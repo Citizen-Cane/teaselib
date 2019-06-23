@@ -29,7 +29,6 @@ public class ScriptEvents {
         }
 
         public ScriptEventTarget removed() {
-            // TODO attach to apply/remove handler
             return new ScriptEventTarget(this, itemRemoved);
         }
     }
@@ -81,10 +80,6 @@ public class ScriptEvents {
             target.eventSource.add(this);
         }
 
-        public void run() {
-            action.run();
-        }
-
         @Override
         public void run(ItemChangedEventArgs eventArgs) throws Exception {
             if (source.item.equals(eventArgs.item)) {
@@ -94,6 +89,10 @@ public class ScriptEvents {
                     target.eventSource.remove(this);
                 }
             }
+        }
+
+        public void run() {
+            action.run();
         }
     }
 }

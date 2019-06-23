@@ -1,11 +1,11 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.Message;
@@ -17,21 +17,23 @@ import teaselib.core.devices.Devices;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.test.TestScript;
+import teaselib.util.Item;
 import teaselib.util.Items;
 
 public class KeyReleaseScriptIntegrationTest {
+    TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
+    Devices devices = script.teaseLib.devices;
+    DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
+    KeyRelease keyRelease = deviceCache.getDefaultDevice();
+    Actuator actuator = keyRelease.actuators().get(1, TimeUnit.HOURS);
+
+    @Before
+    public void before() {
+        script.debugger.resumeTime();
+    }
 
     @Test
     public void testUsageInScriptWithActionStates() {
-        TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
-        script.debugger.resumeTime();
-
-        Devices devices = script.teaseLib.devices;
-        DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
-
-        KeyRelease keyRelease = deviceCache.getDefaultDevice();
-        Actuator actuator = keyRelease.actuators().get(1, TimeUnit.HOURS);
-
         Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
 
         // TODO make applyAction being called on cuffs.apply() instead of here
@@ -92,17 +94,6 @@ public class KeyReleaseScriptIntegrationTest {
 
     @Test
     public void testUsageInScriptWithScriptEvents() {
-        TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
-        script.debugger.resumeTime();
-
-        Devices devices = script.teaseLib.devices;
-        DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
-
-        KeyRelease keyRelease = deviceCache.getDefaultDevice();
-        Actuator actuator = keyRelease.actuators().get(1, TimeUnit.HOURS);
-
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
-
         // TODO Also with when(...)
         EventSource<ScriptEventArgs> afterChoices = script.events().afterChoices;
         Event<ScriptEventArgs> renewHold = new Event<ScriptEventArgs>() {
@@ -117,8 +108,11 @@ public class KeyReleaseScriptIntegrationTest {
             }
         };
         afterChoices.add(renewHold);
-        script.events().when(cuffs.get()).applied().thenOnce(actuator::start);
-        script.events().when(cuffs.get()).removed().thenOnce(actuator::release);
+
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        Item restraints = cuffs.get();
+        script.events().when(restraints).applied().thenOnce(actuator::start);
+        script.events().when(restraints).removed().thenOnce(actuator::release);
 
         // TODO remaining before arm should be == available
         long available = actuator.available(TimeUnit.SECONDS);
@@ -143,7 +137,6 @@ public class KeyReleaseScriptIntegrationTest {
         assertTrue(actuator.isRunning());
 
         script.say("Starting release timer", Message.Delay10s);
-        // TODO Start not called
         cuffs.apply();
         script.completeAll();
         assertEquals("Release timer not set", available - 10, actuator.remaining(TimeUnit.SECONDS), 1.0);
@@ -158,4 +151,8 @@ public class KeyReleaseScriptIntegrationTest {
         assertEquals(0, actuator.remaining(TimeUnit.SECONDS), 1.0);
     }
 
+    @After
+    public void releaseAll() {
+        keyRelease.actuators().stream().filter(Actuator::isRunning).forEach(Actuator::release);
+    }
 }

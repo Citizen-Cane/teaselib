@@ -1,15 +1,18 @@
 package teaselib.core.state;
 
 import teaselib.Duration;
+import teaselib.core.ScriptEvents;
 import teaselib.core.StateMaps;
 import teaselib.util.Item;
 
 public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.Attributes {
     public final Item item;
+    final ScriptEvents events;
 
-    public ItemProxy(String namespace, Item item) {
+    public ItemProxy(String namespace, Item item, ScriptEvents events) {
         super(namespace, item);
-        this.item = item;
+        this.item = state;
+        this.events = events;
     }
 
     @Override
@@ -35,13 +38,17 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     @Override
     public Options applyTo(Object... items) {
         injectNamespace();
-        return new StateOptionsProxy(namespace, item.applyTo(items));
+        StateOptionsProxy options = new StateOptionsProxy(namespace, item.applyTo(items), events);
+        events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
+        return options;
     }
 
     @Override
     public Options apply() {
         injectNamespace();
-        return new StateOptionsProxy(namespace, item.apply());
+        StateOptionsProxy options = new StateOptionsProxy(namespace, item.apply(), events);
+        events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
+        return options;
     }
 
     private void injectNamespace() {
@@ -50,11 +57,13 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
 
     @Override
     public void remove() {
+        events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
         item.remove();
     }
 
     @Override
     public void removeFrom(Object... peers) {
+        events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
         item.removeFrom(peers);
     }
 

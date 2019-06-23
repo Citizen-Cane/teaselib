@@ -76,10 +76,14 @@ public class Actuator implements Device {
     }
 
     public void start() {
+        // TODO Reset on device
+        hold();
         start(keyRelease.available(index), TimeUnit.SECONDS);
     }
 
     public void start(long duration, TimeUnit unit) {
+        // TODO Reset on device
+        hold();
         keyRelease.start(index, (int) TimeUnit.SECONDS.convert(duration, unit));
     }
 

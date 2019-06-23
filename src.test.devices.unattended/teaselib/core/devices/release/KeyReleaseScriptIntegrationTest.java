@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.Message;
@@ -33,6 +34,7 @@ public class KeyReleaseScriptIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testUsageInScriptWithActionStates() {
         Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
 
@@ -54,8 +56,8 @@ public class KeyReleaseScriptIntegrationTest {
         };
         afterChoices.add(renewHold);
 
-        // TODO remaining before arm should be == available
         long available = actuator.available(TimeUnit.SECONDS);
+        assertEquals(available, actuator.remaining(TimeUnit.SECONDS), 1.0);
 
         script.say("Arm", Message.Delay10s);
         actuator.arm();
@@ -138,18 +140,22 @@ public class KeyReleaseScriptIntegrationTest {
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply();
+        assertEquals("Release timer not reset", available, actuator.remaining(TimeUnit.SECONDS), 1.0);
+
         script.completeAll();
-        assertEquals("Release timer not set", available - 10, actuator.remaining(TimeUnit.SECONDS), 1.0);
+        assertEquals("Release timer wrong value", available - 10, actuator.remaining(TimeUnit.SECONDS), 1.0);
 
         script.say("Timer is running", Message.Delay10s);
         script.completeAll();
-        assertEquals("Release timer not set", available - 20, actuator.remaining(TimeUnit.SECONDS), 1.0);
+        assertEquals("Release timer wrong value", available - 20, actuator.remaining(TimeUnit.SECONDS), 1.0);
 
         script.say("Releasing key", Message.Delay10s);
         cuffs.remove();
         assertFalse(actuator.isRunning());
         assertEquals(0, actuator.remaining(TimeUnit.SECONDS), 1.0);
     }
+
+    // TODO Remove hold hook and test it
 
     @After
     public void releaseAll() {

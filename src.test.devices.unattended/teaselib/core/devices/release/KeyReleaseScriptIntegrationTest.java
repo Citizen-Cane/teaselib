@@ -101,7 +101,6 @@ public class KeyReleaseScriptIntegrationTest {
         Event<ScriptEventArgs> renewHold = new Event<ScriptEventArgs>() {
             @Override
             public void run(ScriptEventArgs eventArgs) throws Exception {
-                // TODO hold as long as not started
                 if (actuator.isRunning()) {
                     actuator.hold();
                 } else {
@@ -113,11 +112,12 @@ public class KeyReleaseScriptIntegrationTest {
 
         Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
         Item restraints = cuffs.get();
+        script.events().when(restraints).applied().thenOnce(() -> afterChoices.remove(renewHold));
         script.events().when(restraints).applied().thenOnce(actuator::start);
         script.events().when(restraints).removed().thenOnce(actuator::release);
 
-        // TODO remaining before arm should be == available
         long available = actuator.available(TimeUnit.SECONDS);
+        assertEquals(available, actuator.remaining(TimeUnit.SECONDS), 1.0);
 
         script.say("Arm", Message.Delay10s);
         actuator.arm();

@@ -177,7 +177,7 @@ public class KeyRelease implements Device, Device.Creatable {
                 releaseKeys = new String[size];
                 List<Actuator> elements = new ArrayList<>(size);
                 for (int i = 0; i < size; i++) {
-                    elements.add(new Actuator(this, i));
+                    elements.add(new KeyReleaseActuator(this, i));
                     releaseKeys[i] = "";
                 }
                 actuators = new Actuators(elements);

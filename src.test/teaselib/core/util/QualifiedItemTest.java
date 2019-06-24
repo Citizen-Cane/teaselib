@@ -1,13 +1,14 @@
 package teaselib.core.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 import teaselib.Material;
 import teaselib.core.Script;
 import teaselib.core.TeaseLib;
-import teaselib.core.devices.release.ReleaseActionTest.TestReleaseActionState;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.ItemGuid;
@@ -74,24 +75,4 @@ public class QualifiedItemTest {
         return new ItemImpl(script.teaseLib, TestEnum.One, TeaseLib.DefaultDomain, new ItemGuid(name), "A_Number");
     }
 
-    @Test
-    public void testEquality() {
-        TestScript script = TestScript.getOne();
-
-        String devicePath = "KeyRelease/MyPhoton/1";
-
-        String expected = ReflectionUtils.qualified(TestReleaseActionState.class, devicePath);
-        QualifiedItem actual = QualifiedItem.of(script.state(expected));
-        assertNotSame(expected, actual);
-
-        // Works but bad coding practice
-        assertEquals(actual, expected);
-        assertEquals(expected, actual.toString());
-
-        // Doesn't work this way because String can't be overloaded
-        assertNotEquals(expected, actual);
-
-        // Always wrap strings into qualified items when dealing with state in the core
-        assertEquals(QualifiedItem.of(expected), actual);
-    }
 }

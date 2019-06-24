@@ -1,8 +1,7 @@
 package teaselib.core.devices.release;
 
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import teaselib.Actor;
 import teaselib.Answer;
@@ -40,7 +39,7 @@ public class KeyReleaseSetup extends TeaseScript {
         }
     }
 
-    public void setup(Consumer<KeyRelease> handOverKeys) {
+    public void setup(BiConsumer<KeyReleaseSetup, KeyRelease> handOverKeys) {
         boolean ready = false;
         while (!ready) {
             KeyRelease keyRelease = getKeyReleaseDevice();
@@ -69,7 +68,7 @@ public class KeyReleaseSetup extends TeaseScript {
             }
 
             if (keyRelease.connected()) {
-                handOverKeys.accept(keyRelease);
+                handOverKeys.accept(this, keyRelease);
                 ready = keyRelease.connected();
             }
         }
@@ -77,14 +76,6 @@ public class KeyReleaseSetup extends TeaseScript {
 
     private KeyRelease getKeyReleaseDevice() {
         return teaseLib.devices.get(KeyRelease.class).getDefaultDevice();
-    }
-
-    @Deprecated
-    public void placeKey(Actuator actuator, long duration, TimeUnit unit, String answer, Object... items) {
-        actuator.arm();
-        state(actuator.releaseAction()).applyTo(items).over(duration, unit);
-        agree(answer);
-        actuator.start(duration, unit);
     }
 
     public void prepare(Actuator actuator, Item item) {

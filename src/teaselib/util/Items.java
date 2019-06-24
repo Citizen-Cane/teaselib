@@ -55,7 +55,7 @@ public class Items implements Iterable<Item> {
         this(new ArrayList<>(items.elements), items.inventory);
     }
 
-    public Items(Item[] items) {
+    public Items(Item... items) {
         this(Arrays.asList(items));
     }
 

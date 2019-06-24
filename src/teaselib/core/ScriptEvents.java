@@ -4,6 +4,7 @@ import teaselib.State;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.util.Item;
+import teaselib.util.Items;
 
 public class ScriptEvents {
     public final EventSource<ScriptEventArgs> beforeChoices = new EventSource<>("Before Choices");
@@ -14,14 +15,24 @@ public class ScriptEvents {
     public final EventSource<ItemChangedEventArgs> itemRemoved = new EventSource<>("Item removed");
 
     public ScriptEventSource when(Item item) {
-        return new ScriptEventSource(item);
+        return new ScriptEventSource(new Items(item));
+    }
+
+    /**
+     * Trigger event when any of the items changes its state
+     * 
+     * @param items
+     * @return
+     */
+    public ScriptEventSource when(Items items) {
+        return new ScriptEventSource(items);
     }
 
     public class ScriptEventSource {
-        final Item item;
+        final Items items;
 
-        private ScriptEventSource(Item item) {
-            this.item = item;
+        private ScriptEventSource(Items items) {
+            this.items = items;
         }
 
         public ScriptEventTarget applied() {
@@ -82,7 +93,7 @@ public class ScriptEvents {
 
         @Override
         public void run(ItemChangedEventArgs eventArgs) throws Exception {
-            if (source.item.equals(eventArgs.item)) {
+            if (source.items.contains(eventArgs.item)) {
                 try {
                     action.run();
                 } finally {

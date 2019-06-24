@@ -41,6 +41,15 @@ public class EventSource<T extends EventArgs> {
         return delegates.contains(delegate);
     }
 
+    /**
+     * Returns the number of user events
+     * 
+     * @return
+     */
+    public synchronized int size() {
+        return delegates.size();
+    }
+
     public synchronized void run(T eventArgs) {
         logger.info("{} , {} listeners {}", name, delegates.size(), eventArgs);
         if (initial != null) {

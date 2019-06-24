@@ -83,6 +83,8 @@ public class KeyReleaseSetup extends TeaseScript {
     }
 
     public void prepare(Actuator actuator, Items items) {
+        actuator.arm();
+
         EventSource<ScriptEventArgs> afterChoices = events.afterChoices;
         Event<ScriptEventArgs> renewHold = new Event<ScriptEventArgs>() {
             @Override

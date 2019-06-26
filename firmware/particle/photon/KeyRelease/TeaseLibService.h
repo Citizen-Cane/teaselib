@@ -25,8 +25,10 @@ public:
   static unsigned int processSleepPacket(const UDPMessage& received, SleepMode& sleepMode);
   static unsigned int processPacket(const UDPMessage& received, char* buffer);
   static const UDPMessage Ok;
+  static const UDPMessage WrongCall;
   static const char* const Id;
   static const char* const Sleep;
+  static const char* const Text;
 protected:
   virtual void setup()=0;
   virtual unsigned int process(const UDPMessage& received, char* buffer)=0;

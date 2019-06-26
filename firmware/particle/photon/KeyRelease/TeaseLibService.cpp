@@ -4,8 +4,10 @@
 
 
 const UDPMessage TeaseLibService::Ok("ok", {}, 0);
+const UDPMessage TeaseLibService::WrongCall("WrongCall", {}, 0);
 const char* const TeaseLibService::Id = "id";
 const char* const TeaseLibService::Sleep = "sleep";
+const char* const TeaseLibService::Text = "text";
 
 TeaseLibService** TeaseLibService::services = NULL;
 unsigned int TeaseLibService::serviceCount = 0;

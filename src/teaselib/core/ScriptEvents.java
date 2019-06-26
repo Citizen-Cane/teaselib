@@ -82,6 +82,7 @@ public class ScriptEvents {
         final ScriptEventSource source;
         final ScriptEventTarget target;
         final Runnable action;
+        boolean inProgress = false;
 
         public ScriptEventAction(ScriptEventSource source, ScriptEventTarget target, Runnable action) {
             this.source = source;
@@ -93,10 +94,13 @@ public class ScriptEvents {
 
         @Override
         public void run(ItemChangedEventArgs eventArgs) throws Exception {
-            if (source.items.contains(eventArgs.item)) {
+            if (!inProgress && source.items.contains(eventArgs.item)) {
+                // Avoid being called again when actions themselves remove items
+                inProgress = true;
                 try {
                     action.run();
                 } finally {
+                    inProgress = false;
                     target.eventSource.remove(this);
                 }
             }

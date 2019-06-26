@@ -43,8 +43,8 @@ public class KeyReleaseScriptIntegrationTest {
         script.say("Arm", Message.Delay10s);
         script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(3, script.events().itemApplied.size());
-        assertEquals(1, script.events().itemRemoved.size());
+        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(2, script.events().itemRemoved.size());
         script.reply("Keys placed, #title");
 
         script.say("Holding", Message.Delay10s);
@@ -94,8 +94,8 @@ public class KeyReleaseScriptIntegrationTest {
         script.say("Arm", Message.Delay10s);
         script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(3, script.events().itemApplied.size());
-        assertEquals(1, script.events().itemRemoved.size());
+        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(2, script.events().itemRemoved.size());
         script.reply("Keys placed, #title");
 
         script.say("Holding", Message.Delay10s);

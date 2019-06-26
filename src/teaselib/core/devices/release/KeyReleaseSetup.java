@@ -103,6 +103,7 @@ public class KeyReleaseSetup extends TeaseScript {
 
         events.when(items).applied().thenOnce(() -> afterChoices.remove(renewHold));
         events.when(items).applied().thenOnce(actuator::start);
+
         events.when(items).removed().thenOnce(actuator::release);
         events.when(items).removed().thenOnce(() -> items.removeFrom(Gadgets.Key_Release));
     }

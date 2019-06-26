@@ -125,6 +125,20 @@ public class KeyReleaseTest {
         assertEndState(keyRelease);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testWrongCall() {
+        KeyRelease keyRelease = connectDefaultDevice();
+
+        for (Actuator actuator : connect(keyRelease)) {
+            arm(actuator);
+            start(actuator);
+            hold(actuator);
+            poll(actuator);
+            assertStoppedAfterRelease(actuator);
+        }
+        assertEndState(keyRelease);
+    }
+
     @Test
     public void testDeepSleepRelease() {
         KeyRelease keyRelease = connectDefaultDevice();

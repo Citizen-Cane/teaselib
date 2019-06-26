@@ -204,7 +204,7 @@ public class KeyRelease implements Device, Device.Creatable {
             releaseKeys[actuator] = key.parameters.get(0);
             return releaseKeys[actuator];
         } else {
-            return "";
+            throw new IllegalStateException(key.command);
         }
     }
 
@@ -215,7 +215,7 @@ public class KeyRelease implements Device, Device.Creatable {
             releaseKeys[actuator] = key.parameters.get(0);
             return releaseKeys[actuator];
         } else {
-            return "";
+            throw new IllegalStateException(key.command);
         }
     }
 

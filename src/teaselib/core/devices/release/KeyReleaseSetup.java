@@ -5,6 +5,7 @@ import java.util.function.BiConsumer;
 
 import teaselib.Actor;
 import teaselib.Answer;
+import teaselib.Gadgets;
 import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.ScriptFunction.Relation;
@@ -98,9 +99,12 @@ public class KeyReleaseSetup extends TeaseScript {
         };
         afterChoices.add(renewHold);
 
+        items.applyTo(Gadgets.Key_Release);
+
         events.when(items).applied().thenOnce(() -> afterChoices.remove(renewHold));
         events.when(items).applied().thenOnce(actuator::start);
         events.when(items).removed().thenOnce(actuator::release);
+        events.when(items).removed().thenOnce(() -> items.removeFrom(Gadgets.Key_Release));
     }
 
 }

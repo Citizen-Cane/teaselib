@@ -433,6 +433,12 @@ public class Items implements Iterable<Item> {
         }
     }
 
+    public void removeFrom(Object... peers) {
+        for (Item item : firstOfEachKind()) {
+            item.removeFrom(peers);
+        }
+    }
+
     public Collection<Item> firstOfEachKind() {
         List<Item> firstOfEachKind = new ArrayList<>();
         Set<QualifiedItem> kinds = new HashSet<>();

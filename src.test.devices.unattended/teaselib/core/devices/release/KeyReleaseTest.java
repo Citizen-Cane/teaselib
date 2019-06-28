@@ -58,13 +58,11 @@ public class KeyReleaseTest {
     public static void hold(Actuator actuator) {
         actuator.hold();
         assertTrue(actuator.isRunning());
-        logger.info("Actuator " + actuator.index());
     }
 
     public static void start(Actuator actuator) {
         actuator.start(HoldDuration, TimeUnit.MINUTES);
         assertTrue(actuator.isRunning());
-        logger.info("Actuator " + actuator.index());
     }
 
     public static void poll(Actuator actuator) {

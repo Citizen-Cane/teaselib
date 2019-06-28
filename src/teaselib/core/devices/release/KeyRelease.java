@@ -208,9 +208,9 @@ public class KeyRelease implements Device, Device.Creatable {
         }
     }
 
-    String hold(int actuator, int seconds) {
-        RemoteDeviceMessage key = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Hold,
-                Arrays.asList(Integer.toString(actuator), Integer.toString(seconds))));
+    String hold(int actuator) {
+        RemoteDeviceMessage key = remoteDevice.sendAndReceive(
+                new RemoteDeviceMessage(DeviceClassName, Hold, Arrays.asList(Integer.toString(actuator))));
         if (ReleaseKey.equals(key.command)) {
             releaseKeys[actuator] = key.parameters.get(0);
             return releaseKeys[actuator];

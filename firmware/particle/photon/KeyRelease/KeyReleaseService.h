@@ -51,7 +51,7 @@ public:
       const Actuator* actuator;
       const void arm();
       const int start(const int seconds);
-      const int hold(const int seconds);
+      const int hold();
       const int add(const int seconds);
       const bool advance();
       const void clear();

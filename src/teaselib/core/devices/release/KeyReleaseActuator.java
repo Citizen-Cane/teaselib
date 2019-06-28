@@ -53,34 +53,37 @@ public class KeyReleaseActuator implements Actuator {
         return keyRelease.batteryLevel();
     }
 
+    @Override
     public int index() {
         return index;
     }
 
+    @Override
     public boolean arm() {
         return keyRelease.arm(index);
     }
 
+    @Override
     public void hold() {
-        keyRelease.hold(index, (int) TimeUnit.SECONDS.convert(keyRelease.available(index), TimeUnit.SECONDS));
+        keyRelease.hold(index);
     }
 
+    @Override
     public void start() {
-        // TODO Reset on device
-        hold();
-        start(keyRelease.available(index), TimeUnit.SECONDS);
+        start(0, TimeUnit.SECONDS);
     }
 
+    @Override
     public void start(long duration, TimeUnit unit) {
-        // TODO Reset on device
-        hold();
         keyRelease.start(index, (int) TimeUnit.SECONDS.convert(duration, unit));
     }
 
+    @Override
     public int sleep(long duration, TimeUnit unit) {
         return keyRelease.sleep((int) TimeUnit.SECONDS.convert(duration, unit));
     }
 
+    @Override
     public boolean add(long duration, TimeUnit unit) {
         return keyRelease.add(index, (int) TimeUnit.SECONDS.convert(duration, unit));
     }
@@ -90,6 +93,7 @@ public class KeyReleaseActuator implements Actuator {
      * 
      * @return True if the actuator holds a key and is counting down (not armed).
      */
+    @Override
     public boolean isRunning() {
         return keyRelease.isRunning(index);
     }
@@ -99,6 +103,7 @@ public class KeyReleaseActuator implements Actuator {
      * 
      * @return The number of available minutes.
      */
+    @Override
     public long available(TimeUnit unit) {
         return unit.convert(keyRelease.available(index), TimeUnit.SECONDS);
     }
@@ -106,6 +111,7 @@ public class KeyReleaseActuator implements Actuator {
     /**
      * @return Duration minutes until release.
      */
+    @Override
     public long remaining(TimeUnit unit) {
         return unit.convert(keyRelease.remaining(index), TimeUnit.SECONDS);
     }
@@ -115,6 +121,7 @@ public class KeyReleaseActuator implements Actuator {
      * 
      * @return Whether the key has been released.
      */
+    @Override
     public boolean release() {
         return keyRelease.release(index);
     }

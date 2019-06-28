@@ -7,6 +7,7 @@ import java.util.Set;
 
 import teaselib.Duration;
 import teaselib.State;
+import teaselib.core.ScriptEvents;
 import teaselib.core.StateImpl;
 import teaselib.core.StateMaps;
 
@@ -15,20 +16,27 @@ import teaselib.core.StateMaps;
  *
  */
 public class StateProxy extends AbstractProxy<State> implements State, StateMaps.Attributes {
-    public StateProxy(String namespace, State state) {
+    final ScriptEvents events;
+
+    public StateProxy(String namespace, State state, ScriptEvents events) {
         super(namespace, state);
+        this.events = events;
     }
 
     @Override
     public Options apply() {
         injectNamespace();
-        return new StateOptionsProxy(namespace, state.apply());
+        StateOptionsProxy options = new StateOptionsProxy(namespace, state.apply(), events);
+        events.stateApplied.run(new ScriptEvents.StateChangedEventArgs(state));
+        return options;
     }
 
     @Override
     public Options applyTo(Object... items) {
         injectNamespace();
-        return new StateOptionsProxy(namespace, state.applyTo(items));
+        StateOptionsProxy options = new StateOptionsProxy(namespace, state.applyTo(items), events);
+        events.stateApplied.run(new ScriptEvents.StateChangedEventArgs(state));
+        return options;
     }
 
     private void injectNamespace() {
@@ -62,11 +70,13 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
 
     @Override
     public void remove() {
+        events.stateRemoved.run(new ScriptEvents.StateChangedEventArgs(state));
         state.remove();
     }
 
     @Override
     public void removeFrom(Object... peers) {
+        events.stateRemoved.run(new ScriptEvents.StateChangedEventArgs(state));
         state.removeFrom(peers);
     }
 

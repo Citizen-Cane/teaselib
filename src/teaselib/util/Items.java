@@ -1,6 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +55,7 @@ public class Items implements Iterable<Item> {
         this(new ArrayList<>(items.elements), items.inventory);
     }
 
-    public Items(Item[] items) {
+    public Items(Item... items) {
         this(Arrays.asList(items));
     }
 
@@ -433,6 +433,12 @@ public class Items implements Iterable<Item> {
         }
     }
 
+    public void removeFrom(Object... peers) {
+        for (Item item : firstOfEachKind()) {
+            item.removeFrom(peers);
+        }
+    }
+
     public Collection<Item> firstOfEachKind() {
         List<Item> firstOfEachKind = new ArrayList<>();
         Set<QualifiedItem> kinds = new HashSet<>();
@@ -505,6 +511,13 @@ public class Items implements Iterable<Item> {
         return elements.stream();
     }
 
+    // TODO remove? ->
+    /**
+     * returns the item values.
+     * 
+     * @return
+     */
+    @Deprecated
     public Set<Object> valueSet() {
         return elements.stream().map(item -> itemImpl(item).value).collect(Collectors.toCollection(LinkedHashSet::new));
     }

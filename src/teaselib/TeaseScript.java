@@ -551,12 +551,14 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean askYN(ScriptFunction scriptFunction, Answer yes, Answer no) {
-        if (yes.meaning != Meaning.YES)
-            throw new IllegalArgumentException(yes.toString());
-        if (yes.meaning != Meaning.NO)
-            throw new IllegalArgumentException(no.toString());
+        if (yes.meaning == Meaning.NO || no.meaning == Meaning.YES) {
+            Answer swap = yes;
+            yes = no;
+            no = swap;
+        }
 
-        return showChoices(Arrays.asList(yes, no), null).meaning == Meaning.YES;
+        teaselib.Answer answer = showChoices(Arrays.asList(yes, no), null);
+        return answer.meaning == Meaning.YES || answer == yes;
     }
 
     public final void deny(String no) {

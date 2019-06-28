@@ -54,11 +54,13 @@ public abstract class TeaseScriptPersistence extends Script {
         }
 
         public <T extends Enum<?>> Item item(T value) {
-            return new ItemProxy(namespace, teaseLib.item(name, value));
+            return new ItemProxy(namespace, teaseLib.item(name, value), events);
         }
 
+        // TODO Remove code duplication
+
         public Item item(String value) {
-            return new ItemProxy(namespace, teaseLib.item(name, value));
+            return new ItemProxy(namespace, teaseLib.item(name, value), events);
         }
 
         @SafeVarargs
@@ -89,7 +91,7 @@ public abstract class TeaseScriptPersistence extends Script {
                 if (item instanceof ItemProxy) {
                     proxies.add(item);
                 } else {
-                    proxies.add(new ItemProxy(namespace, item));
+                    proxies.add(new ItemProxy(namespace, item, events));
                 }
             }
             return new Items(proxies);
@@ -181,11 +183,11 @@ public abstract class TeaseScriptPersistence extends Script {
         return teaseLib.new PersistentSequence<>(TeaseLib.DefaultDomain, namespace, name, values);
     }
 
-    public State state(Enum<?> item) {
-        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, item));
+    public State state(Enum<?> value) {
+        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, value), events);
     }
 
-    public State state(String item) {
-        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, item));
+    public State state(String value) {
+        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, value), events);
     }
 }

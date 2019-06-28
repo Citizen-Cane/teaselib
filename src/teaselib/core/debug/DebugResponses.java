@@ -75,6 +75,7 @@ public class DebugResponses {
         Pattern choice = WildcardPattern.compile(entry.match);
         for (int i = 0; i < choices.size(); i++) {
             // TODO Match against all text elements
+            // TODO match lower case - same as speech recognition
             if (choice.matcher(choices.get(i).answer.text.get(0)).matches()
                     && (bestResult == null || bestResult.response == Response.Ignore)) {
                 try {

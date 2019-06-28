@@ -17,7 +17,6 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.TeaseLib.PersistentBoolean;
 import teaselib.core.TeaseLib.PersistentString;
-import teaselib.core.devices.ActionState;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
@@ -245,7 +244,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     protected State applyInternal(Object... attributes) {
-        if (!applied() && !stateAppliesBeforehand(attributes)) {
+        if (!applied()) {
             setTemporary();
         }
 
@@ -259,18 +258,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             }
         }
 
-        if (!stateAppliesBeforehand(attributes)) {
-            setApplied();
-        }
+        setApplied();
         return this;
-    }
-
-    private boolean stateAppliesBeforehand(Object... attributes) {
-        if (attributes.length == 0) {
-            return false;
-        } else {
-            return states(Arrays.stream(attributes)).allMatch(ActionState::isActionState);
-        }
     }
 
     public Stream<StateImpl> peerStates() {

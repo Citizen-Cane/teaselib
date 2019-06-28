@@ -51,8 +51,13 @@ const char* const KeyReleaseService::Version = "0.02";
 */
 
 /* Servo control:
-   When the battery drains and the voltage drops, moving the servos
+   Caution: When the battery drains and the voltage drops, moving the servos
    drop the voltage down below the amount needed to feed them with a proper PWM signal
+
+   -> only operate the device with a usb power supply and use rechargeable batteries as backup power
+   - Normal rechargeables last around two hours with activated WIFI and servos - test your own setup !
+   So when you have a power outage in the middle of the session, you should still be able to get the espcape keys.
+
 
    Experimental (non-working, can be activated in source code):
    - To save battery charge servos are attached only for the time it takes to move the shaft to the requested angle.
@@ -63,17 +68,22 @@ const char* const KeyReleaseService::Version = "0.02";
 
 /* LED state:
   - The LED breathes cyan as usual (connected to the cloud) while the device is inactve.
-  - It pulses dark green when any of the servos is ready to receive a key
-  - It pulses dark red while any of the timers is counting down
-  - It starts breathing again once all keys have been released
+  - Yellow pulse and an active hook indicates that the device is ready to receive a key
+  - Green pulses indicate "Hold" mode - the device holds the key until the timer is started,
+    or the Hold isn't renewed during the available duration
+  - Dark blue pulse inditate that one or more timers count down - the frequency indicates the duration until the next release
+  - Once all keys have been released, the device starts breathing cyan again
   the activity pulse frequence indicates the remaining time until all keys will have been released
 */
 
 /* Sleep modes:
-  - Deep sleep is supported if a single release is pending and
-  - the requested sleep time is greater than or equal to the relase duration
-  Otherwise the device enters light sleep until the next release.
+  + Deep sleep is supported if a single release is pending and
+    the requested sleep time is greater than or equal to the relase duration
+  + Otherwise the device enters light sleep until the next release.
+  - Obviously the device doesn't react on commands while sleeping.
   TODO light sleep to all but last release, then switch to deep sleep until the last release is due.
+  TODO Test with hold
+  TODO Java RemoteDevice disconnects correctly, but fails to reconnect when device is available again
 */
 
 const int KeyReleaseService::DefaultSetupSize = 2;
@@ -98,7 +108,10 @@ const unsigned int PulseFrequencyAt0s = 500;
 const unsigned int PulseFrequencyAt1h = 5000;
 const unsigned int SecondsAt1h = 3600;
 
-const unsigned int PulseFrequencyWhenIdleOrArming = 2000;
+const unsigned int PulseFrequencyWhenIdle = 2000;
+const unsigned int PulseFrequencyWhenArming = 1000;
+const unsigned int PulseFrequencyWhenHolding = 2000;
+const unsigned int PulseFrequencyWhenError = 500;
 const unsigned int PulseLength = 100;
 
 KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actuatorCount)
@@ -109,9 +122,9 @@ KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actua
 , actuatorCount(actuatorCount)
 , sessionKey(createSessionKey())
 , releaseTimer(1 * 1000, &KeyReleaseService::releaseTimerCallback, *this)
-, ledTimer(PulseFrequencyWhenIdleOrArming, &KeyReleaseService::ledTimerCallback, *this)
+, ledTimer(PulseFrequencyWhenIdle, &KeyReleaseService::ledTimerCallback, *this)
 , ledPulseOffTimer(PulseLength, &KeyReleaseService::ledTimerPulseOffCallback, *this, true)
-, status(Idle)
+, pulseStatus(Actuator::Idle)
 , secondsSinceLastUpdate(0)
 {}
 
@@ -168,30 +181,51 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     Duration& duration = durations[index];
     duration.arm();
     delay(1000);
+    updatePulse(Actuator::Armed);
     armKey(index);
-    updatePulse(Armed);
     releaseTimer.start();
     return Ok.toBuffer(buffer);
   }
-  else if (isCommand(received, "hold" /* actuator seconds */)) {
+  else if (isCommand(received, "hold")) {
+    // TODO When start() has been called, disallow hold() until release -> error
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
-    const int seconds = atol(received.parameters[1]);
-    durations[index].hold(seconds);
-    updatePulse(Holding);
-    releaseTimer.start();
-    const char* parameters[] = {sessionKey};
-    return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
+    Duration& duration = durations[index];
+    if (duration.status == Actuator::Armed || duration.status == Actuator::Holding) {
+      duration.hold();
+      updatePulse(Actuator::Holding);
+      releaseTimer.start();
+      const char* parameters[] = {sessionKey};
+      return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
+    } else {
+      updatePulse(Actuator::Error);
+      releaseKey(index);
+      Duration& duration = durations[index];
+      duration.clear();
+      releaseKey(index);
+      return WrongCall.toBuffer(buffer);
+    }
   }
   else if (isCommand(received, "start" /* actuator seconds */)) {
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     const int seconds = atol(received.parameters[1]);
-    durations[index].start(seconds);
-    updatePulse(Active);
-    releaseTimer.start();
-    const char* parameters[] = {sessionKey};
-    return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
+    Duration& duration = durations[index];
+    if (duration.status == Actuator::Armed || duration.status == Actuator::Holding) {
+      duration.clear();
+      duration.start(seconds > 0 ? seconds : duration.actuator->defaultSeconds);
+      updatePulse(Actuator::Active);
+      releaseTimer.start();
+      const char* parameters[] = {sessionKey};
+      return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
+    } else {
+      updatePulse(Actuator::Error);
+      releaseKey(index);
+      Duration& duration = durations[index];
+      duration.clear();
+      releaseKey(index);
+      return WrongCall.toBuffer(buffer);
+    }
   }
   else if (isCommand(received, "add" /* actuator seconds */)) {
     releaseTimer.stop();
@@ -199,7 +233,7 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     const int seconds = atol(received.parameters[1]);
     Duration& duration = durations[index];
     duration.add(seconds);
-    updatePulse(status);
+    updatePulse(pulseStatus);
     releaseTimer.start();
     return createCountMessage(duration.remainingSeconds, buffer);
   }
@@ -214,22 +248,42 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     return createCountMessage(duration.remainingSeconds, buffer);
   }
   else if (isCommand(received, "running" /* actuator */)) {
+    // TODO Deprecate and use status instead
     const int index = atol(received.parameters[0]);
     Duration& duration = durations[index];
     return createCountMessage(duration.running ? 1 : 0, buffer);
+  }
+  else if (isCommand(received, "status" /* actuator */)) {
+    const int index = atol(received.parameters[0]);
+    Duration& duration = durations[index];
+    const char* parameters[] = {Actuator::statusText(duration.status)};
+    return UDPMessage(TeaseLibService::Text, parameters, 1).toBuffer(buffer);
   }
   else if (isCommand(received, "release" /* actuator releaseKey */)) {
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     // TODO comparre release key string in order to  prevent cheating
-    durations[index].clear();
+    Duration& duration = durations[index];
+    duration.clear();
+    updatePulse(Actuator::Released);
     releaseKey(index);
-    updatePulse(Released);
     releaseTimer.start();
     return Ok.toBuffer(buffer);
   }
   else  {
     return 0;
+  }
+}
+
+const char* KeyReleaseService::Actuator::statusText(Status status) {
+  switch((int) status) {
+    case Actuator::Idle: return "Idle";
+    case Actuator::Armed: return "Armed";
+    case Actuator::Holding: return "Holding";
+    case Actuator::Error: return "Error";
+    case Actuator::Active: return "Active";
+    case Actuator::Released: return "Released";
+    default: return "Unknown";
   }
 }
 
@@ -262,12 +316,12 @@ unsigned int KeyReleaseService::sleepRequested(const unsigned int durationSecond
 
 void KeyReleaseService::releaseTimerCallback() {
   // Resume to Active or Idle after one minute
-  if (status == Released) {
+  if (pulseStatus == Actuator::Released) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
-      status = Active;
+      pulseStatus = Actuator::Active;
     } else {
-      status = Idle;
+      pulseStatus = Actuator::Idle;
     }
   }
   // Update durations
@@ -278,13 +332,13 @@ void KeyReleaseService::releaseTimerCallback() {
         continue;
       } else {
         releaseKey(i);
-        updatePulse(Released);
+        updatePulse(Actuator::Released);
       }
     }
   }
   // Update pulse
-  if (status != Released) {
-    updatePulse(status);
+  if (pulseStatus != Actuator::Released) {
+    updatePulse(pulseStatus);
   }
 }
 
@@ -306,36 +360,39 @@ unsigned int KeyReleaseService::runningReleases() {
   return runningReleases;
 }
 
-void KeyReleaseService::updatePulse(const Status status) {
-  if (this->status != status) {
-    this->status = status;
+void KeyReleaseService::updatePulse(const Actuator::Status status) {
+  if (this->pulseStatus != status) {
+    this->pulseStatus = status;
     secondsSinceLastUpdate = MaxPulseFrequency / 1000;
   }
 
-  if (status == Armed) {
+  // TODO On state change, light up the new color for a second or so before flashing
+  // to indicate immediately that a change has been applied
+
+  if (status == Actuator::Armed) {
     RGB.control(true);
-    RGB.color(240, 100, 0);
-    updatePulse(PulseFrequencyWhenIdleOrArming);  // also (re-)starts the timer
-  } else if (status == Holding) {
+    RGB.color(224, 128, 0);
+    updatePulse(PulseFrequencyWhenArming);
+  } else if (status == Actuator::Holding) {
     const unsigned int nextReleaseDuration = nextRelease();
-    if (nextReleaseDuration > 0) {
-      RGB.color(0, 255, 0);
-      updatePulse(pulsePeriod(nextReleaseDuration));
-    } else {
-      updatePulse(Idle);
-    }
-  } else if (status == Active) {
+    RGB.color(0, 192, 0);
+    updatePulse(PulseFrequencyWhenHolding);
+  } else if (status == Actuator::Error) {
+    const unsigned int nextReleaseDuration = nextRelease();
+    RGB.color(192, 0, 0);
+    updatePulse(PulseFrequencyWhenError);
+  } else if (status == Actuator::Active) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
       RGB.color(0, 0, 255);
       updatePulse(pulsePeriod(nextReleaseDuration));
     } else {
-      updatePulse(Idle);
+      updatePulse(Actuator::Idle);
     }
-  } else if (status == Released) {
+  } else if (status == Actuator::Released) {
     RGB.color(255, 0, 255);
-    updatePulse(PulseFrequencyWhenIdleOrArming);
-  } else if (status == Idle) {
+    updatePulse(PulseFrequencyWhenIdle);
+  } else if (status == Actuator::Idle) {
     ledTimer.stop();
     RGB.brightness(255);
     RGB.control(false);
@@ -343,7 +400,7 @@ void KeyReleaseService::updatePulse(const Status status) {
 }
 
 void KeyReleaseService::updatePulse(const int frequencyMillis) {
-  // Changing the period restarts the pulse timer, so we might not call it too often,
+  // Changing the period restarts the pulse timer, so don't update too often,
   // since the pulse is updated every second by the release timer
   if (secondsSinceLastUpdate++ * 1000 >= MaxPulseFrequency) {
     ledTimer.changePeriod(frequencyMillis);
@@ -379,15 +436,21 @@ const void KeyReleaseService::Duration::arm() {
   running = true;
   elapsedSeconds = 0;
   remainingSeconds = actuator->defaultSeconds;
+  status = Actuator::Armed;
 }
 
-const int KeyReleaseService::Duration::hold(const int seconds) {
-  remainingSeconds = min(seconds, actuator->maximumSeconds);
+const int KeyReleaseService::Duration::hold() {
+  running = true;
+  elapsedSeconds = 0;
+  remainingSeconds = actuator->defaultSeconds;
+  status = Actuator::Holding;
   return remainingSeconds;
 }
 
 const int KeyReleaseService::Duration::start(const int seconds) {
+  running = true;
   remainingSeconds = min(seconds, actuator->maximumSeconds - elapsedSeconds);
+  status = Actuator::Active;
   return remainingSeconds;
 }
 
@@ -403,6 +466,7 @@ const bool KeyReleaseService::Duration::advance() {
       remainingSeconds--;
       if (remainingSeconds == 0) {
         running = false;
+        status = Actuator::Released;
       }
     }
   }
@@ -413,6 +477,7 @@ const void KeyReleaseService::Duration::clear() {
   running = false;
   elapsedSeconds = 0;
   remainingSeconds = 0;
+  status = Actuator::Idle;
 }
 
 

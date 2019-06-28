@@ -28,21 +28,34 @@ public:
     const int maximumSeconds;
     const int releasedAngle;
     const int armedAngle;
-  };
+
+    enum Status {
+      // TODO Removed idle since it's the same as Released
+      Idle,
+      Armed,
+      Holding,
+      Error,
+      Active,
+      Released
+    };
+
+    static const char* statusText(Status status);
+};
 
   struct Duration {
       bool running;
       int elapsedSeconds;
       int remainingSeconds;
+      Actuator::Status status;
 
       const Actuator* actuator;
       const void arm();
       const int start(const int seconds);
-      const int hold(const int seconds);
+      const int hold();
       const int add(const int seconds);
       const bool advance();
       const void clear();
-  };
+};
 
   class ServoControl {
   public:
@@ -87,14 +100,8 @@ private:
 
   void armKey(const int index);
   void releaseKey(const int index);
-  enum Status {
-    Idle,
-    Armed,
-    Holding,
-    Active,
-    Released
-  } status;
-  void updatePulse(Status status);
+  Actuator::Status pulseStatus;
+  void updatePulse(Actuator::Status status);
   void updatePulse(const int frequencyMillis);
   unsigned int nextRelease();
   unsigned int runningReleases();

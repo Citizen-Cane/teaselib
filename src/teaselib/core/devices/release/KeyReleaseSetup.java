@@ -1,17 +1,22 @@
 package teaselib.core.devices.release;
 
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import teaselib.Actor;
 import teaselib.Answer;
+import teaselib.Gadgets;
 import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.ScriptFunction.Relation;
 import teaselib.TeaseScript;
 import teaselib.core.Script;
+import teaselib.core.ScriptEventArgs;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.events.Event;
+import teaselib.core.events.EventSource;
+import teaselib.util.Item;
+import teaselib.util.Items;
 
 /**
  * Performs setup of the global stimulation controller.
@@ -35,7 +40,7 @@ public class KeyReleaseSetup extends TeaseScript {
         }
     }
 
-    public void setup(Consumer<KeyRelease> handOverKeys) {
+    public void setup(BiConsumer<KeyReleaseSetup, KeyRelease> handOverKeys) {
         boolean ready = false;
         while (!ready) {
             KeyRelease keyRelease = getKeyReleaseDevice();
@@ -64,7 +69,7 @@ public class KeyReleaseSetup extends TeaseScript {
             }
 
             if (keyRelease.connected()) {
-                handOverKeys.accept(keyRelease);
+                handOverKeys.accept(this, keyRelease);
                 ready = keyRelease.connected();
             }
         }
@@ -74,11 +79,33 @@ public class KeyReleaseSetup extends TeaseScript {
         return teaseLib.devices.get(KeyRelease.class).getDefaultDevice();
     }
 
-    public void placeKey(Actuator actuator, long duration, TimeUnit unit, String answer, Object... items) {
+    public void prepare(Actuator actuator, Item item) {
+        prepare(actuator, new Items(item));
+    }
+
+    public void prepare(Actuator actuator, Items items) {
         actuator.arm();
-        state(actuator.releaseAction()).applyTo(items).over(duration, unit);
-        agree(answer);
-        actuator.start(duration, unit);
+
+        EventSource<ScriptEventArgs> afterChoices = events.afterChoices;
+        Event<ScriptEventArgs> renewHold = new Event<ScriptEventArgs>() {
+            @Override
+            public void run(ScriptEventArgs eventArgs) throws Exception {
+                if (actuator.isRunning()) {
+                    actuator.hold();
+                } else {
+                    afterChoices.remove(this);
+                }
+            }
+        };
+        afterChoices.add(renewHold);
+
+        items.applyTo(Gadgets.Key_Release);
+
+        events.when(items).applied().thenOnce(() -> afterChoices.remove(renewHold));
+        events.when(items).applied().thenOnce(actuator::start);
+
+        events.when(items).removed().thenOnce(actuator::release);
+        events.when(items).removed().thenOnce(() -> items.removeFrom(Gadgets.Key_Release));
     }
 
 }

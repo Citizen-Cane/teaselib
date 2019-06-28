@@ -177,7 +177,7 @@ public class KeyRelease implements Device, Device.Creatable {
                 releaseKeys = new String[size];
                 List<Actuator> elements = new ArrayList<>(size);
                 for (int i = 0; i < size; i++) {
-                    elements.add(new Actuator(this, i));
+                    elements.add(new KeyReleaseActuator(this, i));
                     releaseKeys[i] = "";
                 }
                 actuators = new Actuators(elements);
@@ -204,18 +204,18 @@ public class KeyRelease implements Device, Device.Creatable {
             releaseKeys[actuator] = key.parameters.get(0);
             return releaseKeys[actuator];
         } else {
-            return "";
+            throw new IllegalStateException(key.command);
         }
     }
 
-    String hold(int actuator, int seconds) {
-        RemoteDeviceMessage key = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Hold,
-                Arrays.asList(Integer.toString(actuator), Integer.toString(seconds))));
+    String hold(int actuator) {
+        RemoteDeviceMessage key = remoteDevice.sendAndReceive(
+                new RemoteDeviceMessage(DeviceClassName, Hold, Arrays.asList(Integer.toString(actuator))));
         if (ReleaseKey.equals(key.command)) {
             releaseKeys[actuator] = key.parameters.get(0);
             return releaseKeys[actuator];
         } else {
-            return "";
+            throw new IllegalStateException(key.command);
         }
     }
 

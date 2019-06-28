@@ -6,6 +6,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.util.ExceptionUtil;
+
 public class EventSource<T extends EventArgs> {
     private static final Logger logger = LoggerFactory.getLogger(EventSource.class);
 
@@ -33,12 +35,21 @@ public class EventSource<T extends EventArgs> {
     public synchronized void remove(Event<T> delegate) {
         boolean removed = delegates.remove(delegate);
         if (!removed) {
-            throw new IllegalArgumentException("Removing event " + delegate.toString() + " failed.");
+            throw new IllegalArgumentException("Event " + delegate.toString() + " has already been removed.");
         }
     }
 
     public synchronized boolean contains(Event<T> delegate) {
         return delegates.contains(delegate);
+    }
+
+    /**
+     * Returns the number of user events
+     * 
+     * @return
+     */
+    public synchronized int size() {
+        return delegates.size();
     }
 
     public synchronized void run(T eventArgs) {
@@ -61,8 +72,10 @@ public class EventSource<T extends EventArgs> {
     private void runDelegate(T eventArgs, Event<T> delegate) {
         try {
             delegate.run(eventArgs);
+        } catch (Exception e) {
+            throw ExceptionUtil.asRuntimeException(e);
         } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
+            throw ExceptionUtil.asRuntimeException(t);
         }
     }
 

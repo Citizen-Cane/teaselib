@@ -10,6 +10,7 @@ import teaselib.core.Debugger;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
+import teaselib.core.ScriptEvents;
 import teaselib.core.TeaseLib;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
@@ -173,6 +174,10 @@ public class TestScript extends TeaseScript {
 
     private void addCustomUserItems(String resourcePath) {
         teaseLib.addUserItems(getClass().getResource(resourcePath));
+    }
+
+    public ScriptEvents events() {
+        return events;
     }
 
     @Override

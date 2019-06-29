@@ -1,11 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
 import teaselib.Answer;
+import teaselib.Answer.Meaning;
 import teaselib.test.TestScript;
 
 public class AskYNTest {
@@ -84,6 +84,42 @@ public class AskYNTest {
 
         assertFalse(script.askYN(yes, no));
         assertTrue(script.askYN(no, yes));
+    }
+
+    @Test
+    public void testReplyMultipleYesNo() {
+        TestScript script = TestScript.getOne();
+        script.debugger.addResponse("No", Debugger.Response.Choose);
+
+        Answer answer = script.reply(Answer.yes("Yes"), Answer.yes("Maybe"), Answer.yes("Perhaps"), Answer.no("No"));
+        assertEquals(answer.meaning, Meaning.NO);
+    }
+
+    @Test
+    public void testReplyMultipleYes1() {
+        TestScript script = TestScript.getOne();
+        script.debugger.addResponse("Yes", Debugger.Response.Choose);
+
+        Answer answer = script.reply(Answer.yes("Yes"), Answer.yes("Maybe"), Answer.yes("Perhaps"), Answer.no("No"));
+        assertEquals(answer.meaning, Meaning.YES);
+    }
+
+    @Test
+    public void testReplyMultipleYes2() {
+        TestScript script = TestScript.getOne();
+        script.debugger.addResponse("Maybe", Debugger.Response.Choose);
+
+        Answer answer = script.reply(Answer.yes("Yes"), Answer.yes("Maybe"), Answer.yes("Perhaps"), Answer.no("No"));
+        assertEquals(answer.meaning, Meaning.YES);
+    }
+
+    @Test
+    public void testReplyMultipleYes3() {
+        TestScript script = TestScript.getOne();
+        script.debugger.addResponse("Perhaps", Debugger.Response.Choose);
+
+        Answer answer = script.reply(Answer.yes("Yes"), Answer.yes("Maybe"), Answer.yes("Perhaps"), Answer.no("No"));
+        assertEquals(answer.meaning, Meaning.YES);
     }
 
 }

@@ -50,11 +50,15 @@ public class Rule {
         return probability > rule.probability || confidence.probability > rule.confidence.probability;
     }
 
+    public static Rule maxProbability(Rule a, Rule b) {
+        return a.probability > b.probability ? a : b;
+    }
+
     @Override
     public String toString() {
-        return "Name=" + name + " sequenceIndex=" + ruleIndex + " choiceIndex=" + choiceIndex + " [" + fromElement
-                + "," + toElement + "[ C=" + probability + "~" + confidence + " children=" + children.size() + " \""
-                + text + "\"";
+        return "Name=" + name + " sequenceIndex=" + ruleIndex + " choiceIndex=" + choiceIndex + " [" + fromElement + ","
+                + toElement + "[ C=" + probability + "~" + confidence + " children=" + children.size() + " \"" + text
+                + "\"";
     }
 
     public String prettyPrint() {

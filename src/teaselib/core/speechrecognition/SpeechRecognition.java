@@ -1,11 +1,12 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -114,7 +115,7 @@ public class SpeechRecognition {
     /**
      * Speech recognition has been started or resumed and is listening for voice input
      */
-    private boolean speechRecognitionActive = false;
+    private AtomicBoolean speechRecognitionActive = new AtomicBoolean(false);
 
     // Allow other threads to wait for speech recognition to complete
     private Event<SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = (
@@ -141,14 +142,18 @@ public class SpeechRecognition {
 
     private void unlockSpeechRecognitionInProgressSyncObject() {
         delegateThread.run(() -> {
-            // Check because this is called as a completion event by the
-            // event source, and might be called twice when the
-            // hypothesis event handler generates a Completion event
-            if (SpeechRecognitionInProgress.isLocked()) {
-                logger.debug("Unlocking speech recognition sync object");
-                SpeechRecognitionInProgress.unlock();
-            }
+            unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
         });
+    }
+
+    private static void unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread() {
+        // Check because this is called as a completion event by the
+        // event source, and might be called twice when the
+        // hypothesis event handler generates a Completion event
+        if (SpeechRecognitionInProgress.isLocked()) {
+            logger.debug("Unlocking speech recognition sync object");
+            SpeechRecognitionInProgress.unlock();
+        }
     }
 
     SpeechRecognition() {
@@ -245,16 +250,13 @@ public class SpeechRecognition {
 
     public void stopRecognition() {
         if (sr != null) {
-            try {
-                delegateThread.run(() -> {
-                    sr.stopRecognition();
-                    logger.info("Speech recognition stopped");
-                });
-            } finally {
+            delegateThread.run(() -> {
+                SpeechRecognition.this.speechRecognitionActive.set(false);
                 hypothesisEventHandler.enable(false);
-                SpeechRecognition.this.speechRecognitionActive = false;
-                unlockSpeechRecognitionInProgressSyncObject();
-            }
+                sr.stopRecognition();
+                unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
+                logger.info("Speech recognition stopped");
+            });
         } else {
             recognizerNotInitialized();
         }
@@ -271,7 +273,7 @@ public class SpeechRecognition {
         }
 
         setChoices(phrases);
-        SpeechRecognition.this.speechRecognitionActive = true;
+        SpeechRecognition.this.speechRecognitionActive.set(true);
         synchronized (TextToSpeech.AudioOutput) {
             sr.startRecognition();
         }
@@ -295,6 +297,7 @@ public class SpeechRecognition {
     byte[] srgs(Phrases phrases) {
         try {
             SRGSBuilder srgs = new SRGSBuilder(phrases, sr.languageCode);
+            logger.info("{}", srgs.toXML());
             return srgs.toBytes();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);
@@ -305,13 +308,13 @@ public class SpeechRecognition {
         throw new IllegalStateException("Recognizer not initialized");
     }
 
-    public boolean isSpeechRecognitionInProgress() {
+    public static boolean isSpeechRecognitionInProgress() {
         return SpeechRecognitionInProgress.isLocked();
     }
 
     // TODO Move to SpeechRecognizer and make it non-static
     public static void completeSpeechRecognitionInProgress() {
-        if (SpeechRecognitionInProgress.isLocked()) {
+        if (isSpeechRecognitionInProgress()) {
             logger.info("Waiting for speech recognition to complete");
             try {
                 SpeechRecognitionInProgress.lockInterruptibly();
@@ -330,7 +333,7 @@ public class SpeechRecognition {
      * @return True if speech recognition is listening to voice input
      */
     public boolean isActive() {
-        return speechRecognitionActive;
+        return speechRecognitionActive.get();
     }
 
     public void emulateRecogntion(String emulatedRecognitionResult) {

@@ -1,6 +1,7 @@
 package teaselib.core.ui;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,21 +78,33 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         };
 
         this.recognitionCompleted = (eventArgs) -> {
-            if (eventArgs.result.length == 1) {
-                Rule result = eventArgs.result[0];
-                logger.info("rules \n{}", result.prettyPrint());
+            if (eventArgs.result.length > 1) {
+                logger.info("More than one result:");
+            }
+            Arrays.stream(eventArgs.result).forEach(result -> logger.info("rules \n{}", result.prettyPrint()));
 
-                if (audioSignalProblems.occured()) {
-                    logAudioSignalProblem(result);
-                } else {
-                    double penalty = audioSignalProblems.penalty();
-                    if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
-                        if (confidenceIsHighEnough(result, expectedConfidence, 0)) {
-                            logAudioSignalProblemPenalty(result, penalty);
-                        } else {
-                            logLackOfConfidence(result);
-                        }
+            Rule result = eventArgs.result[0];
+            if (eventArgs.result.length > 1) {
+                result = Arrays.stream(eventArgs.result).reduce(Rule::maxProbability).orElseThrow();
+            } else if (eventArgs.result.length == 1) {
+                result = eventArgs.result[0];
+            } else {
+                throw new IllegalStateException("RecognitionCompleted-event without result");
+            }
+
+            if (audioSignalProblems.occured()) {
+                logAudioSignalProblem(result);
+            } else {
+                double penalty = audioSignalProblems.penalty();
+                if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
+                    if (confidenceIsHighEnough(result, expectedConfidence, 0)) {
+                        logAudioSignalProblemPenalty(result, penalty);
                     } else {
+                        logLackOfConfidence(result);
+                    }
+                } else {
+                    Prompt prompt = active.getAndSet(null);
+                    if (prompt != null) {
                         disableSpeechRecognition();
                         try {
                             List<Integer> choices = gatherResults(result);
@@ -99,25 +112,22 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                                 logger.info("No choice rules in: {} - rejecting ", result);
                                 eventArgs.consumed = true;
                                 fireRecognitionRejectedEvent(result);
-                            } else if (active.get().acceptedResult == Result.Accept.AllSame
+                            } else if (prompt.acceptedResult == Result.Accept.AllSame
                                     && choices.stream().distinct().count() > 1) {
                                 logger.info("ambiguous choice rules {} in: {} - rejecting ", choices, result);
                                 eventArgs.consumed = true;
                                 fireRecognitionRejectedEvent(result);
                             } else {
-                                signal(new Prompt.Result(choices));
+                                signal(prompt, new Prompt.Result(choices));
                             }
                         } catch (Exception e) {
-                            active.get().setException(e);
-                        } finally {
-                            active.set(null);
+                            prompt.setException(e);
                         }
                     }
                 }
-            } else {
-                logger.info("Ignoring none or more than one result");
             }
         };
+
     }
 
     private List<Integer> gatherResults(Rule rule) {
@@ -152,8 +162,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 && result.confidence.isAsHighAs(expected);
     }
 
-    private void signal(Prompt.Result result) {
-        Prompt prompt = active.get();
+    private void signal(Prompt prompt, Prompt.Result result) {
         prompt.lock.lock();
         try {
             prompt.signalResult(this, result);
@@ -173,31 +182,29 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     @Override
-    public synchronized void show(Prompt prompt) {
+    public void show(Prompt prompt) {
         Objects.requireNonNull(prompt);
         active.set(prompt);
-        enableSpeechRecognition();
+        enableSpeechRecognition(prompt);
     }
 
     @Override
     public boolean dismiss(Prompt prompt) throws InterruptedException {
-        Prompt activePrompt = active.get();
-
+        Prompt activePrompt = active.getAndSet(null);
         if (activePrompt == null) {
             return false;
         } else if (activePrompt != prompt) {
             throw new IllegalStateException("Trying to dismiss wrong prompt");
         } else {
             disableSpeechRecognition();
-            active.set(null);
-            return prompt.result() == Prompt.Result.UNDEFINED;
+            return true;
         }
     }
 
     // TODO Resolve race condition: lazy initialization versus dismiss in main thread on timeout
     // -> recognition not started yet but main thread dismisses prompt
 
-    private void enableSpeechRecognition() {
+    private void enableSpeechRecognition(Prompt prompt) {
         if (speechRecognizer.isActive()) {
             throw new IllegalStateException("Speech recognizer already active");
         }
@@ -208,7 +215,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
 
-        speechRecognizer.startRecognition(active.get().choices, expectedConfidence);
+        speechRecognizer.startRecognition(prompt.choices, expectedConfidence);
     }
 
     private void disableSpeechRecognition() {

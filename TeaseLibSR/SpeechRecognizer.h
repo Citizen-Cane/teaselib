@@ -26,9 +26,6 @@ public:
 	void startEventHandler(JNIEnv* eventHandlerEnv, jobject jevents, const std::function<void(void)>& signalInitialized);
 
 	void setChoices(const Choices& choices);
-	void setChoices(const char* srgs, const size_t length);
-	void setChoices(const wchar_t* srgs, const size_t length);
-	void setChoices_Windows1252(const wchar_t* srgs, const size_t length);
 	void setChoices(CComPtr<IStream>& srgs);
 
 	void setMaxAlternates(const int maxAlternates);

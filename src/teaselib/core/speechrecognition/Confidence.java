@@ -78,4 +78,13 @@ public enum Confidence {
             return confidence;
     }
 
+    public static Confidence valueOf(float propability) {
+        if (propability > High.probability)
+            return High;
+        if (propability > Normal.probability)
+            return Normal;
+        if (propability > Low.probability)
+            return Low;
+        return Noise;
+    }
 }

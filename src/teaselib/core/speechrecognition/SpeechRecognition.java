@@ -263,8 +263,8 @@ public class SpeechRecognition {
     }
 
     private void setupAndStartSR(Phrases phrases) {
-        if (!(sr instanceof SpeechRecognitionSRGS) && (enableSpeechHypothesisHandlerGlobally()
-                || SpeechRecognition.this.recognitionConfidence == Confidence.Low)) {
+        if (enableSpeechHypothesisHandlerGlobally()
+                || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
             hypothesisEventHandler.setChoices(firstPhraseOfEachChoice());
             hypothesisEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
             hypothesisEventHandler.enable(true);

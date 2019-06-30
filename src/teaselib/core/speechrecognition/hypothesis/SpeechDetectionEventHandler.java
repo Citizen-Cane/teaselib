@@ -101,7 +101,7 @@ public class SpeechDetectionEventHandler {
     }
 
     private Event<SpeechRecognitionStartedEventArgs> recognitionStarted() {
-        return (eventArgs) -> {
+        return eventArgs -> {
             if (!enabled) {
                 return;
             } else {
@@ -111,14 +111,24 @@ public class SpeechDetectionEventHandler {
     }
 
     private Event<SpeechRecognizedEventArgs> speechDetected() {
-        return (eventArgs) -> {
+        return eventArgs -> {
             if (!enabled) {
                 return;
             } else {
                 for (Rule result : eventArgs.result) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("rules \n{}", result.prettyPrint());
+                    }
                     if (acceptHypothesis(result)) {
                         logger.info("Considering {}", result);
                         hypothesisResult = result;
+                    } else {
+                        Rule resultWithChoicePropability = result.withChoiceProbability();
+                        if (acceptHypothesis(resultWithChoicePropability)) {
+                            logger.info("Considering choice-propabilty-measured result {}",
+                                    resultWithChoicePropability);
+                            hypothesisResult = resultWithChoicePropability;
+                        }
                     }
                 }
             }
@@ -135,7 +145,7 @@ public class SpeechDetectionEventHandler {
     }
 
     private Event<SpeechRecognizedEventArgs> recognitionRejected() {
-        return (eventArgs) -> {
+        return eventArgs -> {
             if (!enabled) {
                 return;
             } else if (hypothesisResult == null) {
@@ -149,6 +159,8 @@ public class SpeechDetectionEventHandler {
                         eventArgs, hypothesisResult, elevatedRule);
 
                 fireRecognitionCompletedEvent(elevatedRule);
+            } else {
+                logger.info("rules \n{}", hypothesisResult.prettyPrint());
             }
         };
     }
@@ -187,7 +199,7 @@ public class SpeechDetectionEventHandler {
     }
 
     private Event<SpeechRecognizedEventArgs> recognitionCompleted() {
-        return (eventArgs) -> {
+        return eventArgs -> {
             Rule recognitionCompletedResult = eventArgs.result[0];
 
             if (recognitionCompletedResult.confidence.isLowerThan(expectedConfidence) //

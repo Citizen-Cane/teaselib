@@ -59,7 +59,7 @@ import teaselib.util.Items;
 import teaselib.util.TeaseLibLogger;
 import teaselib.util.TextVariables;
 
-public class TeaseLib implements AutoCloseable {
+public class TeaseLib implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLib.class);
 
     public static final String DefaultDomain = "";
@@ -238,10 +238,10 @@ public class TeaseLib implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         globals.close();
-        if (host instanceof AutoCloseable) {
-            ((AutoCloseable) host).close();
+        if (host instanceof Closeable) {
+            ((Closeable) host).close();
         }
     }
 

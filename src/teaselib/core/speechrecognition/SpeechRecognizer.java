@@ -8,13 +8,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import teaselib.Config;
+import teaselib.core.Closeable;
 import teaselib.core.configuration.Configuration;
 
 /**
  * @author Citizen-Cane
  *
  */
-public class SpeechRecognizer implements AutoCloseable {
+public class SpeechRecognizer implements Closeable {
     private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
     @SuppressWarnings("unused")
     private final Configuration config;

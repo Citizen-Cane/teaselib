@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Audio;
+import teaselib.core.Closeable;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
@@ -28,7 +29,7 @@ import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
-public class DebugHost implements Host, HostInputMethod.Backend, AutoCloseable {
+public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     private static final Logger logger = LoggerFactory.getLogger(DebugHost.class);
 
     static final Point javacvDebugWindow = new Point(80, 80);

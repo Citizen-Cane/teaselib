@@ -27,6 +27,7 @@ import teaselib.Replay;
 import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
 import teaselib.core.AbstractMessage;
+import teaselib.core.Closeable;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
@@ -36,7 +37,7 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.PrefetchImage;
 import teaselib.core.util.Prefetcher;
 
-public class MessageRendererQueue implements AutoCloseable {
+public class MessageRendererQueue implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(MessageRendererQueue.class);
 
     private static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(Arrays.asList(Message.Type.Text,

@@ -7,7 +7,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Supplier;
 
-public class ObjectMap implements AutoCloseable {
+import teaselib.core.Closeable;
+
+public class ObjectMap implements Closeable {
     private final Map<Object, Supplier<?>> suppliers = new HashMap<>();
     private final Map<Object, Object> realized = new HashMap<>();
 
@@ -88,7 +90,7 @@ public class ObjectMap implements AutoCloseable {
      * @see java.io.Closeable#close()
      */
     @Override
-    public void close() throws Exception {
+    public void close() {
         Exception first = null;
         Set<Object> closed = new HashSet<>();
         for (Entry<Object, Object> entry : realized.entrySet()) {
@@ -108,7 +110,7 @@ public class ObjectMap implements AutoCloseable {
         closed.stream().forEach(realized::remove);
 
         if (first != null) {
-            throw first;
+            throw ExceptionUtil.asRuntimeException(first);
         }
     }
 }

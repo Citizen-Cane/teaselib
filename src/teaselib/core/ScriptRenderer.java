@@ -29,7 +29,7 @@ import teaselib.core.media.RenderedMessage.Decorator;
  * @author Citizen-Cane
  *
  */
-public class ScriptRenderer implements AutoCloseable {
+public class ScriptRenderer implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(ScriptRenderer.class);
 
     private final MediaRendererQueue renderQueue = new MediaRendererQueue();

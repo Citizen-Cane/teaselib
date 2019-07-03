@@ -38,19 +38,7 @@ public enum Clothes {
     Tanktop,
     Trousers,
     TShirt,
-    Vest,
-
-    // Fetish
-    Corset,
-    Harness,
-
-    /**
-     * In the BDSM context, a hood is full head cover with optional holes for eyes, nose and mouth, otherwise a head
-     * harness. A mask is similar but also different, as for disguising the wearers identity.
-     */
-    Hood,
-
-    ;
+    Vest,;
 
     public enum UnderpantsType {
         Boxers,
@@ -119,10 +107,7 @@ public enum Clothes {
     public static final Clothes[] FemaleClothing = { Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
             Vest, Shoes };
 
-    public static final Clothes[] Fetish = { Corset, Harness, Hood };
-
-    public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, FemaleUnderwear, FemaleClothing,
-            Fetish };
+    public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, FemaleUnderwear, FemaleClothing };
 
     @Override
     public String toString() {

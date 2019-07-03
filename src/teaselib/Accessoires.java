@@ -17,6 +17,16 @@ public enum Accessoires {
     Wig,
     Bells,
 
+    // Fetish
+    Corset,
+    Harness,
+
+    /**
+     * In the BDSM context, a hood is full head cover with optional holes for eyes, nose and mouth, otherwise a head
+     * harness. A mask is similar but also different, as for disguising the wearers identity.
+     */
+    Hood,
+
     ;
 
     public enum JewelryType {
@@ -35,6 +45,8 @@ public enum Accessoires {
     public static final Accessoires[] Maid = { Apron, Bonnet, Bells };
     public static final Accessoires[] Crossdressing = { Breast_Forms, Wig };
 
-    public static final Accessoires[][] Categories = { Male, Female, Maid, Crossdressing };
+    public static final Accessoires[] Fetish = { Corset, Harness, Hood };
+
+    public static final Accessoires[][] Categories = { Male, Female, Maid, Crossdressing, Fetish };
 
 }

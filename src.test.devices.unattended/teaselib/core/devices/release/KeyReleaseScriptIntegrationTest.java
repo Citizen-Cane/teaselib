@@ -23,7 +23,7 @@ public class KeyReleaseScriptIntegrationTest {
     Devices devices = script.teaseLib.devices;
     DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
     KeyRelease keyRelease = deviceCache.getDefaultDevice();
-    Actuator actuator = keyRelease.actuators().get(1, TimeUnit.HOURS);
+    Actuator actuator = keyRelease.actuators().available().get(1, TimeUnit.HOURS).get();
 
     @Before
     public void before() {

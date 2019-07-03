@@ -38,8 +38,12 @@ public class Actuators implements Iterable<Actuator> {
         return elements.isEmpty();
     }
 
-    public Actuator get(long duration, TimeUnit unit) {
-        return get(getActuatorIndex(duration, durations(unit)));
+    public Optional<Actuator> get(long duration, TimeUnit unit) {
+        if (isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.ofNullable(get(getActuatorIndex(duration, durations(unit))));
+        }
     }
 
     public Actuators available() {
@@ -76,25 +80,14 @@ public class Actuators implements Iterable<Actuator> {
             }
         }
         return bestActuator != unset ? bestActuator : maxActuator;
-
     }
 
-    // TODO instead of min/max provide interface that can deal with more than two actuators and a duration
-
-    public Actuator min() {
-        Optional<Actuator> actuator = stream().reduce(Actuators::min);
-        if (actuator.isPresent())
-            return actuator.get();
-        else
-            throw new IllegalStateException("Empty list");
+    public Optional<Actuator> min() {
+        return stream().reduce(Actuators::min);
     }
 
-    public Actuator max() {
-        Optional<Actuator> actuator = stream().reduce(Actuators::max);
-        if (actuator.isPresent())
-            return actuator.get();
-        else
-            throw new IllegalStateException("Empty list");
+    public Optional<Actuator> max() {
+        return stream().reduce(Actuators::max);
     }
 
     public static Actuator min(Actuator a, Actuator b) {

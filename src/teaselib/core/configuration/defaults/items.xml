@@ -72,6 +72,7 @@
 
 
 		<Item item="Rope" guid="rope" displayName="Rope">
+			<Attribute> Material.Rope </Attribute>
 		</Item>
 
 		<Item item="Ankle_Restraints" guid="ankle_restraints" displayName="Ankle Restraints">
@@ -81,6 +82,7 @@
 		</Item>
 
 		<Item item="Chains" guid="chains" displayName="Chains">
+			<Attribute> Features.Lockable </Attribute>
 			<Attribute> Material.Metal </Attribute>
 		</Item>
 

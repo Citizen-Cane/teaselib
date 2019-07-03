@@ -10,6 +10,7 @@ public enum Features implements Item.Attribute {
     Lockable,
     HandsFree,
     EStim,
+    Spikes,
 
     ;
 

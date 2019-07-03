@@ -77,16 +77,25 @@ public enum Clothes {
     public enum GenitalAccessType {
         Ouvert,
         Zipper,
+        None
     }
 
     public enum AnalAccessType {
         Ouvert,
         Zipper,
+        None
     }
 
     public enum BreastAccessType {
         Ouvert,
         Zipper,
+        None
+    }
+
+    public enum NippleAccessType {
+        Ouvert,
+        Zipper,
+        None
     }
 
     // Namespaces of wearers of the diverse clothing items

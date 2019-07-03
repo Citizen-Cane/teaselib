@@ -11,4 +11,5 @@ public enum Material implements Item.Attribute {
     Rubber,
     Elastan,
     Wood,
+    Rope
 }

@@ -484,6 +484,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(answers));
     }
 
+    public final Answer reply(Answers answers) {
+        return showChoices(answers);
+    }
+
     public final Answer reply(ScriptFunction scriptFunction, Answer answer, Answer... more) {
         return showChoices(Answers.of(answer, more), scriptFunction);
     }

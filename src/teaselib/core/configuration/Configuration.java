@@ -110,7 +110,7 @@ public class Configuration {
             File userFile = new File(persistentPath, properties);
 
             if (defaultResource.isPresent()) {
-                initUserFileWithDefaults(defaultResource + properties, userFile);
+                initUserFileWithDefaults(defaultResource.get() + properties, userFile);
             }
 
             ConfigurationFile configurationFile = persistentConfigurationFiles

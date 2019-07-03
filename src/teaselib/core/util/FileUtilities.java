@@ -55,6 +55,9 @@ public class FileUtilities {
 
     public static void copy(String resource, File destination) throws IOException {
         try (InputStream source = FileUtilities.class.getResourceAsStream(resource)) {
+            if (source == null) {
+                throw new IOException(resource);
+            }
             copy(source, destination);
         }
     }

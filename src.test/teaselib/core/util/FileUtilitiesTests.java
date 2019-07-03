@@ -14,10 +14,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
-public class FileUtilityTests {
+public class FileUtilitiesTests {
     File currentDir = new File(getClass().getResource(
             getClass().getSimpleName() + ".class").getPath()).getParentFile();
 

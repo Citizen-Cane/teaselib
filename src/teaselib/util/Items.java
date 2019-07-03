@@ -1,6 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import teaselib.TeaseScriptPersistence;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.math.Combinations;
@@ -619,5 +620,9 @@ public class Items implements Iterable<Item> {
         return new Items(
                 stream().filter(item -> Arrays.stream(values).noneMatch(item::is)).collect(Collectors.toList()),
                 inventory);
+    }
+
+    public Items of(TeaseScriptPersistence.Domain domain) {
+        return domain.items(this);
     }
 }

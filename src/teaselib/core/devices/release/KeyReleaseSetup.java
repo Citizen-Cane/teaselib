@@ -99,13 +99,13 @@ public class KeyReleaseSetup extends TeaseScript {
         };
         afterChoices.add(renewHold);
 
-        items.applyTo(Gadgets.Key_Release);
+        Items handled = items.of(domain(Gadgets.Key_Release));
+        handled.applyTo(Gadgets.Key_Release);
 
         events.when(items).applied().thenOnce(() -> afterChoices.remove(renewHold));
         events.when(items).applied().thenOnce(actuator::start);
 
         events.when(items).removed().thenOnce(actuator::release);
-        events.when(items).removed().thenOnce(() -> items.removeFrom(Gadgets.Key_Release));
+        events.when(items).removed().thenOnce(() -> handled.removeFrom(Gadgets.Key_Release));
     }
-
 }

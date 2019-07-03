@@ -13,11 +13,14 @@ import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Features;
+import teaselib.Gadgets;
 import teaselib.Household;
 import teaselib.Material;
 import teaselib.State;
 import teaselib.TeaseScript;
+import teaselib.TeaseScriptPersistence.Domain;
 import teaselib.Toys;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedItem;
 import teaselib.test.TestScript;
@@ -899,4 +902,16 @@ public class ItemsTest {
         assertTrue(bells.is(restraints));
     }
 
+    @Test
+    public void testDomain() {
+        TestScript script = TestScript.getOne();
+        Domain domain = script.domain(Gadgets.Key_Release);
+
+        Items items = script.items(Toys.Wrist_Restraints);
+        Items handled = items.of(domain);
+
+        assertEquals(items.size(), handled.size());
+        assertEquals(script.defaultDomain.toString(), AbstractProxy.itemImpl(items.get()).domain);
+        assertEquals(domain.toString(), AbstractProxy.itemImpl(handled.get()).domain);
+    }
 }

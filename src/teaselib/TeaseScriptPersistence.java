@@ -3,15 +3,20 @@
  */
 package teaselib;
 
+import static java.util.stream.Collectors.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
 import teaselib.core.TeaseLib;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
+import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
+import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 
 /**
@@ -35,6 +40,20 @@ public abstract class TeaseScriptPersistence extends Script {
 
         public Domain(String name) {
             this.name = name;
+        }
+
+        public Item item(Item item) {
+            ItemImpl itemImpl = AbstractProxy.itemImpl(item);
+            return new ItemProxy(namespace, getItemByGuid(itemImpl), events);
+        }
+
+        public Items items(Items items) {
+            return proxiesOf(
+                    new Items(items.stream().map(AbstractProxy::itemImpl).map(this::getItemByGuid).collect(toList())));
+        }
+
+        private Item getItemByGuid(ItemImpl item) {
+            return teaseLib.getByGuid(name, item.value, item.guid.name());
         }
 
         public Items items(Enum<?>... values) {
@@ -98,7 +117,11 @@ public abstract class TeaseScriptPersistence extends Script {
         }
     }
 
-    final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain);
+    public final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain);
+
+    public Domain domain(Enum<?> domain) {
+        return new Domain(QualifiedItem.of(domain).toString());
+    }
 
     public Domain domain(String domain) {
         return new Domain(domain);

@@ -59,6 +59,10 @@ public class Items implements Iterable<Item> {
         this(Arrays.asList(items));
     }
 
+    public Items(Items... items) {
+        this(Arrays.stream(items).flatMap(Items::stream).collect(Collectors.toList()));
+    }
+
     public Items(List<Item> items) {
         this(items, Collections.unmodifiableList(new ArrayList<>(items)));
     }

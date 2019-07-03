@@ -43,8 +43,12 @@ public abstract class TeaseScriptPersistence extends Script {
         }
 
         public Item item(Item item) {
-            ItemImpl itemImpl = AbstractProxy.itemImpl(item);
-            return new ItemProxy(namespace, getItemByGuid(itemImpl), events);
+            if (item == Item.NotFound) {
+                return item;
+            } else {
+                ItemImpl itemImpl = AbstractProxy.itemImpl(item);
+                return new ItemProxy(namespace, getItemByGuid(itemImpl), events);
+            }
         }
 
         public Items items(Items items) {

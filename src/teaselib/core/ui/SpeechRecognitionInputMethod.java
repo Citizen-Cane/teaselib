@@ -55,11 +55,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.speechRecognitionRejectedScript = speechRecognitionRejectedScript;
         this.audioSignalProblems = new AudioSignalProblems();
 
-        this.speechRecognitionStartedEventHandler = (eventArgs) -> audioSignalProblems.clear();
+        this.speechRecognitionStartedEventHandler = eventArgs -> audioSignalProblems.clear();
 
-        this.audioSignalProblemEventHandler = (audioSignal) -> audioSignalProblems.add(audioSignal.problem);
+        this.audioSignalProblemEventHandler = audioSignal -> audioSignalProblems.add(audioSignal.problem);
 
-        this.speechDetectedEventHandler = (eventArgs) -> {
+        this.speechDetectedEventHandler = eventArgs -> {
             if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
                 Rule result = eventArgs.result[0];
                 logAudioSignalProblem(result);
@@ -67,7 +67,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             }
         };
 
-        this.recognitionRejected = (eventArgs) -> {
+        this.recognitionRejected = eventArgs -> {
             if (eventArgs.result != null && eventArgs.result.length == 1) {
                 if (!speechRecognitionRejectedHandlerSignaled && speechRecognitionRejectedScript.isPresent()
                         && speechRecognitionRejectedScript.get().canRun()) {
@@ -77,7 +77,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             }
         };
 
-        this.recognitionCompleted = (eventArgs) -> {
+        this.recognitionCompleted = eventArgs -> {
             if (eventArgs.result.length > 1) {
                 logger.info("More than one result:");
             }

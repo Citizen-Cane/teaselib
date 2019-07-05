@@ -68,9 +68,10 @@ public class Rule {
 
     @Override
     public String toString() {
-        String choice = choiceIndex == Phrases.COMMON_RULE ? " Common" : (" choiceIndex=" + choiceIndex);
-        return "Name=" + name + " sequenceIndex=" + ruleIndex + choice + " [" + fromElement + "," + toElement + "[ C="
-                + probability + "~" + confidence + " children=" + children.size() + " \"" + text + "\"";
+        String displayedRuleIndex = ruleIndex == Integer.MIN_VALUE ? "" : " ruleIndex=" + ruleIndex;
+        String displayedChoiceIndex = choiceIndex == Phrases.COMMON_RULE ? " Common" : (" choiceIndex=" + choiceIndex);
+        return "Name=" + name + displayedRuleIndex + displayedChoiceIndex + " [" + fromElement + "," + toElement
+                + "[ C=" + probability + "~" + confidence + " children=" + children.size() + " \"" + text + "\"";
     }
 
     public String prettyPrint() {

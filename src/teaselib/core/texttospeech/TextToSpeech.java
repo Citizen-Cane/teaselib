@@ -11,8 +11,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.Sexuality.Gender;
 import teaselib.core.events.DelegateExecutor;
@@ -58,7 +56,7 @@ public class TextToSpeech {
     private static final Map<Class<? extends TextToSpeechImplementation>, TextToSpeechImplementation> ttsSDKCLass2Implementation = new LinkedHashMap<>();
     private static final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
     private static final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
-    public static final Lock AudioOutput = new ReentrantLock();
+    public static final Object AudioOutput = new Object();
 
     private final Map<String, Voice> voices = new LinkedHashMap<>();
 

@@ -94,9 +94,10 @@ public class SpeechRecognition {
     }
 
     public final SpeechRecognitionEvents events;
-
     private final Locale locale;
+
     private final SpeechDetectionEventHandler hypothesisEventHandler;
+    private final SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
 
     private SpeechRecognitionImplementation sr = null;
@@ -118,8 +119,11 @@ public class SpeechRecognition {
     private AtomicBoolean speechRecognitionActive = new AtomicBoolean(false);
 
     // Allow other threads to wait for speech recognition to complete
-    private Event<SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = (
-            args) -> lockSpeechRecognitionInProgressSyncObject();
+    private Event<SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = args -> {
+        if (isActive()) {
+            lockSpeechRecognitionInProgressSyncObject();
+        }
+    };
 
     private Event<SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = (
             args) -> unlockSpeechRecognitionInProgressSyncObject();
@@ -141,9 +145,7 @@ public class SpeechRecognition {
     }
 
     private void unlockSpeechRecognitionInProgressSyncObject() {
-        delegateThread.run(() -> {
-            unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
-        });
+        delegateThread.run(SpeechRecognition::unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread);
     }
 
     private static void unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread() {
@@ -189,18 +191,32 @@ public class SpeechRecognition {
                 }
             });
         }
+
         // add the SpeechDetectionEventHandler listeners now to ensure
         // other listeners downstream receive only the correct event,
         // as the event handler may consume the
         // RecognitionRejected-event and fire an recognized event instead
         hypothesisEventHandler = new SpeechDetectionEventHandler(this);
         hypothesisEventHandler.addEventListeners();
+        // Add watchdog last, to receive speechRejected/completed from the hypothesis event handler
+        this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(events, this::handleReecognitionTimeout);
+        this.timeoutWatchdog.addEvents();
     }
 
     void close() {
         sr.close();
         delegateThread.shutdown();
+        timeoutWatchdog.removeEvents();
+        hypothesisEventHandler.removeEventListeners();
         sr = null;
+    }
+
+    private void handleReecognitionTimeout() {
+        Rule result = hypothesisEventHandler.getHypothesis();
+        if (result == null) {
+            result = new Rule("", "", Integer.MIN_VALUE, Phrases.COMMON_RULE, 0, 0, 0.0f, Confidence.Noise);
+        }
+        events.recognitionRejected.run(new SpeechRecognizedEventArgs(result));
     }
 
     private static boolean enableSpeechHypothesisHandlerGlobally() {
@@ -253,8 +269,9 @@ public class SpeechRecognition {
             delegateThread.run(() -> {
                 SpeechRecognition.this.speechRecognitionActive.set(false);
                 hypothesisEventHandler.enable(false);
-                sr.stopRecognition();
+                timeoutWatchdog.enable(false);
                 unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
+                sr.stopRecognition();
                 logger.info("Speech recognition stopped");
             });
         } else {
@@ -263,20 +280,22 @@ public class SpeechRecognition {
     }
 
     private void setupAndStartSR(Phrases phrases) {
-        if (enableSpeechHypothesisHandlerGlobally()
-                || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
+        setChoices(phrases);
+
+        if (enableSpeechHypothesisHandlerGlobally() || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
             hypothesisEventHandler.setChoices(firstPhraseOfEachChoice());
             hypothesisEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
             hypothesisEventHandler.enable(true);
         } else {
             hypothesisEventHandler.enable(false);
         }
+        timeoutWatchdog.enable(true);
 
-        setChoices(phrases);
-        SpeechRecognition.this.speechRecognitionActive.set(true);
         synchronized (TextToSpeech.AudioOutput) {
             sr.startRecognition();
         }
+
+        speechRecognitionActive.set(true);
     }
 
     private void setChoices(Phrases phrases) {
@@ -297,7 +316,9 @@ public class SpeechRecognition {
     byte[] srgs(Phrases phrases) {
         try {
             SRGSBuilder srgs = new SRGSBuilder(phrases, sr.languageCode);
-            logger.info("{}", srgs.toXML());
+            if (logger.isInfoEnabled()) {
+                logger.info("{}", srgs.toXML());
+            }
             return srgs.toBytes();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);

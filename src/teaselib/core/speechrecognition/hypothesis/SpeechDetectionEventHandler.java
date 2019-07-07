@@ -227,4 +227,9 @@ public class SpeechDetectionEventHandler {
         SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(result);
         speechRecognizer.events.recognitionCompleted.run(recognitionCompletedEventArgs);
     }
+
+    public Rule getHypothesis() {
+        return hypothesisResult;
+    }
+
 }

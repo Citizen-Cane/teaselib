@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.concurrency.NamedExecutorService;
 
-public class KeyReleaseArmReleaseOnTimeout {
-    private static final Logger logger = LoggerFactory.getLogger(KeyReleaseArmReleaseOnTimeout.class);
+public class KeyReleaseAutoReleaseTest {
+    private static final Logger logger = LoggerFactory.getLogger(KeyReleaseAutoReleaseTest.class);
 
     KeyRelease keyRelease = KeyReleaseTest.connectDefaultDevice();
     Actuators actuators = KeyReleaseTest.connect(keyRelease);

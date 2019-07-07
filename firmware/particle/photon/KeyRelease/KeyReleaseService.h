@@ -100,6 +100,8 @@ private:
 
   void armKey(const int index);
   void releaseKey(const int index);
+  void releaseAllKeys();
+
   Actuator::Status pulseStatus;
   void updatePulse(Actuator::Status status);
   void updatePulse(const int frequencyMillis);

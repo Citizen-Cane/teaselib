@@ -2,7 +2,7 @@
 
 const char* const KeyReleaseService::Name = "KeyRelease";
 const char* const KeyReleaseService::Description = "Servo-based key release mechanism";
-const char* const KeyReleaseService::Version = "0.02";
+const char* const KeyReleaseService::Version = "0.03";
 
 /* Assembly:
  * From the Circuits folder, you'l need the following Fritzing sketches:
@@ -199,10 +199,7 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
       return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
     } else {
       updatePulse(Actuator::Error);
-      releaseKey(index);
-      Duration& duration = durations[index];
-      duration.clear();
-      releaseKey(index);
+	  releaseAllKeys();
       return WrongCall.toBuffer(buffer);
     }
   }
@@ -220,10 +217,7 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
       return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
     } else {
       updatePulse(Actuator::Error);
-      releaseKey(index);
-      Duration& duration = durations[index];
-      duration.clear();
-      releaseKey(index);
+	  releaseAllKeys();
       return WrongCall.toBuffer(buffer);
     }
   }
@@ -262,7 +256,7 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
   else if (isCommand(received, "release" /* actuator releaseKey */)) {
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
-    // TODO comparre release key string in order to  prevent cheating
+    // TODO compare release key string in order to  prevent cheating
     Duration& duration = durations[index];
     duration.clear();
     updatePulse(Actuator::Released);
@@ -431,6 +425,13 @@ void KeyReleaseService::releaseKey(const int index) {
   servoControl[index].release();
 }
 
+void KeyReleaseService::releaseAllKeys() {
+	for (int index = 0; index < actuatorCount; index++) {
+		Duration& duration = durations[index];
+		duration.clear();
+		releaseKey(index);
+	}
+}
 
 const void KeyReleaseService::Duration::arm() {
   running = true;

@@ -25,7 +25,7 @@ import teaselib.core.devices.Devices;
 public class KeyReleaseTest {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseTest.class);
 
-    static final long HoldDuration = 1; // minutes
+    static final long HOLD_DURATION_MINUTES = 1;
 
     public static KeyRelease connectDefaultDevice() {
         Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
@@ -42,7 +42,7 @@ public class KeyReleaseTest {
         assertTrue(keyRelease.active());
         Actuators actuators = keyRelease.actuators();
         assertTrue(actuators.size() > 0);
-        logger.info(keyRelease.getName() + ": " + actuators + " actuators");
+        logger.info("{}: {} actuators", keyRelease.getName(), actuators);
         return actuators;
     }
 
@@ -51,21 +51,20 @@ public class KeyReleaseTest {
         long available = actuator.available(TimeUnit.MINUTES);
         assertTrue(available > 0);
         actuator.arm();
-        sleep(5, TimeUnit.SECONDS);
-        assertTrue(actuator.isRunning());
+        assertRunning(actuator);
     }
 
     public static void hold(Actuator actuator) {
         actuator.hold();
-        assertTrue(actuator.isRunning());
+        assertRunning(actuator);
     }
 
     public static void start(Actuator actuator) {
-        actuator.start(HoldDuration, TimeUnit.MINUTES);
-        assertTrue(actuator.isRunning());
+        actuator.start(HOLD_DURATION_MINUTES, TimeUnit.MINUTES);
+        assertRunning(actuator);
     }
 
-    public static void poll(Actuator actuator) {
+    public static void waitForAutoRelease(Actuator actuator) {
         while (actuator.isRunning()) {
             long remaining = actuator.remaining(TimeUnit.SECONDS);
             if (remaining == 0) {
@@ -75,9 +74,13 @@ public class KeyReleaseTest {
         }
     }
 
-    public static void assertStoppedAfterRelease(Actuator actuator) {
+    private static void assertRunning(Actuator actuator) {
+        assertTrue(actuator.isRunning());
+        sleep(5, TimeUnit.SECONDS);
+    }
+
+    public static void assertStopped(Actuator actuator) {
         assertFalse(actuator.isRunning());
-        sleep(10, TimeUnit.SECONDS);
     }
 
     public static void assertEndState(KeyRelease keyRelease) {
@@ -91,6 +94,7 @@ public class KeyReleaseTest {
             Thread.sleep(TimeUnit.MILLISECONDS.convert(duration, unit));
         } catch (InterruptedException e) {
             Assume.assumeTrue(false);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -101,10 +105,10 @@ public class KeyReleaseTest {
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
-            poll(actuator);
+            waitForAutoRelease(actuator);
             // Release the key in the last minute
             actuator.release();
-            assertStoppedAfterRelease(actuator);
+            assertStopped(actuator);
         }
 
         assertEndState(keyRelease);
@@ -117,8 +121,8 @@ public class KeyReleaseTest {
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
-            poll(actuator);
-            assertStoppedAfterRelease(actuator);
+            waitForAutoRelease(actuator);
+            assertStopped(actuator);
         }
         assertEndState(keyRelease);
     }
@@ -131,9 +135,48 @@ public class KeyReleaseTest {
             arm(actuator);
             start(actuator);
             hold(actuator);
-            poll(actuator);
-            assertStoppedAfterRelease(actuator);
+            waitForAutoRelease(actuator);
+            assertStopped(actuator);
         }
+        assertEndState(keyRelease);
+    }
+
+    @Test
+    public void testWrongCallReleasesAll() {
+        KeyRelease keyRelease = connectDefaultDevice();
+
+        for (Actuator actuator : connect(keyRelease)) {
+            arm(actuator);
+            hold(actuator);
+            start(actuator);
+        }
+
+        Actuator wrongCalled = keyRelease.actuators().get(0);
+        try {
+            hold(wrongCalled);
+            fail("Expected WrongCallException");
+        } catch (IllegalStateException e) {
+            for (Actuator actuator : connect(keyRelease)) {
+                assertStopped(actuator);
+            }
+        } catch (Exception e) {
+            fail("Expected WrongCallException");
+        }
+
+        assertEndState(keyRelease);
+    }
+
+    @Test
+    public void testStatus() {
+        KeyRelease keyRelease = connectDefaultDevice();
+
+        for (Actuator actuator : connect(keyRelease)) {
+            arm(actuator);
+            start(actuator);
+            waitForAutoRelease(actuator);
+            assertStopped(actuator);
+        }
+
         assertEndState(keyRelease);
     }
 
@@ -148,9 +191,9 @@ public class KeyReleaseTest {
             // Sleeping longer than the next release duration with only one
             // release pending causes the device to enter deep sleep and
             // release on reset
-            sleep(HoldDuration + 1, TimeUnit.MINUTES);
+            sleep(HOLD_DURATION_MINUTES + 1, TimeUnit.MINUTES);
             // The key should have been released automatically by now
-            assertStoppedAfterRelease(actuator);
+            assertStopped(actuator);
         }
 
         assertEndState(keyRelease);
@@ -159,42 +202,40 @@ public class KeyReleaseTest {
     @Test
     public void testDeepSleepPacket() {
         KeyRelease keyRelease = connectDefaultDevice();
-
         Actuators actuators = connect(keyRelease);
-        logger.info(keyRelease.getName() + ": " + actuators.size() + " actuators");
+
         Actuator actuator = actuators.get(0);
-        actuator.sleep(HoldDuration, TimeUnit.MINUTES);
+        actuator.sleep(HOLD_DURATION_MINUTES, TimeUnit.MINUTES);
 
         // Trigger deep sleep by request a duration longer than the release duration
         // of the last running actuator. When the device wakes up from deep sleep,
         // it resets and subsequently releases the key.
-
-        sleep(HoldDuration + 1, TimeUnit.MINUTES);
+        sleep(HOLD_DURATION_MINUTES + 1, TimeUnit.MINUTES);
         assertEndState(keyRelease);
     }
 
     @Test
     public void testHardwiredDuration() {
-        List<Long> durations_60_120 = Arrays.asList(60L, 120L);
-        assertEquals(0, Actuators.getActuatorIndex(-59, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(-60, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(-61, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(-90, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(-119, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(-120, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(-121, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(Long.MIN_VALUE, durations_60_120));
+        List<Long> durations = Arrays.asList(60L, 120L);
+        assertEquals(0, Actuators.getActuatorIndex(-59, durations));
+        assertEquals(0, Actuators.getActuatorIndex(-60, durations));
+        assertEquals(0, Actuators.getActuatorIndex(-61, durations));
+        assertEquals(0, Actuators.getActuatorIndex(-90, durations));
+        assertEquals(0, Actuators.getActuatorIndex(-119, durations));
+        assertEquals(0, Actuators.getActuatorIndex(-120, durations));
+        assertEquals(0, Actuators.getActuatorIndex(-121, durations));
+        assertEquals(0, Actuators.getActuatorIndex(Long.MIN_VALUE, durations));
 
-        assertEquals(0, Actuators.getActuatorIndex(-1, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(0, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(30, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(59, durations_60_120));
-        assertEquals(0, Actuators.getActuatorIndex(60, durations_60_120));
+        assertEquals(0, Actuators.getActuatorIndex(-1, durations));
+        assertEquals(0, Actuators.getActuatorIndex(0, durations));
+        assertEquals(0, Actuators.getActuatorIndex(30, durations));
+        assertEquals(0, Actuators.getActuatorIndex(59, durations));
+        assertEquals(0, Actuators.getActuatorIndex(60, durations));
 
-        assertEquals(1, Actuators.getActuatorIndex(61, durations_60_120));
-        assertEquals(1, Actuators.getActuatorIndex(90, durations_60_120));
-        assertEquals(1, Actuators.getActuatorIndex(120, durations_60_120));
-        assertEquals(1, Actuators.getActuatorIndex(121, durations_60_120));
-        assertEquals(1, Actuators.getActuatorIndex(Long.MAX_VALUE, durations_60_120));
+        assertEquals(1, Actuators.getActuatorIndex(61, durations));
+        assertEquals(1, Actuators.getActuatorIndex(90, durations));
+        assertEquals(1, Actuators.getActuatorIndex(120, durations));
+        assertEquals(1, Actuators.getActuatorIndex(121, durations));
+        assertEquals(1, Actuators.getActuatorIndex(Long.MAX_VALUE, durations));
     }
 }

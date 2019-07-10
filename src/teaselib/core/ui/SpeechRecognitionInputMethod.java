@@ -105,7 +105,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 } else {
                     Prompt prompt = active.getAndSet(null);
                     if (prompt != null) {
-                        disableSpeechRecognition();
+                        endSpeechRecognition();
                         try {
                             List<Integer> choices = gatherResults(result);
                             if (choices.isEmpty()) {
@@ -185,7 +185,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     public void show(Prompt prompt) {
         Objects.requireNonNull(prompt);
         active.set(prompt);
-        enableSpeechRecognition(prompt);
+        startSpeechRecognition(prompt);
     }
 
     @Override
@@ -196,7 +196,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         } else if (activePrompt != prompt) {
             throw new IllegalStateException("Trying to dismiss wrong prompt");
         } else {
-            disableSpeechRecognition();
+            endSpeechRecognition();
             return true;
         }
     }
@@ -204,7 +204,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     // TODO Resolve race condition: lazy initialization versus dismiss in main thread on timeout
     // -> recognition not started yet but main thread dismisses prompt
 
-    private void enableSpeechRecognition(Prompt prompt) {
+    private void startSpeechRecognition(Prompt prompt) {
         if (speechRecognizer.isActive()) {
             throw new IllegalStateException("Speech recognizer already active");
         }
@@ -218,19 +218,16 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.startRecognition(prompt.choices, expectedConfidence);
     }
 
-    private void disableSpeechRecognition() {
-        if (!speechRecognizer.isActive()) {
-            throw new IllegalStateException("Speech recognizer not active");
+    private void endSpeechRecognition() {
+        try {
+            speechRecognizer.endRecognition();
+        } finally {
+            speechRecognizer.events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
+            speechRecognizer.events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
+            speechRecognizer.events.speechDetected.remove(speechDetectedEventHandler);
+            speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
+            speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
         }
-
-        logger.debug("Stopping speech recognition");
-        speechRecognizer.stopRecognition();
-
-        speechRecognizer.events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
-        speechRecognizer.events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
-        speechRecognizer.events.speechDetected.remove(speechDetectedEventHandler);
-        speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
-        speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
     }
 
     @Override

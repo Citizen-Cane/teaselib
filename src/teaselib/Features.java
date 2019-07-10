@@ -6,6 +6,7 @@ public enum Features implements Item.Attribute {
     Inflatable,
     Vibrating,
     Detachable,
+    Coupled,
     SuctionCup,
     Lockable,
     HandsFree,

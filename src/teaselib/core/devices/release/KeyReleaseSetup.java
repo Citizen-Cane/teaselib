@@ -6,7 +6,6 @@ import java.util.function.BiConsumer;
 import teaselib.Actor;
 import teaselib.Answer;
 import teaselib.Gadgets;
-import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.ScriptFunction.Relation;
 import teaselib.TeaseScript;
@@ -47,8 +46,7 @@ public class KeyReleaseSetup extends TeaseScript {
             if (keyRelease.connected()) {
                 showInterTitle("Device connected.");
             } else {
-                append(Mood.Strict, "Please activate the key release device you want to use!");
-                showInterTitle("Activating key release device!");
+                showInterTitle("Please activate the key release device you want to use.");
                 Answer no = Answer.no("It doesn't work, #title");
                 Answer deviceConnected = Answer.resume("Device connected, #title");
                 Answer reply = reply(new ScriptFunction(() -> {
@@ -59,7 +57,7 @@ public class KeyReleaseSetup extends TeaseScript {
                     if (keyRelease.connected()) {
                         showInterTitle("Device connected.");
                     } else {
-                        showInterTitle("Device not found - please check network connection.");
+                        showInterTitle("Device not found - please check network connection and reset.");
                         replace("Let's try turning it off and on again.");
                     }
                 } else {

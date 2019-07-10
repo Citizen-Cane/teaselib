@@ -40,6 +40,20 @@ public class KeyReleaseSetup extends TeaseScript {
         }
     }
 
+    public boolean alreadyConnected() {
+        KeyRelease keyRelease = getKeyReleaseDevice();
+        return keyRelease.connected();
+    }
+
+    public boolean alreadyPrepared() {
+        KeyRelease keyRelease = getKeyReleaseDevice();
+        if (keyRelease.connected()) {
+            return keyRelease.actuators().stream().allMatch(Actuator::isRunning);
+        } else {
+            return false;
+        }
+    }
+
     public void setup(BiConsumer<KeyReleaseSetup, KeyRelease> handOverKeys) {
         boolean ready = false;
         while (!ready) {
@@ -84,6 +98,7 @@ public class KeyReleaseSetup extends TeaseScript {
     }
 
     public void prepare(Actuator actuator, Items items) {
+        show(items);
         actuator.arm();
 
         EventSource<ScriptEventArgs> afterChoices = events.afterChoices;

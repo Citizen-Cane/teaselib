@@ -223,26 +223,20 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @param item
      *            The items to hint / display.
      */
-    public void show(Item... item) {
-        // TODO Show item images
+    public void show(Item... items) {
+        show(Arrays.asList(items));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @param item
-     */
+    public void show(Enum<?>... items) {
+        show(items(items));
+    }
+
     public void show(List<Item> items) {
-        // TODO Show item images
+        show(new Items(items));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @param item
-     */
     public void show(Items items) {
-        // TODO Show item images
+        // TODO Implement show items when with current say/show/reply statement
     }
 
     /**
@@ -605,16 +599,16 @@ public abstract class TeaseScript extends TeaseScriptMath {
         showChoices(Arrays.asList(chat), null, Intention.Chat);
     }
 
-    public final void chat(ScriptFunction scriptFunction, Answer chat) {
-        showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat);
+    public final Answer chat(ScriptFunction scriptFunction, Answer chat) {
+        return showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat);
     }
 
-    public final void chat(RunnableScript script, Answer chat) {
-        showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
+    public final Answer chat(RunnableScript script, Answer chat) {
+        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
     }
 
-    public final void chat(CallableScript<Answer> script, Answer chat) {
-        showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
+    public final Answer chat(CallableScript<Answer> script, Answer chat) {
+        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
     }
 
     /**

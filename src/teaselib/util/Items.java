@@ -202,10 +202,11 @@ public class Items implements Iterable<Item> {
     }
 
     /**
-     * Get all items matching the supplied attributes. Only available items are returned.
+     * Get all items matching the supplied attributes. All items are returned, as a result the collection may contains
+     * unavailable items.
      * 
      * @param attributes
-     * @return Available items that match all of the attributes.
+     * @return Items that match all of the attributes.
      */
     public final Items matching(Enum<?>... attributes) {
         return matchingImpl((Object[]) attributes);
@@ -216,26 +217,7 @@ public class Items implements Iterable<Item> {
     }
 
     public final Items matchingImpl(Object... attributes) {
-        Items matching = queryInventoryImpl(attributes);
-        return matching.getAvailable();
-    }
-
-    /**
-     * Get all items matching the supplied attributes. This method also returns non-available items.
-     * 
-     * @param attributes
-     * @return Available items that match all of the attributes.
-     */
-    /**
-     * @param attributes
-     * @return
-     */
-    public final Items queryInventory(Enum<?>... attributes) {
-        return queryInventoryImpl((Object[]) attributes);
-    }
-
-    public final Items queryInventory(String... attributes) {
-        return queryInventoryImpl((Object[]) attributes);
+        return queryInventoryImpl(attributes);
     }
 
     private Items queryInventoryImpl(Object... attributes) {
@@ -273,17 +255,18 @@ public class Items implements Iterable<Item> {
     }
 
     /**
-     * Get matching or available items:
-     * <li>First try to match applied items.
+     * Get applied, matching or available items:
+     * <li>First prefer applied items.
      * <li>second try to match available items with the requested attributes.
      * <li>If not possible, match as many items as possible. then complete set with available non-matching items.
-     * <li>Finally add unavailable items to complete the set.
+     * <li>Continue adding unavailable items that match the requested attributes.
+     * <li>Finally add unavailable items that match the requested item to complete the set.
      * <p>
      * 
      * @param attributes
      *            The preferred attributes to match.
-     * @return Preferred available items matching requested attributes, filled up with non-matching available items as a
-     *         fall-back. The Item list may be empty if none of the requested items are available.
+     * @return Preferred applied and available items matching requested attributes, filled up with non-matching
+     *         available items as a fall-back. The result may be empty if none of the requested items are available.
      */
     public Items prefer(Enum<?>... attributes) {
         return appliedOrPreferred((Object[]) attributes);
@@ -328,6 +311,20 @@ public class Items implements Iterable<Item> {
 
         for (Item item : elements) {
             if (!found.contains(QualifiedItem.of(item)) && item.isAvailable()) {
+                found.add(QualifiedItem.of(itemValue(item)));
+                preferred.add(item);
+            }
+        }
+
+        for (Item item : elements) {
+            if (item.is(attributes)) {
+                found.add(QualifiedItem.of(itemValue(item)));
+                preferred.add(item);
+            }
+        }
+
+        for (Item item : elements) {
+            if (!found.contains(QualifiedItem.of(item))) {
                 found.add(QualifiedItem.of(itemValue(item)));
                 preferred.add(item);
             }

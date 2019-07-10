@@ -100,7 +100,6 @@ public class ItemImplTest {
     @Test
     public void testApplyToAutomaticDefaultsAndAttributes() throws Exception {
         TestScript script = TestScript.getOne();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Buttplug).applied());
         assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
@@ -146,7 +145,6 @@ public class ItemImplTest {
     public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeers() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -243,7 +241,6 @@ public class ItemImplTest {
     public void testCanApplyWithoutDefaults() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -268,7 +265,6 @@ public class ItemImplTest {
     @Test
     public void testCanApplyWithDefaults() {
         TestScript script = TestScript.getOne();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Gag).applied());
 
@@ -293,7 +289,6 @@ public class ItemImplTest {
     public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
         String Body_WristsTied = "teaselib.Body.WristsTied";
@@ -327,7 +322,6 @@ public class ItemImplTest {
     public void testStringsAndEnumsMixed() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
         String Body_WristsTied = "teaselib.Body.WristsTied";
@@ -387,7 +381,6 @@ public class ItemImplTest {
     public void testTemporaryItems() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -404,7 +397,6 @@ public class ItemImplTest {
     @Test
     public void testRemoveOneOfMultipleItemsToSamePeer() {
         TestScript script = TestScript.getOne();
-        script.setAvailable(Toys.values());
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
                 .matching(Material.Leather);

@@ -79,7 +79,7 @@ public class ItemsTest {
         assertFalse(gags.anyAvailable());
         assertFalse(gags.get().is(Toys.Gags.Ring_Gag));
 
-        Item ringGag = gags.queryInventory(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
         ringGag.setAvailable(true);
@@ -108,7 +108,7 @@ public class ItemsTest {
         Items gags = script.items(Toys.Gag);
         assertFalse(gags.anyAvailable());
 
-        Item ringGag = gags.queryInventory(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
         assertEquals(0, gags.getAvailable().size());
@@ -126,7 +126,6 @@ public class ItemsTest {
     public void testMatching() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         Items gags = script.items(Toys.Gag);
 
@@ -149,20 +148,20 @@ public class ItemsTest {
         assertNotEquals(Item.NotFound, gags.get());
         assertFalse(gags.get().isAvailable());
 
-        Item bitGag = gags.queryInventory(Toys.Gags.Bit_Gag).get();
+        Item bitGag = gags.matching(Toys.Gags.Bit_Gag).get();
         assertTrue(bitGag.is(Toys.Gags.Bit_Gag));
 
-        Item penisGag = gags.queryInventory(Toys.Gags.Penis_Gag).get();
+        Item penisGag = gags.matching(Toys.Gags.Penis_Gag).get();
         penisGag.setAvailable(true);
 
         assertEquals(penisGag, gags.get());
-        assertEquals(bitGag, gags.queryInventory(Toys.Gags.Bit_Gag).get());
+        assertEquals(bitGag, gags.matching(Toys.Gags.Bit_Gag).get());
 
-        assertFalse(gags.queryInventory(Toys.Gags.Bit_Gag).get().isAvailable());
-        assertTrue(gags.queryInventory(Toys.Gags.Penis_Gag).get().isAvailable());
+        assertFalse(gags.matching(Toys.Gags.Bit_Gag).get().isAvailable());
+        assertTrue(gags.matching(Toys.Gags.Penis_Gag).get().isAvailable());
 
         assertEquals(penisGag, gags.get());
-        assertTrue(gags.queryInventory(Toys.Gags.Penis_Gag).get().isAvailable());
+        assertTrue(gags.matching(Toys.Gags.Penis_Gag).get().isAvailable());
 
         Item noRingGag = gags.prefer(Toys.Gags.Ring_Gag).get();
         assertEquals(penisGag, noRingGag);
@@ -205,7 +204,7 @@ public class ItemsTest {
         assertFalse(gags.anyAvailable());
         assertFalse(script.items(Toys.Collar).anyAvailable());
 
-        Item penisGag = gags.queryInventory(Toys.Gags.Penis_Gag).get();
+        Item penisGag = gags.matching(Toys.Gags.Penis_Gag).get();
         penisGag.setAvailable(true);
 
         assertTrue(gags.anyAvailable());
@@ -246,6 +245,7 @@ public class ItemsTest {
         assertFalse(gags.allAvailable());
 
         gags.get().setAvailable(true);
+        assertTrue(gags.anyAvailable());
         assertFalse(gags.allAvailable());
 
         script.setAvailable(Toys.values());
@@ -255,7 +255,6 @@ public class ItemsTest {
     @Test
     public void testRetainIsLogicalAnd() {
         TestScript script = TestScript.getOne();
-        script.setAvailable(Toys.values());
 
         Items buttPlugs = script.items(Toys.Buttplug);
         assertTrue(buttPlugs.size() > 1);
@@ -352,7 +351,6 @@ public class ItemsTest {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
         script.addTestUserItems2();
-        script.setAvailable(Toys.values());
 
         Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
         Items restraints = inventory.prefer(Features.Lockable, Material.Leather);
@@ -384,7 +382,7 @@ public class ItemsTest {
         Varieties<Items> all = inventory.varieties();
         assertEquals(4, all.size());
 
-        Items cuffsWithMaterial = inventory.queryInventory(Toys.Wrist_Restraints, material);
+        Items cuffsWithMaterial = inventory.matching(Toys.Wrist_Restraints, material);
         assertFalse(cuffsWithMaterial.equals(Items.None));
         assertEquals(1, cuffsWithMaterial.size());
 
@@ -398,7 +396,6 @@ public class ItemsTest {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
         script.addTestUserItems2();
-        script.setAvailable(Toys.values());
 
         Items allMetal = script.items(Toys.Wrist_Restraints, Toys.Humbler).prefer(Material.Metal);
         assertTrue(allMetal.item(Toys.Wrist_Restraints).is(Material.Metal));
@@ -407,10 +404,7 @@ public class ItemsTest {
         script.items(Toys.Wrist_Restraints).matching(Material.Leather).get().apply();
         Items alreadyApplied = script.items(Toys.Wrist_Restraints, Toys.Humbler).prefer(Material.Metal);
         assertTrue(alreadyApplied.item(Toys.Wrist_Restraints).is(Material.Leather));
-        // assertTrue(alreadyApplied.item(Toys.Humbler).is(Material.Metal));
-        // TODO Improve attribute matching for applied items
-        // - decide whether to consider preferred or matching attributes
-        // -> matching applied -> ??? - matching requested -> Metal
+        assertTrue(alreadyApplied.item(Toys.Humbler).is(Material.Wood));
     }
 
     @Test
@@ -442,7 +436,6 @@ public class ItemsTest {
     @Test
     public void testAnyApplied() {
         TestScript script = TestScript.getOne();
-        script.setAvailable(Toys.values());
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Material.Metal);
         assertEquals(2, restraints.size());
@@ -464,7 +457,6 @@ public class ItemsTest {
     public void testWhatItemHasBeenApplied() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -520,7 +512,6 @@ public class ItemsTest {
     public void testMatchingItemInstanceAttributesDontInterferWithApplied() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
-        script.setAvailable(Toys.values());
 
         Items gags1 = script.items(Toys.Gag);
         Item ringGag = gags1.matching(Toys.Gags.Ring_Gag).get();
@@ -569,7 +560,6 @@ public class ItemsTest {
     public void testMatchingDifferentItemsOfAKIndDontInterferShort() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
-        script.setAvailable(Toys.values());
 
         Items gags = script.items(Toys.Gag);
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
@@ -784,9 +774,7 @@ public class ItemsTest {
     public void testOrElsePreferEnum() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.Wrist_Restraints);
-
-        assertTrue(script.items(Toys.Wrist_Restraints).someAre(Material.Metal));
+        script.items(Toys.Wrist_Restraints).matching(Material.Metal).get().setAvailable(true);
 
         Items restraints = script.items(Toys.Wrist_Restraints).matching(Material.Wood).orElsePrefer(Material.Metal);
         assertTrue(restraints.allAre(Material.Metal));
@@ -796,12 +784,11 @@ public class ItemsTest {
     public void testOrElsePreferString() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.Wrist_Restraints);
-
-        assertTrue(script.items("teaselib.Toys.Wrist_Restraints").someAre("teaselib.Material.Metal"));
+        script.items(Toys.Wrist_Restraints).matching(Material.Metal).get().setAvailable(true);
 
         Items restraints = script.items("teaselib.Toys.Wrist_Restraints").matching("teaselib.Material.Wood")
                 .orElsePrefer("teaselib.Material.Metal");
+
         assertTrue(restraints.allAre("teaselib.Material.Metal"));
     }
 
@@ -809,9 +796,7 @@ public class ItemsTest {
     public void testOrElseMatchingEnum() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.Wrist_Restraints);
-
-        assertTrue(script.items(Toys.Wrist_Restraints).someAre(Material.Metal));
+        script.items(Toys.Wrist_Restraints).matching(Material.Metal).get().setAvailable(true);
 
         Items restraints = script.items(Toys.Wrist_Restraints).matching(Material.Wood).orElseMatching(Material.Metal);
         assertTrue(restraints.allAre(Material.Metal));
@@ -821,9 +806,7 @@ public class ItemsTest {
     public void testOrElseMatchingString() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.Wrist_Restraints);
-
-        assertTrue(script.items("teaselib.Toys.Wrist_Restraints").someAre("teaselib.Material.Metal"));
+        script.items(Toys.Wrist_Restraints).matching(Material.Metal).get().setAvailable(true);
 
         Items restraints = script.items("teaselib.Toys.Wrist_Restraints").matching("teaselib.Material.Wood")
                 .orElseMatching("teaselib.Material.Metal");

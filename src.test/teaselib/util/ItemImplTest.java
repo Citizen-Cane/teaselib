@@ -1,8 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -406,8 +404,10 @@ public class ItemImplTest {
     @Test
     public void testRemoveOneOfMultipleItemsToSamePeer() {
         TestScript script = TestScript.getOne();
+        script.setAvailable(Toys.values());
 
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
+                .matching(Material.Leather);
         restraints.apply();
 
         Items chains = script.items(Toys.Chains, Accessoires.Bells);

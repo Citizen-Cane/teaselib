@@ -344,7 +344,7 @@ public class ItemsTest {
 
         Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
         Varieties<Items> all = inventory.varieties();
-        assertEquals(2, all.size());
+        assertEquals(4, all.size());
     }
 
     @Test
@@ -382,10 +382,13 @@ public class ItemsTest {
 
     private static void testAnyWithAppliedItem(Items inventory, Material material) {
         Varieties<Items> all = inventory.varieties();
-        assertEquals(2, all.size());
-        Items cuffs = inventory.queryInventory(Toys.Wrist_Restraints, material);
-        assertFalse(cuffs.equals(Items.None));
-        cuffs.apply();
+        assertEquals(4, all.size());
+
+        Items cuffsWithMaterial = inventory.queryInventory(Toys.Wrist_Restraints, material);
+        assertFalse(cuffsWithMaterial.equals(Items.None));
+        assertEquals(1, cuffsWithMaterial.size());
+
+        cuffsWithMaterial.apply();
         Items appliedCuffs = all.reduce(Items::best);
         assertTrue(appliedCuffs.get(Toys.Wrist_Restraints).is(material));
     }
@@ -428,7 +431,7 @@ public class ItemsTest {
         script.addTestUserItems();
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
-        assertEquals(3, restraints.size());
+        assertEquals(4, restraints.size());
 
         List<Object> values = new ArrayList<>(restraints.valueSet());
         assertEquals(2, values.size());
@@ -439,16 +442,17 @@ public class ItemsTest {
     @Test
     public void testAnyApplied() {
         TestScript script = TestScript.getOne();
+        script.setAvailable(Toys.values());
 
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
-
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Material.Metal);
+        assertEquals(2, restraints.size());
         assertFalse(restraints.anyApplied());
 
-        script.item(Toys.Wrist_Restraints).apply();
+        restraints.item(Toys.Wrist_Restraints).apply();
         assertTrue(restraints.anyApplied());
         assertFalse(restraints.allApplied());
 
-        script.item(Toys.Ankle_Restraints).apply();
+        restraints.item(Toys.Ankle_Restraints).apply();
         assertTrue(restraints.anyApplied());
         assertTrue(restraints.allApplied());
 
@@ -831,12 +835,13 @@ public class ItemsTest {
         TestScript script = TestScript.getOne();
 
         Items all = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
-        assertEquals(2, all.size());
+        assertEquals(4, all.size());
         assertEquals(script.item(Toys.Ankle_Restraints), all.item(Toys.Ankle_Restraints));
         assertEquals(script.item(Toys.Wrist_Restraints), all.item(Toys.Wrist_Restraints));
 
         Items without = all.without(Toys.Ankle_Restraints);
-        assertEquals(1, without.size());
+        assertEquals(2, without.size());
+
         assertEquals(Item.NotFound, without.item(Toys.Ankle_Restraints));
         assertEquals(script.item(Toys.Wrist_Restraints), without.item(Toys.Wrist_Restraints));
 
@@ -851,12 +856,13 @@ public class ItemsTest {
         TestScript script = TestScript.getOne();
 
         Items all = script.items("teaselib.Toys.Wrist_Restraints", "teaselib.Toys.Ankle_Restraints");
-        assertEquals(2, all.size());
+        assertEquals(4, all.size());
         assertEquals(script.item("teaselib.Toys.Ankle_Restraints"), all.item("teaselib.Toys.Ankle_Restraints"));
         assertEquals(script.item("teaselib.Toys.Wrist_Restraints"), all.item("teaselib.Toys.Wrist_Restraints"));
 
         Items without = all.without("teaselib.Toys.Ankle_Restraints");
-        assertEquals(1, without.size());
+        assertEquals(2, without.size());
+
         assertEquals(Item.NotFound, without.item("teaselib.Toys.Ankle_Restraints"));
         assertEquals(script.item("teaselib.Toys.Wrist_Restraints"), without.item("teaselib.Toys.Wrist_Restraints"));
 

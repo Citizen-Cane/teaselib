@@ -516,14 +516,12 @@ public class Items implements Iterable<Item> {
         return elements.stream();
     }
 
-    // TODO remove? ->
     /**
-     * returns the item values.
+     * return distinct item values.
      * 
      * @return
      */
-    @Deprecated
-    public Set<Object> valueSet() {
+    Set<Object> valueSet() {
         return elements.stream().map(item -> itemImpl(item).value).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -625,4 +623,5 @@ public class Items implements Iterable<Item> {
     public Items of(TeaseScriptPersistence.Domain domain) {
         return domain.items(this);
     }
+
 }

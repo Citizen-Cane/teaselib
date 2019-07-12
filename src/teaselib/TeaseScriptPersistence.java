@@ -86,6 +86,14 @@ public abstract class TeaseScriptPersistence extends Script {
             return new ItemProxy(namespace, teaseLib.item(name, value), events);
         }
 
+        public State state(Enum<?> value) {
+            return new StateProxy(namespace, teaseLib.state(name, value), events);
+        }
+
+        public State state(String value) {
+            return new StateProxy(namespace, teaseLib.state(name, value), events);
+        }
+
         @SafeVarargs
         public final <T extends Enum<?>> Items items(T[]... values) {
             List<Item> items = new ArrayList<>();
@@ -211,10 +219,10 @@ public abstract class TeaseScriptPersistence extends Script {
     }
 
     public State state(Enum<?> value) {
-        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, value), events);
+        return defaultDomain.state(value);
     }
 
     public State state(String value) {
-        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, value), events);
+        return defaultDomain.state(value);
     }
 }

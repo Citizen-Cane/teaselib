@@ -1,12 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertEqualsFlattened;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.withoutPunctation;
-import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
+import static java.util.Arrays.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
+import static teaselib.core.speechrecognition.srgs.Phrases.*;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -391,6 +388,63 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("No Miss, of course"), new Prompt.Result(1));
         assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1));
+    }
+
+    private static Choices distinctChociesWithPairwiseCommonParts() {
+        return new Choices(new Choice("A at M attached"), new Choice("A at N attached"), new Choice("B at N attached"),
+                new Choice("B at M attached"));
+    }
+
+    @Test
+    public void testSliceDistinctChociesWithPairwiseCommonParts() {
+        Choices choices = distinctChociesWithPairwiseCommonParts();
+
+        Phrases phrases = Phrases.of(choices);
+
+        assertEquals(4, phrases.size());
+        assertEqualsFlattened(choices, phrases);
+    }
+
+    @Test
+    public void testSRGSBuilderDistinctChociesWithPairwiseCommonParts() throws InterruptedException {
+        Choices choices = distinctChociesWithPairwiseCommonParts();
+
+        // TODO The test fails because each distinct part of the phrase is a member of multiple choices
+        // rule group=0 index=0 = [Common[0, 1] = [A], Common[2, 3] = [B]]
+        // rule group=0 index=2 = [Common[0, 3] = [M], Common[1, 2] = [N]]
+        // To find the correct choice:
+        // + find choice index that is member of all srgs rules
+        // for instance srgs rules with common[2,3] = [B] and common[1,2] would be choice 2 B at N atttached
+        // -> TODO add multiple choices to srgs rules (currently each choice rule can hold only one choice)
+        assertRecognized(choices, withoutPunctation("A at M attached"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("A at N attached"), new Prompt.Result(1));
+        assertRecognized(choices, withoutPunctation("B at N attached"), new Prompt.Result(2));
+        assertRecognized(choices, withoutPunctation("B at M attached"), new Prompt.Result(3));
+    }
+
+    private static Choices distinctChociesWithPairwiseCommonPartsShort() {
+        return new Choices(new Choice("A M"), new Choice("A N"), new Choice("B N"), new Choice("B M"));
+    }
+
+    @Test
+    public void testSliceDistinctChociesWithPairwiseCommonPartsShort() {
+        Choices choices = distinctChociesWithPairwiseCommonPartsShort();
+
+        Phrases phrases = Phrases.of(choices);
+
+        // TODO Should be 2 but distinct parts are merged because of a hack in phrase parsing
+        assertEquals(2, phrases.size());
+        assertEqualsFlattened(choices, phrases);
+    }
+
+    @Test
+    public void testSRGSBuilderDistinctChociesWithPairwiseCommonPartsShort() throws InterruptedException {
+        Choices choices = distinctChociesWithPairwiseCommonPartsShort();
+
+        assertRecognized(choices, withoutPunctation("A M"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("A N"), new Prompt.Result(1));
+        assertRecognized(choices, withoutPunctation("B N"), new Prompt.Result(2));
+        assertRecognized(choices, withoutPunctation("B M"), new Prompt.Result(3));
     }
 
 }

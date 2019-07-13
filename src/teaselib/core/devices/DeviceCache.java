@@ -159,4 +159,8 @@ public class DeviceCache<T extends Device> {
         deviceListeners.remove(deviceListener);
     }
 
+    public static String qualifiedName(Device device) {
+        return device.getDevicePath().replace('/', '.');
+    }
+
 }

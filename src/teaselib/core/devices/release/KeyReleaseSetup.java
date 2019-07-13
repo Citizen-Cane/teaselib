@@ -17,6 +17,7 @@ import teaselib.core.StateImpl;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
+import teaselib.core.state.AbstractProxy;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
@@ -53,10 +54,15 @@ public class KeyReleaseSetup extends TeaseScript {
             restore(keyRelease);
 
             return keyRelease.actuators().stream()
-                    .allMatch(actuator -> actuator.isRunning() && state(actuator.getName()).applied());
+                    .allMatch(actuator -> actuator.isRunning() && state(qualifiedName(actuator)).applied());
         } else {
             return false;
         }
+    }
+
+    private static String qualifiedName(Actuator actuator) {
+        // TODO Implement white space handling in object persistence
+        return DeviceCache.qualifiedName(actuator).replace(' ', '_');
     }
 
     public void restore() {
@@ -71,14 +77,15 @@ public class KeyReleaseSetup extends TeaseScript {
     }
 
     private void restore(Actuator actuator) {
-        String actuatorName = actuator.getName();
+        String actuatorName = qualifiedName(actuator);
 
-        StateImpl actuatorState = (StateImpl) domain(Gadgets.Key_Release).state(actuatorName);
+        StateImpl actuatorState = (StateImpl) AbstractProxy
+                .removeProxy(domain(Gadgets.Key_Release).state(actuatorName));
         Items handled = new Items(actuatorState.peers().stream().filter(peer -> peer instanceof Item)
                 .map(item -> (Item) item).collect(Collectors.toList()));
 
         if (!handled.equals(Items.None)) {
-            handled.applyTo(actuatorState).over(actuator.remaining(TimeUnit.SECONDS), TimeUnit.SECONDS);
+            handled.applyTo(actuatorName).over(actuator.remaining(TimeUnit.SECONDS), TimeUnit.SECONDS);
 
             Items items = handled.of(defaultDomain);
             items.apply();
@@ -93,7 +100,8 @@ public class KeyReleaseSetup extends TeaseScript {
         while (!ready) {
             KeyRelease keyRelease = getKeyReleaseDevice();
             if (keyRelease.connected()) {
-                showInterTitle("Device connected.");
+                // TODO show in ui as notification
+                // showInterTitle("Device connected.");
             } else {
                 showInterTitle("Activate key release device!");
                 Answer no = Answer.no("It doesn't work, #title");
@@ -158,9 +166,9 @@ public class KeyReleaseSetup extends TeaseScript {
         afterChoices.add(renewHold);
 
         Items handled = items.of(domain(Gadgets.Key_Release));
-        handled.applyTo(actuator.getName());
+        handled.applyTo(qualifiedName(actuator));
 
-        String actuatorName = actuator.getName();
+        String actuatorName = qualifiedName(actuator);
 
         events.when(items).applied().thenOnce(() -> afterChoices.remove(renewHold));
         events.when(items).applied().thenOnce(actuator::start);

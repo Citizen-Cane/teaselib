@@ -1,8 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,7 +26,7 @@ public class ScriptEventsTest {
 
         @Override
         public String getName() {
-            return null;
+            return getClass().getName();
         }
 
         @Override
@@ -43,6 +41,7 @@ public class ScriptEventsTest {
 
         @Override
         public void close() {
+            // Ignore
         }
 
         @Override
@@ -118,7 +117,7 @@ public class ScriptEventsTest {
         script.script(KeyReleaseSetup.class).prepare(actuator, items);
 
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(3, script.events().itemApplied.size());
         assertEquals(2, script.events().itemRemoved.size());
 
         items.apply();
@@ -143,7 +142,7 @@ public class ScriptEventsTest {
         script.script(KeyReleaseSetup.class).prepare(actuator, items);
 
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(3, script.events().itemApplied.size());
         assertEquals(2, script.events().itemRemoved.size());
 
         items.apply();
@@ -169,7 +168,7 @@ public class ScriptEventsTest {
         script.script(KeyReleaseSetup.class).prepare(actuator, chains);
 
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(3, script.events().itemApplied.size());
         assertEquals(2, script.events().itemRemoved.size());
 
         chains.applyTo(items);
@@ -195,7 +194,7 @@ public class ScriptEventsTest {
         script.script(KeyReleaseSetup.class).prepare(actuator, chains);
 
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(3, script.events().itemApplied.size());
         assertEquals(2, script.events().itemRemoved.size());
 
         chains.applyTo(items);

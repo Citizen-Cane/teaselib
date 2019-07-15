@@ -20,8 +20,24 @@ import teaselib.test.TestScript;
 
 public class ItemImplTest {
 
+    enum PeerlessItem {
+        Test1
+    }
+
     @Test
-    public void testAvailable() throws Exception {
+    public void testPeerlessApply() {
+        TestScript script = TestScript.getOne();
+        assertFalse(script.item(PeerlessItem.Test1).applied());
+
+        script.item(PeerlessItem.Test1).apply();
+        assertTrue(script.item(PeerlessItem.Test1).applied());
+
+        script.item(PeerlessItem.Test1).remove();
+        assertFalse(script.item(PeerlessItem.Test1).applied());
+    }
+
+    @Test
+    public void testAvailable() {
         TeaseScript script = TestScript.getOne();
         QualifiedItem fooBar = QualifiedItem.of("Foo.Bar");
         String storageName = fooBar.name();
@@ -44,7 +60,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIs() throws Exception {
+    public void testIs() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
@@ -60,7 +76,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIs_EmptyArg() throws Exception {
+    public void testIs_EmptyArg() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
@@ -70,7 +86,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIsHandlesArrays() throws Exception {
+    public void testIsHandlesArrays() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
@@ -86,7 +102,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIsWithMixedPeersAndAttributes() throws Exception {
+    public void testIsWithMixedPeersAndAttributes() {
         TeaseScript script = TestScript.getOne();
 
         Item nippleClamps = script.item(Toys.Nipple_Clamps);
@@ -98,7 +114,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testApplyToAutomaticDefaultsAndAttributes() throws Exception {
+    public void testApplyToAutomaticDefaultsAndAttributes() {
         TestScript script = TestScript.getOne();
 
         assertFalse(script.state(Toys.Buttplug).applied());

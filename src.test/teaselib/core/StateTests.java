@@ -1,9 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +17,22 @@ import teaselib.test.TestScript;
 import teaselib.util.Item;
 
 public class StateTests {
+
+    enum PeerlessState {
+        Test1
+    }
+
+    @Test
+    public void testPeerlessApply() {
+        TestScript script = TestScript.getOne();
+        assertFalse(script.state(PeerlessState.Test1).applied());
+
+        script.state(PeerlessState.Test1).apply();
+        assertTrue(script.state(PeerlessState.Test1).applied());
+
+        script.state(PeerlessState.Test1).remove();
+        assertFalse(script.state(PeerlessState.Test1).applied());
+    }
 
     @Test
     public void testLocalState() {

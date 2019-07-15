@@ -21,12 +21,12 @@ public class ScriptEventsTest {
 
         @Override
         public String getDevicePath() {
-            return null;
+            return getClass().getPackage().getName();
         }
 
         @Override
         public String getName() {
-            return getClass().getName();
+            return getClass().getSimpleName();
         }
 
         @Override
@@ -75,6 +75,7 @@ public class ScriptEventsTest {
 
         @Override
         public void start(long duration, TimeUnit unit) {
+            // Mocked
         }
 
         @Override

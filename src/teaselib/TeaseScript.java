@@ -595,6 +595,18 @@ public abstract class TeaseScript extends TeaseScriptMath {
         showChoices(Arrays.asList(Answer.resume(chat)), null, Intention.Chat);
     }
 
+    public final String chat(ScriptFunction scriptFunction, String chat) {
+        return showChoices(Arrays.asList(Answer.resume(chat)), scriptFunction, Intention.Chat).text.get(0);
+    }
+
+    public final String chat(RunnableScript script, String chat) {
+        return showChoices(Arrays.asList(Answer.resume(chat)), new ScriptFunction(script), Intention.Chat).text.get(0);
+    }
+
+    public final String chat(CallableScript<Answer> script, String chat) {
+        return showChoices(Arrays.asList(Answer.resume(chat)), new ScriptFunction(script), Intention.Chat).text.get(0);
+    }
+
     public final void chat(Answer chat) {
         showChoices(Arrays.asList(chat), null, Intention.Chat);
     }

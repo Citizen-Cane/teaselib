@@ -1,10 +1,12 @@
 package teaselib.core;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.core.ui.InputMethods;
+import teaselib.util.Daytime;
 
 public class Debugger {
     public final TeaseLib teaseLib;
@@ -130,6 +132,16 @@ public class Debugger {
 
     public void replyScriptFunction(String string) {
         ((ResponseDebugInputMethod) debugInputMethod).replyScriptFunction(string);
+    }
+
+    public void setTime(Daytime dayTime) {
+        Date now = new Date(teaseLib.getTime(TimeUnit.MILLISECONDS));
+        // TODO Resolve deprecation
+        Date adjusted = new Date(now.getYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        teaseLib.advanceTime(adjusted.getTime() - now.getTime(), TimeUnit.MILLISECONDS);
+
+        long hours = TimeOfDayImpl.hours(dayTime).average();
+        teaseLib.advanceTime(hours, TimeUnit.HOURS);
     }
 
 }

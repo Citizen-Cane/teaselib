@@ -564,15 +564,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean deny(ScriptFunction scriptFunction, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), scriptFunction).meaning == Meaning.NO;
+        return showChoices(Arrays.asList(Answer.no(no)), scriptFunction) != ScriptFunction.Timeout;
     }
 
     public final boolean deny(RunnableScript script, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)).meaning == Meaning.NO;
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != ScriptFunction.Timeout;
     }
 
     public final boolean deny(CallableScript<Answer> script, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)).meaning == Meaning.NO;
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != ScriptFunction.Timeout;
     }
 
     public final void agree(String yes) {
@@ -580,15 +580,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean agree(ScriptFunction scriptFunction, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction).meaning == Meaning.YES;
+        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction) != ScriptFunction.Timeout;
     }
 
     public final boolean agree(RunnableScript script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)).meaning == Meaning.YES;
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != ScriptFunction.Timeout;
     }
 
     public final boolean agree(CallableScript<Answer> script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)).meaning == Meaning.YES;
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != ScriptFunction.Timeout;
     }
 
     public final void chat(String chat) {

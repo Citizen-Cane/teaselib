@@ -1,6 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -150,6 +150,7 @@ public class Items implements Iterable<Item> {
      * 
      * @return First item or {@link Item#NotFound}
      */
+    // TODO when get(Enum<?>) is removed because of item(), rename this to first()
     public Item get() {
         return getAppliedOrFirstAvailableOrNotFound();
     }
@@ -159,6 +160,8 @@ public class Items implements Iterable<Item> {
      * 
      * @return First item or {@link Item#NotFound}
      */
+    // TODO get() and item() are the same ->
+    // + keep get() since item(...).item(...) is confusing - I misinterpreted it myself
     public final Item get(Enum<?> item) {
         return item(QualifiedItem.of(item));
     }

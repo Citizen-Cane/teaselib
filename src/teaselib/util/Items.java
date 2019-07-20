@@ -78,6 +78,10 @@ public class Items implements Iterable<Item> {
         return new Items(list, inventory);
     }
 
+    public boolean noneAvailable() {
+        return elements.stream().noneMatch(Item::isAvailable);
+    }
+
     public boolean anyAvailable() {
         return elements.stream().anyMatch(Item::isAvailable);
     }
@@ -143,6 +147,10 @@ public class Items implements Iterable<Item> {
 
     public Items getApplied() {
         return new Items(filter(Item::applied));
+    }
+
+    public Items getExpired() {
+        return new Items(filter(Item::expired));
     }
 
     /**
@@ -619,6 +627,10 @@ public class Items implements Iterable<Item> {
 
     public Items of(TeaseScriptPersistence.Domain domain) {
         return domain.items(this);
+    }
+
+    public boolean isEmpty() {
+        return elements.isEmpty();
     }
 
 }

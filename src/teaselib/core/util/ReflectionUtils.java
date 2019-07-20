@@ -33,6 +33,14 @@ public final class ReflectionUtils {
         return normalizedClassName(clazz) + "." + name;
     }
 
+    public static String qualified(String namespace, Class<?> clazz, String name) {
+        return namespace + "." + clazz.getSimpleName() + "." + name;
+    }
+
+    public static String qualified(String namespace, String name) {
+        return namespace + "." + name;
+    }
+
     public static String absolutePath(Package p) {
         return "/" + p.getName().replace('.', '/') + '/';
     }

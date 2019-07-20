@@ -12,6 +12,7 @@ public enum Features implements Item.Attribute {
     HandsFree,
     EStim,
     Spikes,
+    AutoRelease,
 
     ;
 

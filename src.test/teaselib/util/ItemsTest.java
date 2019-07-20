@@ -475,6 +475,21 @@ public class ItemsTest {
     }
 
     @Test
+    public void testAvailableItems() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items restraints = script.items(Toys.Wrist_Restraints);
+        assertEquals(2, restraints.size());
+
+        assertEquals(0, restraints.getAvailable().size());
+        restraints.get().setAvailable(true);
+        assertEquals(1, restraints.getAvailable().size());
+        assertFalse(restraints.allAvailable());
+        assertTrue(restraints.preferred().allAvailable());
+    }
+
+    @Test
     public void testAppliedItems() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();

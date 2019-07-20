@@ -1,6 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -263,6 +263,15 @@ public class Items implements Iterable<Item> {
             }
         }
         return false;
+    }
+
+    /**
+     * Reduce an item selection to an applyable set. Choose an applicable set from all available items.
+     * 
+     * @return A set of matching items, containing already applied items. Each kind of item will be contained only once.
+     */
+    public Items preferred() {
+        return appliedOrPreferred();
     }
 
     /**

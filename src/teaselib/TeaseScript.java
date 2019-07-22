@@ -662,20 +662,29 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     /**
-     * Build a list of resource strings from a {@link WildcardPattern}.
+     * Build a list of resource strings from a {@link WildcardPattern}. Resources are searched relative to the script
+     * class. If no resources are found, the class inheritance is traversed upwards up to the first TeaseLib class. As a
+     * result, all user-defined super classes can provide images as well and inherit them to sub-classes. Sub.classes
+     * can "override" images provided by the base class.
      * 
      * @param wildcardPattern
      *            The wildcard pattern ("?" replaces a single, "*" multiple characters).
-     * @return A list of resources that matches the wildcard pattern.
+     * @return A list of resources that match the wildcard pattern.
      */
     public List<String> resources(String wildcardPattern) {
-        List<String> items = resources.resources(wildcardPattern, getClass());
-        int size = items.size();
-        if (size > 0) {
-            logger.info("{}: '{}' yields {} resources", getClass().getSimpleName(), wildcardPattern, size);
-        } else {
-            logger.info("{}: '{}' doesn't yield any resources", getClass().getSimpleName(), wildcardPattern);
-        }
+        List<String> items;
+        int size = 0;
+        Class<?> scriptClass = getClass();
+        do {
+            items = resources.resources(wildcardPattern, scriptClass);
+            size = items.size();
+            if (size > 0) {
+                logger.info("{}: '{}' yields {} resources", scriptClass.getSimpleName(), wildcardPattern, size);
+            } else {
+                logger.info("{}: '{}' doesn't yield any resources", scriptClass.getSimpleName(), wildcardPattern);
+                scriptClass = scriptClass.getSuperclass();
+            }
+        } while (size == 0 && scriptClass != TeaseScript.class);
         return new ArrayList<>(items);
     }
 }

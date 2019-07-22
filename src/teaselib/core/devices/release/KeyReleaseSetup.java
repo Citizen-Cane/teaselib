@@ -158,8 +158,6 @@ public class KeyReleaseSetup extends TeaseScript {
             public void run(ScriptEventArgs eventArgs) throws Exception {
                 if (actuator.isRunning()) {
                     actuator.hold();
-                } else {
-                    afterChoices.remove(this);
                 }
             }
         };

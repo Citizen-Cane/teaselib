@@ -57,6 +57,16 @@ public class TimeOfDayImpl implements TimeOfDay {
     }
 
     @Override
+    public boolean isEarlierThan(Daytime dayTime) {
+        return timeOfDayTable.get(dayTime()).average() < timeOfDayTable.get(dayTime).average();
+    }
+
+    @Override
+    public boolean isLaterThan(Daytime dayTime) {
+        return timeOfDayTable.get(dayTime()).average() > timeOfDayTable.get(dayTime).average();
+    }
+
+    @Override
     public boolean isAnyOf(Daytime... daytimes) {
         return Arrays.asList(daytimes).stream().anyMatch(this::is);
     }

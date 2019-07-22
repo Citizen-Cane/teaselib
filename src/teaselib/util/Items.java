@@ -1,6 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -525,7 +525,7 @@ public class Items implements Iterable<Item> {
         return elements.iterator();
     }
 
-    int size() {
+    public int size() {
         return elements.size();
     }
 

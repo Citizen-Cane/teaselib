@@ -27,6 +27,10 @@ public class KeyReleaseTest {
 
     static final long HOLD_DURATION_MINUTES = 1;
 
+    public static void releaseAllRunningActuators(KeyRelease keyRelease) {
+        keyRelease.actuators().stream().filter(Actuator::isRunning).forEach(Actuator::release);
+    }
+
     public static KeyRelease connectDefaultDevice() {
         Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
         DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);

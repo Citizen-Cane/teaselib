@@ -22,12 +22,12 @@ public class KeyReleaseAutoReleaseTest {
 
     @Before
     public void releaseAllBefore() {
-        keyRelease.actuators().stream().filter(Actuator::isRunning).forEach(Actuator::release);
+        KeyReleaseTest.releaseAllRunningActuators(keyRelease);
     }
 
     @After
     public void releaseAllAfterwards() {
-        keyRelease.actuators().stream().filter(Actuator::isRunning).forEach(Actuator::release);
+        KeyReleaseTest.releaseAllRunningActuators(keyRelease);
     }
 
     @Test

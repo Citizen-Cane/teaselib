@@ -105,4 +105,10 @@ public class Actuators implements Iterable<Actuator> {
             return b;
         }
     }
+
+    @Override
+    public String toString() {
+        return elements.toString();
+    }
+
 }

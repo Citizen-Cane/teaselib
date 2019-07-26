@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -91,7 +92,9 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
     }
 
     @Test
+    @Ignore
     public void testStatus() {
+        // TODO Test once status command is implemented
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);

@@ -78,7 +78,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply();
-        assertEquals(0, script.events().afterChoices.size());
+        assertEquals("Hold renew event not removed", 0, script.events().afterChoices.size());
         assertEquals("Release timer not reset", availableSeconds, actuator.remaining(SECONDS), 1.0);
 
         script.completeAll();
@@ -125,7 +125,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Starting release timer", Message.Delay10s);
         restraints.apply();
-        assertEquals(0, script.events().afterChoices.size());
+        assertEquals("Hold renew event not removed", 0, script.events().afterChoices.size());
         assertEquals("Release timer not reset", availableSeconds, actuator.remaining(SECONDS), 1.0);
 
         script.completeAll();
@@ -174,7 +174,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Starting release timer", Message.Delay10s);
         restraints.apply();
-        assertEquals(0, script.events().afterChoices.size());
+        assertEquals("Hold renew event not removed", 0, script.events().afterChoices.size());
         assertEquals("Release timer not reset", availableSeconds, actuator.remaining(SECONDS), 1.0);
 
         actuator.sleep(15, SECONDS);

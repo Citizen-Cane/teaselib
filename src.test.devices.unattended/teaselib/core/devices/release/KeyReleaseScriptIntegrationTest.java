@@ -13,33 +13,28 @@ import org.junit.Test;
 import teaselib.Message;
 import teaselib.Toys;
 import teaselib.core.configuration.DebugSetup;
-import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.Devices;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
-public class KeyReleaseScriptIntegrationTest {
+public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     static final long requestedDurationSeconds = HOURS.toSeconds(1);
 
     final TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
-    final Devices devices = script.teaseLib.devices;
-    final DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
+
     KeyRelease keyRelease;
     Actuator actuator;
-
     long defaultDurationSeconds;
     long availableSeconds;
 
     @Before
     public void before() {
-        keyRelease = deviceCache.getDefaultDevice();
-        KeyReleaseTest.releaseAllRunningActuators(keyRelease);
-
-        actuator = keyRelease.actuators().available().get(1, HOURS).get();
+        keyRelease = connectDefaultDevice(script.teaseLib.devices);
+        releaseAllRunningActuators(keyRelease);
 
         // TODO query default time from device - using release default time of 1h
         defaultDurationSeconds = 3600;
+        actuator = keyRelease.actuators().available().get(defaultDurationSeconds, SECONDS).orElseThrow();
         availableSeconds = actuator.available(SECONDS);
 
         script.debugger.resumeTime();
@@ -50,7 +45,7 @@ public class KeyReleaseScriptIntegrationTest {
 
     @After
     public void releaseAllAfterwards() {
-        KeyReleaseTest.releaseAllRunningActuators(keyRelease);
+        releaseAllRunningActuators(keyRelease);
     }
 
     @Test
@@ -61,7 +56,7 @@ public class KeyReleaseScriptIntegrationTest {
         script.say("Arm", Message.Delay10s);
         script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(3, script.events().itemApplied.size());
         assertEquals(2, script.events().itemRemoved.size());
         script.reply("Keys placed, #title");
 
@@ -70,7 +65,7 @@ public class KeyReleaseScriptIntegrationTest {
                 1.0);
 
         script.completeAll();
-        assertEquals(defaultDurationSeconds - 10, actuator.remaining(SECONDS), 1.0);
+        assertEquals(defaultDurationSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Are you ready?");
         script.reply("In a minute, #title");
@@ -78,7 +73,7 @@ public class KeyReleaseScriptIntegrationTest {
 
         script.say("Are you ready?", Message.Delay10s);
         script.completeAll();
-        assertEquals(defaultDurationSeconds - 10, actuator.remaining(SECONDS), 1.0);
+        assertEquals(defaultDurationSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
         assertTrue(actuator.isRunning());
 
         script.say("Starting release timer", Message.Delay10s);
@@ -87,11 +82,11 @@ public class KeyReleaseScriptIntegrationTest {
         assertEquals("Release timer not reset", availableSeconds, actuator.remaining(SECONDS), 1.0);
 
         script.completeAll();
-        assertEquals("Release timer wrong value", availableSeconds - 10, actuator.remaining(SECONDS), 1.0);
+        assertEquals("Release timer wrong value", availableSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Timer is running", Message.Delay10s);
         script.completeAll();
-        assertEquals("Release timer wrong value", availableSeconds - 20, actuator.remaining(SECONDS), 1.0);
+        assertEquals("Release timer wrong value", availableSeconds - 20.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Releasing key", Message.Delay10s);
         cuffs.remove();
@@ -109,7 +104,7 @@ public class KeyReleaseScriptIntegrationTest {
         script.say("Arm", Message.Delay10s);
         script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(3, script.events().itemApplied.size());
         assertEquals(2, script.events().itemRemoved.size());
         script.reply("Keys placed, #title");
 
@@ -117,7 +112,7 @@ public class KeyReleaseScriptIntegrationTest {
         assertEquals("Hold duration not reset to default", defaultDurationSeconds, actuator.remaining(SECONDS), 1.0);
 
         script.completeAll();
-        assertEquals(defaultDurationSeconds - 10, actuator.remaining(SECONDS), 1.0);
+        assertEquals(defaultDurationSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Are you ready?");
         script.reply("In a minute, #title");
@@ -125,7 +120,7 @@ public class KeyReleaseScriptIntegrationTest {
 
         script.say("Are you ready?", Message.Delay10s);
         script.completeAll();
-        assertEquals(defaultDurationSeconds - 10, actuator.remaining(SECONDS), 1.0);
+        assertEquals(defaultDurationSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
         assertTrue(actuator.isRunning());
 
         script.say("Starting release timer", Message.Delay10s);
@@ -134,11 +129,11 @@ public class KeyReleaseScriptIntegrationTest {
         assertEquals("Release timer not reset", availableSeconds, actuator.remaining(SECONDS), 1.0);
 
         script.completeAll();
-        assertEquals("Release timer wrong value", availableSeconds - 10, actuator.remaining(SECONDS), 1.0);
+        assertEquals("Release timer wrong value", availableSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Timer is running", Message.Delay10s);
         script.completeAll();
-        assertEquals("Release timer wrong value", availableSeconds - 20, actuator.remaining(SECONDS), 1.0);
+        assertEquals("Release timer wrong value", availableSeconds - 20.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Releasing key", Message.Delay10s);
 
@@ -160,7 +155,7 @@ public class KeyReleaseScriptIntegrationTest {
         script.say("Arm", Message.Delay10s);
         script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals(2, script.events().itemApplied.size());
+        assertEquals(3, script.events().itemApplied.size());
         assertEquals(2, script.events().itemRemoved.size());
         script.reply("Keys placed, #title");
 
@@ -174,7 +169,7 @@ public class KeyReleaseScriptIntegrationTest {
         script.say("Are you ready?", Message.Delay10s);
         script.completeAll();
         // Woken up
-        assertEquals(availableSeconds - 20, actuator.remaining(TimeUnit.SECONDS), 1.0);
+        assertEquals(availableSeconds - 20.0, actuator.remaining(TimeUnit.SECONDS), 1.0);
         assertTrue(actuator.isRunning());
 
         script.say("Starting release timer", Message.Delay10s);
@@ -185,7 +180,7 @@ public class KeyReleaseScriptIntegrationTest {
         actuator.sleep(15, SECONDS);
         script.say("Timer is running", Message.Delay10s);
         script.completeAll();
-        assertEquals("Release timer wrong value", availableSeconds - 20, actuator.remaining(SECONDS), 1.0);
+        assertEquals("Release timer wrong value", availableSeconds - 20.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Releasing key", Message.Delay10s);
 

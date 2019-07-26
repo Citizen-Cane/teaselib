@@ -9,103 +9,29 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assume;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import teaselib.core.configuration.DebugSetup;
-import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.Devices;
 
 /**
  * @author Citizen-Cane
  *
  */
-public class KeyReleaseTest {
-    private static final Logger logger = LoggerFactory.getLogger(KeyReleaseTest.class);
+public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
+    final KeyRelease keyRelease = connectDefaultDevice();
 
-    static final long HOLD_DURATION_MINUTES = 1;
-
-    public static void releaseAllRunningActuators(KeyRelease keyRelease) {
-        keyRelease.actuators().stream().filter(Actuator::isRunning).forEach(Actuator::release);
+    @Before
+    public void before() {
+        releaseAllRunningActuators(keyRelease);
     }
 
-    public static KeyRelease connectDefaultDevice() {
-        Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
-        DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
-        KeyRelease keyRelease = deviceCache.getDefaultDevice();
-        connect(keyRelease);
-        return keyRelease;
-    }
-
-    public static Actuators connect(KeyRelease keyRelease) {
-        assertTrue("No KeyRelease device found", DeviceCache.connect(keyRelease, 0.0));
-        assertTrue(keyRelease.connected());
-        logger.info(keyRelease.getName());
-        assertTrue(keyRelease.active());
-        Actuators actuators = keyRelease.actuators();
-        assertTrue(actuators.size() > 0);
-        logger.info("{}: {} actuators", keyRelease.getName(), actuators);
-        return actuators;
-    }
-
-    public static void arm(Actuator actuator) {
-        assertFalse(actuator.isRunning());
-        long available = actuator.available(TimeUnit.MINUTES);
-        assertTrue(available > 0);
-        actuator.arm();
-        assertRunning(actuator);
-    }
-
-    public static void hold(Actuator actuator) {
-        actuator.hold();
-        assertRunning(actuator);
-    }
-
-    public static void start(Actuator actuator) {
-        actuator.start(HOLD_DURATION_MINUTES, TimeUnit.MINUTES);
-        assertRunning(actuator);
-    }
-
-    public static void waitForAutoRelease(Actuator actuator) {
-        while (actuator.isRunning()) {
-            long remaining = actuator.remaining(TimeUnit.SECONDS);
-            if (remaining == 0) {
-                break;
-            }
-            sleep(10, TimeUnit.SECONDS);
-        }
-    }
-
-    private static void assertRunning(Actuator actuator) {
-        assertTrue(actuator.isRunning());
-        sleep(5, TimeUnit.SECONDS);
-    }
-
-    public static void assertStopped(Actuator actuator) {
-        assertFalse(actuator.isRunning());
-    }
-
-    public static void assertEndState(KeyRelease keyRelease) {
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        assertTrue(keyRelease.actuators().size() > 0);
-    }
-
-    static void sleep(long duration, TimeUnit unit) {
-        try {
-            Thread.sleep(TimeUnit.MILLISECONDS.convert(duration, unit));
-        } catch (InterruptedException e) {
-            Assume.assumeTrue(false);
-            Thread.currentThread().interrupt();
-        }
+    @After
+    public void releaseAllAfterwards() {
+        releaseAllRunningActuators(keyRelease);
     }
 
     @Test
     public void testManualRelease() {
-        KeyRelease keyRelease = connectDefaultDevice();
-
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
@@ -120,8 +46,6 @@ public class KeyReleaseTest {
 
     @Test
     public void testAutomaticRelease() {
-        KeyRelease keyRelease = connectDefaultDevice();
-
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
@@ -133,8 +57,6 @@ public class KeyReleaseTest {
 
     @Test(expected = IllegalStateException.class)
     public void testWrongCall() {
-        KeyRelease keyRelease = connectDefaultDevice();
-
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
@@ -147,8 +69,6 @@ public class KeyReleaseTest {
 
     @Test
     public void testWrongCallReleasesAll() {
-        KeyRelease keyRelease = connectDefaultDevice();
-
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             hold(actuator);
@@ -172,8 +92,6 @@ public class KeyReleaseTest {
 
     @Test
     public void testStatus() {
-        KeyRelease keyRelease = connectDefaultDevice();
-
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
@@ -186,8 +104,6 @@ public class KeyReleaseTest {
 
     @Test
     public void testDeepSleepRelease() {
-        KeyRelease keyRelease = connectDefaultDevice();
-
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
@@ -205,7 +121,6 @@ public class KeyReleaseTest {
 
     @Test
     public void testDeepSleepPacket() {
-        KeyRelease keyRelease = connectDefaultDevice();
         Actuators actuators = connect(keyRelease);
 
         Actuator actuator = actuators.get(0);

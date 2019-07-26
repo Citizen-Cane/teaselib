@@ -1,3 +1,10 @@
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include<Particle.h>
+
 #include "KeyReleaseService.h"
 
 const char* const KeyReleaseService::Name = "KeyRelease";
@@ -5,7 +12,7 @@ const char* const KeyReleaseService::Description = "Servo-based key release mech
 const char* const KeyReleaseService::Version = "0.03";
 
 /* Assembly:
- * From the Circuits folder, you'l need the following Fritzing sketches:
+ * From the Circuits folder, you'll need the following Fritzing sketches:
  * - a servo interface
  * - Vin Voltage Divider
  * Assemble all on bread- or perfboard. Both components match nicely together.
@@ -114,7 +121,7 @@ const unsigned int PulseFrequencyWhenHolding = 2000;
 const unsigned int PulseFrequencyWhenError = 500;
 const unsigned int PulseLength = 100;
 
-KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actuatorCount)
+KeyReleaseService::KeyReleaseService(const Actuator** actuators, const unsigned int actuatorCount)
 : TeaseLibService(Name, Description, Version)
 , actuators(actuators)
 , servoControl(new ServoControl[actuatorCount])
@@ -141,7 +148,7 @@ const char* const KeyReleaseService::createSessionKey() {
 }
 
 void KeyReleaseService::setup() {
-  for(int i = 0; i < actuatorCount; i++) {
+  for(unsigned int i = 0; i < actuatorCount; i++) {
       servoControl[i].attach(actuators[i]);
       durations[i].actuator = actuators[i];
       durations[i].clear();
@@ -169,7 +176,7 @@ void KeyReleaseService::setup() {
 
 unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
   if (isCommand(received, "actuators")) {
-    const char count[2] = {'0' + min(9, actuatorCount) , 0};
+    const char count[2] = {static_cast<char>('0' + min(9UL, actuatorCount)), 0};
     const char* parameters[] = {count};
     return UDPMessage("count", parameters, 1).toBuffer(buffer);
     return createCountMessage(actuatorCount, buffer);
@@ -319,7 +326,7 @@ void KeyReleaseService::releaseTimerCallback() {
     }
   }
   // Update durations
-  for(int i = 0; i < actuatorCount; i++) {
+  for(unsigned int i = 0; i < actuatorCount; i++) {
     Duration& duration = durations[i];
     if (duration.running) {
       if(duration.advance()) {
@@ -336,9 +343,9 @@ void KeyReleaseService::releaseTimerCallback() {
   }
 }
 
-unsigned int KeyReleaseService::nextRelease() {
-  unsigned int nextReleaseDuration = 0;
-  for(int i = 0; i < actuatorCount; i++) {
+int KeyReleaseService::nextRelease() {
+  int nextReleaseDuration = 0;
+  for(unsigned int i = 0; i < actuatorCount; i++) {
     nextReleaseDuration = max(nextReleaseDuration, durations[i].remainingSeconds);
   }
   return nextReleaseDuration;
@@ -346,7 +353,7 @@ unsigned int KeyReleaseService::nextRelease() {
 
 unsigned int KeyReleaseService::runningReleases() {
   unsigned int runningReleases = 0;
-  for(int i = 0; i < actuatorCount; i++) {
+  for(unsigned int i = 0; i < actuatorCount; i++) {
     if (durations[i].running) {
       runningReleases++;
     }
@@ -365,32 +372,30 @@ void KeyReleaseService::updatePulse(const Actuator::Status status) {
 
   if (status == Actuator::Armed) {
     RGB.control(true);
-    RGB.color(224, 128, 0);
-    updatePulse(PulseFrequencyWhenArming);
+    updatePulse(224, 128, 0, PulseFrequencyWhenArming);
   } else if (status == Actuator::Holding) {
-    const unsigned int nextReleaseDuration = nextRelease();
-    RGB.color(0, 192, 0);
-    updatePulse(PulseFrequencyWhenHolding);
+    updatePulse(0, 192, 0, PulseFrequencyWhenHolding);
   } else if (status == Actuator::Error) {
-    const unsigned int nextReleaseDuration = nextRelease();
-    RGB.color(192, 0, 0);
-    updatePulse(PulseFrequencyWhenError);
+    updatePulse(192, 0, 0, PulseFrequencyWhenError);
   } else if (status == Actuator::Active) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
-      RGB.color(0, 0, 255);
-      updatePulse(pulsePeriod(nextReleaseDuration));
+      updatePulse(0, 0, 255, pulsePeriod(nextReleaseDuration));
     } else {
       updatePulse(Actuator::Idle);
     }
   } else if (status == Actuator::Released) {
-    RGB.color(255, 0, 255);
-    updatePulse(PulseFrequencyWhenIdle);
+    updatePulse(255, 0, 255, PulseFrequencyWhenIdle);
   } else if (status == Actuator::Idle) {
     ledTimer.stop();
     RGB.brightness(255);
     RGB.control(false);
   }
+}
+
+void KeyReleaseService::updatePulse(const int r, const int g, const int b, const int pulseDuration) {
+  RGB.color(0, 0, 255);
+  updatePulse(pulseDuration);
 }
 
 void KeyReleaseService::updatePulse(const int frequencyMillis) {
@@ -426,7 +431,7 @@ void KeyReleaseService::releaseKey(const int index) {
 }
 
 void KeyReleaseService::releaseAllKeys() {
-	for (int index = 0; index < actuatorCount; index++) {
+	for (unsigned int index = 0; index < actuatorCount; index++) {
 		Duration& duration = durations[index];
 		duration.clear();
 		releaseKey(index);

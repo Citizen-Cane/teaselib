@@ -1,3 +1,9 @@
+#pragma SPARK_NO_PREPROCESSOR
+#include<Particle.h>
+
+#include <stdio.h>
+#include <string.h>
+
 #include "UDPMessage.h"
 #include "KeyReleaseService.h"
 

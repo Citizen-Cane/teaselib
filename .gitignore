@@ -223,6 +223,11 @@ lib/*.lib
 lib/*.dll
 lib/*.exp
 
-/bin.test/
-/bin.test.interactive/
-/.vs/
+bin.test/
+bin.test.interactive/
+.vs/
+.vscode/
+
+# Particle workbench
+devices/particle/**/target/
+*.bin

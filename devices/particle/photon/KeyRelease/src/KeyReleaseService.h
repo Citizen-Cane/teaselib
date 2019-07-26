@@ -54,7 +54,7 @@ public:
       const int hold();
       const int add(const int seconds);
       const bool advance();
-      const void clear();
+      const void clear(const Actuator::Status status);
 };
 
   class ServoControl {

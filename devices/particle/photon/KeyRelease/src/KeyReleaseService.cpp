@@ -151,7 +151,7 @@ void KeyReleaseService::setup() {
   for(unsigned int i = 0; i < actuatorCount; i++) {
       servoControl[i].attach(actuators[i]);
       durations[i].actuator = actuators[i];
-      durations[i].clear();
+      durations[i].clear(Actuator::Idle);
       if (i > 0) {
         delay(1000);
       }
@@ -216,7 +216,6 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     const int seconds = atol(received.parameters[1]);
     Duration& duration = durations[index];
     if (duration.status == Actuator::Armed || duration.status == Actuator::Holding) {
-      duration.clear();
       duration.start(seconds > 0 ? seconds : duration.actuator->defaultSeconds);
       updatePulse(Actuator::Active);
       releaseTimer.start();
@@ -265,7 +264,7 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     const int index = atol(received.parameters[0]);
     // TODO compare release key string in order to  prevent cheating
     Duration& duration = durations[index];
-    duration.clear();
+    duration.clear(Actuator::Released);
     updatePulse(Actuator::Released);
     releaseKey(index);
     releaseTimer.start();
@@ -433,7 +432,7 @@ void KeyReleaseService::releaseKey(const int index) {
 void KeyReleaseService::releaseAllKeys() {
 	for (unsigned int index = 0; index < actuatorCount; index++) {
 		Duration& duration = durations[index];
-		duration.clear();
+		duration.clear(Actuator::Idle);
 		releaseKey(index);
 	}
 }
@@ -455,7 +454,8 @@ const int KeyReleaseService::Duration::hold() {
 
 const int KeyReleaseService::Duration::start(const int seconds) {
   running = true;
-  remainingSeconds = min(seconds, actuator->maximumSeconds - elapsedSeconds);
+  elapsedSeconds = 0;
+  remainingSeconds = min(seconds, actuator->maximumSeconds);
   status = Actuator::Active;
   return remainingSeconds;
 }
@@ -471,19 +471,18 @@ const bool KeyReleaseService::Duration::advance() {
       elapsedSeconds++;
       remainingSeconds--;
       if (remainingSeconds == 0) {
-        running = false;
-        status = Actuator::Released;
+        clear(Actuator::Released);
       }
     }
   }
   return running;
 }
 
-const void KeyReleaseService::Duration::clear() {
+const void KeyReleaseService::Duration::clear(const Actuator::Status status) {
   running = false;
   elapsedSeconds = 0;
   remainingSeconds = 0;
-  status = Actuator::Idle;
+  this->status = status;
 }
 
 

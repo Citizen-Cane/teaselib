@@ -232,8 +232,19 @@ public class SpeechRecognition {
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
             delegateThread.run(() -> {
-                setupAndStartSR(SpeechRecognition.this.phrases);
+                enableSR(SpeechRecognition.this.phrases);
                 logger.info("Speech recognition started");
+            });
+        } else {
+            recognizerNotInitialized();
+        }
+    }
+
+    public void pauseRecognition() {
+        if (sr != null) {
+            delegateThread.run(() -> {
+                disableSR();
+                logger.info("Speech recognition paused");
             });
         } else {
             recognizerNotInitialized();
@@ -243,8 +254,12 @@ public class SpeechRecognition {
     public void resumeRecognition() {
         if (sr != null) {
             delegateThread.run(() -> {
-                setupAndStartSR(phrases);
-                logger.info("Speech recognition resumed");
+                if (phrases != null) {
+                    enableSR(phrases);
+                    logger.info("Speech recognition resumed");
+                } else {
+                    logger.info("Speech recognition already stopped");
+                }
             });
         } else {
             recognizerNotInitialized();
@@ -255,31 +270,40 @@ public class SpeechRecognition {
         if (sr != null) {
             delegateThread.run(() -> {
                 sr.stopRecognition();
-                // TODO Reparse phrases to srgs once before start - not on each resume
-                setupAndStartSR(SpeechRecognition.this.phrases);
-                logger.info("Speech recognition restarted");
+                if (phrases != null) {
+                    // TODO Parse phrases to srgs once before start - not on each resume
+                    // - needs grammar management since prompts may be paused and a different grammar loaded
+                    // TODO Phrases field may conflict with Prompt stacking because SR is not supposed to remember this
+                    // -> needs map of phrases->grammar hash to enable/disable the right grammar (and to remove it when
+                    // dismissed)
+                    enableSR(phrases);
+                    logger.info("Speech recognition restarted");
+                } else {
+                    logger.warn("Speech recognition already stopped");
+                }
             });
         } else {
             recognizerNotInitialized();
         }
     }
 
-    public void stopRecognition() {
+    public void endRecognition() {
         if (sr != null) {
             delegateThread.run(() -> {
-                SpeechRecognition.this.speechRecognitionActive.set(false);
-                hypothesisEventHandler.enable(false);
-                timeoutWatchdog.enable(false);
-                unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
-                sr.stopRecognition();
-                logger.info("Speech recognition stopped");
+                if (phrases != null) {
+                    phrases = null;
+                    disableSR();
+                    logger.info("Speech recognition stopped");
+                } else {
+                    logger.warn("Speech recognition already stopped");
+                }
             });
         } else {
             recognizerNotInitialized();
         }
     }
 
-    private void setupAndStartSR(Phrases phrases) {
+    private void enableSR(Phrases phrases) {
         setChoices(phrases);
 
         if (enableSpeechHypothesisHandlerGlobally() || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
@@ -296,6 +320,14 @@ public class SpeechRecognition {
         }
 
         speechRecognitionActive.set(true);
+    }
+
+    private void disableSR() {
+        SpeechRecognition.this.speechRecognitionActive.set(false);
+        hypothesisEventHandler.enable(false);
+        timeoutWatchdog.enable(false);
+        unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
+        sr.stopRecognition();
     }
 
     private void setChoices(Phrases phrases) {

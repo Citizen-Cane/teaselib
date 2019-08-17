@@ -237,7 +237,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                 }
             }
 
-            if (state.peers().stream().noneMatch(ItemGuid::isItemGuid) && releaseInstanceGuid()) {
+            releaseInstanceGuid();
+            if (state.peers().isEmpty()) {
                 state.remove();
             }
         }

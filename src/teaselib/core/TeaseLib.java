@@ -1,5 +1,7 @@
 package teaselib.core;
 
+import static java.util.concurrent.TimeUnit.*;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -52,6 +54,7 @@ import teaselib.core.util.QualifiedName;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
 import teaselib.motiondetection.MotionDetector;
+import teaselib.util.Daytime;
 import teaselib.util.Item;
 import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
@@ -345,9 +348,12 @@ public class TeaseLib implements Closeable {
     }
 
     public TimeOfDay timeOfDay() {
-        LocalTime now = LocalDateTime
-                .ofInstant(Instant.ofEpochMilli(getTime(TimeUnit.MILLISECONDS)), ZoneId.systemDefault()).toLocalTime();
+        LocalTime now = localTime(getTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS);
         return new TimeOfDayImpl(now);
+    }
+
+    private static LocalTime localTime(long time, TimeUnit unit) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(unit.toMillis(time)), ZoneId.systemDefault()).toLocalTime();
     }
 
     /**
@@ -375,6 +381,24 @@ public class TeaseLib implements Closeable {
 
     public Duration duration(long limit, TimeUnit unit) {
         return new DurationImpl(this, limit, unit);
+    }
+
+    public Duration duration(Daytime dayTime) {
+        return duration(dayTime, 0);
+    }
+
+    public Duration duration(Daytime dayTime, long daysInTheFuture) {
+        TimeOfDay start = timeOfDay();
+        TimeOfDay end = new TimeOfDayImpl(localTime(TimeOfDayImpl.hours(dayTime).average(), TimeUnit.HOURS));
+
+        int duration = TimeOfDayImpl.getTime(end).getHour() - TimeOfDayImpl.getTime(start).getHour();
+        if (duration < 0) {
+            duration += 24 * Math.max(1, daysInTheFuture);
+        } else {
+            duration += 24 * daysInTheFuture;
+        }
+
+        return duration(duration, HOURS);
     }
 
     protected abstract class PersistentValue<T> {
@@ -952,4 +976,5 @@ public class TeaseLib implements Closeable {
     public void addUserItems(URL items) {
         userItems.addItems(items);
     }
+
 }

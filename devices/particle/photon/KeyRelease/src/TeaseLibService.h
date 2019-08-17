@@ -2,7 +2,6 @@
 #define _INCLUDE_TeaseLibDeviceService
 
 // Auto-include particle dev includes
-#include <application.h>
 
 #include "UDPMessage.h"
 

@@ -223,26 +223,20 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @param item
      *            The items to hint / display.
      */
-    public void show(Item... item) {
-        // TODO Show item images
+    public void show(Item... items) {
+        show(Arrays.asList(items));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @param item
-     */
+    public void show(Enum<?>... items) {
+        show(items(items));
+    }
+
     public void show(List<Item> items) {
-        // TODO Show item images
+        show(new Items(items));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @param item
-     */
     public void show(Items items) {
-        // TODO Show item images
+        // TODO Implement show items when with current say/show/reply statement
     }
 
     /**
@@ -570,15 +564,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean deny(ScriptFunction scriptFunction, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), scriptFunction).meaning == Meaning.NO;
+        return showChoices(Arrays.asList(Answer.no(no)), scriptFunction) != ScriptFunction.Timeout;
     }
 
     public final boolean deny(RunnableScript script, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)).meaning == Meaning.NO;
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != ScriptFunction.Timeout;
     }
 
     public final boolean deny(CallableScript<Answer> script, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)).meaning == Meaning.NO;
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != ScriptFunction.Timeout;
     }
 
     public final void agree(String yes) {
@@ -586,35 +580,47 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean agree(ScriptFunction scriptFunction, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction).meaning == Meaning.YES;
+        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction) != ScriptFunction.Timeout;
     }
 
     public final boolean agree(RunnableScript script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)).meaning == Meaning.YES;
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != ScriptFunction.Timeout;
     }
 
     public final boolean agree(CallableScript<Answer> script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)).meaning == Meaning.YES;
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != ScriptFunction.Timeout;
     }
 
     public final void chat(String chat) {
         showChoices(Arrays.asList(Answer.resume(chat)), null, Intention.Chat);
     }
 
+    public final String chat(ScriptFunction scriptFunction, String chat) {
+        return showChoices(Arrays.asList(Answer.resume(chat)), scriptFunction, Intention.Chat).text.get(0);
+    }
+
+    public final String chat(RunnableScript script, String chat) {
+        return showChoices(Arrays.asList(Answer.resume(chat)), new ScriptFunction(script), Intention.Chat).text.get(0);
+    }
+
+    public final String chat(CallableScript<Answer> script, String chat) {
+        return showChoices(Arrays.asList(Answer.resume(chat)), new ScriptFunction(script), Intention.Chat).text.get(0);
+    }
+
     public final void chat(Answer chat) {
         showChoices(Arrays.asList(chat), null, Intention.Chat);
     }
 
-    public final void chat(ScriptFunction scriptFunction, Answer chat) {
-        showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat);
+    public final Answer chat(ScriptFunction scriptFunction, Answer chat) {
+        return showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat);
     }
 
-    public final void chat(RunnableScript script, Answer chat) {
-        showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
+    public final Answer chat(RunnableScript script, Answer chat) {
+        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
     }
 
-    public final void chat(CallableScript<Answer> script, Answer chat) {
-        showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
+    public final Answer chat(CallableScript<Answer> script, Answer chat) {
+        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
     }
 
     /**
@@ -656,20 +662,29 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     /**
-     * Build a list of resource strings from a {@link WildcardPattern}.
+     * Build a list of resource strings from a {@link WildcardPattern}. Resources are searched relative to the script
+     * class. If no resources are found, the class inheritance is traversed upwards up to the first TeaseLib class. As a
+     * result, all user-defined super classes can provide images as well and inherit them to sub-classes. Sub.classes
+     * can "override" images provided by the base class.
      * 
      * @param wildcardPattern
      *            The wildcard pattern ("?" replaces a single, "*" multiple characters).
-     * @return A list of resources that matches the wildcard pattern.
+     * @return A list of resources that match the wildcard pattern.
      */
     public List<String> resources(String wildcardPattern) {
-        List<String> items = resources.resources(wildcardPattern, getClass());
-        int size = items.size();
-        if (size > 0) {
-            logger.info("{}: '{}' yields {} resources", getClass().getSimpleName(), wildcardPattern, size);
-        } else {
-            logger.info("{}: '{}' doesn't yield any resources", getClass().getSimpleName(), wildcardPattern);
-        }
+        List<String> items;
+        int size = 0;
+        Class<?> scriptClass = getClass();
+        do {
+            items = resources.resources(wildcardPattern, scriptClass);
+            size = items.size();
+            if (size > 0) {
+                logger.info("{}: '{}' yields {} resources", scriptClass.getSimpleName(), wildcardPattern, size);
+            } else {
+                logger.info("{}: '{}' doesn't yield any resources", scriptClass.getSimpleName(), wildcardPattern);
+                scriptClass = scriptClass.getSuperclass();
+            }
+        } while (size == 0 && scriptClass != TeaseScript.class);
         return new ArrayList<>(items);
     }
 }

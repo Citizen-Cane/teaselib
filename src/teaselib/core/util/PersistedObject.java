@@ -246,7 +246,8 @@ public class PersistedObject {
             if (canPersistObject(persisted)) {
                 return persisted;
             } else {
-                throw new UnsupportedOperationException("White space in values is not supported");
+                throw new UnsupportedOperationException(
+                        "White space in values is not supported:" + persistable + "(" + persisted + ")");
             }
         }
     }

@@ -22,6 +22,10 @@ public class Interval implements Iterable<Integer> {
         this.end = end;
     }
 
+    public int average() {
+        return (start + end) / 2;
+    }
+
     @Override
     public Iterator<Integer> iterator() {
         return new Iterator<Integer>() {

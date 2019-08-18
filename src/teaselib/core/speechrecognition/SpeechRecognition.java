@@ -2,6 +2,7 @@ package teaselib.core.speechrecognition;
 
 import static java.util.stream.Collectors.*;
 
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -214,7 +215,8 @@ public class SpeechRecognition {
     private void handleReecognitionTimeout() {
         Rule result = hypothesisEventHandler.getHypothesis();
         if (result == null) {
-            result = new Rule("", "", Integer.MIN_VALUE, Phrases.COMMON_RULE, 0, 0, 0.0f, Confidence.Noise);
+            result = new Rule("", "", Integer.MIN_VALUE, Collections.singleton(Phrases.COMMON_RULE), 0, 0, 0.0f,
+                    Confidence.Noise);
         }
         events.recognitionRejected.run(new SpeechRecognizedEventArgs(result));
     }

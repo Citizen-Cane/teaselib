@@ -132,8 +132,9 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     private List<Integer> gatherResults(Rule rule) {
         ArrayList<Integer> results = new ArrayList<>();
-        if (rule.choiceIndex > Prompt.Result.DISMISSED.elements.get(0)) {
-            results.add(rule.choiceIndex);
+        if (rule.choiceIndices.stream()
+                .allMatch(choiceIndex -> choiceIndex > Prompt.Result.DISMISSED.elements.get(0))) {
+            results.addAll(rule.choiceIndices);
         }
         rule.children.stream().forEach(child -> results.addAll(gatherResults(child)));
         return results;

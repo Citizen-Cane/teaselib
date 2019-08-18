@@ -139,7 +139,7 @@ public class SpeechDetectionEventHandler {
         // TODO Check number of choices equal or higher to support multiple choices
         return hypothesisResult == null //
                 || rule.ruleIndex != hypothesisResult.ruleIndex //
-                || rule.choiceIndex != hypothesisResult.choiceIndex //
+                || !rule.choiceIndices.equals(hypothesisResult.choiceIndices) //
                 || promptSplitter.count(rule.text) > promptSplitter.count(hypothesisResult.text) //
                 || rule.hasHigherProbabilityThan(hypothesisResult);
     }

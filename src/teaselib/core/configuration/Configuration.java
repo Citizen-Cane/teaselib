@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -120,18 +121,19 @@ public class Configuration {
     }
 
     private boolean namespaceAlreadyRegistered(List<String> namespaces) {
-        return namespaces.stream().anyMatch(userPropertiesNamespaceMapping::containsKey);
+        return namespaces.stream().map(String::toLowerCase).anyMatch(userPropertiesNamespaceMapping::containsKey);
     }
 
     private void registerNamespaces(List<String> namespaces, ConfigurationFile p) {
         for (String namespace : namespaces) {
-            userPropertiesNamespaceMapping.put(namespace, p);
+            userPropertiesNamespaceMapping.put(namespace.toLowerCase(), p);
         }
     }
 
     public Optional<ConfigurationFile> getUserSettings(String namespace) {
-        return userPropertiesNamespaceMapping.entrySet().stream().filter((e) -> namespace.startsWith(e.getKey()))
-                .map(e -> e.getValue()).findFirst();
+        return userPropertiesNamespaceMapping.entrySet().stream()
+                .filter(e -> namespace.toLowerCase().startsWith(e.getKey()))
+                .map(Entry<String, ConfigurationFile>::getValue).findFirst();
     }
 
     public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {

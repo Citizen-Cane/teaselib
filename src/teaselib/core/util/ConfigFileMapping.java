@@ -38,7 +38,7 @@ public class ConfigFileMapping implements Persistence {
         if (persistence.has(name)) {
             return persistence.get(name);
         } else {
-            Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+            Optional<ConfigurationFile> properties = getConfigFile(name);
             if (properties.isPresent()) {
                 return properties.get().get(name.toString());
             } else {
@@ -52,7 +52,7 @@ public class ConfigFileMapping implements Persistence {
         if (persistence.has(name)) {
             return persistence.getBoolean(name);
         } else {
-            Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+            Optional<ConfigurationFile> properties = getConfigFile(name);
             if (properties.isPresent()) {
                 return properties.get().getBoolean(name.toString());
             } else {

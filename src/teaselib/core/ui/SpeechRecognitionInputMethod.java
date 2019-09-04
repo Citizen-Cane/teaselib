@@ -3,11 +3,14 @@ package teaselib.core.ui;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,18 +110,24 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                     if (prompt != null) {
                         endSpeechRecognition();
                         try {
-                            List<Integer> choices = gatherResults(result);
+                            List<Set<Integer>> choices = gatherResults(result);
                             if (choices.isEmpty()) {
                                 logger.info("No choice rules in: {} - rejecting ", result);
                                 eventArgs.consumed = true;
                                 fireRecognitionRejectedEvent(result);
-                            } else if (prompt.acceptedResult == Result.Accept.AllSame
-                                    && choices.stream().distinct().count() > 1) {
-                                logger.info("ambiguous choice rules {} in: {} - rejecting ", choices, result);
-                                eventArgs.consumed = true;
-                                fireRecognitionRejectedEvent(result);
                             } else {
-                                signal(prompt, new Prompt.Result(choices));
+                                if (prompt.acceptedResult == Result.Accept.AllSame && choices.isEmpty()) {
+                                    logger.info("ambiguous choice rules {} in: {} - rejecting ", choices, result);
+                                    eventArgs.consumed = true;
+                                    fireRecognitionRejectedEvent(result);
+                                } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                                    List<Integer> distinctChoices = choices.stream()
+                                            .map(indices -> indices.iterator().next()).collect(Collectors.toList());
+                                    signal(prompt, new Prompt.Result(distinctChoices));
+                                } else {
+                                    Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
+                                    signal(prompt, new Prompt.Result(distinctChoice.get()));
+                                }
                             }
                         } catch (Exception e) {
                             prompt.setException(e);
@@ -127,17 +136,36 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 }
             }
         };
-
     }
 
-    private List<Integer> gatherResults(Rule rule) {
-        ArrayList<Integer> results = new ArrayList<>();
-        if (rule.choiceIndices.stream()
+    private List<Set<Integer>> gatherResults(Rule rule) {
+        ArrayList<Set<Integer>> results = new ArrayList<>();
+        if (!rule.choiceIndices.isEmpty() && rule.choiceIndices.stream()
                 .allMatch(choiceIndex -> choiceIndex > Prompt.Result.DISMISSED.elements.get(0))) {
-            results.addAll(rule.choiceIndices);
+            results.add(rule.choiceIndices);
         }
         rule.children.stream().forEach(child -> results.addAll(gatherResults(child)));
         return results;
+    }
+
+    private static Optional<Integer> getCommonDistinctValue(List<Set<Integer>> sets) {
+        if (sets.isEmpty())
+            return Optional.empty();
+
+        Set<Integer> candidates = new HashSet<>(sets.get(0));
+        for (Integer candidate : new ArrayList<>(candidates)) {
+            for (int i = 1; i < sets.size(); i++) {
+                if (!candidates.contains(candidate)) {
+                    candidates.remove(candidate);
+                    if (candidates.isEmpty())
+                        return Optional.empty();
+                    else
+                        break;
+                }
+            }
+        }
+
+        return candidates.size() == 1 ? Optional.of(candidates.iterator().next()) : Optional.empty();
     }
 
     private void fireRecognitionRejectedEvent(Rule result) {

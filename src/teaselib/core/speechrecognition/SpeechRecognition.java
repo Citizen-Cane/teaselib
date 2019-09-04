@@ -215,8 +215,7 @@ public class SpeechRecognition {
     private void handleReecognitionTimeout() {
         Rule result = hypothesisEventHandler.getHypothesis();
         if (result == null) {
-            result = new Rule("", "", Integer.MIN_VALUE, Collections.singleton(Phrases.COMMON_RULE), 0, 0, 0.0f,
-                    Confidence.Noise);
+            result = new Rule("", "", Integer.MIN_VALUE, Collections.emptySet(), 0, 0, 0.0f, Confidence.Noise);
         }
         events.recognitionRejected.run(new SpeechRecognizedEventArgs(result));
     }

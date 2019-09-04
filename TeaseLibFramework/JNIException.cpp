@@ -15,7 +15,6 @@ void JNIException::throwNew(JNIEnv* env, NativeException *e) {
 		env->GetMethodID(runtimeClass, "<init>", "(ILjava/lang/String;)V"),
 		e->errorCode,
 		message.detach()));
-	assert(false);
 	env->Throw(throwable);
 }
 

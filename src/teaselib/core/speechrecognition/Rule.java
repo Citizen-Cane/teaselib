@@ -70,10 +70,8 @@ public class Rule {
     @Override
     public String toString() {
         String displayedRuleIndex = ruleIndex == Integer.MIN_VALUE ? "" : " ruleIndex=" + ruleIndex;
-        String displayedChoiceIndex = choiceIndices.contains(Phrases.COMMON_RULE) ? " Common"
-                : (" choiceIndex=" + choiceIndices);
-        return "Name=" + name + displayedRuleIndex + displayedChoiceIndex + " [" + fromElement + "," + toElement
-                + "[ C=" + probability + "~" + confidence + " children=" + children.size() + " \"" + text + "\"";
+        return "Name=" + name + displayedRuleIndex + choiceIndices + " [" + fromElement + "," + toElement + "[ C="
+                + probability + "~" + confidence + " children=" + children.size() + " \"" + text + "\"";
     }
 
     public String prettyPrint() {

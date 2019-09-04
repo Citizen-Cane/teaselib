@@ -226,7 +226,16 @@ std::vector<int> RuleName::choiceIndex(const SPPHRASERULE* rule) const {
 		return std::vector<int>({ INT_MIN });
 	} else {
 		try {
-			return std::vector<int>({ stoi(args.at(2)) });
+			std::vector<int> choiceIndices;
+			std::wstringstream ss(args.at(2));
+
+			for (int i; ss >> i;) {
+				choiceIndices.push_back(i);
+				if (ss.peek() == ',')
+					ss.ignore();
+			}
+
+			return choiceIndices;
 		} catch (const std::exception& e) {
 			return std::vector<int>({ INT_MIN });
 		}

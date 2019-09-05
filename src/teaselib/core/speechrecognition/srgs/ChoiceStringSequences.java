@@ -15,7 +15,7 @@ public class ChoiceStringSequences extends Sequences<ChoiceString> {
         BiPredicate<ChoiceString, ChoiceString> equalsOp = ChoiceString::samePhrase;
         Function<ChoiceString, List<ChoiceString>> splitter = ChoiceString::words;
         return Sequences.of(choices, equalsOp, splitter, ChoiceString::joinCommon, ChoiceString::joinSequence,
-                s -> new ChoiceString("", s.choice));
+                s -> new ChoiceString("", s.choices));
     }
 
 }

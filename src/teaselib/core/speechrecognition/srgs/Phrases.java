@@ -1,9 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +22,7 @@ public class Phrases extends ArrayList<Rule> {
     private static final long serialVersionUID = 1L;
 
     public static final int COMMON_RULE = Integer.MIN_VALUE;
+    public static final Set<Integer> COMMON_RULE_SET = Collections.singleton(Integer.MIN_VALUE);
 
     final int choiceCount;
 
@@ -136,7 +134,7 @@ public class Phrases extends ArrayList<Rule> {
                 }
 
                 if (isAlreadyCommon(first)) {
-                    Set<Integer> choices = group.stream().map(p -> p.choice).collect(toSet());
+                    Set<Integer> choices = group.stream().flatMap(p -> p.choices.stream()).collect(toSet());
                     List<ChoiceString> elements = first.stream().map(first.joinSequenceOperator::apply).distinct()
                             .collect(toList());
                     List<String> strings = elements.stream().map(s -> s.phrase).distinct().collect(toList());
@@ -145,25 +143,27 @@ public class Phrases extends ArrayList<Rule> {
                     rule.add(items);
                 } else if (!differentChoices(first)) {
                     Function<? super ChoiceString, ? extends String> classifier = phrase -> phrase.phrase;
-                    Function<? super ChoiceString, ? extends Integer> mapper = phrase -> phrase.choice;
-                    Map<String, Set<Integer>> items = first.stream().filter(sequence -> !sequence.isEmpty())
+                    Function<? super ChoiceString, ? extends Set<Integer>> mapper = phrase -> phrase.choices;
+                    Map<String, Set<Set<Integer>>> items = first.stream().filter(sequence -> !sequence.isEmpty())
                             .map(first.joinSequenceOperator::apply)
                             .collect(groupingBy(classifier, LinkedHashMap::new, mapping(mapper, toSet())));
 
                     Rule rule = phrases.rule(groupIndex, ruleIndex);
                     items.entrySet().stream().forEach(
-                            entry -> rule.add(new OneOf(entry.getValue(), Collections.singletonList(entry.getKey()))));
+                            entry -> rule.add(new OneOf(entry.getValue().stream().flatMap(Set::stream).collect(toSet()),
+                                    Collections.singletonList(entry.getKey()))));
                     // TODO Find out how to join this condition end else branch
                 } else {
-                    Function<? super ChoiceString, ? extends Integer> classifier = phrase -> phrase.choice;
+                    Function<? super ChoiceString, ? extends Set<Integer>> classifier = phrase -> phrase.choices;
                     Function<? super ChoiceString, ? extends String> mapper = phrase -> phrase.phrase;
-                    Map<Integer, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
+                    Map<Set<Integer>, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
                             .map(first.joinSequenceOperator::apply)
                             .collect(groupingBy(classifier, LinkedHashMap::new, mapping(mapper, toList())));
 
                     Rule rule = phrases.rule(groupIndex, ruleIndex);
-                    items.entrySet().stream().forEach(entry -> rule
-                            .add(new OneOf(Collections.singleton(entry.getKey()), distinct(entry.getValue()))));
+                    items.entrySet().stream().forEach(entry -> rule.add(new OneOf(
+                            Collections.singleton(entry.getKey()).stream().flatMap(Set::stream).collect(toSet()),
+                            distinct(entry.getValue()))));
                 }
 
                 if (!sliced.isEmpty()) {
@@ -203,19 +203,19 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     private static boolean isAlreadyCommon(Sequences<ChoiceString> slice) {
-        return slice.size() == 1 && slice.get(0).get(0).choice == Phrases.COMMON_RULE;
+        return slice.size() == 1 && slice.get(0).get(0).choices.equals(Phrases.COMMON_RULE_SET);
     }
 
     private static boolean differentChoices(Sequences<ChoiceString> slice) {
-        Map<String, Integer> unique = new HashMap<>();
+        Map<String, Set<Integer>> unique = new HashMap<>();
         for (Sequence<ChoiceString> sequence : slice) {
             if (!sequence.isEmpty()) {
                 ChoiceString words = slice.joinSequenceOperator.apply(sequence);
-                Integer choice = unique.get(words.phrase);
-                if (choice != null && choice != words.choice) {
+                Set<Integer> choices = unique.get(words.phrase);
+                if (choices != null && !words.choices.containsAll(choices)) {
                     return false;
                 }
-                unique.put(words.phrase, words.choice);
+                unique.put(words.phrase, words.choices);
             }
         }
         return true;

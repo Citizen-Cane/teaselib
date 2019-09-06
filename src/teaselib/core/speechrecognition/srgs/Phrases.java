@@ -161,9 +161,8 @@ public class Phrases extends ArrayList<Rule> {
                             .collect(groupingBy(classifier, LinkedHashMap::new, mapping(mapper, toList())));
 
                     Rule rule = phrases.rule(groupIndex, ruleIndex);
-                    items.entrySet().stream().forEach(entry -> rule.add(new OneOf(
-                            Collections.singleton(entry.getKey()).stream().flatMap(Set::stream).collect(toSet()),
-                            distinct(entry.getValue()))));
+                    items.entrySet().stream()
+                            .forEach(entry -> rule.add(new OneOf(entry.getKey(), distinct(entry.getValue()))));
                 }
 
                 if (!sliced.isEmpty()) {

@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 class ChoiceString {
     final String phrase;
@@ -50,15 +51,7 @@ class ChoiceString {
         }
 
         Set<Integer> results = choices.stream().flatMap(phrase -> phrase.choices.stream()).collect(toSet());
-        int choice;
-        if (results.size() == 1) {
-            choice = results.iterator().next();
-        } else if (results.size() == 2 && results.contains(Phrases.COMMON_RULE)) {
-            choice = results.stream().filter(i -> i != Phrases.COMMON_RULE).reduce(Math::max).orElseThrow();
-        } else {
-            choice = Phrases.COMMON_RULE;
-        }
-        return new ChoiceString(choices.get(0).phrase, choice);
+        return new ChoiceString(choices.get(0).phrase, results);
     }
 
     public static ChoiceString joinSequence(List<ChoiceString> choices) {
@@ -66,8 +59,11 @@ class ChoiceString {
             throw new NoSuchElementException();
         }
 
-        Integer choice = choices.stream().flatMap(phrase -> phrase.choices.stream()).reduce(Math::max).orElseThrow();
+        Set<Integer> choice = choices.stream().map(phrase -> phrase.choices).reduce(ChoiceString::intersect).orElseThrow();
         return new ChoiceString(choices.stream().map(element -> element.phrase).collect(joining(" ")).trim(), choice);
     }
 
+    public static <T> Set<T> intersect(Set<T> a, Set<T> b) {
+        return a.stream().filter(b::contains).collect(Collectors.toSet());
+    }
 }

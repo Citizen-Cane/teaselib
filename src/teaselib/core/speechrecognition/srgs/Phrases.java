@@ -116,7 +116,9 @@ public class Phrases extends ArrayList<Rule> {
 
             if (!sliced.isEmpty()) {
                 Sequences<ChoiceString> first = sliced.remove(0);
-                // Join if this or next contain empty slices
+
+                // // Join if this or next contain empty slices
+                // TODO Can only be removed when srgs reports "" as a result rule
                 if (!sliced.isEmpty() && !phrases.allChoicesDefined(groupIndex)) {
                     Sequences<ChoiceString> second = sliced.get(0);
                     if (first.containsOptionalParts() || second.containsOptionalParts()) {

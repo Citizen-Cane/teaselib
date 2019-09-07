@@ -89,7 +89,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
 
             String id;
             if (items.isCommon()) {
-                id = ruleName(rule, items);
+                id = choiceName(rule, items.choices);
             } else {
                 if (items.choices.size() > 1) {
                     throw new UnsupportedOperationException("OneOf item with multiple choices");
@@ -131,7 +131,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                     for (int choice : items.choices) {
                         String inventoryKey = inventoryKey(rule, choice);
                         List<Element> elements = addToInventory.computeIfAbsent(inventoryKey, key -> new ArrayList<>());
-                        Element ruleRef = ruleRef(items.isCommon() ? ruleName(rule, items) : choiceName(rule, choice));
+                        Element ruleRef = ruleRef(choiceName(rule, items.choices));
                         boolean optionalRule = blank.contains(choice);
                         elements.add(optionalRule ? optionalRuleRefItem(ruleRef) : ruleRef);
                     }
@@ -173,7 +173,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 for (OneOf items : rule) {
                     int choice = inventoryChoice(key);
                     if (items.choices.contains(choice)) {
-                        entry.getValue().appendChild(ruleRef(ruleName(rule, items)));
+                        entry.getValue().appendChild(ruleRef(choiceName(rule, items.choices)));
                     }
                 }
             }

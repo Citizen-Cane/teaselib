@@ -105,10 +105,16 @@ public class SpeechRecognitionComplexTest {
         Choices choices = optionalPhraseToDistiniguishMulitpleChoices();
         Phrases phrases = Phrases.of(choices);
 
+        // TODO Desired - remove joining empty phrase with neighboring phrase
+        // assertEquals(Phrases.rule(0, 0, Phrases.oneOf(CHOICES_0_1, "I")), phrases.get(0));
+        // assertEquals(Phrases.rule(0, 1, Phrases.oneOf(0, ""), Phrases.oneOf(1, "don't")), phrases.get(1));
+        // assertEquals(Phrases.rule(0, 2, Phrases.oneOf(CHOICES_0_1, "have it")), phrases.get(2));
+        // assertEquals(3, phrases.size());
+
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(CHOICES_0_1, "have it")), phrases.get(1));
-
         assertEquals(2, phrases.size());
+
         assertEqualsFlattened(choices, phrases);
     }
 

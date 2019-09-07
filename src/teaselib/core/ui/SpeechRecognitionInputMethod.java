@@ -115,19 +115,21 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                                 logger.info("No choice rules in: {} - rejecting ", result);
                                 eventArgs.consumed = true;
                                 fireRecognitionRejectedEvent(result);
-                            } else {
-                                if (prompt.acceptedResult == Result.Accept.AllSame && choices.isEmpty()) {
-                                    logger.info("ambiguous choice rules {} in: {} - rejecting ", choices, result);
+                            } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                                List<Integer> distinctChoices = choices.stream()
+                                        .map(indices -> indices.iterator().next()).collect(Collectors.toList());
+                                signal(prompt, new Prompt.Result(distinctChoices));
+                            } else if (prompt.acceptedResult == Result.Accept.AllSame) {
+                                Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
+                                if (distinctChoice.isPresent()) {
+                                    signal(prompt, new Prompt.Result(distinctChoice.get()));
+                                } else {
+                                    logger.info("No distinct choice {} in: {} - rejecting ", choices, result);
                                     eventArgs.consumed = true;
                                     fireRecognitionRejectedEvent(result);
-                                } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                                    List<Integer> distinctChoices = choices.stream()
-                                            .map(indices -> indices.iterator().next()).collect(Collectors.toList());
-                                    signal(prompt, new Prompt.Result(distinctChoices));
-                                } else {
-                                    Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
-                                    signal(prompt, new Prompt.Result(distinctChoice.get()));
                                 }
+                            } else {
+                                throw new UnsupportedOperationException(prompt.acceptedResult.toString());
                             }
                         } catch (Exception e) {
                             prompt.setException(e);
@@ -155,7 +157,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         Set<Integer> candidates = new HashSet<>(sets.get(0));
         for (Integer candidate : new ArrayList<>(candidates)) {
             for (int i = 1; i < sets.size(); i++) {
-                if (!candidates.contains(candidate)) {
+                if (!sets.get(i).contains(candidate)) {
                     candidates.remove(candidate);
                     if (candidates.isEmpty())
                         return Optional.empty();

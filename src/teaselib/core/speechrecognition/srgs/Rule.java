@@ -78,8 +78,7 @@ public class Rule extends ArrayList<OneOf> {
     }
 
     int choices() {
-        long count = stream().map(i -> i.choices).flatMap(Set::stream).filter(choice -> choice != Phrases.COMMON_RULE)
-                .distinct().count();
+        long count = stream().map(oneOf -> oneOf.choices).flatMap(Set::stream).distinct().count();
         if (count > 0) {
             return (int) count;
         } else {

@@ -169,8 +169,7 @@ public class SpeechRecognitionTestUtils {
                             if (rule.group == group && rule.index == ruleIndex) {
                                 for (OneOf items : rule) {
                                     // The sequence of the items in OneOf matters
-                                    if (items.choices.contains(choiceIndex)
-                                            || items.choices.contains(Phrases.COMMON_RULE)) {
+                                    if (items.choices.contains(choiceIndex)) {
                                         word = items.iterator().next();
                                         choiceProcessed = true;
                                         break;

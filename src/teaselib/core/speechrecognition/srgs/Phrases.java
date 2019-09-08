@@ -21,9 +21,7 @@ import teaselib.util.math.Partition;
 public class Phrases extends ArrayList<Rule> {
     private static final long serialVersionUID = 1L;
 
-    public static final int COMMON_RULE = Integer.MIN_VALUE;
-
-    final int choiceCount;
+    private final int choiceCount;
 
     public static Rule rule(int group, int ruleIndex, String... items) {
         return new Rule(group, ruleIndex, items);

@@ -1,11 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertChoicesAndPhrasesMatch;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertEqualsFlattened;
-import static teaselib.core.speechrecognition.srgs.Phrases.COMMON_RULE;
-import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
+import static java.util.Arrays.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
+import static teaselib.core.speechrecognition.srgs.Phrases.*;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -42,8 +40,8 @@ public class PhrasesSmokeTest {
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss")), phrases.get(0));
-        assertEquals(Phrases.rule(COMMON_RULE, 1, Phrases.oneOf(0, "of course"), Phrases.oneOf(1, "of course")), 1);
-        assertEquals(Phrases.rule(1, 1, Phrases.oneOf(0, "Miss")), phrases.get(2));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(CHOICES_0_1, "of course")), 1);
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss")), phrases.get(2));
 
         assertEquals(3, phrases.size());
         assertEqualsFlattened(choices, phrases);
@@ -72,9 +70,9 @@ public class PhrasesSmokeTest {
         Choices choices = optionalPhraseToDistiniguishMulitpleChoices();
         Phrases phrases = Phrases.of(choices);
 
-        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(CHOICES_0_1, "I")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(0, ""), Phrases.oneOf(1, "don't")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(2));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(CHOICES_0_1, "have it")), phrases.get(2));
 
         assertEquals(3, phrases.size());
         assertEqualsFlattened(choices, phrases);

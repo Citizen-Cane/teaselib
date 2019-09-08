@@ -12,7 +12,6 @@ public class OneOf extends ArrayList<String> {
 
     public OneOf(Set<Integer> choices, int capacity) {
         super(capacity);
-        checkArguments(choices);
         this.choices = choices;
     }
 
@@ -21,16 +20,10 @@ public class OneOf extends ArrayList<String> {
     }
 
     public OneOf(Set<Integer> choices, List<String> items) {
-        checkArguments(choices);
         this.choices = choices;
         for (String item : items) {
             add(item);
         }
-    }
-
-    private static void checkArguments(Set<Integer> choices) {
-        if (choices.stream().anyMatch(index -> index < 0))
-            throw new IllegalArgumentException("Choice index must be positive:" + choices);
     }
 
     @Override
@@ -59,11 +52,7 @@ public class OneOf extends ArrayList<String> {
     }
 
     public boolean isCommon() {
-        if (choices.size() == 1 && choices.contains(Phrases.COMMON_RULE)) {
-            return true;
-        } else {
-            return choices.size() > 1;
-        }
+        return choices.size() > 1;
     }
 
     public boolean isBlank() {

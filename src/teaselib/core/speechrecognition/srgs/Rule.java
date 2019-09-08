@@ -1,7 +1,5 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toSet;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,16 +85,6 @@ public class Rule extends ArrayList<OneOf> {
         } else {
             return 1;
         }
-    }
-
-    public boolean containOptionalChoices() {
-        return stream().anyMatch(
-                items -> !items.choices.contains(Phrases.COMMON_RULE) && items.stream().anyMatch(String::isBlank));
-    }
-
-    public boolean isCommon() {
-        Set<Integer> choices = stream().map(item -> item.choices).flatMap(Set::stream).collect(toSet());
-        return choices.size() > 1 || choices.contains(Phrases.COMMON_RULE);
     }
 
     public boolean isBlank() {

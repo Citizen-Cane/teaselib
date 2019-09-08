@@ -22,7 +22,7 @@ public class Phrases extends ArrayList<Rule> {
     private static final long serialVersionUID = 1L;
 
     public static final int COMMON_RULE = Integer.MIN_VALUE;
-    public static final Set<Integer> COMMON_RULE_SET = Collections.singleton(Integer.MIN_VALUE);
+    private static final Set<Integer> COMMON_RULE_SET = Collections.singleton(Integer.MIN_VALUE);
 
     final int choiceCount;
 

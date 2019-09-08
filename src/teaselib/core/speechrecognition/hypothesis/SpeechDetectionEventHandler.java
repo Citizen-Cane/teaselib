@@ -52,6 +52,7 @@ public class SpeechDetectionEventHandler {
 
     private Confidence expectedConfidence = Confidence.Default;
     private boolean enabled = false;
+    private int choiceCount = 0;
     private PromptSplitter promptSplitter = null;
     private int minimumForHypothesisRecognition = 0;
     Rule hypothesisResult;
@@ -84,6 +85,7 @@ public class SpeechDetectionEventHandler {
     }
 
     public void setChoices(List<String> choices) {
+        choiceCount = choices.size();
         if (vowelSplitter.count(choices.get(0)) > 0) {
             promptSplitter = vowelSplitter;
         } else {
@@ -123,7 +125,7 @@ public class SpeechDetectionEventHandler {
                         logger.info("Considering {}", result);
                         hypothesisResult = result;
                     } else {
-                        Rule resultWithChoicePropability = result.withChoiceProbability();
+                        Rule resultWithChoicePropability = result.withDistinctChoiceProbability(choiceCount);
                         if (acceptHypothesis(resultWithChoicePropability)) {
                             logger.info("Considering choice-propabilty-measured result {}",
                                     resultWithChoicePropability);

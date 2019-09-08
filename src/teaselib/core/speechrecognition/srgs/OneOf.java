@@ -65,11 +65,7 @@ public class OneOf extends ArrayList<String> {
 
     @Override
     public String toString() {
-        if (isCommon()) {
-            return "Common" + (choices.size() > 1 ? choices.toString() : "") + " = " + super.toString();
-        } else {
-            return "choice " + choices + " = " + super.toString();
-        }
+        return "choice " + choices + " = " + super.toString();
     }
 
     public boolean hasOptionalParts() {

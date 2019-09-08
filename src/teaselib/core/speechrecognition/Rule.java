@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import teaselib.core.speechrecognition.srgs.Phrases;
-
 /**
  * @author Citizen-Cane
  *
@@ -50,9 +48,9 @@ public class Rule {
         children.add(rule);
     }
 
-    public Rule withChoiceProbability() {
-        List<Rule> childrenWithChoices = children.stream()
-                .filter(child -> !child.choiceIndices.contains(Phrases.COMMON_RULE)).collect(Collectors.toList());
+    public Rule withDistinctChoiceProbability(int choiceCount) {
+        List<Rule> childrenWithChoices = children.stream().filter(child -> (child.choiceIndices.size() < choiceCount))
+                .collect(Collectors.toList());
         float average = (float) childrenWithChoices.stream().mapToDouble(child -> child.probability).average()
                 .orElse(0.0f);
 

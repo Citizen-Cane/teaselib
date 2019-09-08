@@ -87,17 +87,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 continue;
             }
 
-            String id;
-            if (items.isCommon()) {
-                id = choiceName(rule, items.choices);
-            } else {
-                if (items.choices.size() > 1) {
-                    throw new UnsupportedOperationException("OneOf item with multiple choices");
-                }
-                // TODO choice key from all choices (or common) - doesn't apply since choice size == 1
-                id = choiceName(rule, items.choices.iterator().next());
-            }
-
+            String id = choiceName(rule, items.choices);
             Element ruleElement = createRule(id);
             grammar.appendChild(ruleElement);
 

@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,16 +42,9 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         Element inventoryNode = document.createElement("one-of");
         Map<String, Element> inventoryItems = new LinkedHashMap<>();
         for (Rule rule : phrases) {
-            if (rule.index < 0) {
-                throw new IndexOutOfBoundsException("Rule index of " + rule);
-            }
             for (OneOf item : rule) {
                 if (!item.isCommon()) {
-                    if (item.choices.size() > 1) {
-                        throw new IllegalArgumentException("Inventory accepts only distinct choices: " + item);
-                    }
-                    // TODO Inventory key from all choices (or common) - doesn't apply since choice size == 1
-                    String inventoryKey = inventoryKey(rule, item.choices.iterator().next());
+                    String inventoryKey = inventoryKey(rule, item.choices);
                     if (!inventoryItems.containsKey(inventoryKey)) {
                         Element inventoryItem = document.createElement("item");
                         inventoryItems.put(inventoryKey, inventoryItem);
@@ -64,7 +58,11 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     }
 
     private static String inventoryKey(Rule rule, int choice) {
-        return choice + "_" + rule.group;
+        return inventoryKey(rule, Collections.singleton(choice));
+    }
+
+    private static String inventoryKey(Rule rule, Set<Integer> choices) {
+        return choices.stream().map(Object::toString).collect(Collectors.joining(",")) + "_" + rule.group;
     }
 
     private static int inventoryChoice(String inventoryKey) {

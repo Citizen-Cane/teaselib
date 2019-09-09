@@ -1,9 +1,12 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Arrays.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
-import static teaselib.core.speechrecognition.srgs.Phrases.*;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertEqualsFlattened;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.withoutPunctation;
+import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,6 +26,10 @@ import teaselib.core.ui.Prompt;
 public class SpeechRecognitionComplexTest {
 
     private static final HashSet<Integer> CHOICES_0_1 = new HashSet<>(Arrays.asList(0, 1));
+    private static final HashSet<Integer> CHOICES_0_3 = new HashSet<>(Arrays.asList(0, 3));
+    private static final HashSet<Integer> CHOICES_1_2 = new HashSet<>(Arrays.asList(1, 2));
+    private static final HashSet<Integer> CHOICES_2_3 = new HashSet<>(Arrays.asList(2, 3));
+    private static final HashSet<Integer> CHOICES_0_1_2_3 = new HashSet<>(Arrays.asList(0, 1, 2, 3));
 
     @Test
     public void testRejected() throws InterruptedException {
@@ -404,10 +411,14 @@ public class SpeechRecognitionComplexTest {
     @Test
     public void testSliceDistinctChociesWithPairwiseCommonParts() {
         Choices choices = distinctChociesWithPairwiseCommonParts();
-
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(4, phrases.size());
+        assertEquals(Phrases.rule(0, 0, oneOf(CHOICES_0_1, "A"), oneOf(CHOICES_2_3, "B")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, oneOf(CHOICES_0_1_2_3, "at")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 2, oneOf(CHOICES_0_3, "M"), oneOf(CHOICES_1_2, "N")), phrases.get(2));
+        assertEquals(Phrases.rule(0, 3, oneOf(CHOICES_0_1_2_3, "attached")), phrases.get(3));
+
         assertEqualsFlattened(choices, phrases);
     }
 
@@ -435,7 +446,6 @@ public class SpeechRecognitionComplexTest {
     @Test
     public void testSliceDistinctChociesWithPairwiseCommonPartsShort() {
         Choices choices = distinctChociesWithPairwiseCommonPartsShort();
-
         Phrases phrases = Phrases.of(choices);
 
         // TODO Should be 2 but distinct parts are merged because of a hack in phrase parsing

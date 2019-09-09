@@ -1,10 +1,11 @@
 package teaselib.core.speechrecognition.srgs;
 
+import static java.util.stream.Collectors.joining;
+
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -56,8 +57,8 @@ abstract class AbstractSRGSBuilder {
     }
 
     static String choiceName(Rule rule, Set<Integer> choices) {
-        return CHOICE_NODE_PREFIX + rule.index + "_"
-                + choices.stream().map(Object::toString).collect(Collectors.joining(",")) + "__group_" + rule.group;
+        return CHOICE_NODE_PREFIX + rule.index + "_" + choices.stream().map(Object::toString).collect(joining(","))
+                + "__group_" + rule.group;
     }
 
     Element createGrammar() {

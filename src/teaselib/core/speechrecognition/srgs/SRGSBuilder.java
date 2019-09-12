@@ -1,5 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
+import static java.util.stream.Collectors.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -106,36 +108,50 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
 
     private void addRuleToInventory(Map<String, Element> inventoryItems, Rule rule) {
         Set<Integer> blank = rule.stream().filter(OneOf::isBlank).map(item -> item.choices).flatMap(Set::stream)
-                .collect(Collectors.toSet());
-
+                .collect(toSet());
         Map<String, List<Element>> addToInventory = new HashMap<>();
+
+        // TODO optimize srgs by adding common start/end rules directly to main rule
 
         for (OneOf items : rule) {
             if (!items.isBlank()) {
                 if (items.isCommon() && rule.size() == 1) {
-                    // TODO optimize by adding common start/end rules directly to main rule
-                    appendRuleRefToAllChoices(inventoryItems, rule);
-                } else {
-                    for (int choice : items.choices) {
-                        String inventoryKey = inventoryKey(rule, choice);
-                        List<Element> elements = addToInventory.computeIfAbsent(inventoryKey, key -> new ArrayList<>());
-                        Element ruleRef = ruleRef(choiceName(rule, items.choices));
-                        boolean optionalRule = blank.contains(choice);
-                        elements.add(optionalRule ? optionalRuleRefItem(ruleRef) : ruleRef);
+                    for (Map.Entry<String, Element> entry : inventoryItems.entrySet()) {
+                        String key = entry.getKey();
+                        int group = inventoryGroup(key);
+                        if (group == rule.group) {
+                            collectRules(rule, blank, addToInventory, items);
+                        }
                     }
+                } else {
+                    collectRules(rule, blank, addToInventory, items);
                 }
             }
         }
 
+        addRulesToInventory(inventoryItems, addToInventory);
+    }
+
+    private void collectRules(Rule rule, Set<Integer> blank, Map<String, List<Element>> addToInventory, OneOf items) {
+        for (int choice : items.choices) {
+            String inventoryKey = inventoryKey(rule, choice);
+            List<Element> elements = addToInventory.computeIfAbsent(inventoryKey, k -> new ArrayList<>());
+            Element ruleRef = ruleRef(choiceName(rule, items.choices));
+            boolean optionalRule = blank.contains(choice);
+            elements.add(optionalRule ? optionalRuleRefItem(ruleRef) : ruleRef);
+        }
+    }
+
+    private void addRulesToInventory(Map<String, Element> inventoryItems, Map<String, List<Element>> addToInventory) {
         for (Map.Entry<String, List<Element>> addElements : addToInventory.entrySet()) {
             Element inventoryElement = inventoryItems.get(addElements.getKey());
-            List<Element> items = addElements.getValue();
-            if (items.size() == 1) {
-                inventoryElement.appendChild(items.get(0));
+            List<Element> elements = addElements.getValue();
+            if (elements.size() == 1) {
+                inventoryElement.appendChild(elements.get(0));
             } else {
                 Element oneOf = document.createElement("one-of");
                 inventoryElement.appendChild(oneOf);
-                items.stream().forEach(ruleRef -> oneOf.appendChild(ruleRefItem(ruleRef)));
+                elements.stream().forEach(ruleRef -> oneOf.appendChild(ruleRefItem(ruleRef)));
             }
         }
     }
@@ -151,21 +167,6 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         Element item = document.createElement("item");
         item.appendChild(child);
         return item;
-    }
-
-    private void appendRuleRefToAllChoices(Map<String, Element> inventoryItems, Rule rule) {
-        for (Map.Entry<String, Element> entry : inventoryItems.entrySet()) {
-            String key = entry.getKey();
-            int group = inventoryGroup(key);
-            if (group == rule.group) {
-                for (OneOf items : rule) {
-                    int choice = inventoryChoice(key);
-                    if (items.choices.contains(choice)) {
-                        entry.getValue().appendChild(ruleRef(choiceName(rule, items.choices)));
-                    }
-                }
-            }
-        }
     }
 
 }

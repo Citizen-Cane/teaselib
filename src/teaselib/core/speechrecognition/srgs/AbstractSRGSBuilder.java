@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
@@ -30,7 +30,8 @@ import org.w3c.dom.Element;
 abstract class AbstractSRGSBuilder {
 
     static final String MAIN_RULE_NAME = "Main";
-    static final String CHOICE_NODE_PREFIX = "Choice_";
+    private static final String CHOICE_NODE_PREFIX = "Choice_";
+    private static final String GROUP_HEADER = "__group_";
 
     final Phrases phrases;
     private final String languageCode;
@@ -58,7 +59,7 @@ abstract class AbstractSRGSBuilder {
 
     static String choiceName(Rule rule, Set<Integer> choices) {
         return CHOICE_NODE_PREFIX + rule.index + "_" + choices.stream().map(Object::toString).collect(joining(","))
-                + "__group_" + rule.group;
+                + GROUP_HEADER + rule.group;
     }
 
     Element createGrammar() {
@@ -109,6 +110,8 @@ abstract class AbstractSRGSBuilder {
         StreamResult streamResult = new StreamResult(result);
 
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+
         Transformer transformer = transformerFactory.newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");

@@ -66,11 +66,11 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     }
 
     private static int inventoryChoice(String inventoryKey) {
-        return Integer.parseInt(inventoryKey.substring(0, inventoryKey.indexOf("_")));
+        return Integer.parseInt(inventoryKey.substring(0, inventoryKey.indexOf('_')));
     }
 
     private static int inventoryGroup(String inventoryKey) {
-        return Integer.parseInt(inventoryKey.substring(inventoryKey.indexOf("_") + 1));
+        return Integer.parseInt(inventoryKey.substring(inventoryKey.indexOf('_') + 1));
     }
 
     private void createRuleElements(Element grammar, Map<String, Element> inventoryItems, Rule rule) {

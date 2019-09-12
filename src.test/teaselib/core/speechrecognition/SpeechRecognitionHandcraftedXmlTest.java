@@ -1,10 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
@@ -43,8 +42,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
                 StringSequence.splitWords(emulatedRecognitionResult).stream().collect(Collectors.joining(" ")),
                 emulatedRecognitionResult);
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
-        InputStream inputStream = resources.get(resource);
-        byte[] xml = Stream.toByteArray(inputStream);
+        byte[] xml = Stream.toByteArray(resources.get(resource));
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
             @Override
             byte[] srgs(Phrases phrases) {
@@ -149,7 +147,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
      */
     @Test
     public void testHandcraftedOptionalCommonRule() throws InterruptedException, IOException {
-        String resource = "srgs/handcrafted_optional_commom_rule.xml";
+        String resource = "srgs/handcrafted_optional_common_rule.xml";
 
         assertRecognized(resource, "Yes Miss of course", new Prompt.Result(0));
         assertRecognized(resource, "No of course", new Prompt.Result(1));

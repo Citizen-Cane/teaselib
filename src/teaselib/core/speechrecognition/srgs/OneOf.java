@@ -51,21 +51,13 @@ public class OneOf extends ArrayList<String> {
         return true;
     }
 
-    public boolean isCommon() {
-        return choices.size() > 1;
-    }
-
-    public boolean isBlank() {
+    boolean isBlank() {
         return isEmpty() || stream().allMatch(String::isBlank);
     }
 
     @Override
     public String toString() {
         return "choice " + choices + " = " + super.toString();
-    }
-
-    public boolean hasOptionalParts() {
-        return stream().anyMatch(String::isBlank);
     }
 
 }

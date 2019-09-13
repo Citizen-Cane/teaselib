@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -45,8 +44,8 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         Map<String, Element> inventoryItems = new LinkedHashMap<>();
         for (Rule rule : phrases) {
             for (OneOf item : rule) {
-                if (!item.isCommon()) {
-                    String inventoryKey = inventoryKey(rule, item.choices);
+                for (int choice : item.choices) {
+                    String inventoryKey = inventoryKey(rule, choice);
                     if (!inventoryItems.containsKey(inventoryKey)) {
                         Element inventoryItem = document.createElement("item");
                         inventoryItems.put(inventoryKey, inventoryItem);
@@ -64,15 +63,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     }
 
     private static String inventoryKey(Rule rule, Set<Integer> choices) {
-        return choices.stream().map(Object::toString).collect(Collectors.joining(",")) + "_" + rule.group;
-    }
-
-    private static int inventoryChoice(String inventoryKey) {
-        return Integer.parseInt(inventoryKey.substring(0, inventoryKey.indexOf('_')));
-    }
-
-    private static int inventoryGroup(String inventoryKey) {
-        return Integer.parseInt(inventoryKey.substring(inventoryKey.indexOf('_') + 1));
+        return choices.stream().map(Object::toString).collect(joining(",")) + "_" + rule.group;
     }
 
     private void createRuleElements(Element grammar, Map<String, Element> inventoryItems, Rule rule) {
@@ -114,18 +105,10 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         // TODO optimize srgs by adding common start/end rules directly to main rule
 
         for (OneOf items : rule) {
+            // TODO isBlank() resolves teaselib.core.jni.NativeException in testSimpleIrregularPhrases and other tests:
+            // line 0 hr=0x80045003 Rule reference "Choice_2_2,3,4__group_0" is undefined
             if (!items.isBlank()) {
-                if (items.isCommon() && rule.size() == 1) {
-                    for (Map.Entry<String, Element> entry : inventoryItems.entrySet()) {
-                        String key = entry.getKey();
-                        int group = inventoryGroup(key);
-                        if (group == rule.group) {
-                            collectRules(rule, blank, addToInventory, items);
-                        }
-                    }
-                } else {
-                    collectRules(rule, blank, addToInventory, items);
-                }
+                collectRules(rule, blank, addToInventory, items);
             }
         }
 
@@ -136,8 +119,9 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         for (int choice : items.choices) {
             String inventoryKey = inventoryKey(rule, choice);
             List<Element> elements = addToInventory.computeIfAbsent(inventoryKey, k -> new ArrayList<>());
-            Element ruleRef = ruleRef(choiceName(rule, items.choices));
             boolean optionalRule = blank.contains(choice);
+            String choiceName = choiceName(rule, items.choices);
+            Element ruleRef = ruleRef(choiceName);
             elements.add(optionalRule ? optionalRuleRefItem(ruleRef) : ruleRef);
         }
     }

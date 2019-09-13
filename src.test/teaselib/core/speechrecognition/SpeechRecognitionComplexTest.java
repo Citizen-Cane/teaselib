@@ -1,12 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertEqualsFlattened;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.withoutPunctation;
-import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
+import static java.util.Arrays.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
+import static teaselib.core.speechrecognition.srgs.Phrases.*;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -448,8 +445,11 @@ public class SpeechRecognitionComplexTest {
         Choices choices = distinctChociesWithPairwiseCommonPartsShort();
         Phrases phrases = Phrases.of(choices);
 
-        // TODO Should be 2 but distinct parts are merged because of a hack in phrase parsing
+        // TODO Should be 2 but distinct parts are merged since the sequence-alicer splits alternating distinct-common
+        // -> change the slicer to consider chunks that are partially common slices
         assertEquals(2, phrases.size());
+        assertEquals(Phrases.rule(0, 0, oneOf(CHOICES_0_1, "A"), oneOf(CHOICES_2_3, "B")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, oneOf(CHOICES_0_3, "M"), oneOf(CHOICES_1_2, "N")), phrases.get(1));
         assertEqualsFlattened(choices, phrases);
     }
 

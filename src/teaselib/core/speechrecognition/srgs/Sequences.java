@@ -61,6 +61,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             Function<List<T>, T> joinSequenceOperator, UnaryOperator<T> emptyCloneOp) {
         List<Sequences<T>> slices = new ArrayList<>();
 
+        // to pass unit test SpeechRecognitionComplexTest.testSliceDistinctChociesWithPairwiseCommonPartsShort:
+        // TODO slice chunks with maximal partial common parts
+        // -> return Sequences<T> commonStart with complete choice coverage
+        // likewise commonMiddle
         Sequence<T> commonStart = sequences.commonStart();
         if (!commonStart.isEmpty()) {
             slices.add(new Sequences<>(Collections.singletonList(commonStart), sequences.equalsOperator,
@@ -69,7 +73,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Sequences<T> remainder = commonStart.isEmpty() ? sequences : sequences.removeIncluding(commonStart);
 
         while (remainder.maxLength() > 0) {
+
+            // to pass unit test SpeechRecognitionComplexTest.testSliceDistinctChociesWithPairwiseCommonPartsShort:
+            // TODO slice chunks with maximal partial common parts
             Sequence<T> commonMiddle = remainder.commonMiddle();
+
             if (!commonMiddle.isEmpty()) {
                 Sequences<T> unique = remainder.removeUpTo(commonMiddle, emptyCloneOp);
                 slices.add(new Sequences<>(unique, sequences.equalsOperator, joinCommonOperator, joinSequenceOperator));
@@ -84,6 +92,33 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             remainder = remainder.removeIncluding(commonMiddle);
         }
         return slices;
+    }
+
+    private static <T> List<Sequences<T>> slice_new(Sequences<T> sequences, Function<List<T>, T> joinCommonOperator,
+            Function<List<T>, T> joinSequenceOperator, UnaryOperator<T> emptyCloneOp) {
+        List<Sequences<T>> slices = new ArrayList<>();
+        while (sequences.maxLength() > 0) {
+            slices.add(sequences.slice());
+        }
+        return slices;
+    }
+
+    private Sequences<T> slice() {
+        // TODO Remove and return a (partially) common sequence that can be used to build rules
+        // -> like slice = removeSlice();
+
+        Sequence<T> commonStart = commonStart();
+        if (!commonStart.isEmpty()) {
+            // TODO Old style remove* doesn't remove, just returns a copy
+            return removeIncluding(commonStart);
+        } else {
+            Sequence<T> commonMiddle = commonMiddle();
+            if (!commonMiddle.isEmpty()) {
+                return removeExcluding(commonMiddle);
+            } else {
+                return removeIncluding(commonMiddle); // empty, to the end
+            }
+        }
     }
 
     Sequence<T> commonStart() {
@@ -181,7 +216,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     Sequences<T> removeExcluding(Sequence<T> match) {
         Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
         for (Sequence<T> listSequence : this) {
-            List<T> subList = listSequence.subList(listSequence.indexOf(match), listSequence.size());
+            List<T> subList = listSequence.subList(0, listSequence.indexOf(match));
             subLists.add(new Sequence<>(subList, equalsOperator));
         }
         return subLists;

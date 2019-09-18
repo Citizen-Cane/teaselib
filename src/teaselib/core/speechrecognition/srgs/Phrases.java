@@ -83,10 +83,10 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     public static Phrases of(Choices choices) {
-        List<ChoiceString> all = choices.stream().flatMap(
-                choice -> choice.phrases.stream().map(phrase -> new ChoiceString(phrase, choices.indexOf(choice))))
+        List<PhraseString> all = choices.stream().flatMap(
+                choice -> choice.phrases.stream().map(phrase -> new PhraseString(phrase, choices.indexOf(choice))))
                 .collect(Collectors.toList());
-        Partition<ChoiceString> groups = new Partition<>(all, Phrases::haveCommonParts);
+        Partition<PhraseString> groups = new Partition<>(all, Phrases::haveCommonParts);
 
         // phrases are grouped by common slices
         // + For each group, get the head, slice and group by common parts -> recursion
@@ -95,7 +95,7 @@ public class Phrases extends ArrayList<Rule> {
         Phrases phrases = new Phrases(choices.size());
 
         int groupIndex = 0;
-        for (Partition<ChoiceString>.Group group : groups) {
+        for (Partition<PhraseString>.Group group : groups) {
             recurse(phrases, Collections.singletonList(group.items), groupIndex++, 0);
         }
 
@@ -106,17 +106,17 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     // TODO Improve performance by providing sliced choice strings as input (saves us from rebuilding strings)
-    private static void recurse(Phrases phrases, List<List<ChoiceString>> groups, int groupIndex, int ruleIndex) {
-        for (List<ChoiceString> group : groups) {
-            List<Sequences<ChoiceString>> sliced = ChoiceStringSequences.slice(group);
+    private static void recurse(Phrases phrases, List<List<PhraseString>> groups, int groupIndex, int ruleIndex) {
+        for (List<PhraseString> group : groups) {
+            List<Sequences<PhraseString>> sliced = PhraseStringSequences.slice(group);
 
             if (!sliced.isEmpty()) {
-                Sequences<ChoiceString> first = sliced.remove(0);
+                Sequences<PhraseString> first = sliced.remove(0);
 
                 // // Join if this or next contain empty slices
                 // TODO Can only be removed when srgs reports "" as a result rule
                 if (!sliced.isEmpty() && !phrases.allChoicesDefined(groupIndex)) {
-                    Sequences<ChoiceString> second = sliced.get(0);
+                    Sequences<PhraseString> second = sliced.get(0);
                     if (first.containsOptionalParts() || second.containsOptionalParts()) {
                         first = first.joinWith(second);
                         sliced.remove(0);
@@ -132,8 +132,8 @@ public class Phrases extends ArrayList<Rule> {
                 }
 
                 if (!differentChoices(first)) {
-                    Function<? super ChoiceString, ? extends String> classifier = phrase -> phrase.phrase;
-                    Function<? super ChoiceString, ? extends Set<Integer>> mapper = phrase -> phrase.choices;
+                    Function<? super PhraseString, ? extends String> classifier = phrase -> phrase.phrase;
+                    Function<? super PhraseString, ? extends Set<Integer>> mapper = phrase -> phrase.indices;
                     Map<String, Set<Set<Integer>>> items = first.stream().filter(sequence -> !sequence.isEmpty())
                             .map(first.joinSequenceOperator::apply)
                             .collect(groupingBy(classifier, LinkedHashMap::new, mapping(mapper, toSet())));
@@ -144,8 +144,8 @@ public class Phrases extends ArrayList<Rule> {
                                     Collections.singletonList(entry.getKey()))));
                     // TODO Find out how to join this and else path
                 } else {
-                    Function<? super ChoiceString, ? extends Set<Integer>> classifier = phrase -> phrase.choices;
-                    Function<? super ChoiceString, ? extends String> mapper = phrase -> phrase.phrase;
+                    Function<? super PhraseString, ? extends Set<Integer>> classifier = phrase -> phrase.indices;
+                    Function<? super PhraseString, ? extends String> mapper = phrase -> phrase.phrase;
                     Map<Set<Integer>, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
                             .map(first.joinSequenceOperator::apply)
                             .collect(groupingBy(classifier, LinkedHashMap::new, mapping(mapper, toList())));
@@ -158,7 +158,7 @@ public class Phrases extends ArrayList<Rule> {
                 if (!sliced.isEmpty()) {
                     ruleIndex++;
                     // TODO continue with rest of slice -> rebuild sequence instead of strings
-                    List<ChoiceString> flattened = Sequences.flatten(sliced, first.equalsOperator,
+                    List<PhraseString> flattened = Sequences.flatten(sliced, first.equalsOperator,
                             first.joinSequenceOperator);
                     recurse(phrases, Collections.singletonList(flattened), groupIndex, ruleIndex);
                 }
@@ -191,22 +191,22 @@ public class Phrases extends ArrayList<Rule> {
         }
     }
 
-    private static boolean differentChoices(Sequences<ChoiceString> slice) {
+    private static boolean differentChoices(Sequences<PhraseString> slice) {
         Map<String, Set<Integer>> unique = new HashMap<>();
-        for (Sequence<ChoiceString> sequence : slice) {
+        for (Sequence<PhraseString> sequence : slice) {
             if (!sequence.isEmpty()) {
-                ChoiceString words = slice.joinSequenceOperator.apply(sequence);
+                PhraseString words = slice.joinSequenceOperator.apply(sequence);
                 Set<Integer> choices = unique.get(words.phrase);
-                if (choices != null && !words.choices.containsAll(choices)) {
+                if (choices != null && !words.indices.containsAll(choices)) {
                     return false;
                 }
-                unique.put(words.phrase, words.choices);
+                unique.put(words.phrase, words.indices);
             }
         }
         return true;
     }
 
-    static boolean haveCommonParts(ChoiceString a, ChoiceString b) {
+    static boolean haveCommonParts(PhraseString a, PhraseString b) {
         List<Sequences<String>> slice = StringSequences.of(a.toString(), b.toString());
         return slice.stream().anyMatch(sequence -> sequence.size() == 1);
     }

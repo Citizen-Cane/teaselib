@@ -13,20 +13,20 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class ChoiceString {
+class PhraseString {
     final String phrase;
-    final Set<Integer> choices;
+    final Set<Integer> indices;
 
-    ChoiceString(String phrase, int choice) {
+    PhraseString(String phrase, int indices) {
         super();
         this.phrase = phrase;
-        this.choices = Collections.singleton(choice);
+        this.indices = Collections.singleton(indices);
     }
 
-    ChoiceString(String phrase, Set<Integer> choices) {
+    PhraseString(String phrase, Set<Integer> indices) {
         super();
         this.phrase = phrase;
-        this.choices = choices;
+        this.indices = indices;
     }
 
     @Override
@@ -34,36 +34,36 @@ class ChoiceString {
         return phrase;
     }
 
-    public boolean samePhrase(ChoiceString other) {
+    public boolean samePhrase(PhraseString other) {
         return phrase.equalsIgnoreCase(other.phrase);
     }
 
-    public List<ChoiceString> words() {
+    public List<PhraseString> words() {
         if (phrase.isEmpty()) {
             return singletonList(this);
         } else {
             String[] words = phrase.split("[ .:,;\t\n_()]+");
-            return stream(words).map(word -> new ChoiceString(word, choices)).collect(toList());
+            return stream(words).map(word -> new PhraseString(word, indices)).collect(toList());
         }
     }
 
-    public static ChoiceString joinCommon(List<ChoiceString> choices) {
-        if (choices.isEmpty()) {
+    public static PhraseString joinCommon(List<PhraseString> strings) {
+        if (strings.isEmpty()) {
             throw new NoSuchElementException();
         }
 
-        Set<Integer> results = choices.stream().flatMap(phrase -> phrase.choices.stream()).collect(toSet());
-        return new ChoiceString(choices.get(0).phrase, results);
+        Set<Integer> results = strings.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
+        return new PhraseString(strings.get(0).phrase, results);
     }
 
-    public static ChoiceString joinSequence(List<ChoiceString> choices) {
-        if (choices.isEmpty()) {
+    public static PhraseString joinSequence(List<PhraseString> strings) {
+        if (strings.isEmpty()) {
             throw new NoSuchElementException();
         }
 
-        Set<Integer> choice = choices.stream().map(phrase -> phrase.choices).reduce(ChoiceString::intersect)
+        Set<Integer> choice = strings.stream().map(phrase -> phrase.indices).reduce(PhraseString::intersect)
                 .orElseThrow();
-        return new ChoiceString(choices.stream().map(element -> element.phrase).collect(joining(" ")).trim(), choice);
+        return new PhraseString(strings.stream().map(element -> element.phrase).collect(joining(" ")).trim(), choice);
     }
 
     private static <T> Set<T> intersect(Set<T> a, Set<T> b) {
@@ -72,17 +72,17 @@ class ChoiceString {
 
     @Override
     public int hashCode() {
-        return Objects.hash(choices, phrase);
+        return Objects.hash(indices, phrase);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (!(obj instanceof ChoiceString))
+        if (!(obj instanceof PhraseString))
             return false;
-        ChoiceString other = (ChoiceString) obj;
-        return Objects.equals(choices, other.choices) && samePhrase(other);
+        PhraseString other = (PhraseString) obj;
+        return Objects.equals(indices, other.indices) && samePhrase(other);
     }
 
 }

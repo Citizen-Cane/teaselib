@@ -47,9 +47,9 @@ public class PhrasesIntegrationTest {
 
     @Test
     public void testPhraseGrouping() {
-        List<ChoiceString> strings = Arrays.asList(new ChoiceString("Yes Miss", 0), new ChoiceString("Yes Mistress", 0),
-                new ChoiceString("Of course Miss", 0), new ChoiceString("I have it", 0));
-        Partition<ChoiceString> grooupedPhrases = new Partition<>(strings, Phrases::haveCommonParts);
+        List<PhraseString> strings = Arrays.asList(new PhraseString("Yes Miss", 0), new PhraseString("Yes Mistress", 0),
+                new PhraseString("Of course Miss", 0), new PhraseString("I have it", 0));
+        Partition<PhraseString> grooupedPhrases = new Partition<>(strings, Phrases::haveCommonParts);
         assertEquals(2, grooupedPhrases.groups.size());
     }
 

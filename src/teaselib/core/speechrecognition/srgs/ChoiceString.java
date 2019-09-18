@@ -1,7 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.Collections;
 import java.util.List;
@@ -59,11 +61,12 @@ class ChoiceString {
             throw new NoSuchElementException();
         }
 
-        Set<Integer> choice = choices.stream().map(phrase -> phrase.choices).reduce(ChoiceString::intersect).orElseThrow();
+        Set<Integer> choice = choices.stream().map(phrase -> phrase.choices).reduce(ChoiceString::intersect)
+                .orElseThrow();
         return new ChoiceString(choices.stream().map(element -> element.phrase).collect(joining(" ")).trim(), choice);
     }
 
-    public static <T> Set<T> intersect(Set<T> a, Set<T> b) {
+    private static <T> Set<T> intersect(Set<T> a, Set<T> b) {
         return a.stream().filter(b::contains).collect(Collectors.toSet());
     }
 }

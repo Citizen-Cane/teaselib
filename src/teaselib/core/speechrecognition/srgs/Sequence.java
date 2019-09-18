@@ -21,14 +21,14 @@ public class Sequence<T> extends ArrayList<T> {
         this(elements, Object::equals);
     }
 
-    public Sequence(BiPredicate<T, T> equals) {
+    public Sequence(BiPredicate<T, T> equalsOperator) {
         super();
-        this.equalsOperator = equals;
+        this.equalsOperator = equalsOperator;
     }
 
-    public Sequence(List<T> elements, BiPredicate<T, T> equals) {
+    public Sequence(List<T> elements, BiPredicate<T, T> equalsOperator) {
         super(elements);
-        this.equalsOperator = equals;
+        this.equalsOperator = equalsOperator;
     }
 
     public boolean startsWith(List<? extends T> elements) {
@@ -80,6 +80,11 @@ public class Sequence<T> extends ArrayList<T> {
         return true;
     }
 
+    /**
+     * Get all sub-sequences, starting with the largest
+     * 
+     * @return
+     */
     public List<Sequence<T>> subLists() {
         List<Sequence<T>> candidates = new ArrayList<>();
         for (int n = size(); n > 0; --n) {
@@ -102,6 +107,18 @@ public class Sequence<T> extends ArrayList<T> {
 
     public T join(Function<List<T>, T> joinSequenceOperator) {
         return joinSequenceOperator.apply(this);
+    }
+
+    public void remove(int from, int size) {
+        for (int i = 0; i < size; i++) {
+            remove(from);
+        }
+    }
+
+    public boolean startsWith(T element) {
+        if (isEmpty())
+            return false;
+        return equalsOperator.test(get(0), element);
     }
 
 }

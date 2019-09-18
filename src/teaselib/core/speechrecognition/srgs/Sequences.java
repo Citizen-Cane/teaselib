@@ -1,6 +1,5 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
@@ -64,43 +63,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
     }
 
-    private static <T> List<Sequences<T>> slice_old(Sequences<T> sequences, Function<List<T>, T> joinCommonOperator,
-            Function<List<T>, T> joinSequenceOperator, UnaryOperator<T> emptyCloneOp) {
-        List<Sequences<T>> slices = new ArrayList<>();
-
-        // to pass unit test SpeechRecognitionComplexTest.testSliceDistinctChociesWithPairwiseCommonPartsShort:
-        // TODO slice chunks with maximal partial common parts
-        // -> return Sequences<T> commonStart with complete choice coverage
-        // likewise commonMiddle
-        Sequence<T> commonStart = sequences.commonStart();
-        if (!commonStart.isEmpty()) {
-            slices.add(new Sequences<>(Collections.singletonList(commonStart), sequences.equalsOperator,
-                    sequences.joinCommonOperator, sequences.joinSequenceOperator));
-        }
-        Sequences<T> remainder = commonStart.isEmpty() ? sequences : sequences.removeIncluding(commonStart);
-
-        while (remainder.maxLength() > 0) {
-
-            // to pass unit test SpeechRecognitionComplexTest.testSliceDistinctChociesWithPairwiseCommonPartsShort:
-            // TODO slice chunks with maximal partial common parts
-            Sequence<T> commonMiddle = remainder.commonMiddle();
-
-            if (!commonMiddle.isEmpty()) {
-                Sequences<T> unique = remainder.removeUpTo(commonMiddle, emptyCloneOp);
-                slices.add(new Sequences<>(unique, sequences.equalsOperator, joinCommonOperator, joinSequenceOperator));
-                slices.add(new Sequences<>(Collections.singletonList(commonMiddle), sequences.equalsOperator,
-                        sequences.joinCommonOperator, sequences.joinSequenceOperator));
-            }
-
-            if (commonMiddle.isEmpty()) {
-                slices.add(remainder);
-                break;
-            }
-            remainder = remainder.removeIncluding(commonMiddle);
-        }
-        return slices;
-    }
-
     private static <T> List<Sequences<T>> slice(Sequences<T> sequences, Function<List<T>, T> joinCommonOperator,
             Function<List<T>, T> joinSequenceOperator, UnaryOperator<T> emptyCloneOp) {
         List<Sequences<T>> slices = new ArrayList<>();
@@ -143,14 +105,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             disjunct.add(new Sequence<>(equalsOperator));
         }
 
-        // What's wrong?
-        // splits from single sequence as long as the element to split doens't occur in otrher sequence
-        // -> removes a lot of entries from sequence
-        // TODO If all first elements are distinct, remove them
-
-        // TODO Remove element if it occurs only once in the set of first elements
-        // -> remove one element after another until only common elements are left
-        // TODO do this column wise (all first elements, then next
+        // Split slices column-wise
         while (!isEmpty()) {
             boolean elementRemoved = false;
             for (int i = 0; i < size(); i++) {
@@ -161,6 +116,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                         disjunct.get(i).add(element);
                         sequence.remove(element);
                         elementRemoved = true;
+                    } else {
+                        return disjunct;
                     }
                 }
             }
@@ -173,8 +130,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private Sequences<T> splitCommon() {
-        // TODO Find common sequences, add as single new sequences with combined choice indices
-
         List<T> candidates = new ArrayList<>(size());
         for (int n = 0; n < size(); n++) {
             candidates.add(null);
@@ -193,7 +148,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                         if (sequence != otherSequence) {
                             if (otherSequence.size() >= length) {
                                 List<T> otherElement = otherSequence.subList(0, length);
-                                if (element.toString().equals(otherElement.toString())) {
+                                // TODO 1.a Use the equalsOperator to compare lists elements
+                                if (element.toString().equalsIgnoreCase(otherElement.toString())) {
                                     candidates.set(i, joinSequenceOperator.apply(element));
                                     nothingFound = false;
                                 }
@@ -216,7 +172,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         for (int i = 0; i < candidates.size(); i++) {
             T value = candidates.get(i);
             if (value != null) {
-                String key = value.toString();
+                // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
+                String key = value.toString().toLowerCase();
                 if (reduced.containsKey(key)) {
                     T existing = reduced.get(key);
                     reduced.put(key, joinCommonOperator.apply(Arrays.asList(existing, value)));
@@ -224,7 +181,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     reduced.put(key, value);
                 }
 
-                // TODO Generalize
+                // TODO Generalize and use op
                 int l = value.toString().split(" ").length;
                 get(i).remove(0, l);
             }
@@ -317,36 +274,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
         return true;
-    }
-
-    Sequences<T> removeUpTo(Sequence<T> match, UnaryOperator<T> emptyCloneOp) {
-        Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
-        for (Sequence<T> listSequence : this) {
-            List<T> subList = listSequence.subList(0, listSequence.indexOf(match));
-            if (subList.isEmpty()) {
-                subList = singletonList(emptyCloneOp.apply(listSequence.get(0)));
-            }
-            subLists.add(new Sequence<>(subList, equalsOperator));
-        }
-        return subLists;
-    }
-
-    Sequences<T> removeExcluding(Sequence<T> match) {
-        Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
-        for (Sequence<T> listSequence : this) {
-            List<T> subList = listSequence.subList(0, listSequence.indexOf(match));
-            subLists.add(new Sequence<>(subList, equalsOperator));
-        }
-        return subLists;
-    }
-
-    Sequences<T> removeIncluding(Sequence<T> match) {
-        Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
-        for (Sequence<T> listSequence : this) {
-            List<T> subList = listSequence.subList(listSequence.indexOf(match) + match.size(), listSequence.size());
-            subLists.add(new Sequence<>(subList, equalsOperator));
-        }
-        return subLists;
     }
 
     public boolean containsOptionalParts() {

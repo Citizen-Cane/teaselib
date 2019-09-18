@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static java.util.Arrays.stream;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -39,12 +40,10 @@ class ChoiceString {
 
     public List<ChoiceString> words() {
         if (phrase.isEmpty()) {
-            return Collections.singletonList(this);
+            return singletonList(this);
         } else {
             String[] words = phrase.split("[ .:,;\t\n_()]+");
-            List<ChoiceString> collect = stream(words).map(word -> new ChoiceString(word, choices)).collect(toList());
-            // collect.add(new ChoiceString("", choices));
-            return collect;
+            return stream(words).map(word -> new ChoiceString(word, choices)).collect(toList());
         }
     }
 
@@ -83,7 +82,7 @@ class ChoiceString {
         if (!(obj instanceof ChoiceString))
             return false;
         ChoiceString other = (ChoiceString) obj;
-        return Objects.equals(choices, other.choices) && Objects.equals(phrase, other.phrase);
+        return Objects.equals(choices, other.choices) && samePhrase(other);
     }
 
 }

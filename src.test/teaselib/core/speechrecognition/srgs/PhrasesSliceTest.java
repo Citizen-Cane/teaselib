@@ -60,13 +60,13 @@ public class PhrasesSliceTest {
         assertEquals(new ChoiceStringSequences(result("Yes", 0, 1)), slice1);
 
         Sequences<ChoiceString> slice2 = choices.slice();
-        assertEquals(new ChoiceStringSequences(result("Miss", 0), none, none), slice2);
+        assertEquals(new ChoiceStringSequences(result("Miss", 0)), slice2);
 
         Sequences<ChoiceString> slice3 = choices.slice();
         assertEquals(new ChoiceStringSequences(result("of course", 0, 1, 2)), slice3);
 
         Sequences<ChoiceString> slice4 = choices.slice();
-        assertEquals(new ChoiceStringSequences(none, result("Miss", 1), none), slice4);
+        assertEquals(new ChoiceStringSequences(result("Miss", 1)), slice4);
 
         Sequences<ChoiceString> empty = choices.slice();
         assertTrue(empty.isEmpty());

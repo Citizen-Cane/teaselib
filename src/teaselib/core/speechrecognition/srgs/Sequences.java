@@ -10,9 +10,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -102,7 +104,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     private Sequences<T> splitDisjunct() {
         Sequences<T> disjunct = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
         for (int i = 0; i < size(); i++) {
-            disjunct.add(new Sequence<>(equalsOperator));
+            disjunct.add(null);
         }
 
         // Split slices column-wise
@@ -113,11 +115,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 if (!sequence.isEmpty()) {
                     T element = sequence.get(0);
                     if (!othersStartWith(sequence, element)) {
-                        disjunct.get(i).add(element);
+                        disjunct.get(i, () -> new Sequence<>(equalsOperator)).add(element);
                         sequence.remove(element);
                         elementRemoved = true;
                     } else {
-                        return disjunct;
+                        break;
                     }
                 }
             }
@@ -126,7 +128,17 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        return disjunct;
+        List<Sequence<T>> elements = disjunct.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        return new Sequences<>(elements, equalsOperator, joinCommonOperator, joinSequenceOperator);
+    }
+
+    private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {
+        Sequence<T> sequence = get(index);
+        if (sequence == null) {
+            sequence = supplier.get();
+            set(index, sequence);
+        }
+        return sequence;
     }
 
     private Sequences<T> splitCommon() {

@@ -14,7 +14,7 @@ import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.util.math.Partition;
 
-public class PhrasesTest {
+public class PhrasesIntegrationTest {
 
     private static final HashSet<Integer> CHOICES_0_1 = new HashSet<>(Arrays.asList(0, 1));
 

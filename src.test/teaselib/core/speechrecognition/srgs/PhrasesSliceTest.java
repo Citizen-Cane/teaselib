@@ -50,7 +50,7 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testThatChoiceStringCaseIsIgnored() {
+    public void testThatChoiceStringYes3() {
         PhraseStringSequences choices = new PhraseStringSequences(choice("yes Miss, of course", 0),
                 choice("Yes, of Course, Miss", 1), choice("Of course", 2));
 
@@ -71,6 +71,49 @@ public class PhrasesSliceTest {
 
         // Sliced fine using separate indices
         // TODO -> map slice indices to choice indices when building phrase rules
+    }
+
+    @Test
+    public void testThatChoiceStringYesNo3() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("yes Miss, of course", 0),
+                choice("Yes, of Course, Miss", 1), choice("Yes, Of course", 2), choice("No Miss, of course not", 3),
+                choice("No, of Course not, Miss", 4), choice("No, Of course not", 5));
+
+        Sequences<PhraseString> slice1 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("Yes", 0, 1, 2), result("No", 3, 4, 5)), slice1);
+
+        Sequences<PhraseString> slice2 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("Miss", 0)), slice2);
+
+        Sequences<PhraseString> slice3 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("of course", 0, 1, 2)), slice3);
+
+        Sequences<PhraseString> slice4 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("Miss", 1)), slice4);
+
+        Sequences<PhraseString> empty = choices.slice();
+        assertTrue(empty.isEmpty());
+
+        // Sliced fine using separate indices
+        // TODO -> map slice indices to choice indices when building phrase rules
+    }
+
+    @Test
+    public void testSliceMultipleChoiceSinglePhraseOfStringsOneOptionalPart() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("yes Miss, of course", 0),
+                choice("No, of Course not, Miss", 1));
+
+        Sequences<PhraseString> slice1 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("yes Miss", 0), result("No", 1)), slice1);
+
+        Sequences<PhraseString> slice2 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("of course", 0, 1)), slice2);
+
+        Sequences<PhraseString> slice3 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("not Miss", 1)), slice3);
+
+        Sequences<PhraseString> empty = choices.slice();
+        assertTrue(empty.isEmpty());
     }
 
     // String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not", "Of course not" };

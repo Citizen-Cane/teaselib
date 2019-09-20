@@ -42,7 +42,7 @@ public class Phrases extends ArrayList<Rule> {
         return new OneOf(choices, Arrays.asList(items));
     }
 
-    public static Phrases of(String... choices) {
+    static Phrases of(String... choices) {
         return of(Arrays.asList(choices));
     }
 
@@ -59,7 +59,7 @@ public class Phrases extends ArrayList<Rule> {
         addAll(rules);
     }
 
-    Optional<Rule> get(int group, int index) {
+    private Optional<Rule> get(int group, int index) {
         for (Rule rule : this) {
             if (rule.index == index && rule.group == group) {
                 return Optional.of(rule);
@@ -83,8 +83,10 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     public static Phrases of(Choices choices) {
-        List<PhraseString> all = choices.stream().flatMap(
-                choice -> choice.phrases.stream().map(phrase -> new PhraseString(phrase, choices.indexOf(choice))))
+        IndexMap<Integer> index2choices = new IndexMap<>();
+        List<PhraseString> all = choices.stream()
+                .flatMap(choice -> choice.phrases.stream()
+                        .map(phrase -> new PhraseString(phrase, index2choices.add(choices.indexOf(choice)))))
                 .collect(Collectors.toList());
         Partition<PhraseString> groups = new Partition<>(all, Phrases::haveCommonParts);
 
@@ -96,17 +98,20 @@ public class Phrases extends ArrayList<Rule> {
 
         int groupIndex = 0;
         for (Partition<PhraseString>.Group group : groups) {
-            recurse(phrases, Collections.singletonList(group.items), groupIndex++, 0);
+            recurse(phrases, Collections.singletonList(group.items), groupIndex++, 0, index2choices);
         }
 
         // remove completely empty rules that might have been added as a result of processing optional parts
         // + blank OneOf elements are suppressed later on by the SRGSBuilder
         return new Phrases(phrases.choiceCount,
                 phrases.stream().filter(rule -> !rule.isBlank()).collect(Collectors.toList()));
+
+        // TODO REfactor phrase creation into constuctor
     }
 
     // TODO Improve performance by providing sliced choice strings as input (saves us from rebuilding strings)
-    private static void recurse(Phrases phrases, List<List<PhraseString>> groups, int groupIndex, int ruleIndex) {
+    private static void recurse(Phrases phrases, List<List<PhraseString>> groups, int groupIndex, int ruleIndex,
+            IndexMap<Integer> index2choices) {
         for (List<PhraseString> group : groups) {
             List<Sequences<PhraseString>> sliced = PhraseStringSequences.slice(group);
 
@@ -133,7 +138,8 @@ public class Phrases extends ArrayList<Rule> {
 
                 if (!differentChoices(first)) {
                     Function<? super PhraseString, ? extends String> classifier = phrase -> phrase.phrase;
-                    Function<? super PhraseString, ? extends Set<Integer>> mapper = phrase -> phrase.indices;
+                    Function<? super PhraseString, ? extends Set<Integer>> mapper = phrase -> index2choices
+                            .get(phrase.indices);
                     Map<String, Set<Set<Integer>>> items = first.stream().filter(sequence -> !sequence.isEmpty())
                             .map(first.joinSequenceOperator::apply)
                             .collect(groupingBy(classifier, LinkedHashMap::new, mapping(mapper, toSet())));
@@ -144,7 +150,8 @@ public class Phrases extends ArrayList<Rule> {
                                     Collections.singletonList(entry.getKey()))));
                     // TODO Find out how to join this and else path
                 } else {
-                    Function<? super PhraseString, ? extends Set<Integer>> classifier = phrase -> phrase.indices;
+                    Function<? super PhraseString, ? extends Set<Integer>> classifier = phrase -> index2choices
+                            .get(phrase.indices);
                     Function<? super PhraseString, ? extends String> mapper = phrase -> phrase.phrase;
                     Map<Set<Integer>, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
                             .map(first.joinSequenceOperator::apply)
@@ -160,7 +167,7 @@ public class Phrases extends ArrayList<Rule> {
                     // TODO continue with rest of slice -> rebuild sequence instead of strings
                     List<PhraseString> flattened = Sequences.flatten(sliced, first.equalsOperator,
                             first.joinSequenceOperator);
-                    recurse(phrases, Collections.singletonList(flattened), groupIndex, ruleIndex);
+                    recurse(phrases, Collections.singletonList(flattened), groupIndex, ruleIndex, index2choices);
                 }
             }
         }

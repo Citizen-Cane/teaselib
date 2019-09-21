@@ -156,17 +156,32 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             while (true) {
                 boolean nothingFound = true;
                 Sequences<T> sequences = this;
-                for (int i = 0; i < sequences.size(); i++) {
+                exit: for (int i = 0; i < sequences.size(); i++) {
                     Sequence<T> sequence = sequences.get(i);
                     if (sequence.size() >= length) {
-                        List<T> element = sequence.subList(0, length);
+                        List<T> startElements = sequence.subList(0, length);
+                        T newElement = startElements.get(startElements.size() - 1);
                         for (int j = 0; j < size(); j++) {
                             Sequence<T> otherSequence = get(j);
                             if (sequence != otherSequence && otherSequence.size() >= length) {
-                                List<T> otherElement = otherSequence.subList(0, length);
-                                // TODO 1.a Use the equalsOperator to compare lists elements
-                                if (element.toString().equalsIgnoreCase(otherElement.toString())) {
-                                    candidates.set(i, joinSequenceOperator.apply(element));
+                                List<T> otherStartElements = otherSequence.subList(0, length);
+                                boolean isStartOfOtherCommonChunk = startElements.size() > 1 //
+                                        // TODO equalsOperator
+                                        && !startElements.toString().equalsIgnoreCase(otherStartElements.toString())
+                                        && equalsOperator.test(newElement, otherStartElements.get(0));
+                                if (isStartOfOtherCommonChunk) {
+                                    nothingFound = true;
+                                    for (int k = 0; k < candidates.size(); k++) {
+                                        // TODO store candidates as sequence elements, not joined
+                                        if (candidates.get(k) != null && candidates.get(k).toString().toLowerCase()
+                                                .startsWith(newElement.toString().toLowerCase())) {
+                                            candidates.set(k, null);
+                                        }
+                                    }
+                                    break exit;
+                                } else if (startElements.toString().equalsIgnoreCase(otherStartElements.toString())) {
+                                    // TODO 1.a Use the equalsOperator to compare lists elements
+                                    candidates.set(i, joinSequenceOperator.apply(startElements));
                                     nothingFound = false;
                                 }
                             }
@@ -179,12 +194,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 } else {
                     Optional<Integer> nextMaxCommon = maxCommon(candidates);
                     if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon.get())) {
-                        // TODO Test still fails:
-                        // Miss, Of course
-                        // Of course
-                        // -> have to slice off miss first n order to find out that "of course" is more common
-                        // - update candidate "Miss" only if next element is not the start of another candidate
-                        // -> end common slicing and return ("Miss",2)
                         length++;
                     } else {
                         break;

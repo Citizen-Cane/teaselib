@@ -115,7 +115,7 @@ public class Phrases extends ArrayList<Rule> {
         for (List<PhraseString> group : groups) {
             List<Sequences<PhraseString>> sliced = PhraseStringSequences.slice(group);
 
-            if (!sliced.isEmpty()) {
+            while (!sliced.isEmpty()) {
                 Sequences<PhraseString> first = sliced.remove(0);
 
                 // // Join if this or next contain empty slices
@@ -162,13 +162,7 @@ public class Phrases extends ArrayList<Rule> {
                             .forEach(entry -> rule.add(new OneOf(entry.getKey(), distinct(entry.getValue()))));
                 }
 
-                if (!sliced.isEmpty()) {
-                    ruleIndex++;
-                    // TODO continue with rest of slice -> rebuild sequence instead of strings
-                    List<PhraseString> flattened = Sequences.flatten(sliced, first.equalsOperator,
-                            first.joinSequenceOperator);
-                    recurse(phrases, Collections.singletonList(flattened), groupIndex, ruleIndex, index2choices);
-                }
+                ruleIndex++;
             }
         }
     }

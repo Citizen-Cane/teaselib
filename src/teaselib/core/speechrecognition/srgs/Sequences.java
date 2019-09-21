@@ -6,12 +6,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -128,7 +130,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        List<Sequence<T>> elements = disjunct.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        List<Sequence<T>> elements = disjunct.stream().filter(Objects::nonNull).map(joinSequenceOperator::apply)
+                .map(Sequence::new).collect(Collectors.toList());
         return new Sequences<>(elements, equalsOperator, joinCommonOperator, joinSequenceOperator);
     }
 
@@ -147,18 +150,19 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             candidates.add(null);
         }
 
-        int length = 1;
-        while (true) {
-            boolean nothingFound = true;
-            Sequences<T> sequences = this;
-            for (int i = 0; i < sequences.size(); i++) {
-                Sequence<T> sequence = sequences.get(i);
-                if (sequence.size() >= length) {
-                    List<T> element = sequence.subList(0, length);
-                    for (int j = 0; j < size(); j++) {
-                        Sequence<T> otherSequence = get(j);
-                        if (sequence != otherSequence) {
-                            if (otherSequence.size() >= length) {
+        Optional<Integer> maxCommon = maxCommon(0, 1);
+        if (maxCommon.isPresent()) {
+            int length = 1;
+            while (true) {
+                boolean nothingFound = true;
+                Sequences<T> sequences = this;
+                for (int i = 0; i < sequences.size(); i++) {
+                    Sequence<T> sequence = sequences.get(i);
+                    if (sequence.size() >= length) {
+                        List<T> element = sequence.subList(0, length);
+                        for (int j = 0; j < size(); j++) {
+                            Sequence<T> otherSequence = get(j);
+                            if (sequence != otherSequence && otherSequence.size() >= length) {
                                 List<T> otherElement = otherSequence.subList(0, length);
                                 // TODO 1.a Use the equalsOperator to compare lists elements
                                 if (element.toString().equalsIgnoreCase(otherElement.toString())) {
@@ -169,39 +173,78 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                         }
                     }
                 }
-            }
 
-            if (nothingFound) {
-                break;
-            } else {
-                length++;
-            }
-        }
-
-        // only valid candidates or null
-
-        Map<String, T> reduced = new LinkedHashMap<>();
-        for (int i = 0; i < candidates.size(); i++) {
-            T value = candidates.get(i);
-            if (value != null) {
-                // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
-                String key = value.toString().toLowerCase();
-                if (reduced.containsKey(key)) {
-                    T existing = reduced.get(key);
-                    reduced.put(key, joinCommonOperator.apply(Arrays.asList(existing, value)));
+                if (nothingFound) {
+                    break;
                 } else {
-                    reduced.put(key, value);
+                    Optional<Integer> nextMaxCommon = maxCommon(candidates);
+                    if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon.get())) {
+                        // TODO Test still fails:
+                        // Miss, Of course
+                        // Of course
+                        // -> have to slice off miss first n order to find out that "of course" is more common
+                        // - update candidate "Miss" only if next element is not the start of another candidate
+                        // -> end common slicing and return ("Miss",2)
+                        length++;
+                    } else {
+                        break;
+                    }
                 }
-
-                // TODO Generalize and use op
-                int l = value.toString().split(" ").length;
-                get(i).remove(0, l);
             }
         }
 
+        Map<String, T> reduced = reduce(candidates);
         Sequences<T> common = new Sequences<>(equalsOperator, joinCommonOperator, joinSequenceOperator);
         reduced.values().stream().map(Sequence<T>::new).forEach(common::add);
         return common;
+    }
+
+    private Optional<Integer> maxCommon(List<T> candidates) {
+        // TODO Use generic split operator intead of toString()
+        Sequences<T> remaining = remaining(
+                candidates.stream().map(t -> t != null ? t.toString().split(" ").length : 0).collect(toList()));
+        return remaining.maxCommon(0, 1);
+    }
+
+    private Sequences<T> remaining(List<Integer> from) {
+        Sequences<T> remaining = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
+
+        for (int i = 0; i < size(); i++) {
+            Sequence<T> sequence = get(i);
+            remaining.add(new Sequence<>(sequence.subList(from.get(i), sequence.size()), equalsOperator));
+        }
+        return remaining;
+    }
+
+    private Optional<Integer> maxCommon(int start, int length) {
+        Map<String, AtomicInteger> distinct = new HashMap<>(size());
+        // TODO use generic equalsOperator to accumulate occurrence into distinct map
+        stream().filter(seq -> seq.size() > start).map(seq -> seq.subList(start, Math.min(start + length, seq.size())))
+                .map(Objects::toString).map(String::toLowerCase)
+                .forEach(s -> distinct.computeIfAbsent(s, t -> new AtomicInteger(0)).incrementAndGet());
+        return distinct.values().stream().map(AtomicInteger::intValue).reduce(Math::max);
+    }
+
+    private Map<String, T> reduce(List<T> candidates) {
+        Map<String, T> reduced = new LinkedHashMap<>();
+        for (int i = 0; i < candidates.size(); i++) {
+            T candidate = candidates.get(i);
+            if (candidate != null) {
+                // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
+                String key = candidate.toString().toLowerCase();
+                if (reduced.containsKey(key)) {
+                    T existing = reduced.get(key);
+                    reduced.put(key, joinCommonOperator.apply(Arrays.asList(existing, candidate)));
+                } else {
+                    reduced.put(key, candidate);
+                }
+
+                // TODO Generalize and use op
+                int l = candidate.toString().split(" ").length;
+                get(i).remove(0, l);
+            }
+        }
+        return reduced;
     }
 
     private boolean othersStartWith(Sequence<T> skip, T element) {

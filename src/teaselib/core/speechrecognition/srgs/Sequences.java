@@ -109,19 +109,35 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             disjunct.add(null);
         }
 
-        // Split slices column-wise
+        int length = 1;
         while (!isEmpty()) {
+            Map<String, AtomicInteger> distinct = new HashMap<>(size());
+            Map<String, List<Sequence<T>>> lookup = new HashMap<>(size());
+            stream().filter(seq -> seq.size() > 0).forEach(sequence -> {
+                String key = new Sequence<>(sequence.subList(0, Math.min(length, sequence.size()))).toString()
+                        .toLowerCase();
+                distinct.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
+                lookup.computeIfAbsent(key, t -> new ArrayList<>()).add(sequence);
+            });
+
             boolean elementRemoved = false;
             for (int i = 0; i < size(); i++) {
                 Sequence<T> sequence = get(i);
                 if (!sequence.isEmpty()) {
                     T element = sequence.get(0);
                     if (!othersStartWith(sequence, element)) {
-                        disjunct.get(i, () -> new Sequence<>(equalsOperator)).add(element);
-                        sequence.remove(element);
-                        elementRemoved = true;
-                    } else {
-                        break;
+                        String key = element.toString().toLowerCase();
+                        AtomicInteger n = distinct.get(key);
+                        if (n != null && n.intValue() == 1 && distinct.entrySet().stream()
+                                .filter(entry -> entry.getValue().intValue() > 1).noneMatch(entry -> {
+                                    return lookup.get(entry.getKey()).stream().anyMatch(seq -> {
+                                        return seq.toString().toLowerCase().contains(key);
+                                    });
+                                })) {
+                            disjunct.get(i, () -> new Sequence<>(equalsOperator)).add(element);
+                            sequence.remove(element);
+                            elementRemoved = true;
+                        }
                     }
                 }
             }

@@ -74,22 +74,51 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testThatChoiceStringYesNo3() {
-        PhraseStringSequences choices = new PhraseStringSequences(choice("yes Miss, of course", 0),
-                choice("Yes, of Course, Miss", 1), choice("Yes, Of course", 2), choice("No Miss, of course not", 3),
-                choice("No, of Course not, Miss", 4), choice("No, Of course not", 5));
+    public void testThatCommonSlicesConsiderSubsequentCommonSlices() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("yes Miss, of course", 0), choice("Yes, Of Course, Miss", 1), choice("Yes, of course", 2), //
+                choice("No Miss, of course not", 3), choice("No, of Course not, Miss", 4),
+                choice("No, Of course not", 5));
 
         Sequences<PhraseString> slice1 = choices.slice();
         assertEquals(new PhraseStringSequences(result("Yes", 0, 1, 2), result("No", 3, 4, 5)), slice1);
 
         Sequences<PhraseString> slice2 = choices.slice();
-        assertEquals(new PhraseStringSequences(result("Miss", 0)), slice2);
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 3)), slice2);
 
         Sequences<PhraseString> slice3 = choices.slice();
-        assertEquals(new PhraseStringSequences(result("of course", 0, 1, 2)), slice3);
+        assertEquals(new PhraseStringSequences(result("of course", 0, 1, 2, 3, 4, 5)), slice3);
 
         Sequences<PhraseString> slice4 = choices.slice();
         assertEquals(new PhraseStringSequences(result("Miss", 1)), slice4);
+
+        Sequences<PhraseString> slice5 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("not", 3, 4, 5)), slice5);
+
+        Sequences<PhraseString> slice6 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("Miss", 4)), slice6);
+
+        Sequences<PhraseString> empty = choices.slice();
+        assertTrue(empty.isEmpty());
+
+        // Sliced fine using separate indices
+        // TODO -> map slice indices to choice indices when building phrase rules
+    }
+
+    @Test
+    public void testThatSliceCommonPrefersLargerCommonChunks() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("Miss, of course", 0), choice("Of Course, Miss", 1), choice("of course", 2),
+                choice("Miss, of course, Miss", 3));
+
+        Sequences<PhraseString> slice1 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 3)), slice1);
+
+        Sequences<PhraseString> slice2 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("of course", 0, 1, 2, 3)), slice2);
+
+        Sequences<PhraseString> slice3 = choices.slice();
+        assertEquals(new PhraseStringSequences(result("Miss", 1, 3)), slice3);
 
         Sequences<PhraseString> empty = choices.slice();
         assertTrue(empty.isEmpty());
@@ -115,7 +144,5 @@ public class PhrasesSliceTest {
         Sequences<PhraseString> empty = choices.slice();
         assertTrue(empty.isEmpty());
     }
-
-    // String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not", "Of course not" };
 
 }

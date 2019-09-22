@@ -50,6 +50,15 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         this.joinSequenceOperator = joinSequenceOperator;
     }
 
+    public Sequences(Sequences<T> other) {
+        this(other.equalsOperator, other.joinCommonOperator, other.joinSequenceOperator);
+        for (Sequence<T> sequence : other) {
+            Sequence<T> clone = new Sequence<>(equalsOperator);
+            clone.addAll(sequence);
+            add(clone);
+        }
+    }
+
     public static <T> List<Sequences<T>> of(Iterable<T> elements, BiPredicate<T, T> equalsOperator,
             Function<T, List<T>> splitter, Function<List<T>, T> joinCommonOperator,
             Function<List<T>, T> joinSequenceOperator) {
@@ -109,6 +118,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         int length = 1;
         while (!isEmpty()) {
+            // TODO Refactor distinct lookup into new class
             Map<String, AtomicInteger> distinct = new HashMap<>(size());
             Map<String, List<Sequence<T>>> lookup = new HashMap<>(size());
             stream().filter(seq -> seq.size() > 0).forEach(sequence -> {
@@ -124,14 +134,26 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 if (!sequence.isEmpty()) {
                     T element = sequence.get(0);
                     if (!othersStartWith(sequence, element)) {
-                        String key = element.toString().toLowerCase();
-                        AtomicInteger n = distinct.get(key);
-                        if (n != null && n.intValue() == 1 && distinct.entrySet().stream()
-                                .filter(entry -> entry.getValue().intValue() > 1).noneMatch(entry -> {
-                                    return lookup.get(entry.getKey()).stream().anyMatch(seq -> {
-                                        return seq.toString().toLowerCase().contains(key);
-                                    });
-                                })) {
+                        if (occursInAnotherSequence(element, distinct, lookup)) {
+                            Sequences<T> withElement = new Sequences<>(this);
+                            Sequences<T> withoutElement = new Sequences<>(withElement);
+                            Sequence<T> removeOneElement = withoutElement.get(i);
+                            removeOneElement.remove(element);
+                            if (!removeOneElement.isEmpty()) {
+                                int commonnessWithoutElement = commonness(withoutElement);
+                                // TODO results in stack overflow because withElement is always the same
+                                // - no reduction is taking place -> recursion never ends
+                                // How to compute commonness of un-sliced sequence?
+                                // - as if re-occurring elements had been matched?
+                                int commonnessWithElement = commonness(withElement);
+                                if (commonnessWithoutElement > commonnessWithElement) {
+                                    disjunct.get(i, () -> new Sequence<>(equalsOperator)).add(element);
+                                    sequence.remove(element);
+                                    elementRemoved = true;
+                                }
+                            }
+                        } else {
+                            // TODO Resolve code duplication - move into distinct lookup new class
                             disjunct.get(i, () -> new Sequence<>(equalsOperator)).add(element);
                             sequence.remove(element);
                             elementRemoved = true;
@@ -146,7 +168,34 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         List<Sequence<T>> elements = disjunct.stream().filter(Objects::nonNull).map(joinSequenceOperator::apply)
                 .map(Sequence::new).collect(Collectors.toList());
-        return new Sequences<>(elements, equalsOperator, joinCommonOperator, joinSequenceOperator);
+        Sequences<T> sliced = new Sequences<>(elements, equalsOperator, joinCommonOperator, joinSequenceOperator);
+        return sliced;
+    }
+
+    /**
+     * @param sequences
+     * @return
+     */
+    private int commonness(Sequences<T> sequences) {
+        return slice(sequences).stream().map(Sequences::commonness).reduce(Math::max).orElse(0);
+    }
+
+    private int commonness() {
+        // TODO resolve cast to make class generic
+        return stream().flatMap(Sequence::stream).map(element -> ((PhraseString) element).indices.size())
+                .reduce(Math::max).orElse(0);
+    }
+
+    private boolean occursInAnotherSequence(T element, Map<String, AtomicInteger> distinct,
+            Map<String, List<Sequence<T>>> lookup) {
+        String key = element.toString().toLowerCase();
+        AtomicInteger n = distinct.get(key);
+        return n != null && n.intValue() == 1
+                && distinct.entrySet().stream().filter(entry -> entry.getValue().intValue() > 1).anyMatch(entry -> {
+                    return lookup.get(entry.getKey()).stream().anyMatch(seq -> {
+                        return seq.toString().toLowerCase().contains(key);
+                    });
+                });
     }
 
     private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {

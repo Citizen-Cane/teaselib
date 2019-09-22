@@ -33,11 +33,10 @@ public class StringSequences extends Sequences<String> {
         return of(Arrays.asList(choices));
     }
 
-    public static List<Sequences<String>> of(List<String> choices) {
+    private static List<Sequences<String>> of(List<String> choices) {
         BiPredicate<String, String> equalsOp = String::equalsIgnoreCase;
         Function<String, List<String>> splitter = StringSequence::splitWords;
-        return Sequences.of(choices, equalsOp, splitter, StringSequences::joinCommon, StringSequences::joinSequence,
-                s -> "");
+        return Sequences.of(choices, equalsOp, splitter, StringSequences::joinCommon, StringSequences::joinSequence);
     }
 
 }

@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 public class Sequences<T> extends ArrayList<Sequence<T>> {
@@ -53,7 +52,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     public static <T> List<Sequences<T>> of(Iterable<T> elements, BiPredicate<T, T> equalsOperator,
             Function<T, List<T>> splitter, Function<List<T>, T> joinCommonOperator,
-            Function<List<T>, T> joinSequenceOperator, UnaryOperator<T> emptyCloneOp) {
+            Function<List<T>, T> joinSequenceOperator) {
         Iterator<T> choices = elements.iterator();
         if (!choices.hasNext()) {
             return Collections.emptyList();
@@ -63,12 +62,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 Sequence<T> e = new Sequence<>(splitter.apply(choice), sequences.equalsOperator);
                 sequences.add(e);
             }
-            return slice(sequences, joinCommonOperator, joinSequenceOperator, emptyCloneOp);
+            return slice(sequences);
         }
     }
 
-    private static <T> List<Sequences<T>> slice(Sequences<T> sequences, Function<List<T>, T> joinCommonOperator,
-            Function<List<T>, T> joinSequenceOperator, UnaryOperator<T> emptyCloneOp) {
+    private static <T> List<Sequences<T>> slice(Sequences<T> sequences) {
         List<Sequences<T>> slices = new ArrayList<>();
         while (sequences.maxLength() > 0) {
             slices.add(sequences.slice());

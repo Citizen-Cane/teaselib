@@ -1,16 +1,12 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.List;
 import java.util.stream.Stream;
 
 public class PhraseStringSequences extends Sequences<PhraseString> {
     private static final long serialVersionUID = 1L;
-
-    private PhraseStringSequences() {
-        super(PhraseString::samePhrase, PhraseString::joinCommon, PhraseString::joinSequence);
-    }
 
     @SafeVarargs
     PhraseStringSequences(Sequence<PhraseString>... choices) {
@@ -20,7 +16,7 @@ public class PhraseStringSequences extends Sequences<PhraseString> {
 
     public static List<Sequences<PhraseString>> slice(List<PhraseString> choices) {
         return Sequences.of(choices, PhraseString::samePhrase, PhraseString::words, PhraseString::joinCommon,
-                PhraseString::joinSequence, s -> new PhraseString("", s.indices));
+                PhraseString::joinSequence);
     }
 
 }

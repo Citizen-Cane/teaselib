@@ -277,8 +277,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     private Optional<Integer> maxCommon(List<Sequence<T>> candidates) {
         // TODO Use generic split operator instead of toString()
-        Sequences<T> remaining = remaining(
-                candidates.stream().map(t -> t != null ? t.toString().split(" ").length : 0).collect(toList()));
+        Sequences<T> remaining = remaining(candidates.stream()
+                .map(sequence -> sequence != null && !sequence.isEmpty() ? sequence.size() : 0).collect(toList()));
         return remaining.maxCommon(0, 1);
     }
 
@@ -305,7 +305,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Map<String, Sequence<T>> reduced = new LinkedHashMap<>();
         for (int i = 0; i < candidates.size(); i++) {
             Sequence<T> candidate = candidates.get(i);
-            if (candidate != null) {
+            if (candidate != null && !candidate.isEmpty()) {
                 // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
                 String key = candidate.toString().toLowerCase();
                 if (reduced.containsKey(key)) {

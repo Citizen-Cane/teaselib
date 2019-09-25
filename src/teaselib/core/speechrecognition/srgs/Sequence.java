@@ -101,6 +101,10 @@ public class Sequence<T> extends ArrayList<T> {
         return new Sequence<>(subList(from, from + list.size()));
     }
 
+    public boolean nonEmpty() {
+        return size() > 0;
+    }
+
     @Override
     public String toString() {
         return stream().map(T::toString).filter(t -> !t.isEmpty()).collect(Collectors.joining(" "));

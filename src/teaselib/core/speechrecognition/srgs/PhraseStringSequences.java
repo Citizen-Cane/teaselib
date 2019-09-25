@@ -10,8 +10,11 @@ public class PhraseStringSequences extends Sequences<PhraseString> {
 
     @SafeVarargs
     PhraseStringSequences(Sequence<PhraseString>... choices) {
-        super(Stream.of(choices).collect(toList()), PhraseString::samePhrase, PhraseString::joinCommon,
-                PhraseString::joinSequence);
+        this(Stream.of(choices).collect(toList()));
+    }
+
+    PhraseStringSequences(List<Sequence<PhraseString>> choices) {
+        super(choices, PhraseString::samePhrase, PhraseString::joinCommon, PhraseString::joinSequence);
     }
 
     public static List<Sequences<PhraseString>> slice(List<PhraseString> choices) {

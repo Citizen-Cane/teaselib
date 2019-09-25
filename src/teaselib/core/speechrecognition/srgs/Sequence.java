@@ -18,6 +18,10 @@ public class Sequence<T> extends ArrayList<T> {
         this(Arrays.asList(elements));
     }
 
+    public Sequence(Sequence<T> elements) {
+        this(elements, elements.equalsOperator);
+    }
+
     public Sequence(List<T> elements) {
         this(elements, Object::equals);
     }

@@ -129,15 +129,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         int length = 1;
         while (!isEmpty()) {
-            // TODO Refactor distinct lookup into new class
-            Map<String, AtomicInteger> distinct = new HashMap<>(size());
-            Map<String, List<Sequence<T>>> lookup = new HashMap<>(size());
-            stream().filter(seq -> seq.size() > 0).forEach(sequence -> {
-                String key = new Sequence<>(sequence.subList(0, Math.min(length, sequence.size()))).toString()
-                        .toLowerCase();
-                distinct.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
-                lookup.computeIfAbsent(key, t -> new ArrayList<>()).add(sequence);
-            });
+            SequenceLookup<T> distinct = new SequenceLookup<>(size());
+            distinct.scan(this, length);
 
             boolean elementRemoved = false;
             for (int i = 0; i < size(); i++) {
@@ -145,7 +138,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 if (!sequence.isEmpty()) {
                     T element = sequence.get(0);
                     if (!othersStartWith(sequence, element)) {
-                        if (occursInAnotherSequence(element, distinct, lookup)) {
+                        if (distinct.occursInAnotherSequence(element)) {
                             List<Sequences<T>> candidate = clone(soFar);
                             Sequences<T> current = new Sequences<>(disjunct);
                             current.get(i, () -> new Sequence<>(equalsOperator)).add(element);
@@ -204,18 +197,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         // TODO resolve cast to make class generic
         return stream().flatMap(Sequence::stream).map(element -> ((PhraseString) element).indices.size())
                 .reduce(Math::max).orElse(0);
-    }
-
-    private boolean occursInAnotherSequence(T element, Map<String, AtomicInteger> distinct,
-            Map<String, List<Sequence<T>>> lookup) {
-        String key = element.toString().toLowerCase();
-        AtomicInteger n = distinct.get(key);
-        return n != null && n.intValue() == 1
-                && distinct.entrySet().stream().filter(entry -> entry.getValue().intValue() > 1).anyMatch(entry -> {
-                    return lookup.get(entry.getKey()).stream().anyMatch(seq -> {
-                        return seq.toString().toLowerCase().contains(key);
-                    });
-                });
     }
 
     private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {

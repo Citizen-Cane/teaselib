@@ -1,7 +1,10 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -116,11 +119,21 @@ public class PhrasesSliceTest {
     @Test
     public void testThatSliceCommonPrefersLargerCommonChunks() {
         PhraseStringSequences choices = new PhraseStringSequences( //
-                choice("Miss, of course", 0), choice("Of Course, Miss", 1), choice("of course", 2),
+                choice("Miss, of course", 0), choice("of Course, Miss", 1), choice("of course", 2),
                 choice("Miss, of course, Miss", 3));
 
+        // List<Sequences<PhraseString>> subOptimal = complete(choices);
+        // candidates.add(subOptimal);
+        // List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
+        // assertNotEquals(optimal, subOptimal);
+        // assertEquals(3, Sequences.commonness(optimal));
+        // assertEquals(2, Sequences.commonness(subOptimal));
+
+        // Slices correctly but not optimal since only single items are moved
+        // -> this causes the next segment to be sliced disjunct,
+        // but what we want is a different slice common chunk
+        // -> move all occurrences of an element to the "without" branch
         Sequences<PhraseString> slice1 = advance(choices);
-        // TODO Add recursion for common slices to make the next two assertions succeed 
         assertEquals(new PhraseStringSequences(result("Miss", 0, 3)), slice1);
 
         Sequences<PhraseString> slice2 = advance(choices);

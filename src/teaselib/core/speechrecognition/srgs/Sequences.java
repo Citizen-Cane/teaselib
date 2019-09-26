@@ -237,7 +237,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                                         joinSequenceOperator);
                                 common.stream().map(Sequence::new).forEach(current::add);
 
-                                current.get(i, () -> new Sequence<>(equalsOperator)).addAll(startElements);
+                                current.get(i, () -> new Sequence<>(equalsOperator))
+                                        .add(joinSequenceOperator.apply(startElements));
                                 current = new Sequences<>(
                                         current.stream().filter(Sequence::nonEmpty).collect(Collectors.toList()),
                                         equalsOperator, joinCommonOperator, joinSequenceOperator);

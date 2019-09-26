@@ -1,8 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -215,6 +216,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         Optional<Integer> maxCommon = maxCommon(0, 1);
         if (maxCommon.isPresent()) {
+            // TODO Start at maxLength and break when phrases match the first time
+            // -> reduces recursion since only one match size has to be handled
+            // - likely misses smaller chunks with potentially higher commonness
             int length = 1;
             while (true) {
                 SequenceLookup<T> distinct = new SequenceLookup<>(size());
@@ -226,11 +230,12 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     if (sequence.size() >= length) {
                         List<T> startElements = sequence.subList(0, length);
                         if (othersStartWith(sequence, startElements)) {
-                            if (distinct.occursInAnotherCommonSequence(startElements)) {
+
+                            if (distinct.occursLaterInAnotherSequence(startElements)) {
                                 List<Sequences<T>> candidate = clone(soFar);
                                 Sequences<T> current = new Sequences<>(equalsOperator, joinCommonOperator,
                                         joinSequenceOperator);
-                                common.stream().map(t -> new Sequence<>(t)).forEach(current::add);
+                                common.stream().map(Sequence::new).forEach(current::add);
 
                                 current.get(i, () -> new Sequence<>(equalsOperator)).addAll(startElements);
                                 current = new Sequences<>(
@@ -304,23 +309,26 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     private Map<String, Sequence<T>> distinct(List<Sequence<T>> candidates) {
         Map<String, Sequence<T>> reduced = new LinkedHashMap<>();
         for (int i = 0; i < candidates.size(); i++) {
-            Sequence<T> candidate = candidates.get(i);
-            if (candidate != null && !candidate.isEmpty()) {
-                // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
-                String key = candidate.toString().toLowerCase();
-                if (reduced.containsKey(key)) {
-                    Sequence<T> existing = reduced.get(key);
-                    // reduced.put(key, joinCommonOperator.apply(Arrays.asList(existing, candidate)));
-                    Sequence<T> joined = new Sequence<>(existing);
-                    joined.addAll(candidate);
-                    reduced.put(key, joined);
-                } else {
-                    reduced.put(key, candidate);
-                }
+            Sequence<T> t = candidates.get(i);
+            if (!t.isEmpty()) {
+                Sequence<T> candidate = new Sequence<>(joinSequenceOperator.apply(t));
+                if (!candidate.isEmpty()) {
+                    // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
+                    String key = candidate.toString().toLowerCase();
+                    if (reduced.containsKey(key)) {
+                        Sequence<T> existing = reduced.get(key);
+                        Sequence<T> joined = new Sequence<>(existing);
+                        joined.addAll(candidate);
+                        reduced.put(key, new Sequence<>(
+                                joinCommonOperator.apply(Arrays.asList(candidate.get(0), existing.get(0)))));
+                    } else {
+                        reduced.put(key, candidate);
+                    }
 
-                // TODO Generalize and use op
-                int l = candidate.toString().split(" ").length;
-                get(i).remove(0, l);
+                    // TODO Generalize and use op
+                    int l = candidate.toString().split(" ").length;
+                    get(i).remove(0, l);
+                }
             }
         }
         return reduced;

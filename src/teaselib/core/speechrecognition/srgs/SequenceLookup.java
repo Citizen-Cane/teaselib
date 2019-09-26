@@ -38,13 +38,14 @@ class SequenceLookup<T> {
                 });
     }
 
-    boolean occursInAnotherCommonSequence(List<T> elements) {
+    boolean occursLaterInAnotherSequence(List<T> elements) {
         String key = elements.stream().map(Objects::toString).map(String::toLowerCase).collect(Collectors.joining(" "));
         AtomicInteger n = indices.get(key);
         return n != null && n.intValue() > 1
                 && indices.entrySet().stream().filter(entry -> entry.getValue().intValue() > 1).anyMatch(entry -> {
                     return lookup.get(entry.getKey()).stream().anyMatch(seq -> {
-                        return seq.toString().toLowerCase().contains(key);
+                        String lowerCase = seq.toString().toLowerCase();
+                        return lowerCase.contains(key) && !lowerCase.startsWith(key);
                     });
                 });
     }

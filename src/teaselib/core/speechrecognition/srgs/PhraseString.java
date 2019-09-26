@@ -58,7 +58,7 @@ class PhraseString {
 
     public static PhraseString joinSequence(List<PhraseString> strings) {
         if (strings.isEmpty()) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("Empty phrases cannot be concatenated since they don't provide indices");
         }
 
         Set<Integer> choice = strings.stream().map(phrase -> phrase.indices).reduce(PhraseString::intersect)

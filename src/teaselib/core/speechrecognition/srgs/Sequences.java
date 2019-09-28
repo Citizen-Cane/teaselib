@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,6 +140,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     if (!othersStartWith(sequence, element)) {
                         if (distinct.occursInAnotherDistinctSequence(element)) {
                             List<Sequences<T>> candidate = clone(soFar);
+
                             Sequences<T> current = new Sequences<>(disjunct);
                             current.get(i, () -> new Sequence<>(equalsOperator)).add(element);
                             current = new Sequences<>(
@@ -224,42 +225,22 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 SequenceLookup<T> distinct = new SequenceLookup<>(size());
                 distinct.scan(this, length);
 
-                boolean nothingFound = true;
-                for (int i = 0; i < size(); i++) {
-                    Sequence<T> sequence = get(i);
-                    if (sequence.size() >= length) {
-                        List<T> startElements = sequence.subList(0, length);
-                        if (othersStartWith(sequence, startElements)) {
-
-                            if (distinct.occursLaterInAnotherSequence(startElements)) {
-                                List<Sequences<T>> candidate = clone(soFar);
-                                Sequences<T> current = new Sequences<>(equalsOperator, joinCommonOperator,
-                                        joinSequenceOperator);
-                                common.stream().map(Sequence::new).forEach(current::add);
-
-                                current.get(i, () -> new Sequence<>(equalsOperator))
-                                        .add(joinSequenceOperator.apply(startElements));
-                                current = new Sequences<>(
-                                        current.stream().filter(Sequence::nonEmpty).collect(Collectors.toList()),
-                                        equalsOperator, joinCommonOperator, joinSequenceOperator);
-                                candidate.add(current);
-
-                                Sequences<T> withoutElement = new Sequences<>(this);
-                                withoutElement.get(i).remove(0, startElements.size());
-                                List<Sequences<T>> slices = slice(candidates, withoutElement);
-                                candidate.addAll(slices);
-                                candidates.add(candidate);
-                            }
-
-                            common.set(i, new Sequence<>(joinSequenceOperator.apply(startElements)));
-                            nothingFound = false;
-                        }
-                    }
-                }
+                boolean nothingFound = collectCommonStartElements(common, length);
 
                 if (nothingFound) {
                     break;
                 } else {
+                    Sequences<T> slice = new Sequences<>(this).createCommonSlice(common);
+                    // TODO 1-n combinations of common chunks
+                    for (int i = 0; i < slice.size(); i++) {
+                        Sequence<T> startElements = slice.get(i);
+                        if (distinct.occursLaterInAnotherSequence(startElements)) {
+                            // first level, i = 1 "of" something gets lost
+                            List<Sequences<T>> candidate = sliceCommonWithoutStartElements(candidates, soFar, startElements);
+                            candidates.add(candidate);
+                        }
+                    }
+
                     Optional<Integer> nextMaxCommon = maxCommon(common);
                     if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon.get())) {
                         length++;
@@ -270,8 +251,42 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
+        // all recursion instances remove from the original "this", since we don't recurse with a clone of this
+        // - not true since we call a static slice() method that works on "withoutElement"
         Sequences<T> slice = createCommonSlice(common);
         return slice;
+    }
+
+    private List<Sequences<T>> sliceCommonWithoutStartElements(List<List<Sequences<T>>> candidates, List<Sequences<T>> soFar,
+            Sequence<T> startElements) {
+        List<Sequences<T>> candidate = clone(soFar);
+        candidate.add(new Sequences<>(Collections.singleton(startElements), equalsOperator, joinCommonOperator,
+                joinSequenceOperator));
+        Sequences<T> withoutElement = new Sequences<>(this);
+        for (Sequence<T> sequence : withoutElement) {
+            if (sequence.startsWith(startElements)) {
+                sequence.remove(0, startElements.size());
+            }
+        }
+
+        List<Sequences<T>> slices = slice(candidates, withoutElement);
+        candidate.addAll(slices);
+        return candidate;
+    }
+
+    private boolean collectCommonStartElements(Sequences<T> common, int length) {
+        boolean nothingFound = true;
+        for (int i = 0; i < size(); i++) {
+            Sequence<T> sequence = get(i);
+            if (sequence.size() >= length) {
+                List<T> startElements = sequence.subList(0, length);
+                if (othersStartWith(sequence, startElements)) {
+                    common.set(i, new Sequence<>(joinSequenceOperator.apply(startElements)));
+                    nothingFound = false;
+                }
+            }
+        }
+        return nothingFound;
     }
 
     private Sequences<T> createCommonSlice(List<Sequence<T>> candidates) {

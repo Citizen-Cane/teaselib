@@ -217,32 +217,27 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         Optional<Integer> maxCommon = maxCommon(0, 1);
         if (maxCommon.isPresent()) {
-            // TODO Start at maxLength and break when phrases match the first time
-            // -> reduces recursion since only one match size has to be handled
-            // - likely misses smaller chunks with potentially higher commonness
             int length = 1;
             while (true) {
                 SequenceLookup<T> distinct = new SequenceLookup<>(size());
                 distinct.scan(this, length);
 
                 boolean nothingFound = collectCommonStartElements(common, length);
-
                 if (nothingFound) {
                     break;
                 } else {
-                    Sequences<T> slice = new Sequences<>(this).createCommonSlice(common);
-                    // TODO 1-n combinations of common chunks
-                    for (int i = 0; i < slice.size(); i++) {
-                        Sequence<T> startElements = slice.get(i);
-                        if (distinct.occursLaterInAnotherSequence(startElements)) {
-                            // first level, i = 1 "of" something gets lost
-                            List<Sequences<T>> candidate = sliceCommonWithoutStartElements(candidates, soFar, startElements);
-                            candidates.add(candidate);
-                        }
-                    }
-
-                    Optional<Integer> nextMaxCommon = maxCommon(common);
+                    Optional<Integer> nextMaxCommon = maxCommonAfter(common);
                     if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon.get())) {
+                        Sequences<T> slice = new Sequences<>(this).gatherCommonElements(common);
+                        // TODO 1-n combinations of common chunks
+                        for (int i = 0; i < slice.size(); i++) {
+                            Sequence<T> startElements = slice.get(i);
+                            if (distinct.occursLaterInAnotherSequence(startElements)) {
+                                List<Sequences<T>> candidate = sliceCommonWithoutStartElements(candidates, soFar,
+                                        startElements);
+                                candidates.add(candidate);
+                            }
+                        }
                         length++;
                     } else {
                         break;
@@ -251,14 +246,12 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        // all recursion instances remove from the original "this", since we don't recurse with a clone of this
-        // - not true since we call a static slice() method that works on "withoutElement"
-        Sequences<T> slice = createCommonSlice(common);
+        Sequences<T> slice = gatherCommonSlice(common);
         return slice;
     }
 
-    private List<Sequences<T>> sliceCommonWithoutStartElements(List<List<Sequences<T>>> candidates, List<Sequences<T>> soFar,
-            Sequence<T> startElements) {
+    private List<Sequences<T>> sliceCommonWithoutStartElements(List<List<Sequences<T>>> candidates,
+            List<Sequences<T>> soFar, Sequence<T> startElements) {
         List<Sequences<T>> candidate = clone(soFar);
         candidate.add(new Sequences<>(Collections.singleton(startElements), equalsOperator, joinCommonOperator,
                 joinSequenceOperator));
@@ -281,7 +274,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             if (sequence.size() >= length) {
                 List<T> startElements = sequence.subList(0, length);
                 if (othersStartWith(sequence, startElements)) {
-                    common.set(i, new Sequence<>(joinSequenceOperator.apply(startElements)));
+                    // common.set(i, new Sequence<>(joinSequenceOperator.apply(startElements)));
+                    common.set(i, new Sequence<>(startElements));
                     nothingFound = false;
                 }
             }
@@ -289,17 +283,24 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return nothingFound;
     }
 
-    private Sequences<T> createCommonSlice(List<Sequence<T>> candidates) {
+    private Sequences<T> gatherCommonElements(List<Sequence<T>> candidates) {
         Map<String, Sequence<T>> distinct = distinct(candidates);
         Sequences<T> common = new Sequences<>(equalsOperator, joinCommonOperator, joinSequenceOperator);
         distinct.values().stream().map(Sequence<T>::new).forEach(common::add);
         return common;
     }
 
-    private Optional<Integer> maxCommon(List<Sequence<T>> candidates) {
-        // TODO Use generic split operator instead of toString()
-        Sequences<T> remaining = remaining(candidates.stream()
-                .map(sequence -> sequence != null && !sequence.isEmpty() ? sequence.size() : 0).collect(toList()));
+    private Sequences<T> gatherCommonSlice(List<Sequence<T>> candidates) {
+        Map<String, Sequence<T>> distinct = distinct(candidates);
+        Sequences<T> common = new Sequences<>(equalsOperator, joinCommonOperator, joinSequenceOperator);
+        distinct.values().stream().map(joinSequenceOperator::apply).map(Sequence::new).forEach(common::add);
+        return common;
+    }
+
+    private Optional<Integer> maxCommonAfter(List<Sequence<T>> sequences) {
+        List<Integer> startIndices = sequences.stream()
+                .map(sequence -> sequence != null && !sequence.isEmpty() ? sequence.size() : 0).collect(toList());
+        Sequences<T> remaining = remaining(startIndices);
         return remaining.maxCommon(0, 1);
     }
 
@@ -325,18 +326,24 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     private Map<String, Sequence<T>> distinct(List<Sequence<T>> candidates) {
         Map<String, Sequence<T>> reduced = new LinkedHashMap<>();
         for (int i = 0; i < candidates.size(); i++) {
-            Sequence<T> t = candidates.get(i);
-            if (!t.isEmpty()) {
-                Sequence<T> candidate = new Sequence<>(joinSequenceOperator.apply(t));
+            Sequence<T> elements = candidates.get(i);
+            if (!elements.isEmpty()) {
+                Sequence<T> candidate = new Sequence<>(elements);
                 if (!candidate.isEmpty()) {
                     // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
-                    String key = candidate.toString().toLowerCase();
+                    String key = joinSequenceOperator.apply(candidate).toString().toLowerCase();
                     if (reduced.containsKey(key)) {
                         Sequence<T> existing = reduced.get(key);
                         Sequence<T> joined = new Sequence<>(existing);
                         joined.addAll(candidate);
-                        reduced.put(key, new Sequence<>(
-                                joinCommonOperator.apply(Arrays.asList(candidate.get(0), existing.get(0)))));
+                        // reduced.put(key, new Sequence<>(
+                        // joinCommonOperator.apply(Arrays.asList(candidate.get(0), existing.get(0)))));
+                        Sequence<T> joinedElements = new Sequence<>(equalsOperator);
+                        for (int j = 0; j < existing.size(); j++) {
+                            joinedElements
+                                    .add(joinCommonOperator.apply(Arrays.asList(candidate.get(j), existing.get(j))));
+                        }
+                        reduced.put(key, joinedElements);
                     } else {
                         reduced.put(key, candidate);
                     }

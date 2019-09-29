@@ -154,6 +154,20 @@ public class PhrasesSliceTest {
     }
 
     @Test
+    public void testSliceMultipleChoiceIrregularPhrasesTryout() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("No Miss, I'm sorry", 0),
+                choice("Yes Miss, I'm ready", 1), choice("I have it, Miss", 2), choice("Yes,it's ready, Miss", 3),
+                choice("It's ready, Miss", 4));
+
+        List<Sequences<PhraseString>> subOptimal = complete(choices);
+        candidates.add(subOptimal);
+        List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
+        assertNotEquals(optimal, subOptimal);
+        assertEquals(5, Sequences.commonness(optimal));
+        assertEquals(2, Sequences.commonness(subOptimal));
+    }
+
+    @Test
     public void testSliceMultipleChoiceIrregularPhrases() {
         PhraseStringSequences choices = new PhraseStringSequences(choice("No Miss, I'm sorry", 0),
                 choice("Yes Miss, I'm ready", 1), choice("I have it, Miss", 2), choice("Yes,it's ready, Miss", 3),
@@ -187,11 +201,12 @@ public class PhrasesSliceTest {
         // -> start elements missing - not in "soFar"
         // TODO Far too many candidates (~120'000)
         // TODO Candidates sliced chunks contain multiple elements
-        assertEquals(new PhraseStringSequences(result("I", 2)), optimal.get(0));
-        assertEquals(new PhraseStringSequences(result("have it", 2)), optimal.get(1));
-        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2, 3, 4)), optimal.get(2));
-        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(3));
-        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), optimal.get(4));
+        assertEquals(new PhraseStringSequences(result("No", 0)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("It's", 4)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("have it", 2)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2, 3, 4)), optimal.get(3));
+        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(4));
+        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), optimal.get(5));
     }
 
 }

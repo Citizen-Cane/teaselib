@@ -75,6 +75,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     private static <T> List<Sequences<T>> slice(List<List<Sequences<T>>> candidates, Sequences<T> sequences) {
         List<Sequences<T>> slices = new ArrayList<>();
+        return slice(candidates, slices, sequences);
+    }
+
+    private static <T> List<Sequences<T>> slice(List<List<Sequences<T>>> candidates, List<Sequences<T>> slices,
+            Sequences<T> sequences) {
         while (sequences.maxLength() > 0) {
             slices.add(sequences.slice(candidates, slices));
         }
@@ -136,9 +141,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
                             Sequences<T> withoutElement = new Sequences<>(this);
                             withoutElement.get(i).remove(element);
-                            List<Sequences<T>> slices = slice(candidates, withoutElement);
-                            candidate.addAll(slices);
-                            candidates.add(candidate);
+                            List<Sequences<T>> slices = slice(candidates, candidate, withoutElement);
+                            // candidate.addAll(slices);
+                            candidates.add(slices);
                         } else {
                             disjunct.get(i, () -> new Sequence<>(traits)).add(element);
                             sequence.remove(element);
@@ -243,9 +248,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        List<Sequences<T>> slices = slice(candidates, withoutElement);
-        candidate.addAll(slices);
-        return candidate;
+        List<Sequences<T>> slices = slice(candidates, candidate, withoutElement);
+        // candidate.addAll(slices);
+        // return candidate;
+        return slices;
     }
 
     private boolean collectCommonStartElements(Sequences<T> common, int length) {

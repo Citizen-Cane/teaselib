@@ -1,9 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -141,7 +138,7 @@ public class Phrases extends ArrayList<Rule> {
                     Function<? super PhraseString, ? extends Set<Integer>> mapper = phrase -> index2choices
                             .get(phrase.indices);
                     Map<String, Set<Set<Integer>>> items = first.stream().filter(sequence -> !sequence.isEmpty())
-                            .map(first.joinSequenceOperator::apply)
+                            .map(first.traits.joinSequenceOperator::apply)
                             .collect(groupingBy(classifier, LinkedHashMap::new, mapping(mapper, toSet())));
 
                     Rule rule = phrases.rule(groupIndex, ruleIndex);
@@ -154,7 +151,7 @@ public class Phrases extends ArrayList<Rule> {
                             .get(phrase.indices);
                     Function<? super PhraseString, ? extends String> mapper = phrase -> phrase.phrase;
                     Map<Set<Integer>, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
-                            .map(first.joinSequenceOperator::apply)
+                            .map(first.traits.joinSequenceOperator::apply)
                             .collect(groupingBy(classifier, LinkedHashMap::new, mapping(mapper, toList())));
 
                     Rule rule = phrases.rule(groupIndex, ruleIndex);
@@ -196,7 +193,7 @@ public class Phrases extends ArrayList<Rule> {
         Map<String, Set<Integer>> unique = new HashMap<>();
         for (Sequence<PhraseString> sequence : slice) {
             if (!sequence.isEmpty()) {
-                PhraseString words = slice.joinSequenceOperator.apply(sequence);
+                PhraseString words = slice.traits.joinSequenceOperator.apply(sequence);
                 Set<Integer> choices = unique.get(words.phrase);
                 if (choices != null && !words.indices.containsAll(choices)) {
                     return false;

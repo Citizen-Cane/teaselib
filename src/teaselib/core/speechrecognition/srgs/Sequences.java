@@ -14,46 +14,35 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
 public class Sequences<T> extends ArrayList<Sequence<T>> {
     private static final long serialVersionUID = 1L;
 
-    final transient BiPredicate<T, T> equalsOperator;
-    final transient Function<List<T>, T> joinCommonOperator;
-    final transient Function<List<T>, T> joinSequenceOperator;
+    final Sequence.Traits<T> traits;
 
-    public Sequences(BiPredicate<T, T> equalsOperator, Function<List<T>, T> joinOperator,
-            Function<List<T>, T> joinSequenceOperator) {
+    public Sequences(Traits<T> traits) {
         super();
-        this.equalsOperator = equalsOperator;
-        this.joinCommonOperator = joinOperator;
-        this.joinSequenceOperator = joinSequenceOperator;
+        this.traits = traits;
     }
 
-    public Sequences(Collection<? extends Sequence<T>> elements, BiPredicate<T, T> equalsOperator,
-            Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator) {
+    public Sequences(Collection<? extends Sequence<T>> elements, Traits<T> traits) {
         super(elements);
-        this.equalsOperator = equalsOperator;
-        this.joinCommonOperator = joinCommonOperator;
-        this.joinSequenceOperator = joinSequenceOperator;
+        this.traits = traits;
     }
 
-    public Sequences(int initialCapacity, BiPredicate<T, T> equalsOperator, Function<List<T>, T> joinCommonOperator,
-            Function<List<T>, T> joinSequenceOperator) {
+    public Sequences(int initialCapacity, Traits<T> traits) {
         super(initialCapacity);
-        this.equalsOperator = equalsOperator;
-        this.joinCommonOperator = joinCommonOperator;
-        this.joinSequenceOperator = joinSequenceOperator;
+        this.traits = traits;
     }
 
     public Sequences(Sequences<T> other) {
-        this(other.equalsOperator, other.joinCommonOperator, other.joinSequenceOperator);
+        this(other.traits);
         for (Sequence<T> sequence : other) {
-            Sequence<T> clone = new Sequence<>(equalsOperator);
+            Sequence<T> clone = new Sequence<>(traits);
             if (sequence != null) {
                 clone.addAll(sequence);
             }
@@ -61,16 +50,14 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
     }
 
-    public static <T> List<Sequences<T>> of(Iterable<T> elements, BiPredicate<T, T> equalsOperator,
-            Function<T, List<T>> splitter, Function<List<T>, T> joinCommonOperator,
-            Function<List<T>, T> joinSequenceOperator) {
+    public static <T> List<Sequences<T>> of(Iterable<T> elements, Traits<T> traits) {
         Iterator<T> choices = elements.iterator();
         if (!choices.hasNext()) {
             return Collections.emptyList();
         } else {
-            Sequences<T> sequences = new Sequences<>(equalsOperator, joinCommonOperator, joinSequenceOperator);
+            Sequences<T> sequences = new Sequences<>(traits);
             for (T choice : elements) {
-                Sequence<T> e = new Sequence<>(splitter.apply(choice), sequences.equalsOperator);
+                Sequence<T> e = new Sequence<>(traits.splitter.apply(choice), traits);
                 sequences.add(e);
             }
             return slice(sequences);
@@ -122,7 +109,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private Sequences<T> splitDisjunct(List<List<Sequences<T>>> candidates, List<Sequences<T>> soFar) {
-        Sequences<T> disjunct = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
+        Sequences<T> disjunct = new Sequences<>(size(), traits);
         for (int i = 0; i < size(); i++) {
             disjunct.add(null);
         }
@@ -142,10 +129,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                             List<Sequences<T>> candidate = clone(soFar);
 
                             Sequences<T> current = new Sequences<>(disjunct);
-                            current.get(i, () -> new Sequence<>(equalsOperator)).add(element);
+                            current.get(i, () -> new Sequence<>(traits)).add(element);
                             current = new Sequences<>(
-                                    current.stream().filter(Sequence::nonEmpty).collect(Collectors.toList()),
-                                    equalsOperator, joinCommonOperator, joinSequenceOperator);
+                                    current.stream().filter(Sequence::nonEmpty).collect(Collectors.toList()), traits);
                             candidate.add(current);
 
                             Sequences<T> withoutElement = new Sequences<>(this);
@@ -154,7 +140,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                             candidate.addAll(slices);
                             candidates.add(candidate);
                         } else {
-                            disjunct.get(i, () -> new Sequence<>(equalsOperator)).add(element);
+                            disjunct.get(i, () -> new Sequence<>(traits)).add(element);
                             sequence.remove(element);
                             elementRemoved = true;
                         }
@@ -181,8 +167,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     private Sequences<T> createDisjunctSlice(Sequences<T> disjunct) {
         List<Sequence<T>> elements = disjunct.stream().filter(Objects::nonNull).filter(Sequence::nonEmpty)
-                .map(joinSequenceOperator::apply).map(Sequence::new).collect(Collectors.toList());
-        Sequences<T> sliced = new Sequences<>(elements, equalsOperator, joinCommonOperator, joinSequenceOperator);
+                .map(traits.joinSequenceOperator::apply).map(element -> new Sequence<>(element, traits))
+                .collect(toList());
+        Sequences<T> sliced = new Sequences<>(elements, traits);
         return sliced;
     }
 
@@ -191,13 +178,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public static <T> int commonness(List<Sequences<T>> sequences) {
-        return sequences.stream().map(Sequences::commonness).reduce(Math::max).orElse(0);
-    }
-
-    private int commonness() {
-        // TODO resolve cast to make class generic
-        return stream().flatMap(Sequence::stream).map(element -> ((PhraseString) element).indices.size())
-                .reduce(Math::max).orElse(0);
+        return sequences.stream().map(sequence -> sequence.traits.commonnessOperator.apply(sequence)).reduce(Math::max)
+                .orElse(0);
     }
 
     private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {
@@ -210,9 +192,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private Sequences<T> splitCommon(List<List<Sequences<T>>> candidates, List<Sequences<T>> soFar) {
-        Sequences<T> common = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
+        Sequences<T> common = new Sequences<>(size(), traits);
         for (int n = 0; n < size(); n++) {
-            common.add(new Sequence<>(equalsOperator));
+            common.add(new Sequence<>(traits));
         }
 
         Optional<Integer> maxCommon = maxCommon(0, 1);
@@ -253,8 +235,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     private List<Sequences<T>> sliceCommonWithoutStartElements(List<List<Sequences<T>>> candidates,
             List<Sequences<T>> soFar, Sequence<T> startElements) {
         List<Sequences<T>> candidate = clone(soFar);
-        candidate.add(new Sequences<>(Collections.singleton(startElements), equalsOperator, joinCommonOperator,
-                joinSequenceOperator));
+        candidate.add(new Sequences<>(Collections.singleton(startElements), traits));
         Sequences<T> withoutElement = new Sequences<>(this);
         for (Sequence<T> sequence : withoutElement) {
             if (sequence.startsWith(startElements)) {
@@ -274,8 +255,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             if (sequence.size() >= length) {
                 List<T> startElements = sequence.subList(0, length);
                 if (othersStartWith(sequence, startElements)) {
-                    // common.set(i, new Sequence<>(joinSequenceOperator.apply(startElements)));
-                    common.set(i, new Sequence<>(startElements));
+                    common.set(i, new Sequence<>(startElements, traits));
                     nothingFound = false;
                 }
             }
@@ -285,15 +265,16 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     private Sequences<T> gatherCommonElements(List<Sequence<T>> candidates) {
         Map<String, Sequence<T>> distinct = distinct(candidates);
-        Sequences<T> common = new Sequences<>(equalsOperator, joinCommonOperator, joinSequenceOperator);
+        Sequences<T> common = new Sequences<>(traits);
         distinct.values().stream().map(Sequence<T>::new).forEach(common::add);
         return common;
     }
 
     private Sequences<T> gatherCommonSlice(List<Sequence<T>> candidates) {
         Map<String, Sequence<T>> distinct = distinct(candidates);
-        Sequences<T> common = new Sequences<>(equalsOperator, joinCommonOperator, joinSequenceOperator);
-        distinct.values().stream().map(joinSequenceOperator::apply).map(Sequence::new).forEach(common::add);
+        Sequences<T> common = new Sequences<>(traits);
+        distinct.values().stream().map(traits.joinSequenceOperator::apply)
+                .map(element -> new Sequence<>(element, traits)).forEach(common::add);
         return common;
     }
 
@@ -305,11 +286,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private Sequences<T> remaining(List<Integer> from) {
-        Sequences<T> remaining = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
+        Sequences<T> remaining = new Sequences<>(size(), traits);
 
         for (int i = 0; i < size(); i++) {
             Sequence<T> sequence = get(i);
-            remaining.add(new Sequence<>(sequence.subList(from.get(i), sequence.size()), equalsOperator));
+            remaining.add(new Sequence<>(sequence.subList(from.get(i), sequence.size()), traits));
         }
         return remaining;
     }
@@ -328,20 +309,18 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         for (int i = 0; i < candidates.size(); i++) {
             Sequence<T> elements = candidates.get(i);
             if (!elements.isEmpty()) {
-                Sequence<T> candidate = new Sequence<>(elements);
+                Sequence<T> candidate = new Sequence<>(elements, traits);
                 if (!candidate.isEmpty()) {
                     // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
-                    String key = joinSequenceOperator.apply(candidate).toString().toLowerCase();
+                    String key = traits.joinSequenceOperator.apply(candidate).toString().toLowerCase();
                     if (reduced.containsKey(key)) {
                         Sequence<T> existing = reduced.get(key);
-                        Sequence<T> joined = new Sequence<>(existing);
+                        Sequence<T> joined = new Sequence<>(existing, traits);
                         joined.addAll(candidate);
-                        // reduced.put(key, new Sequence<>(
-                        // joinCommonOperator.apply(Arrays.asList(candidate.get(0), existing.get(0)))));
-                        Sequence<T> joinedElements = new Sequence<>(equalsOperator);
+                        Sequence<T> joinedElements = new Sequence<>(traits);
                         for (int j = 0; j < existing.size(); j++) {
-                            joinedElements
-                                    .add(joinCommonOperator.apply(Arrays.asList(candidate.get(j), existing.get(j))));
+                            joinedElements.add(
+                                    traits.joinCommonOperator.apply(Arrays.asList(candidate.get(j), existing.get(j))));
                         }
                         reduced.put(key, joinedElements);
                     } else {
@@ -366,7 +345,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     Sequence<T> commonStart() {
-        Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
+        Sequence<T> sequence = new Sequence<>(get(0), traits);
         for (int i = sequence.size(); i >= 1; --i) {
             if (allStartWithSequence(sequence)) {
                 return common(sequence);
@@ -374,7 +353,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             sequence.remove(sequence.size() - 1);
         }
 
-        return new Sequence<>(Collections.emptyList(), equalsOperator);
+        return new Sequence<>(Collections.emptyList(), traits);
     }
 
     private boolean allStartWithSequence(Sequence<T> sequence) {
@@ -387,7 +366,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     Sequence<T> commonEnd() {
-        Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
+        Sequence<T> sequence = new Sequence<>(get(0), traits);
         for (int i = sequence.size(); i >= 1; --i) {
             if (allEndWithSequence(sequence)) {
                 return common(sequence);
@@ -395,7 +374,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             sequence.remove(0);
         }
 
-        return new Sequence<>(Collections.emptyList(), equalsOperator);
+        return new Sequence<>(Collections.emptyList(), traits);
     }
 
     private boolean allEndWithSequence(Sequence<T> sequence) {
@@ -408,7 +387,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     Sequence<T> commonMiddle() {
-        Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
+        Sequence<T> sequence = new Sequence<>(get(0), traits);
 
         int lastElement = sequence.size() - 1;
         if (lastElement > 0 && sequence.get(lastElement).toString().isBlank()) {
@@ -422,7 +401,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        return new Sequence<>(Collections.emptyList(), equalsOperator);
+        return new Sequence<>(Collections.emptyList(), traits);
     }
 
     private Sequence<T> common(Sequence<T> candidate) {
@@ -431,9 +410,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         for (int i = 0; i < candidate.size(); i++) {
             final int index = i;
             List<T> slice = common.stream().map(e -> e.get(index)).collect(toList());
-            joined.add(joinCommonOperator.apply(slice));
+            joined.add(traits.joinCommonOperator.apply(slice));
         }
-        return new Sequence<>(joined, equalsOperator);
+        return new Sequence<>(joined, traits);
     }
 
     private boolean allContainMiddleSequence(Sequence<T> sequence) {
@@ -462,8 +441,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return stream().map(Sequence::toString).collect(Collectors.toList());
     }
 
-    public static <T> List<T> flatten(List<Sequences<T>> sliced, BiPredicate<T, T> equalsOperator,
-            Function<List<T>, T> joinSequenceOperator) {
+    public static <T> List<T> flatten(List<Sequences<T>> sliced, Sequence.Traits<T> traits) {
         int phraseCount = phraseCount(sliced);
         if (phraseCount == 0) {
             return Collections.emptyList();
@@ -472,7 +450,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         List<T> flattened = new ArrayList<>(phraseCount);
 
         for (int phraseIndex = 0; phraseIndex < phraseCount; phraseIndex++) {
-            Sequence<T> phrase = new Sequence<>(equalsOperator);
+            Sequence<T> phrase = new Sequence<>(traits);
 
             for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
                 Sequences<T> sequences = sliced.get(ruleIndex);
@@ -480,31 +458,31 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 phrase.addAll(sequence);
             }
 
-            flattened.add(joinSequenceOperator.apply(phrase));
+            flattened.add(traits.joinSequenceOperator.apply(phrase));
         }
 
         return flattened;
     }
 
     public Sequences<T> joinWith(Sequences<T> second) {
-        Sequences<T> joined = new Sequences<>(equalsOperator, joinCommonOperator, joinSequenceOperator);
+        Sequences<T> joined = new Sequences<>(traits);
         if (this.size() > second.size()) {
             for (int i = 0; i < this.size(); i++) {
                 List<T> elements = new ArrayList<>(get(i));
                 elements.addAll(second.get(0));
-                joined.add(new Sequence<>(joinSequenceOperator.apply(elements)));
+                joined.add(new Sequence<>(traits.joinSequenceOperator.apply(elements), traits));
             }
         } else if (this.size() < second.size()) {
             for (int i = 0; i < second.size(); i++) {
                 List<T> elements = new ArrayList<>(get(0));
                 elements.addAll(second.get(i));
-                joined.add(new Sequence<>(joinSequenceOperator.apply(elements)));
+                joined.add(new Sequence<>(traits.joinSequenceOperator.apply(elements), traits));
             }
         } else {
             for (int i = 0; i < second.size(); i++) {
                 List<T> elements = new ArrayList<>(get(i));
                 elements.addAll(second.get(i));
-                joined.add(new Sequence<>(joinSequenceOperator.apply(elements)));
+                joined.add(new Sequence<>(traits.joinSequenceOperator.apply(elements), traits));
             }
         }
         return joined;

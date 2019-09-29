@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
@@ -11,29 +11,42 @@ import java.util.stream.Collectors;
 public class Sequence<T> extends ArrayList<T> {
     private static final long serialVersionUID = 1L;
 
-    final transient BiPredicate<T, T> equalsOperator;
+    static class Traits<T> {
+        final BiPredicate<T, T> equalsOperator;
+        final Function<T, List<T>> splitter;
+        final Function<List<T>, T> joinCommonOperator;
+        final Function<List<Sequence<T>>, Integer> commonnessOperator;
+        final Function<List<T>, T> joinSequenceOperator;
 
-    @SafeVarargs
-    public Sequence(T... elements) {
-        this(Arrays.asList(elements));
+        Traits(BiPredicate<T, T> equalsOperator, Function<T, List<T>> splitter,
+                Function<List<Sequence<T>>, Integer> commonnessOperator, Function<List<T>, T> joinCommonOperator,
+                Function<List<T>, T> joinSequenceOperator) {
+            this.equalsOperator = equalsOperator;
+            this.splitter = splitter;
+            this.commonnessOperator = commonnessOperator;
+            this.joinCommonOperator = joinCommonOperator;
+            this.joinSequenceOperator = joinSequenceOperator;
+        }
     }
+
+    final Sequence.Traits<T> traits;
 
     public Sequence(Sequence<T> elements) {
-        this(elements, elements.equalsOperator);
+        this(elements, elements.traits);
     }
 
-    public Sequence(List<T> elements) {
-        this(elements, Object::equals);
-    }
-
-    public Sequence(BiPredicate<T, T> equalsOperator) {
+    public Sequence(Traits<T> traits) {
         super();
-        this.equalsOperator = equalsOperator;
+        this.traits = traits;
     }
 
-    public Sequence(List<T> elements, BiPredicate<T, T> equalsOperator) {
+    public Sequence(T element, Traits<T> traits) {
+        this(Collections.singletonList(element), traits);
+    }
+
+    public Sequence(List<T> elements, Traits<T> traits) {
         super(elements);
-        this.equalsOperator = equalsOperator;
+        this.traits = traits;
     }
 
     public boolean startsWith(List<? extends T> elements) {
@@ -78,7 +91,7 @@ public class Sequence<T> extends ArrayList<T> {
      */
     private boolean matchesAt(List<? extends T> elements, int index) {
         for (int i = 0; i < elements.size(); i++) {
-            if (!equalsOperator.test(get(index + i), elements.get(i))) {
+            if (!traits.equalsOperator.test(get(index + i), elements.get(i))) {
                 return false;
             }
         }
@@ -94,7 +107,7 @@ public class Sequence<T> extends ArrayList<T> {
         List<Sequence<T>> candidates = new ArrayList<>();
         for (int n = size(); n > 0; --n) {
             for (int i = 0; i <= size() - n; ++i) {
-                candidates.add(new Sequence<>(this.subList(i, i + n), this.equalsOperator));
+                candidates.add(new Sequence<>(this.subList(i, i + n), traits));
             }
         }
         return candidates;
@@ -102,7 +115,7 @@ public class Sequence<T> extends ArrayList<T> {
 
     public Sequence<T> subList(Sequence<T> list) {
         int from = indexOf(list);
-        return new Sequence<>(subList(from, from + list.size()));
+        return new Sequence<>(subList(from, from + list.size()), traits);
     }
 
     public boolean nonEmpty() {
@@ -127,14 +140,14 @@ public class Sequence<T> extends ArrayList<T> {
     public boolean startsWith(T element) {
         if (isEmpty())
             return false;
-        return equalsOperator.test(get(0), element);
+        return traits.equalsOperator.test(get(0), element);
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + Objects.hash(equalsOperator);
+        result = prime * result + Objects.hash(traits.equalsOperator);
         return result;
     }
 

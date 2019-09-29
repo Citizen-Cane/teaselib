@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +19,10 @@ class SequenceLookup<T> {
     }
 
     void scan(Sequences<T> sequences, int length) {
-        sequences.stream().filter(seq -> seq.size() > 0).forEach(sequence -> {
-            String key = new Sequence<>(
-                    sequences.joinSequenceOperator.apply(sequence.subList(0, Math.min(length, sequence.size()))))
-                            .toString().toLowerCase();
+        sequences.stream().filter(sequence -> sequence.size() > 0).forEach(sequence -> {
+            T value = sequence.traits.joinSequenceOperator
+                    .apply(sequence.subList(0, Math.min(length, sequence.size())));
+            String key = new Sequence<>(Collections.singletonList(value), sequence.traits).toString().toLowerCase();
             indices.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
             lookup.computeIfAbsent(key, t -> new ArrayList<>()).add(sequence);
         });

@@ -1,26 +1,27 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.stream;
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.Arrays.*;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
 class PhraseString {
+    static final Sequence.Traits<PhraseString> Traits = new Traits<>(PhraseString::samePhrase, PhraseString::words,
+            PhraseString::joinCommon, PhraseString::joinSequence);
+
     final String phrase;
     final Set<Integer> indices;
 
     PhraseString(String phrase, int indices) {
         super();
         this.phrase = phrase;
-        this.indices = Collections.singleton(indices);
+        this.indices = singleton(indices);
     }
 
     PhraseString(String phrase, Set<Integer> indices) {
@@ -67,7 +68,7 @@ class PhraseString {
     }
 
     private static <T> Set<T> intersect(Set<T> a, Set<T> b) {
-        return a.stream().filter(b::contains).collect(Collectors.toSet());
+        return a.stream().filter(b::contains).collect(toSet());
     }
 
     @Override

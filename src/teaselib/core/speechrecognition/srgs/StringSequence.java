@@ -1,31 +1,34 @@
 package teaselib.core.speechrecognition.srgs;
 
-import java.util.Arrays;
-import java.util.Collections;
+import static java.util.Arrays.*;
+import static java.util.Collections.*;
+
 import java.util.List;
-import java.util.function.BiPredicate;
 
 public class StringSequence extends Sequence<String> {
     private static final long serialVersionUID = 1L;
 
-    private StringSequence(List<String> elements, BiPredicate<String, String> equals) {
-        super(elements, equals);
+    public static final Traits<String> Traits = new Traits<>(String::equalsIgnoreCase, StringSequence::splitWords,
+            StringSequences::joinCommon, StringSequences::joinSequence);
+
+    private StringSequence(List<String> elements) {
+        super(elements, Traits);
     }
 
     public static List<String> splitWords(String string) {
         if (string.isEmpty()) {
-            return Collections.emptyList();
+            return emptyList();
         } else {
-            return Arrays.asList(string.split("[ .:,;\t\n_()]+"));
+            return asList(string.split("[ .:,;\t\n_()]+"));
         }
     }
 
     public static StringSequence ignoreCase() {
-        return new StringSequence(Collections.emptyList(), String::equalsIgnoreCase);
+        return new StringSequence(emptyList());
     }
 
     public static StringSequence ignoreCase(String string) {
-        return new StringSequence(splitWords(string), String::equalsIgnoreCase);
+        return new StringSequence(splitWords(string));
     }
 
 }

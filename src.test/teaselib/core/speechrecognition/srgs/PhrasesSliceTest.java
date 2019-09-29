@@ -1,10 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,12 +14,12 @@ public class PhrasesSliceTest {
 
     static Sequence<PhraseString> choice(String string, Integer... choices) {
         return new Sequence<>(new PhraseString(string, Stream.of(choices).collect(toSet())).words(),
-                PhraseString::samePhrase);
+                PhraseString.Traits);
     }
 
     static Sequence<PhraseString> result(String string, Integer... choices) {
         return new Sequence<>(Collections.singletonList(new PhraseString(string, Stream.of(choices).collect(toSet()))),
-                PhraseString::samePhrase);
+                PhraseString.Traits);
     }
 
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();

@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -142,7 +142,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                             Sequences<T> withoutElement = new Sequences<>(this);
                             withoutElement.get(i).remove(element);
                             List<Sequences<T>> slices = slice(candidates, candidate, withoutElement);
-                            // candidate.addAll(slices);
                             candidates.add(slices);
                         } else {
                             disjunct.get(i, () -> new Sequence<>(traits)).add(element);
@@ -157,8 +156,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        Sequences<T> slice = createDisjunctSlice(disjunct);
-        return slice;
+        return createDisjunctSlice(disjunct);
     }
 
     private static <T> List<Sequences<T>> clone(List<Sequences<T>> multipleSequences) {
@@ -174,8 +172,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         List<Sequence<T>> elements = disjunct.stream().filter(Objects::nonNull).filter(Sequence::nonEmpty)
                 .map(traits.joinSequenceOperator::apply).map(element -> new Sequence<>(element, traits))
                 .collect(toList());
-        Sequences<T> sliced = new Sequences<>(elements, traits);
-        return sliced;
+        return new Sequences<>(elements, traits);
     }
 
     public static <T> List<Sequences<T>> reduce(List<List<Sequences<T>>> candidates) {
@@ -233,8 +230,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        Sequences<T> slice = gatherCommonSlice(common);
-        return slice;
+        return gatherCommonSlice(common);
     }
 
     private List<Sequences<T>> sliceCommonWithoutStartElements(List<List<Sequences<T>>> candidates,
@@ -248,10 +244,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        List<Sequences<T>> slices = slice(candidates, candidate, withoutElement);
-        // candidate.addAll(slices);
-        // return candidate;
-        return slices;
+        return slice(candidates, candidate, withoutElement);
     }
 
     private boolean collectCommonStartElements(Sequences<T> common, int length) {

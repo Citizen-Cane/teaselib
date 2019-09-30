@@ -1,7 +1,10 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -175,13 +178,10 @@ public class PhrasesSliceTest {
 
         Sequences<PhraseString> slice1 = advance(choices);
         assertEquals(new PhraseStringSequences(result("No", 0)), slice1);
-
         Sequences<PhraseString> slice2 = advance(choices);
         assertEquals(new PhraseStringSequences(result("Yes", 1, 3)), slice2);
-
         Sequences<PhraseString> slice3 = advance(choices);
         assertEquals(new PhraseStringSequences(result("Miss I'm", 0, 1), result("It's ready Miss", 3, 4)), slice3);
-
         Sequences<PhraseString> slice4 = advance(choices);
         assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1), result("I have it Miss", 2)),
                 slice4);
@@ -197,16 +197,18 @@ public class PhrasesSliceTest {
         assertEquals(2, Sequences.commonness(subOptimal));
 
         // TODO "I have it" is split
-        // TODO optimal is incomplete (yes/no missing), other candidates too (first "no" added @ 3950)
-        // -> start elements missing - not in "soFar"
-        // TODO Far too many candidates (~120'000)
-        // TODO Candidates sliced chunks contain multiple elements
+        // TODO ~29073 candidates take long to compute
+        // TODO It's ready could be matched -> candidate with less slices?
         assertEquals(new PhraseStringSequences(result("No", 0)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("It's", 4)), optimal.get(1));
-        assertEquals(new PhraseStringSequences(result("have it", 2)), optimal.get(2));
-        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2, 3, 4)), optimal.get(3));
-        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(4));
-        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), optimal.get(5));
+        assertEquals(new PhraseStringSequences(result("Yes", 1, 3)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("It's", 3)), optimal.get(3));
+        assertEquals(new PhraseStringSequences(result("ready", 3, 4)), optimal.get(4));
+        assertEquals(new PhraseStringSequences(result("I", 2)), optimal.get(5));
+        assertEquals(new PhraseStringSequences(result("have it", 2)), optimal.get(6));
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2, 3, 4)), optimal.get(7));
+        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(8));
+        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), optimal.get(9));
     }
 
 }

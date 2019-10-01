@@ -100,17 +100,34 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
      * 
      */
     Sequences<T> slice(List<List<Sequences<T>>> candidates, List<Sequences<T>> soFar) {
-        Sequences<T> disjunct = splitDisjunct(candidates, soFar);
-        if (!disjunct.isEmpty()) {
-            return disjunct;
-        } else {
-            return splitCommon(candidates, soFar);
+        Sequences<T> slice = splitDisjunct(candidates, soFar);
+        if (slice.isEmpty()) {
+            slice = splitCommon(candidates, soFar);
         }
+
+        return slice;
     }
 
     @Override
     public boolean isEmpty() {
         return super.isEmpty() || stream().allMatch(Sequence::isEmpty);
+    }
+
+    private void splitDisjunctUniqueElements(Sequences<T> disjunct) {
+        SequenceLookup<T> distinct2 = new SequenceLookup<>(size());
+        distinct2.scan(this, 1);
+        for (int i = 0; i < size(); i++) {
+            Sequence<T> sequence = get(i);
+            if (!sequence.isEmpty()) {
+                T element = sequence.get(0);
+                if (!othersStartWith(sequence, element)) {
+                    if (!distinct2.occursInAnotherDistinctSequence(element)) {
+                        disjunct.get(i, () -> new Sequence<>(traits)).add(element);
+                        sequence.remove(element);
+                    }
+                }
+            }
+        }
     }
 
     private Sequences<T> splitDisjunct(List<List<Sequences<T>>> candidates, List<Sequences<T>> soFar) {
@@ -119,11 +136,12 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             disjunct.add(null);
         }
 
+        splitDisjunctUniqueElements(disjunct);
+
         int length = 1;
         while (!isEmpty()) {
             SequenceLookup<T> distinct = new SequenceLookup<>(size());
             distinct.scan(this, length);
-
             boolean elementRemoved = false;
             for (int i = 0; i < size(); i++) {
                 Sequence<T> sequence = get(i);
@@ -135,8 +153,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
                             Sequences<T> current = new Sequences<>(disjunct);
                             current.get(i, () -> new Sequence<>(traits)).add(element);
-                            current = new Sequences<>(
-                                    current.stream().filter(Sequence::nonEmpty).collect(Collectors.toList()), traits);
+                            current = new Sequences<>(current.stream().filter(Sequence::nonEmpty).collect(toList()),
+                                    traits);
                             candidate.add(current);
 
                             Sequences<T> withoutElement = new Sequences<>(this);
@@ -147,6 +165,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                             disjunct.get(i, () -> new Sequence<>(traits)).add(element);
                             sequence.remove(element);
                             elementRemoved = true;
+                            // TODO After removing an element, check for common start elements
+                            // -> try out all possible sequences of removing elements -> too much
+                            // need strategy, like finding out all candidates of later sequences
+                            // - remove those who appear in another sequence later
                         }
                     }
                 }
@@ -176,7 +198,15 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public static <T> List<Sequences<T>> reduce(List<List<Sequences<T>>> candidates) {
-        return candidates.stream().reduce((a, b) -> commonness(a) > commonness(b) ? a : b).orElseThrow();
+        return candidates.stream().reduce((a, b) -> {
+            int ca = commonness(a);
+            int cb = commonness(b);
+            if (ca == cb) {
+                return a.size() < b.size() ? a : b;
+            } else {
+                return ca > cb ? a : b;
+            }
+        }).orElseThrow();
     }
 
     public static <T> int commonness(List<Sequences<T>> sequences) {

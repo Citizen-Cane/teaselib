@@ -8,9 +8,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class PhrasesSliceTest {
@@ -35,9 +39,7 @@ public class PhrasesSliceTest {
     }
 
     private List<Sequences<PhraseString>> complete(PhraseStringSequences choices) {
-        Sequences<PhraseString> slice;
-        while (!(slice = advance(choices)).isEmpty()) {
-            soFar.add(slice);
+        while (!advance(choices).isEmpty()) {
         }
         return soFar;
     }
@@ -171,7 +173,7 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testSliceMultipleChoiceIrregularPhrases() {
+    public void testSliceMultipleChoiceIrregularPhrasesStraightSubOptimal() {
         PhraseStringSequences choices = new PhraseStringSequences(choice("No Miss, I'm sorry", 0),
                 choice("Yes Miss, I'm ready", 1), choice("I have it, Miss", 2), choice("Yes,it's ready, Miss", 3),
                 choice("It's ready, Miss", 4));
@@ -188,17 +190,30 @@ public class PhrasesSliceTest {
 
         Sequences<PhraseString> empty = advance(choices);
         assertTrue(empty.isEmpty());
+    }
+
+    @Test
+    public void testSliceMultipleChoiceIrregularPhrasesMaxCommon() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("No Miss, I'm sorry", 0),
+                choice("Yes Miss, I'm ready", 1), choice("I have it, Miss", 2), choice("Yes,it's ready, Miss", 3),
+                choice("It's ready, Miss", 4));
 
         List<Sequences<PhraseString>> subOptimal = complete(choices);
         candidates.add(subOptimal);
-        List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
+        List<Sequences<PhraseString>> optimal = candidates.stream().reduce((a, b) -> {
+            int ca = Sequences.commonness(a);
+            int cb = Sequences.commonness(b);
+            return ca > cb ? a : b;
+        }).orElseThrow();
+
         assertNotEquals(optimal, subOptimal);
         assertEquals(5, Sequences.commonness(optimal));
         assertEquals(2, Sequences.commonness(subOptimal));
 
-        // TODO "I have it" is split
+        // TODO "I" + "have it" is split
         // TODO ~29073 candidates take long to compute
         // TODO It's ready could be matched -> candidate with less slices?
+        assertEquals(10, optimal.size());
         assertEquals(new PhraseStringSequences(result("No", 0)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("It's", 4)), optimal.get(1));
         assertEquals(new PhraseStringSequences(result("Yes", 1, 3)), optimal.get(2));
@@ -209,6 +224,135 @@ public class PhrasesSliceTest {
         assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2, 3, 4)), optimal.get(7));
         assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(8));
         assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), optimal.get(9));
+    }
+
+    @Test
+    public void testSliceMultipleChoiceIrregularPhrasesMaxCommonShortestSize() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("No Miss, I'm sorry", 0),
+                choice("Yes Miss, I'm ready", 1), choice("I have it, Miss", 2), choice("Yes,it's ready, Miss", 3),
+                choice("It's ready, Miss", 4));
+
+        List<Sequences<PhraseString>> subOptimal = complete(choices);
+        candidates.add(subOptimal);
+        List<Sequences<PhraseString>> optimal = candidates.stream().reduce((a, b) -> {
+            int ca = Sequences.commonness(a);
+            int cb = Sequences.commonness(b);
+            if (ca == cb) {
+                return a.size() < b.size() ? a : b;
+            } else {
+                return ca > cb ? a : b;
+            }
+        }).orElseThrow();
+
+        assertNotEquals(optimal, subOptimal);
+        assertEquals(5, Sequences.commonness(optimal));
+        assertEquals(2, Sequences.commonness(subOptimal));
+
+        // TODO "I" + "have it" is split
+        // TODO ~29073 candidates take long to compute
+        // TODO It's ready could be matched -> candidate with less slices?
+        assertEquals(9, optimal.size());
+        assertEquals(new PhraseStringSequences(result("No", 0), result("It's", 4)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("Yes", 1, 3)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("It's", 3)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("ready", 3, 4)), optimal.get(3));
+        assertEquals(new PhraseStringSequences(result("I", 2)), optimal.get(4));
+        assertEquals(new PhraseStringSequences(result("have it", 2)), optimal.get(5));
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2, 3, 4)), optimal.get(6));
+        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(7));
+        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), optimal.get(8));
+    }
+
+    @Test
+    @Ignore
+    public void testSliceMultipleChoiceIrregularPhrasesMaxCommonCrossProduct() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("No Miss, I'm sorry", 0),
+                choice("Yes Miss, I'm ready", 1), choice("I have it, Miss", 2), choice("Yes,it's ready, Miss", 3),
+                choice("It's ready, Miss", 4));
+
+        List<Sequences<PhraseString>> subOptimal = complete(choices);
+        candidates.add(subOptimal);
+        List<Sequences<PhraseString>> optimal = candidates.stream().reduce((a, b) -> {
+            Function<List<Sequences<PhraseString>>, Double> commonness = (slices) -> {
+                int p = slices.stream().flatMap(Sequences::stream).flatMap(Sequence::stream).map(t -> t.indices.size())
+                        .reduce(0, (x, y) -> x * x + y * y);
+                return (double) p / slices.size();
+            };
+            double ca = commonness.apply(a);
+            double cb = commonness.apply(b);
+            if (ca == cb) {
+                return a.size() < b.size() ? a : b;
+            } else {
+                return ca > cb ? a : b;
+            }
+        }).orElseThrow();
+
+        assertNotEquals(optimal, subOptimal);
+        assertEquals(5, Sequences.commonness(optimal));
+        assertEquals(2, Sequences.commonness(subOptimal));
+
+        // TODO "I have it" is split
+        // TODO ~29073 candidates take long to compute
+        // TODO It's ready could be matched -> candidate with less slices?
+        assertEquals(9, optimal.size());
+        assertEquals(new PhraseStringSequences(result("No", 0), result("It's", 4)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("Yes", 1, 3)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("It's", 3)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("ready", 3, 4)), optimal.get(3));
+        assertEquals(new PhraseStringSequences(result("I", 2)), optimal.get(4));
+        assertEquals(new PhraseStringSequences(result("have it", 2)), optimal.get(5));
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2, 3, 4)), optimal.get(6));
+        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(7));
+        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), optimal.get(8));
+    }
+
+    @Test
+    public void testSliceMultipleChoiceIrregularPhrasesMaxCommonMaxSmallest() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("No Miss, I'm sorry", 0),
+                choice("Yes Miss, I'm ready", 1), choice("I have it, Miss", 2), choice("Yes,it's ready, Miss", 3),
+                choice("it's ready, Miss", 4));
+
+        List<Sequences<PhraseString>> subOptimal = complete(choices);
+        candidates.add(subOptimal);
+
+        Map<Integer, List<List<Sequences<PhraseString>>>> map = new LinkedHashMap<>();
+        candidates.forEach(candidate -> {
+            int key = Sequences.commonness(candidate);
+            map.computeIfAbsent(key, k -> new ArrayList<>()).add(candidate);
+        });
+
+        List<List<Sequences<PhraseString>>> maxCandidates = new ArrayList<>();
+        for (int i = max(map); i > 0; i--) {
+            maxCandidates.addAll(map.get(i));
+            break;
+        }
+
+        List<Sequences<PhraseString>> optimal = maxCandidates.get(0);
+        assertNotEquals(optimal, subOptimal);
+        assertEquals(5, Sequences.commonness(optimal));
+        assertEquals(2, Sequences.commonness(subOptimal));
+
+        // TODO "I have it" is split
+        // TODO ~29073 candidates take long to compute
+        // TODO It's ready could be matched -> candidate with less slices?
+        // TODO "it's",4 could be joined if processing was delayed until after "yes"
+        // -> "it's ready Miss" could be common
+        // test after each disjunct removal if there are now common start elements
+        // order of execution?
+        assertEquals(9, optimal.size());
+        assertEquals(new PhraseStringSequences(result("No", 0), result("It's", 4)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("Yes", 1, 3)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("It's", 3)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("ready", 3, 4)), optimal.get(3));
+        assertEquals(new PhraseStringSequences(result("I", 2)), optimal.get(4));
+        assertEquals(new PhraseStringSequences(result("have it", 2)), optimal.get(5));
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2, 3, 4)), optimal.get(6));
+        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(7));
+        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), optimal.get(8));
+    }
+
+    private Integer max(Map<Integer, List<List<Sequences<PhraseString>>>> map) {
+        return map.keySet().stream().reduce(Math::max).orElseThrow();
     }
 
 }

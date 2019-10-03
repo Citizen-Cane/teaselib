@@ -131,20 +131,10 @@ public class Sequence<T> extends ArrayList<T> {
         return stream().map(T::toString).filter(t -> !t.isEmpty()).collect(Collectors.joining(" "));
     }
 
-    public T join(Function<List<T>, T> joinSequenceOperator) {
-        return joinSequenceOperator.apply(this);
-    }
-
     public void remove(int from, int size) {
         for (int i = 0; i < size; i++) {
             remove(from);
         }
-    }
-
-    public boolean startsWith(T element) {
-        if (isEmpty())
-            return false;
-        return traits.equalsOperator.test(get(0), element);
     }
 
     @Override

@@ -456,10 +456,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return stream().map(Sequence<T>::toString).anyMatch(String::isEmpty);
     }
 
-    static <T> int phraseCount(List<Sequences<T>> phrases) {
-        return phrases.stream().map(List::size).reduce(Math::max).orElse(0);
-    }
-
     public int maxLength() {
         Optional<? extends Sequence<T>> reduced = stream().reduce((a, b) -> a.size() > b.size() ? a : b);
         return reduced.isPresent() ? reduced.get().size() : 0;
@@ -467,29 +463,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     public List<String> toStrings() {
         return stream().map(Sequence::toString).collect(Collectors.toList());
-    }
-
-    public static <T> List<T> flatten(List<Sequences<T>> sliced, Sequence.Traits<T> traits) {
-        int phraseCount = phraseCount(sliced);
-        if (phraseCount == 0) {
-            return Collections.emptyList();
-        }
-
-        List<T> flattened = new ArrayList<>(phraseCount);
-
-        for (int phraseIndex = 0; phraseIndex < phraseCount; phraseIndex++) {
-            Sequence<T> phrase = new Sequence<>(traits);
-
-            for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
-                Sequences<T> sequences = sliced.get(ruleIndex);
-                Sequence<T> sequence = sequences.get(Math.min(phraseIndex, sequences.size() - 1));
-                phrase.addAll(sequence);
-            }
-
-            flattened.add(traits.joinSequenceOperator.apply(phrase));
-        }
-
-        return flattened;
     }
 
     public Sequences<T> joinWith(Sequences<T> second) {

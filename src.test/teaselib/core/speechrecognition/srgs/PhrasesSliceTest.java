@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class PhrasesSliceTest {
@@ -125,9 +124,6 @@ public class PhrasesSliceTest {
         Sequences<PhraseString> slice1 = advance(choices);
         assertEquals(new PhraseStringSequences(result("Miss of course", 0, 3), result("of course", 1, 2)), slice1);
 
-        List<Sequences<PhraseString>> favored = candidates.get(0);
-        assertEquals(9, Sequences.commonness(favored));
-
         List<Sequences<PhraseString>> subOptimal = complete(choices);
         candidates.add(subOptimal);
         List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
@@ -169,26 +165,26 @@ public class PhrasesSliceTest {
         List<Sequences<PhraseString>> subOptimal = complete(choices);
         candidates.add(subOptimal);
         List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
-        assertNotEquals(optimal, subOptimal);
+        assertEquals(optimal, subOptimal);
         assertEquals(10, Sequences.commonness(optimal));
-        assertEquals(10, Sequences.commonness(subOptimal));
     }
 
     @Test
-    @Ignore
-    // TODO fix recognition tests, then review (and fix) this again
     public void testSliceMultipleChoiceIrregularPhrasesStraightSubOptimal() {
         PhraseStringSequences choices = getMultipleChoiceIrregularPhrases();
 
         Sequences<PhraseString> slice1 = advance(choices);
-        assertEquals(new PhraseStringSequences(result("No", 0)), slice1);
+        assertEquals(new PhraseStringSequences(result("No", 0), result("I have it", 2)), slice1);
         Sequences<PhraseString> slice2 = advance(choices);
-        assertEquals(new PhraseStringSequences(result("Yes", 1, 3)), slice2);
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 2), result("Yes", 1, 3)), slice2);
         Sequences<PhraseString> slice3 = advance(choices);
-        assertEquals(new PhraseStringSequences(result("Miss I'm", 0, 1), result("It's ready Miss", 3, 4)), slice3);
+        assertEquals(new PhraseStringSequences(result("It's ready", 3, 4)), slice3);
         Sequences<PhraseString> slice4 = advance(choices);
-        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1), result("I have it Miss", 2)),
-                slice4);
+        assertEquals(new PhraseStringSequences(result("Miss", 1, 3, 4)), slice4);
+        Sequences<PhraseString> slice5 = advance(choices);
+        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), slice5);
+        Sequences<PhraseString> slice6 = advance(choices);
+        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1)), slice6);
 
         Sequences<PhraseString> empty = advance(choices);
         assertTrue(empty.isEmpty());

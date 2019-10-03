@@ -15,7 +15,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
@@ -202,14 +201,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     public static <T> List<Sequences<T>> reduce(List<List<Sequences<T>>> candidates) {
         return candidates.stream().reduce((a, b) -> {
-            ToIntFunction<List<Sequences<T>>> commonness = slices -> {
-                return slices.stream().map(Sequences::commonness).reduce(0, (x, y) -> x + y);
-            };
-
-            int ca = commonness.applyAsInt(a);
-            int cb = commonness.applyAsInt(b);
+            int ca = commonness(a);
+            int cb = commonness(b);
             if (ca == cb) {
-                return a.size() < b.size() ? a : b;
+                return max(a) > max(b) ? a : b;
             } else {
                 return ca > cb ? a : b;
             }
@@ -220,6 +215,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     public int commonness() {
         return stream().flatMap(Sequence::stream).map(traits.commonnessOperator::applyAsInt).reduce(0,
                 (x, y) -> x + y - 1);
+    }
+
+    public static <T> int max(List<Sequences<T>> sequences) {
+        return sequences.stream().flatMap(Sequences::stream).flatMap(Sequence::stream)
+                .map(t -> (((PhraseString) t).indices.size())).reduce(Math::max).orElse(0);
     }
 
     public static <T> int commonness(List<Sequences<T>> sequences) {

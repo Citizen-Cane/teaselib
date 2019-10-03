@@ -1,8 +1,11 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Arrays.stream;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -48,9 +51,13 @@ class PhraseString {
         }
     }
 
-    private static int commonness(List<Sequence<PhraseString>> elements) {
-        return elements.stream().flatMap(Sequence::stream).map(element -> (element).indices.size()).reduce(Math::max)
-                .orElse(0);
+    // TODO split collecting and computing the values
+    // private static int commonness(List<List<PhraseString>> elements) {
+    // return elements.stream().flatMap(List::stream).map(element -> (element).indices.size()).reduce(0,
+    // (x, y) -> x + y - 1);
+    // }
+    private static int commonness(PhraseString element) {
+        return element.indices.size() * element.words().size();
     }
 
     public static PhraseString joinCommon(List<PhraseString> strings) {

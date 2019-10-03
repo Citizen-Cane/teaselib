@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 public class Sequence<T> extends ArrayList<T> {
@@ -15,12 +16,11 @@ public class Sequence<T> extends ArrayList<T> {
         final BiPredicate<T, T> equalsOperator;
         final Function<T, List<T>> splitter;
         final Function<List<T>, T> joinCommonOperator;
-        final Function<List<Sequence<T>>, Integer> commonnessOperator;
+        final ToIntFunction<T> commonnessOperator;
         final Function<List<T>, T> joinSequenceOperator;
 
-        Traits(BiPredicate<T, T> equalsOperator, Function<T, List<T>> splitter,
-                Function<List<Sequence<T>>, Integer> commonnessOperator, Function<List<T>, T> joinCommonOperator,
-                Function<List<T>, T> joinSequenceOperator) {
+        Traits(BiPredicate<T, T> equalsOperator, Function<T, List<T>> splitter, ToIntFunction<T> commonnessOperator,
+                Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator) {
             this.equalsOperator = equalsOperator;
             this.splitter = splitter;
             this.commonnessOperator = commonnessOperator;
@@ -116,6 +116,10 @@ public class Sequence<T> extends ArrayList<T> {
     public Sequence<T> subList(Sequence<T> list) {
         int from = indexOf(list);
         return new Sequence<>(subList(from, from + list.size()), traits);
+    }
+
+    public List<T> subList(int from) {
+        return subList(from, size());
     }
 
     public boolean nonEmpty() {

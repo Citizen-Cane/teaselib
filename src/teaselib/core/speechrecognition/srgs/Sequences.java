@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
@@ -114,16 +115,21 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private void splitDisjunctUniqueElements(Sequences<T> disjunct) {
-        SequenceLookup<T> distinct2 = new SequenceLookup<>(size());
-        distinct2.scan(this, 1);
+        SequenceLookup<T> distinct2 = new SequenceLookup<>(this);
+        distinct2.scan(1);
         for (int i = 0; i < size(); i++) {
             Sequence<T> sequence = get(i);
             if (!sequence.isEmpty()) {
                 T element = sequence.get(0);
-                if (!othersStartWith(sequence, element)) {
-                    if (!distinct2.occursInAnotherDistinctSequence(element)) {
-                        disjunct.get(i, () -> new Sequence<>(traits)).add(element);
-                        sequence.remove(element);
+                while (!distinct2.othersStartWith(element) && !distinct2.occursInAnotherDistinctSequence(element)) {
+                    disjunct.get(i, () -> new Sequence<>(traits)).add(element);
+                    // Invalidates distinct lookup
+                    sequence.remove(element);
+                    distinct2.scan(1);
+                    if (sequence.isEmpty()) {
+                        break;
+                    } else {
+                        element = sequence.get(0);
                     }
                 }
             }
@@ -140,15 +146,15 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         int length = 1;
         while (!isEmpty()) {
-            SequenceLookup<T> distinct = new SequenceLookup<>(size());
-            distinct.scan(this, length);
+            SequenceLookup<T> distinct = new SequenceLookup<>(this);
+            distinct.scan(length);
             boolean elementRemoved = false;
             for (int i = 0; i < size(); i++) {
                 Sequence<T> sequence = get(i);
                 if (!sequence.isEmpty()) {
                     T element = sequence.get(0);
-                    if (!othersStartWith(sequence, element)) {
-                        if (distinct.occursInAnotherDistinctSequence(element)) {
+                    if (!distinct.othersStartWith(element)) {
+                        if (distinct.occursInAnotherDistinctSequence(element) && distinct.hasCommonStartElements()) {
                             List<Sequences<T>> candidate = clone(soFar);
 
                             Sequences<T> current = new Sequences<>(disjunct);
@@ -164,11 +170,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                         } else {
                             disjunct.get(i, () -> new Sequence<>(traits)).add(element);
                             sequence.remove(element);
+                            distinct.scan(1);
                             elementRemoved = true;
-                            // TODO After removing an element, check for common start elements
-                            // -> try out all possible sequences of removing elements -> too much
-                            // need strategy, like finding out all candidates of later sequences
-                            // - remove those who appear in another sequence later
                         }
                     }
                 }
@@ -199,19 +202,28 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     public static <T> List<Sequences<T>> reduce(List<List<Sequences<T>>> candidates) {
         return candidates.stream().reduce((a, b) -> {
-            int ca = commonness(a);
-            int cb = commonness(b);
+            ToIntFunction<List<Sequences<T>>> commonness = slices -> {
+                return slices.stream().map(Sequences::commonness).reduce(0, (x, y) -> x + y);
+            };
+
+            int ca = commonness.applyAsInt(a);
+            int cb = commonness.applyAsInt(b);
             if (ca == cb) {
                 return a.size() < b.size() ? a : b;
             } else {
                 return ca > cb ? a : b;
             }
+
         }).orElseThrow();
     }
 
+    public int commonness() {
+        return stream().flatMap(Sequence::stream).map(traits.commonnessOperator::applyAsInt).reduce(0,
+                (x, y) -> x + y - 1);
+    }
+
     public static <T> int commonness(List<Sequences<T>> sequences) {
-        return sequences.stream().map(sequence -> sequence.traits.commonnessOperator.apply(sequence)).reduce(Math::max)
-                .orElse(0);
+        return sequences.stream().map(Sequences::commonness).reduce(0, (x, y) -> x + y);
     }
 
     private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {
@@ -233,17 +245,27 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         if (maxCommon.isPresent()) {
             int length = 1;
             while (true) {
-                SequenceLookup<T> distinct = new SequenceLookup<>(size());
-                distinct.scan(this, length);
+                SequenceLookup<T> distinct = new SequenceLookup<>(this);
+                distinct.scan(length);
+                boolean nothingFound1 = true;
+                for (int i1 = 0; i1 < size(); i1++) {
+                    Sequence<T> sequence = get(i1);
+                    if (sequence.size() >= length) {
+                        List<T> startElements1 = sequence.subList(0, length);
+                        if (distinct.othersStartWith(startElements1)) {
+                            common.set(i1, new Sequence<>(startElements1, traits));
+                            nothingFound1 = false;
+                        }
+                    }
+                }
 
-                boolean nothingFound = collectCommonStartElements(common, length);
+                boolean nothingFound = nothingFound1;
                 if (nothingFound) {
                     break;
                 } else {
                     Optional<Integer> nextMaxCommon = maxCommonAfter(common);
                     if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon.get())) {
                         Sequences<T> slice = new Sequences<>(this).gatherCommonElements(common);
-                        // TODO 1-n combinations of common chunks
                         for (int i = 0; i < slice.size(); i++) {
                             Sequence<T> startElements = slice.get(i);
                             if (distinct.occursLaterInAnotherSequence(startElements)) {
@@ -275,21 +297,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
 
         return slice(candidates, candidate, withoutElement);
-    }
-
-    private boolean collectCommonStartElements(Sequences<T> common, int length) {
-        boolean nothingFound = true;
-        for (int i = 0; i < size(); i++) {
-            Sequence<T> sequence = get(i);
-            if (sequence.size() >= length) {
-                List<T> startElements = sequence.subList(0, length);
-                if (othersStartWith(sequence, startElements)) {
-                    common.set(i, new Sequence<>(startElements, traits));
-                    nothingFound = false;
-                }
-            }
-        }
-        return nothingFound;
     }
 
     private Sequences<T> gatherCommonElements(List<Sequence<T>> candidates) {
@@ -363,14 +370,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
         return reduced;
-    }
-
-    private boolean othersStartWith(Sequence<T> skip, T element) {
-        return stream().filter(seq -> seq != skip).anyMatch(seq -> seq.startsWith(element));
-    }
-
-    private boolean othersStartWith(Sequence<T> skip, List<T> elements) {
-        return stream().filter(seq -> seq != skip).anyMatch(seq -> seq.startsWith(elements));
     }
 
     Sequence<T> commonStart() {

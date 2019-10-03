@@ -1,9 +1,11 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toList;
+import static java.lang.Math.min;
+import static java.util.Arrays.*;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -218,8 +220,12 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public static <T> int max(List<Sequences<T>> sequences) {
-        return sequences.stream().flatMap(Sequences::stream).flatMap(Sequence::stream)
-                .map(t -> (((PhraseString) t).indices.size())).reduce(Math::max).orElse(0);
+        return sequences.stream().map(Sequences::max).reduce(Math::max).orElse(0);
+    }
+
+    public int max() {
+        return stream().flatMap(Sequence::stream).map(traits.commonnessOperator::applyAsInt).reduce(Math::max)
+                .orElse(0);
     }
 
     public static <T> int commonness(List<Sequences<T>> sequences) {
@@ -288,7 +294,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     private List<Sequences<T>> sliceCommonWithoutStartElements(List<List<Sequences<T>>> candidates,
             List<Sequences<T>> soFar, Sequence<T> startElements) {
         List<Sequences<T>> candidate = clone(soFar);
-        candidate.add(new Sequences<>(Collections.singleton(startElements), traits));
+        candidate.add(new Sequences<>(singleton(startElements), traits));
         Sequences<T> withoutElement = new Sequences<>(this);
         for (Sequence<T> sequence : withoutElement) {
             if (sequence.startsWith(startElements)) {
@@ -334,7 +340,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     private Optional<Integer> maxCommon(int start, int length) {
         Map<String, AtomicInteger> distinct = new HashMap<>(size());
         // TODO use generic equalsOperator to accumulate occurrence into distinct map
-        stream().filter(seq -> seq.size() > start).map(seq -> seq.subList(start, Math.min(start + length, seq.size())))
+        stream().filter(seq -> seq.size() > start).map(seq -> seq.subList(start, min(start + length, seq.size())))
                 .map(Objects::toString).map(String::toLowerCase)
                 .forEach(s -> distinct.computeIfAbsent(s, t -> new AtomicInteger(0)).incrementAndGet());
         return distinct.values().stream().map(AtomicInteger::intValue).reduce(Math::max);
@@ -355,8 +361,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                         joined.addAll(candidate);
                         Sequence<T> joinedElements = new Sequence<>(traits);
                         for (int j = 0; j < existing.size(); j++) {
-                            joinedElements.add(
-                                    traits.joinCommonOperator.apply(Arrays.asList(candidate.get(j), existing.get(j))));
+                            joinedElements
+                                    .add(traits.joinCommonOperator.apply(asList(candidate.get(j), existing.get(j))));
                         }
                         reduced.put(key, joinedElements);
                     } else {

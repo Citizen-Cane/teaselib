@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,8 +18,12 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.w3c.dom.Element;
 
 public class SRGSBuilder extends AbstractSRGSBuilder {
+    final Phrases phrases;
+
     public SRGSBuilder(Phrases phrases, String languageCode) throws ParserConfigurationException, TransformerException {
-        super(phrases, languageCode);
+        super(languageCode);
+        this.phrases = phrases;
+        buildXML();
     }
 
     @Override

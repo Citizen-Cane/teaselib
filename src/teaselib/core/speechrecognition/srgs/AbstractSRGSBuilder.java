@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
@@ -30,19 +30,16 @@ import org.w3c.dom.Element;
 abstract class AbstractSRGSBuilder {
 
     static final String MAIN_RULE_NAME = "Main";
-    private static final String CHOICE_NODE_PREFIX = "Choice_";
+    static final String CHOICE_NODE_PREFIX = "Choice_";
     private static final String GROUP_HEADER = "__group_";
 
-    final Phrases phrases;
     private final String languageCode;
     final Document document;
 
-    AbstractSRGSBuilder(Phrases phrases, String languageCode)
+    AbstractSRGSBuilder(String languageCode)
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
-        this.phrases = phrases;
         this.languageCode = languageCode;
         this.document = createDocument();
-        buildXML();
     }
 
     private static Document createDocument() throws ParserConfigurationException {

@@ -40,4 +40,13 @@ public class SRGSPhraseBuilderTest {
         assertNotEquals("", xml);
     }
 
+    @Test
+    public void testCommonEdges()
+            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+        Choices choices = new Choices(new Choice("A B, D"), new Choice("A C, D"));
+        SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
+        String xml = srgs.toXML();
+        assertNotEquals("", xml);
+    }
+
 }

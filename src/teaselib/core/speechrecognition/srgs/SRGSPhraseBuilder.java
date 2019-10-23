@@ -17,7 +17,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import teaselib.core.ui.Choices;
 
@@ -83,14 +82,14 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
             List<PhraseString> slice = slices.remove(0).stream().map(e -> e.get(0)).collect(toList());
             Set<Integer> coverage = slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
             if (current.collect(coverage).size() == 1 && current.previous != null) {
-                Node common = current.collect(coverage).iterator().next();
+                Element common = current.collect(coverage).iterator().next();
                 List<Element> ruleRefs = new ArrayList<>();
 
                 for (PhraseString phrase : slice) {
                     Set<Integer> indices = phrase.indices;
                     Element ruleRef = ruleRef(choiceName(n, indices));
                     ruleRefs.add(ruleRef);
-                    next.add(indices, ruleRef);
+                    next.add(indices, common);
                     addRule(grammar, phrase, n);
                 }
 
@@ -115,7 +114,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                 }
             }
 
-            // TODO Remember each set of indices and search back to find largst common chunk
+            // TODO Remember each set of indices and search back to find largest common chunk
             // append node to that chunk
 
             n++;

@@ -112,7 +112,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         try {
                             List<Set<Integer>> choices = gatherResults(result);
                             if (choices.isEmpty()) {
-                                logger.info("No choice rules in: {} - rejecting ", result);
+                                logger.warn("No choice rules in: {} - rejecting ", result);
                                 eventArgs.consumed = true;
                                 fireRecognitionRejectedEvent(result);
                             } else if (prompt.acceptedResult == Result.Accept.Multiple) {
@@ -124,7 +124,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                                 if (distinctChoice.isPresent()) {
                                     signal(prompt, new Prompt.Result(distinctChoice.get()));
                                 } else {
-                                    logger.info("No distinct choice {} in: {} - rejecting ", choices, result);
+                                    logger.warn("No distinct choice {} in: {} - rejecting ", choices, result);
                                     eventArgs.consumed = true;
                                     fireRecognitionRejectedEvent(result);
                                 }

@@ -1,10 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -153,7 +150,7 @@ public class PhrasesSliceTest {
         assertTrue(empty.isEmpty());
     }
 
-    private PhraseStringSequences getMultipleChoiceIrregularPhrases() {
+    private static PhraseStringSequences getMultipleChoiceIrregularPhrases() {
         return new PhraseStringSequences(choice("No Miss, I'm sorry", 0), choice("Yes Miss, I'm ready", 1),
                 choice("I have it, Miss", 2), choice("Yes,it's ready, Miss", 3), choice("It's ready, Miss", 4));
     }

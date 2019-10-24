@@ -80,14 +80,32 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
         // AB(0) ,BC(1) is sliced with choice 1 starting at 2nd slice
         // -> TODO gather B(1) with A(0) into one-of items
-        // Generate lists first
+        // Generate lists first?
+
+        // <one-of>
+        // ..<item>
+        // ....<ruleref uri="#Choice_0_0"/> A
+        // ....<ruleref uri="#Choice_1_0,1"/> B
+        // ..</item>
+        // ..<item>
+        // ....<ruleref uri="#Choice_1_0,1"/> B
+        // ....<ruleref uri="#Choice_2_1"/> C
+        // ..</item>
+        // </one-of>
+
+        // at slice 0, only A is known -> single ruleref
+        // This might go on in the middle, so we need a generic solution
+        // -> browse forward, but then we must remember handled slices (or parts) -> too complex
+        // -> insert backwards, but then we must defer xml generation to the end -> recursion
+
         Indices<Element> current = new Indices<>(phrases.size(), main);
         Indices<Element> next = new Indices<>(current);
         int n = 0;
         while (!slices.isEmpty()) {
             List<PhraseString> slice = slices.remove(0).stream().map(e -> e.get(0)).collect(toList());
+
             Set<Integer> coverage = slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
-            if (current.collect(coverage).size() == 1 && current.previous != null) {
+            if (current.collect(coverage).size() == 1) {
                 Element common = current.collect(coverage).iterator().next();
                 List<Element> ruleRefs = new ArrayList<>();
 

@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -24,8 +24,7 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.implementation.Unsupported;
-import teaselib.core.speechrecognition.srgs.Phrases;
-import teaselib.core.speechrecognition.srgs.SRGSBuilder;
+import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.ui.Choices;
 import teaselib.core.util.Environment;
@@ -132,7 +131,7 @@ public class SpeechRecognition {
     private Confidence recognitionConfidence;
 
     private Choices choices;
-    private Phrases phrases;
+    private byte[] srgs;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
         delegateThread.run(() -> {
@@ -229,11 +228,11 @@ public class SpeechRecognition {
     // TODO Add a prepare step to allow setup in advance - all cpu computations should be done beforehand
     public void startRecognition(Choices choices, Confidence recognitionConfidence) {
         this.choices = choices;
-        this.phrases = Phrases.of(choices);
+        this.srgs = srgs(choices);
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
             delegateThread.run(() -> {
-                enableSR(SpeechRecognition.this.phrases);
+                enableSR(SpeechRecognition.this.srgs);
                 logger.info("Speech recognition started");
             });
         } else {
@@ -255,8 +254,8 @@ public class SpeechRecognition {
     public void resumeRecognition() {
         if (sr != null) {
             delegateThread.run(() -> {
-                if (phrases != null) {
-                    enableSR(phrases);
+                if (srgs != null) {
+                    enableSR(srgs);
                     logger.info("Speech recognition resumed");
                 } else {
                     logger.info("Speech recognition already stopped");
@@ -271,13 +270,13 @@ public class SpeechRecognition {
         if (sr != null) {
             delegateThread.run(() -> {
                 sr.stopRecognition();
-                if (phrases != null) {
-                    // TODO Parse phrases to srgs once before start - not on each resume
+                if (srgs != null) {
+                    // TODO Parse to srgs once before start - not on each resume
                     // - needs grammar management since prompts may be paused and a different grammar loaded
                     // TODO Phrases field may conflict with Prompt stacking because SR is not supposed to remember this
                     // -> needs map of phrases->grammar hash to enable/disable the right grammar (and to remove it when
                     // dismissed)
-                    enableSR(phrases);
+                    enableSR(srgs);
                     logger.info("Speech recognition restarted");
                 } else {
                     logger.warn("Speech recognition already stopped");
@@ -291,8 +290,8 @@ public class SpeechRecognition {
     public void endRecognition() {
         if (sr != null) {
             delegateThread.run(() -> {
-                if (phrases != null) {
-                    phrases = null;
+                if (srgs != null) {
+                    srgs = null;
                     disableSR();
                     logger.info("Speech recognition stopped");
                 } else {
@@ -304,8 +303,8 @@ public class SpeechRecognition {
         }
     }
 
-    private void enableSR(Phrases phrases) {
-        setChoices(phrases);
+    private void enableSR(byte[] srgs) {
+        setChoices(srgs);
 
         if (enableSpeechHypothesisHandlerGlobally() || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
             hypothesisEventHandler.setChoices(firstPhraseOfEachChoice());
@@ -331,9 +330,9 @@ public class SpeechRecognition {
         sr.stopRecognition();
     }
 
-    private void setChoices(Phrases phrases) {
+    private void setChoices(byte[] srgs) {
         if (sr instanceof SpeechRecognitionSRGS) {
-            ((SpeechRecognitionSRGS) sr).setChoices(srgs(phrases));
+            ((SpeechRecognitionSRGS) sr).setChoices(srgs);
         } else if (sr instanceof SpeechRecognitionChoices) {
             List<String> firstPhraseOfEachChoice = firstPhraseOfEachChoice();
             ((SpeechRecognitionChoices) sr).setChoices(firstPhraseOfEachChoice);
@@ -346,13 +345,13 @@ public class SpeechRecognition {
         return choices.stream().map(choice -> choice.phrases.get(0)).collect(toList());
     }
 
-    byte[] srgs(Phrases phrases) {
+    byte[] srgs(Choices choices) {
         try {
-            SRGSBuilder srgs = new SRGSBuilder(phrases, sr.languageCode);
+            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, sr.languageCode);
             if (logger.isInfoEnabled()) {
-                logger.info("{}", srgs.toXML());
+                logger.info("{}", builder.toXML());
             }
-            return srgs.toBytes();
+            return builder.toBytes();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }

@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -13,7 +13,6 @@ import org.junit.Test;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
-import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.speechrecognition.srgs.StringSequence;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -45,7 +44,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
         byte[] xml = Stream.toByteArray(resources.get(resource));
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
             @Override
-            byte[] srgs(Phrases phrases) {
+            byte[] srgs(Choices choices) {
                 return xml;
             }
         };

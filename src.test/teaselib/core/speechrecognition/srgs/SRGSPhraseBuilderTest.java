@@ -49,4 +49,13 @@ public class SRGSPhraseBuilderTest {
         assertNotEquals("", xml);
     }
 
+    @Test
+    public void testMultiplePhraseStartPositions()
+            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+        Choices choices = new Choices(new Choice("A B"), new Choice("B C"));
+        SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
+        String xml = srgs.toXML();
+        assertNotEquals("", xml);
+    }
+
 }

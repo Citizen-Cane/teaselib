@@ -23,11 +23,19 @@ import teaselib.core.ui.Choices;
 public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
     final Choices choices;
+    private IndexMap<Integer> index2choices;
+    private List<PhraseString> phrases;
 
     public SRGSPhraseBuilder(Choices choices, String languageCode)
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
         super(languageCode);
         this.choices = choices;
+        this.index2choices = new IndexMap<>();
+        this.phrases = choices.stream()
+                .flatMap(choice -> choice.phrases.stream()
+                        .map(phrase -> new PhraseString(phrase, index2choices.add(choices.indexOf(choice)))))
+                .collect(Collectors.toList());
+
         buildXML();
     }
 
@@ -68,13 +76,11 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     private void createNodes(Element grammar, Element main) {
-        IndexMap<Integer> index2choices = new IndexMap<>();
-        List<PhraseString> phrases = choices.stream()
-                .flatMap(choice -> choice.phrases.stream()
-                        .map(phrase -> new PhraseString(phrase, index2choices.add(choices.indexOf(choice)))))
-                .collect(Collectors.toList());
         List<Sequences<PhraseString>> slices = PhraseStringSequences.slice(phrases);
 
+        // AB(0) ,BC(1) is sliced with choice 1 starting at 2nd slice
+        // -> TODO gather B(1) with A(0) into one-of items
+        // Generate lists first
         Indices<Element> current = new Indices<>(phrases.size(), main);
         Indices<Element> next = new Indices<>(current);
         int n = 0;
@@ -136,9 +142,9 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         grammar.appendChild(element);
     }
 
-    static String choiceName(int n, Set<Integer> indices) {
-        // TODO map to choice index via index2choices map
-        return CHOICE_NODE_PREFIX + n + "_" + indices.stream().map(Object::toString).collect(joining(","));
+    String choiceName(int n, Set<Integer> indices) {
+        return CHOICE_NODE_PREFIX + n + "_"
+                + index2choices.get(indices).stream().map(Object::toString).collect(joining(","));
     }
 
     private Element gather(List<Element> elements) {

@@ -88,7 +88,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
             Rule result = eventArgs.result[0];
             if (eventArgs.result.length > 1) {
-                result = Arrays.stream(eventArgs.result).reduce(Rule::maxProbability).orElseThrow();
+                // TODO add handling for Result.Accept.Multiple
+                // TODO call gather/distinct only once
+                result = Arrays.stream(eventArgs.result)
+                        .filter(r -> getCommonDistinctValue(gatherResults(r)).isPresent()).reduce(Rule::maxProbability)
+                        .orElseThrow();
             } else if (eventArgs.result.length == 1) {
                 result = eventArgs.result[0];
             } else {
@@ -112,22 +116,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         try {
                             List<Set<Integer>> choices = gatherResults(result);
                             if (choices.isEmpty()) {
-                                logger.warn("No choice rules in: {} - rejecting ", result);
-                                eventArgs.consumed = true;
-                                fireRecognitionRejectedEvent(result);
+                                handleNoChoices(eventArgs, result);
                             } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                                List<Integer> distinctChoices = choices.stream()
-                                        .map(indices -> indices.iterator().next()).collect(Collectors.toList());
-                                signal(prompt, new Prompt.Result(distinctChoices));
+                                handleMultipleChoices(eventArgs, result, prompt, choices);
                             } else if (prompt.acceptedResult == Result.Accept.AllSame) {
-                                Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
-                                if (distinctChoice.isPresent()) {
-                                    signal(prompt, new Prompt.Result(distinctChoice.get()));
-                                } else {
-                                    logger.warn("No distinct choice {} in: {} - rejecting ", choices, result);
-                                    eventArgs.consumed = true;
-                                    fireRecognitionRejectedEvent(result);
-                                }
+                                handleDistinctChoice(eventArgs, result, prompt, choices);
                             } else {
                                 throw new UnsupportedOperationException(prompt.acceptedResult.toString());
                             }
@@ -138,6 +131,38 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 }
             }
         };
+    }
+
+    private void handleNoChoices(SpeechRecognizedEventArgs eventArgs, Rule result) {
+        logger.warn("No choice rules in: {} - rejecting ", result);
+        eventArgs.consumed = true;
+        fireRecognitionRejectedEvent(result);
+    }
+
+    private void handleMultipleChoices(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
+            List<Set<Integer>> choices) {
+        List<Integer> distinctChoices = choices.stream().map(indices -> indices.size() == 1 ? indices.iterator().next()
+                : Prompt.Result.UNDEFINED.elements.iterator().next()).collect(Collectors.toList());
+        Prompt.Result promptResult = new Prompt.Result(distinctChoices);
+        if (promptResult.valid(prompt.choices)) {
+            signal(prompt, promptResult);
+        } else {
+            logger.warn("Undefined result index in multiple choices {} : {} - rejecting ", choices, result);
+            eventArgs.consumed = true;
+            fireRecognitionRejectedEvent(result);
+        }
+    }
+
+    private void handleDistinctChoice(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
+            List<Set<Integer>> choices) {
+        Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
+        if (distinctChoice.isPresent()) {
+            signal(prompt, new Prompt.Result(distinctChoice.get()));
+        } else {
+            logger.warn("No distinct choice {} in: {} - rejecting ", choices, result);
+            eventArgs.consumed = true;
+            fireRecognitionRejectedEvent(result);
+        }
     }
 
     private List<Set<Integer>> gatherResults(Rule rule) {

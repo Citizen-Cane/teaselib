@@ -30,6 +30,11 @@ public class SpeechRecognitionHandcraftedXmlTest {
         emulateSpeechRecognition(resource, emulatedRecognitionResult, expected);
     }
 
+    private static void assertRecognized(String resource, String emulatedRecognitionResult, Prompt.Result expected,
+            Prompt.Result.Accept mode) throws IOException, InterruptedException {
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, expected, mode);
+    }
+
     private static void assertRejected(String resource, String emulatedRecognitionResult)
             throws IOException, InterruptedException {
         emulateSpeechRecognition(resource, emulatedRecognitionResult, null);
@@ -37,6 +42,11 @@ public class SpeechRecognitionHandcraftedXmlTest {
 
     private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
             Prompt.Result expected) throws IOException, InterruptedException {
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, expected, Prompt.Result.Accept.Multiple);
+    }
+
+    private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
+            Prompt.Result expected, Prompt.Result.Accept mode) throws IOException, InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
                 StringSequence.splitWords(emulatedRecognitionResult).stream().collect(Collectors.joining(" ")),
                 emulatedRecognitionResult);
@@ -49,7 +59,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
             }
         };
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod), Prompt.Result.Accept.Multiple);
+        Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod), mode);
 
         prompt.lock.lockInterruptibly();
         try {
@@ -158,6 +168,22 @@ public class SpeechRecognitionHandcraftedXmlTest {
         assertRecognized(resource, "No of course not Miss", new Prompt.Result(1, 1));
         assertRecognized(resource, "No Miss of course not miss", new Prompt.Result(1, 1));
         assertRecognized(resource, "No of course not Miss", new Prompt.Result(1, 1));
+    }
+
+    /**
+     * Demonstrate optional item elements in srgs xml
+     */
+    @Test
+    public void testHandcraftedDelayedPhraseStartWithGarbage() throws InterruptedException, IOException {
+        String srgs = "srgs/handcrafted_delayed_phrase_start_with_garbage.xml";
+
+        assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.AllSame);
+        assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.AllSame);
+
+        assertRejected(srgs, "Yes Miss of course Miss");
+        assertRejected(srgs, "of course");
+
+        assertRejected(srgs, "any");
     }
 
     /**

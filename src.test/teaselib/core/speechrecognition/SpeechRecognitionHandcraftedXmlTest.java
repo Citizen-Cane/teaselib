@@ -37,7 +37,12 @@ public class SpeechRecognitionHandcraftedXmlTest {
 
     private static void assertRejected(String resource, String emulatedRecognitionResult)
             throws IOException, InterruptedException {
-        emulateSpeechRecognition(resource, emulatedRecognitionResult, null);
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, null, Prompt.Result.Accept.Multiple);
+    }
+
+    private static void assertRejected(String resource, String emulatedRecognitionResult, Prompt.Result.Accept mode)
+            throws IOException, InterruptedException {
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, null, mode);
     }
 
     private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
@@ -171,19 +176,68 @@ public class SpeechRecognitionHandcraftedXmlTest {
     }
 
     /**
-     * Demonstrate optional item elements in srgs xml
+     * Demonstrate use of special rule to start phrase building after first slice:
+     * <p>
+     * not recognized because there are multiple results.
      */
     @Test
     public void testHandcraftedDelayedPhraseStartWithGarbage() throws InterruptedException, IOException {
         String srgs = "srgs/handcrafted_delayed_phrase_start_with_garbage.xml";
+        assertRejected(srgs, "Yes of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Of course Miss", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "any", Prompt.Result.Accept.AllSame);
+    }
 
+    /**
+     * Demonstrate use of special rule to start phrase building after first slice:
+     * <p>
+     * not recognized since using special=GARBAGE in a choice ruleRef results in multiple recognitions, as "Yes" is
+     * recognized as "Yes" and also as Garbage.
+     */
+    @Test
+    public void testHandcraftedDelayedPhraseStartWithGarbageRuleRef() throws InterruptedException, IOException {
+        String srgs = "srgs/handcrafted_delayed_phrase_start_with_garbage_RuleRef.xml";
+        assertRejected(srgs, "Yes of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Of course Miss", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "any", Prompt.Result.Accept.AllSame);
+    }
+
+    /**
+     * Demonstrate use of special rule to start phrase building after first slice:
+     * <p>
+     * Results in a single recognition with two children (on for each phrase chunk).
+     */
+    @Test
+    public void testHandcraftedDelayedPhraseStartWithNull() throws InterruptedException, IOException {
+        String srgs = "srgs/handcrafted_delayed_phrase_start_with_null.xml";
         assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.AllSame);
         assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "any", Prompt.Result.Accept.AllSame);
+    }
 
-        assertRejected(srgs, "Yes Miss of course Miss");
-        assertRejected(srgs, "of course");
-
-        assertRejected(srgs, "any");
+    /**
+     * Demonstrate use of special rule to start phrase building after first slice:
+     * <p>
+     * Results in a single recognition with three children (on for each phrase chunk), the third originates from the
+     * special=NULL rule (Yes or Miss not spoken).
+     * <p>
+     * Perfect recognition of all child rules because the rules not spoken result in a NULL rule with the intended
+     * choice index.
+     */
+    @Test
+    public void testHandcraftedDelayedPhraseStartWithNullRuleRef() throws InterruptedException, IOException {
+        String srgs = "srgs/handcrafted_delayed_phrase_start_with_null_RuleRef.xml";
+        assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.AllSame);
+        assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "any", Prompt.Result.Accept.AllSame);
     }
 
     /**

@@ -88,11 +88,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
             Rule result = eventArgs.result[0];
             if (eventArgs.result.length > 1) {
-                // TODO add handling for Result.Accept.Multiple
-                // TODO call gather/distinct only once
-                result = Arrays.stream(eventArgs.result)
-                        .filter(r -> getCommonDistinctValue(gatherResults(r)).isPresent()).reduce(Rule::maxProbability)
-                        .orElseThrow();
+                result = Arrays.stream(eventArgs.result).reduce(Rule::maxProbability).orElseThrow();
             } else if (eventArgs.result.length == 1) {
                 result = eventArgs.result[0];
             } else {
@@ -114,7 +110,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                     if (prompt != null) {
                         endSpeechRecognition();
                         try {
-                            List<Set<Integer>> choices = gatherResults(result);
+                            List<Set<Integer>> choices = result.gather();
                             if (choices.isEmpty()) {
                                 handleNoChoices(eventArgs, result);
                             } else if (prompt.acceptedResult == Result.Accept.Multiple) {
@@ -163,16 +159,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             eventArgs.consumed = true;
             fireRecognitionRejectedEvent(result);
         }
-    }
-
-    private List<Set<Integer>> gatherResults(Rule rule) {
-        ArrayList<Set<Integer>> results = new ArrayList<>();
-        if (!rule.choiceIndices.isEmpty() && rule.choiceIndices.stream()
-                .allMatch(choiceIndex -> choiceIndex > Prompt.Result.DISMISSED.elements.get(0))) {
-            results.add(rule.choiceIndices);
-        }
-        rule.children.stream().forEach(child -> results.addAll(gatherResults(child)));
-        return results;
     }
 
     private static Optional<Integer> getCommonDistinctValue(List<Set<Integer>> sets) {

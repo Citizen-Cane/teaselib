@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import teaselib.core.ui.Prompt;
+
 /**
  * @author Citizen-Cane
  *
@@ -65,11 +67,22 @@ public class Rule {
         return a.probability > b.probability ? a : b;
     }
 
+    public List<Set<Integer>> gather() {
+        ArrayList<Set<Integer>> results = new ArrayList<>();
+        if (!choiceIndices.isEmpty() && choiceIndices.stream()
+                // TODO looks redundant - remove when tests succeed again
+                .allMatch(choiceIndex -> choiceIndex > Prompt.Result.DISMISSED.elements.get(0))) {
+            results.add(choiceIndices);
+        }
+        children.stream().forEach(child -> results.addAll(child.gather()));
+        return results;
+    }
+
     @Override
     public String toString() {
         String displayedRuleIndex = ruleIndex == Integer.MIN_VALUE ? "" : " ruleIndex=" + ruleIndex;
-        return "Name=" + name + displayedRuleIndex + choiceIndices + " [" + fromElement + "," + toElement + "[ C="
-                + probability + "~" + confidence + " children=" + children.size() + " \"" + text + "\"";
+        return "Name=" + name + displayedRuleIndex + " choices=" + choiceIndices + " [" + fromElement + "," + toElement
+                + "[ C=" + probability + "~" + confidence + " children=" + children.size() + " \"" + text + "\"";
     }
 
     public String prettyPrint() {

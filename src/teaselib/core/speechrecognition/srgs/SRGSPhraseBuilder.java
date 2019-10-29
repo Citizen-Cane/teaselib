@@ -27,6 +27,8 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     private IndexMap<Integer> index2choices;
     private List<PhraseString> phrases;
 
+    int guid = 0;
+
     public SRGSPhraseBuilder(Choices choices, String languageCode)
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
         super(languageCode);
@@ -93,16 +95,18 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
                 for (PhraseString phrase : slice) {
                     Set<Integer> indices = phrase.indices;
-                    Element ruleRef = ruleRef(choiceName(n, indices));
+                    String ruleName = choiceName(n, indices);
+                    Element ruleRef = ruleRef(ruleName);
                     ruleRefs.add(ruleRef);
                     missingIndices.removeAll(indices);
                     next.add(indices, common);
-                    addRule(grammar, phrase, n);
+                    addRule(grammar, ruleName, phrase.phrase);
                 }
 
                 if (!missingIndices.isEmpty()) {
-                    ruleRefs.add(ruleRef(choiceName(n, missingIndices)));
-                    specialRule(grammar, missingIndices, n);
+                    String ruleName = choiceName(n, missingIndices);
+                    ruleRefs.add(ruleRef(ruleName));
+                    specialRule(grammar, ruleName);
                 }
 
                 common.appendChild(gather(ruleRefs));
@@ -113,20 +117,22 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                     Set<Integer> indices = phrase.indices;
                     Set<Element> nodes = current.collect(indices);
                     for (Element element : nodes) {
-                        Element ruleRef = ruleRef(choiceName(n, indices));
+                        String ruleName = choiceName(n, indices);
+                        Element ruleRef = ruleRef(ruleName);
                         ruleRefs.computeIfAbsent(element, e -> new ArrayList<>()).add(ruleRef);
                         next.add(indices, element);
-                        addRule(grammar, phrase, n);
+                        addRule(grammar, ruleName, phrase.phrase);
                     }
                     missingIndices.removeAll(indices);
                 }
 
                 if (!missingIndices.isEmpty()) {
-                    Element ruleRef = ruleRef(choiceName(n, missingIndices));
+                    String ruleName = choiceName(n, missingIndices);
+                    Element ruleRef = ruleRef(ruleName);
                     Set<Element> nodes = current.collect(missingIndices);
                     for (Element element : nodes) {
                         ruleRefs.computeIfAbsent(element, e -> new ArrayList<>()).add(ruleRef);
-                        specialRule(grammar, missingIndices, n);
+                        specialRule(grammar, ruleName);
                         next.add(missingIndices, element);
                     }
                 }
@@ -157,9 +163,9 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         return item;
     }
 
-    private Element specialRule(Element grammar, Set<Integer> indices, int index) {
+    private Element specialRule(Element grammar, String id) {
         Element element = document.createElement("rule");
-        addAttribute(element, "id", choiceName(index, indices));
+        addAttribute(element, "id", id);
         addAttribute(element, "scope", "private");
 
         Element specialNull = document.createElement("ruleref");
@@ -170,17 +176,18 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         return element;
     }
 
-    private void addRule(Element grammar, PhraseString phrase, int index) {
+    private void addRule(Element grammar, String id, String text) {
         Element element = document.createElement("rule");
-        addAttribute(element, "id", choiceName(index, phrase.indices));
+        addAttribute(element, "id", id);
         addAttribute(element, "scope", "private");
-        element.setTextContent(phrase.phrase);
+        element.setTextContent(text);
         grammar.appendChild(element);
     }
 
     String choiceName(int n, Set<Integer> indices) {
+        guid++;
         return CHOICE_NODE_PREFIX + n + "_"
-                + index2choices.get(indices).stream().map(Object::toString).collect(joining(","));
+                + index2choices.get(indices).stream().map(Object::toString).collect(joining(",")) + "__" + guid;
     }
 
     private Element gather(List<Element> elements) {

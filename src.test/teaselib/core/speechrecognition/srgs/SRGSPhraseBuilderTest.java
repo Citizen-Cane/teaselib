@@ -58,4 +58,16 @@ public class SRGSPhraseBuilderTest {
         assertNotEquals("", xml);
     }
 
+    @Test
+    public void testSingleChoiceMultiplePhrasesAreDistinct()
+            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+        String[] yes = { "Yes Miss, of course", "Of course, Miss" };
+        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes));
+        SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
+        String xml = srgs.toXML();
+        assertNotEquals("", xml);
+
+        // TODO Yes Miss must be one-of together with special=NULL -> check index mapping
+    }
+
 }

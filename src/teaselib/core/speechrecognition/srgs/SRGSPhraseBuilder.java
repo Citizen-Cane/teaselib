@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -78,26 +79,6 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     private void createNodes(Element grammar, Element main) {
         List<Sequences<PhraseString>> slices = PhraseStringSequences.slice(phrases);
 
-        // AB(0) ,BC(1) is sliced with choice 1 starting at 2nd slice
-        // -> TODO gather B(1) with A(0) into one-of items
-        // Generate lists first?
-
-        // <one-of>
-        // ..<item>
-        // ....<ruleref uri="#Choice_0_0"/> A
-        // ....<ruleref uri="#Choice_1_0,1"/> B
-        // ..</item>
-        // ..<item>
-        // ....<ruleref uri="#Choice_1_0,1"/> B
-        // ....<ruleref uri="#Choice_2_1"/> C
-        // ..</item>
-        // </one-of>
-
-        // at slice 0, only A is known -> single ruleref
-        // This might go on in the middle, so we need a generic solution
-        // -> browse forward, but then we must remember handled slices (or parts) -> too complex
-        // -> insert backwards, but then we must defer xml generation to the end -> recursion
-
         Indices<Element> current = new Indices<>(phrases.size(), main);
         Indices<Element> next = new Indices<>(current);
         int n = 0;
@@ -105,6 +86,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
             List<PhraseString> slice = slices.remove(0).stream().map(e -> e.get(0)).collect(toList());
 
             Set<Integer> coverage = slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
+            Set<Integer> missingIndices = all();
             if (current.collect(coverage).size() == 1) {
                 Element common = current.collect(coverage).iterator().next();
                 List<Element> ruleRefs = new ArrayList<>();
@@ -113,8 +95,14 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                     Set<Integer> indices = phrase.indices;
                     Element ruleRef = ruleRef(choiceName(n, indices));
                     ruleRefs.add(ruleRef);
+                    missingIndices.removeAll(indices);
                     next.add(indices, common);
                     addRule(grammar, phrase, n);
+                }
+
+                if (!missingIndices.isEmpty()) {
+                    ruleRefs.add(ruleRef(choiceName(n, missingIndices)));
+                    specialRule(grammar, missingIndices, n);
                 }
 
                 common.appendChild(gather(ruleRefs));
@@ -130,26 +118,56 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                         next.add(indices, element);
                         addRule(grammar, phrase, n);
                     }
+                    missingIndices.removeAll(indices);
+                }
+
+                if (!missingIndices.isEmpty()) {
+                    Element ruleRef = ruleRef(choiceName(n, missingIndices));
+                    Set<Element> nodes = current.collect(missingIndices);
+                    for (Element element : nodes) {
+                        ruleRefs.computeIfAbsent(element, e -> new ArrayList<>()).add(ruleRef);
+                        specialRule(grammar, missingIndices, n);
+                        next.add(missingIndices, element);
+                    }
                 }
 
                 for (Entry<Element, List<Element>> items : ruleRefs.entrySet()) {
                     Element item = gather(items.getValue());
                     items.getKey().appendChild(item);
                 }
-            }
 
-            // TODO Remember each set of indices and search back to find largest common chunk
-            // append node to that chunk
+            }
 
             n++;
             current = next;
         }
     }
 
+    private Set<Integer> all() {
+        Set<Integer> all = new HashSet<>();
+        for (int i = 0; i < choices.size(); i++) {
+            all.add(i);
+        }
+        return all;
+    }
+
     private Element item(Element ruleRef) {
         Element item = document.createElement("item");
         item.appendChild(ruleRef);
         return item;
+    }
+
+    private Element specialRule(Element grammar, Set<Integer> indices, int index) {
+        Element element = document.createElement("rule");
+        addAttribute(element, "id", choiceName(index, indices));
+        addAttribute(element, "scope", "private");
+
+        Element specialNull = document.createElement("ruleref");
+        addAttribute(specialNull, "special", "NULL");
+        element.appendChild(specialNull);
+        grammar.appendChild(element);
+
+        return element;
     }
 
     private void addRule(Element grammar, PhraseString phrase, int index) {

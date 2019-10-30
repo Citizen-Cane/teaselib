@@ -88,7 +88,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
             List<PhraseString> slice = slices.remove(0).stream().map(e -> e.get(0)).collect(toList());
 
             Set<Integer> coverage = slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
-            Set<Integer> missingIndices = all();
+            Set<Integer> missingIndices = allIndices();
             if (current.collect(coverage).size() == 1) {
                 Element common = current.collect(coverage).iterator().next();
                 List<Element> ruleRefs = new ArrayList<>();
@@ -149,12 +149,12 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         }
     }
 
-    private Set<Integer> all() {
-        Set<Integer> all = new HashSet<>();
-        for (int i = 0; i < choices.size(); i++) {
-            all.add(i);
+    private Set<Integer> allIndices() {
+        Set<Integer> indices = new HashSet<>();
+        for (int i = 0; i < phrases.size(); i++) {
+            indices.add(i);
         }
-        return all;
+        return indices;
     }
 
     private Element item(Element ruleRef) {

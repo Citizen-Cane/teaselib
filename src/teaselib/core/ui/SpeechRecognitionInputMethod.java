@@ -153,7 +153,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             List<Set<Integer>> choices) {
         Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
         if (distinctChoice.isPresent()) {
-            signal(prompt, new Prompt.Result(distinctChoice.get()));
+            signal(prompt, new Prompt.Result(speechRecognizer.mapPhraseToChoice(distinctChoice.get())));
         } else {
             logger.warn("No distinct choice {} in: {} - rejecting ", choices, result);
             eventArgs.consumed = true;

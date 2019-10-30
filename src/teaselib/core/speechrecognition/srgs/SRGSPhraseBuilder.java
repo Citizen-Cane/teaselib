@@ -186,8 +186,12 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
     String choiceName(int n, Set<Integer> indices) {
         guid++;
-        return CHOICE_NODE_PREFIX + n + "_"
-                + index2choices.get(indices).stream().map(Object::toString).collect(joining(",")) + "__" + guid;
+        return CHOICE_NODE_PREFIX + n + "_" + indices.stream().map(Object::toString).collect(joining(",")) + "__"
+                + guid;
+    }
+
+    public int map(int index) {
+        return index2choices.get(index);
     }
 
     private Element gather(List<Element> elements) {

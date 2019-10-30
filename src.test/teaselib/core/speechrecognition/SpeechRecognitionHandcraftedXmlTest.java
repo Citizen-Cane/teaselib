@@ -60,6 +60,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
             @Override
             byte[] srgs(Choices choices) {
+                mapper = index -> index;
                 return xml;
             }
         };

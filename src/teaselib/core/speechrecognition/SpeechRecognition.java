@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -132,6 +133,7 @@ public class SpeechRecognition {
 
     private Choices choices;
     private byte[] srgs;
+    Function<Integer, Integer> mapper;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
         delegateThread.run(() -> {
@@ -351,6 +353,7 @@ public class SpeechRecognition {
             if (logger.isInfoEnabled()) {
                 logger.info("{}", builder.toXML());
             }
+            mapper = builder::map;
             return builder.toBytes();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);
@@ -402,5 +405,9 @@ public class SpeechRecognition {
 
     public Confidence userDefinedConfidence(Confidence expectedConfidence) {
         return confidenceMapping.getOrDefault(expectedConfidence, expectedConfidence);
+    }
+
+    public Integer mapPhraseToChoice(int index) {
+        return mapper.apply(index);
     }
 }

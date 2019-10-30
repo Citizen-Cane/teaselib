@@ -58,11 +58,9 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("Of course, Miss"), new Prompt.Result(0));
 
+        assertRejected(choices, "Yes Miss");
         assertRejected(choices, "Of course");
-        assertRejected(choices, "Yes Miss Yes Miss");
-        assertRejected(choices, "Of course of course");
-        assertRejected(choices, withoutPunctation("Yes Miss, of course of course"));
-        assertRejected(choices, withoutPunctation("Of course of course, Miss"));
+        assertRejected(choices, withoutPunctation("Miss"));
     }
 
     private static Choices multipleChoicesAlternativePhrases() {

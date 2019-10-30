@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -54,9 +55,15 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     static class Indices<T> {
         final Indices<T> previous;
         final Map<Integer, T> indexMap = new HashMap<>();
+        private final Function<T, String> toString;
 
         public Indices(int size, T node) {
-            this(null);
+            this(size, node, T::toString);
+        }
+
+        public Indices(int size, T node, Function<T, String> toString) {
+            this.previous = null;
+            this.toString = toString;
             for (int i = 0; i < size; i++) {
                 indexMap.put(Integer.valueOf(i), node);
             }
@@ -64,6 +71,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
         public Indices(Indices<T> current) {
             this.previous = current;
+            this.toString = previous.toString;
         }
 
         void add(Set<Integer> indices, T element) {
@@ -76,6 +84,15 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
             return indexMap.entrySet().stream().filter(entry -> indices.contains(entry.getKey()))
                     .map(Map.Entry::getValue).collect(Collectors.toSet());
         }
+
+        @Override
+        public String toString() {
+            return "["
+                    + indexMap.entrySet().stream().map(entry -> entry.getKey() + "=" + toString.apply(entry.getValue()))
+                            .collect(Collectors.joining(" "))
+                    + "]";
+        }
+
     }
 
     private void createNodes(Element grammar, Element main) {
@@ -107,6 +124,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                     String ruleName = choiceName(n, missingIndices);
                     ruleRefs.add(ruleRef(ruleName));
                     specialRule(grammar, ruleName);
+                    next.add(missingIndices, common);
                 }
 
                 common.appendChild(gather(ruleRefs));

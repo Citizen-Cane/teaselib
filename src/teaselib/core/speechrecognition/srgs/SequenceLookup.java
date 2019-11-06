@@ -12,7 +12,7 @@ class SequenceLookup<T> {
     final Sequences<T> sequences;
     final Map<String, AtomicInteger> startElementIndicess;
     final Map<String, List<Sequence<T>>> startElementSequences;
-    final Map<String, List<Sequence<T>>> laterOccurrences;;
+    final Map<String, List<Sequence<T>>> laterOccurrences;
 
     SequenceLookup(Sequences<T> sequences) {
         this.sequences = sequences;

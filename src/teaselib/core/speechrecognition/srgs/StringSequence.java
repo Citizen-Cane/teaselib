@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
+import static java.util.Arrays.*;
+import static java.util.Collections.*;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class StringSequence extends Sequence<String> {
         }
     }
 
-    public static int commonness(String element) {
+    public static int commonness(@SuppressWarnings("unused") String element) {
         return 1;
     }
 

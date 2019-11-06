@@ -1,11 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.joining;
-
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
-import java.util.Collections;
-import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -31,13 +27,11 @@ abstract class AbstractSRGSBuilder {
 
     static final String MAIN_RULE_NAME = "Main";
     static final String CHOICE_NODE_PREFIX = "Choice_";
-    private static final String GROUP_HEADER = "__group_";
 
     private final String languageCode;
     final Document document;
 
-    AbstractSRGSBuilder(String languageCode)
-            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+    AbstractSRGSBuilder(String languageCode) throws ParserConfigurationException, TransformerFactoryConfigurationError {
         this.languageCode = languageCode;
         this.document = createDocument();
     }
@@ -49,15 +43,6 @@ abstract class AbstractSRGSBuilder {
     }
 
     abstract void buildXML() throws TransformerFactoryConfigurationError, TransformerException;
-
-    static String choiceName(Rule rule, int choice) {
-        return choiceName(rule, Collections.singleton(choice));
-    }
-
-    static String choiceName(Rule rule, Set<Integer> choices) {
-        return CHOICE_NODE_PREFIX + rule.index + "_" + choices.stream().map(Object::toString).collect(joining(","))
-                + GROUP_HEADER + rule.group;
-    }
 
     Element createGrammar() {
         Element grammar = document.createElement("grammar");

@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition;
 
 import static java.util.Arrays.*;
-import static java.util.stream.Collectors.*;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
@@ -12,13 +11,9 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.junit.Assume;
-
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
-import teaselib.core.speechrecognition.srgs.Phrases;
-import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.speechrecognition.srgs.StringSequence;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
@@ -122,84 +117,6 @@ public class SpeechRecognitionTestUtils {
         } finally {
             prompt.lock.unlock();
         }
-    }
-
-    public static void assertEqualsFlattened(Choices choices, Phrases phrases) {
-        Sequences<String> flattened = flatten(phrases);
-        assertEquals(choices.size(), flattened.size());
-
-        List<String> allChoices = firstOfEach(choices).stream().map(SpeechRecognitionTestUtils::withoutPunctation)
-                .collect(toList());
-        assertEquals(allChoices, flattened.toStrings());
-    }
-
-    public static void assertChoicesAndPhrasesMatch(Choices choices, Phrases phrases) {
-        Sequences<String> flattened = flatten(phrases);
-        assertEquals(choices.size(), flattened.size());
-
-        List<String> allChoices = all(choices).stream().map(SpeechRecognitionTestUtils::withoutPunctation)
-                .collect(toList());
-        flattened.toStrings().stream().forEach(phrase -> {
-            assertTrue("'" + phrase + "' not found in: " + allChoices, allChoices.contains(phrase));
-        });
-    }
-
-    private static List<String> all(Choices choices) {
-        return choices.stream().flatMap(p -> p.phrases.stream()).collect(toList());
-    }
-
-    private static List<String> firstOfEach(Choices choices) {
-        return choices.stream().map(p -> p.phrases.get(0)).collect(toList());
-    }
-
-    /**
-     * Flattens phrases to input strings.
-     * 
-     * @param phrases
-     * 
-     * @return A list containing the first phrase of each choice.
-     */
-    public static Sequences<String> flatten(Phrases phrases) {
-        Assume.assumeTrue("Phrases are deprecated", false);
-        return null;
-        // int choices = phrases.choices();
-        // Sequences<String> flattened = StringSequences.of(choices);
-        // for (int i = 0; i < choices; i++) {
-        // StringSequence sequence = StringSequence.ignoreCase();
-        // flattened.add(sequence);
-        // }
-        //
-        // int rules = phrases.rules();
-        // int groups = phrases.groups();
-        // Set<Integer> processed = new HashSet<>();
-        //
-        // for (int group = 0; group < groups; group++) {
-        // for (int choiceIndex = 0; choiceIndex < choices; choiceIndex++) {
-        // if (!processed.contains(choiceIndex)) {
-        // boolean choiceProcessed = false;
-        // for (int ruleIndex = 0; ruleIndex < rules; ruleIndex++) {
-        // for (Rule rule : phrases) {
-        // String word = "";
-        // if (rule.group == group && rule.index == ruleIndex) {
-        // for (OneOf items : rule) {
-        // // The sequence of the items in OneOf matters
-        // if (items.choices.contains(choiceIndex)) {
-        // word = items.iterator().next();
-        // choiceProcessed = true;
-        // break;
-        // }
-        // }
-        // flattened.get(choiceIndex).add(word);
-        // }
-        // }
-        // }
-        // if (choiceProcessed) {
-        // processed.add(choiceIndex);
-        // }
-        // }
-        // }
-        // }
-        // return flattened;
     }
 
 }

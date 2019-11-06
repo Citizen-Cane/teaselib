@@ -1,5 +1,7 @@
 package teaselib.core.ui;
 
+import static java.util.Arrays.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,8 +66,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
         this.speechDetectedEventHandler = eventArgs -> {
             if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
-                Rule result = eventArgs.result[0];
-                logAudioSignalProblem(result);
+                logAudioSignalProblem(eventArgs.result);
                 speechRecognizer.restartRecognition();
             }
         };
@@ -87,30 +88,36 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 }
                 Arrays.stream(eventArgs.result).forEach(result -> logger.info("rules \n{}", result.prettyPrint()));
 
-                Rule result = eventArgs.result[0];
-                if (eventArgs.result.length > 1) {
-                    result = Arrays.stream(eventArgs.result).reduce(Rule::maxProbability).orElseThrow();
-                } else if (eventArgs.result.length == 1) {
-                    result = eventArgs.result[0];
-                } else {
-                    throw new IllegalStateException("RecognitionCompleted-event without result");
-                }
-
                 if (audioSignalProblems.occured()) {
-                    logAudioSignalProblem(result);
+                    logAudioSignalProblem(eventArgs.result);
                     return prompt;
                 } else {
-                    double penalty = audioSignalProblems.penalty();
-                    if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
-                        if (confidenceIsHighEnough(result, expectedConfidence, 0)) {
-                            logAudioSignalProblemPenalty(result, penalty);
+                    Rule result = eventArgs.result[0];
+                    if (eventArgs.result.length > 1) {
+                        if (prompt.acceptedResult == Result.Accept.AllSame) {
+                            result = distinct(eventArgs.result).orElseThrow();
                         } else {
-                            logLackOfConfidence(result);
+                            throw new UnsupportedOperationException("TODO Define best result for multiple choices");
                         }
-                        return prompt;
+                    } else if (eventArgs.result.length == 1) {
+                        result = eventArgs.result[0];
                     } else {
-                        try {
-                            List<Set<Integer>> choices = result.gather();
+                        throw new IllegalStateException("RecognitionCompleted-event without result");
+                    }
+
+                    try {
+                        List<Set<Integer>> choices = result.gather();
+
+                        double penalty = audioSignalProblems.penalty();
+                        if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
+                            if (confidenceIsHighEnough(result, expectedConfidence, 0)) {
+                                logAudioSignalProblemPenalty(result, penalty);
+                            } else {
+                                logLackOfConfidence(result);
+                            }
+                            reject(eventArgs);
+                            return prompt;
+                        } else {
                             if (choices.isEmpty()) {
                                 handleNoChoices(eventArgs, result);
                                 return prompt;
@@ -121,21 +128,29 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                             } else {
                                 throw new UnsupportedOperationException(prompt.acceptedResult.toString());
                             }
-                        } catch (Exception e) {
-                            prompt.setException(e);
-                            endSpeechRecognition();
-                            return null;
                         }
+                    } catch (Exception e) {
+                        prompt.setException(e);
+                        endSpeechRecognition();
+                        return null;
                     }
                 }
             });
         };
     }
 
+    private static Optional<Rule> distinct(Rule... result) {
+        return distinct(asList(result));
+    }
+
+    public static Optional<Rule> distinct(List<Rule> result) {
+        return result.stream().filter(r -> getCommonDistinctValue(r.gather()).isPresent()).reduce(Rule::maxProbability);
+    }
+
     private void handleNoChoices(SpeechRecognizedEventArgs eventArgs, Rule result) {
         logger.warn("No choice rules in: {} - rejecting ", result);
         eventArgs.consumed = true;
-        fireRecognitionRejectedEvent(result);
+        fireRecognitionRejectedEvent(eventArgs);
     }
 
     private Prompt handleMultipleChoices(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
@@ -144,13 +159,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 : Prompt.Result.UNDEFINED.elements.iterator().next()).collect(Collectors.toList());
         Prompt.Result promptResult = new Prompt.Result(distinctChoices);
         if (promptResult.valid(prompt.choices)) {
-            endSpeechRecognition();
-            signal(prompt, promptResult);
+            accept(prompt, promptResult);
             return null;
         } else {
-            logger.warn("Undefined result index in multiple choices {} : {} - rejecting ", choices, result);
-            eventArgs.consumed = true;
-            fireRecognitionRejectedEvent(result);
+            logger.warn("Undefined result index in {} : {} - rejecting", choices, result);
+            reject(eventArgs);
             return prompt;
         }
     }
@@ -159,25 +172,34 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             List<Set<Integer>> choices) {
         Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
         if (distinctChoice.isPresent()) {
-            endSpeechRecognition();
-            signal(prompt, new Prompt.Result(speechRecognizer.mapPhraseToChoice(distinctChoice.get())));
+            accept(prompt, new Prompt.Result(speechRecognizer.mapPhraseToChoice(distinctChoice.get())));
             return null;
         } else {
-            logger.warn("No distinct choice {} in: {} - rejecting ", choices, result);
-            eventArgs.consumed = true;
-            fireRecognitionRejectedEvent(result);
+            logger.warn("No distinct choice {} in {} - rejecting", choices, result);
+            reject(eventArgs);
             return prompt;
         }
     }
 
-    private static Optional<Integer> getCommonDistinctValue(List<Set<Integer>> sets) {
-        if (sets.isEmpty())
+    private Prompt accept(Prompt prompt, Prompt.Result promptResult) {
+        endSpeechRecognition();
+        signal(prompt, promptResult);
+        return null;
+    }
+
+    private void reject(SpeechRecognizedEventArgs eventArgs) {
+        eventArgs.consumed = true;
+        fireRecognitionRejectedEvent(eventArgs);
+    }
+
+    private static Optional<Integer> getCommonDistinctValue(List<Set<Integer>> indicesSets) {
+        if (indicesSets.isEmpty())
             return Optional.empty();
 
-        Set<Integer> candidates = new HashSet<>(sets.get(0));
+        Set<Integer> candidates = new HashSet<>(indicesSets.get(0));
         for (Integer candidate : new ArrayList<>(candidates)) {
-            for (int i = 1; i < sets.size(); i++) {
-                if (!sets.get(i).contains(candidate)) {
+            for (int i = 1; i < indicesSets.size(); i++) {
+                if (!indicesSets.get(i).contains(candidate)) {
                     candidates.remove(candidate);
                     if (candidates.isEmpty())
                         return Optional.empty();
@@ -190,21 +212,20 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         return candidates.size() == 1 ? Optional.of(candidates.iterator().next()) : Optional.empty();
     }
 
-    private void fireRecognitionRejectedEvent(Rule result) {
-        SpeechRecognizedEventArgs recognitionRejectedEventArgs = new SpeechRecognizedEventArgs(result);
-        speechRecognizer.events.recognitionRejected.run(recognitionRejectedEventArgs);
+    private void fireRecognitionRejectedEvent(SpeechRecognizedEventArgs eventArgs) {
+        speechRecognizer.events.recognitionRejected.run(new SpeechRecognizedEventArgs(eventArgs.result));
     }
 
     private void logLackOfConfidence(Rule result) {
-        logger.info("Dropping result '{}' due to lack of confidence (expected {})", result, expectedConfidence);
+        logger.info("Rejecting result '{}' due to lack of confidence (expected {})", result, expectedConfidence);
     }
 
-    private void logAudioSignalProblem(Rule result) {
-        logger.info("Dropping result '{}' due to audio signal problems {}", result, audioSignalProblems);
+    private void logAudioSignalProblem(Rule[] result) {
+        logger.info("Rejecting result '{}' due to audio signal problems {}", result, audioSignalProblems);
     }
 
     private void logAudioSignalProblemPenalty(Rule result, double penalty) {
-        logger.info("Dropping result '{}' due to audio signal problem penalty  (required  {} + {} + = {})", result,
+        logger.info("Rejecting result '{}' due to audio signal problem penalty  (required  {} + {} + = {})", result,
                 expectedConfidence, penalty, expectedConfidence.probability + penalty);
     }
 

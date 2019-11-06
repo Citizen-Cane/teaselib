@@ -68,9 +68,8 @@ public class SpeechRecognitionTestUtils {
 
     static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedSpeech, Prompt.Result expectedRules)
             throws InterruptedException {
-        Event<SpeechRecognizedEventArgs> rejectedHandler = (eventArgs) -> {
+        Event<SpeechRecognizedEventArgs> rejectedHandler = eventArgs -> {
             prompt.setTimedOut();
-            prompt.dismiss();
         };
         sr.events.recognitionRejected.add(rejectedHandler);
         try {

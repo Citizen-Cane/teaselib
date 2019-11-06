@@ -81,51 +81,54 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         };
 
         this.recognitionCompleted = eventArgs -> {
-            if (eventArgs.result.length > 1) {
-                logger.info("More than one result:");
-            }
-            Arrays.stream(eventArgs.result).forEach(result -> logger.info("rules \n{}", result.prettyPrint()));
+            active.updateAndGet(prompt -> {
+                if (eventArgs.result.length > 1) {
+                    logger.info("More than one result:");
+                }
+                Arrays.stream(eventArgs.result).forEach(result -> logger.info("rules \n{}", result.prettyPrint()));
 
-            Rule result = eventArgs.result[0];
-            if (eventArgs.result.length > 1) {
-                result = Arrays.stream(eventArgs.result).reduce(Rule::maxProbability).orElseThrow();
-            } else if (eventArgs.result.length == 1) {
-                result = eventArgs.result[0];
-            } else {
-                throw new IllegalStateException("RecognitionCompleted-event without result");
-            }
-
-            if (audioSignalProblems.occured()) {
-                logAudioSignalProblem(result);
-            } else {
-                double penalty = audioSignalProblems.penalty();
-                if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
-                    if (confidenceIsHighEnough(result, expectedConfidence, 0)) {
-                        logAudioSignalProblemPenalty(result, penalty);
-                    } else {
-                        logLackOfConfidence(result);
-                    }
+                Rule result = eventArgs.result[0];
+                if (eventArgs.result.length > 1) {
+                    result = Arrays.stream(eventArgs.result).reduce(Rule::maxProbability).orElseThrow();
+                } else if (eventArgs.result.length == 1) {
+                    result = eventArgs.result[0];
                 } else {
-                    Prompt prompt = active.getAndSet(null);
-                    if (prompt != null) {
-                        endSpeechRecognition();
+                    throw new IllegalStateException("RecognitionCompleted-event without result");
+                }
+
+                if (audioSignalProblems.occured()) {
+                    logAudioSignalProblem(result);
+                    return prompt;
+                } else {
+                    double penalty = audioSignalProblems.penalty();
+                    if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
+                        if (confidenceIsHighEnough(result, expectedConfidence, 0)) {
+                            logAudioSignalProblemPenalty(result, penalty);
+                        } else {
+                            logLackOfConfidence(result);
+                        }
+                        return prompt;
+                    } else {
                         try {
                             List<Set<Integer>> choices = result.gather();
                             if (choices.isEmpty()) {
                                 handleNoChoices(eventArgs, result);
+                                return prompt;
                             } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                                handleMultipleChoices(eventArgs, result, prompt, choices);
+                                return handleMultipleChoices(eventArgs, result, prompt, choices);
                             } else if (prompt.acceptedResult == Result.Accept.AllSame) {
-                                handleDistinctChoice(eventArgs, result, prompt, choices);
+                                return handleDistinctChoice(eventArgs, result, prompt, choices);
                             } else {
                                 throw new UnsupportedOperationException(prompt.acceptedResult.toString());
                             }
                         } catch (Exception e) {
                             prompt.setException(e);
+                            endSpeechRecognition();
+                            return null;
                         }
                     }
                 }
-            }
+            });
         };
     }
 
@@ -135,29 +138,35 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         fireRecognitionRejectedEvent(result);
     }
 
-    private void handleMultipleChoices(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
+    private Prompt handleMultipleChoices(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
             List<Set<Integer>> choices) {
         List<Integer> distinctChoices = choices.stream().map(indices -> indices.size() == 1 ? indices.iterator().next()
                 : Prompt.Result.UNDEFINED.elements.iterator().next()).collect(Collectors.toList());
         Prompt.Result promptResult = new Prompt.Result(distinctChoices);
         if (promptResult.valid(prompt.choices)) {
+            endSpeechRecognition();
             signal(prompt, promptResult);
+            return null;
         } else {
             logger.warn("Undefined result index in multiple choices {} : {} - rejecting ", choices, result);
             eventArgs.consumed = true;
             fireRecognitionRejectedEvent(result);
+            return prompt;
         }
     }
 
-    private void handleDistinctChoice(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
+    private Prompt handleDistinctChoice(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
             List<Set<Integer>> choices) {
         Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
         if (distinctChoice.isPresent()) {
+            endSpeechRecognition();
             signal(prompt, new Prompt.Result(speechRecognizer.mapPhraseToChoice(distinctChoice.get())));
+            return null;
         } else {
             logger.warn("No distinct choice {} in: {} - rejecting ", choices, result);
             eventArgs.consumed = true;
             fireRecognitionRejectedEvent(result);
+            return prompt;
         }
     }
 

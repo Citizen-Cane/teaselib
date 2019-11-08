@@ -286,4 +286,30 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("B M"), new Prompt.Result(3));
     }
 
+    @Test
+    public void testSRGSBuilderMultiLevelCommon() throws InterruptedException {
+        Choices choices = new Choices( //
+                new Choice("A B0 C0 D"), //
+                new Choice("A B1 C0 D"), //
+                new Choice("A B2 C2 D"));
+
+        assertRecognized(choices, withoutPunctation("A B0 C0 D"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("A B1 C0 D"), new Prompt.Result(1));
+        assertRecognized(choices, withoutPunctation("A B2 C2 D"), new Prompt.Result(2));
+    }
+
+    @Test
+    public void testSRGSBuilderMultiLevelCommon2() throws InterruptedException {
+        Choices choices = new Choices( //
+                new Choice("A B0 C0 D"), //
+                new Choice("A B1 C0 D"), //
+                new Choice("A B2 C2 D"), //
+                new Choice("A B3 C2 D"));
+
+        assertRecognized(choices, withoutPunctation("A B0 C0 D"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("A B1 C0 D"), new Prompt.Result(1));
+        assertRecognized(choices, withoutPunctation("A B2 C2 D"), new Prompt.Result(2));
+        assertRecognized(choices, withoutPunctation("A B3 C2 D"), new Prompt.Result(3));
+    }
+
 }

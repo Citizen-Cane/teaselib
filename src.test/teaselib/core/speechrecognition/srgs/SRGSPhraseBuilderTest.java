@@ -91,6 +91,32 @@ public class SRGSPhraseBuilderTest {
         assertNotEquals("", xml);
     }
 
+    @Test
+    public void testMultiLevelCommon1()
+            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+        Choices choices = new Choices( //
+                new Choice("A B0 C0 D"), //
+                new Choice("A B1 C0 D"), //
+                new Choice("A B2 C2 D"), //
+                new Choice("A B3 C2 D"));
+        SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
+        String xml = srgs.toXML();
+        assertNotEquals("", xml);
+    }
+
+    @Test
+    public void testMultiLevelCommon2()
+            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+        Choices choices = new Choices( //
+                new Choice("A B0 C0 D"), //
+                new Choice("A B1 C0 D"), //
+                new Choice("A B2 C2 D"), //
+                new Choice("A B3 C2 D"));
+        SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
+        String xml = srgs.toXML();
+        assertNotEquals("", xml);
+    }
+
     private static final Choice Optional = new Choice("");
 
     @Test

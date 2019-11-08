@@ -187,4 +187,43 @@ public class PhrasesSliceTest {
         assertTrue(empty.isEmpty());
     }
 
+    @Test
+    public void testSliceMultipleCommon1() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("A B0 C0 D", 0), choice("A B1 C0 D", 1),
+                choice("A B2 C2 D", 2));
+
+        Sequences<PhraseString> slice1 = advance(choices);
+        Sequences<PhraseString> slice2 = advance(choices);
+        Sequences<PhraseString> slice3 = advance(choices);
+        Sequences<PhraseString> slice4 = advance(choices);
+        Sequences<PhraseString> empty = advance(choices);
+
+        assertEquals(new PhraseStringSequences(result("A", 0, 1, 2)), slice1);
+        assertEquals(new PhraseStringSequences(result("b0", 0), result("b1", 1), result("b2 c2", 2)), slice2);
+        assertEquals(new PhraseStringSequences(result("c0", 0, 1)), slice3);
+        assertEquals(new PhraseStringSequences(result("d", 0, 1, 2)), slice4);
+
+        assertTrue(empty.isEmpty());
+    }
+
+    @Test
+    public void testSliceMultipleCommon2() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("A B0 C0 D", 0), choice("A B1 C0 D", 1),
+                choice("A B2 C2 D", 2), choice("A B3 C2 D", 3));
+
+        Sequences<PhraseString> slice1 = advance(choices);
+        Sequences<PhraseString> slice2 = advance(choices);
+        Sequences<PhraseString> slice3 = advance(choices);
+        Sequences<PhraseString> slice4 = advance(choices);
+        Sequences<PhraseString> empty = advance(choices);
+
+        assertEquals(new PhraseStringSequences(result("A", 0, 1, 2, 3)), slice1);
+        assertEquals(new PhraseStringSequences(result("b0", 0), result("b1", 1), result("b2", 2), result("b3", 3)),
+                slice2);
+        assertEquals(new PhraseStringSequences(result("c0", 0, 1), result("c2", 2, 3)), slice3);
+        assertEquals(new PhraseStringSequences(result("d", 0, 1, 2, 3)), slice4);
+
+        assertTrue(empty.isEmpty());
+    }
+
 }

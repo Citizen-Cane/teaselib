@@ -26,7 +26,7 @@ import org.w3c.dom.Element;
 abstract class AbstractSRGSBuilder {
 
     static final String MAIN_RULE_NAME = "Main";
-    static final String CHOICE_NODE_PREFIX = "Choice_";
+    static final String CHOICE_NODE_PREFIX = "r_";
 
     private final String languageCode;
     final Document document;

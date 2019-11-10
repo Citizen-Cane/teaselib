@@ -214,7 +214,7 @@ int RuleName::ruleIndex(const SPPHRASERULE * rule) const {
 		return INT_MIN;
 	} else {
 		try {
-			return stoi(args.at(1));
+			return stoi(args[1]);
 		} catch (const std::exception& e) {
 			return INT_MIN;
 		}
@@ -227,7 +227,7 @@ std::vector<int> RuleName::choiceIndex(const SPPHRASERULE* rule) const {
 	} else {
 		try {
 			std::vector<int> choiceIndices;
-			std::wstringstream ss(args.at(2));
+			std::wstringstream ss(args[2]);
 
 			for (int i; ss >> i;) {
 				choiceIndices.push_back(i);

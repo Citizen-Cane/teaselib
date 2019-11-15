@@ -431,14 +431,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             // Combobox
             final javax.swing.JComboBox<String> ssComboBox = getComboBox();
             // Init all slots
-            for (int index : new Interval(choices)) {
+            for (int index : new Interval(0, choices.size() - 1)) {
                 clickableChoices.add(index, null);
             }
             // Combobox
             final ComboBoxModel<String> model = ssComboBox.getModel();
             for (int j = 0; j < model.getSize(); j++) {
                 final int comboboxIndex = j;
-                for (final int index : new Interval(choices)) {
+                for (final int index : new Interval(0, choices.size() - 1)) {
                     final String text = model.getElementAt(j);
                     if (text.contains(Choice.getDisplay(choices.get(index)))) {
                         clickableChoices.set(index, (Runnable) () -> ssComboBox.setSelectedIndex(comboboxIndex));
@@ -449,7 +449,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             // There might be more buttons than expected,
             // probably some kind of caching
             for (final javax.swing.JButton button : buttons) {
-                for (int index : new Interval(choices)) {
+                for (int index : new Interval(0, choices.size() - 1)) {
                     String buttonText = button.getText();
                     String choice = Choice.getDisplay(choices.get(index));
                     if (buttonText.contains(choice)) {

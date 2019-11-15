@@ -502,14 +502,6 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(answers), null, intention);
     }
 
-    public final Answer Answer(ScriptFunction scriptFunction, Intention intention, Answer... answers) {
-        return showChoices(Arrays.asList(answers), scriptFunction, intention);
-    }
-
-    public final Answer Answer(ScriptFunction scriptFunction, Intention intention, Answers answers) {
-        return showChoices(answers, scriptFunction, intention);
-    }
-
     public final String reply(Intention intention, String answer) {
         return showChoices(Answers.of(answer), null, intention).text.get(0);
     }

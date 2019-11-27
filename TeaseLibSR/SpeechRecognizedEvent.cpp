@@ -1,5 +1,6 @@
 #include "stdafx.h"
 
+#include <algorithm>
 #include <sstream>
 #include <map>
 #include <vector>
@@ -111,13 +112,29 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	if (FAILED(hr)) throw new COMException(hr);
 
 	const RuleName ruleName(rule, semanticResults);
+
+	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");
+	jobject choiceIndices = env->NewObject(hashSetClass, JNIClass::getMethodID(env, hashSetClass, "<init>", "()V"));
+	if (env->ExceptionCheck()) throw new JNIException(env);
+	jmethodID add = JNIClass::getMethodID(env, hashSetClass, "add", "(Ljava/lang/Object;)Z");
+
+	jclass integerClass = JNIClass::getClass(env, "java/lang/Integer");
+	jmethodID valueOf = JNIClass::getStaticMethodID(env, integerClass, "valueOf", "(I)Ljava/lang/Integer;");
+
+	std::for_each(ruleName.choice_indices.begin(), ruleName.choice_indices.end(), [&](const int index) {
+		jobject jchoiceIndex = env->CallStaticObjectMethod(integerClass, valueOf, index);
+		if (env->ExceptionCheck()) throw new JNIException(env);
+		env->CallBooleanMethod(choiceIndices, add, jchoiceIndex);
+		if (env->ExceptionCheck()) throw new JNIException(env);
+	});
+
 	jobject jRule = env->NewObject(
 		ruleClass,
-		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;IIIIFLteaselib/core/speechrecognition/Confidence;)V"),
+		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/Set;IIFLteaselib/core/speechrecognition/Confidence;)V"),
 		static_cast<jstring>(JNIString(env, ruleName.name.c_str())),
 		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
 		ruleName.rule_index,
-		ruleName.choice_index,
+		choiceIndices,
 		rule->ulFirstElement,
 		rule->ulFirstElement + rule->ulCountOfElements,
 		rule->SREngineConfidence,
@@ -161,7 +178,7 @@ RuleName::RuleName(const SPPHRASERULE * rule, const SemanticResults& semanticRes
 : name(ruleName(rule, semanticResults))
 , args(split(name, L'_'))
 , rule_index(ruleIndex(rule))
-, choice_index(choiceIndex(rule)) {
+, choice_indices(choiceIndex(rule)) {
 }
 
 std::wstring RuleName::withoutChoiceIndex(const wchar_t * pszName) {
@@ -197,21 +214,30 @@ int RuleName::ruleIndex(const SPPHRASERULE * rule) const {
 		return INT_MIN;
 	} else {
 		try {
-			return stoi(args.at(1));
+			return stoi(args[1]);
 		} catch (const std::exception& e) {
 			return INT_MIN;
 		}
 	}
 }
 
-int RuleName::choiceIndex(const SPPHRASERULE* rule) const {
+std::vector<int> RuleName::choiceIndex(const SPPHRASERULE* rule) const {
 	if (args.size() < 3) {
-		return INT_MIN;
+		return std::vector<int>({ INT_MIN });
 	} else {
 		try {
-			return stoi(args.at(2));
+			std::vector<int> choiceIndices;
+			std::wstringstream ss(args[2]);
+
+			for (int i; ss >> i;) {
+				choiceIndices.push_back(i);
+				if (ss.peek() == ',')
+					ss.ignore();
+			}
+
+			return choiceIndices;
 		} catch (const std::exception& e) {
-			return INT_MIN;
+			return std::vector<int>({ INT_MIN });
 		}
 	}
 }

@@ -1,26 +1,20 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.Arrays.*;
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
-import teaselib.core.speechrecognition.srgs.OneOf;
-import teaselib.core.speechrecognition.srgs.Phrases;
-import teaselib.core.speechrecognition.srgs.Rule;
-import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.speechrecognition.srgs.StringSequence;
-import teaselib.core.speechrecognition.srgs.StringSequences;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
@@ -37,15 +31,16 @@ public class SpeechRecognitionTestUtils {
     private SpeechRecognitionTestUtils() {
     }
 
-    static void assertRecognized(Choices choices, String phrase, Prompt.Result expected) throws InterruptedException {
-        emulateSpeechRecognition(choices, withoutPunctation(phrase), expected);
+    static List<Rule> assertRecognized(Choices choices, String phrase, Prompt.Result expected)
+            throws InterruptedException {
+        return emulateSpeechRecognition(choices, withoutPunctation(phrase), expected);
     }
 
-    static void assertRejected(Choices choices, String phrase) throws InterruptedException {
-        emulateSpeechRecognition(choices, withoutPunctation(phrase), null);
+    static List<Rule> assertRejected(Choices choices, String phrase) throws InterruptedException {
+        return emulateSpeechRecognition(choices, withoutPunctation(phrase), null);
     }
 
-    static void emulateSpeechRecognition(Choices choices, String phrase, Prompt.Result expected)
+    static List<Rule> emulateSpeechRecognition(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class);
@@ -55,7 +50,7 @@ public class SpeechRecognitionTestUtils {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            awaitResult(sr, prompt, phrase, expected);
+            return awaitResult(sr, prompt, phrase, expected);
         } finally {
             prompt.lock.unlock();
             sr.close();
@@ -66,13 +61,20 @@ public class SpeechRecognitionTestUtils {
         return StringSequence.splitWords(text).stream().collect(Collectors.joining(" "));
     }
 
-    static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedSpeech, Prompt.Result expectedRules)
-            throws InterruptedException {
-        Event<SpeechRecognizedEventArgs> rejectedHandler = (eventArgs) -> {
+    static List<Rule> awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedSpeech,
+            Prompt.Result expectedRules) throws InterruptedException {
+        List<Rule> results = new ArrayList<>();
+        Event<SpeechRecognizedEventArgs> completedHandler = eventArgs -> {
+            results.addAll(asList(eventArgs.result));
+        };
+        sr.events.recognitionCompleted.add(completedHandler);
+
+        Event<SpeechRecognizedEventArgs> rejectedHandler = eventArgs -> {
             prompt.setTimedOut();
-            prompt.dismiss();
+            results.addAll(asList(eventArgs.result));
         };
         sr.events.recognitionRejected.add(rejectedHandler);
+
         try {
             sr.emulateRecogntion(emulatedSpeech);
             // TODO rejected event must occur - but doesn't - to avoid timeout work-around
@@ -93,7 +95,10 @@ public class SpeechRecognitionTestUtils {
             }
         } finally {
             sr.events.recognitionRejected.remove(rejectedHandler);
+            sr.events.recognitionCompleted.remove(completedHandler);
         }
+
+        return results;
     }
 
     private static void assertAllTheSameChoices(Prompt.Result expectedRules, Prompt.Result result) {
@@ -112,81 +117,6 @@ public class SpeechRecognitionTestUtils {
         } finally {
             prompt.lock.unlock();
         }
-    }
-
-    public static void assertEqualsFlattened(Choices choices, Phrases phrases) {
-        Sequences<String> flattened = flatten(phrases);
-        assertEquals(choices.size(), flattened.size());
-
-        List<String> allChoices = firstOfEach(choices).stream().map(SpeechRecognitionTestUtils::withoutPunctation)
-                .collect(toList());
-        assertEquals(allChoices, flattened.toStrings());
-    }
-
-    public static void assertChoicesAndPhrasesMatch(Choices choices, Phrases phrases) {
-        Sequences<String> flattened = flatten(phrases);
-        assertEquals(choices.size(), flattened.size());
-
-        List<String> allChoices = all(choices).stream().map(SpeechRecognitionTestUtils::withoutPunctation)
-                .collect(toList());
-        flattened.toStrings().stream().forEach(phrase -> {
-            assertTrue("'" + phrase + "' not found in: " + allChoices, allChoices.contains(phrase));
-        });
-    }
-
-    private static List<String> all(Choices choices) {
-        return choices.stream().flatMap(p -> p.phrases.stream()).collect(toList());
-    }
-
-    private static List<String> firstOfEach(Choices choices) {
-        return choices.stream().map(p -> p.phrases.get(0)).collect(toList());
-    }
-
-    /**
-     * Flattens phrases to input strings.
-     * 
-     * @return A list containing the first phrase of each choice.
-     */
-    public static Sequences<String> flatten(Phrases phrases) {
-        int choices = phrases.choices();
-        Sequences<String> flattened = StringSequences.of(choices);
-        for (int i = 0; i < choices; i++) {
-            StringSequence sequence = StringSequence.ignoreCase();
-            flattened.add(sequence);
-        }
-
-        int rules = phrases.rules();
-        int groups = phrases.groups();
-        Set<Integer> processed = new HashSet<>();
-
-        for (int group = 0; group < groups; group++) {
-            for (int choiceIndex = 0; choiceIndex < choices; choiceIndex++) {
-                if (!processed.contains(choiceIndex)) {
-                    boolean choiceProcessed = false;
-                    for (int ruleIndex = 0; ruleIndex < rules; ruleIndex++) {
-                        for (Rule rule : phrases) {
-                            String word = "";
-                            if (rule.group == group && rule.index == ruleIndex) {
-                                for (OneOf items : rule) {
-                                    // The sequence of the items in OneOf matters
-                                    if (items.choices.contains(choiceIndex)
-                                            || items.choices.contains(Phrases.COMMON_RULE)) {
-                                        word = items.iterator().next();
-                                        choiceProcessed = true;
-                                        break;
-                                    }
-                                }
-                                flattened.get(choiceIndex).add(word);
-                            }
-                        }
-                    }
-                    if (choiceProcessed) {
-                        processed.add(choiceIndex);
-                    }
-                }
-            }
-        }
-        return flattened;
     }
 
 }

@@ -1,25 +1,20 @@
 package teaselib.util;
 
-import java.util.Collection;
 import java.util.Iterator;
 
 public class Interval implements Iterable<Integer> {
     public final int start;
     public final int end;
 
-    public Interval(Collection<?> collection) {
-        this(0, collection.size() - 1);
-    }
-
-    public Interval(int start) {
-        this(start, start);
-    }
-
     public Interval(int start, int end) {
         if (start > end)
             throw new IllegalArgumentException("start > end");
         this.start = start;
         this.end = end;
+    }
+
+    public int average() {
+        return (start + end) / 2;
     }
 
     @Override

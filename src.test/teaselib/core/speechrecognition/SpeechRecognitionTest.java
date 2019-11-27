@@ -1,15 +1,18 @@
 package teaselib.core.speechrecognition;
 
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Test;
 
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
+import teaselib.core.ui.SpeechRecognitionInputMethod;
 
 /**
  * @author Citizen-Cane
@@ -54,7 +57,6 @@ public class SpeechRecognitionTest {
         Choices choices = new Choices(new Choice("Yes Miss, I've spurted off"),
                 new Choice("No Miss, I didn't spurt off"));
 
-        // TODO Should yield two choice 0 words since "Miss" is a common phrase here
         assertRecognized(choices, "Yes Miss I've spurted off", new Prompt.Result(0, 0));
         assertRecognized(choices, "No Miss I didn't spurt off", new Prompt.Result(1, 1));
         assertRejected(choices, "Yes Miss I didn't spurt off");
@@ -103,6 +105,35 @@ public class SpeechRecognitionTest {
         assertRecognized(choices, a, new Prompt.Result(0));
         assertRecognized(choices, o, new Prompt.Result(1));
         assertRecognized(choices, u, new Prompt.Result(2));
+    }
+
+    @Test
+    public void testSRGSBuilderSimilarEndAmbiguity() throws InterruptedException {
+        Choices choices = new Choices(new Choice("Yes I have"), new Choice("No I haven't"));
+
+        List<Rule> result = new ArrayList<>();
+        result.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
+        result.addAll(assertRejected(choices, "Yes I haven't"));
+        assertEquals(2, result.size());
+
+        Rule distinct = SpeechRecognitionInputMethod.distinct(result).orElseThrow();
+        assertEquals(result.get(0), distinct);
+
+        assertRejected(choices, "Yes I haven't");
+        assertRejected(choices, "No I have");
+    }
+
+    @Test
+    public void testSRGSBuilderSimilarEndAmbiguity2() throws InterruptedException {
+        Choices choices = new Choices(new Choice("Yes I have"), new Choice("No I haven't"));
+
+        List<Rule> result = new ArrayList<>();
+        result.addAll(assertRejected(choices, "Yes I haven't"));
+        result.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
+        assertEquals(2, result.size());
+
+        Rule distinct = SpeechRecognitionInputMethod.distinct(result).orElseThrow();
+        assertEquals(result.get(1), distinct);
     }
 
 }

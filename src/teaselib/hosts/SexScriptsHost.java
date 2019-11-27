@@ -2,6 +2,7 @@ package teaselib.hosts;
 
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.EventQueue;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Insets;
@@ -94,13 +95,15 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     private static final boolean renderBackgroundImage = true;
 
-    MainFrame mainFrame = null;
+    final MainFrame mainFrame;
     private final ImageIcon backgroundImageIcon;
     private final Image backgroundImage;
 
     // TODO Consolidate, use a single thread pool
     private final ExecutorService showPopupThreadPool = NamedExecutorService.singleThreadedQueue("Show-Choices");
     private final ExecutorService showChoicesThreadPool = NamedExecutorService.singleThreadedQueue("Show-Popup");
+
+    private boolean intertitleActive = false;
 
     private Runnable onQuitHandler = null;
 
@@ -119,25 +122,24 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         this.ss = script;
         // Should be set by the host, but SexScript doesn't, so we do
         Thread.currentThread().setName("TeaseScript main thread");
+
         // Initialize rendering via background image
         String fieldName = "backgroundImage";
         ImageIcon imageIcon = null;
         try {
             mainFrame = getMainFrame();
             imageIcon = getImageIcon(fieldName);
-        } catch (NoSuchFieldException e) {
-            logger.error(e.getMessage(), e);
-            ss.showPopup("Field " + fieldName + " not found");
-        } catch (IllegalAccessException e) {
-            logger.error(e.getMessage(), e);
-            ss.showPopup("Field " + fieldName + " not accessible");
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
+
         backgroundImageIcon = imageIcon;
         if (imageIcon != null) {
             backgroundImage = imageIcon.getImage();
         } else {
             backgroundImage = null;
         }
+
         // automatically show popup
         int originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {
@@ -168,7 +170,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                     Runnable runnable = onQuitHandler;
                     // Execute each quit handler just once
                     onQuitHandler = null;
-                    logger.info("Running quit handler " + runnable.getClass().getName());
+                    logger.info("Running quit handler {}", runnable.getClass().getName());
                     runnable.run();
                 } else {
                     mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
@@ -281,7 +283,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 // Draw original background image
                 g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
-                // todo scale image into bi
+                // TODO scale image into bi
                 int width = image.getWidth(null);
                 int height = image.getHeight(null);
                 if (height > bounds.height) {
@@ -338,57 +340,55 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         ss.show(message);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.Host#show(java.awt.Image, java.lang.String)
-     */
     @Override
     public void show(byte[] imageBytes, String text) {
-        // TODO Set image and text at once to overcome layout glitches
-        // (mostly the delay between displaying the new image and then displaying the text)
-        setImage(imageBytes);
-        show(text);
+        EventQueue.invokeLater(() -> {
+            setImage(imageBytes);
+            intertitleActive = false;
+            show(text);
+        });
     }
 
     @Override
     public void showInterTitle(String text) {
-        // TODO Auto-generated method stub
-        try {
-            Image image = backgroundImageIcon.getImage();
-            ss.setImage((byte[]) null, 0);
-            MainFrame mainFrame = getMainFrame();
-            Rectangle bounds = getContentBounds(mainFrame);
-            bounds.x = 0;
-            bounds.y = 0;
-            BufferedImage interTitleImage = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = (Graphics2D) interTitleImage.getGraphics();
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            // Draw original background image
-            g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
-            // Compensate for the text not being centered (causes the text area to be not centered anymore)
-            int offset = 0;
-            g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
-            int top = bounds.height / 4 + offset;
-            int bottom = bounds.height * 3 / 4 + offset;
-            // Render the intertitle top, text and bottom areas
-            g2d.fillRect(bounds.x, bounds.y, bounds.width, top);
-            g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f));
-            g2d.fillRect(bounds.x, top, bounds.width, bottom - top);
-            g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
-            g2d.fillRect(bounds.x, bottom, bounds.width, bounds.height - bottom);
-            backgroundImageIcon.setImage(interTitleImage);
-            mainFrame.repaint();
+        EventQueue.invokeLater(() -> {
+            if (!intertitleActive) {
+                Image image = backgroundImageIcon.getImage();
+                ss.setImage((byte[]) null, 0);
+                Rectangle bounds = getContentBounds(mainFrame);
+                bounds.x = 0;
+                bounds.y = 0;
+                BufferedImage interTitleImage = new BufferedImage(bounds.width, bounds.height,
+                        BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = (Graphics2D) interTitleImage.getGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                // Draw original background image
+                g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
+                // Compensate for the text not being centered (causes the text area to be not centered anymore)
+                int offset = 0;
+                g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
+                int top = bounds.height / 4 + offset;
+                int bottom = bounds.height * 3 / 4 + offset;
+                // Render the intertitle top, text and bottom areas
+                g2d.fillRect(bounds.x, bounds.y, bounds.width, top);
+                g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f));
+                g2d.fillRect(bounds.x, top, bounds.width, bottom - top);
+                g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
+                g2d.fillRect(bounds.x, bottom, bounds.width, bounds.height - bottom);
+                backgroundImageIcon.setImage(interTitleImage);
+                mainFrame.repaint();
+
+                intertitleActive = true;
+            }
             // Show white text, since the background is black
             ss.show("<p style=\"color:#e0e0e0\">" + text + "</p>");
-        } catch (ReflectiveOperationException e) {
-            logger.error(e.getMessage(), e);
-        }
+        });
     }
 
     @Override
     public void endScene() {
-        show(null, null);
+        // Keep the image, remove any text to provide feedback
+        show("");
     }
 
     @Override
@@ -431,14 +431,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             // Combobox
             final javax.swing.JComboBox<String> ssComboBox = getComboBox();
             // Init all slots
-            for (int index : new Interval(choices)) {
+            for (int index : new Interval(0, choices.size() - 1)) {
                 clickableChoices.add(index, null);
             }
             // Combobox
             final ComboBoxModel<String> model = ssComboBox.getModel();
             for (int j = 0; j < model.getSize(); j++) {
                 final int comboboxIndex = j;
-                for (final int index : new Interval(choices)) {
+                for (final int index : new Interval(0, choices.size() - 1)) {
                     final String text = model.getElementAt(j);
                     if (text.contains(Choice.getDisplay(choices.get(index)))) {
                         clickableChoices.set(index, (Runnable) () -> ssComboBox.setSelectedIndex(comboboxIndex));
@@ -449,7 +449,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             // There might be more buttons than expected,
             // probably some kind of caching
             for (final javax.swing.JButton button : buttons) {
-                for (int index : new Interval(choices)) {
+                for (int index : new Interval(0, choices.size() - 1)) {
                     String buttonText = button.getText();
                     String choice = Choice.getDisplay(choices.get(index));
                     if (buttonText.contains(choice)) {
@@ -512,8 +512,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                     // Poll a little
                     for (int i = 1; i < 10; i++) {
                         if (comboBox.isVisible() /* && comboBox.hasFocus() */) {
-                            // Work-around the issue that the pop-up cannot be
-                            // hidden
+                            // Work-around the issue that the pop-up cannot be hidden
                             // after making it visible when not focused
                             showPopup();
                             return true;
@@ -649,7 +648,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             return FileUtilities.currentDir();
         else if (folder == Location.TeaseLib)
             return ResourceLoader.getProjectPath(getClass()).getParentFile().getAbsoluteFile();
-        // return new File(getLocation(Location.Host), "lib" + File.separator + "TeaseLib" + File.separator);
         else if (folder == Location.User)
             return new File(getLocation(Location.Host).getAbsoluteFile(), "teaselib");
         else if (folder == Location.Log)
@@ -657,4 +655,5 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         else
             throw new IllegalArgumentException(Objects.toString(folder));
     }
+
 }

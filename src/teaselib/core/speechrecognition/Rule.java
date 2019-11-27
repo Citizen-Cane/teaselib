@@ -2,9 +2,10 @@ package teaselib.core.speechrecognition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import teaselib.core.speechrecognition.srgs.Phrases;
+import teaselib.core.ui.Prompt;
 
 /**
  * @author Citizen-Cane
@@ -15,7 +16,7 @@ public class Rule {
     public final String name;
     public final String text;
     public final int ruleIndex;
-    public final int choiceIndex;
+    public final Set<Integer> choiceIndices;
     public final int fromElement;
     public final int toElement;
 
@@ -28,16 +29,16 @@ public class Rule {
     }
 
     public Rule(Rule rule, float probability, Confidence confidence) {
-        this(rule.name, rule.text, rule.ruleIndex, rule.choiceIndex, rule.fromElement, rule.toElement, probability,
+        this(rule.name, rule.text, rule.ruleIndex, rule.choiceIndices, rule.fromElement, rule.toElement, probability,
                 confidence);
     }
 
-    public Rule(String name, String text, int ruleIndex, int choiceInddex, int fromElement, int toElement,
+    public Rule(String name, String text, int ruleIndex, Set<Integer> choiceIndices, int fromElement, int toElement,
             float probability, Confidence confidence) {
         this.name = name;
         this.text = text;
         this.ruleIndex = ruleIndex;
-        this.choiceIndex = choiceInddex;
+        this.choiceIndices = choiceIndices;
         this.fromElement = fromElement;
         this.toElement = toElement;
         this.children = new ArrayList<>();
@@ -49,8 +50,8 @@ public class Rule {
         children.add(rule);
     }
 
-    public Rule withChoiceProbability() {
-        List<Rule> childrenWithChoices = children.stream().filter(child -> child.choiceIndex != Phrases.COMMON_RULE)
+    public Rule withDistinctChoiceProbability(int choiceCount) {
+        List<Rule> childrenWithChoices = children.stream().filter(child -> (child.choiceIndices.size() < choiceCount))
                 .collect(Collectors.toList());
         float average = (float) childrenWithChoices.stream().mapToDouble(child -> child.probability).average()
                 .orElse(0.0f);
@@ -66,11 +67,21 @@ public class Rule {
         return a.probability > b.probability ? a : b;
     }
 
+    public List<Set<Integer>> gather() {
+        ArrayList<Set<Integer>> results = new ArrayList<>();
+        if (!choiceIndices.isEmpty() && choiceIndices.stream()
+                // TODO looks redundant - remove when tests succeed again
+                .allMatch(choiceIndex -> choiceIndex > Prompt.Result.DISMISSED.elements.get(0))) {
+            results.add(choiceIndices);
+        }
+        children.stream().forEach(child -> results.addAll(child.gather()));
+        return results;
+    }
+
     @Override
     public String toString() {
         String displayedRuleIndex = ruleIndex == Integer.MIN_VALUE ? "" : " ruleIndex=" + ruleIndex;
-        String displayedChoiceIndex = choiceIndex == Phrases.COMMON_RULE ? " Common" : (" choiceIndex=" + choiceIndex);
-        return "Name=" + name + displayedRuleIndex + displayedChoiceIndex + " [" + fromElement + "," + toElement
+        return "Name=" + name + displayedRuleIndex + " choices=" + choiceIndices + " [" + fromElement + "," + toElement
                 + "[ C=" + probability + "~" + confidence + " children=" + children.size() + " \"" + text + "\"";
     }
 

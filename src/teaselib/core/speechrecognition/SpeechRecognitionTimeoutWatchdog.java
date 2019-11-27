@@ -19,7 +19,7 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  */
 public class SpeechRecognitionTimeoutWatchdog {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTimeoutWatchdog.class);
-    static final long timeoutMillis = TimeUnit.SECONDS.toMillis(2);
+    private static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(2);
 
     final SpeechRecognitionEvents events;
     final AtomicBoolean active = new AtomicBoolean(false);
@@ -84,29 +84,28 @@ public class SpeechRecognitionTimeoutWatchdog {
         if (enabled() && task != null) {
             stopTimerTask();
             timer.purge();
-            logger.info("Timeout stopped by {}", this.toString());
+            logger.info("Timeout watchdog stopped");
         }
     };
 
     private void startTimerTask() {
         if (task == null) {
-            logger.info("Starting timeout by {}", this.toString());
+            logger.info("Starting timeout watchdog");
         } else {
-            // TODO Does not work since taks is reset to null
-            logger.info("Restarting timeout by {}", this.toString());
+            logger.info("Restarting timeout watchdog");
         }
 
         TimerTask t = new TimerTask() {
             @Override
             public void run() {
                 if (enabled() && task != null) {
-                    logger.info("Timeout after {}ms", timeoutMillis);
+                    logger.info("Timeout after {}ms", TIMEOUT_MILLIS);
                     timeoutAction.run();
                 }
             }
         };
         this.task = t;
-        timer.schedule(t, timeoutMillis);
+        timer.schedule(t, TIMEOUT_MILLIS);
     }
 
     private void updateStatus() {

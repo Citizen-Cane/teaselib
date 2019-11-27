@@ -1,12 +1,14 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static java.util.concurrent.TimeUnit.*;
+import static org.junit.Assert.*;
 
 import java.time.LocalTime;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.test.TestScript;
 import teaselib.util.Daytime;
 
 public class TimeOfDayImplTest {
@@ -48,4 +50,59 @@ public class TimeOfDayImplTest {
         assertTrue(new TimeOfDayImpl(LocalTime.of(4, 0)).isAnyOf(Daytime.Night, Daytime.Forenoon));
         assertFalse(new TimeOfDayImpl(LocalTime.of(4, 0)).isAnyOf(Daytime.Morning, Daytime.Forenoon));
     }
+
+    @Test
+    public void testFutureDaytime() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        for (Daytime daytime : Daytime.values()) {
+            script.debugger.setTime(daytime);
+            assertTrue(script.timeOfDay().is(daytime));
+        }
+    }
+
+    @Test
+    public void testDaytimeDurationForSomeDays() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        script.debugger.setTime(Daytime.Noon);
+        assertEquals(4, script.duration(Daytime.Afternoon).remaining(TimeUnit.HOURS));
+        assertEquals(9, script.duration(Daytime.Evening).remaining(TimeUnit.HOURS));
+        assertEquals(14, script.duration(Daytime.Night).remaining(TimeUnit.HOURS));
+        assertEquals(20, script.duration(Daytime.Morning).remaining(TimeUnit.HOURS));
+        assertEquals(22, script.duration(Daytime.Forenoon).remaining(TimeUnit.HOURS));
+
+        testFromNoon(script, 0);
+        testFromNoon(script, 1);
+        testFromNoon(script, 2);
+    }
+
+    private static void testFromNoon(TestScript script, long days) {
+        long today = days * 24;
+        assertEquals(4 + today, script.duration(Daytime.Afternoon, days).remaining(TimeUnit.HOURS));
+        assertEquals(9 + today, script.duration(Daytime.Evening, days).remaining(TimeUnit.HOURS));
+        long tomorrow = Math.max(today - 24, 0);
+        assertEquals(14 + tomorrow, script.duration(Daytime.Night, days).remaining(TimeUnit.HOURS));
+        assertEquals(20 + tomorrow, script.duration(Daytime.Morning, days).remaining(TimeUnit.HOURS));
+        assertEquals(22 + tomorrow, script.duration(Daytime.Forenoon, days).remaining(TimeUnit.HOURS));
+    }
+
+    @Test
+    public void testDaytimeDurationUntilTomorrow() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        script.debugger.setTime(Daytime.Noon);
+
+        assertEquals(9, script.duration(Daytime.Evening, 0).remaining(TimeUnit.HOURS));
+        assertEquals(9 + 24, script.duration(Daytime.Evening, 1).remaining(TimeUnit.HOURS));
+        assertEquals(9 + 48, script.duration(Daytime.Evening, 2).remaining(TimeUnit.HOURS));
+
+        assertEquals(20, script.duration(Daytime.Morning, 0).remaining(HOURS));
+        assertEquals(20, script.duration(Daytime.Morning, 1).remaining(HOURS));
+        assertEquals(20 + 24, script.duration(Daytime.Morning, 2).remaining(HOURS));
+    }
+
 }

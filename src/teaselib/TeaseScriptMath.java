@@ -11,6 +11,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
 import teaselib.core.TeaseLib;
 import teaselib.core.TimeOfDay;
+import teaselib.util.Daytime;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
@@ -161,6 +162,14 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
 
     public Duration duration(long limit, TimeUnit unit) {
         return teaseLib.duration(limit, unit);
+    }
+
+    public Duration duration(Daytime dayTime) {
+        return teaseLib.duration(dayTime);
+    }
+
+    public Duration duration(Daytime dayTime, long daysInTheFuture) {
+        return teaseLib.duration(dayTime, daysInTheFuture);
     }
 
     public Item random(Items items) {

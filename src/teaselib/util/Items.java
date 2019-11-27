@@ -1,6 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,6 +78,10 @@ public class Items implements Iterable<Item> {
         return new Items(list, inventory);
     }
 
+    public boolean noneAvailable() {
+        return elements.stream().noneMatch(Item::isAvailable);
+    }
+
     public boolean anyAvailable() {
         return elements.stream().anyMatch(Item::isAvailable);
     }
@@ -145,11 +149,16 @@ public class Items implements Iterable<Item> {
         return new Items(filter(Item::applied));
     }
 
+    public Items getExpired() {
+        return new Items(filter(Item::expired));
+    }
+
     /**
      * Return applied or first available item.
      * 
      * @return First item or {@link Item#NotFound}
      */
+    // TODO when get(Enum<?>) is removed because of item(), rename this to first()
     public Item get() {
         return getAppliedOrFirstAvailableOrNotFound();
     }
@@ -159,6 +168,8 @@ public class Items implements Iterable<Item> {
      * 
      * @return First item or {@link Item#NotFound}
      */
+    // TODO get() and item() are the same ->
+    // + keep get() since item(...).item(...) is confusing - I misinterpreted it myself
     public final Item get(Enum<?> item) {
         return item(QualifiedItem.of(item));
     }
@@ -202,10 +213,11 @@ public class Items implements Iterable<Item> {
     }
 
     /**
-     * Get all items matching the supplied attributes. Only available items are returned.
+     * Get all items matching the supplied attributes. All items are returned, as a result the collection may contains
+     * unavailable items.
      * 
      * @param attributes
-     * @return Available items that match all of the attributes.
+     * @return Items that match all of the attributes.
      */
     public final Items matching(Enum<?>... attributes) {
         return matchingImpl((Object[]) attributes);
@@ -216,26 +228,7 @@ public class Items implements Iterable<Item> {
     }
 
     public final Items matchingImpl(Object... attributes) {
-        Items matching = queryInventoryImpl(attributes);
-        return matching.getAvailable();
-    }
-
-    /**
-     * Get all items matching the supplied attributes. This method also returns non-available items.
-     * 
-     * @param attributes
-     * @return Available items that match all of the attributes.
-     */
-    /**
-     * @param attributes
-     * @return
-     */
-    public final Items queryInventory(Enum<?>... attributes) {
-        return queryInventoryImpl((Object[]) attributes);
-    }
-
-    public final Items queryInventory(String... attributes) {
-        return queryInventoryImpl((Object[]) attributes);
+        return queryInventoryImpl(attributes);
     }
 
     private Items queryInventoryImpl(Object... attributes) {
@@ -273,17 +266,27 @@ public class Items implements Iterable<Item> {
     }
 
     /**
-     * Get matching or available items:
-     * <li>First try to match applied items.
+     * Reduce an item selection to an applyable set. Choose an applicable set from all available items.
+     * 
+     * @return A set of matching items, containing already applied items. Each kind of item will be contained only once.
+     */
+    public Items preferred() {
+        return appliedOrPreferred();
+    }
+
+    /**
+     * Get applied, matching or available items:
+     * <li>First prefer applied items.
      * <li>second try to match available items with the requested attributes.
      * <li>If not possible, match as many items as possible. then complete set with available non-matching items.
-     * <li>Finally add unavailable items to complete the set.
+     * <li>Continue adding unavailable items that match the requested attributes.
+     * <li>Finally add unavailable items that match the requested item to complete the set.
      * <p>
      * 
      * @param attributes
      *            The preferred attributes to match.
-     * @return Preferred available items matching requested attributes, filled up with non-matching available items as a
-     *         fall-back. The Item list may be empty if none of the requested items are available.
+     * @return Preferred applied and available items matching requested attributes, filled up with non-matching
+     *         available items as a fall-back. The result may be empty if none of the requested items are available.
      */
     public Items prefer(Enum<?>... attributes) {
         return appliedOrPreferred((Object[]) attributes);
@@ -328,6 +331,20 @@ public class Items implements Iterable<Item> {
 
         for (Item item : elements) {
             if (!found.contains(QualifiedItem.of(item)) && item.isAvailable()) {
+                found.add(QualifiedItem.of(itemValue(item)));
+                preferred.add(item);
+            }
+        }
+
+        for (Item item : elements) {
+            if (item.is(attributes)) {
+                found.add(QualifiedItem.of(itemValue(item)));
+                preferred.add(item);
+            }
+        }
+
+        for (Item item : elements) {
+            if (!found.contains(QualifiedItem.of(item))) {
                 found.add(QualifiedItem.of(itemValue(item)));
                 preferred.add(item);
             }
@@ -508,7 +525,7 @@ public class Items implements Iterable<Item> {
         return elements.iterator();
     }
 
-    int size() {
+    public int size() {
         return elements.size();
     }
 
@@ -516,14 +533,12 @@ public class Items implements Iterable<Item> {
         return elements.stream();
     }
 
-    // TODO remove? ->
     /**
-     * returns the item values.
+     * return distinct item values.
      * 
      * @return
      */
-    @Deprecated
-    public Set<Object> valueSet() {
+    Set<Object> valueSet() {
         return elements.stream().map(item -> itemImpl(item).value).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -625,4 +640,9 @@ public class Items implements Iterable<Item> {
     public Items of(TeaseScriptPersistence.Domain domain) {
         return domain.items(this);
     }
+
+    public boolean isEmpty() {
+        return elements.isEmpty();
+    }
+
 }

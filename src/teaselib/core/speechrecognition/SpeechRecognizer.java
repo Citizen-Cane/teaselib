@@ -17,7 +17,7 @@ import teaselib.core.configuration.Configuration;
  */
 public class SpeechRecognizer implements Closeable {
     private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
-    @SuppressWarnings("unused")
+
     private final Configuration config;
 
     public SpeechRecognizer(Configuration config) {
@@ -42,6 +42,7 @@ public class SpeechRecognizer implements Closeable {
         }
     }
 
+    @Override
     public void close() {
         for (Entry<Locale, SpeechRecognition> entry : speechRecognitionInstances.entrySet()) {
             entry.getValue().close();
@@ -59,7 +60,7 @@ public class SpeechRecognizer implements Closeable {
             final Collection<SpeechRecognition> stoppedInstances = new HashSet<>();
             for (SpeechRecognition sR : speechRecognitionInstances.values()) {
                 if (sR.isActive()) {
-                    sR.stopRecognition();
+                    sR.pauseRecognition();
                     stoppedInstances.add(sR);
                 }
             }

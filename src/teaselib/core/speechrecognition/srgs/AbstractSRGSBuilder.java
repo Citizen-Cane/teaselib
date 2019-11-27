@@ -2,8 +2,8 @@ package teaselib.core.speechrecognition.srgs;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
-import java.util.stream.Collectors;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -26,19 +26,14 @@ import org.w3c.dom.Element;
 abstract class AbstractSRGSBuilder {
 
     static final String MAIN_RULE_NAME = "Main";
-    private static final String RULE_NODE_PREFIX = "Rule_";
-    static final String CHOICE_NODE_PREFIX = "Choice_";
+    static final String CHOICE_NODE_PREFIX = "r_";
 
-    final Phrases phrases;
     private final String languageCode;
     final Document document;
 
-    AbstractSRGSBuilder(Phrases phrases, String languageCode)
-            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
-        this.phrases = phrases;
+    AbstractSRGSBuilder(String languageCode) throws ParserConfigurationException, TransformerFactoryConfigurationError {
         this.languageCode = languageCode;
         this.document = createDocument();
-        buildXML();
     }
 
     private static Document createDocument() throws ParserConfigurationException {
@@ -48,19 +43,6 @@ abstract class AbstractSRGSBuilder {
     }
 
     abstract void buildXML() throws TransformerFactoryConfigurationError, TransformerException;
-
-    static String ruleName(Rule rule) {
-        return RULE_NODE_PREFIX + rule.index + "__group_" + rule.group;
-    }
-
-    static String ruleName(Rule rule, OneOf common) {
-        return RULE_NODE_PREFIX + rule.index + "__group_" + rule.group + "_common_"
-                + common.choices.stream().map(choice -> choice.toString()).collect(Collectors.joining("_"));
-    }
-
-    static String choiceName(Rule rule, int choice) {
-        return CHOICE_NODE_PREFIX + rule.index + "_" + choice + "__group_" + rule.group;
-    }
 
     Element createGrammar() {
         Element grammar = document.createElement("grammar");
@@ -110,6 +92,8 @@ abstract class AbstractSRGSBuilder {
         StreamResult streamResult = new StreamResult(result);
 
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+
         Transformer transformer = transformerFactory.newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
@@ -121,8 +105,9 @@ abstract class AbstractSRGSBuilder {
     public byte[] toBytes() throws TransformerFactoryConfigurationError, TransformerException {
         DOMSource domSource = new DOMSource(document);
 
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
+        TransformerFactory factory = TransformerFactory.newInstance();
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        Transformer transformer = factory.newTransformer();
 
         ByteArrayOutputStream srgs = new ByteArrayOutputStream();
         transformer.transform(domSource, new StreamResult(srgs));

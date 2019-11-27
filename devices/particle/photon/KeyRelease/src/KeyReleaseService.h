@@ -54,7 +54,7 @@ public:
       const int hold();
       const int add(const int seconds);
       const bool advance();
-      const void clear();
+      const void clear(const Actuator::Status status);
 };
 
   class ServoControl {
@@ -76,7 +76,7 @@ private:
   static const Actuator* DefaultSetup[];
   static const int DefaultSetupSize;
 
-  KeyReleaseService(const Actuator**, const int actuators);
+  KeyReleaseService(const Actuator** actuators, const unsigned int actuatorCount);
 protected:
   virtual void setup();
   virtual unsigned int process(const UDPMessage& received, char* buffer);
@@ -85,14 +85,18 @@ private:
   const Actuator** actuators;
   ServoControl* servoControl;
   Duration* durations;
-  const int actuatorCount;
+  const unsigned int actuatorCount;
   const char* const sessionKey;
-  static const char* const createSessionKey();
 
   Timer releaseTimer;
   Timer ledTimer;
-  unsigned int secondsSinceLastUpdate;
   Timer ledPulseOffTimer;
+
+  Actuator::Status pulseStatus;
+  unsigned int secondsSinceLastUpdate;
+
+  static const char* const createSessionKey();
+  
   void releaseTimerCallback();
   void ledTimerCallback();
   void ledTimerPulseOffCallback();
@@ -102,10 +106,10 @@ private:
   void releaseKey(const int index);
   void releaseAllKeys();
 
-  Actuator::Status pulseStatus;
   void updatePulse(Actuator::Status status);
+  void updatePulse(const int r, const int g, const int b, const int pulseDuration);
   void updatePulse(const int frequencyMillis);
-  unsigned int nextRelease();
+  int nextRelease();
   unsigned int runningReleases();
   unsigned int createCountMessage(unsigned int count, char* buffer);
 };

@@ -14,7 +14,7 @@ public class ZipLocation extends FileSystemLocation {
 
     ZipLocation(Path zip, Path project) throws IOException {
         super(zip, project);
-        this.fileSystem = FileSystems.newFileSystem(zip, null);
+        this.fileSystem = FileSystems.newFileSystem(zip);
         for (Path root : fileSystem.getRootDirectories()) {
             addRootDirectory(root);
         }

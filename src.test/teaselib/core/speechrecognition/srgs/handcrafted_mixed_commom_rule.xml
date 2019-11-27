@@ -4,12 +4,12 @@
     <one-of>
       <item>
         <ruleref uri="#Choice_0_0__group_0"/>
-        <ruleref uri="#Rule_1__group_0_common_0_1"/>
+        <ruleref uri="#Rule_1__group_0"/>
         <ruleref uri="#Choice_2_0__group_0"/>
       </item>
       <item>
         <ruleref uri="#Choice_0_1__group_0"/>
-        <ruleref uri="#Rule_1__group_0_common_0_1"/>
+        <ruleref uri="#Rule_1__group_0"/>
          <ruleref uri="#Choice_2_1__group_0"/>
       </item>
     </one-of>
@@ -28,7 +28,7 @@
       <item>No</item>
     </one-of>
   </rule>
-  <rule id="Rule_1__group_0_common_0_1" scope="private">of course</rule>
+  <rule id="Rule_1__group_0" scope="private">of course</rule>
   <rule id="Choice_2_1__group_0" scope="private">not Miss</rule>
   <rule id="Choice_2_0__group_0" scope="private">Miss</rule>
 </grammar>

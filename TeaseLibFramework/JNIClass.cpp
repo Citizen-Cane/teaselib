@@ -20,6 +20,7 @@ jclass JNIClass::getClass(JNIEnv* env, const char* name)
 	return clazz;
 }
 
+
 jfieldID JNIClass::getFieldID(JNIEnv* env, jobject object, const char* name, const char* signature)
 {
 	jfieldID id = env->GetFieldID(env->GetObjectClass(object), name, signature);
@@ -75,6 +76,32 @@ jmethodID JNIClass::getMethodID(JNIEnv* env, const char* className, const char* 
 {
 	jclass clazz = getClass(env, className);
 	jmethodID id = env->GetMethodID(clazz, name, signature);
+	assert(!env->ExceptionCheck());
+	if (env->ExceptionCheck()) throw new JNIException(env);
+	return id;
+}
+
+
+jmethodID JNIClass::getStaticMethodID(JNIEnv* env, jobject object, const char* name, const char* signature)
+{
+	jmethodID id = env->GetStaticMethodID(env->GetObjectClass(object), name, signature);
+	assert(!env->ExceptionCheck());
+	if (env->ExceptionCheck()) throw new JNIException(env);
+	return id;
+}
+
+jmethodID JNIClass::getStaticMethodID(JNIEnv* env, jclass clazz, const char* name, const char* signature)
+{
+	jmethodID id = env->GetStaticMethodID(clazz, name, signature);
+	assert(!env->ExceptionCheck());
+	if (env->ExceptionCheck()) throw new JNIException(env);
+	return id;
+}
+
+jmethodID JNIClass::getStaticMethodID(JNIEnv* env, const char* className, const char* name, const char* signature)
+{
+	jclass clazz = getClass(env, className);
+	jmethodID id = env->GetStaticMethodID(clazz, name, signature);
 	assert(!env->ExceptionCheck());
 	if (env->ExceptionCheck()) throw new JNIException(env);
 	return id;

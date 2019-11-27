@@ -1,8 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -22,8 +20,24 @@ import teaselib.test.TestScript;
 
 public class ItemImplTest {
 
+    enum PeerlessItem {
+        Test1
+    }
+
     @Test
-    public void testAvailable() throws Exception {
+    public void testPeerlessApply() {
+        TestScript script = TestScript.getOne();
+        assertFalse(script.item(PeerlessItem.Test1).applied());
+
+        script.item(PeerlessItem.Test1).apply();
+        assertTrue(script.item(PeerlessItem.Test1).applied());
+
+        script.item(PeerlessItem.Test1).remove();
+        assertFalse(script.item(PeerlessItem.Test1).applied());
+    }
+
+    @Test
+    public void testAvailable() {
         TeaseScript script = TestScript.getOne();
         QualifiedItem fooBar = QualifiedItem.of("Foo.Bar");
         String storageName = fooBar.name();
@@ -46,7 +60,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIs() throws Exception {
+    public void testIs() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
@@ -62,7 +76,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIs_EmptyArg() throws Exception {
+    public void testIs_EmptyArg() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
@@ -72,7 +86,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIsHandlesArrays() throws Exception {
+    public void testIsHandlesArrays() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
@@ -88,7 +102,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIsWithMixedPeersAndAttributes() throws Exception {
+    public void testIsWithMixedPeersAndAttributes() {
         TeaseScript script = TestScript.getOne();
 
         Item nippleClamps = script.item(Toys.Nipple_Clamps);
@@ -100,9 +114,8 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testApplyToAutomaticDefaultsAndAttributes() throws Exception {
+    public void testApplyToAutomaticDefaultsAndAttributes() {
         TestScript script = TestScript.getOne();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Buttplug).applied());
         assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
@@ -148,7 +161,6 @@ public class ItemImplTest {
     public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeers() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -245,7 +257,6 @@ public class ItemImplTest {
     public void testCanApplyWithoutDefaults() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -270,7 +281,6 @@ public class ItemImplTest {
     @Test
     public void testCanApplyWithDefaults() {
         TestScript script = TestScript.getOne();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Gag).applied());
 
@@ -295,7 +305,6 @@ public class ItemImplTest {
     public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
         String Body_WristsTied = "teaselib.Body.WristsTied";
@@ -329,7 +338,6 @@ public class ItemImplTest {
     public void testStringsAndEnumsMixed() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
         String Body_WristsTied = "teaselib.Body.WristsTied";
@@ -389,7 +397,6 @@ public class ItemImplTest {
     public void testTemporaryItems() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        script.setAvailable(Toys.values());
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -407,7 +414,8 @@ public class ItemImplTest {
     public void testRemoveOneOfMultipleItemsToSamePeer() {
         TestScript script = TestScript.getOne();
 
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
+                .matching(Material.Leather);
         restraints.apply();
 
         Items chains = script.items(Toys.Chains, Accessoires.Bells);

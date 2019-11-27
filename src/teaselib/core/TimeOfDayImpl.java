@@ -4,6 +4,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import teaselib.util.Daytime;
 import teaselib.util.Interval;
@@ -17,6 +18,7 @@ public class TimeOfDayImpl implements TimeOfDay {
     static Map<Daytime, Interval> defaultTimeOfDayTable() {
         EnumMap<Daytime, Interval> timeOfDay = new EnumMap<>(Daytime.class);
 
+        // hour intervals last til the last minute of that hour
         timeOfDay.put(Daytime.Morning, new Interval(6, 9));
         timeOfDay.put(Daytime.Forenoon, new Interval(8, 11));
         timeOfDay.put(Daytime.Noon, new Interval(12, 13));
@@ -38,7 +40,12 @@ public class TimeOfDayImpl implements TimeOfDay {
         return interval.contains(localTime.getHour()) || interval.contains(localTime.getHour() - 24);
     }
 
-    private final LocalTime localTime;
+    static Interval hours(Daytime dayTime) {
+        return timeOfDayTable.entrySet().stream().filter(entry -> entry.getKey() == dayTime).map(Entry::getValue)
+                .findFirst().orElseThrow();
+    }
+
+    final LocalTime localTime;
 
     TimeOfDayImpl(LocalTime localTime) {
         this.localTime = localTime;
@@ -50,7 +57,32 @@ public class TimeOfDayImpl implements TimeOfDay {
     }
 
     @Override
+    public boolean isEarlierThan(Daytime dayTime) {
+        return timeOfDayTable.get(dayTime()).average() < timeOfDayTable.get(dayTime).average();
+    }
+
+    @Override
+    public boolean isLaterThan(Daytime dayTime) {
+        return timeOfDayTable.get(dayTime()).average() > timeOfDayTable.get(dayTime).average();
+    }
+
+    @Override
     public boolean isAnyOf(Daytime... daytimes) {
         return Arrays.asList(daytimes).stream().anyMatch(this::is);
     }
+
+    @Override
+    public Daytime dayTime() {
+        return timeOfDayTable.entrySet().stream().map(Entry::getKey).filter(this::is).findFirst().orElseThrow();
+    }
+
+    public static LocalTime getTime(TimeOfDay timeOfDay) {
+        return ((TimeOfDayImpl) timeOfDay).localTime;
+    }
+
+    @Override
+    public String toString() {
+        return dayTime() + " " + localTime;
+    }
+
 }

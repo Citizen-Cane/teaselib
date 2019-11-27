@@ -3,9 +3,7 @@
  */
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -46,8 +44,8 @@ public class ToyPersistenceTests {
         gag.setAvailable(true);
         assertTrue(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "ball_gag")));
 
-        Item highHeels = script.teaseLib.items(Clothes.Partner, Clothes.Shoes)
-                .queryInventory(Clothes.Footwear.High_Heels).get();
+        Item highHeels = script.teaseLib.items(Clothes.Partner, Clothes.Shoes).matching(Clothes.Footwear.High_Heels)
+                .get();
         highHeels.setAvailable(true);
 
         assertTrue("Domain item storage unsupported",
@@ -65,7 +63,7 @@ public class ToyPersistenceTests {
         assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Toys.class.getSimpleName(), "ball_gag")));
 
-        script.teaseLib.items(TeaseLib.DefaultDomain, Clothes.Shoes).queryInventory(Clothes.Footwear.High_Heels).get()
+        script.teaseLib.items(TeaseLib.DefaultDomain, Clothes.Shoes).matching(Clothes.Footwear.High_Heels).get()
                 .setAvailable(true);
         assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Clothes.class.getSimpleName(), "high_heels")));
@@ -78,7 +76,7 @@ public class ToyPersistenceTests {
         script.teaseLib.item(Clothes.Partner, Toys.Collar).setAvailable(true);
         assertTrue(script.storage.containsKey(QualifiedName.of(Clothes.Partner, Toys.class.getSimpleName(), "collar")));
 
-        script.teaseLib.items(Clothes.Doll, Clothes.Shoes).queryInventory(Clothes.Footwear.High_Heels).get()
+        script.teaseLib.items(Clothes.Doll, Clothes.Shoes).matching(Clothes.Footwear.High_Heels).get()
                 .setAvailable(true);
         assertTrue(script.storage
                 .containsKey(QualifiedName.of(Clothes.Doll, Clothes.class.getSimpleName(), "high_heels")));

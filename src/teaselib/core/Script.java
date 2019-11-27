@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Answer;
-import teaselib.Answer.Meaning;
 import teaselib.Body;
 import teaselib.Config;
 import teaselib.Config.SpeechRecognition.Intention;
@@ -323,12 +322,13 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied()
-                && choices.stream().filter(choice -> choice.answer.meaning != Meaning.RESUME).count() > 0) {
+                && HeadGestureInputMethod.distinctGestures(choices)) {
             inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getInputMethodExecutorService(),
                     teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
         }
 
         return inputMethods;
+
     }
 
     private Prompt getPrompt(Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction) {

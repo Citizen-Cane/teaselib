@@ -19,4 +19,8 @@ public:
 	static jmethodID getMethodID(JNIEnv* env, jobject object, const char* name, const char* signature);
 	static jmethodID getMethodID(JNIEnv* env, jclass clazz, const char* name, const char* signature);
 	static jmethodID getMethodID(JNIEnv* env, const char* className, const char* name, const char* signature);
+
+	static jmethodID getStaticMethodID(JNIEnv* env, jobject object, const char* name, const char* signature);
+	static jmethodID getStaticMethodID(JNIEnv* env, jclass clazz, const char* name, const char* signature);
+	static jmethodID getStaticMethodID(JNIEnv* env, const char* className, const char* name, const char* signature);
 };

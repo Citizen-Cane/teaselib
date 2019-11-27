@@ -34,6 +34,12 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
         return awaitGesture(motionDetector.get(), prompt);
     }
 
+    public static boolean distinctGestures(Choices choices) {
+        boolean singleYes = choices.stream().filter(choice -> choice.answer.meaning == Meaning.YES).count() == 1;
+        boolean singleNo = choices.stream().filter(choice -> choice.answer.meaning == Meaning.NO).count() == 1;
+        return singleYes || singleNo;
+    }
+
     private static Prompt.Result awaitGesture(MotionDetector motionDetector, Prompt prompt) {
         return motionDetector.call(() -> {
             motionDetector.setSensitivity(MotionSensitivity.High);
@@ -41,7 +47,7 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
                     .collect(Collectors.toList());
             while (!Thread.currentThread().isInterrupted()) {
                 Gesture gesture = motionDetector.await(gestures, Double.MAX_VALUE);
-                if (supported(gesture)) {
+                if (supported(gesture) && gestures.stream().filter(g -> g == gesture).count() == 1) {
                     Prompt.Result result = new Prompt.Result(gestures.indexOf(gesture));
                     if (result.valid(prompt.choices)) {
                         return result;

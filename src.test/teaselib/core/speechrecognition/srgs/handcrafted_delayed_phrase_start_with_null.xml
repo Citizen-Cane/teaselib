@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" root="Main" tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
+  <rule id="Main" scope="private">
+    <one-of>
+      <item>
+        <ruleref uri="#Choice_0_0__group_0"/>
+      </item>
+      <item>
+        <!-- TODO Rule Ref Choice_0_1__group_0 to improve choice detection - all phrases not in slice-->
+        <ruleref special="NULL"/>
+      </item>
+    </one-of>
+
+    <ruleref uri="#Choice_1_0,1__group_0"/>
+
+    <one-of>
+      <item>
+        <ruleref special="NULL"/>
+      </item>
+      <item>
+        <ruleref uri="#Choice_2_1__group_0"/>
+      </item>
+    </one-of>
+  </rule>
+  <rule id="Choice_0_0__group_0" scope="private">Yes</rule>
+  <rule id="Choice_1_0,1__group_0" scope="private">Of course</rule>
+  <rule id="Choice_2_1__group_0" scope="private">Miss</rule>
+</grammar>

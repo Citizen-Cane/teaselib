@@ -138,6 +138,15 @@ public class KeyReleaseSetup extends TeaseScript {
         prepare(actuator, new Items(item));
     }
 
+    // TODO Add defaults for lockable items:
+    // long actuator: detachable & lockable ankle & wrist cuffs, lockable collar/humbler/etc.
+    // short actuator: chains, coupled hand/ankle cuffs, anything that restricts posture
+    //
+    // + Script may set duration for lockable items, or not
+    // -> setup may override duration with Math.min(scriptDuration, actuator.remaining())
+    // + script releases when appropriate, or
+    // script awaits item().expired() (or remaining - x), to comment key release before the key drops.
+
     // TODO Remove use of actuator
     /**
      * 

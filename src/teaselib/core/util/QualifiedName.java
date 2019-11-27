@@ -6,7 +6,7 @@ public class QualifiedName implements Comparable<QualifiedName> {
     private static final char SEPARATOR = '.';
     public static final String NONE = "";
 
-    protected static final String[] StrippedPackageNames = { "teaselib", "teaselib.scripts" };
+    protected static final String[] StrippedPackageNames = { "teaselib.scripts", "teaselib" };
 
     private static String stripPath(String path) {
         for (String packageName : StrippedPackageNames) {
@@ -19,12 +19,12 @@ public class QualifiedName implements Comparable<QualifiedName> {
     }
 
     public static QualifiedName of(String domain, String namespace, String name) {
-        return new QualifiedName(domain, stripPath(namespace), name);
+        return new QualifiedName(stripPath(domain), stripPath(namespace), name);
     }
 
     public static QualifiedName of(String domain, Enum<?> item) {
         QualifiedItem qualifiedItem = QualifiedItem.of(item);
-        return QualifiedName.of(domain, stripPath(qualifiedItem.namespace()), qualifiedItem.name());
+        return QualifiedName.of(stripPath(domain), stripPath(qualifiedItem.namespace()), qualifiedItem.name());
     }
 
     public final String domain;

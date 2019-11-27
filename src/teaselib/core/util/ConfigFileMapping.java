@@ -25,7 +25,7 @@ public class ConfigFileMapping implements Persistence {
 
     @Override
     public boolean has(QualifiedName name) {
-        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        Optional<ConfigurationFile> properties = getConfigFile(name);
         if (properties.isPresent() && properties.get().has(name.toString())) {
             return true;
         } else {
@@ -38,7 +38,7 @@ public class ConfigFileMapping implements Persistence {
         if (persistence.has(name)) {
             return persistence.get(name);
         } else {
-            Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+            Optional<ConfigurationFile> properties = getConfigFile(name);
             if (properties.isPresent()) {
                 return properties.get().get(name.toString());
             } else {
@@ -52,7 +52,7 @@ public class ConfigFileMapping implements Persistence {
         if (persistence.has(name)) {
             return persistence.getBoolean(name);
         } else {
-            Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+            Optional<ConfigurationFile> properties = getConfigFile(name);
             if (properties.isPresent()) {
                 return properties.get().getBoolean(name.toString());
             } else {
@@ -63,7 +63,7 @@ public class ConfigFileMapping implements Persistence {
 
     @Override
     public void set(QualifiedName name, String value) {
-        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        Optional<ConfigurationFile> properties = getConfigFile(name);
         if (properties.isPresent()) {
             properties.get().set(name.toString(), value);
             if (persistence.has(name)) {
@@ -76,7 +76,7 @@ public class ConfigFileMapping implements Persistence {
 
     @Override
     public void set(QualifiedName name, boolean value) {
-        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        Optional<ConfigurationFile> properties = getConfigFile(name);
         if (properties.isPresent()) {
             properties.get().set(name.toString(), value);
             if (persistence.has(name)) {
@@ -89,11 +89,19 @@ public class ConfigFileMapping implements Persistence {
 
     @Override
     public void clear(QualifiedName name) {
-        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        Optional<ConfigurationFile> properties = getConfigFile(name);
         if (properties.isPresent()) {
             properties.get().clear(name.toString());
         }
         persistence.clear(name);
+    }
+
+    private Optional<ConfigurationFile> getConfigFile(QualifiedName name) {
+        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        if (properties.isEmpty()) {
+            properties = config.getUserSettings(name.domain);
+        }
+        return properties;
     }
 
     @Override

@@ -1,6 +1,8 @@
 package teaselib.core.util;
 
-abstract class AbstractQualifiedItem<T> extends QualifiedItem {
+import java.util.Optional;
+
+abstract class AbstractQualifiedItem<T> implements QualifiedItem {
     public final T value;
 
     public AbstractQualifiedItem(T value) {
@@ -21,6 +23,11 @@ abstract class AbstractQualifiedItem<T> extends QualifiedItem {
     }
 
     @Override
+    public Optional<String> guid() {
+        return Optional.empty();
+    }
+
+    @Override
     public abstract boolean equals(Object obj);
 
     @Override
@@ -29,6 +36,14 @@ abstract class AbstractQualifiedItem<T> extends QualifiedItem {
         int result = 1;
         result = prime * result + toString().toLowerCase().hashCode();
         return result;
+    }
+
+    String toString(String path, Optional<String> guid) {
+        if (guid.isPresent()) {
+            return path + "#" + guid.get();
+        } else {
+            return path;
+        }
     }
 
 }

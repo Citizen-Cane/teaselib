@@ -1,5 +1,7 @@
 package teaselib.core;
 
+import static java.util.stream.Collectors.toList;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -38,6 +41,7 @@ import teaselib.Toys;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
 import teaselib.util.ItemGuid;
@@ -176,10 +180,15 @@ public class UserItemsImpl implements UserItems {
         List<Item> all = collectItems(item, itemMap);
 
         if (all.isEmpty()) {
-            addDefaultItem(domain, item, itemMap, all);
+            if (item.guid().isEmpty()) {
+                addDefaultItem(domain, item, itemMap, all);
+            } else {
+                all.add(Item.NotFound);
+            }
         }
 
         return Collections.unmodifiableList(all);
+
     }
 
     private ItemMap getItemMap(String domain) {
@@ -212,15 +221,38 @@ public class UserItemsImpl implements UserItems {
         }
     }
 
-    private static List<Item> collectItems(QualifiedItem item, ItemMap itemMap) {
+    private static List<Item> collectItems(QualifiedItem qualifiedItem, ItemMap itemMap) {
         List<Item> all = new ArrayList<>();
+
+        // // TODO use QualifiedItem as key for item map - requires ItemMap to use QualifiedItem
+        // Map<String, Item> items = itemMap.get(new QualifiedString(qualifiedItem.namespace(), qualifiedItem.name()));
+        // if (items != null) {
+        // Optional<String> guid = qualifiedItem.guid();
+        // if (guid.isPresent()) {
+        // all.addAll(itemsMatchingGuid(items, guid.get()));
+        // } else {
+        // all.addAll(items.values());
+        // }
+        // }
+
         for (Entry<Object, Map<String, Item>> entry : itemMap.entrySet()) {
-            // TODO use QualifiedItem as key for item map
-            if (item.equals(entry.getKey())) {
-                all.addAll(entry.getValue().values());
+            QualifiedString key = new QualifiedString(qualifiedItem.namespace(), qualifiedItem.name());
+            if (key.equals(entry.getKey())) {
+                Optional<String> guid = qualifiedItem.guid();
+                if (guid.isPresent()) {
+                    all.addAll(itemsMatchingGuid(entry.getValue(), guid.get()));
+                } else {
+                    all.addAll(entry.getValue().values());
+                }
             }
         }
+
         return all;
+    }
+
+    private static List<Item> itemsMatchingGuid(Map<String, Item> items, String guid) {
+        return items.values().stream().map(item -> ((ItemImpl) item)).filter(item -> item.guid.name().equals(guid))
+                .collect(toList());
     }
 
     private void addDefaultItem(String domain, QualifiedItem item, ItemMap itemMap, List<Item> all) {

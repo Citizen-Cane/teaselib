@@ -32,9 +32,20 @@ public class QualifiedItemTest {
     public void testString() {
         String testString = "teaselib.core.util.QualifiedItemTest.TestEnum.One";
         QualifiedItem one = QualifiedItem.of(testString);
-        assertTrue(one instanceof QualifiedObject);
+        assertTrue(one instanceof QualifiedString);
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum", one.namespace());
         assertEquals("One", one.name());
+        assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum.One", one.toString());
+    }
+
+    @Test
+    public void testStringGuid() {
+        String testString = "teaselib.core.util.QualifiedItemTest.TestEnum.One#myGuid";
+        QualifiedItem one = QualifiedItem.of(testString);
+        assertTrue(one instanceof QualifiedString);
+        assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum", one.namespace());
+        assertEquals("One", one.name());
+        assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum.One#myGuid", one.toString());
     }
 
     @Test
@@ -46,6 +57,22 @@ public class QualifiedItemTest {
         assertTrue(one instanceof QualifiedItemImpl);
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum", one.namespace());
         assertEquals("One", one.name());
+        assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum.One#One", one.toString());
+    }
+
+    @Test
+    public void testItemGuid() {
+        TestScript testScript = TestScript.getOne();
+        Item notFound = testScript.item("teaselib.core.util.QualifiedItemTest.TestEnum.One#myGuid");
+        assertEquals(Item.NotFound, notFound);
+
+        Item testItem = testScript.item("teaselib.Toys.Gag#ring_gag");
+        QualifiedItem gag = QualifiedItem.of(testItem);
+
+        assertTrue(gag instanceof QualifiedItemImpl);
+        assertEquals("teaselib.Toys", gag.namespace());
+        assertEquals("Gag", gag.name());
+        assertEquals("teaselib.Toys.Gag#ring_gag", gag.toString());
     }
 
     @Test

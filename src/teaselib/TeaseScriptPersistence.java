@@ -3,7 +3,7 @@
  */
 package teaselib;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,10 +80,13 @@ public abstract class TeaseScriptPersistence extends Script {
             return new ItemProxy(namespace, teaseLib.item(name, value), events);
         }
 
-        // TODO Remove code duplication
-
         public Item item(String value) {
-            return new ItemProxy(namespace, teaseLib.item(name, value), events);
+            Item item = teaseLib.item(name, value);
+            if (item == Item.NotFound) {
+                return item;
+            } else {
+                return new ItemProxy(namespace, item, events);
+            }
         }
 
         public State state(Enum<?> value) {
@@ -120,6 +123,8 @@ public abstract class TeaseScriptPersistence extends Script {
             List<Item> proxies = new ArrayList<>();
             for (Item item : items) {
                 if (item instanceof ItemProxy) {
+                    proxies.add(item);
+                } else if (item == Item.NotFound) {
                     proxies.add(item);
                 } else {
                     proxies.add(new ItemProxy(namespace, item, events));

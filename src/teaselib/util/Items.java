@@ -297,60 +297,101 @@ public class Items implements Iterable<Item> {
     }
 
     private Items appliedOrPreferred(Object... attributes) {
-        Varieties<Items> varieties = varieties();
-        List<Items> applied = varieties.stream().filter(Items::anyApplied).collect(Collectors.toList());
-        if (applied.isEmpty()) {
-            return preferredItems(attributes);
+        if (anyApplied()) {
+            Varieties<Items> varieties = varieties();
+            List<Items> someApplied = varieties.stream().filter(Items::anyApplied).collect(Collectors.toList());
+            return best(someApplied, attributes);
         } else {
-            return appliedItemsPlusRemainingPreferred(applied, attributes);
+            return preferredItems(attributes);
         }
     }
 
-    private static Items appliedItemsPlusRemainingPreferred(List<Items> applied, Object... attributes) {
+    private static Items best(List<Items> someApplied, Object... attributes) {
         // TODO select best set based on attributes of applied items as well as requested items
-        return applied.stream().reduce(Items::best).orElse(Items.None);
+        return someApplied.stream().reduce(Items::best).orElse(Items.None);
+    }
+
+    static class Preferred {
+        private final List<Item> elements;
+        private final Object[] attributes;
+        private final Set<QualifiedItem> found = new HashSet<>();
+        private final List<Item> items = new ArrayList<>();
+
+        public Preferred(List<Item> elements, Object[] attributes) {
+            this.elements = elements;
+            this.attributes = attributes;
+        }
+
+        public void addApplied() {
+            for (Item item : elements) {
+                if (item.applied() && missing(item)) {
+                    found.add(QualifiedItem.of(itemValue(item)));
+                    items.add(item);
+                }
+            }
+        }
+
+        // TODO Optimize items by number of matching attributes - best matching set with attribute coverage
+        // e.g. all lockable, or all metal, use attribute order as priority
+        public void addAvailableMatching() {
+            for (Item item : elements) {
+                if (missing(item) && item.is(attributes) && item.isAvailable()) {
+                    found.add(QualifiedItem.of(itemValue(item)));
+                    items.add(item);
+                }
+            }
+        }
+
+        public void addAvailableNonMatching() {
+            for (Item item : elements) {
+                if (missing(item) && item.isAvailable()) {
+                    found.add(QualifiedItem.of(itemValue(item)));
+                    items.add(item);
+                }
+            }
+        }
+
+        public void addMissingMatching() {
+            for (Item item : elements) {
+                if (missing(item) && item.is(attributes)) {
+                    found.add(QualifiedItem.of(itemValue(item)));
+                    items.add(item);
+                }
+            }
+        }
+
+        public void addMissing() {
+            for (Item item : elements) {
+                if (missing(item)) {
+                    found.add(QualifiedItem.of(itemValue(item)));
+                    items.add(item);
+                }
+            }
+        }
+
+        private boolean missing(Item item) {
+            return !found.contains(qualifiedValue(item));
+        }
+
+        private QualifiedItem qualifiedValue(Item item) {
+            return QualifiedItem.of(AbstractProxy.itemImpl(item).value);
+        }
+
+        public List<Item> toList() {
+            return items;
+        }
+
     }
 
     private Items preferredItems(Object... attributes) {
-        Set<QualifiedItem> found = new HashSet<>();
-        List<Item> preferred = new ArrayList<>();
+        Preferred preferred = new Preferred(elements, attributes);
+        preferred.addApplied();
+        preferred.addAvailableMatching();
+        preferred.addAvailableNonMatching();
+        preferred.addMissingMatching();
+        preferred.addMissing();
 
-        for (Item item : elements) {
-            if (item.applied()) {
-                found.add(QualifiedItem.of(itemValue(item)));
-                preferred.add(item);
-            }
-        }
-
-        for (Item item : elements) {
-            if (item.is(attributes) && item.isAvailable()) {
-                found.add(QualifiedItem.of(itemValue(item)));
-                preferred.add(item);
-            }
-        }
-
-        for (Item item : elements) {
-            if (!found.contains(QualifiedItem.of(item)) && item.isAvailable()) {
-                found.add(QualifiedItem.of(itemValue(item)));
-                preferred.add(item);
-            }
-        }
-
-        for (Item item : elements) {
-            if (item.is(attributes)) {
-                found.add(QualifiedItem.of(itemValue(item)));
-                preferred.add(item);
-            }
-        }
-
-        for (Item item : elements) {
-            if (!found.contains(QualifiedItem.of(item))) {
-                found.add(QualifiedItem.of(itemValue(item)));
-                preferred.add(item);
-            }
-        }
-
-        return new Items(preferred, inventory);
+        return new Items(preferred.toList(), inventory);
     }
 
     /**
@@ -371,14 +412,14 @@ public class Items implements Iterable<Item> {
     }
 
     private boolean isVariety(List<Item> combination) {
-        return Varieties.isVariety(
-                combination.stream().map(QualifiedItem::of).map(QualifiedItem::toString).collect(Collectors.toList()));
+        return Varieties.isVariety(combination.stream().map(AbstractProxy::itemImpl).map(itemImpl -> itemImpl.value)
+                .map(QualifiedItem::of).map(QualifiedItem::toString).collect(Collectors.toList()));
     }
 
     private int getVariety() {
         Set<String> types = new HashSet<>();
         for (Item item : elements) {
-            types.add(QualifiedItem.of(item).toString());
+            types.add(QualifiedItem.of(AbstractProxy.itemImpl(item).value).toString());
         }
 
         return types.size();
@@ -643,6 +684,15 @@ public class Items implements Iterable<Item> {
 
     public boolean isEmpty() {
         return elements.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return "elements=" + displayNames(elements) + " inventory=" + displayNames(inventory);
+    }
+
+    private static String displayNames(List<Item> list) {
+        return list.stream().map(Item::displayName).collect(Collectors.joining(" "));
     }
 
 }

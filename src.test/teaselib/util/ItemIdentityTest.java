@@ -1,6 +1,11 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -11,9 +16,11 @@ import teaselib.Body;
 import teaselib.Household;
 import teaselib.State;
 import teaselib.Toys;
+import teaselib.Toys.Gags;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.Persist;
+import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.Storage;
 import teaselib.test.TestScript;
 
@@ -517,6 +524,9 @@ public class ItemIdentityTest {
         assertNotEquals(ringGag, bitGag);
         assertFalse(ringGag.is(bitGag));
         // TODO comparing items works via has(all attributes) but should check peers for item instance
+
+        assertTrue(ringGag.applied());
+        assertFalse(bitGag.applied());
     }
 
     @Test
@@ -535,7 +545,6 @@ public class ItemIdentityTest {
     }
 
     @Test
-    // TODO This should work as well, but without adding item instance to item state
     public void testThatStateIsItem() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
@@ -545,8 +554,8 @@ public class ItemIdentityTest {
         assertTrue(script.item(Toys.Gag).applied());
         assertTrue(script.state(Toys.Gag).applied());
         assertTrue(script.state(Body.InMouth).is(item));
-        // TODO Requires item instance applied to item state but we decided against this - values is only applied to
-        // peers, not to itself
+        // TODO Requires item instance applied to item state but we decided against this
+        // - value is only applied to peers, not to itself
         // -> can be resolved via peers
         assertTrue(script.state(Toys.Gag).is(item));
     }
@@ -561,9 +570,28 @@ public class ItemIdentityTest {
         item.apply();
         assertTrue(script.item(Household.Clothes_Pegs).applied());
         assertTrue(script.state(Household.Clothes_Pegs).applied());
-        // TODO Requires item instance applied to item state but we decided against this - values is only applied to
-        // peers, not to itself
-        // -> can be resolved via peersmust be added to item state itself
+        // TODO Requires item instance applied to item state but we decided against this
+        // - value is only applied to peers, not to itself
+        // -> can be resolved via "peers must be added to item state itself"
         assertTrue(script.state(Household.Clothes_Pegs).is(item));
     }
+
+    @Test
+    public void testRetrievingItemViaString() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+        Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
+
+        QualifiedItem ringGagRef = QualifiedItem.of(ringGag);
+        QualifiedItem bitGagRef = QualifiedItem.of(bitGag);
+        assertNotEquals(ringGagRef, bitGagRef);
+        assertNotEquals(ringGagRef.toString(), bitGagRef.toString());
+
+        assertTrue(script.item(Toys.Gag).is(Gags.Ball_Gag));
+        assertEquals(ringGag, script.item(ringGagRef.toString()));
+        assertEquals(bitGag, script.item(bitGagRef.toString()));
+    }
+
 }

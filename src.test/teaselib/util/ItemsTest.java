@@ -1,6 +1,10 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -273,9 +277,9 @@ public class ItemsTest {
         Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Chains);
 
         Item chains = chainedUp.get(Toys.Chains);
-        assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(chains));
+        assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
         chainedUp.get(Toys.Wrist_Restraints).applyTo(Toys.Chains);
-        assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(chains));
+        assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
     }
 
     @Test

@@ -35,12 +35,12 @@ class QualifiedObject extends AbstractQualifiedItem<Object> {
 
     @Override
     public String namespace() {
-        return namespaceOf(value);
+        return QualifiedItem.namespaceOf(value);
     }
 
     @Override
     public String name() {
-        return nameOf(value);
+        return QualifiedItem.nameOf(value);
     }
 
     @Override

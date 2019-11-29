@@ -1,5 +1,7 @@
 package teaselib.core.util;
 
+import java.util.Optional;
+
 import teaselib.State;
 import teaselib.util.Item;
 
@@ -7,15 +9,17 @@ import teaselib.util.Item;
  * @author Citizen-Cane
  *
  */
-public abstract class QualifiedItem {
+public interface QualifiedItem {
 
-    public abstract boolean is(Object obj);
+    public boolean is(Object obj);
 
-    public abstract String namespace();
+    public String namespace();
 
-    public abstract String name();
+    public String name();
 
-    public abstract Object value();
+    public Object value();
+
+    public Optional<String> guid();
 
     public static String namespaceOf(Object item) {
         if (item instanceof Enum<?>) {
@@ -64,6 +68,8 @@ public abstract class QualifiedItem {
             return new QualifiedItemImpl((Item) value);
         } else if (value instanceof State) {
             return new QualifiedStateImpl((State) value);
+        } else if (value instanceof String) {
+            return new QualifiedString((String) value);
         } else {
             return new QualifiedObject(value);
         }

@@ -1,8 +1,9 @@
 package teaselib.core.util;
 
-import teaselib.core.state.ItemProxy;
+import java.util.Optional;
+
+import teaselib.core.state.AbstractProxy;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 
 class QualifiedItemImpl extends AbstractQualifiedItem<Item> {
 
@@ -51,17 +52,16 @@ class QualifiedItemImpl extends AbstractQualifiedItem<Item> {
     }
 
     @Override
+    public Optional<String> guid() {
+        return Optional.of(AbstractProxy.itemImpl(value).guid.name());
+    }
+
+    @Override
     public String toString() {
-        return QualifiedItem.of(item(value)).toString();
+        return toString(QualifiedItem.of(item(value)).toString(), guid());
     }
 
     private static Object item(Item item) {
-        if (item instanceof ItemProxy) {
-            return ((ItemImpl) ((ItemProxy) item).item).value;
-        } else if (item instanceof ItemImpl) {
-            return ((ItemImpl) item).value;
-        } else {
-            throw new UnsupportedOperationException(item.toString());
-        }
+        return AbstractProxy.itemImpl(item).value;
     }
 }

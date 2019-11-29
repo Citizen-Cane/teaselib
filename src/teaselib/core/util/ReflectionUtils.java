@@ -57,16 +57,20 @@ public final class ReflectionUtils {
         return clazz.getName().replace('.', '/') + '/';
     }
 
-    public static <T extends Enum<?>> T getEnum(QualifiedItem qualifiedItem) throws ClassNotFoundException {
+    public static <T extends Enum<?>> T getEnum(QualifiedItem qualifiedItem) {
         String className = qualifiedItem.namespace();
         try {
             @SuppressWarnings("unchecked")
             Class<T> enumClass = (Class<T>) Class.forName(className);
             return getEnum(enumClass, qualifiedItem);
         } catch (ClassNotFoundException e) {
-            @SuppressWarnings("unchecked")
-            Class<T> nestedClass = (Class<T>) Class.forName(nestedClass(className));
-            return getEnum(nestedClass, qualifiedItem);
+            try {
+                @SuppressWarnings("unchecked")
+                Class<T> nestedClass = (Class<T>) Class.forName(nestedClass(className));
+                return getEnum(nestedClass, qualifiedItem);
+            } catch (ClassNotFoundException e1) {
+                throw new IllegalArgumentException("Not an enum:" + qualifiedItem, e);
+            }
         }
     }
 

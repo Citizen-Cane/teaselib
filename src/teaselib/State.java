@@ -28,9 +28,13 @@ public interface State {
 
     void removeFrom(Object... peers);
 
-    interface Options {
-        State over(long duration, TimeUnit unit);
+    interface Options extends State.Persistence {
+        Persistence over(long duration, TimeUnit unit);
 
-        State over(Duration duration);
+        Persistence over(Duration duration);
+    }
+
+    interface Persistence {
+        void remember();
     }
 }

@@ -336,16 +336,13 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    public State over(long limit, TimeUnit unit) {
+    public State.Persistence over(long limit, TimeUnit unit) {
         return over(new DurationImpl(this.stateMaps.teaseLib, limit, unit));
     }
 
     @Override
-    public State over(Duration duration) {
+    public Persistence over(Duration duration) {
         this.duration = duration;
-        if (duration.limit(TimeUnit.MILLISECONDS) != TEMPORARY) {
-            remember();
-        }
         return this;
     }
 
@@ -361,7 +358,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    private void remember() {
+    @Override
+    public void remember() {
         updatePersistence();
         for (Object peer : peers) {
             if (!(peer instanceof ItemGuid)) {

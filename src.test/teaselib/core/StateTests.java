@@ -11,6 +11,7 @@ import teaselib.Household;
 import teaselib.Material;
 import teaselib.State;
 import teaselib.Toys;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
@@ -56,7 +57,6 @@ public class StateTests {
     public void testPersistentStateAndNamespaceAttribute() {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
-
         State somethingOnNipples = script.state(Body.OnNipples);
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
@@ -66,7 +66,9 @@ public class StateTests {
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
-        assertEquals(7, script.storage.size());
+
+        assertEquals(0, script.storage.size());
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember();
 
         // Assert that when a state is applied then
         // the namespace of the script is applied to that state
@@ -299,4 +301,37 @@ public class StateTests {
                 new StateImpl(script.teaseLib, TeaseLib.DefaultDomain, "test"));
         assertSame(test1, test2);
     }
+
+    @Test
+    public void testApplyResetsDuration() {
+        TestScript script = TestScript.getOne();
+        script.teaseLib.freezeTime();
+
+        script.state(Body.OnNipples).applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
+        assertEquals(30, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+
+        script.state(Body.OnNipples).apply();
+        assertTrue("Apply without options must reset duration to 0", script.state(Body.OnNipples).expired());
+        assertEquals(0, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+    }
+
+    @Test
+    public void testPersistentStateRememberWithoutDuration() {
+        TestScript script = TestScript.getOne();
+        script.teaseLib.freezeTime();
+
+        script.state(Body.OnNipples).applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
+        assertEquals(30, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+
+        script.debugger.advanceTime(10, TimeUnit.MINUTES);
+        assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+
+        // TODO Public interface or utility method
+        AbstractProxy.stateImpl(script.state(Body.OnNipples)).remember();
+        assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+
+        script.debugger.clearStateMaps();
+        assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+    }
+
 }

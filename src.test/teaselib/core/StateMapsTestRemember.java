@@ -42,7 +42,8 @@ public class StateMapsTestRemember extends StateMaps {
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
 
-        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device).over(24, TimeUnit.HOURS);
+        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device).over(24, TimeUnit.HOURS)
+                .remember();
 
         assertUnrelatedStateIsNotAffected();
         assertRememberedToyAndPeersAreRemembered();
@@ -74,7 +75,8 @@ public class StateMapsTestRemember extends StateMaps {
     @Test
     public void testRememberedItemsAreCompletelyRemoved() {
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
-        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS);
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS)
+                .remember();
 
         assertEquals(9, storage.size());
 
@@ -94,9 +96,10 @@ public class StateMapsTestRemember extends StateMaps {
     }
 
     @Test
-    public void testRememberedItemsAreCompletelyRemovedAfterSessionRestore() {
+    public void testRememberedItemsAreCompletlyRemovedAfterSessionRestore() {
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
-        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS);
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS)
+                .remember();
 
         // Simulate session end & restore
         clear();

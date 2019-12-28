@@ -1,7 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -17,7 +16,7 @@ public class ItemPersistencyTest {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
-        script.item(Toys.Chastity_Device).apply().over(2, TimeUnit.HOURS);
+        script.item(Toys.Chastity_Device).apply().over(2, TimeUnit.HOURS).remember();
         script.debugger.advanceTime(1, TimeUnit.HOURS);
         script.debugger.clearStateMaps();
 
@@ -51,7 +50,7 @@ public class ItemPersistencyTest {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
-        script.item(Toys.Chastity_Device).apply().over(2, TimeUnit.HOURS);
+        script.item(Toys.Chastity_Device).apply().over(2, TimeUnit.HOURS).remember();
         script.debugger.clearStateMaps();
 
         script.debugger.advanceTime(3, TimeUnit.HOURS);

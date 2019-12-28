@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +31,7 @@ public class StateImplAutoRemoveTests {
         assertFalse(part.applied());
         assertTrue(part.expired());
 
-        state.applyTo(TestStates.BODY_PART).over(2, TimeUnit.HOURS);
+        state.applyTo(TestStates.BODY_PART).over(2, TimeUnit.HOURS).remember();
 
         assertApplied(script);
         assertPersisted(script, debugger);

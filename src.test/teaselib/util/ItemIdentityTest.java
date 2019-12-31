@@ -105,9 +105,16 @@ public class ItemIdentityTest {
         assertTrue(onPenis.applied());
 
         Item otherChastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Belt).get();
-        otherChastityDevice.remove();
 
         // Removing the wrong item doesn't work
+        try {
+            otherChastityDevice.remove();
+            fail("Removing un-applied item must throw");
+        } catch (IllegalStateException e) {
+            assertTrue(chastityDevice.applied());
+            assertTrue(onPenis.applied());
+        }
+
         assertTrue(chastityDevice.applied());
         assertTrue(onPenis.applied());
 
@@ -132,11 +139,15 @@ public class ItemIdentityTest {
 
         Item otherChastityDevice = script.items("teaselib.Toys.Chastity_Device")
                 .matching("teaselib.Toys.Chastity_Devices.Belt").get();
-        otherChastityDevice.remove();
 
         // Removing the wrong item doesn't work
-        assertTrue(chastityDevice.applied());
-        assertTrue(onPenis.applied());
+        try {
+            otherChastityDevice.remove();
+            fail("Removing un-applied item must throw");
+        } catch (IllegalStateException e) {
+            assertTrue(chastityDevice.applied());
+            assertTrue(onPenis.applied());
+        }
 
         // Instead just remove the default item
         script.item("teaselib.Toys.Chastity_Device").remove();
@@ -185,7 +196,10 @@ public class ItemIdentityTest {
         assertFalse(notApplied.applied());
 
         assertTrue(clothesPinsState.applied());
+        notApplied.apply();
+        assertTrue(notApplied.applied());
         notApplied.remove();
+        assertFalse(notApplied.applied());
         assertTrue(clothesPinsState.applied());
     }
 

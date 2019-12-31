@@ -92,13 +92,13 @@ public class ItemImplTest {
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
                 peers, new Object[] { Size.Large, Length.Long });
 
-        assertTrue(item.is(new Object[] { Size.Large }));
-        assertFalse(item.is(new Object[] { Size.Small }));
+        assertTrue(item.is(Size.Large));
+        assertFalse(item.is(Size.Small));
 
-        assertTrue(item.is(new Object[] { Size.Large, Length.Long }));
-        assertFalse(item.is(new Object[] { Size.Large, Length.Short }));
+        assertTrue(item.is(Size.Large, Length.Long));
+        assertFalse(item.is(Size.Large, Length.Short));
 
-        assertFalse(item.is(new Object[] { Size.Small, Length.Short }));
+        assertFalse(item.is(Size.Small, Length.Short));
     }
 
     @Test
@@ -272,10 +272,6 @@ public class ItemImplTest {
         assertTrue(wristRestraints.applied());
         assertFalse(wristRestraints.canApply());
         assertTrue(wristRestraints.is(wristRestraints));
-
-        // Apply should work even if applied already, since after an item has been applied,
-        // applying it again results in a correctly modeled setup
-        wristRestraints.apply();
     }
 
     @Test
@@ -295,10 +291,17 @@ public class ItemImplTest {
         assertTrue(gag.applied());
         assertFalse(gag.canApply());
         assertTrue(gag.is(gag));
+    }
 
-        // Apply should work even if applied already, since after an item has been applied,
-        // applying it again results in a correctly modeled setup
-        gag.apply();
+    @Test(expected = IllegalStateException.class)
+    public void applyingTwiceRuinsPlausibilityOfActor() {
+        TestScript script = TestScript.getOne();
+        assertFalse(script.state(Toys.Gag).applied());
+
+        script.item(Toys.Gag).apply();
+        assertTrue(script.state(Toys.Gag).applied());
+
+        script.item(Toys.Gag).apply();
     }
 
     @Test
@@ -415,7 +418,7 @@ public class ItemImplTest {
         TestScript script = TestScript.getOne();
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
-                .matching(Material.Leather);
+                .prefer(Material.Leather);
         restraints.apply();
 
         Items chains = script.items(Toys.Chains, Accessoires.Bells);
@@ -454,7 +457,6 @@ public class ItemImplTest {
         Item woodenSpoon = script.item(Household.Wooden_Spoon);
         assertTrue(woodenSpoon.is(Material.Wood));
         assertTrue(woodenSpoon.is(Material.class));
-
     }
 
 }

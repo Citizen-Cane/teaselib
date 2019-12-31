@@ -1,6 +1,7 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.state.AbstractProxy.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,11 +15,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import teaselib.Duration;
+import teaselib.State;
+import teaselib.State.Persistence;
 import teaselib.TeaseScriptPersistence;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedItem;
@@ -307,7 +312,7 @@ public class Items implements Iterable<Item> {
     }
 
     private static Items best(List<Items> someApplied, Object... attributes) {
-        // TODO select best set based on attributes of applied items as well as requested items
+        // TODO select best set based on attributes of applied and requested items
         return someApplied.stream().reduce(Items::best).orElse(Items.None);
     }
 
@@ -373,7 +378,7 @@ public class Items implements Iterable<Item> {
             return !found.contains(qualifiedValue(item));
         }
 
-        private QualifiedItem qualifiedValue(Item item) {
+        private static QualifiedItem qualifiedValue(Item item) {
             return QualifiedItem.of(AbstractProxy.itemImpl(item).value);
         }
 
@@ -454,48 +459,46 @@ public class Items implements Iterable<Item> {
     }
 
     private static Map<QualifiedItem, Long> attributesOfAvailable(List<Item> items) {
-        return items.stream().filter(Item::isAvailable)
-                .collect(Collectors.groupingBy(QualifiedItem::of, Collectors.counting()));
+        return items.stream().filter(Item::isAvailable).collect(groupingBy(QualifiedItem::of, counting()));
     }
 
     /**
      * Applies each item. If the list contains multiple items of the same kind, only the first of each kind is applied.
      * 
-     * @return the items.
      */
-    public Items apply() {
-        for (Item item : this.firstOfEachKind()) {
-            item.apply();
-        }
-        return this;
+    public State.Options apply() {
+        return applyToImpl(Item::apply);
     }
 
     /**
      * Applies each item to the given peers. If there are multiple items of the same kind, only the first of each kind
      * is applied. To apply to multiple instances, apply each through {@link Items#all}
      * 
-     * @return the items.
      */
-    public Items applyTo(Object... peers) {
-        for (Item item : firstOfEachKind()) {
-            item.applyTo(AbstractProxy.removeProxies(peers));
-        }
-        return this;
+    public State.Options applyTo(Object... peers) {
+        return applyToImpl(item -> item.applyTo(removeProxies(peers)));
     }
 
-    public Items over(long duration, TimeUnit unit) {
-        for (Item item : firstOfEachKind()) {
-            item.apply().over(duration, unit);
-        }
-        return this;
-    }
+    public State.Options applyToImpl(Function<Item, State.Options> applyFunction) {
+        List<State.Options> options = firstOfEachKind().stream().map(applyFunction::apply).collect(toList());
+        return new State.Options() {
+            @Override
+            public void remember() {
+                options.forEach(State.Options::remember);
+            }
 
-    public Items remember(long duration, TimeUnit unit) {
-        for (Item item : this) {
-            item.apply().over(duration, unit).remember();
-            ;
-        }
-        return this;
+            @Override
+            public Persistence over(long duration, TimeUnit unit) {
+                options.forEach(option -> option.over(duration, unit));
+                return this;
+            }
+
+            @Override
+            public Persistence over(Duration duration) {
+                options.forEach(option -> option.over(duration));
+                return this;
+            }
+        };
     }
 
     public void remove() {
@@ -599,11 +602,6 @@ public class Items implements Iterable<Item> {
         return QualifiedItem.of(itemImpl(item).value);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -612,11 +610,6 @@ public class Items implements Iterable<Item> {
         return result;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -680,7 +673,7 @@ public class Items implements Iterable<Item> {
 
     }
 
-    public Items withoutImpl(Object... values) {
+    private Items withoutImpl(Object... values) {
         return new Items(
                 stream().filter(item -> Arrays.stream(values).noneMatch(item::is)).collect(Collectors.toList()),
                 inventory);

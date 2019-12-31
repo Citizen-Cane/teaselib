@@ -1,10 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -879,8 +875,10 @@ public class ItemsTest {
     public void testItemAppliedToItems() {
         TestScript script = TestScript.getOne();
 
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar).apply();
-        Items chains = script.items(Toys.Chains, Accessoires.Bells).applyTo(restraints);
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        restraints.apply();
+        Items chains = script.items(Toys.Chains, Accessoires.Bells);
+        chains.applyTo(restraints);
 
         Item singleChainItem = chains.get(Toys.Chains);
         Item bells = chains.get(Accessoires.Bells);

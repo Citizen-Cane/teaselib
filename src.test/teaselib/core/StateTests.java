@@ -307,12 +307,15 @@ public class StateTests {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
 
-        script.state(Body.OnNipples).applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
-        assertEquals(30, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+        script.state(Toys.Nipple_Clamps).applyTo(Body.OnNipples).over(30, TimeUnit.MINUTES);
+        assertEquals(30, script.state(Toys.Nipple_Clamps).duration().remaining(TimeUnit.MINUTES));
 
-        script.state(Body.OnNipples).apply();
-        assertTrue("Apply without options must reset duration to 0", script.state(Body.OnNipples).expired());
-        assertEquals(0, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+        script.state(Toys.Nipple_Clamps).apply();
+        // allows setting a duration for items that may be attached to multiple peers
+        // - otherwise the duration would be forgotten
+        assertEquals("Apply without setting a duration must retain the previous duration", 30,
+                script.state(Toys.Nipple_Clamps).duration().remaining(TimeUnit.MINUTES));
+        assertFalse(script.state(Toys.Nipple_Clamps).expired());
     }
 
     @Test

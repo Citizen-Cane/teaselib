@@ -1,5 +1,7 @@
 package teaselib.core;
 
+import static java.util.concurrent.TimeUnit.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,8 +77,6 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         this.peerStorage = persistentPeers(domain, item);
         this.attributeStorage = persistentAttributes(domain, item);
 
-        this.duration = new DurationImpl(this.stateMaps.teaseLib, 0, 0, TimeUnit.SECONDS);
-
         restoreApplied();
         restoreDuration();
         restoreAttributes();
@@ -124,6 +124,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             long start = Long.parseLong(argv[0]);
             long limit = string2limit(argv[1]);
             this.duration = new DurationImpl(this.stateMaps.teaseLib, start, limit, TimeUnit.SECONDS);
+        } else {
+            this.duration = new DurationImpl(this.stateMaps.teaseLib, 0, 0, TimeUnit.SECONDS);
         }
     }
 
@@ -272,7 +274,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void setTemporary() {
-        over(TEMPORARY, TimeUnit.SECONDS);
+        over(TEMPORARY, SECONDS);
     }
 
     public Set<Object> peers() {

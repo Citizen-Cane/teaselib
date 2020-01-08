@@ -1,7 +1,11 @@
 package teaselib.core.state;
 
+import java.util.concurrent.TimeUnit;
+
 import teaselib.Duration;
+import teaselib.State;
 import teaselib.core.ScriptEvents;
+import teaselib.core.ScriptEvents.ItemChangedEventArgs;
 import teaselib.core.StateMaps;
 import teaselib.util.Item;
 
@@ -35,12 +39,43 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
         return item.is(attributes);
     }
 
+    static final class ItemEventProxy implements State.Options {
+        final Item item;
+        final StateOptionsProxy options;
+        private ScriptEvents events;
+
+        public ItemEventProxy(Item item, ScriptEvents events, StateOptionsProxy options) {
+            this.item = item;
+            this.events = events;
+            this.options = options;
+        }
+
+        @Override
+        public void remember() {
+            options.remember();
+        }
+
+        @Override
+        public Persistence over(long duration, TimeUnit unit) {
+            Persistence persistence = options.over(duration, unit);
+            events.itemDuration.run(new ItemChangedEventArgs(item));
+            return persistence;
+        }
+
+        @Override
+        public Persistence over(Duration duration) {
+            Persistence persistence = options.over(duration);
+            events.itemDuration.run(new ItemChangedEventArgs(item));
+            return persistence;
+        }
+    }
+
     @Override
     public Options applyTo(Object... items) {
         injectNamespace();
         StateOptionsProxy options = new StateOptionsProxy(namespace, item.applyTo(items), events);
         events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
-        return options;
+        return new ItemEventProxy(item, events, options);
     }
 
     @Override
@@ -48,7 +83,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
         injectNamespace();
         StateOptionsProxy options = new StateOptionsProxy(namespace, item.apply(), events);
         events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
-        return options;
+        return new ItemEventProxy(item, events, options);
     }
 
     private void injectNamespace() {

@@ -9,7 +9,7 @@
 
 const char* const KeyReleaseService::Name = "KeyRelease";
 const char* const KeyReleaseService::Description = "Servo-based key release mechanism";
-const char* const KeyReleaseService::Version = "0.03";
+const char* const KeyReleaseService::Version = "0.04";
 
 /* Assembly:
  * From the Circuits folder, you'll need the following Fritzing sketches:
@@ -200,13 +200,15 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     Duration& duration = durations[index];
     if (duration.status == Actuator::Armed || duration.status == Actuator::Holding) {
       duration.hold();
-      updatePulse(Actuator::Holding);
+      if (duration.status == Actuator::Armed) {
+        updatePulse(Actuator::Holding);
+      }
       releaseTimer.start();
       const char* parameters[] = {sessionKey};
       return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
     } else {
       updatePulse(Actuator::Error);
-	  releaseAllKeys();
+	    releaseAllKeys();
       return WrongCall.toBuffer(buffer);
     }
   }
@@ -216,14 +218,20 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     const int seconds = atol(received.parameters[1]);
     Duration& duration = durations[index];
     if (duration.status == Actuator::Armed || duration.status == Actuator::Holding) {
-      duration.start(seconds > 0 ? seconds : duration.actuator->defaultSeconds);
-      updatePulse(Actuator::Active);
-      releaseTimer.start();
+      if (seconds > 0) {
+        duration.start(seconds);
+        updatePulse(Actuator::CountDown);
+        releaseTimer.start();
+      } else {
+        duration.hold();
+        updatePulse(Actuator::AwaitRelease);
+        releaseTimer.start();
+      }
       const char* parameters[] = {sessionKey};
       return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
     } else {
       updatePulse(Actuator::Error);
-	  releaseAllKeys();
+	    releaseAllKeys();
       return WrongCall.toBuffer(buffer);
     }
   }
@@ -281,7 +289,8 @@ const char* KeyReleaseService::Actuator::statusText(Status status) {
     case Actuator::Armed: return "Armed";
     case Actuator::Holding: return "Holding";
     case Actuator::Error: return "Error";
-    case Actuator::Active: return "Active";
+    case Actuator::CountDown: return "CountDown";
+    case Actuator::AwaitRelease: return "AwaitRelease";
     case Actuator::Released: return "Released";
     default: return "Unknown";
   }
@@ -319,7 +328,7 @@ void KeyReleaseService::releaseTimerCallback() {
   if (pulseStatus == Actuator::Released) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
-      pulseStatus = Actuator::Active;
+      pulseStatus = Actuator::CountDown;
     } else {
       pulseStatus = Actuator::Idle;
     }
@@ -376,13 +385,15 @@ void KeyReleaseService::updatePulse(const Actuator::Status status) {
     updatePulse(0, 192, 0, PulseFrequencyWhenHolding);
   } else if (status == Actuator::Error) {
     updatePulse(192, 0, 0, PulseFrequencyWhenError);
-  } else if (status == Actuator::Active) {
+  } else if (status == Actuator::CountDown) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
       updatePulse(0, 0, 255, pulsePeriod(nextReleaseDuration));
     } else {
       updatePulse(Actuator::Idle);
     }
+  } else if (status == Actuator::AwaitRelease) {
+    updatePulse(0, 0, 192, PulseFrequencyWhenHolding);
   } else if (status == Actuator::Released) {
     updatePulse(255, 0, 255, PulseFrequencyWhenIdle);
   } else if (status == Actuator::Idle) {
@@ -392,22 +403,22 @@ void KeyReleaseService::updatePulse(const Actuator::Status status) {
   }
 }
 
-void KeyReleaseService::updatePulse(const int r, const int g, const int b, const int pulseDuration) {
-  RGB.color(0, 0, 255);
-  updatePulse(pulseDuration);
+void KeyReleaseService::updatePulse(const int r, const int g, const int b, const int periodMillis) {
+  RGB.color(r, g, b);
+  updatePulsePeriod(periodMillis);
 }
 
-void KeyReleaseService::updatePulse(const int frequencyMillis) {
+void KeyReleaseService::updatePulsePeriod(const int periodMillis) {
   // Changing the period restarts the pulse timer, so don't update too often,
   // since the pulse is updated every second by the release timer
   if (secondsSinceLastUpdate++ * 1000 >= MaxPulseFrequency) {
-    ledTimer.changePeriod(frequencyMillis);
+    ledTimer.changePeriod(periodMillis);
     secondsSinceLastUpdate = 0;
   }
 }
 
-unsigned int KeyReleaseService::pulsePeriod(const unsigned int seconds) {
-  const unsigned int pulseFrequency = PulseFrequencyAt0s + ((PulseFrequencyAt1h - PulseFrequencyAt0s) * seconds) / SecondsAt1h;
+unsigned int KeyReleaseService::pulsePeriod(const unsigned int secondsUntilRelease) {
+  const unsigned int pulseFrequency = PulseFrequencyAt0s + ((PulseFrequencyAt1h - PulseFrequencyAt0s) * secondsUntilRelease) / SecondsAt1h;
   const unsigned int lowPulseFrequency = max(pulseFrequency, MinPulseFrequency);
   return min(lowPulseFrequency, MaxPulseFrequency);
 }
@@ -456,7 +467,7 @@ const int KeyReleaseService::Duration::start(const int seconds) {
   running = true;
   elapsedSeconds = 0;
   remainingSeconds = min(seconds, actuator->maximumSeconds);
-  status = Actuator::Active;
+  status = Actuator::CountDown;
   return remainingSeconds;
 }
 

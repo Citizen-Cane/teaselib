@@ -1,8 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -118,21 +116,26 @@ public class ScriptEventsTest {
         ActuatorMock actuator = new ActuatorMock();
         script.script(KeyReleaseSetup.class).prepare(actuator, items);
 
-        assertEquals(1, script.events().afterChoices.size());
-        assertEquals(3, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        ScriptEvents events = script.events();
+
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(3, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         items.apply();
         assertTrue(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         items.remove();
         assertFalse(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(0, script.events().itemRemoved.size());
+        assertEquals(0, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(0, events.itemDuration.size());
+        assertEquals(0, events.itemRemoved.size());
     }
 
     @Test
@@ -143,21 +146,26 @@ public class ScriptEventsTest {
         ActuatorMock actuator = new ActuatorMock();
         script.script(KeyReleaseSetup.class).prepare(actuator, items);
 
-        assertEquals(1, script.events().afterChoices.size());
-        assertEquals(3, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        ScriptEvents events = script.events();
+
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(3, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         items.apply();
         assertTrue(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         items.get(Toys.Wrist_Restraints).remove();
         assertFalse(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(0, script.events().itemRemoved.size());
+        assertEquals(0, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(0, events.itemDuration.size());
+        assertEquals(0, events.itemRemoved.size());
     }
 
     @Test
@@ -169,21 +177,26 @@ public class ScriptEventsTest {
         ActuatorMock actuator = new ActuatorMock();
         script.script(KeyReleaseSetup.class).prepare(actuator, chains);
 
-        assertEquals(1, script.events().afterChoices.size());
-        assertEquals(3, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        ScriptEvents events = script.events();
+
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(3, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         chains.applyTo(items);
         assertTrue(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         chains.removeFrom(items);
         assertFalse(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(0, script.events().itemRemoved.size());
+        assertEquals(0, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(0, events.itemDuration.size());
+        assertEquals(0, events.itemRemoved.size());
     }
 
     @Test
@@ -195,21 +208,26 @@ public class ScriptEventsTest {
         ActuatorMock actuator = new ActuatorMock();
         script.script(KeyReleaseSetup.class).prepare(actuator, chains);
 
-        assertEquals(1, script.events().afterChoices.size());
-        assertEquals(3, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        ScriptEvents events = script.events();
+
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(3, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         chains.applyTo(items);
         assertTrue(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         chains.removeFrom(items.get(Toys.Collar));
         assertFalse(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(0, script.events().itemRemoved.size());
+        assertEquals(0, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(0, events.itemDuration.size());
+        assertEquals(0, events.itemRemoved.size());
     }
 
     @Test
@@ -222,23 +240,28 @@ public class ScriptEventsTest {
         ActuatorMock actuator = new ActuatorMock();
         script.script(KeyReleaseSetup.class).prepare(actuator, cuffs);
 
-        assertEquals(1, script.events().afterChoices.size());
-        assertEquals(3, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        ScriptEvents events = script.events();
+
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(3, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         cuffs.get(Toys.Humbler).apply();
         cuffs.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).apply();
 
         assertTrue(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(2, script.events().itemRemoved.size());
+        assertEquals(1, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemoved.size());
 
         cuffs.items(Toys.Collar).remove();
         assertFalse(actuator.active.get());
-        assertEquals(0, script.events().afterChoices.size());
-        assertEquals(0, script.events().itemApplied.size());
-        assertEquals(0, script.events().itemRemoved.size());
+        assertEquals(0, events.afterChoices.size());
+        assertEquals(0, events.itemApplied.size());
+        assertEquals(0, events.itemDuration.size());
+        assertEquals(0, events.itemRemoved.size());
     }
 
 }

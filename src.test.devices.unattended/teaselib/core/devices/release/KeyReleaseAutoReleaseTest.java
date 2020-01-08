@@ -63,9 +63,10 @@ public class KeyReleaseAutoReleaseTest extends KeyReleaseBaseTest {
 
                 // TODO Test doesn't detect restarted device because it just ends the test
                 // -> also control remaining duration
-                // - device will be unable to operate servos after about 2 hours due to low voltage,
+                // - when running on battery,
+                // device will be unable to operate servos after about 2 hours due to low voltage,
                 // then reset without being able to move the servos anymore
-                // TODO Need to turn off servos when not needed
+                // TODO turn off servos when not needed
                 long previousRemaining = actuator.remaining(TimeUnit.SECONDS);
                 while (true) {
                     assertTrue(actuator.connected());

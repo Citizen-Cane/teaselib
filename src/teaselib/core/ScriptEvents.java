@@ -12,6 +12,7 @@ public class ScriptEvents {
     public final EventSource<StateChangedEventArgs> stateApplied = new EventSource<>("State applied");
     public final EventSource<StateChangedEventArgs> stateRemoved = new EventSource<>("State removed");
     public final EventSource<ItemChangedEventArgs> itemApplied = new EventSource<>("Item applied");
+    public final EventSource<ItemChangedEventArgs> itemDuration = new EventSource<>("Item duration");
     public final EventSource<ItemChangedEventArgs> itemRemoved = new EventSource<>("Item removed");
 
     public ScriptEventSource when(Item item) {
@@ -37,6 +38,10 @@ public class ScriptEvents {
 
         public ScriptEventTarget applied() {
             return new ScriptEventTarget(this, itemApplied);
+        }
+
+        public ScriptEventTarget duration() {
+            return new ScriptEventTarget(this, itemDuration);
         }
 
         public ScriptEventTarget removed() {
@@ -71,7 +76,7 @@ public class ScriptEvents {
     }
 
     public static class ItemChangedEventArgs extends ScriptEventArgs {
-        final Item item;
+        public final Item item;
 
         public ItemChangedEventArgs(Item item) {
             this.item = item;

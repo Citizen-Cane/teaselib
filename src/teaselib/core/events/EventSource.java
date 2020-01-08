@@ -2,6 +2,7 @@ package teaselib.core.events;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +29,16 @@ public class EventSource<T extends EventArgs> {
         this.completing = completing;
     }
 
-    public synchronized void add(Event<T> delegate) {
+    public synchronized Event<T> add(Event<T> delegate) {
         delegates.add(delegate);
+        return delegate;
     }
 
     public synchronized void remove(Event<T> delegate) {
         boolean removed = delegates.remove(delegate);
         if (!removed) {
-            throw new IllegalArgumentException("Event " + delegate.toString() + " has already been removed.");
+            throw new NoSuchElementException(
+                    "Event " + delegate + " has already been removed from event source '" + name + "'.");
         }
     }
 

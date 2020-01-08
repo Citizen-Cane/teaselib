@@ -35,7 +35,8 @@ public:
       Armed,
       Holding,
       Error,
-      Active,
+      CountDown,
+      AwaitRelease,
       Released
     };
 
@@ -108,7 +109,7 @@ private:
 
   void updatePulse(Actuator::Status status);
   void updatePulse(const int r, const int g, const int b, const int pulseDuration);
-  void updatePulse(const int frequencyMillis);
+  void updatePulsePeriod(const int periodMillis);
   int nextRelease();
   unsigned int runningReleases();
   unsigned int createCountMessage(unsigned int count, char* buffer);

@@ -97,6 +97,10 @@ public class ScriptEvents {
             target.eventSource.add(this);
         }
 
+        public Items items() {
+            return source.items;
+        }
+
         @Override
         public void run(ItemChangedEventArgs eventArgs) throws Exception {
             if (!inProgress && source.items.contains(eventArgs.item)) {

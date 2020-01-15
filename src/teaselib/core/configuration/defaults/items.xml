@@ -78,20 +78,24 @@
 		<Item item="Ankle_Restraints" guid="ankle_restraints" displayName="Ankle restraints">
 			<Attribute> Features.Detachable </Attribute>
 			<Attribute> Material.Leather </Attribute>
+			<Attribute> Features.Lockable </Attribute>
 		</Item>
 
 		<Item item="Wrist_Restraints" guid="wrist_restraints" displayName="Wrist restraints">
 			<Attribute> Features.Detachable </Attribute>
 			<Attribute> Material.Leather </Attribute>
+			<Attribute> Features.Lockable </Attribute>
 		</Item>
 
 		<Item item="Ankle_Restraints" guid="ankle_cuffs" displayName="Ankle cuffs">
 			<Attribute> Features.Coupled </Attribute>
+			<Attribute> Features.Lockable </Attribute>
 			<Attribute> Material.Metal </Attribute>
 		</Item>
 
 		<Item item="Wrist_Restraints" guid="handcuffs" displayName="Hand cuffs">
 			<Attribute> Features.Coupled </Attribute>
+			<Attribute> Features.Lockable </Attribute>
 			<Attribute> Material.Metal </Attribute>
 		</Item>
 

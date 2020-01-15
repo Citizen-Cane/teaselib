@@ -1,8 +1,20 @@
 package teaselib.core.devices.release;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static teaselib.Features.Detachable;
+import static teaselib.Features.Lockable;
+import static teaselib.Toys.Ankle_Restraints;
+import static teaselib.Toys.Collar;
+import static teaselib.Toys.Humbler;
+import static teaselib.Toys.Wrist_Restraints;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -15,6 +27,7 @@ import teaselib.ScriptFunction;
 import teaselib.ScriptFunction.Relation;
 import teaselib.State.Options;
 import teaselib.TeaseScript;
+import teaselib.Toys;
 import teaselib.core.Script;
 import teaselib.core.ScriptEventArgs;
 import teaselib.core.ScriptEvents.ScriptEventAction;
@@ -36,8 +49,16 @@ import teaselib.util.Items;
  */
 public class KeyReleaseSetup extends TeaseScript {
 
+    public final Map<Items, Long> itemDurationSeconds = new LinkedHashMap<>();
+    public final Map<Items, Actuator> itemActuators = new HashMap<>();
+    public final Map<Actuator, Items> actuatorItems = new HashMap<>();
+
+    public final Map<Actuator, ScriptEventAction> handledItems = new HashMap<>();
+    public final Map<Actuator, Event<ScriptEventArgs>> installedRenewHoldEvents = new HashMap<>();
+
     public KeyReleaseSetup(TeaseScript script) {
         super(script, getOrDefault(script, Locale.ENGLISH));
+        defaults();
     }
 
     private static Actor getOrDefault(Script script, Locale locale) {
@@ -72,6 +93,10 @@ public class KeyReleaseSetup extends TeaseScript {
         return DeviceCache.qualifiedName(actuator).replace(' ', '_');
     }
 
+    // TODO call this on startup
+    // TODO call on connecting the device (which includes startup) from onDeviceConnect(Actuators)
+    // TODO restore actuators from multiple devices depending on handled domain and running actuator
+    // - device may sleep, but handled items in KeyRelease domain are applied to the actuator name
     public void restore() {
         KeyRelease keyRelease = getKeyReleaseDevice();
         if (keyRelease.active()) {
@@ -96,14 +121,14 @@ public class KeyReleaseSetup extends TeaseScript {
             Options appliedToItems = items.apply();
             Duration remaining = duration(actuator.remaining(TimeUnit.SECONDS), TimeUnit.SECONDS);
 
+            Event<ScriptEventArgs> renewHoldEvent;
             if (!remaining.expired()) {
                 appliedToItems.over(remaining);
+                renewHoldEvent = null;
             } else {
-                Event<ScriptEventArgs> renewHoldEvent = installRenewHoldEvent(actuator);
-                events.when(items).removed().thenOnce(() -> events.afterChoices.remove(renewHoldEvent));
+                renewHoldEvent = installRenewHoldEvent(actuator);
             }
-
-            releaseOnRemove(actuator, items, handled);
+            installReleaseAction(actuator, items, handled, null, renewHoldEvent);
         }
     }
 
@@ -146,9 +171,139 @@ public class KeyReleaseSetup extends TeaseScript {
         return teaseLib.devices.get(KeyRelease.class).getDefaultDevice();
     }
 
-    public void prepare(Actuator actuator, Item item) {
-        prepare(actuator, new Items(item));
+    /**
+     * Sets default for items that can be locked.
+     * <p>
+     * All restraints are considered lockable since this is the main purpose of these devices.
+     * <p>
+     * Other potentially lockable items are requested explicitly.
+     */
+    public void defaults() {
+        // TODO Decide whether to support different kinds of restraints,
+        // or find out how to handle them without explicit queries
+        // - force scripts to use matching(Features.Coupled/Features.Detachable)
+        // - add anklets/wristlets as explicit type to Accessoires, however they're still connectable as
+        // - find a way to specify that anklets/wristlets can be detached -> via removeFrom Hands/Wrists Tied
+        // -> blocks applying/removing all states with applying/removing an item - but that feature isn't needed anyway
+        Items cuffs = new Items( //
+                items(Wrist_Restraints, Ankle_Restraints).matching(Detachable), //
+                items(Collar, Humbler).matching(Lockable) //
+        );
+
+        Items handcuffs = new Items( //
+                items(Wrist_Restraints, Ankle_Restraints).without(Detachable), //
+                items(Toys.Chains).matching(Lockable) //
+        );
+
+        assign(handcuffs, 1, TimeUnit.HOURS);
+        assign(cuffs, 2, TimeUnit.HOURS);
     }
+
+    public void clearAssignments() {
+        itemDurationSeconds.clear();
+    }
+
+    public void assign(Items items, long duration, TimeUnit unit) {
+        itemDurationSeconds.put(items, TimeUnit.SECONDS.convert(duration, unit));
+    }
+
+    //
+    // TODO listen to device connect/disconnect events
+    //
+
+    // TODO automatically Items.prefer() lockable items as long as a key release device is available
+    public void onDeviceConnect(Actuators actuators) {
+        for (Entry<Items, Long> entry : itemDurationSeconds.entrySet()) {
+            Optional<Actuator> actuator = actuators.get(entry.getValue(), TimeUnit.SECONDS);
+            if (actuator.isPresent()) {
+                bind(actuator.get(), entry.getKey());
+            }
+        }
+    }
+
+    public void onDeviceDisconnect(Actuators actuators) {
+        for (Actuator actuator : actuators) {
+            clear(actuator);
+        }
+    }
+
+    /**
+     * Assign items to a key
+     * 
+     * @param actuator
+     *            Actuator to hold the key
+     * @param items
+     *            Items to be locked with the key
+     */
+    private void bind(Actuator actuator, Items items) {
+        clear(actuator);
+
+        itemActuators.put(items, actuator);
+        actuatorItems.put(actuator, items);
+
+        installApplyLock(actuator, items);
+    }
+
+    /**
+     * Obtain the key and attach it to a previously assigned actuator.
+     * <p>
+     * The countdown will be started when {code items.apply().over(...)} is called. So to start the countdown after the
+     * next prompt, use:
+     * 
+     * <pre>
+     *     public void startCountdownAfterPrompt(Message instructions, Items restraints, Answer ready, Duration duration) {
+     *         say(instructions);
+     *         State.Options applied = items.apply();
+     *         reply(ready);
+     *         applied.over(duration);
+     *     }
+     * }
+     * </pre>
+     * 
+     * @param items
+     *            The items to be locked.
+     */
+    public void prepare(Items items) {
+        // TODO show setup dialog if gadget is available or key release device running -> display setup instructions
+        show(items);
+
+        List<Actuator> all = assignedActuators(items);
+        if (all.size() > 1) {
+            throw new IllegalArgumentException(
+                    "Items assigned to multiple keys - use prefer() or matching() to narrow items");
+        } else if (all.size() == 1) {
+            Actuator actuator = all.get(0);
+            actuator.arm();
+            Event<ScriptEventArgs> renewHoldEvent = installRenewHoldEvent(actuator);
+            installedRenewHoldEvents.put(actuator, renewHoldEvent);
+        }
+    }
+
+    private List<Actuator> assignedActuators(Items items) {
+        return handledItems.entrySet().stream().filter(entry -> !entry.getValue().items().intersection(items).isEmpty())
+                .map(Entry<Actuator, ScriptEventAction>::getKey).collect(Collectors.toList());
+    }
+
+    private void clear(Actuator actuator) {
+        Items items = actuatorItems.remove(actuator);
+        itemActuators.remove(items);
+
+        if (handledItems.containsKey(actuator)) {
+            handledItems.remove(actuator);
+        }
+    }
+
+    Optional<Actuator> getActuator(Item item) {
+        return itemActuators.entrySet().stream().filter(entry -> entry.getKey().contains(item))
+                .map(Entry<Items, Actuator>::getValue).findAny();
+    }
+
+    Optional<Actuator> getActuator(Items items) {
+        return itemActuators.entrySet().stream().filter(entry -> entry.getKey().containsAll(items))
+                .map(Entry<Items, Actuator>::getValue).findAny();
+    }
+
+    // ---------------------- old -------------------------------
 
     // TODO Add defaults for lockable items:
     // long actuator: detachable & lockable ankle & wrist cuffs, lockable collar/humbler/etc.
@@ -159,7 +314,11 @@ public class KeyReleaseSetup extends TeaseScript {
     // + script releases when appropriate, or
     // script awaits item().expired() (or remaining - x), to comment key release before the key drops.
 
-    // TODO Remove use of actuator
+    @Deprecated
+    public void prepare(Actuator actuator, Item item) {
+        prepare(actuator, new Items(item));
+    }
+
     /**
      * 
      * Prepare the actuator for start/release when applying/removing the items.
@@ -169,56 +328,69 @@ public class KeyReleaseSetup extends TeaseScript {
      *            The items to link the actuator to. The holding duration is persisted in
      *            items.of(domain(Gadgets.Key_Release), and the items are applied to state(actuator.getName()).
      */
+    @Deprecated
     public void prepare(Actuator actuator, Items items) {
-        show(items);
-        actuator.arm();
+        bind(actuator, items);
+        prepare(items);
+    }
+
+    private void installApplyLock(Actuator actuator, Items items) {
+        ScriptEventAction action = events.when(items).applied().thenOnce(() -> {
+            handledItems.remove(actuator);
+            lock(actuator, items);
+        });
+        handledItems.put(actuator, action);
+    }
+
+    private void lock(Actuator actuator, Items items) {
+        if (!actuator.isRunning()) {
+            actuator.arm();
+        }
 
         Items handled = items.of(domain(Gadgets.Key_Release));
-        handled.applyTo(actuatorName(actuator)).remember();
+        if (!handled.anyApplied()) {
+            actuator.start();
+            renewHold(actuator);
+            handled.applyTo(actuatorName(actuator)).remember();
 
-        events.when(items).applied().thenOnce(actuator::start);
-        events.when(items).applied().thenOnce(() -> renewHold(actuator));
-        events.when(items).applied().thenOnce(() -> handled.applyTo(actuatorName(actuator)));
+            Event<ScriptEventArgs> renewHoldEvent = installedRenewHoldEvents.get(actuator);
+            if (renewHoldEvent == null) {
+                renewHoldEvent = installRenewHoldEvent(actuator);
+            }
+            ScriptEventAction startCountDownAction = installCountdownAction(actuator, items, renewHoldEvent);
 
-        Event<ScriptEventArgs> renewHoldEvent = installRenewHoldEvent(actuator);
-        ScriptEventAction startCountDownAction = installCountdownAction(actuator, items);
-        ScriptEventAction removeRenewHoldAction = installRemoveHoldAction(items, renewHoldEvent);
-
-        releaseOnRemove(actuator, items, handled);
-        cleanupOnRemove(items, renewHoldEvent, startCountDownAction, removeRenewHoldAction);
+            installReleaseAction(actuator, items, handled, startCountDownAction, renewHoldEvent);
+        }
     }
 
-    private ScriptEventAction installRemoveHoldAction(Items items, Event<ScriptEventArgs> renewHoldEvent) {
-        return events.when(items).duration().thenOnce(() -> events.afterChoices.remove(renewHoldEvent));
-    }
-
-    private ScriptEventAction installCountdownAction(Actuator actuator, Items items) {
-        return events.when(items).duration().thenOnce(() -> startCountDown(actuator, items));
+    private ScriptEventAction installCountdownAction(Actuator actuator, Items items,
+            Event<ScriptEventArgs> renewHoldEvent) {
+        return events.when(items).duration().thenOnce(() -> {
+            events.afterChoices.remove(renewHoldEvent);
+            startCountDown(actuator, items);
+        });
     }
 
     private Event<ScriptEventArgs> installRenewHoldEvent(Actuator actuator) {
         return events.afterChoices.add(eventArgs -> renewHold(actuator));
     }
 
-    private void releaseOnRemove(Actuator actuator, Items items, Items handled) {
+    private void installReleaseAction(Actuator actuator, Items items, Items handled,
+            ScriptEventAction startCountDownEvent, Event<ScriptEventArgs> renewHold) {
         events.when(items).removed().thenOnce(() -> {
             actuator.release();
             handled.removeFrom(actuatorName(actuator));
-        });
-    }
 
-    private void cleanupOnRemove(Items items, Event<ScriptEventArgs> renewHold, ScriptEventAction startCountDownEvent,
-            ScriptEventAction removeRenewHoldEvent) {
-        events.when(items).removed().thenOnce(() -> {
-            if (events.afterChoices.contains(renewHold)) {
-                events.afterChoices.remove(renewHold);
-            }
             if (events.itemDuration.contains(startCountDownEvent)) {
                 events.itemDuration.remove(startCountDownEvent);
             }
-            if (events.itemDuration.contains(removeRenewHoldEvent)) {
-                events.itemDuration.remove(removeRenewHoldEvent);
+
+            if (events.afterChoices.contains(renewHold)) {
+                events.afterChoices.remove(renewHold);
+                installedRenewHoldEvents.remove(actuator);
             }
+
+            installApplyLock(actuator, items);
         });
     }
 

@@ -1,7 +1,11 @@
 package teaselib.core.devices.release;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.Assert.*;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +14,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import teaselib.Features;
 import teaselib.Message;
 import teaselib.Toys;
 import teaselib.core.ScriptEvents;
@@ -24,118 +29,119 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     final TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
     final ScriptEvents events = script.events();
+    private KeyReleaseSetup keyReleaseSetup;
 
-    KeyRelease keyRelease;
-    Actuator actuator;
-    long availableSeconds;
+    KeyRelease keyReleaseDevice;
 
     @Before
     public void before() {
-        keyRelease = connectDefaultDevice(script.teaseLib.devices);
-        releaseAllRunningActuators(keyRelease);
-
-        // TODO query default time from device - for now using release default time of 1h
-        actuator = keyRelease.actuators().available().get(requestedDurationSeconds, SECONDS).orElseThrow();
-        availableSeconds = actuator.available(SECONDS);
-
+        keyReleaseDevice = connectDefaultDevice(script.teaseLib.devices);
+        releaseAllRunningActuators(keyReleaseDevice);
+        keyReleaseSetup = script.script(KeyReleaseSetup.class);
+        Actuators actuators = keyReleaseDevice.actuators();
+        keyReleaseSetup.onDeviceConnect(actuators);
         script.debugger.resumeTime();
-        assertFalse(actuator.isRunning());
-        assertEquals("Didn't get requested actuator", requestedDurationSeconds, availableSeconds);
-        assertEquals(0, actuator.remaining(SECONDS));
+    }
+
+    @After
+    public void detachDevice() {
+        keyReleaseSetup.onDeviceDisconnect(keyReleaseDevice.actuators());
     }
 
     @After
     public void releaseAllAfterwards() {
-        releaseAllRunningActuators(keyRelease);
+        releaseAllRunningActuators(keyReleaseDevice);
+    }
+
+    private long availableSeconds(Items items) {
+        return keyReleaseSetup.getActuator(items).orElseThrow().available(SECONDS);
     }
 
     @Test
     public void testScriptEventsWithItem() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
-        Item restraints = cuffs.get();
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
+        long availableSeconds = availableSeconds(cuffs);
 
         script.say("Arm", Message.Delay10s);
-        script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
-        assertArmedAndHolding();
+        keyReleaseSetup.prepare(cuffs);
+        assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply();
         assertEquals("Hold renew event removed", 1, events.afterChoices.size());
-        assertApplied(availableSeconds);
+        assertApplied(cuffs, availableSeconds);
 
         script.say("Releasing key", Message.Delay10s);
         cuffs.remove();
-        assertEquals("Hold renew event not removed", 0, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(0, events.itemRemoved.size());
-
-        assertFalse(actuator.isRunning());
-        assertEquals(0, actuator.remaining(SECONDS), 1.0);
+        assertReleased(cuffs);
     }
 
     @Test
     public void testScriptEventsWithItemOverDuration() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
-        Item restraints = cuffs.get();
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
 
         script.say("Arm", Message.Delay10s);
-        script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
-        assertArmedAndHolding();
+        keyReleaseSetup.prepare(cuffs);
+        assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply().over(scheduledDurationSeconds, SECONDS);
         assertEquals("Hold renew event not removed after setting duration", 0, events.afterChoices.size());
-        assertApplied(scheduledDurationSeconds);
+        assertApplied(cuffs, scheduledDurationSeconds);
 
         script.say("Releasing key", Message.Delay10s);
         cuffs.remove();
-        assertReleased();
+        assertReleased(cuffs);
     }
 
     @Test
     public void testScriptEventsWithItems() {
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
+        long availableSeconds = availableSeconds(cuffs);
 
         script.say("Arm", Message.Delay10s);
-        script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
-        assertArmedAndHolding();
+        keyReleaseSetup.prepare(cuffs);
+        assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
-        restraints.apply();
+        cuffs.apply();
         assertEquals("Hold renew event removed", 1, events.afterChoices.size());
-        assertApplied(availableSeconds);
+        assertApplied(cuffs, availableSeconds);
 
         script.say("Releasing key", Message.Delay10s);
-        Item wristCuffs = restraints.get(Toys.Wrist_Restraints);
+        Item wristCuffs = cuffs.get(Toys.Wrist_Restraints);
         wristCuffs.remove();
-        assertReleased();
+        assertReleased(cuffs);
     }
 
     @Test
     public void testScriptEventsWithItemsOverDuration() {
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
 
         script.say("Arm", Message.Delay10s);
-        script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
-        assertArmedAndHolding();
+        keyReleaseSetup.prepare(cuffs);
+        assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
-        restraints.apply().over(scheduledDurationSeconds, SECONDS);
+        cuffs.apply().over(scheduledDurationSeconds, SECONDS);
         assertEquals("Hold renew event not removed after setting duration", 0, events.afterChoices.size());
-        assertApplied(scheduledDurationSeconds);
+        assertApplied(cuffs, scheduledDurationSeconds);
 
         script.say("Releasing key", Message.Delay10s);
-        Item wristCuffs = restraints.get(Toys.Wrist_Restraints);
+        Item wristCuffs = cuffs.get(Toys.Wrist_Restraints);
         wristCuffs.remove();
-        assertReleased();
+        assertReleased(cuffs);
     }
 
-    private void assertArmedAndHolding() {
+    private void assertArmedAndHolding(Items items) {
         assertEquals(1, events.afterChoices.size());
-        assertEquals(3, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        assertEquals(keyReleaseDevice.actuators().size(), events.itemApplied.size());
+        assertEquals(0, events.itemDuration.size());
+        assertEquals(0, events.itemRemoved.size());
         script.reply("Keys placed, #title");
+
+        Actuator actuator = keyReleaseSetup.getActuator(items.get()).orElseThrow();
+        assertTrue(actuator.isRunning());
 
         script.say("Holding", Message.Delay10s);
         assertEquals("Hold duration not reset to default", requestedDurationSeconds, actuator.remaining(SECONDS), 1.0);
@@ -150,10 +156,11 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         script.say("Are you ready?", Message.Delay10s);
         script.completeAll();
         assertEquals(requestedDurationSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
-        assertTrue(actuator.isRunning());
     }
 
-    private void assertApplied(long scheduledSeconds) {
+    private void assertApplied(Items items, long scheduledSeconds) {
+        Actuator actuator = keyReleaseSetup.getActuator(items).orElseThrow();
+        assertTrue(actuator.isRunning());
         assertEquals("Release timer not reset", scheduledSeconds, actuator.remaining(SECONDS), 1.0);
 
         script.completeAll();
@@ -164,14 +171,16 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertEquals("Release timer wrong value", scheduledSeconds - 20.0, actuator.remaining(SECONDS), 1.0);
     }
 
-    private void assertReleased() {
+    private void assertReleased(Items items) {
+        Actuator actuator = keyReleaseSetup.getActuator(items).orElseThrow();
+        assertFalse(actuator.isRunning());
+        assertEquals(0, actuator.remaining(SECONDS), 1.0);
+
         assertEquals("Hold renew event not removed", 0, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
+        assertEquals(keyReleaseDevice.actuators().size(), events.itemApplied.size());
         assertEquals(0, events.itemDuration.size());
         assertEquals(0, events.itemRemoved.size());
 
-        assertFalse(actuator.isRunning());
-        assertEquals(0, actuator.remaining(SECONDS), 1.0);
     }
 
     ///////////////////////////////////////
@@ -180,18 +189,19 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     @Ignore
     // TODO Device becomes disconnected while sending command during sleep, but reconnect fails
     public void testScriptEventsWithItemsAndSleepWhileHolding() {
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        Actuator actuator = keyReleaseSetup.getActuator(cuffs).orElseThrow();
+        long availableSeconds = actuator.available(TimeUnit.SECONDS);
 
         script.say("Arm", Message.Delay10s);
-        script.script(KeyReleaseSetup.class).prepare(actuator, restraints);
-        ScriptEvents events = script.events();
+        keyReleaseSetup.prepare(cuffs);
         assertEquals(1, events.afterChoices.size());
         assertEquals(3, events.itemApplied.size());
         assertEquals(2, events.itemDuration.size());
         assertEquals(3, events.itemRemoved.size());
         script.reply("Keys placed, #title");
 
-        // Device will not react on commands
+        // Device will not react on commands afterwards
         actuator.sleep(15, SECONDS);
 
         script.say("Holding", Message.Delay10s, "Are you ready?");
@@ -200,12 +210,13 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Are you ready?", Message.Delay10s);
         script.completeAll();
+
         // Woken up
         assertEquals(availableSeconds - 20.0, actuator.remaining(TimeUnit.SECONDS), 1.0);
         assertTrue(actuator.isRunning());
 
         script.say("Starting release timer", Message.Delay10s);
-        restraints.apply();
+        cuffs.apply();
         assertEquals("Hold renew event removed", 1, events.afterChoices.size());
         assertEquals("Release timer not reset", availableSeconds, actuator.remaining(SECONDS), 1.0);
 
@@ -216,9 +227,9 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Releasing key", Message.Delay10s);
 
-        Item wristCuffs = restraints.get(Toys.Wrist_Restraints);
+        Item wristCuffs = cuffs.get(Toys.Wrist_Restraints);
         wristCuffs.remove();
-        assertReleased();
+        assertReleased(cuffs);
     }
 
 }

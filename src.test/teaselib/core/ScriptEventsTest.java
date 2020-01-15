@@ -1,23 +1,36 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import teaselib.Features;
 import teaselib.Toys;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.release.Actuator;
+import teaselib.core.devices.release.Actuators;
 import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
 public class ScriptEventsTest {
-    class ActuatorMock implements Actuator {
-        final AtomicBoolean active = new AtomicBoolean(false);
+    private TestScript script;
+    private Actuators actuators;
+    private KeyReleaseSetup keyReleaseSetup;
+
+    static class ActuatorMock implements Actuator {
+        final long availableSeconds;
+
+        public ActuatorMock(long availableDuration, TimeUnit unit) {
+            availableSeconds = TimeUnit.SECONDS.convert(availableDuration, unit);
+        }
 
         @Override
         public String getDevicePath() {
@@ -69,8 +82,7 @@ public class ScriptEventsTest {
         }
 
         @Override
-        public void start() {
-            active.set(true);
+        public void start() { // Mock
         }
 
         @Override
@@ -94,7 +106,7 @@ public class ScriptEventsTest {
 
         @Override
         public long available(TimeUnit unit) {
-            return 0;
+            return availableSeconds;
         }
 
         @Override
@@ -104,164 +116,244 @@ public class ScriptEventsTest {
 
         @Override
         public boolean release() {
-            return active.getAndSet(false);
+            return true;
         }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + (int) (availableSeconds ^ (availableSeconds >>> 32));
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            ActuatorMock other = (ActuatorMock) obj;
+            if (availableSeconds != other.availableSeconds)
+                return false;
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return availableSeconds + " seconds";
+        }
+
+    }
+
+    @Before
+    public void setupActuators() {
+        script = TestScript.getOne(new DebugSetup());
+        keyReleaseSetup = script.script(KeyReleaseSetup.class);
+        actuators = new Actuators(
+                Arrays.asList(new ActuatorMock(2, TimeUnit.HOURS), new ActuatorMock(1, TimeUnit.HOURS)));
+        keyReleaseSetup.onDeviceConnect(actuators);
+
+        assertEquals(2, keyReleaseSetup.itemDurationSeconds.size());
+        assertEquals(2, keyReleaseSetup.itemActuators.size());
+        assertEquals(2, keyReleaseSetup.actuatorItems.size());
+    }
+
+    @After
+    public void detachDevice() {
+        keyReleaseSetup.onDeviceDisconnect(actuators);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testKeyReleaseEventHandlingPrepareWithoutSelect() {
+        Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+
+        Items cuffs = items.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints);
+        script.script(KeyReleaseSetup.class).prepare(cuffs);
     }
 
     @Test
     public void testKeyReleaseEventHandlingRemoveAllItems() {
-        TestScript script = TestScript.getOne();
-        Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        Items cuffs = script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).matching(Features.Coupled);
+        keyReleaseSetup.prepare(cuffs);
+        assertArmedAndHolding();
 
-        ActuatorMock actuator = new ActuatorMock();
-        script.script(KeyReleaseSetup.class).prepare(actuator, items);
+        // TODO the items collection contains all elements, usually selects one
+        // -> leather restraints and cuffs are applied
+        // -> resolve by matching detachable (leather) or coupled (handcuffs) items Toys.Ankle_Restraints,
+        // Toys.Wrist_Restraints
+        // TODO matching break generic scripts that just apply
+        cuffs.apply();
+        // TODO generic items Toys.Ankle_Restraints, Toys.Wrist_Restraints are applied one after another
+        // -> triggers both actuators one after another
+        assertApplied();
 
-        ScriptEvents events = script.events();
-
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(3, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
-
-        items.apply();
-        assertTrue(actuator.active.get());
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
-
-        items.remove();
-        assertFalse(actuator.active.get());
-        assertEquals(0, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(0, events.itemDuration.size());
-        assertEquals(0, events.itemRemoved.size());
+        cuffs.remove();
+        assertIdle();
     }
 
     @Test
     public void testKeyReleaseEventHandlingRemoveOneItem() {
-        TestScript script = TestScript.getOne();
-        Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        Items items = new Items(
+                script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable), //
+                script.items(Toys.Collar) //
+        );
 
-        ActuatorMock actuator = new ActuatorMock();
-        script.script(KeyReleaseSetup.class).prepare(actuator, items);
-
-        ScriptEvents events = script.events();
-
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(3, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        keyReleaseSetup.prepare(items);
+        assertArmedAndHolding();
 
         items.apply();
-        assertTrue(actuator.active.get());
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        assertApplied();
 
         items.get(Toys.Wrist_Restraints).remove();
-        assertFalse(actuator.active.get());
-        assertEquals(0, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(0, events.itemDuration.size());
-        assertEquals(0, events.itemRemoved.size());
+        assertIdle();
     }
 
     @Test
     public void testKeyReleaseEventHandlingRemoveFromPeers() {
-        TestScript script = TestScript.getOne();
         Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
         Item chains = script.item(Toys.Chains);
 
-        ActuatorMock actuator = new ActuatorMock();
-        script.script(KeyReleaseSetup.class).prepare(actuator, chains);
-
-        ScriptEvents events = script.events();
-
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(3, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        keyReleaseSetup.prepare(new Items(chains));
+        assertArmedAndHolding();
 
         chains.applyTo(items);
-        assertTrue(actuator.active.get());
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        assertApplied();
 
         chains.removeFrom(items);
-        assertFalse(actuator.active.get());
-        assertEquals(0, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(0, events.itemDuration.size());
-        assertEquals(0, events.itemRemoved.size());
+        assertIdle();
     }
 
     @Test
     public void testKeyReleaseEventHandlingRemoveFromOnePeer() {
-        TestScript script = TestScript.getOne();
         Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
         Item chains = script.item(Toys.Chains);
 
-        ActuatorMock actuator = new ActuatorMock();
-        script.script(KeyReleaseSetup.class).prepare(actuator, chains);
-
-        ScriptEvents events = script.events();
-
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(3, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        keyReleaseSetup.prepare(new Items(chains));
+        assertArmedAndHolding();
 
         chains.applyTo(items);
-        assertTrue(actuator.active.get());
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        assertApplied();
 
         chains.removeFrom(items.get(Toys.Collar));
-        assertFalse(actuator.active.get());
-        assertEquals(0, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(0, events.itemDuration.size());
-        assertEquals(0, events.itemRemoved.size());
+        assertIdle();
     }
 
     @Test
     public void testKeyReleaseEventHandlingApplyBeforeRemoveOnly() {
-        TestScript script = TestScript.getOne();
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Humbler, Toys.Collar);
+        Items cuffs = new Items(
+                script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable), //
+                script.items(Toys.Humbler, Toys.Collar) //
+        );
 
         cuffs.get(Toys.Collar).apply(); // before, so this doesn't start the timer
+        assertIdle();
 
-        ActuatorMock actuator = new ActuatorMock();
-        script.script(KeyReleaseSetup.class).prepare(actuator, cuffs);
-
-        ScriptEvents events = script.events();
-
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(3, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        keyReleaseSetup.prepare(cuffs);
+        assertArmedAndHolding();
 
         cuffs.get(Toys.Humbler).apply();
         cuffs.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).apply();
 
-        assertTrue(actuator.active.get());
-        assertEquals(1, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
-        assertEquals(2, events.itemRemoved.size());
+        assertApplied();
 
         cuffs.items(Toys.Collar).remove();
-        assertFalse(actuator.active.get());
-        assertEquals(0, events.afterChoices.size());
-        assertEquals(0, events.itemApplied.size());
-        assertEquals(0, events.itemDuration.size());
-        assertEquals(0, events.itemRemoved.size());
+        cuffs.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).remove();
+        assertIdle();
+    }
+
+    @Test
+    public void testKeyReleaseDefaultHandlerRemoveAllItems() {
+        Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+
+        assertIdle();
+
+        items.apply();
+        assertApplied();
+
+        items.remove();
+        assertIdle();
+    }
+
+    @Test
+    public void testKeyReleaseDefaultHandlerRemoveOneItem() {
+        Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+
+        assertIdle();
+
+        items.apply();
+        assertApplied();
+
+        items.get(Toys.Wrist_Restraints).remove();
+        assertIdle();
+    }
+
+    @Test
+    public void testKeyReleaseDefaultHandlerRemoveFromPeers() {
+        Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        Item chains = script.item(Toys.Chains);
+
+        assertIdle();
+
+        chains.applyTo(items);
+        assertApplied();
+
+        chains.removeFrom(items);
+        assertIdle();
+    }
+
+    @Test
+    public void testKeyReleaseDefaultHandlerFromOnePeer() {
+        Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        Item chains = script.item(Toys.Chains);
+
+        assertIdle();
+
+        chains.applyTo(items);
+        assertApplied();
+
+        chains.removeFrom(items.get(Toys.Collar));
+        assertIdle();
+    }
+
+    @Test
+    public void testKeyReleaseDefaultHandlerApplyBeforeRemoveOnly() {
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Humbler, Toys.Collar);
+
+        cuffs.get(Toys.Collar).apply(); // before, so this doesn't start the timer
+        assertIdle();
+
+        cuffs.get(Toys.Humbler).apply();
+        cuffs.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).apply();
+        assertApplied();
+
+        cuffs.items(Toys.Collar).remove();
+        cuffs.items(Toys.Humbler).remove();
+        cuffs.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).remove();
+        assertIdle();
+    }
+
+    private void assertIdle() {
+        assertEquals(0, script.events().afterChoices.size());
+        assertEquals("Expected all apply hook active", actuators.size(), script.events().itemApplied.size());
+        assertEquals(0, script.events().itemDuration.size());
+        assertEquals(0, script.events().itemRemoved.size());
+    }
+
+    private void assertArmedAndHolding() {
+        assertEquals(1, script.events().afterChoices.size());
+        assertEquals("Expected all apply hook active", actuators.size(), script.events().itemApplied.size());
+        assertEquals(0, script.events().itemDuration.size());
+        assertEquals(0, script.events().itemRemoved.size());
+    }
+
+    private void assertApplied() {
+        assertEquals(1, script.events().afterChoices.size());
+        assertEquals("Expected apply hook removed", actuators.size() - 1L, script.events().itemApplied.size());
+        assertEquals(1, script.events().itemDuration.size());
+        assertEquals(1, script.events().itemRemoved.size());
     }
 
 }

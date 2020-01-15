@@ -1,7 +1,9 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.*;
-import static teaselib.core.state.AbstractProxy.*;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.state.AbstractProxy.removeProxies;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -259,6 +261,14 @@ public class Items implements Iterable<Item> {
 
     public boolean contains(Item item) {
         return elements.contains(item);
+    }
+
+    public boolean containsAll(Items items) {
+        return elements.containsAll(items.elements);
+    }
+
+    public Items intersection(Items items) {
+        return new Items(elements.stream().distinct().filter(items::contains).collect(toList()));
     }
 
     private <S> boolean containsImpl(S item) {

@@ -211,7 +211,7 @@ public class KeyReleaseSetup extends TeaseScript {
     // TODO listen to device connect/disconnect events
     //
 
-    // TODO automatically Items.prefer() lockable items as long as a key release device is available
+    // TODO prefer lockable items as long as a key release device is available
     public void onDeviceConnect(Actuators actuators) {
         for (Entry<Items, Long> entry : itemDurationSeconds.entrySet()) {
             Optional<Actuator> actuator = actuators.get(entry.getValue(), TimeUnit.SECONDS);
@@ -244,6 +244,19 @@ public class KeyReleaseSetup extends TeaseScript {
         installApplyLock(actuator, items);
     }
 
+    public boolean canPrepare(Item item) {
+        return canPrepare(new Items(item));
+    }
+
+    public boolean canPrepare(Items items) {
+        List<Actuator> all = assignedActuators(items);
+        return all.size() == 1;
+    }
+
+    public boolean prepare(Item item) {
+        return prepare(new Items(item));
+    }
+
     /**
      * Obtain the key and attach it to a previously assigned actuator.
      * <p>
@@ -263,20 +276,26 @@ public class KeyReleaseSetup extends TeaseScript {
      * @param items
      *            The items to be locked.
      */
-    public void prepare(Items items) {
+    public boolean prepare(Items items) {
+        List<Actuator> actuators = assignedActuators(items);
+        if (actuators.size() > 1) {
+            throw new IllegalArgumentException(
+                    "Items assigned to multiple keys - use prefer() or matching() to narrow items");
+        } else if (actuators.size() == 1) {
+            prepare(items, actuators.get(0));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void prepare(Items items, Actuator actuator) {
         // TODO show setup dialog if gadget is available or key release device running -> display setup instructions
         show(items);
 
-        List<Actuator> all = assignedActuators(items);
-        if (all.size() > 1) {
-            throw new IllegalArgumentException(
-                    "Items assigned to multiple keys - use prefer() or matching() to narrow items");
-        } else if (all.size() == 1) {
-            Actuator actuator = all.get(0);
-            actuator.arm();
-            Event<ScriptEventArgs> renewHoldEvent = installRenewHoldEvent(actuator);
-            installedRenewHoldEvents.put(actuator, renewHoldEvent);
-        }
+        actuator.arm();
+        Event<ScriptEventArgs> renewHoldEvent = installRenewHoldEvent(actuator);
+        installedRenewHoldEvents.put(actuator, renewHoldEvent);
     }
 
     private List<Actuator> assignedActuators(Items items) {
@@ -303,37 +322,6 @@ public class KeyReleaseSetup extends TeaseScript {
                 .map(Entry<Items, Actuator>::getValue).findAny();
     }
 
-    // ---------------------- old -------------------------------
-
-    // TODO Add defaults for lockable items:
-    // long actuator: detachable & lockable ankle & wrist cuffs, lockable collar/humbler/etc.
-    // short actuator: chains, coupled hand/ankle cuffs, anything that restricts posture
-    //
-    // + Script may set duration for lockable items, or not
-    // -> setup may override duration with Math.min(scriptDuration, actuator.remaining())
-    // + script releases when appropriate, or
-    // script awaits item().expired() (or remaining - x), to comment key release before the key drops.
-
-    @Deprecated
-    public void prepare(Actuator actuator, Item item) {
-        prepare(actuator, new Items(item));
-    }
-
-    /**
-     * 
-     * Prepare the actuator for start/release when applying/removing the items.
-     * 
-     * @param actuator
-     * @param items
-     *            The items to link the actuator to. The holding duration is persisted in
-     *            items.of(domain(Gadgets.Key_Release), and the items are applied to state(actuator.getName()).
-     */
-    @Deprecated
-    public void prepare(Actuator actuator, Items items) {
-        bind(actuator, items);
-        prepare(items);
-    }
-
     private void installApplyLock(Actuator actuator, Items items) {
         ScriptEventAction action = events.when(items).applied().thenOnce(() -> {
             handledItems.remove(actuator);
@@ -344,6 +332,7 @@ public class KeyReleaseSetup extends TeaseScript {
 
     private void lock(Actuator actuator, Items items) {
         if (!actuator.isRunning()) {
+            // TODO display instructions when arming on apply
             actuator.arm();
         }
 

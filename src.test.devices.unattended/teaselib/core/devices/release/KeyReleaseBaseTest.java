@@ -1,6 +1,7 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,20 +28,22 @@ public class KeyReleaseBaseTest {
         }
     }
 
-    public static KeyRelease connectDefaultDevice() {
+    public static KeyRelease getDefaultDevice() {
         Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
-        return connectDefaultDevice(devices);
-    }
-
-    public static KeyRelease connectDefaultDevice(Devices devices) {
         DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
-        KeyRelease keyRelease = deviceCache.getDefaultDevice();
-        connect(keyRelease);
-        return keyRelease;
+        return deviceCache.getDefaultDevice();
     }
 
-    public static Actuators connect(KeyRelease keyRelease) {
-        assertTrue("No KeyRelease device found", DeviceCache.connect(keyRelease, 0.0));
+    public static boolean connect(KeyRelease keyRelease, double secondsToWait) {
+        return DeviceCache.connect(keyRelease, secondsToWait);
+    }
+
+    public static Actuators assertConnected(KeyRelease keyRelease) {
+        return assertConnected(keyRelease, 0.0);
+    }
+
+    public static Actuators assertConnected(KeyRelease keyRelease, double seconds) {
+        assertTrue("No KeyRelease device found:" + keyRelease, DeviceCache.connect(keyRelease, seconds));
         assertTrue(keyRelease.connected());
         logger.info(keyRelease.getName());
         assertTrue(keyRelease.active());

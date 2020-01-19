@@ -1,7 +1,9 @@
 package teaselib.core.devices.release;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.Assert.*;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -20,11 +22,12 @@ public class KeyReleaseAutoReleaseTest extends KeyReleaseBaseTest {
 
     static final long requestedDurationSeconds = HOURS.toSeconds(1);
 
-    final KeyRelease keyRelease = connectDefaultDevice();
+    final KeyRelease keyRelease = getDefaultDevice();
     final Actuators actuators = keyRelease.actuators();
 
     @Before
     public void before() {
+        assertConnected(keyRelease);
         releaseAllRunningActuators(keyRelease);
 
         assertTrue("All actuators still active", actuators.available().size() > 0);
@@ -53,7 +56,7 @@ public class KeyReleaseAutoReleaseTest extends KeyReleaseBaseTest {
     private void awaitAutoRelease(Consumer<Actuator> test) throws InterruptedException {
         ExecutorService executor = NamedExecutorService.newFixedThreadPool(actuators.size(), "test", 0,
                 TimeUnit.MINUTES);
-        for (final Actuator actuator : connect(keyRelease)) {
+        for (final Actuator actuator : assertConnected(keyRelease)) {
             executor.submit(() -> {
                 test.accept(actuator);
 

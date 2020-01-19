@@ -9,16 +9,34 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.devices.Devices;
+import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.remote.RemoteDeviceMessage;
 import teaselib.core.devices.remote.RemoteDevices;
 
 public class KeyRelease implements Device, Device.Creatable {
     private static final class MyDeviceFactory extends DeviceFactory<KeyRelease> {
+        DeviceFactoryListener<LocalNetworkDevice> forwardEvents = new DeviceFactoryListener<LocalNetworkDevice>() {
+            @Override
+            public void deviceConnected(DeviceEvent<LocalNetworkDevice> e) {
+                MyDeviceFactory.this.fireDeviceConnected(DeviceCache.createDevicePath(DeviceClassName, e.devicePath),
+                        KeyRelease.class);
+            }
+
+            @Override
+            public void deviceDisconnected(DeviceEvent<LocalNetworkDevice> e) {
+                MyDeviceFactory.this.fireDeviceDisconnected(DeviceCache.createDevicePath(DeviceClassName, e.devicePath),
+                        KeyRelease.class);
+            }
+        };
+
         private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
+            devices.get(LocalNetworkDevice.class).addDeviceListener(forwardEvents);
         }
 
         @Override
@@ -154,6 +172,7 @@ public class KeyRelease implements Device, Device.Creatable {
     @Override
     public void close() {
         remoteDevice.close();
+        factory.removeDevice(getDevicePath());
     }
 
     @Override
@@ -291,6 +310,6 @@ public class KeyRelease implements Device, Device.Creatable {
 
     @Override
     public String toString() {
-        return remoteDevice.getDescription();
+        return getDevicePath();
     }
 }

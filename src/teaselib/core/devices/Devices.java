@@ -7,14 +7,15 @@ import java.util.Map;
 import teaselib.core.configuration.Configuration;
 
 public class Devices {
-    private final Map<Class<?>, DeviceCache<? extends Device>> deviceClasses = new HashMap<Class<?>, DeviceCache<?>>();
-    private Object configuration;
+    private final Map<Class<?>, DeviceCache<? extends Device>> deviceClasses = new HashMap<>();
+    private final Map<String, DeviceCache<? extends Device>> deviceClassNames = new HashMap<>();
+    private final Configuration configuration;
 
-    public Devices(Object configuration) {
+    public Devices(Configuration configuration) {
         this.configuration = configuration;
     }
 
-    public <T extends Device.Creatable> DeviceCache<T> get(Class<T> deviceClass) {
+    public <T extends Device> DeviceCache<T> get(Class<T> deviceClass) {
         if (deviceClasses.containsKey(deviceClass)) {
             @SuppressWarnings("unchecked")
             DeviceCache<T> deviceCache = (DeviceCache<T>) deviceClasses.get(deviceClass);
@@ -25,10 +26,19 @@ public class Devices {
                 @SuppressWarnings("unchecked")
                 DeviceCache<T> deviceCache = (DeviceCache<T>) method.invoke(this.getClass(), this, configuration);
                 deviceClasses.put(deviceClass, deviceCache);
+                deviceCache.getFactoryClassNames().stream().forEach(name -> deviceClassNames.put(name, deviceCache));
                 return deviceCache;
             } catch (ReflectiveOperationException e) {
-                throw new RuntimeException(e);
+                throw new UnsupportedOperationException(e);
             }
         }
     }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Device> T get(String devicePath) {
+        String deviceClass = DeviceCache.getDeviceClass(devicePath);
+        DeviceCache<? extends Device> deviceCache = deviceClassNames.get(deviceClass);
+        return (T) deviceCache.getDevice(devicePath);
+    }
+
 }

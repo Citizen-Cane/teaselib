@@ -33,7 +33,7 @@ public class NetworkDeviceDiscoveryTest {
         LocalNetworkDeviceDiscoveryBroadcast localNetworkDeviceDiscoveryBroadcast = new LocalNetworkDeviceDiscoveryBroadcast();
         try {
             for (InterfaceAddress interfaceAddress : localNetworkDeviceDiscoveryBroadcast.networks()) {
-                logger.info("Sending broadcast message to " + interfaceAddress.getBroadcast().toString());
+                logger.info("Sending broadcast message to {}", interfaceAddress.getBroadcast());
 
                 UDPConnection connection = new UDPConnection(interfaceAddress.getBroadcast(), 666);
                 try {

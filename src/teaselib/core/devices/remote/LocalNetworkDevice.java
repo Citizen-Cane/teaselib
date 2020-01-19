@@ -5,6 +5,7 @@ package teaselib.core.devices.remote;
 
 import java.io.IOException;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
 
 /**
@@ -49,14 +51,10 @@ public class LocalNetworkDevice extends RemoteDevice {
      */
     private static final int SocketTimeoutMillis = 2000;
 
-    private static LocalNetworkDeviceFactory Factory;
-
     public static synchronized LocalNetworkDeviceFactory getDeviceFactory(Devices devices,
             Configuration configuration) {
-        if (Factory == null) {
-            Factory = new LocalNetworkDeviceFactory(DeviceClassName, devices, configuration);
-        }
-        return Factory;
+        return new LocalNetworkDeviceFactory(DeviceClassName, devices, configuration);
+
     }
 
     private final String name;
@@ -66,9 +64,13 @@ public class LocalNetworkDevice extends RemoteDevice {
 
     private UDPConnection connection;
 
-    LocalNetworkDevice(String name, UDPConnection connection, String serviceName, String description, String version) {
+    private DeviceFactory<LocalNetworkDevice> factory;
+
+    LocalNetworkDevice(DeviceFactory<LocalNetworkDevice> factory, String name, String address, String serviceName,
+            String description, String version) throws SocketException, UnknownHostException {
+        this.factory = factory;
         this.name = name;
-        this.connection = connection;
+        this.connection = new UDPConnection(address);
         this.serviceName = serviceName;
         this.description = description;
         this.version = version;
@@ -95,8 +97,6 @@ public class LocalNetworkDevice extends RemoteDevice {
             RemoteDeviceMessage ok;
             try {
                 ok = sendAndReceive(Id, SocketTimeoutMillis);
-            } catch (SocketException e) {
-                ok = Timeout;
             } catch (IOException e) {
                 ok = Timeout;
             }
@@ -104,8 +104,6 @@ public class LocalNetworkDevice extends RemoteDevice {
                 reconnect();
                 try {
                     ok = sendAndReceive(Id, SocketTimeoutMillis);
-                } catch (SocketException e) {
-                    ok = Timeout;
                 } catch (IOException e) {
                     ok = Timeout;
                 }
@@ -123,6 +121,7 @@ public class LocalNetworkDevice extends RemoteDevice {
     @Override
     public void close() {
         connection.close();
+        factory.removeDevice(getDevicePath());
     }
 
     @Override
@@ -170,10 +169,8 @@ public class LocalNetworkDevice extends RemoteDevice {
             try {
                 received = sendAndReceive(message, SocketTimeoutMillis);
                 break;
-            } catch (SocketException e) {
-                continue;
             } catch (IOException e) {
-                continue;
+                // Retry
             }
         }
         if (received == Timeout) {
@@ -182,34 +179,31 @@ public class LocalNetworkDevice extends RemoteDevice {
                 try {
                     received = sendAndReceive(message, SocketTimeoutMillis);
                     break;
-                } catch (SocketException e) {
-                    continue;
                 } catch (IOException e) {
-                    continue;
+                    // Retry
                 }
             }
         }
         return received;
     }
 
-    private RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message, int timeout)
-            throws SocketException, IOException {
-        logger.info("Sending " + message.toString());
+    private RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message, int timeout) throws IOException {
+        logger.info("Sending {}", message);
         byte[] received = connection.sendAndReceive(new UDPMessage(message).toByteArray(), timeout);
         RemoteDeviceMessage receivedMessage = new UDPMessage(received).message;
-        logger.info("Received " + receivedMessage.toString());
+        logger.info("Received {}", receivedMessage);
         return receivedMessage;
     }
 
     private void reconnect() {
-        Factory.removeDisconnectedDevice(this);
-        List<String> devicePaths = Factory.getDevices();
+        factory.removeDisconnectedDevice(this);
+        List<String> devicePaths = factory.getDevices();
         for (String devicePath : devicePaths) {
             if (!WaitingForConnection.equals(devicePath) && getDevicePath().equals(devicePath)) {
-                LocalNetworkDevice device = Factory.getDevice(devicePath);
+                LocalNetworkDevice device = factory.getDevice(devicePath);
                 connection.close();
                 connection = device.connection;
-                Factory.connectDevice(this);
+                factory.connectDevice(this);
                 break;
             }
         }
@@ -218,10 +212,16 @@ public class LocalNetworkDevice extends RemoteDevice {
     @Override
     public void send(RemoteDeviceMessage message) {
         try {
-            logger.info("Sending " + message.getClass().getSimpleName() + ": " + message.toString());
+            logger.info("Sending {}: {}", message.getClass().getSimpleName(), message);
             connection.send(new UDPMessage(message).toByteArray());
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
     }
+
+    @Override
+    public String toString() {
+        return getDevicePath();
+    }
+
 }

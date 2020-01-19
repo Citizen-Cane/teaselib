@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.HOURS;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,6 +44,8 @@ import teaselib.core.debug.CheckPoint;
 import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
+import teaselib.core.devices.DeviceEvent;
+import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.util.ConfigFileMapping;
@@ -156,8 +158,19 @@ public class TeaseLib implements Closeable {
     }
 
     private void bindMotionDetectorToVideoRenderer() {
-        devices.get(MotionDetector.class).addDeviceListener(motionDetector -> motionDetector
-                .setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback)));
+        devices.get(MotionDetector.class).addDeviceListener(new DeviceFactoryListener<MotionDetector>() {
+
+            @Override
+            public void deviceConnected(DeviceEvent<MotionDetector> e) {
+                devices.get(MotionDetector.class).getDevice(e.devicePath)
+                        .setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback));
+            }
+
+            @Override
+            public void deviceDisconnected(DeviceEvent<MotionDetector> e) {
+                devices.get(MotionDetector.class).getDevice(e.devicePath).setVideoRenderer(null);
+            }
+        });
     }
 
     private void bindNetworkProperties() {

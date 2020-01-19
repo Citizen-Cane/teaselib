@@ -30,12 +30,12 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     final TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
     final ScriptEvents events = script.events();
     private KeyReleaseSetup keyReleaseSetup;
-
     KeyRelease keyReleaseDevice;
 
     @Before
     public void before() {
-        keyReleaseDevice = connectDefaultDevice(script.teaseLib.devices);
+        keyReleaseDevice = getDefaultDevice();
+        assertConnected(keyReleaseDevice);
         releaseAllRunningActuators(keyReleaseDevice);
         keyReleaseSetup = script.script(KeyReleaseSetup.class);
         Actuators actuators = keyReleaseDevice.actuators();

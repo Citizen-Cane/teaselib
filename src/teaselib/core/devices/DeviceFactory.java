@@ -1,48 +1,60 @@
 package teaselib.core.devices;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.function.Supplier;
 
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.configuration.Configuration;
 
 public abstract class DeviceFactory<T extends Device> {
-    private final String deviceClass;
+    private final String deviceClassName;
     protected final Devices devices;
     protected final Configuration configuration;
-    private final Map<String, T> deviceCache;
 
-    public DeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
-        this.deviceClass = deviceClass;
+    private final Map<String, Supplier<T>> discovered = new HashMap<>();
+    private final Map<String, T> deviceCache = new LinkedHashMap<>();
+
+    public DeviceFactory(String deviceClassName, Devices devices, Configuration configuration) {
+        this.deviceClassName = deviceClassName;
         this.devices = devices;
         this.configuration = configuration;
-        this.deviceCache = new LinkedHashMap<>();
     }
 
     public String getDeviceClass() {
-        return deviceClass;
+        return deviceClassName;
     }
 
     public List<String> getDevices() {
+        List<String> devicePaths;
         try {
-            List<String> devicePaths = enumerateDevicePaths(deviceCache);
-            if (devicePaths.isEmpty()) {
-                devicePaths.add(DeviceCache.createDevicePath(deviceClass, Device.WaitingForConnection));
-            }
-            // remove disconnected
-            Map<String, T> updatedDeviceCache = new LinkedHashMap<>();
-            for (String devicePath : devicePaths) {
-                if (deviceCache.containsKey(devicePath)) {
-                    updatedDeviceCache.put(devicePath, deviceCache.get(devicePath));
-                }
-            }
-            deviceCache.clear();
-            deviceCache.putAll(updatedDeviceCache);
-            return devicePaths;
+            devicePaths = enumerateDevicePaths(deviceCache);
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException(e);
+            Thread.currentThread().interrupt();
+            return Collections.emptyList();
         }
+
+        if (devicePaths.isEmpty()) {
+            devicePaths.add(DeviceCache.createDevicePath(deviceClassName, Device.WaitingForConnection));
+        }
+
+        // remove disconnected
+        // TODO call removed event for each removed device
+        Map<String, T> updatedDeviceCache = new LinkedHashMap<>();
+        for (String devicePath : devicePaths) {
+            if (deviceCache.containsKey(devicePath)) {
+                updatedDeviceCache.put(devicePath, deviceCache.get(devicePath));
+            }
+        }
+
+        deviceCache.clear();
+        deviceCache.putAll(updatedDeviceCache);
+
+        devicePaths.addAll(discovered.keySet());
+        return devicePaths;
     }
 
     public boolean isDeviceCached(String devicePath) {
@@ -53,10 +65,32 @@ public abstract class DeviceFactory<T extends Device> {
         if (deviceCache.containsKey(devicePath)) {
             return deviceCache.get(devicePath);
         } else {
-            String deviceName = DeviceCache.getDeviceName(devicePath);
-            T device = createDevice(deviceName);
-            deviceCache.put(devicePath, device);
-            return device;
+            if (discovered.containsKey(devicePath)) {
+                return createDiscoveredDevice(devicePath);
+            } else {
+                return createFromDevicePath(devicePath);
+            }
+        }
+    }
+
+    private T createDiscoveredDevice(String devicePath) {
+        T device = discovered.remove(devicePath).get();
+        deviceCache.put(devicePath, device);
+        return device;
+    }
+
+    private T createFromDevicePath(String devicePath) {
+        String deviceName = DeviceCache.getDeviceName(devicePath);
+        T device = createDevice(deviceName);
+        deviceCache.put(devicePath, device);
+        return device;
+    }
+
+    public void removeDevice(String devicePath) {
+        if (deviceCache.containsKey(devicePath)) {
+            deviceCache.remove(devicePath);
+        } else {
+            throw new NoSuchElementException(devicePath);
         }
     }
 
@@ -82,10 +116,19 @@ public abstract class DeviceFactory<T extends Device> {
      *            The disconnected device.
      */
     public void removeDisconnectedDevice(T device) {
-        String devicePath = device.getDevicePath();
-        if (deviceCache.get(devicePath) == device) {
-            deviceCache.remove(devicePath);
-        }
+        removeDevice(device.getDevicePath());
+    }
+
+    protected void deviceDiscovered(String devicePath, Supplier<T> device) {
+        discovered.put(devicePath, device);
+    }
+
+    protected void fireDeviceConnected(String devicePath, Class<T> deviceClass) {
+        devices.get(deviceClass).fireDeviceConnected(devicePath);
+    }
+
+    protected void fireDeviceDisconnected(String devicePath, Class<T> deviceClass) {
+        devices.get(deviceClass).fireDeviceDisconnected(devicePath);
     }
 
     /**

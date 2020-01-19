@@ -3,7 +3,8 @@
  */
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,10 +20,11 @@ import org.junit.Test;
  *
  */
 public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
-    final KeyRelease keyRelease = connectDefaultDevice();
+    final KeyRelease keyRelease = getDefaultDevice();
 
     @Before
     public void before() {
+        assertConnected(keyRelease);
         releaseAllRunningActuators(keyRelease);
     }
 
@@ -33,7 +35,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
 
     @Test
     public void testManualRelease() {
-        for (Actuator actuator : connect(keyRelease)) {
+        for (Actuator actuator : assertConnected(keyRelease)) {
             arm(actuator);
             start(actuator);
             waitForAutoRelease(actuator);
@@ -47,7 +49,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
 
     @Test
     public void testAutomaticRelease() {
-        for (Actuator actuator : connect(keyRelease)) {
+        for (Actuator actuator : assertConnected(keyRelease)) {
             arm(actuator);
             start(actuator);
             waitForAutoRelease(actuator);
@@ -58,7 +60,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
 
     @Test(expected = IllegalStateException.class)
     public void testWrongCall() {
-        for (Actuator actuator : connect(keyRelease)) {
+        for (Actuator actuator : assertConnected(keyRelease)) {
             arm(actuator);
             start(actuator);
             hold(actuator);
@@ -70,7 +72,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
 
     @Test
     public void testWrongCallReleasesAll() {
-        for (Actuator actuator : connect(keyRelease)) {
+        for (Actuator actuator : assertConnected(keyRelease)) {
             arm(actuator);
             hold(actuator);
             start(actuator);
@@ -81,7 +83,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
             hold(wrongCalled);
             fail("Expected WrongCallException");
         } catch (IllegalStateException e) {
-            for (Actuator actuator : connect(keyRelease)) {
+            for (Actuator actuator : assertConnected(keyRelease)) {
                 assertStopped(actuator);
             }
         } catch (Exception e) {
@@ -95,7 +97,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
     @Ignore
     public void testStatus() {
         // TODO Test once status command is implemented
-        for (Actuator actuator : connect(keyRelease)) {
+        for (Actuator actuator : assertConnected(keyRelease)) {
             arm(actuator);
             start(actuator);
             waitForAutoRelease(actuator);
@@ -107,7 +109,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
 
     @Test
     public void testDeepSleepRelease() {
-        for (Actuator actuator : connect(keyRelease)) {
+        for (Actuator actuator : assertConnected(keyRelease)) {
             arm(actuator);
             start(actuator);
             keyRelease.sleep(Integer.MAX_VALUE);
@@ -124,7 +126,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
 
     @Test
     public void testDeepSleepPacket() {
-        Actuators actuators = connect(keyRelease);
+        Actuators actuators = assertConnected(keyRelease);
 
         Actuator actuator = actuators.get(0);
         actuator.sleep(HOLD_DURATION_MINUTES, TimeUnit.MINUTES);

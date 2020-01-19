@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.devices.remote;
 
 import java.net.Inet4Address;

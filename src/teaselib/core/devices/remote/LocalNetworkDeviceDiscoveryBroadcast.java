@@ -17,35 +17,33 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.ScriptInterruptedException;
-
 class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     static final Logger logger = LoggerFactory.getLogger(LocalNetworkDeviceDiscoveryBroadcast.class);
 
     private final Map<InterfaceAddress, BroadcastListener> discoveryThreads = new HashMap<>();
-    private BroadcastListener deviceSTatusMessageListener;
+    private BroadcastListener deviceStatusMessageListener;
 
     @Override
     public void enableDeviceStatusListener(boolean enable) {
-        if (deviceSTatusMessageListener == null && enable) {
+        if (deviceStatusMessageListener == null && enable) {
             installBroadcastListener();
-        } else if (deviceSTatusMessageListener != null && !enable) {
+        } else if (deviceStatusMessageListener != null && !enable) {
             removeBroadcastListener();
         }
     }
 
     private void installBroadcastListener() {
         try {
-            deviceSTatusMessageListener = new BroadcastListener();
-            deviceSTatusMessageListener.start();
+            deviceStatusMessageListener = new BroadcastListener();
+            deviceStatusMessageListener.start();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
     }
 
     private void removeBroadcastListener() {
-        deviceSTatusMessageListener.end();
-        deviceSTatusMessageListener = null;
+        deviceStatusMessageListener.end();
+        deviceStatusMessageListener = null;
     }
 
     @Override
@@ -57,7 +55,6 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         } catch (SocketException e) {
             logger.error(e.getMessage(), e);
         }
-        waitForDevicesToReply();
     }
 
     void updateInterfaceBroadcastListeners(List<InterfaceAddress> networks) {
@@ -100,13 +97,9 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
 
     private void sendBroadcastIDMessage(InterfaceAddress interfaceAddress) throws IOException {
         InetAddress broadcastAddress = interfaceAddress.getBroadcast();
-        logger.info("Sending broadcast message to " + broadcastAddress.toString());
+        logger.info("Sending broadcast message to {}", broadcastAddress);
         UDPConnection connection = discoveryThreads.get(interfaceAddress).connection;
         connection.send(new UDPMessage(RemoteDevice.Id).toByteArray());
-    }
-
-    private static void waitForDevicesToReply() throws InterruptedException {
-        Thread.sleep(2000);
     }
 
     class BroadcastListener extends Thread {
@@ -115,7 +108,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
 
         public BroadcastListener(InetAddress address, int port) throws IOException {
             connection = new UDPConnection(address, port);
-            initThread("Installed interface broadcast socket on " + address.toString());
+            initThread("Installed interface broadcast socket on " + address);
         }
 
         BroadcastListener() throws IOException {
@@ -123,7 +116,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
                     LocalNetworkDevice.Port);
             connection = new UDPConnection(address);
             connection.setCheckPacketNumber(false);
-            initThread("Listening for broadcast packets on " + address.toString());
+            initThread("Listening for broadcast packets on " + address);
         }
 
         private void initThread(String name) {
@@ -142,7 +135,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
             try {
                 join();
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException(e);
+                Thread.currentThread().interrupt();
             }
         }
 
@@ -154,7 +147,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
                         byte[] received = connection.receive();
                         RemoteDeviceMessage services = new UDPMessage(received).message;
                         if ("services".equals(services.command)) {
-                            logger.info("Received device startup message on " + connection);
+                            logger.info("Received device startup message on {}", connection);
                             fireDeviceDiscovered(services);
                         }
                     } catch (SocketException e) {
@@ -181,12 +174,12 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
 
     @Override
     void close() {
-        if (deviceSTatusMessageListener != null) {
-            deviceSTatusMessageListener.interrupt();
+        if (deviceStatusMessageListener != null) {
+            deviceStatusMessageListener.interrupt();
             try {
-                deviceSTatusMessageListener.join();
+                deviceStatusMessageListener.join();
             } catch (InterruptedException e) {
-                // ignore
+                Thread.currentThread().interrupt();
             }
         }
     }

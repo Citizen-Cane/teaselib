@@ -1,5 +1,7 @@
 package teaselib.core.devices;
 
 public interface DeviceFactoryListener<T extends Device> {
-    void deviceCreated(T device);
+    void deviceConnected(DeviceEvent<T> e);
+
+    void deviceDisconnected(DeviceEvent<T> e);
 }

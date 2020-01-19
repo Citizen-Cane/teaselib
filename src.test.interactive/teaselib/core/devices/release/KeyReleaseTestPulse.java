@@ -2,6 +2,10 @@ package teaselib.core.devices.release;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static teaselib.core.devices.release.KeyReleaseBaseTest.arm;
+import static teaselib.core.devices.release.KeyReleaseBaseTest.assertConnected;
+import static teaselib.core.devices.release.KeyReleaseBaseTest.getDefaultDevice;
+import static teaselib.core.devices.release.KeyReleaseBaseTest.sleep;
 
 import java.util.concurrent.TimeUnit;
 
@@ -14,22 +18,22 @@ public class KeyReleaseTestPulse {
 
     @Test
     public void testPulseFrequency() {
-        final KeyRelease keyRelease = KeyReleaseFunctionalTest.connectDefaultDevice();
-        Actuators actuators = KeyReleaseFunctionalTest.connect(keyRelease);
+        KeyRelease keyRelease = getDefaultDevice();
+        Actuators actuators = assertConnected(keyRelease);
 
-        for (Actuator actuator : KeyReleaseFunctionalTest.connect(keyRelease)) {
+        for (Actuator actuator : actuators) {
             testActuator(actuator);
         }
 
-        KeyReleaseFunctionalTest.sleep(10, TimeUnit.SECONDS);
+        sleep(10, TimeUnit.SECONDS);
         assertTrue(keyRelease.connected());
         assertTrue(keyRelease.active());
         assertTrue(!actuators.isEmpty());
     }
 
     private static void testActuator(Actuator actuator) {
-        KeyReleaseFunctionalTest.arm(actuator);
-        KeyReleaseFunctionalTest.sleep(5, TimeUnit.SECONDS);
+        arm(actuator);
+        sleep(5, TimeUnit.SECONDS);
 
         actuator.start(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS);
 

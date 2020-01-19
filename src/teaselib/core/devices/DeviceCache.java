@@ -1,9 +1,12 @@
 package teaselib.core.devices;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,8 +36,6 @@ public class DeviceCache<T extends Device> {
         return this;
     }
 
-    private Map<String, T> devices = new LinkedHashMap<>();
-
     public T getDefaultDevice() {
         String defaultId = getFirst(getDevicePaths());
         return getDevice(defaultId);
@@ -54,22 +55,13 @@ public class DeviceCache<T extends Device> {
     }
 
     public T getDevice(String devicePath) {
-        if (devices.containsKey(devicePath)) {
-            return devices.get(devicePath);
-        } else {
-            T device = create(devicePath);
-            devices.put(devicePath, device);
-            fireDeviceCreated(device);
-            return device;
-        }
-    }
+        // TODO removed fireDeviceConnected(device) breaks camera plug-in/surprise removal -> restore
 
-    private T create(String devicePath) {
         try {
             String deviceClassName = getDeviceClass(devicePath);
             DeviceFactory<? extends T> deviceFactory = factories.get(deviceClassName);
             if (deviceFactory == null) {
-                throw new DeviceNotFoundException("Factory for" + deviceClassName + " not found");
+                throw new DeviceNotFoundException("Factory for " + deviceClassName + " not found");
             }
             T device = deviceFactory.getDevice(devicePath);
             if (device == null) {
@@ -88,6 +80,10 @@ public class DeviceCache<T extends Device> {
         for (Map.Entry<String, DeviceFactory<? extends T>> entry : factories.entrySet())
             devicePaths.addAll(entry.getValue().getDevices());
         return devicePaths;
+    }
+
+    public List<String> getFactoryClassNames() {
+        return factories.values().stream().map(DeviceFactory<? extends T>::getDeviceClass).collect(toList());
     }
 
     public static String createDevicePath(String deviceClassName, String deviceName) {
@@ -145,9 +141,15 @@ public class DeviceCache<T extends Device> {
         return device.connected();
     }
 
-    private void fireDeviceCreated(T device) {
+    void fireDeviceConnected(String devicePath) {
         for (DeviceFactoryListener<T> deviceListener : deviceListeners) {
-            deviceListener.deviceCreated(device);
+            deviceListener.deviceConnected(new DeviceEvent<>(this, devicePath));
+        }
+    }
+
+    void fireDeviceDisconnected(String devicePath) {
+        for (DeviceFactoryListener<T> deviceListener : deviceListeners) {
+            deviceListener.deviceDisconnected(new DeviceEvent<>(this, devicePath));
         }
     }
 
@@ -161,6 +163,12 @@ public class DeviceCache<T extends Device> {
 
     public static String qualifiedName(Device device) {
         return device.getDevicePath().replace('/', '.');
+    }
+
+    @Override
+    public String toString() {
+        return getFactoryClassNames() + " = " + factories.values().stream().map(f -> f.getDevices().size()).count()
+                + " devices";
     }
 
 }

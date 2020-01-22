@@ -32,7 +32,7 @@ public class ScriptEvents {
     public class ScriptEventSource {
         final Items items;
 
-        private ScriptEventSource(Items items) {
+        ScriptEventSource(Items items) {
             this.items = items;
         }
 

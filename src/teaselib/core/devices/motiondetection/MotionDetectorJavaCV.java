@@ -53,7 +53,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     private static final String DeviceClassName = "MotionDetectorJavaCV";
 
     private static final class MyDeviceFactory extends DeviceFactory<MotionDetectorJavaCV> {
-        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+        MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
         }
 

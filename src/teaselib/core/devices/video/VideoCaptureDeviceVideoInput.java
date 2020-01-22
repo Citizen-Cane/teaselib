@@ -35,7 +35,7 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
     private static final String DeviceClassName = "JavaCVVideoInput";
 
     private static final class MyDeviceFactory extends DeviceFactory<VideoCaptureDeviceVideoInput> {
-        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+        MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
         }
 
@@ -82,15 +82,15 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         return -1;
     }
 
-    private int deviceId;
+    int deviceId;
     private String deviceName;
     private final MyDeviceFactory factory;
-    private videoInput vi = null;
+    videoInput vi = null;
     Mat mat = new Mat();
     Size captureSize = DefaultResolution;
     double fps = 0.0;
 
-    private VideoCaptureDeviceVideoInput(String deviceName, MyDeviceFactory factory) {
+    VideoCaptureDeviceVideoInput(String deviceName, MyDeviceFactory factory) {
         if (deviceName.equals(Device.WaitingForConnection)) {
             this.deviceId = Integer.MIN_VALUE;
         } else {
@@ -218,6 +218,10 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
 
     private class FrameIterator implements Iterator<Mat> {
         Mat f = null;
+
+        FrameIterator() {
+            super();
+        }
 
         private Mat read() {
             mat.data(vi.getPixels(deviceId, false, true));

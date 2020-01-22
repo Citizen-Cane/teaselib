@@ -56,7 +56,7 @@ public abstract class AbstractInputMethod implements InputMethod {
         }
     }
 
-    private Prompt.Result awaitAndSignalResult(Prompt prompt) throws InterruptedException, ExecutionException {
+    Prompt.Result awaitAndSignalResult(Prompt prompt) throws InterruptedException, ExecutionException {
         if (prompt.result() == Prompt.Result.UNDEFINED) {
             Prompt.Result result = handleShow(prompt);
             signalResult(prompt, result);

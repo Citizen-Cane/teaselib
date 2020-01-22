@@ -22,7 +22,7 @@ import teaselib.core.devices.Devices;
  *
  */
 public class NetworkDeviceDiscoveryTest {
-    private static final Logger logger = LoggerFactory.getLogger(NetworkDeviceDiscoveryTest.class);
+    static final Logger logger = LoggerFactory.getLogger(NetworkDeviceDiscoveryTest.class);
 
     static final int Minutes = 2;
 

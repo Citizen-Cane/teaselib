@@ -38,12 +38,11 @@ import teaselib.core.util.PrefetchImage;
 import teaselib.core.util.Prefetcher;
 
 public class MessageRendererQueue implements Closeable {
-    private static final Logger logger = LoggerFactory.getLogger(MessageRendererQueue.class);
+    static final Logger logger = LoggerFactory.getLogger(MessageRendererQueue.class);
 
     private static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(Arrays.asList(Message.Type.Text,
             Message.Type.Image, Message.Type.Mood, Message.Type.Speech, Message.Type.Delay));
-    private static final Set<Type> SoundTypes = new HashSet<>(
-            Arrays.asList(Type.Speech, Type.Sound, Type.BackgroundSound));
+    static final Set<Type> SoundTypes = new HashSet<>(Arrays.asList(Type.Speech, Type.Sound, Type.BackgroundSound));
 
     private static final double DELAY_AT_END_OF_MESSAGE = 2.0;
 
@@ -52,10 +51,10 @@ public class MessageRendererQueue implements Closeable {
     // TODO Handle message decorator processing here in order to make textToSpeechPlayer private
     public final TextToSpeechPlayer textToSpeechPlayer;
 
-    private final NamedExecutorService executor = NamedExecutorService.singleThreadedQueue("Message renderer queue", 1,
+    final NamedExecutorService executor = NamedExecutorService.singleThreadedQueue("Message renderer queue", 1,
             TimeUnit.HOURS);
     private final Prefetcher<byte[]> imageFetcher;
-    private Future<?> running = null;
+    Future<?> running = null;
 
     private MediaRenderer.Threaded currentRenderer = null;
     private RenderSound backgroundSoundRenderer = null;
@@ -234,11 +233,11 @@ public class MessageRendererQueue implements Closeable {
             return messages.get(messages.size() - 1);
         }
 
-        private RenderedMessage getMandatory() {
+        RenderedMessage getMandatory() {
             return RenderedMessage.getLastSection(getLastMessage());
         }
 
-        private RenderedMessage getEnd() {
+        RenderedMessage getEnd() {
             return stripAudio(RenderedMessage.getLastSection(getLastMessage()));
         }
 

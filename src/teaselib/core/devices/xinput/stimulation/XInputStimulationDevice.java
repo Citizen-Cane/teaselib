@@ -94,7 +94,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     private static final String DeviceClassName = "XInputStimulationDevice";
 
     private static final class MyDeviceFactory extends DeviceFactory<StimulationDevice> {
-        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+        MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
         }
 

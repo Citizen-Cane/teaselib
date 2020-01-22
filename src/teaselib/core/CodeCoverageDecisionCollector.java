@@ -30,7 +30,7 @@ public class CodeCoverageDecisionCollector implements Iterable<DecisionList> {
             final int result;
             final Prompt prompt;
 
-            private Entry(int n, Prompt prompt) {
+            Entry(int n, Prompt prompt) {
                 super();
                 this.result = n;
                 this.prompt = prompt;
@@ -58,7 +58,7 @@ public class CodeCoverageDecisionCollector implements Iterable<DecisionList> {
         }
     }
 
-    private List<DecisionList> coverage = new ArrayList<>();
+    List<DecisionList> coverage = new ArrayList<>();
 
     public CodeCoverageDecisionCollector() {
         coverage.add(new DecisionList());

@@ -608,7 +608,7 @@ public class Items implements Iterable<Item> {
         return AbstractProxy.itemImpl(item);
     }
 
-    private static QualifiedItem itemValue(Item item) {
+    static QualifiedItem itemValue(Item item) {
         return QualifiedItem.of(itemImpl(item).value);
     }
 

@@ -8,15 +8,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class TeaseLibLogger {
-    private final BufferedWriter log;
+    final BufferedWriter log;
     private final Level level;
 
     private boolean showTime = false;
     private boolean showThread = false;
     private boolean logToConsole = false;
 
-    private final static SimpleDateFormat timeFormat = new SimpleDateFormat(
-            "HH:mm:ss.SSS");
+    private final static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
 
     public enum Level {
         None,
@@ -98,8 +97,7 @@ public class TeaseLibLogger {
     private String format(String text) {
         Date now = new Date(System.currentTimeMillis());
         String line = (showTime ? (timeFormat.format(now) + " [") : "")
-                + (showThread ? (Thread.currentThread().getName() + "] ") : "")
-                + text + "\n";
+                + (showThread ? (Thread.currentThread().getName() + "] ") : "") + text + "\n";
         return line;
     }
 
@@ -127,8 +125,7 @@ public class TeaseLibLogger {
 
     public void error(Object instance, Throwable e) {
         String message = e.getMessage();
-        info(e.getClass().getSimpleName() + ": "
-                + (message != null ? message : ""));
+        info(e.getClass().getSimpleName() + ": " + (message != null ? message : ""));
         info(instance.getClass().getName() + ":" + instance.toString());
         stackTrace(e);
         Throwable cause = e.getCause();

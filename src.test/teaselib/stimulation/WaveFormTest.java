@@ -1,6 +1,6 @@
 package teaselib.stimulation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ public class WaveFormTest {
         assertEquals(0.0, squareWave.getValue(1000), 0.0);
     }
 
-    private static final class TestStimulator implements Stimulator {
+    static final class TestStimulator implements Stimulator {
         WaveForm waveForm = null;
 
         @Override

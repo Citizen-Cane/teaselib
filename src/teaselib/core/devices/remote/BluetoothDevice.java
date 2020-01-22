@@ -12,7 +12,7 @@ import teaselib.core.devices.Devices;
 
 public class BluetoothDevice extends RemoteDevice {
     private static final class BluetoothDeviceFactory extends DeviceFactory<RemoteDevice> {
-        private BluetoothDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+        BluetoothDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
         }
 
@@ -34,13 +34,8 @@ public class BluetoothDevice extends RemoteDevice {
 
     private static final String DeviceClassName = "BluetoothDevice";
 
-    private static BluetoothDeviceFactory Factory = new BluetoothDeviceFactory(DeviceClassName, null, null);
-
     public static synchronized BluetoothDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
-        if (Factory == null) {
-            Factory = new BluetoothDeviceFactory(DeviceClassName, devices, configuration);
-        }
-        return Factory;
+        return new BluetoothDeviceFactory(DeviceClassName, devices, configuration);
     }
 
     public static synchronized DeviceCache<RemoteDevice> getDeviceCache(Devices devices, Configuration configuration) {

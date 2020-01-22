@@ -123,11 +123,11 @@ public abstract class DeviceFactory<T extends Device> {
         discovered.put(devicePath, device);
     }
 
-    protected void fireDeviceConnected(String devicePath, Class<T> deviceClass) {
+    public void fireDeviceConnected(String devicePath, Class<T> deviceClass) {
         devices.get(deviceClass).fireDeviceConnected(devicePath);
     }
 
-    protected void fireDeviceDisconnected(String devicePath, Class<T> deviceClass) {
+    public void fireDeviceDisconnected(String devicePath, Class<T> deviceClass) {
         devices.get(deviceClass).fireDeviceDisconnected(devicePath);
     }
 

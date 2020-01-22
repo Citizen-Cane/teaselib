@@ -1,6 +1,6 @@
 package teaselib.core.devices.xinput.stimulation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +24,7 @@ import teaselib.test.TestException;
  *
  */
 public class StimulationSamplerTaskTest {
-
-    private static class TestStimulationSamplerTask extends StimulationSamplerTask {
+    static class TestStimulationSamplerTask extends StimulationSamplerTask {
         final List<Samples> sampled = new ArrayList<>();
 
         @Override

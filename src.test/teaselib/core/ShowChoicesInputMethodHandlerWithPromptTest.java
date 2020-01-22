@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
     }
 
     private abstract class RunnableTestScript extends TeaseScript implements Runnable {
-        private RunnableTestScript(Script script) {
+        RunnableTestScript(Script script) {
             super(script);
         }
 
@@ -54,10 +55,13 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
     RunnableTestScript script;
     Debugger debugger;
     AtomicInteger count;
+    DebugHost host;
+    TeaseLib teaseLib;
 
     @Before
     public void init() throws IOException {
-        TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
+        host = new DebugHost();
+        teaseLib = new TeaseLib(host, new DebugPersistence(), new DebugSetup());
         Actor actor = TestScript.newActor(Gender.Masculine);
         ResourceLoader resourceLoader = new ResourceLoader(this.getClass());
 
@@ -79,6 +83,12 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
 
         debugger = new Debugger(teaseLib, debugInputMethodHandler);
         count = new AtomicInteger(0);
+    }
+
+    @After
+    public void cleanup() {
+        teaseLib.close();
+        host.close();
     }
 
     @Test

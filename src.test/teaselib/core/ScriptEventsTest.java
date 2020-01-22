@@ -13,8 +13,10 @@ import teaselib.Features;
 import teaselib.Toys;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.BatteryLevel;
+import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.Actuators;
+import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -154,7 +156,7 @@ public class ScriptEventsTest {
         keyReleaseSetup = script.script(KeyReleaseSetup.class);
         actuators = new Actuators(
                 Arrays.asList(new ActuatorMock(2, TimeUnit.HOURS), new ActuatorMock(1, TimeUnit.HOURS)));
-        keyReleaseSetup.onDeviceConnect(actuators);
+        keyReleaseSetup.deviceConnected(new DeviceEvent<>(script.teaseLib.devices.get(KeyRelease.class), null));
 
         assertEquals(2, keyReleaseSetup.itemDurationSeconds.size());
         assertEquals(2, keyReleaseSetup.itemActuators.size());
@@ -163,7 +165,7 @@ public class ScriptEventsTest {
 
     @After
     public void detachDevice() {
-        keyReleaseSetup.onDeviceDisconnect(actuators);
+        keyReleaseSetup.deviceDisconnected(new DeviceEvent<>(script.teaseLib.devices.get(KeyRelease.class), null));
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -35,7 +35,7 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.util.TextVariables;
 
 public class TextToSpeechRecorder {
-    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechRecorder.class);
+    static final Logger logger = LoggerFactory.getLogger(TextToSpeechRecorder.class);
 
     public static final String MessageFilename = "message.txt";
     public static final String ResourcesFilename = "inventory.txt";
@@ -102,7 +102,7 @@ public class TextToSpeechRecorder {
             return sum;
         }
 
-        private void log() {
+        void log() {
             StringBuilder processSymbols = new StringBuilder();
             boolean appendSeparator = false;
             for (Symbol symbol : symbols) {

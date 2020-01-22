@@ -18,8 +18,8 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  *
  */
 public class SpeechRecognitionTimeoutWatchdog {
-    private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTimeoutWatchdog.class);
-    private static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(2);
+    static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTimeoutWatchdog.class);
+    static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(2);
 
     final SpeechRecognitionEvents events;
     final AtomicBoolean active = new AtomicBoolean(false);

@@ -1,6 +1,7 @@
 package teaselib.core.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,7 +74,7 @@ public class PersistTest {
     public static final class PersistableImplementation<T> extends ArrayList<T> implements Persist.Persistable {
         private static final long serialVersionUID = 1L;
 
-        private PersistableImplementation(List<T> values) {
+        PersistableImplementation(List<T> values) {
             super(values);
         }
 

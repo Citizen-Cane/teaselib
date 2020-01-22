@@ -15,18 +15,14 @@ import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import teaselib.core.javacv.util.Geom;
 import teaselib.core.util.TimeLine;
 import teaselib.motiondetection.MotionDetector.Presence;
 
 public class MotionDetectionResultImplementation extends MotionDetectionResultData {
-    private static final Logger logger = LoggerFactory.getLogger(MotionDetectionResultImplementation.class);
-
     private static final double CIRCULARITY_VARIANCE = 1.3; // 1.3 seems to be necessary to detect blinking eyes
-    private static final Set<Presence> STARTUP_PRESENCE = Collections.singleton(Presence.CameraShake);
+    static final Set<Presence> STARTUP_PRESENCE = Collections.singleton(Presence.CameraShake);
 
     public class PresenceData {
         final Map<Presence, Rect> presenceIndicators;
@@ -167,6 +163,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
     }
 
     @Override
+    @SuppressWarnings("resource")
     public Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion) {
         Rect presenceRect = presenceIndicators.get(viewPoint2PresenceRegion.get(viewPoint));
         Set<Presence> presence;

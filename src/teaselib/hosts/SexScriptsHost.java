@@ -89,9 +89,9 @@ import teaselib.util.Interval;
 // - This is in fact not a speech recognition related problem,
 // but dismissing the combobox after showing the list programatically
 public class SexScriptsHost implements Host, HostInputMethod.Backend {
-    private static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
+    static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
-    private IScript ss;
+    IScript ss;
 
     private static final boolean renderBackgroundImage = true;
 
@@ -105,7 +105,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     private boolean intertitleActive = false;
 
-    private Runnable onQuitHandler = null;
+    Runnable onQuitHandler = null;
 
     private final InputMethod inputMethod;
 

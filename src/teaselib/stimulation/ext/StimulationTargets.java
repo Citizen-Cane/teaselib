@@ -20,7 +20,7 @@ public class StimulationTargets implements Iterable<Samples> {
     public static final StimulationTargets None = new StimulationTargets();
 
     private final List<Stimulator> stimulators;
-    private final List<StimulationTarget> targets;
+    final List<StimulationTarget> targets;
 
     public static class Samples {
         private long timeStampMillis;
@@ -68,7 +68,7 @@ public class StimulationTargets implements Iterable<Samples> {
 
         private Optional<Sample> next;
 
-        private SampleIterator() {
+        SampleIterator() {
             this.samples = new Samples(size());
 
             this.iterators = new ArrayList<>(size());

@@ -11,7 +11,7 @@ import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.DeviceFactory;
-import teaselib.core.devices.DeviceFactoryListener;
+import teaselib.core.devices.DeviceListener;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.devices.remote.RemoteDevice;
@@ -20,7 +20,7 @@ import teaselib.core.devices.remote.RemoteDevices;
 
 public class KeyRelease implements Device, Device.Creatable {
     private static final class MyDeviceFactory extends DeviceFactory<KeyRelease> {
-        DeviceFactoryListener<LocalNetworkDevice> forwardEvents = new DeviceFactoryListener<LocalNetworkDevice>() {
+        DeviceListener<LocalNetworkDevice> forwardEvents = new DeviceListener<LocalNetworkDevice>() {
             @Override
             public void deviceConnected(DeviceEvent<LocalNetworkDevice> e) {
                 MyDeviceFactory.this.fireDeviceConnected(DeviceCache.createDevicePath(DeviceClassName, e.devicePath),
@@ -34,7 +34,7 @@ public class KeyRelease implements Device, Device.Creatable {
             }
         };
 
-        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+        MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
             devices.get(LocalNetworkDevice.class).addDeviceListener(forwardEvents);
         }

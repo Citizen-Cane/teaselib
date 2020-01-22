@@ -22,7 +22,7 @@ import teaselib.functional.RunnableScript;
 public class CodeCoverage<T extends Script> {
     private final CodeCoverageInputMethod debugInputMethod = new CodeCoverageInputMethod(
             NamedExecutorService.singleThreadedQueue(getClass().getSimpleName(), 10, TimeUnit.SECONDS));
-    private final CodeCoverageDecisionCollector decisionVariants = new CodeCoverageDecisionCollector();
+    final CodeCoverageDecisionCollector decisionVariants = new CodeCoverageDecisionCollector();
     private final Iterator<DecisionList> current = decisionVariants.iterator();
 
     public boolean hasNext() {

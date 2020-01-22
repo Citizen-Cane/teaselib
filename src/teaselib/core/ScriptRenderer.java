@@ -30,18 +30,18 @@ import teaselib.core.media.RenderedMessage.Decorator;
  *
  */
 public class ScriptRenderer implements Closeable {
-    private static final Logger logger = LoggerFactory.getLogger(ScriptRenderer.class);
+    static final Logger logger = LoggerFactory.getLogger(ScriptRenderer.class);
 
-    private final MediaRendererQueue renderQueue = new MediaRendererQueue();
+    final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final ExecutorService scriptFunctionExecutor = NamedExecutorService.newUnlimitedThreadPool("Script task", 1,
             HOURS);
     private final ExecutorService inputMethodExecutor = NamedExecutorService.newUnlimitedThreadPool("Input method", 1,
             HOURS);
 
-    private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
+    final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
 
-    private List<MediaRenderer> playedRenderers = null;
+    List<MediaRenderer> playedRenderers = null;
     private final List<Message> prependedMessages = new ArrayList<>();
 
     final MessageRendererQueue messageRenderer;

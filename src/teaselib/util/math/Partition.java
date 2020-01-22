@@ -25,7 +25,7 @@ public class Partition<K> implements Iterable<Partition<K>.Group> {
 
     public class Group implements Iterable<K> {
         public final List<K> items;
-        private final List<K> writableItems;
+        final List<K> writableItems;
         public K orderingElement;
 
         Group(K item) {

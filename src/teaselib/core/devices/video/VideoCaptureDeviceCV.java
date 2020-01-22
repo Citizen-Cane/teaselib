@@ -1,6 +1,7 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.*;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,14 +35,14 @@ import teaselib.video.VideoCaptureDevices;
  *
  */
 public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDevice */ {
-    private static final Logger logger = LoggerFactory.getLogger(VideoCaptureDeviceCV.class);
+    static final Logger logger = LoggerFactory.getLogger(VideoCaptureDeviceCV.class);
 
     private static final String DeviceClassName = "JavaCVVideoCapture";
 
-    private static final boolean UseVideoInput = Platform.isWindows();
+    static final boolean UseVideoInput = Platform.isWindows();
 
     private static final class MyDeviceFactory extends DeviceFactory<VideoCaptureDeviceCV> {
-        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+        MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
         }
 
@@ -125,13 +126,13 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
     private int deviceId;
     private String deviceName;
     private final MyDeviceFactory factory;
-    private final VideoCapture videoCapture;
+    final VideoCapture videoCapture;
     Size captureSize = DefaultResolution;
     double fps = 0.0;
 
     final Mat mat = new Mat();
 
-    private VideoCaptureDeviceCV(String deviceName, MyDeviceFactory factory) {
+    VideoCaptureDeviceCV(String deviceName, MyDeviceFactory factory) {
         this.deviceName = deviceName;
         this.factory = factory;
         this.videoCapture = new VideoCapture();
@@ -143,7 +144,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
                 : Integer.parseInt(DeviceCache.getDeviceName(deviceName));
     }
 
-    private VideoCaptureDeviceCV(int deviceId, MyDeviceFactory factory) {
+    VideoCaptureDeviceCV(int deviceId, MyDeviceFactory factory) {
         this.deviceName = Integer.toString(deviceId);
         this.factory = factory;
         this.videoCapture = new VideoCapture();
@@ -274,6 +275,10 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
 
     private class FrameIterator implements Iterator<Mat> {
         Mat f = null;
+
+        FrameIterator() {
+            super();
+        }
 
         private Mat read() {
             videoCapture.grab();

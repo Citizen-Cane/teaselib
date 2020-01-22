@@ -126,7 +126,7 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
 
         public static final Sample End = new Sample(Long.MAX_VALUE, 0.0);
 
-        private Sample() {
+        Sample() {
             this(Long.MIN_VALUE, 0.0);
         }
 

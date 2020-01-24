@@ -11,7 +11,7 @@ public interface Device {
      *
      */
     public interface Creatable extends Device {
-
+        // Tagging interface
     }
 
     /**

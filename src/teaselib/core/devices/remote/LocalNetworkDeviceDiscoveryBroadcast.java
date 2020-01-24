@@ -17,11 +17,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.concurrency.NamedExecutorService;
+
 class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     static final Logger logger = LoggerFactory.getLogger(LocalNetworkDeviceDiscoveryBroadcast.class);
 
     private final Map<InterfaceAddress, BroadcastListener> discoveryThreads = new HashMap<>();
     private BroadcastListener deviceStatusMessageListener;
+
+    final NamedExecutorService eventExecutor = NamedExecutorService
+            .singleThreadedQueue("LocalNetworkDeviceConnectionHandler");
 
     @Override
     public void enableDeviceStatusListener(boolean enable) {
@@ -148,7 +153,13 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
                         RemoteDeviceMessage services = new UDPMessage(received).message;
                         if ("services".equals(services.command)) {
                             logger.info("Received device startup message on {}", connection);
-                            fireDeviceDiscovered(services);
+                            eventExecutor.submit(() -> {
+                                try {
+                                    fireDeviceDiscovered(services);
+                                } catch (Throwable t) {
+                                    logger.error(t.getMessage(), t);
+                                }
+                            });
                         }
                     } catch (SocketException e) {
                         boolean socketHasBeenClosed = isRunning.get();

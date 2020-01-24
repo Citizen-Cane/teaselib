@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import teaselib.core.configuration.Configuration;
@@ -149,4 +150,10 @@ public abstract class DeviceFactory<T extends Device> {
      * @return A device instance that corresponds to the given device name.
      */
     public abstract T createDevice(String deviceName);
+
+    public Optional<T> findMatching(T device) {
+        return getDevices().stream().filter(devicePath -> !Device.WaitingForConnection.equals(devicePath)
+                || devicePath.equals(device.getDevicePath())).map(this::getDevice).findFirst();
+    }
+
 }

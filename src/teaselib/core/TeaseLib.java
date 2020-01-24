@@ -45,7 +45,7 @@ import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.DeviceEvent;
-import teaselib.core.devices.DeviceFactoryListener;
+import teaselib.core.devices.DeviceListener;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.util.ConfigFileMapping;
@@ -73,7 +73,7 @@ public class TeaseLib implements Closeable {
     private static final String TranscriptLogFileName = "TeaseLib session transcript.log";
 
     public final Host host;
-    private final Persistence persistence;
+    final Persistence persistence;
     final UserItems userItems;
     public final TeaseLibLogger transcript;
 
@@ -158,17 +158,16 @@ public class TeaseLib implements Closeable {
     }
 
     private void bindMotionDetectorToVideoRenderer() {
-        devices.get(MotionDetector.class).addDeviceListener(new DeviceFactoryListener<MotionDetector>() {
+        devices.get(MotionDetector.class).addDeviceListener(new DeviceListener<MotionDetector>() {
 
             @Override
             public void deviceConnected(DeviceEvent<MotionDetector> e) {
-                devices.get(MotionDetector.class).getDevice(e.devicePath)
-                        .setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback));
+                e.getDevice().setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback));
             }
 
             @Override
             public void deviceDisconnected(DeviceEvent<MotionDetector> e) {
-                devices.get(MotionDetector.class).getDevice(e.devicePath).setVideoRenderer(null);
+                e.getDevice().setVideoRenderer(null);
             }
         });
     }
@@ -378,11 +377,15 @@ public class TeaseLib implements Closeable {
      *            maximum value
      * @return A value in the interval [min, max]
      */
+    @SuppressWarnings("static-method")
     public int random(int min, int max) {
+        // TODO reproducible random values with debugger
         return teaselib.util.math.Random.random(min, max);
     }
 
+    @SuppressWarnings("static-method")
     public double random(double min, double max) {
+        // TODO reproducible random values with debugger
         return teaselib.util.math.Random.random(min, max);
     }
 

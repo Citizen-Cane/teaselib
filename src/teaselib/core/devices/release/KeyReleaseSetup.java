@@ -33,6 +33,8 @@ import teaselib.core.ScriptEventArgs;
 import teaselib.core.ScriptEvents.ScriptEventAction;
 import teaselib.core.StateImpl;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceEvent;
+import teaselib.core.devices.DeviceListener;
 import teaselib.core.events.Event;
 import teaselib.core.state.AbstractProxy;
 import teaselib.util.Item;
@@ -47,7 +49,7 @@ import teaselib.util.Items;
  * @author Citizen-Cane
  *
  */
-public class KeyReleaseSetup extends TeaseScript {
+public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRelease> {
 
     public final Map<Items, Long> itemDurationSeconds = new LinkedHashMap<>();
     public final Map<Items, Actuator> itemActuators = new HashMap<>();
@@ -59,6 +61,15 @@ public class KeyReleaseSetup extends TeaseScript {
     public KeyReleaseSetup(TeaseScript script) {
         super(script, getOrDefault(script, Locale.ENGLISH));
         defaults();
+    }
+
+    public void init() {
+        defaults();
+        restore();
+    }
+
+    public void setupOnDeviceConnect() {
+        teaseLib.devices.get(KeyRelease.class).addDeviceListener(this);
     }
 
     private static Actor getOrDefault(Script script, Locale locale) {
@@ -207,12 +218,11 @@ public class KeyReleaseSetup extends TeaseScript {
         itemDurationSeconds.put(items, TimeUnit.SECONDS.convert(duration, unit));
     }
 
-    //
-    // TODO listen to device connect/disconnect events
-    //
-
     // TODO prefer lockable items as long as a key release device is available
-    public void onDeviceConnect(Actuators actuators) {
+
+    @Override
+    public void deviceConnected(DeviceEvent<KeyRelease> e) {
+        Actuators actuators = e.getDevice().actuators();
         for (Entry<Items, Long> entry : itemDurationSeconds.entrySet()) {
             Optional<Actuator> actuator = actuators.get(entry.getValue(), TimeUnit.SECONDS);
             if (actuator.isPresent()) {
@@ -221,8 +231,9 @@ public class KeyReleaseSetup extends TeaseScript {
         }
     }
 
-    public void onDeviceDisconnect(Actuators actuators) {
-        for (Actuator actuator : actuators) {
+    @Override
+    public void deviceDisconnected(DeviceEvent<KeyRelease> e) {
+        for (Actuator actuator : e.getDevice().actuators()) {
             clear(actuator);
         }
     }

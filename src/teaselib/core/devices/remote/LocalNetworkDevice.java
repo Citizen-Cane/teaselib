@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,18 +195,16 @@ public class LocalNetworkDevice extends RemoteDevice {
         return receivedMessage;
     }
 
-    private void reconnect() {
-        factory.removeDisconnectedDevice(this);
-        List<String> devicePaths = factory.getDevices();
-        for (String devicePath : devicePaths) {
-            if (!WaitingForConnection.equals(devicePath) && getDevicePath().equals(devicePath)) {
-                LocalNetworkDevice device = factory.getDevice(devicePath);
-                connection.close();
-                connection = device.connection;
-                factory.connectDevice(this);
-                break;
-            }
+    private boolean reconnect() {
+        Optional<LocalNetworkDevice> matchingDevice = factory.findMatching(this);
+        if (matchingDevice.isPresent()) {
+            LocalNetworkDevice device = matchingDevice.get();
+            connection.close();
+            factory.removeDevice(device.getDevicePath());
+            connection = device.connection;
+            factory.connectDevice(this);
         }
+        return matchingDevice.isPresent();
     }
 
     @Override

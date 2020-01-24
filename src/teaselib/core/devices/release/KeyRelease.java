@@ -18,19 +18,19 @@ import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.remote.RemoteDeviceMessage;
 import teaselib.core.devices.remote.RemoteDevices;
 
-public class KeyRelease implements Device, Device.Creatable {
+public class KeyRelease implements Device.Creatable {
     private static final class MyDeviceFactory extends DeviceFactory<KeyRelease> {
         DeviceListener<LocalNetworkDevice> forwardEvents = new DeviceListener<LocalNetworkDevice>() {
             @Override
             public void deviceConnected(DeviceEvent<LocalNetworkDevice> e) {
-                MyDeviceFactory.this.fireDeviceConnected(DeviceCache.createDevicePath(DeviceClassName, e.devicePath),
-                        KeyRelease.class);
+                MyDeviceFactory.this.fireDeviceConnected(
+                        DeviceCache.createDevicePath(DeviceClassName, e.getDevice().getDevicePath()), KeyRelease.class);
             }
 
             @Override
             public void deviceDisconnected(DeviceEvent<LocalNetworkDevice> e) {
-                MyDeviceFactory.this.fireDeviceDisconnected(DeviceCache.createDevicePath(DeviceClassName, e.devicePath),
-                        KeyRelease.class);
+                MyDeviceFactory.this.fireDeviceDisconnected(
+                        DeviceCache.createDevicePath(DeviceClassName, e.getDevice().getDevicePath()), KeyRelease.class);
             }
         };
 

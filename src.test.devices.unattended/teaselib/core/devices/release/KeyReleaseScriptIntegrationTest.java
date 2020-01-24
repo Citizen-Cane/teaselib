@@ -29,23 +29,25 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     final TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
     final ScriptEvents events = script.events();
-    private KeyReleaseSetup keyReleaseSetup;
+    final KeyReleaseSetup keyReleaseSetup = script.script(KeyReleaseSetup.class);
     KeyRelease keyReleaseDevice;
 
     @Before
-    public void before() {
+    public void before() throws InterruptedException {
+        awaitConnection(script.teaseLib.devices.get(KeyRelease.class));
         keyReleaseDevice = getDefaultDevice();
-        assertConnected(keyReleaseDevice);
         releaseAllRunningActuators(keyReleaseDevice);
-        keyReleaseSetup = script.script(KeyReleaseSetup.class);
-        Actuators actuators = keyReleaseDevice.actuators();
-        keyReleaseSetup.onDeviceConnect(actuators);
+
+        keyReleaseSetup.deviceConnected(new DeviceEventMock(keyReleaseDevice));
+
         script.debugger.resumeTime();
     }
 
     @After
     public void detachDevice() {
-        keyReleaseSetup.onDeviceDisconnect(keyReleaseDevice.actuators());
+        if (keyReleaseDevice != null) {
+            keyReleaseSetup.deviceDisconnected(new DeviceEventMock(keyReleaseDevice));
+        }
     }
 
     @After

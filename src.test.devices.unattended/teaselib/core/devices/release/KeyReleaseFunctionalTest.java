@@ -24,7 +24,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
 
     @Before
     public void before() {
-        assertConnected(keyRelease);
+        assertConnected(keyRelease, WAIT_FOR_CONNECTION_SECONDS);
         releaseAllRunningActuators(keyRelease);
     }
 

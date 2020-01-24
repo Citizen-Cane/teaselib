@@ -3,6 +3,8 @@ package teaselib.core.devices.release;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assume;
@@ -10,7 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.configuration.DebugSetup;
+import teaselib.core.devices.BatteryLevel;
+import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceEvent;
+import teaselib.core.devices.DeviceListener;
 import teaselib.core.devices.Devices;
 
 /**
@@ -20,6 +26,7 @@ import teaselib.core.devices.Devices;
 public class KeyReleaseBaseTest {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseBaseTest.class);
 
+    static final double WAIT_FOR_CONNECTION_SECONDS = 20.0;
     static final long HOLD_DURATION_MINUTES = 1;
 
     public static void releaseAllRunningActuators(KeyRelease keyRelease) {
@@ -102,6 +109,182 @@ public class KeyReleaseBaseTest {
         } catch (InterruptedException e) {
             Assume.assumeTrue(false);
             Thread.currentThread().interrupt();
+        }
+    }
+
+    protected static class ActuatorMock implements Actuator {
+        final long availableSeconds;
+
+        public ActuatorMock(long availableDuration, TimeUnit unit) {
+            availableSeconds = TimeUnit.SECONDS.convert(availableDuration, unit);
+        }
+
+        @Override
+        public String getDevicePath() {
+            return getClass().getPackage().getName();
+        }
+
+        @Override
+        public String getName() {
+            return getClass().getSimpleName();
+        }
+
+        @Override
+        public boolean connected() {
+            return false;
+        }
+
+        @Override
+        public boolean active() {
+            return false;
+        }
+
+        @Override
+        public void close() {
+            // Ignore
+        }
+
+        @Override
+        public boolean isWireless() {
+            return false;
+        }
+
+        @Override
+        public BatteryLevel batteryLevel() {
+            return null;
+        }
+
+        @Override
+        public int index() {
+            return 0;
+        }
+
+        @Override
+        public boolean arm() {
+            return false;
+        }
+
+        @Override
+        public void hold() { // Mock
+        }
+
+        @Override
+        public void start() { // Mock
+        }
+
+        @Override
+        public void start(long duration, TimeUnit unit) { // Mock
+        }
+
+        @Override
+        public int sleep(long duration, TimeUnit unit) {
+            return 0;
+        }
+
+        @Override
+        public boolean add(long duration, TimeUnit unit) {
+            return false;
+        }
+
+        @Override
+        public boolean isRunning() {
+            return false;
+        }
+
+        @Override
+        public long available(TimeUnit unit) {
+            return availableSeconds;
+        }
+
+        @Override
+        public long remaining(TimeUnit unit) {
+            return 0;
+        }
+
+        @Override
+        public boolean release() {
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + (int) (availableSeconds ^ (availableSeconds >>> 32));
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            ActuatorMock other = (ActuatorMock) obj;
+            if (availableSeconds != other.availableSeconds)
+                return false;
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return availableSeconds + " seconds";
+        }
+
+    }
+
+    protected static class KeyReleaseMock extends KeyRelease {
+        final Actuators actuators;
+
+        public KeyReleaseMock(List<Actuator> actuators) {
+            super(null, null);
+            this.actuators = new Actuators(actuators);
+        }
+
+        @Override
+        public Actuators actuators() {
+            return actuators;
+        }
+
+    }
+
+    protected static class DeviceEventMock implements DeviceEvent<KeyRelease> {
+        final KeyRelease device;
+
+        public DeviceEventMock(KeyRelease device) {
+            super();
+            this.device = device;
+        }
+
+        @Override
+        public KeyRelease getDevice() {
+            return device;
+        }
+    }
+
+    public <T extends Device> void awaitConnection(DeviceCache<T> deviceCache) throws InterruptedException {
+        CountDownLatch waitForConnection = new CountDownLatch(1);
+        DeviceListener<T> deviceListener = new DeviceListener<T>() {
+            @Override
+            public void deviceConnected(DeviceEvent<T> e) {
+                waitForConnection.countDown();
+            }
+
+            @Override
+            public void deviceDisconnected(DeviceEvent<T> e) {
+                // Ignore
+            }
+        };
+        try {
+            deviceCache.addDeviceListener(deviceListener);
+            if (!deviceCache.getDefaultDevice().connected()) {
+                assertTrue("Didn't receive device connection event after" + WAIT_FOR_CONNECTION_SECONDS + " seconds",
+                        waitForConnection.await((int) WAIT_FOR_CONNECTION_SECONDS, TimeUnit.SECONDS));
+            }
+        } finally {
+            deviceCache.removeDeviceListener(deviceListener);
         }
     }
 

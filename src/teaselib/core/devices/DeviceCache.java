@@ -15,7 +15,7 @@ import teaselib.core.ScriptInterruptedException;
 public class DeviceCache<T extends Device> {
     private static final int CONNECTION_WAIT_UNTIL_CONNECTED = -1;
     private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<>();
-    private final Set<DeviceFactoryListener<T>> deviceListeners = new LinkedHashSet<>();
+    private final Set<DeviceListener<T>> deviceListeners = new LinkedHashSet<>();
 
     private static final char PathSeparator = '/';
 
@@ -142,23 +142,31 @@ public class DeviceCache<T extends Device> {
     }
 
     void fireDeviceConnected(String devicePath) {
-        for (DeviceFactoryListener<T> deviceListener : deviceListeners) {
-            deviceListener.deviceConnected(new DeviceEvent<>(this, devicePath));
+        synchronized (deviceListeners) {
+            for (DeviceListener<T> deviceListener : deviceListeners) {
+                deviceListener.deviceConnected(new DeviceEventImpl<>(this, devicePath));
+            }
         }
     }
 
     void fireDeviceDisconnected(String devicePath) {
-        for (DeviceFactoryListener<T> deviceListener : deviceListeners) {
-            deviceListener.deviceDisconnected(new DeviceEvent<>(this, devicePath));
+        synchronized (deviceListeners) {
+            for (DeviceListener<T> deviceListener : deviceListeners) {
+                deviceListener.deviceDisconnected(new DeviceEventImpl<>(this, devicePath));
+            }
         }
     }
 
-    public void addDeviceListener(DeviceFactoryListener<T> deviceListener) {
-        deviceListeners.add(deviceListener);
+    public void addDeviceListener(DeviceListener<T> deviceListener) {
+        synchronized (deviceListeners) {
+            deviceListeners.add(deviceListener);
+        }
     }
 
-    public void removeDeviceListener(DeviceFactoryListener<T> deviceListener) {
-        deviceListeners.remove(deviceListener);
+    public void removeDeviceListener(DeviceListener<T> deviceListener) {
+        synchronized (deviceListeners) {
+            deviceListeners.remove(deviceListener);
+        }
     }
 
     public static String qualifiedName(Device device) {
@@ -167,8 +175,11 @@ public class DeviceCache<T extends Device> {
 
     @Override
     public String toString() {
-        return getFactoryClassNames() + " = " + factories.values().stream().map(f -> f.getDevices().size()).count()
-                + " devices";
+        return getFactoryClassNames() + " = " + size() + " devices";
+    }
+
+    public int size() {
+        return factories.values().stream().map(f -> f.getDevices().size()).reduce(0, Integer::sum);
     }
 
 }

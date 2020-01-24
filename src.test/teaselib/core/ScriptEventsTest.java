@@ -12,151 +12,25 @@ import org.junit.Test;
 import teaselib.Features;
 import teaselib.Toys;
 import teaselib.core.configuration.DebugSetup;
-import teaselib.core.devices.BatteryLevel;
-import teaselib.core.devices.DeviceEvent;
-import teaselib.core.devices.release.Actuator;
-import teaselib.core.devices.release.Actuators;
 import teaselib.core.devices.release.KeyRelease;
+import teaselib.core.devices.release.KeyReleaseBaseTest;
 import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
-public class ScriptEventsTest {
+public class ScriptEventsTest extends KeyReleaseBaseTest {
     private TestScript script;
-    private Actuators actuators;
     private KeyReleaseSetup keyReleaseSetup;
-
-    static class ActuatorMock implements Actuator {
-        final long availableSeconds;
-
-        public ActuatorMock(long availableDuration, TimeUnit unit) {
-            availableSeconds = TimeUnit.SECONDS.convert(availableDuration, unit);
-        }
-
-        @Override
-        public String getDevicePath() {
-            return getClass().getPackage().getName();
-        }
-
-        @Override
-        public String getName() {
-            return getClass().getSimpleName();
-        }
-
-        @Override
-        public boolean connected() {
-            return false;
-        }
-
-        @Override
-        public boolean active() {
-            return false;
-        }
-
-        @Override
-        public void close() {
-            // Ignore
-        }
-
-        @Override
-        public boolean isWireless() {
-            return false;
-        }
-
-        @Override
-        public BatteryLevel batteryLevel() {
-            return null;
-        }
-
-        @Override
-        public int index() {
-            return 0;
-        }
-
-        @Override
-        public boolean arm() {
-            return false;
-        }
-
-        @Override
-        public void hold() { // Mock
-        }
-
-        @Override
-        public void start() { // Mock
-        }
-
-        @Override
-        public void start(long duration, TimeUnit unit) { // Mock
-        }
-
-        @Override
-        public int sleep(long duration, TimeUnit unit) {
-            return 0;
-        }
-
-        @Override
-        public boolean add(long duration, TimeUnit unit) {
-            return false;
-        }
-
-        @Override
-        public boolean isRunning() {
-            return false;
-        }
-
-        @Override
-        public long available(TimeUnit unit) {
-            return availableSeconds;
-        }
-
-        @Override
-        public long remaining(TimeUnit unit) {
-            return 0;
-        }
-
-        @Override
-        public boolean release() {
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + (int) (availableSeconds ^ (availableSeconds >>> 32));
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            ActuatorMock other = (ActuatorMock) obj;
-            if (availableSeconds != other.availableSeconds)
-                return false;
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            return availableSeconds + " seconds";
-        }
-
-    }
+    private KeyRelease keyRelease;
 
     @Before
     public void setupActuators() {
         script = TestScript.getOne(new DebugSetup());
         keyReleaseSetup = script.script(KeyReleaseSetup.class);
-        actuators = new Actuators(
+        keyRelease = new KeyReleaseMock(
                 Arrays.asList(new ActuatorMock(2, TimeUnit.HOURS), new ActuatorMock(1, TimeUnit.HOURS)));
-        keyReleaseSetup.deviceConnected(new DeviceEvent<>(script.teaseLib.devices.get(KeyRelease.class), null));
+        keyReleaseSetup.deviceConnected(new DeviceEventMock(keyRelease));
 
         assertEquals(2, keyReleaseSetup.itemDurationSeconds.size());
         assertEquals(2, keyReleaseSetup.itemActuators.size());
@@ -165,7 +39,7 @@ public class ScriptEventsTest {
 
     @After
     public void detachDevice() {
-        keyReleaseSetup.deviceDisconnected(new DeviceEvent<>(script.teaseLib.devices.get(KeyRelease.class), null));
+        keyReleaseSetup.deviceDisconnected(new DeviceEventMock(keyRelease));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -339,21 +213,24 @@ public class ScriptEventsTest {
 
     private void assertIdle() {
         assertEquals(0, script.events().afterChoices.size());
-        assertEquals("Expected all apply hook active", actuators.size(), script.events().itemApplied.size());
+        assertEquals("Expected all apply hook active", keyRelease.actuators().size(),
+                script.events().itemApplied.size());
         assertEquals(0, script.events().itemDuration.size());
         assertEquals(0, script.events().itemRemoved.size());
     }
 
     private void assertArmedAndHolding() {
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals("Expected all apply hook active", actuators.size(), script.events().itemApplied.size());
+        assertEquals("Expected all apply hook active", keyRelease.actuators().size(),
+                script.events().itemApplied.size());
         assertEquals(0, script.events().itemDuration.size());
         assertEquals(0, script.events().itemRemoved.size());
     }
 
     private void assertApplied() {
         assertEquals(1, script.events().afterChoices.size());
-        assertEquals("Expected apply hook removed", actuators.size() - 1L, script.events().itemApplied.size());
+        assertEquals("Expected apply hook removed", keyRelease.actuators().size() - 1L,
+                script.events().itemApplied.size());
         assertEquals(1, script.events().itemDuration.size());
         assertEquals(1, script.events().itemRemoved.size());
     }

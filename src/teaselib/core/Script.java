@@ -22,6 +22,7 @@ import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
+import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.Confidence;
@@ -53,7 +54,7 @@ public abstract class Script {
     public final String namespace;
 
     public final ScriptRenderer scriptRenderer;
-    protected final ScriptEvents events;
+    public final ScriptEvents events;
 
     protected String mood = Mood.Neutral;
     protected String displayImage = Message.ActorImage;
@@ -77,6 +78,9 @@ public abstract class Script {
         } catch (IOException e) {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
         }
+
+        script(KeyReleaseSetup.class).init();
+        script(KeyReleaseSetup.class).setupOnDeviceConnect();
     }
 
     private static <T> T getOrDefault(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {

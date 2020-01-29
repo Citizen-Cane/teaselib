@@ -24,6 +24,7 @@ import teaselib.util.Item;
 import teaselib.util.Items;
 
 public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
+    private static final String FOOBAR = "foobar";
     static final long requestedDurationSeconds = HOURS.toSeconds(1);
     static final long scheduledDurationSeconds = MINUTES.toSeconds(23);
 
@@ -34,24 +35,20 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Before
     public void before() throws InterruptedException {
+        // TODO deviceConnectedEvent only in first test
+        // - for subsequent tests, no startup message is received
+        // -> LocalNetworkDevice returns no devices
         awaitConnection(script.teaseLib.devices.get(KeyRelease.class));
+        keyReleaseSetup.say(FOOBAR);
+
         keyReleaseDevice = getDefaultDevice();
         releaseAllRunningActuators(keyReleaseDevice);
-
-        keyReleaseSetup.deviceConnected(new DeviceEventMock(keyReleaseDevice));
 
         script.debugger.resumeTime();
     }
 
     @After
-    public void detachDevice() {
-        if (keyReleaseDevice != null) {
-            keyReleaseSetup.deviceDisconnected(new DeviceEventMock(keyReleaseDevice));
-        }
-    }
-
-    @After
-    public void releaseAllAfterwards() {
+    public void releaseActuators() {
         releaseAllRunningActuators(keyReleaseDevice);
     }
 
@@ -65,7 +62,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         long availableSeconds = availableSeconds(cuffs);
 
         script.say("Arm", Message.Delay10s);
-        keyReleaseSetup.prepare(cuffs);
+        keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
+        keyReleaseSetup.say(FOOBAR);
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
@@ -83,7 +81,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
 
         script.say("Arm", Message.Delay10s);
-        keyReleaseSetup.prepare(cuffs);
+        keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
+        keyReleaseSetup.say(FOOBAR);
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
@@ -102,7 +101,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         long availableSeconds = availableSeconds(cuffs);
 
         script.say("Arm", Message.Delay10s);
-        keyReleaseSetup.prepare(cuffs);
+        keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
+        keyReleaseSetup.say(FOOBAR);
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
@@ -121,7 +121,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
 
         script.say("Arm", Message.Delay10s);
-        keyReleaseSetup.prepare(cuffs);
+        keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
+        keyReleaseSetup.say(FOOBAR);
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
@@ -196,7 +197,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         long availableSeconds = actuator.available(TimeUnit.SECONDS);
 
         script.say("Arm", Message.Delay10s);
-        keyReleaseSetup.prepare(cuffs);
+        keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
         assertEquals(1, events.afterChoices.size());
         assertEquals(3, events.itemApplied.size());
         assertEquals(2, events.itemDuration.size());

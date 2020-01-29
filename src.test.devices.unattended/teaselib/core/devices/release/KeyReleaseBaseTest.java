@@ -193,7 +193,7 @@ public class KeyReleaseBaseTest {
 
         @Override
         public long available(TimeUnit unit) {
-            return availableSeconds;
+            return unit.convert(availableSeconds, TimeUnit.SECONDS);
         }
 
         @Override

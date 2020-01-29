@@ -145,8 +145,8 @@ public class TestScript extends TeaseScript {
 
     public static void run(Class<? extends Script> script) {
         DebugStorage storage = new DebugStorage();
-        try {
-            TeaseLib.run(new DebugHost(), newDebugPersistence(storage), new DebugSetup(), script.getName());
+        try (DebugHost host = new DebugHost()) {
+            TeaseLib.run(host, newDebugPersistence(storage), new DebugSetup(), script.getName());
         } catch (IOException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
@@ -177,7 +177,7 @@ public class TestScript extends TeaseScript {
     }
 
     public ScriptEvents events() {
-        return events;
+        return scriptRenderer.events;
     }
 
     @Override

@@ -1,13 +1,15 @@
 package teaselib.core.ui;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import teaselib.Replay;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.ExceptionUtil;
 
@@ -18,6 +20,9 @@ import teaselib.core.util.ExceptionUtil;
 public abstract class AbstractInputMethod implements InputMethod {
     protected final ExecutorService executor;
     protected final ReentrantLock replySection = new ReentrantLock(true);
+    protected final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
+
+    private final HashMap<String, Runnable> handlers = new HashMap<>();
 
     private Future<Prompt.Result> worker;
 
@@ -27,6 +32,7 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public final void show(Prompt prompt) throws InterruptedException {
+        activePrompt.set(prompt);
         Callable<Prompt.Result> callable = new Callable<Prompt.Result>() {
             @Override
             public Prompt.Result call() throws Exception {
@@ -79,6 +85,13 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public final boolean dismiss(Prompt prompt) throws InterruptedException {
+        Prompt active = activePrompt.getAndSet(null);
+        if (active == null) {
+            return false;
+        } else if (active != prompt) {
+            throw new IllegalStateException("Trying to dismiss wrong prompt");
+        }
+
         if (worker.isCancelled()) {
             return false;
         } else if (worker.isDone()) {
@@ -121,6 +134,49 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public Map<String, Runnable> getHandlers() {
-        return Collections.emptyMap();
+        return handlers;
     }
+
+    protected static class Handler {
+        final String key;
+        final Runnable action;
+
+        public Handler(String key, Runnable action) {
+            this.key = key;
+            this.action = action;
+        }
+    }
+
+    public void add(Handler handler) {
+        handlers.put(handler.key, handler.action);
+    }
+
+    public void remove(Handler handler) {
+        handlers.remove(handler.key);
+    }
+
+    protected void signal(Handler handler) {
+        activePrompt.getAndUpdate(prompt -> {
+            if (prompt != null && !prompt.hasScriptFunction()) {
+                prompt.script.endAll();
+                Replay previous = prompt.script.getReplay();
+
+                // TODO perform interjection as prompt.script actor - not as creator of script
+                // -> interjections must use prompt.script.actor, not the one that created the script
+                prompt.signalHandlerInvocation(handler.key);
+
+                // TODO intercept renderMessage/Intertitle & showChoices (like SpeechRecognitionrScriptAdapter)
+                // -> use events
+                boolean finishedWithPrompt = true;
+                if (finishedWithPrompt) {
+                    previous.replay(Replay.Position.FromMandatory);
+                } else {
+                    previous.replay(Replay.Position.End);
+                }
+
+            }
+            return prompt;
+        });
+    }
+
 }

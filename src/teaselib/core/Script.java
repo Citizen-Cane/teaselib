@@ -22,7 +22,10 @@ import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
+import teaselib.core.devices.DeviceEvent;
+import teaselib.core.devices.DeviceListener;
 import teaselib.core.devices.release.KeyReleaseSetup;
+import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.Confidence;
@@ -54,7 +57,6 @@ public abstract class Script {
     public final String namespace;
 
     public final ScriptRenderer scriptRenderer;
-    public final ScriptEvents events;
 
     protected String mood = Mood.Neutral;
     protected String displayImage = Message.ActorImage;
@@ -67,7 +69,7 @@ public abstract class Script {
      */
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace, //
-                getOrDefault(teaseLib, ScriptRenderer.class, () -> new ScriptRenderer(teaseLib)), new ScriptEvents());
+                getOrDefault(teaseLib, ScriptRenderer.class, () -> new ScriptRenderer(teaseLib)));
 
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
@@ -80,11 +82,34 @@ public abstract class Script {
         }
 
         script(KeyReleaseSetup.class).init();
-        script(KeyReleaseSetup.class).setupOnDeviceConnect();
+
+        bindMotionDetectorToVideoRenderer();
+        bindNetworkProperties();
     }
 
     private static <T> T getOrDefault(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {
         return teaseLib.globals.getOrDefault(clazz, supplier);
+    }
+
+    private void bindMotionDetectorToVideoRenderer() {
+        teaseLib.devices.get(MotionDetector.class).addDeviceListener(new DeviceListener<MotionDetector>() {
+
+            @Override
+            public void deviceConnected(DeviceEvent<MotionDetector> e) {
+                e.getDevice().setVideoRenderer(teaseLib.host.getDisplay(VideoRenderer.Type.CameraFeedback));
+            }
+
+            @Override
+            public void deviceDisconnected(DeviceEvent<MotionDetector> e) {
+                e.getDevice().setVideoRenderer(null);
+            }
+        });
+    }
+
+    private void bindNetworkProperties() {
+        if (Boolean.parseBoolean(teaseLib.config.get(LocalNetworkDevice.Settings.EnableDeviceDiscovery))) {
+            teaseLib.devices.get(LocalNetworkDevice.class).getDevicePaths();
+        }
     }
 
     /**
@@ -94,16 +119,15 @@ public abstract class Script {
      * @param actor
      */
     protected Script(Script script, Actor actor) {
-        this(script.teaseLib, script.resources, actor, script.namespace, script.scriptRenderer, script.events);
+        this(script.teaseLib, script.resources, actor, script.namespace, script.scriptRenderer);
     }
 
     private Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace,
-            ScriptRenderer scriptRenderer, ScriptEvents events) {
+            ScriptRenderer scriptRenderer) {
         this.teaseLib = teaseLib;
         this.resources = resources;
         this.actor = actor;
         this.scriptRenderer = scriptRenderer;
-        this.events = events;
         this.namespace = namespace.replace(" ", "_");
 
         scriptRenderer.messageRenderer.textToSpeechPlayer.acquireVoice(actor, resources);
@@ -293,7 +317,7 @@ public abstract class Script {
     }
 
     private List<Choice> showPrompt(Prompt prompt) {
-        events.beforeChoices.run(new ScriptEventArgs());
+        scriptRenderer.events.beforeChoices.run(new ScriptEventArgs());
 
         List<Choice> choice;
         try {
@@ -306,7 +330,7 @@ public abstract class Script {
         // -> integrate this with endScene() which is just there to workaround the delay until the next say() command
         endAll();
 
-        events.afterChoices.run(new ScriptEventArgs());
+        scriptRenderer.events.afterChoices.run(new ScriptEventArgs());
 
         teaseLib.host.endScene();
 

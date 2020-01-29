@@ -92,6 +92,7 @@ public class Prompt {
 
     static final String NONE = "None";
 
+    public final Script script;
     public final Choices choices;
     public final Result.Accept acceptedResult;
 
@@ -119,6 +120,7 @@ public class Prompt {
 
     public Prompt(Script script, Choices choices, List<InputMethod> inputMethods, ScriptFunction scriptFunction,
             Result.Accept mode) {
+        this.script = script;
         this.choices = choices;
         this.inputMethods = inputMethods;
         this.scriptTask = scriptFunction != null ? new ScriptFutureTask(script, scriptFunction, this) : null;

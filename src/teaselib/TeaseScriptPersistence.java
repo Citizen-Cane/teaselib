@@ -47,7 +47,7 @@ public abstract class TeaseScriptPersistence extends Script {
                 return item;
             } else {
                 ItemImpl itemImpl = AbstractProxy.itemImpl(item);
-                return new ItemProxy(namespace, getItemByGuid(itemImpl), events);
+                return new ItemProxy(namespace, getItemByGuid(itemImpl), scriptRenderer.events);
             }
         }
 
@@ -77,7 +77,7 @@ public abstract class TeaseScriptPersistence extends Script {
         }
 
         public <T extends Enum<?>> Item item(T value) {
-            return new ItemProxy(namespace, teaseLib.item(name, value), events);
+            return new ItemProxy(namespace, teaseLib.item(name, value), scriptRenderer.events);
         }
 
         public Item item(String value) {
@@ -85,16 +85,16 @@ public abstract class TeaseScriptPersistence extends Script {
             if (item == Item.NotFound) {
                 return item;
             } else {
-                return new ItemProxy(namespace, item, events);
+                return new ItemProxy(namespace, item, scriptRenderer.events);
             }
         }
 
         public State state(Enum<?> value) {
-            return new StateProxy(namespace, teaseLib.state(name, value), events);
+            return new StateProxy(namespace, teaseLib.state(name, value), scriptRenderer.events);
         }
 
         public State state(String value) {
-            return new StateProxy(namespace, teaseLib.state(name, value), events);
+            return new StateProxy(namespace, teaseLib.state(name, value), scriptRenderer.events);
         }
 
         @SafeVarargs
@@ -127,7 +127,7 @@ public abstract class TeaseScriptPersistence extends Script {
                 } else if (item == Item.NotFound) {
                     proxies.add(item);
                 } else {
-                    proxies.add(new ItemProxy(namespace, item, events));
+                    proxies.add(new ItemProxy(namespace, item, scriptRenderer.events));
                 }
             }
             return new Items(proxies);

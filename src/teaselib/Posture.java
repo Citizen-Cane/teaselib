@@ -6,9 +6,9 @@ package teaselib;
  *
  */
 public enum Posture {
-    AnklesTiedTogether,
-    WristsTiedInFront,
-    WristsTiedBehindBack,
+    AnklesTiedTogether, // Duplicate of Body.AnklesTied -> Remove
+    WristsTiedInFront, // Redundant - default of Body.WristsTied -> Remove
+    WristsTiedBehindBack, // Correct, changes pose
 
     CantCrawl,
     CantKneel,

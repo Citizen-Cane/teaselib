@@ -44,10 +44,7 @@ import teaselib.core.debug.CheckPoint;
 import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
-import teaselib.core.devices.DeviceEvent;
-import teaselib.core.devices.DeviceListener;
 import teaselib.core.devices.Devices;
-import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.util.ConfigFileMapping;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
@@ -55,7 +52,6 @@ import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
-import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Daytime;
 import teaselib.util.Item;
 import teaselib.util.ItemGuid;
@@ -110,9 +106,6 @@ public class TeaseLib implements Closeable {
 
         this.stateMaps = new StateMaps(this);
         this.devices = new Devices(config);
-
-        bindMotionDetectorToVideoRenderer();
-        bindNetworkProperties();
     }
 
     private static void logDateTime() {
@@ -155,27 +148,6 @@ public class TeaseLib implements Closeable {
                 Boolean.parseBoolean(config.get(Config.Debug.LogDetails)) ? TeaseLibLogger.Level.Debug
                         : TeaseLibLogger.Level.Info).showTime(false).showThread(false);
         return transcriptLogger;
-    }
-
-    private void bindMotionDetectorToVideoRenderer() {
-        devices.get(MotionDetector.class).addDeviceListener(new DeviceListener<MotionDetector>() {
-
-            @Override
-            public void deviceConnected(DeviceEvent<MotionDetector> e) {
-                e.getDevice().setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback));
-            }
-
-            @Override
-            public void deviceDisconnected(DeviceEvent<MotionDetector> e) {
-                e.getDevice().setVideoRenderer(null);
-            }
-        });
-    }
-
-    private void bindNetworkProperties() {
-        if (Boolean.parseBoolean(config.get(LocalNetworkDevice.Settings.EnableDeviceDiscovery))) {
-            devices.get(LocalNetworkDevice.class).getDevicePaths();
-        }
     }
 
     public static void run(Host host, Persistence persistence, File scriptClassPath, String script)

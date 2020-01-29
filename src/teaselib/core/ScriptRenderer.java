@@ -1,6 +1,7 @@
 package teaselib.core;
 
 import static java.util.concurrent.TimeUnit.HOURS;
+import static teaselib.core.concurrency.NamedExecutorService.newUnlimitedThreadPool;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Replay;
-import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.debug.CheckPoint;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
@@ -33,10 +33,8 @@ public class ScriptRenderer implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(ScriptRenderer.class);
 
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
-    private final ExecutorService scriptFunctionExecutor = NamedExecutorService.newUnlimitedThreadPool("Script task", 1,
-            HOURS);
-    private final ExecutorService inputMethodExecutor = NamedExecutorService.newUnlimitedThreadPool("Input method", 1,
-            HOURS);
+    private final ExecutorService scriptFunctionExecutor = newUnlimitedThreadPool("Script task", 1, HOURS);
+    private final ExecutorService inputMethodExecutor = newUnlimitedThreadPool("Input method", 1, HOURS);
 
     final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
@@ -46,8 +44,11 @@ public class ScriptRenderer implements Closeable {
 
     final MessageRendererQueue messageRenderer;
 
+    public final ScriptEvents events;
+
     ScriptRenderer(TeaseLib teaseLib) {
         this.messageRenderer = new MessageRendererQueue(teaseLib, new MediaRendererQueue(renderQueue));
+        this.events = new ScriptEvents(new ScriptEventInputMethod(inputMethodExecutor));
     }
 
     @Override
@@ -200,6 +201,10 @@ public class ScriptRenderer implements Closeable {
                 // because if the current set is cancelled,
                 // the next set must be discarded
                 queuedRenderers.clear();
+
+                completeMandatory();
+                events.beforeMessage.run(new ScriptEventArgs());
+
                 // Now the current set can be completed, and canceling the
                 // current set will result in an empty next set
                 completeAll();
@@ -262,4 +267,5 @@ public class ScriptRenderer implements Closeable {
     ExecutorService getInputMethodExecutorService() {
         return inputMethodExecutor;
     }
+
 }

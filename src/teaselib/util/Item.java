@@ -22,7 +22,7 @@ public interface Item extends State {
 
         @Override
         public State.Options apply() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("Cannot apply when item not found");
         }
 
         @Override

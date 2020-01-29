@@ -65,7 +65,7 @@ public class MediaRendererQueue {
 
             List<MediaRenderer> replayable = new ArrayList<>();
             for (MediaRenderer r : renderers) {
-                if (r instanceof ReplayableMediaRenderer || replayPosition == Replay.Position.FromStart) {
+                if (r instanceof ReplayableMediaRenderer) {
                     ((ReplayableMediaRenderer) r).replay(replayPosition);
                     replayable.add(r);
                 }

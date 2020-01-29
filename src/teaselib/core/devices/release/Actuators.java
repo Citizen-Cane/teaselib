@@ -1,5 +1,7 @@
 package teaselib.core.devices.release;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -42,16 +44,33 @@ public class Actuators implements Iterable<Actuator> {
         if (isEmpty()) {
             return Optional.empty();
         } else {
-            return Optional.ofNullable(get(getActuatorIndex(duration, durations(unit))));
+            return get(elements, duration, unit);
         }
+    }
+
+    public static Optional<Actuator> get(List<Actuator> actuators, long duration, TimeUnit unit) {
+        int index = getActuatorIndex(duration, durations(actuators, unit));
+        if (index >= 0) {
+            return Optional.of(actuators.get(index));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public static List<Actuator> matching(Collection<Actuator> actuators, long duration, TimeUnit unit) {
+        List<Actuator> matching = new ArrayList<>(actuators);
+        long seconds = unit.toSeconds(Math.max(0, duration));
+        matching.sort((a, b) -> (int) (Math.abs(a.available(TimeUnit.SECONDS) - seconds)
+                - Math.abs(b.available(TimeUnit.SECONDS) - seconds)));
+        return matching;
     }
 
     public Actuators available() {
         return new Actuators(stream().filter(actuator -> !actuator.isRunning()).collect(Collectors.toList()));
     }
 
-    private List<Long> durations(TimeUnit unit) {
-        return stream().map(actuator -> actuator.available(unit)).collect(Collectors.toList());
+    private static List<Long> durations(List<Actuator> actuators, TimeUnit unit) {
+        return actuators.stream().map(actuator -> actuator.available(unit)).collect(Collectors.toList());
     }
 
     static int getActuatorIndex(long duration, List<Long> durations) {

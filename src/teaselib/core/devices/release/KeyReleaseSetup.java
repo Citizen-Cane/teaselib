@@ -14,18 +14,14 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import teaselib.Actor;
-import teaselib.Answer;
 import teaselib.Duration;
 import teaselib.Features;
 import teaselib.Gadgets;
-import teaselib.ScriptFunction;
-import teaselib.ScriptFunction.Relation;
 import teaselib.State.Options;
 import teaselib.TeaseScript;
 import teaselib.Toys;
@@ -130,42 +126,6 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         }
     }
 
-    @Deprecated
-    public boolean setup(BiConsumer<KeyReleaseSetup, KeyRelease> handOverKeys) {
-        boolean ready = false;
-        while (!ready) {
-            KeyRelease keyRelease = teaseLib.devices.get(KeyRelease.class).getDefaultDevice();
-            if (keyRelease.connected()) {
-                // TODO show in ui as notification
-                // showInterTitle("Device connected.");
-            } else {
-                showInterTitle("Activate key release device!");
-                Answer no = Answer.no("It doesn't work, #title");
-                Answer deviceConnected = Answer.resume("Device connected, #title");
-                Answer reply = reply(new ScriptFunction(() -> {
-                    DeviceCache.connect(keyRelease);
-                    return deviceConnected;
-                }, Relation.Confirmation), deviceConnected, no);
-                if (reply == deviceConnected) {
-                    if (keyRelease.connected()) {
-                        showInterTitle("Device connected.");
-                    } else {
-                        showInterTitle("Device not found - please reset device and check network connection.");
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            if (keyRelease.connected()) {
-                handOverKeys.accept(this, keyRelease);
-                ready = keyRelease.connected();
-            }
-        }
-
-        return ready;
-    }
-
     /**
      * Sets default for items that can be locked.
      * <p>
@@ -200,6 +160,15 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         public ItemsAlreadyPreparedException(Items items) {
             super("Items already prepared: " + items);
         }
+    }
+
+    public boolean deviceAvailable() {
+        return !actuators.isEmpty();
+    }
+
+    public boolean devicesAvailable(Items... items) {
+        // TODO Unassigned actuators or matching assignments - assignments can be replaced
+        return actuators.size() >= items.length;
     }
 
     private void assign(Items items, long duration, TimeUnit unit, Consumer<Items> instructions,

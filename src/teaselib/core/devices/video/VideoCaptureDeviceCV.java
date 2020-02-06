@@ -218,7 +218,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
 
     @Override
     public boolean active() {
-        return videoCapture.isOpened();
+        return connected() && videoCapture.isOpened() && !videoCapture.isNull();
     }
 
     @Override
@@ -297,16 +297,18 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
 
         @Override
         public boolean hasNext() {
-            if (!videoCapture.isOpened() || videoCapture.isNull()) {
+            if (!active()) {
+                close();
                 return false;
+            } else {
+                f = getMat();
+                return mat != null;
             }
-            f = getMat();
-            return mat != null;
         }
 
         @Override
         public Mat next() {
-            if (!videoCapture.isOpened() || videoCapture.isNull()) {
+            if (!active()) {
                 throw new NoSuchElementException();
             }
 
@@ -332,5 +334,6 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
+        factory.disconnectDevice(this);
     }
 }

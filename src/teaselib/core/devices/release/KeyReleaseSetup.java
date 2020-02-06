@@ -322,6 +322,15 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         return actuator.isPresent() && actuator.get().isRunning();
     }
 
+    public boolean prepare(Item item, long duration, TimeUnit unit, Consumer<Items> instructions) {
+        return prepare(new Items(item), duration, unit, instructions, null);
+    }
+
+    public boolean prepare(Item item, long duration, TimeUnit unit, Consumer<Items> instructions,
+            Consumer<Items> instructionsAgain) {
+        return prepare(new Items(item), duration, unit, instructions, instructionsAgain);
+    }
+
     public boolean isPrepared(Items items) {
         List<Actuator> assignedActuators = assignedActuators(items);
         return assignedActuators.stream().filter(Actuator::isRunning).count() == assignedActuators.size();

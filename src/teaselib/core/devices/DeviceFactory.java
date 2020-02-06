@@ -1,12 +1,12 @@
 package teaselib.core.devices;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import teaselib.core.configuration.Configuration;
@@ -16,7 +16,7 @@ public abstract class DeviceFactory<T extends Device> {
     protected final Devices devices;
     protected final Configuration configuration;
 
-    private final Map<String, Supplier<T>> discovered = new HashMap<>();
+    private final Map<String, Supplier<T>> discovered = new ConcurrentHashMap<>();
     private final Map<String, T> deviceCache = new LinkedHashMap<>();
 
     public DeviceFactory(String deviceClassName, Devices devices, Configuration configuration) {
@@ -38,24 +38,25 @@ public abstract class DeviceFactory<T extends Device> {
             return Collections.emptyList();
         }
 
+        devicePaths.addAll(discovered.keySet());
+
         if (devicePaths.isEmpty()) {
             devicePaths.add(DeviceCache.createDevicePath(deviceClassName, Device.WaitingForConnection));
         }
 
-        // remove disconnected
-        // TODO call removed event for each removed device
+        retainConnectedDevices(devicePaths);
+        return devicePaths;
+    }
+
+    private void retainConnectedDevices(List<String> devicePaths) {
         Map<String, T> updatedDeviceCache = new LinkedHashMap<>();
         for (String devicePath : devicePaths) {
             if (deviceCache.containsKey(devicePath)) {
                 updatedDeviceCache.put(devicePath, deviceCache.get(devicePath));
             }
         }
-
         deviceCache.clear();
         deviceCache.putAll(updatedDeviceCache);
-
-        devicePaths.addAll(discovered.keySet());
-        return devicePaths;
     }
 
     public boolean isDeviceCached(String devicePath) {
@@ -110,13 +111,14 @@ public abstract class DeviceFactory<T extends Device> {
     }
 
     /**
-     * Remove a disconnect a device from the device cache after surprise-removal. The device is removed from the cache.
-     * The device instance may reconnect later on by calling {@link DeviceFactory#connectDevice(Device)}
+     * Remove a disconnected device from the device cache after surprise-removal. The device is removed from the device
+     * cache. The device instance may reconnect later on by calling {@link DeviceFactory#connectDevice(Device)}
      * 
      * @param device
      *            The disconnected device.
      */
-    public void removeDisconnectedDevice(T device) {
+    public void disconnectDevice(T device) {
+        fireDeviceDisconnected(device.getDevicePath(), device.getClass());
         removeDevice(device.getDevicePath());
     }
 
@@ -128,7 +130,7 @@ public abstract class DeviceFactory<T extends Device> {
         devices.get(deviceClass).fireDeviceConnected(devicePath);
     }
 
-    public void fireDeviceDisconnected(String devicePath, Class<T> deviceClass) {
+    public void fireDeviceDisconnected(String devicePath, Class<? extends Device> deviceClass) {
         devices.get(deviceClass).fireDeviceDisconnected(devicePath);
     }
 

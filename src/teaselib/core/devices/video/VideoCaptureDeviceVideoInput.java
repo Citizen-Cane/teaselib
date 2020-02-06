@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -238,6 +239,7 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         @Override
         public boolean hasNext() {
             if (!active()) {
+                close();
                 return false;
             }
             f = getMat();
@@ -246,7 +248,9 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
 
         @Override
         public Mat next() {
-            if (f == null) {
+            if (!active()) {
+                throw new NoSuchElementException();
+            } else if (f == null) {
                 return getMat();
             } else {
                 Mat cached = f;
@@ -268,5 +272,6 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
+        factory.disconnectDevice(this);
     }
 }

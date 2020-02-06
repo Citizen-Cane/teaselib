@@ -172,7 +172,7 @@ public class KeyRelease implements Device.Creatable {
     @Override
     public void close() {
         remoteDevice.close();
-        factory.removeDevice(getDevicePath());
+        factory.disconnectDevice(this);
     }
 
     @Override

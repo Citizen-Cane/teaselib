@@ -14,22 +14,10 @@ import teaselib.core.ScriptInterruptedException;
 
 public class DeviceCache<T extends Device> {
     private static final int CONNECTION_WAIT_UNTIL_CONNECTED = -1;
-    private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<>();
-    private final Set<DeviceListener<T>> deviceListeners = new LinkedHashSet<>();
-
     private static final char PathSeparator = '/';
 
-    public static final class DeviceNotFoundException extends IllegalArgumentException {
-        private static final long serialVersionUID = 1L;
-
-        public DeviceNotFoundException(String message) {
-            super(message);
-        }
-
-        public DeviceNotFoundException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
+    private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<>();
+    private final Set<DeviceListener<T>> deviceListeners = new LinkedHashSet<>();
 
     public DeviceCache<T> addFactory(DeviceFactory<? extends T> factory) {
         factories.put(factory.getDeviceClass(), factory);
@@ -55,8 +43,6 @@ public class DeviceCache<T extends Device> {
     }
 
     public T getDevice(String devicePath) {
-        // TODO removed fireDeviceConnected(device) breaks camera plug-in/surprise removal -> restore
-
         try {
             String deviceClassName = getDeviceClass(devicePath);
             DeviceFactory<? extends T> deviceFactory = factories.get(deviceClassName);
@@ -69,8 +55,6 @@ public class DeviceCache<T extends Device> {
             }
             return device;
         } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
             throw new DeviceNotFoundException(devicePath, e);
         }
     }

@@ -6,8 +6,8 @@ import java.util.Map;
 
 import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.Device;
-import teaselib.core.devices.DeviceCache.DeviceNotFoundException;
 import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.DeviceNotFoundException;
 import teaselib.core.devices.Devices;
 
 public final class TestDeviceFactory<T extends Device> extends DeviceFactory<T> {

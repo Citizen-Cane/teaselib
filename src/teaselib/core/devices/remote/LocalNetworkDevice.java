@@ -54,7 +54,6 @@ public class LocalNetworkDevice extends RemoteDevice {
     public static synchronized LocalNetworkDeviceFactory getDeviceFactory(Devices devices,
             Configuration configuration) {
         return new LocalNetworkDeviceFactory(DeviceClassName, devices, configuration);
-
     }
 
     private final String name;
@@ -121,7 +120,7 @@ public class LocalNetworkDevice extends RemoteDevice {
     @Override
     public void close() {
         connection.close();
-        factory.removeDevice(getDevicePath());
+        factory.disconnectDevice(this);
     }
 
     @Override

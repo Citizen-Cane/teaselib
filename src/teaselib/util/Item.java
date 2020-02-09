@@ -12,6 +12,7 @@ public interface Item extends State {
      *
      */
     interface Attribute {
+        // Tag interface
     }
 
     public static final Item NotFound = new Item() {

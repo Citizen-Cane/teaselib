@@ -2,15 +2,10 @@ package teaselib;
 
 import java.util.concurrent.TimeUnit;
 
-import teaselib.core.util.ReflectionUtils;
-
 public interface State {
     public static final long TEMPORARY = 0;
 
     public static final long INDEFINITELY = Long.MAX_VALUE;
-
-    public static String Available = ReflectionUtils.qualified(State.class, "Available");
-    public static String Unavailable = ReflectionUtils.qualified(State.class, "Unavailable");
 
     Options apply();
 

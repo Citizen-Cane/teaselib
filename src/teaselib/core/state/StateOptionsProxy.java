@@ -19,8 +19,8 @@ public class StateOptionsProxy extends AbstractProxy<State.Options> implements S
     }
 
     @Override
-    public void remember() {
-        state.remember();
+    public void remember(Until forget) {
+        state.remember(forget);
     }
 
     @Override
@@ -32,4 +32,5 @@ public class StateOptionsProxy extends AbstractProxy<State.Options> implements S
     public Persistence over(Duration duration) {
         return new StatePersistenceProxy(namespace, state.over(duration));
     }
+
 }

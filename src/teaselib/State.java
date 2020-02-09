@@ -30,6 +30,11 @@ public interface State {
     }
 
     interface Persistence {
-        void remember();
+        public enum Until {
+            Removed,
+            Expired
+        }
+
+        void remember(Until forget);
     }
 }

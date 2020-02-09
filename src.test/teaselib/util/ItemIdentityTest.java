@@ -3,7 +3,13 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +19,7 @@ import org.junit.Test;
 import teaselib.Body;
 import teaselib.Household;
 import teaselib.State;
+import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.Toys.Gags;
 import teaselib.core.TeaseLib;
@@ -312,7 +319,7 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
 
         Item gag = script.item(Toys.Gag);
-        gag.apply().remember();
+        gag.apply().remember(Until.Removed);
         assertTrue(gag.applied());
 
         script.debugger.clearStateMaps();
@@ -329,7 +336,7 @@ public class ItemIdentityTest {
 
         Items gags1 = script.items(Toys.Gag);
         Item persisted = gags1.matching(Toys.Gags.Ring_Gag).get();
-        persisted.apply().over(1, TimeUnit.HOURS).remember();
+        persisted.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
 
         script.debugger.clearStateMaps();
 
@@ -406,7 +413,7 @@ public class ItemIdentityTest {
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
 
         assertFalse(ringGag.is(Body.InMouth));
-        ringGag.apply().remember();
+        ringGag.apply().remember(Until.Removed);
         return ringGag;
     }
 
@@ -474,7 +481,7 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
-        script.item(Toys.Gag).apply().over(1, TimeUnit.HOURS).remember();
+        script.item(Toys.Gag).apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
         assertTrue(script.item(Toys.Gag).applied());
         assertTrue(script.state(Toys.Gag).applied());
 
@@ -490,7 +497,7 @@ public class ItemIdentityTest {
         script.debugger.freezeTime();
 
         Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        gag.apply().over(1, TimeUnit.HOURS).remember();
+        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
         assertTrue(gag.applied());
         assertTrue(script.state(Toys.Gag).applied());
 
@@ -507,7 +514,7 @@ public class ItemIdentityTest {
         script.debugger.freezeTime();
 
         Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        gag.apply().over(1, TimeUnit.HOURS).remember();
+        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
         assertTrue(gag.applied());
         assertTrue(script.item(Toys.Gag).applied());
         assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));

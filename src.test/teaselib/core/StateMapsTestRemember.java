@@ -11,6 +11,7 @@ import org.junit.Test;
 import teaselib.Body;
 import teaselib.Posture;
 import teaselib.State;
+import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.debug.DebugStorage;
 import teaselib.test.TestScript;
@@ -43,7 +44,7 @@ public class StateMapsTestRemember extends StateMaps {
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device).over(24, TimeUnit.HOURS)
-                .remember();
+                .remember(Until.Removed);
 
         assertUnrelatedStateIsNotAffected();
         assertRememberedToyAndPeersAreRemembered();
@@ -76,9 +77,9 @@ public class StateMapsTestRemember extends StateMaps {
     public void testRememberedItemsAreCompletelyRemoved() {
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS)
-                .remember();
+                .remember(Until.Removed);
 
-        assertEquals(9, storage.size());
+        assertEquals(18, storage.size());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
 
@@ -99,7 +100,7 @@ public class StateMapsTestRemember extends StateMaps {
     public void testRememberedItemsAreCompletlyRemovedAfterSessionRestore() {
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS)
-                .remember();
+                .remember(Until.Removed);
 
         // Simulate session end & restore
         clear();
@@ -111,7 +112,7 @@ public class StateMapsTestRemember extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
-        assertEquals(9, storage.size());
+        assertEquals(18, storage.size());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
 

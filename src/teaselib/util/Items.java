@@ -493,8 +493,8 @@ public class Items implements Iterable<Item> {
         List<State.Options> options = firstOfEachKind().stream().map(applyFunction::apply).collect(toList());
         return new State.Options() {
             @Override
-            public void remember() {
-                options.forEach(State.Options::remember);
+            public void remember(Until forget) {
+                options.forEach(item -> item.remember(forget));
             }
 
             @Override

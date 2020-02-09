@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +23,7 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.Storage;
 import teaselib.util.Item;
 import teaselib.util.ItemGuid;
@@ -31,6 +32,9 @@ import teaselib.util.ItemImpl;
 public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private static final String TEMPORARY_KEYWORD = "TEMPORARY";
     private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
+
+    static final String PERSISTED_DOMAINS = ReflectionUtils.qualified("teaselib", "PersistedDomains");
+    static final String DEFAULT_DOMAIN_NAME = ReflectionUtils.qualified("teaselib", "DefaultDomain");
 
     private final StateMaps stateMaps;
     public final String domain;
@@ -361,7 +365,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    public void remember() {
+    public void remember(Until forget) {
+        if (item != PERSISTED_DOMAINS) {
+            applyTo(forget);
+            stateMaps.teaseLib.state(TeaseLib.DefaultDomain, PERSISTED_DOMAINS)
+                    .applyTo(domain.equals(TeaseLib.DefaultDomain) ? DEFAULT_DOMAIN_NAME : domain)
+                    .remember(Until.Removed);
+        }
+
         updatePersistence();
         for (Object peer : peers) {
             if (!(peer instanceof ItemGuid)) {
@@ -449,6 +460,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
 
         if (peers.isEmpty()) {
+            remove();
+        } else if (peers.stream().noneMatch(peer -> peer.getClass() != Until.class)) {
             remove();
         } else if (isPersisted()) {
             updatePersistence();

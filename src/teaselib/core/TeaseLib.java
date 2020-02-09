@@ -882,9 +882,7 @@ public class TeaseLib implements Closeable {
      * @return The item state.
      */
     public State state(String domain, Object item) {
-        State state = stateMaps.state(domain, item);
-        stateMaps.handleAutoRemoval();
-        return state;
+        return stateMaps.state(domain, item);
     }
 
     public State state(String domain, State state) {

@@ -10,7 +10,7 @@ public class StatePersistenceProxy extends AbstractProxy<State.Persistence> impl
     }
 
     @Override
-    public void remember() {
-        state.remember();
+    public void remember(Until forget) {
+        state.remember(forget);
     }
 }

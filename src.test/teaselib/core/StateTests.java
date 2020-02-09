@@ -1,6 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +13,7 @@ import teaselib.Body;
 import teaselib.Household;
 import teaselib.Material;
 import teaselib.State;
+import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.StateProxy;
@@ -68,7 +72,7 @@ public class StateTests {
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
 
         assertEquals(0, script.storage.size());
-        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember();
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember(Until.Removed);
 
         // Assert that when a state is applied then
         // the namespace of the script is applied to that state
@@ -99,7 +103,7 @@ public class StateTests {
         assertEquals(0, ((StateProxy) script.state(script.namespace)).peers().size());
 
         somethingOnNipples.remove();
-        assertEquals(0, script.storage.size());
+        assertEquals(6, script.storage.size());
 
         assertFalse(somethingOnNipples.is(script.namespace));
         assertFalse(somethingOnNipples.is(Toys.Nipple_Clamps));
@@ -330,7 +334,7 @@ public class StateTests {
         assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
 
         // TODO Public interface or utility method
-        AbstractProxy.stateImpl(script.state(Body.OnNipples)).remember();
+        AbstractProxy.stateImpl(script.state(Body.OnNipples)).remember(Until.Removed);
         assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
 
         script.debugger.clearStateMaps();

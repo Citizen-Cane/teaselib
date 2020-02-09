@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -9,6 +10,7 @@ import org.junit.Test;
 
 import teaselib.Body;
 import teaselib.State;
+import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
@@ -59,7 +61,7 @@ public class StateScopeTests {
         assertTrue(somethingOnNipples.applied());
         assertFalse(peerStorage.available());
 
-        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember();
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember(Until.Removed);
         assertTrue(peerStorage.available());
         String value = peerStorage.value();
         assertTrue(value.contains(Toys.Nipple_Clamps.name()));

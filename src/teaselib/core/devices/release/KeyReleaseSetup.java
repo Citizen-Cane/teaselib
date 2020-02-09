@@ -23,6 +23,7 @@ import teaselib.Duration;
 import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.State.Options;
+import teaselib.State.Persistence.Until;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.Script;
@@ -417,7 +418,7 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         if (!handled.anyApplied()) {
             // TODO Duration should be updated during each hold event
             handled.applyTo(actuatorName(actuator)).over(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS)
-                    .remember();
+                    .remember(Until.Removed);
         }
 
         actuator.start();

@@ -4,12 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
-import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
@@ -34,7 +31,6 @@ public class StateMaps {
     }
 
     final TeaseLib teaseLib;
-    long startupTimeSeconds;
     final Domains cache = new Domains();
 
     public StateMaps(TeaseLib teaseLib) {
@@ -44,7 +40,6 @@ public class StateMaps {
 
     void clear() {
         cache.clear();
-        this.startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
     }
 
     static String toStringWithoutRecursion(Set<Object> peers) {
@@ -128,35 +123,8 @@ public class StateMaps {
             if (state == null) {
                 state = new StateImpl(this, domain, item.value());
                 stateMap.put(key, state);
-                if (mustBeAutoRemoved(state)) {
-                    scheduledForAutoRemoval.add(state);
-                }
             }
             return state;
-        }
-    }
-
-    private Set<State> scheduledForAutoRemoval = new HashSet<>();
-
-    private boolean mustBeAutoRemoved(State state) {
-        if (state.expired()) {
-            Duration duration = state.duration();
-            long limit = duration.limit(TimeUnit.SECONDS);
-            if (limit > State.TEMPORARY) {
-                long autoRemovalTime = duration.end(TimeUnit.SECONDS) + limit / 2;
-                if (autoRemovalTime < startupTimeSeconds) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    void handleAutoRemoval() {
-        ArrayList<State> autoRemove = new ArrayList<>(scheduledForAutoRemoval);
-        scheduledForAutoRemoval.clear();
-        for (State state : autoRemove) {
-            state.remove();
         }
     }
 

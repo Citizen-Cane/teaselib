@@ -1,9 +1,15 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.Assert.*;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.*;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.*;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.CannotJerkOff;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.SomethingOnPenis;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.WristsTiedBehindBack;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.Chastity_Device;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.Wrist_Restraints;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -21,7 +27,9 @@ import org.slf4j.LoggerFactory;
 import teaselib.Body;
 import teaselib.Duration;
 import teaselib.State;
+import teaselib.State.Persistence.Until;
 import teaselib.Toys;
+import teaselib.core.debug.DebugStorage;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 
@@ -89,7 +97,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
     void rememberOrNot(State.Persistence state) {
         if (isRemembered()) {
-            state.remember();
+            state.remember(Until.Removed);
         }
     }
 
@@ -315,7 +323,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         if (isRemembered()) {
             Map<QualifiedName, String> storage = script.storage;
-            assertEquals(9, storage.size()); // or 6
+            assertEquals(18, storage.size());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
             assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Toys", "Chastity_Device.state.duration")));
@@ -339,7 +347,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         if (isRemembered()) {
             Map<QualifiedName, String> storage = script.storage;
-            assertEquals(0, storage.size());
+            assertEquals(6, storage.size());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
             assertFalse(
@@ -366,7 +374,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         if (isRemembered()) {
             Map<QualifiedName, String> storage = script.storage;
-            assertEquals(2, storage.size());
+            assertEquals(12, storage.size());
         }
 
         assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
@@ -376,7 +384,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         if (isRemembered()) {
             Map<QualifiedName, String> storage = script.storage;
-            assertEquals("State not cleared on remove", 0, storage.size());
+            assertEquals("State not cleared on remove (excluding auto-removal book-keeping)", 6, storage.size());
         }
 
         assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
@@ -406,15 +414,17 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         clearStatesMapsOrNot();
 
+        DebugStorage storage = script.storage;
         if (isRemembered()) {
-            assertEquals(6, script.storage.size());
+            assertEquals(15, storage.size());
         }
 
         assertTrue(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
 
         state(TEST_DOMAIN, Toys.Ball_Stretcher).removeFrom(Body.OnBalls);
 
-        assertEquals("Expected item to be completely cleared", 0, script.storage.size());
+        assertEquals("State not completely cleared (excluding auto-removal book-keeping)", isRemembered() ? 6 : 0,
+                storage.size());
 
         assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
         // False because we removed the item early

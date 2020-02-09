@@ -2,10 +2,14 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -17,11 +21,13 @@ import teaselib.Answer;
 import teaselib.Body;
 import teaselib.Config;
 import teaselib.Config.SpeechRecognition.Intention;
+import teaselib.Duration;
 import teaselib.Gadgets;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
+import teaselib.State;
 import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.DeviceListener;
 import teaselib.core.devices.release.KeyReleaseSetup;
@@ -81,10 +87,60 @@ public abstract class Script {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
         }
 
+        handleAutoRemove();
         script(KeyReleaseSetup.class).init();
 
         bindMotionDetectorToVideoRenderer();
         bindNetworkProperties();
+    }
+
+    private void handleAutoRemove() {
+        long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
+
+        State persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.PERSISTED_DOMAINS);
+        Collection<Object> domains = new ArrayList<>(((StateImpl) persistedDomains).peers());
+        for (Object domain : domains) {
+            domain = domain.equals(StateImpl.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain : domain;
+            if (!handleUntilRemoved((String) domain, startupTimeSeconds).applied()
+                    && !handleUntilExpired((String) domain).applied()) {
+                persistedDomains.removeFrom(domain);
+            }
+        }
+    }
+
+    private State handleUntilRemoved(String domain, long startupTimeSeconds) {
+        State untilRemoved = teaseLib.state(domain, State.Persistence.Until.Removed);
+        Set<Object> peers = ((StateImpl) untilRemoved).peers();
+
+        for (Object peer : peers) {
+            State state = teaseLib.state(domain, peer);
+            if (state.expired()) {
+                Duration duration = state.duration();
+                long limit = duration.limit(TimeUnit.SECONDS);
+                if (limit > State.TEMPORARY) {
+                    long autoRemovalTime = duration.end(TimeUnit.SECONDS) + limit / 2;
+                    if (autoRemovalTime <= startupTimeSeconds) {
+                        state.remove();
+                    }
+                }
+            }
+        }
+
+        return untilRemoved;
+    }
+
+    private State handleUntilExpired(String domain) {
+        State untilExpired = teaseLib.state(domain, State.Persistence.Until.Expired);
+        Set<Object> peers = ((StateImpl) untilExpired).peers();
+
+        for (Object peer : peers) {
+            State state = teaseLib.state(domain, peer);
+            if (state.expired()) {
+                state.remove();
+            }
+        }
+
+        return untilExpired;
     }
 
     private static <T> T getOrDefault(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {

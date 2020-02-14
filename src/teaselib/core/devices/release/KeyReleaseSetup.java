@@ -310,6 +310,10 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         return prepare(items, duration, unit, instructions, null);
     }
 
+    public boolean prepare(Items items, Consumer<Items> instructions) {
+        return prepare(items, instructions, null);
+    }
+
     /**
      * Obtain the key and attach it to a previously assigned actuator.
      * <p>
@@ -349,6 +353,11 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         // TODO Check overlaps - items should not appear in multiple assignments
     }
 
+    public boolean prepare(Items items, Consumer<Items> instructions, Consumer<Items> instructionsAgain) {
+        Long duration = assigned(itemDurationSeconds, items).orElse(3600L);
+        return prepare(items, duration, TimeUnit.SECONDS, instructions, instructionsAgain);
+    }
+
     private Optional<Actuator> chooseUnboundActuator(Items items) {
         Long duration = assigned(itemDurationSeconds, items).orElse(0l);
         List<Actuator> matching = Actuators.matching(actuators, duration, TimeUnit.SECONDS);
@@ -370,9 +379,7 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
 
     private void acquireKeys(Items items, Actuator actuator, Consumer<Items> instructions) {
         actuator.arm();
-
         instructions.accept(items);
-
         singleRenewHoldEvent(actuator);
     }
 

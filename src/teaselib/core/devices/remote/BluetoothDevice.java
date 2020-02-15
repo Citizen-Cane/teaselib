@@ -6,7 +6,6 @@ import java.util.Map;
 
 import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.BatteryLevel;
-import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
 
@@ -36,10 +35,6 @@ public class BluetoothDevice extends RemoteDevice {
 
     public static synchronized BluetoothDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
         return new BluetoothDeviceFactory(DeviceClassName, devices, configuration);
-    }
-
-    public static synchronized DeviceCache<RemoteDevice> getDeviceCache(Devices devices, Configuration configuration) {
-        return devices.get(RemoteDevice.class);
     }
 
     public BluetoothDevice(@SuppressWarnings("unused") String deviceName) {

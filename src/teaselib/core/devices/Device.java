@@ -1,7 +1,5 @@
 package teaselib.core.devices;
 
-import teaselib.core.devices.remote.RemoteDevices;
-
 public interface Device {
 
     /**

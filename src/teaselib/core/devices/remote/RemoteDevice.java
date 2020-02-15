@@ -3,11 +3,82 @@ package teaselib.core.devices.remote;
 import java.util.Collections;
 
 import teaselib.core.configuration.Configuration;
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 
 public abstract class RemoteDevice implements Device.Creatable {
+
+    public static final RemoteDevice WaitingForConnection = new RemoteDevice() {
+        @Override
+        public String getDevicePath() {
+            return Device.WaitingForConnection;
+        }
+
+        @Override
+        public String getName() {
+            return Device.WaitingForConnection;
+        }
+
+        @Override
+        public boolean connected() {
+            return false;
+        }
+
+        @Override
+        public boolean active() {
+            return false;
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public boolean isWireless() {
+            return true;
+        }
+
+        @Override
+        public BatteryLevel batteryLevel() {
+            return BatteryLevel.Medium;
+        }
+
+        @Override
+        public String getServiceName() {
+            return Device.WaitingForConnection;
+        }
+
+        @Override
+        public String getDescription() {
+            return Device.WaitingForConnection;
+        }
+
+        @Override
+        public String getVersion() {
+            return "0.0";
+        }
+
+        @Override
+        public int sleep(int durationMinutes) {
+            return 0;
+        }
+
+        @Override
+        public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
+            return Timeout;
+        }
+
+        @Override
+        public void send(RemoteDeviceMessage message) {
+        }
+
+        @Override
+        public String toString() {
+            return getDevicePath();
+        }
+    };
 
     public static synchronized DeviceCache<RemoteDevice> getDeviceCache(Devices devices, Configuration configuration) {
         return new DeviceCache<RemoteDevice>().addFactory(LocalNetworkDevice.getDeviceFactory(devices, configuration))

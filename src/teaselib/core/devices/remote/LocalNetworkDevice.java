@@ -51,6 +51,18 @@ public class LocalNetworkDevice extends RemoteDevice {
      */
     private static final int SocketTimeoutMillis = 2000;
 
+    // TODO resolve access via RemoteDevice
+    // RemoteDevice collects multiple device classes,
+    // but device discovery device paths contain the path to the actual device (LocalNetworkDevice)
+    // -> Caching fails
+    // -> two instances of DeviceFactory for LocalNetworkDevice are created
+    // + one for RemoteDevice
+    // + one for LocalNetworkDevice
+    // When resolved, this method can be removed and the RemoteDevice cache is used
+    public static synchronized DeviceCache<RemoteDevice> getDeviceCache(Devices devices, Configuration configuration) {
+        return new DeviceCache<RemoteDevice>().addFactory(LocalNetworkDevice.getDeviceFactory(devices, configuration));
+    }
+
     public static synchronized LocalNetworkDeviceFactory getDeviceFactory(Devices devices,
             Configuration configuration) {
         return new LocalNetworkDeviceFactory(DeviceClassName, devices, configuration);

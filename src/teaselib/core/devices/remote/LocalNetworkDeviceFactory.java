@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import teaselib.core.configuration.Configuration;
+import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
 
@@ -24,6 +25,10 @@ import teaselib.core.devices.Devices;
 
 public final class LocalNetworkDeviceFactory extends DeviceFactory<LocalNetworkDevice> {
     private final LocalNetworkDeviceDiscovery deviceDiscovery;
+
+    public static synchronized DeviceCache<RemoteDevice> getDeviceCache(Devices devices, Configuration configuration) {
+        return new DeviceCache<RemoteDevice>().addFactory(LocalNetworkDevice.getDeviceFactory(devices, configuration));
+    }
 
     public LocalNetworkDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
         super(deviceClass, devices, configuration);

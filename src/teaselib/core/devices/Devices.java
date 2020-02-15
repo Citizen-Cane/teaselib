@@ -1,10 +1,13 @@
 package teaselib.core.devices;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import teaselib.core.configuration.Configuration;
+import teaselib.core.devices.remote.RemoteDevice;
 
 public class Devices {
     private final Map<Class<?>, DeviceCache<? extends Device>> deviceClasses = new HashMap<>();
@@ -39,6 +42,25 @@ public class Devices {
         String deviceClass = DeviceCache.getDeviceClass(devicePath);
         DeviceCache<? extends Device> deviceCache = deviceClassNames.get(deviceClass);
         return (T) deviceCache.getDevice(devicePath);
+    }
+
+    public <T extends RemoteDevice> List<T> thatSupport(String serviceName, Class<T> deviceClass) {
+        List<T> remoteDevices = new ArrayList<>();
+        DeviceCache<T> cache = get(deviceClass);
+        for (String devicePath : cache.getDevicePaths()) {
+            if (!Device.WaitingForConnection.equals(DeviceCache.getDeviceName(devicePath))) {
+                T device = cache.getDevice(devicePath);
+                if (serviceName.equals(device.getServiceName())) {
+                    remoteDevices.add(device);
+                }
+            }
+        }
+        return remoteDevices;
+    }
+
+    public <T extends Device> T getDefaultDevice(Class<T> deviceClass) {
+        DeviceCache<T> deviceCache = get(deviceClass);
+        return deviceCache.getDefaultDevice();
     }
 
 }

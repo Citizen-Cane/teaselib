@@ -1,6 +1,10 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -847,6 +851,8 @@ public class ItemsTest {
                 without.orElseItems(Toys.Ankle_Restraints, Toys.Wrist_Restraints).item(Toys.Wrist_Restraints));
         assertEquals(script.item(Toys.Ankle_Restraints),
                 without.orElseItems(Toys.Ankle_Restraints).item(Toys.Ankle_Restraints));
+
+        assertEquals(2, all.without(Material.Metal).size());
     }
 
     @Test
@@ -869,6 +875,8 @@ public class ItemsTest {
                         .item("teaselib.Toys.Wrist_Restraints"));
         assertEquals(script.item(Toys.Ankle_Restraints),
                 without.orElseItems("teaselib.Toys.Ankle_Restraints").item("teaselib.Toys.Ankle_Restraints"));
+
+        assertEquals(2, all.without(Material.Metal).size());
     }
 
     @Test

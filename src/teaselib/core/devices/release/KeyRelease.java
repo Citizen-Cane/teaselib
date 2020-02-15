@@ -16,7 +16,6 @@ import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.remote.RemoteDeviceMessage;
-import teaselib.core.devices.remote.RemoteDevices;
 
 public class KeyRelease implements Device.Creatable {
     private static final class MyDeviceFactory extends DeviceFactory<KeyRelease> {
@@ -42,7 +41,7 @@ public class KeyRelease implements Device.Creatable {
         @Override
         public List<String> enumerateDevicePaths(Map<String, KeyRelease> deviceCache) {
             List<String> devicePaths = new ArrayList<>();
-            for (RemoteDevice remoteDevice : RemoteDevices.devicesThatSupport(DeviceClassName, devices)) {
+            for (RemoteDevice remoteDevice : devices.thatSupport(DeviceClassName, LocalNetworkDevice.class)) {
                 devicePaths.add(DeviceCache.createDevicePath(DeviceClassName, remoteDevice.getDevicePath()));
             }
             return devicePaths;
@@ -53,7 +52,7 @@ public class KeyRelease implements Device.Creatable {
             if (WaitingForConnection.equals(deviceName)) {
                 return new KeyRelease(devices, this);
             } else {
-                DeviceCache<RemoteDevice> deviceCache = devices.get(RemoteDevice.class);
+                DeviceCache<LocalNetworkDevice> deviceCache = devices.get(LocalNetworkDevice.class);
                 RemoteDevice device = deviceCache.getDevice(deviceName);
                 return new KeyRelease(devices, this, device);
             }
@@ -130,7 +129,7 @@ public class KeyRelease implements Device.Creatable {
     private String[] releaseKeys = { "" };
 
     KeyRelease(Devices devices, DeviceFactory<KeyRelease> factory) {
-        this(devices, factory, RemoteDevices.WaitingForConnection);
+        this(devices, factory, RemoteDevice.WaitingForConnection);
     }
 
     KeyRelease(Devices devices, DeviceFactory<KeyRelease> factory, RemoteDevice remoteDevice) {
@@ -152,8 +151,8 @@ public class KeyRelease implements Device.Creatable {
 
     @Override
     public boolean connected() {
-        if (remoteDevice == RemoteDevices.WaitingForConnection) {
-            List<RemoteDevice> keyReleaseDevices = RemoteDevices.devicesThatSupport(DeviceClassName, devices);
+        if (remoteDevice == RemoteDevice.WaitingForConnection) {
+            List<LocalNetworkDevice> keyReleaseDevices = devices.thatSupport(DeviceClassName, LocalNetworkDevice.class);
             if (!keyReleaseDevices.isEmpty()) {
                 remoteDevice = keyReleaseDevices.get(0);
                 factory.connectDevice(this);

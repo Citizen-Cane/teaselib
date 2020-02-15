@@ -16,13 +16,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.configuration.DebugSetup;
+import teaselib.core.devices.Devices;
 
 public class KeyReleaseAutoReleaseTest extends KeyReleaseBaseTest {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseAutoReleaseTest.class);
 
     static final long requestedDurationSeconds = HOURS.toSeconds(1);
 
-    final KeyRelease keyRelease = getDefaultDevice();
+    final Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
+    final KeyRelease keyRelease = devices.getDefaultDevice(KeyRelease.class);
     final Actuators actuators = keyRelease.actuators();
 
     @Before

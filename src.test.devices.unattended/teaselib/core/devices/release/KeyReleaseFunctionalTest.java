@@ -15,12 +15,16 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import teaselib.core.configuration.DebugSetup;
+import teaselib.core.devices.Devices;
+
 /**
  * @author Citizen-Cane
  *
  */
 public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
-    final KeyRelease keyRelease = getDefaultDevice();
+    final Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
+    final KeyRelease keyRelease = devices.getDefaultDevice(KeyRelease.class);
 
     @Before
     public void before() {

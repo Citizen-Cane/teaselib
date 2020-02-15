@@ -41,7 +41,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         awaitConnection(script.teaseLib.devices.get(KeyRelease.class));
         keyReleaseSetup.say(FOOBAR);
 
-        keyReleaseDevice = getDefaultDevice();
+        keyReleaseDevice = script.teaseLib.devices.getDefaultDevice(KeyRelease.class);
         releaseAllRunningActuators(keyReleaseDevice);
 
         script.debugger.resumeTime();

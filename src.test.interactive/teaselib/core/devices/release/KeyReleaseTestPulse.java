@@ -4,7 +4,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static teaselib.core.devices.release.KeyReleaseBaseTest.arm;
 import static teaselib.core.devices.release.KeyReleaseBaseTest.assertConnected;
-import static teaselib.core.devices.release.KeyReleaseBaseTest.getDefaultDevice;
 import static teaselib.core.devices.release.KeyReleaseBaseTest.sleep;
 
 import java.util.concurrent.TimeUnit;
@@ -13,12 +12,16 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.configuration.DebugSetup;
+import teaselib.core.devices.Devices;
+
 public class KeyReleaseTestPulse {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseTestPulse.class);
 
     @Test
     public void testPulseFrequency() {
-        KeyRelease keyRelease = getDefaultDevice();
+        Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
+        KeyRelease keyRelease = devices.getDefaultDevice(KeyRelease.class);
         Actuators actuators = assertConnected(keyRelease);
 
         for (Actuator actuator : actuators) {

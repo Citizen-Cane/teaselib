@@ -11,13 +11,11 @@ import org.junit.Assume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.DeviceListener;
-import teaselib.core.devices.Devices;
 
 /**
  * @author Citizen-Cane
@@ -26,19 +24,13 @@ import teaselib.core.devices.Devices;
 public class KeyReleaseBaseTest {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseBaseTest.class);
 
-    static final double WAIT_FOR_CONNECTION_SECONDS = 20.0;
+    static final double WAIT_FOR_CONNECTION_SECONDS = 200020.0;
     static final long HOLD_DURATION_MINUTES = 1;
 
     public static void releaseAllRunningActuators(KeyRelease keyRelease) {
         if (keyRelease != null) {
             keyRelease.actuators().stream().filter(Actuator::isRunning).forEach(Actuator::release);
         }
-    }
-
-    public static KeyRelease getDefaultDevice() {
-        Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
-        DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
-        return deviceCache.getDefaultDevice();
     }
 
     public static boolean connect(KeyRelease keyRelease, double secondsToWait) {

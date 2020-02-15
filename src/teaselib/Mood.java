@@ -51,6 +51,7 @@ public class Mood {
     public static final String Pleased = "<mood=pleased>";
     public static final String Relaxed = "<mood=relaxed>";
     public static final String Sceptic = "<mood=sceptic>";
+    public static final String Satisfied = "<mood=satisfied>";
     public static final String Smiling = "<mood=smiling>";
     public static final String Sorry = "<mood=sorry>";
     public static final String Strict = "<mood=strict>";

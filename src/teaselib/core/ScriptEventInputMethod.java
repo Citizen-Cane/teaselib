@@ -2,7 +2,6 @@ package teaselib.core;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.ui.AbstractInputMethod;
 import teaselib.core.ui.Prompt;
@@ -10,8 +9,6 @@ import teaselib.core.ui.Prompt.Result;
 
 public class ScriptEventInputMethod extends AbstractInputMethod {
     private static final String EVENT_HANDLER_KEY = "Event Received";
-
-    AtomicReference<Prompt> active;
 
     public ScriptEventInputMethod(ExecutorService executor) {
         super(executor);
@@ -29,13 +26,8 @@ public class ScriptEventInputMethod extends AbstractInputMethod {
     }
 
     public void signalEvent(Runnable action) {
-        Handler handler = new Handler(EVENT_HANDLER_KEY, action);
-        add(handler);
-        try {
-            signal(handler);
-        } finally {
-            remove(handler);
-        }
+        SingleShotHandler singleShotHandler = new SingleShotHandler(EVENT_HANDLER_KEY, action);
+        signal(singleShotHandler);
     }
 
 }

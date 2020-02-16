@@ -47,10 +47,12 @@ public class ScriptRenderer implements Closeable {
     final MessageRendererQueue messageRenderer;
 
     public final ScriptEvents events;
+    final ScriptEventInputMethod scriptEventInputMethod;
 
     ScriptRenderer(TeaseLib teaseLib) {
         this.messageRenderer = new MessageRendererQueue(teaseLib, new MediaRendererQueue(renderQueue));
-        this.events = new ScriptEvents(new ScriptEventInputMethod(inputMethodExecutor));
+        scriptEventInputMethod = new ScriptEventInputMethod(inputMethodExecutor);
+        this.events = new ScriptEvents(scriptEventInputMethod);
     }
 
     @Override

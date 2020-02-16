@@ -411,6 +411,8 @@ public abstract class Script {
                     teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
         }
 
+        inputMethods.add(scriptRenderer.scriptEventInputMethod);
+
         return inputMethods;
 
     }

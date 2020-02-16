@@ -137,33 +137,48 @@ public abstract class AbstractInputMethod implements InputMethod {
         return handlers;
     }
 
-    protected static class Handler {
+    protected class SingleShotHandler {
         final String key;
-        final Runnable action;
+        private final Runnable action;
 
-        public Handler(String key, Runnable action) {
+        public SingleShotHandler(String key, Runnable action) {
             this.key = key;
             this.action = action;
+            add(this);
+        }
+
+        public void run() {
+            try {
+                action.run();
+            } finally {
+                remove(this);
+            }
         }
     }
 
-    public void add(Handler handler) {
-        handlers.put(handler.key, handler.action);
+    public void add(SingleShotHandler singleShotHandler) {
+        handlers.put(singleShotHandler.key, singleShotHandler.action);
     }
 
-    public void remove(Handler handler) {
-        handlers.remove(handler.key);
+    public void remove(SingleShotHandler singleShotHandler) {
+        handlers.remove(singleShotHandler.key);
     }
 
-    protected void signal(Handler handler) {
+    protected void signal(SingleShotHandler singleShotHandler) {
         activePrompt.getAndUpdate(prompt -> {
-            if (prompt != null && !prompt.hasScriptFunction()) {
+            // TODO Parameterize handler to avoid signaling while script functions are running
+            if (prompt != null /* && !prompt.hasScriptFunction() */) {
                 prompt.script.endAll();
                 Replay previous = prompt.script.getReplay();
 
                 // TODO perform interjection as prompt.script actor - not as creator of script
                 // -> interjections must use prompt.script.actor, not the one that created the script
-                prompt.signalHandlerInvocation(handler.key);
+                prompt.lock.lock();
+                try {
+                    prompt.signalHandlerInvocation(singleShotHandler.key);
+                } finally {
+                    prompt.lock.unlock();
+                }
 
                 // TODO intercept renderMessage/Intertitle & showChoices (like SpeechRecognitionrScriptAdapter)
                 // -> use events
@@ -173,7 +188,6 @@ public abstract class AbstractInputMethod implements InputMethod {
                 } else {
                     previous.replay(Replay.Position.End);
                 }
-
             }
             return prompt;
         });

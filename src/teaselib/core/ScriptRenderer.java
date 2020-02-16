@@ -1,6 +1,8 @@
 package teaselib.core;
 
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.stream.Collectors.toList;
 import static teaselib.core.concurrency.NamedExecutorService.newUnlimitedThreadPool;
 
 import java.util.ArrayList;
@@ -166,17 +168,14 @@ public class ScriptRenderer implements Closeable {
 
     void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
-        // TODO Actor of last message? or change actor
-        List<RenderedMessage> renderedMessages = convertMessagesToRendered(Collections.singletonList(message),
-                decorators);
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(singletonList(message), decorators);
         MediaRenderer say = messageRenderer.append(actor, renderedMessages, resources);
         renderMessage(teaseLib, say);
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
-        List<RenderedMessage> renderedMessages = convertMessagesToRendered(Collections.singletonList(message),
-                decorators);
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(singletonList(message), decorators);
         MediaRenderer say = messageRenderer.replace(actor, renderedMessages, resources);
         renderMessage(teaseLib, say);
     }
@@ -184,7 +183,7 @@ public class ScriptRenderer implements Closeable {
     private List<RenderedMessage> convertMessagesToRendered(List<Message> messages, Decorator[] decorators) {
         Stream<Message> all = Stream.concat(prependedMessages.stream(), messages.stream());
         List<RenderedMessage> renderedMessages = all.map(message -> RenderedMessage.of(message, decorators))
-                .collect(Collectors.toList());
+                .collect(toList());
         prependedMessages.clear();
         return renderedMessages;
     }

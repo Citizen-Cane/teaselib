@@ -116,19 +116,19 @@ public class MessageRendererQueue implements Closeable {
             }
 
             private void submitTask() {
-                Future<?> future = executor.submit(() -> {
+                Future<Void> future = executor.submit(() -> {
                     try {
                         MessageRendererQueue.this.run(current);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw new ScriptInterruptedException(e);
                     } catch (IOException e) {
-                        // TODO Proper handling of IO exceptions
-                        throw ExceptionUtil.asRuntimeException(e);
+                        ExceptionUtil.handleIOException(e, teaseLib.config, logger);
                     }
+                    return (Void) null;
                 });
 
-                running = thisTask = new MediaFutureTask<RendererFacade>(renderer, (Future<Void>) future) {
+                running = thisTask = new MediaFutureTask<RendererFacade>(renderer, future) {
                     @Override
                     public boolean cancel(boolean mayInterruptIfRunning) {
                         boolean cancel = super.cancel(mayInterruptIfRunning);

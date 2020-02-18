@@ -547,7 +547,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             no = swap;
         }
 
-        teaselib.Answer answer = showChoices(Arrays.asList(yes, no), null);
+        teaselib.Answer answer = showChoices(Arrays.asList(yes, no), scriptFunction);
         return answer.meaning == Meaning.YES || answer == yes;
     }
 
@@ -603,16 +603,16 @@ public abstract class TeaseScript extends TeaseScriptMath {
         showChoices(Arrays.asList(chat), null, Intention.Chat);
     }
 
-    public final Answer chat(ScriptFunction scriptFunction, Answer chat) {
-        return showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat);
+    public final boolean chat(ScriptFunction scriptFunction, Answer chat) {
+        return showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat) != ScriptFunction.Timeout;
     }
 
-    public final Answer chat(RunnableScript script, Answer chat) {
-        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
+    public final boolean chat(RunnableScript script, Answer chat) {
+        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat) != ScriptFunction.Timeout;
     }
 
-    public final Answer chat(CallableScript<Answer> script, Answer chat) {
-        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
+    public final boolean chat(CallableScript<Answer> script, Answer chat) {
+        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat) != ScriptFunction.Timeout;
     }
 
     /**

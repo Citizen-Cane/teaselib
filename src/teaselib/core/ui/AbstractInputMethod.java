@@ -139,7 +139,7 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     protected class SingleShotHandler {
         final String key;
-        private final Runnable action;
+        final Runnable action;
 
         public SingleShotHandler(String key, Runnable action) {
             this.key = key;

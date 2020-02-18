@@ -46,7 +46,7 @@ public class MessageRendererQueue implements Closeable {
 
     private static final double DELAY_AT_END_OF_MESSAGE = 2.0;
 
-    private final TeaseLib teaseLib;
+    final TeaseLib teaseLib;
     private final MediaRendererQueue renderQueue;
     // TODO Handle message decorator processing here in order to make textToSpeechPlayer private
     public final TextToSpeechPlayer textToSpeechPlayer;
@@ -125,7 +125,7 @@ public class MessageRendererQueue implements Closeable {
                     } catch (IOException e) {
                         ExceptionUtil.handleIOException(e, teaseLib.config, logger);
                     }
-                    return (Void) null;
+                    return null;
                 });
 
                 running = thisTask = new MediaFutureTask<RendererFacade>(renderer, future) {

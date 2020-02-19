@@ -177,10 +177,6 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public State.Options apply() {
-        if (applied()) {
-            throw new IllegalStateException(this.guid + " is applied already");
-        }
-
         StateImpl state = state(value);
 
         if (defaultPeers.length == 0) {
@@ -231,10 +227,6 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public void remove() {
-        if (!applied()) {
-            throw new IllegalStateException(this.guid + " is not applied");
-        }
-
         StateImpl state = state(value);
         if (containsMyGuid(state)) {
             for (Object peer : new ArrayList<>(state.peers())) {

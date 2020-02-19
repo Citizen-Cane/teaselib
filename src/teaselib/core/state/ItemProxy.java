@@ -2,6 +2,9 @@ package teaselib.core.state;
 
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.ScriptEvents;
@@ -10,6 +13,8 @@ import teaselib.core.StateMaps;
 import teaselib.util.Item;
 
 public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.Attributes {
+    private static final Logger logger = LoggerFactory.getLogger(ItemProxy.class);
+
     public final Item item;
     final ScriptEvents events;
 
@@ -80,6 +85,14 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
 
     @Override
     public Options apply() {
+        if (applied()) {
+            if (is(namespace)) {
+                throw new IllegalStateException(AbstractProxy.itemImpl(item).guid + " has already been applied");
+            } else {
+                logger.warn("{} has already been applied in another namespace", AbstractProxy.itemImpl(item).guid);
+            }
+        }
+
         injectNamespace();
         StateOptionsProxy options = new StateOptionsProxy(namespace, item.apply(), events);
         events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
@@ -92,6 +105,10 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
 
     @Override
     public void remove() {
+        if (!applied()) {
+            throw new IllegalStateException(AbstractProxy.itemImpl(item).guid + " is not applied");
+        }
+
         events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
         item.remove();
     }

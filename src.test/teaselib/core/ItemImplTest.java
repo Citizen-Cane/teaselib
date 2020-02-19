@@ -1,6 +1,10 @@
-package teaselib.util;
+package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
@@ -14,9 +18,12 @@ import teaselib.Size;
 import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
-import teaselib.core.TeaseLib;
 import teaselib.core.util.QualifiedItem;
 import teaselib.test.TestScript;
+import teaselib.util.Item;
+import teaselib.util.ItemGuid;
+import teaselib.util.ItemImpl;
+import teaselib.util.Items;
 
 public class ItemImplTest {
 
@@ -401,16 +408,32 @@ public class ItemImplTest {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
 
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+        script.teaseLib.temporaryItems().remove();
+
+        assertFalse(script.state(Toys.Chains).applied());
+        script.teaseLib.temporaryItems().remove();
+
+        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
+        gag.apply();
+        gag.remove();
+        script.teaseLib.temporaryItems().remove();
+
+        Item glansRing = script.item(Toys.Glans_Ring);
+        glansRing.apply().over(0, TimeUnit.HOURS);
+        glansRing.remove();
+        script.teaseLib.temporaryItems().remove();
+
+        Item ankleRestraints = script.items(Toys.Ankle_Restraints).matching(Material.Leather).get();
+        ankleRestraints.apply();
+        script.teaseLib.temporaryItems().remove();
 
         Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
         wristRestraints.applyTo(Posture.WristsTiedBehindBack);
-
         Items temporaryItems = script.teaseLib.temporaryItems();
         Item temporaryWristRestraints = temporaryItems.matching(Toys.Wrist_Restraints).get();
-
         assertEquals(wristRestraints, temporaryWristRestraints);
         assertTrue(temporaryItems.contains(Toys.Wrist_Restraints));
+        temporaryItems.remove();
     }
 
     @Test

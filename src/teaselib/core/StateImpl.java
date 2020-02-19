@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -274,7 +275,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private Stream<StateImpl> states(Stream<? extends Object> stream) {
-        return stream.filter(ItemGuid::isntItemGuid).map(this::state);
+        return stream.filter(Predicate.not(ItemGuid::isGuid)).map(this::state);
     }
 
     private void setTemporary() {

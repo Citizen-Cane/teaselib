@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -912,15 +913,18 @@ public class TeaseLib implements Closeable {
     /**
      * @return All temporary items
      */
-    public Items temporaryItems() {
+    Items temporaryItems() {
         List<Item> temporaryItems = new ArrayList<>();
-        for (Entry<String, StateMapCache> entry : stateMaps.cache.entrySet()) {
-            for (Entry<String, StateMap> entry2 : entry.getValue().entrySet()) {
-                for (Entry<Object, State> entry3 : entry2.getValue().states.entrySet()) {
-                    StateImpl state = (StateImpl) entry3.getValue();
+        for (Entry<String, StateMapCache> domains : stateMaps.cache.entrySet()) {
+            String domain = domains.getKey();
+            for (Entry<String, StateMap> namespace : domains.getValue().entrySet()) {
+                for (Entry<Object, State> entries : namespace.getValue().states.entrySet()) {
+                    StateImpl state = (StateImpl) entries.getValue();
                     if (!ItemGuid.isGuid(state.item.toString())
                             && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        temporaryItems.add(item(entry.getKey(), state.item));
+                        temporaryItems.addAll(state.peers().stream().filter(guid -> guid instanceof ItemGuid)
+                                .map(guid -> (ItemGuid) guid).map(guid -> getByGuid(domain, state.item, guid.name()))
+                                .collect(Collectors.toList()));
                     }
                 }
             }

@@ -187,7 +187,8 @@ public class PersistedObject {
     @SuppressWarnings("unchecked")
     private static <T> T deserialize(String className, List<String> persistedValues, Optional<Factory> factory) {
         try {
-            Class<?> clazz = Class.forName(className);
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            Class<?> clazz = Class.forName(className, true, classLoader);
             if (clazz.isEnum()) {
                 @SuppressWarnings("rawtypes")
                 Class<Enum> enumClass = (Class<Enum>) clazz;

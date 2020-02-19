@@ -2,7 +2,6 @@ package teaselib.test;
 
 import java.io.IOException;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
@@ -181,16 +180,8 @@ public class TestScript extends TeaseScript {
         return scriptRenderer.events;
     }
 
-    private static final class AutoRemoveTriggerScript extends TeaseScript {
-        public AutoRemoveTriggerScript(TestScript script) {
-            super(script.teaseLib, script.resources, script.actor,
-                    script.namespace + script.teaseLib.getTime(TimeUnit.MICROSECONDS));
-        }
-    }
-
-    @SuppressWarnings("unused")
     public void triggerAutoRemove() {
-        new AutoRemoveTriggerScript(this);
+        handleAutoRemove();
     }
 
     @Override

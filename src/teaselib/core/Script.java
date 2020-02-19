@@ -87,16 +87,19 @@ public abstract class Script {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
         }
 
-        handleAutoRemove();
-        script(KeyReleaseSetup.class).init();
+        // TODO start only once but not here - KeyReleaseSetup must not be a script - device?
+        boolean startOnce = teaseLib.globals.get(SCRIPT_INSTANCES) == null;
+        if (startOnce) {
+            handleAutoRemove();
+            script(KeyReleaseSetup.class).init();
 
-        bindMotionDetectorToVideoRenderer();
-        bindNetworkProperties();
+            bindMotionDetectorToVideoRenderer();
+            bindNetworkProperties();
+        }
     }
 
-    private void handleAutoRemove() {
+    protected void handleAutoRemove() {
         long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
-
         State persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.PERSISTED_DOMAINS);
         Collection<Object> domains = new ArrayList<>(((StateImpl) persistedDomains).peers());
         for (Object domain : domains) {

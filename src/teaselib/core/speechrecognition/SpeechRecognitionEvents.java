@@ -19,6 +19,10 @@ public class SpeechRecognitionEvents {
     public final EventSource<AudioSignalProblemOccuredEventArgs> audioSignalProblemOccured = new EventSource<>(
             "audioSignalProblemOccured");
 
+    public SpeechRecognitionEvents() {
+        this(null, null);
+    }
+
     public SpeechRecognitionEvents(Event<SpeechRecognitionStartedEventArgs> initial,
             Event<SpeechRecognizedEventArgs> completing) {
         recognitionStarted = new EventSource<>("recognitionStarted", initial, null);

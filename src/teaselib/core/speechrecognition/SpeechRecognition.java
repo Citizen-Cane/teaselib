@@ -34,9 +34,6 @@ import teaselib.core.util.ExceptionUtil;
 public class SpeechRecognition {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
 
-    static final String EnableSpeechHypothesisHandlerGlobally = SpeechRecognition.class.getPackage().getName()
-            + ".Enable" + SpeechDetectionEventHandler.class.getSimpleName() + "Globally";
-
     private static final Map<Confidence, Confidence> confidenceMapping = confidenceMapping();
 
     private static EnumMap<Confidence, Confidence> confidenceMapping() {
@@ -97,7 +94,7 @@ public class SpeechRecognition {
     public final SpeechRecognitionEvents events;
     private final Locale locale;
 
-    private final SpeechDetectionEventHandler hypothesisEventHandler;
+    private final SpeechDetectionEventHandler speechDetectionEventHandler;
     private final SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
 
@@ -172,6 +169,7 @@ public class SpeechRecognition {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
         this.events = new SpeechRecognitionEvents(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
+        speechDetectionEventHandler = new SpeechDetectionEventHandler(events);
         this.locale = locale;
         if (locale == null) {
             sr = Unsupported.Instance;
@@ -180,7 +178,7 @@ public class SpeechRecognition {
                 try {
                     if (Environment.SYSTEM == Environment.Windows) {
                         sr = srClass.getConstructor().newInstance();
-                        sr.init(events, SpeechRecognition.this.locale);
+                        sr.init(speechDetectionEventHandler.eventSink, SpeechRecognition.this.locale);
                     } else {
                         sr = Unsupported.Instance;
                     }
@@ -198,10 +196,9 @@ public class SpeechRecognition {
         // other listeners downstream receive only the correct event,
         // as the event handler may consume the
         // RecognitionRejected-event and fire an recognized event instead
-        hypothesisEventHandler = new SpeechDetectionEventHandler(this);
-        hypothesisEventHandler.addEventListeners();
+        speechDetectionEventHandler.addEventListeners();
         // Add watchdog last, to receive speechRejected/completed from the hypothesis event handler
-        this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(events, this::handleReecognitionTimeout);
+        this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(events, this::handleRecognitionTimeout);
         this.timeoutWatchdog.addEvents();
     }
 
@@ -209,21 +206,16 @@ public class SpeechRecognition {
         sr.close();
         delegateThread.shutdown();
         timeoutWatchdog.removeEvents();
-        hypothesisEventHandler.removeEventListeners();
+        speechDetectionEventHandler.removeEventListeners();
         sr = null;
     }
 
-    private void handleReecognitionTimeout() {
-        Rule result = hypothesisEventHandler.getHypothesis();
+    private void handleRecognitionTimeout() {
+        Rule result = speechDetectionEventHandler.getHypothesis();
         if (result == null) {
             result = new Rule("", "", Integer.MIN_VALUE, Collections.emptySet(), 0, 0, 0.0f, Confidence.Noise);
         }
         events.recognitionRejected.run(new SpeechRecognizedEventArgs(result));
-    }
-
-    private static boolean enableSpeechHypothesisHandlerGlobally() {
-        return Boolean.toString(true)
-                .compareToIgnoreCase(System.getProperty(EnableSpeechHypothesisHandlerGlobally, "true")) == 0;
     }
 
     // TODO Make class stateless by moving sr process into new class with final state - remember that class upstream
@@ -308,13 +300,10 @@ public class SpeechRecognition {
     private void enableSR(byte[] srgs) {
         setChoices(srgs);
 
-        if (enableSpeechHypothesisHandlerGlobally() || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
-            hypothesisEventHandler.setChoices(firstPhraseOfEachChoice());
-            hypothesisEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
-            hypothesisEventHandler.enable(true);
-        } else {
-            hypothesisEventHandler.enable(false);
-        }
+        speechDetectionEventHandler.setChoices(firstPhraseOfEachChoice());
+        speechDetectionEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
+        speechDetectionEventHandler.enable(true);
+
         timeoutWatchdog.enable(true);
 
         synchronized (TextToSpeech.AudioOutput) {
@@ -326,7 +315,7 @@ public class SpeechRecognition {
 
     private void disableSR() {
         SpeechRecognition.this.speechRecognitionActive.set(false);
-        hypothesisEventHandler.enable(false);
+        speechDetectionEventHandler.enable(false);
         timeoutWatchdog.enable(false);
         unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
         sr.stopRecognition();

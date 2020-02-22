@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionEvents;
+import teaselib.core.speechrecognition.events.AudioLevelUpdatedEventArgs;
+import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
@@ -41,8 +43,12 @@ public class SpeechDetectionEventHandler {
      */
     private static final int HypothesisMinimumNumberOfVowelsDefault = 4;
 
-    private final SpeechRecognition speechRecognizer;
+    public final SpeechRecognitionEvents eventSink;
+    public final SpeechRecognitionEvents eventForwardingSource;
+
     private final Event<SpeechRecognitionStartedEventArgs> recognitionStarted;
+    private final Event<AudioSignalProblemOccuredEventArgs> audioSignalProblemOccured;
+    private final Event<AudioLevelUpdatedEventArgs> audioLevelUpdated;
     private final Event<SpeechRecognizedEventArgs> speechDetected;
     private final Event<SpeechRecognizedEventArgs> recognitionRejected;
     private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
@@ -57,27 +63,35 @@ public class SpeechDetectionEventHandler {
     private int minimumForHypothesisRecognition = 0;
     Rule hypothesisResult;
 
-    public SpeechDetectionEventHandler(SpeechRecognition speechRecognizer) {
+    public SpeechDetectionEventHandler(SpeechRecognitionEvents eventForwardingSource) {
         super();
-        this.speechRecognizer = speechRecognizer;
+        this.eventSink = new SpeechRecognitionEvents();
+        this.eventForwardingSource = eventForwardingSource;
+
         this.recognitionStarted = recognitionStarted();
+        this.audioSignalProblemOccured = audioSignalProblemOccured();
+        this.audioLevelUpdated = audioLevelUpdated();
         this.speechDetected = speechDetected();
         this.recognitionRejected = recognitionRejected();
         this.recognitionCompleted = recognitionCompleted();
     }
 
     public void addEventListeners() {
-        speechRecognizer.events.recognitionStarted.add(recognitionStarted);
-        speechRecognizer.events.speechDetected.add(speechDetected);
-        speechRecognizer.events.recognitionRejected.add(recognitionRejected);
-        speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
+        eventSink.recognitionStarted.add(recognitionStarted);
+        eventSink.audioSignalProblemOccured.add(audioSignalProblemOccured);
+        eventSink.audioLevelUpdated.add(audioLevelUpdated);
+        eventSink.speechDetected.add(speechDetected);
+        eventSink.recognitionRejected.add(recognitionRejected);
+        eventSink.recognitionCompleted.add(recognitionCompleted);
     }
 
     public void removeEventListeners() {
-        speechRecognizer.events.recognitionStarted.remove(recognitionStarted);
-        speechRecognizer.events.speechDetected.remove(speechDetected);
-        speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
-        speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
+        eventSink.recognitionStarted.remove(recognitionStarted);
+        eventSink.audioSignalProblemOccured.remove(audioSignalProblemOccured);
+        eventSink.audioLevelUpdated.remove(audioLevelUpdated);
+        eventSink.speechDetected.remove(speechDetected);
+        eventSink.recognitionRejected.remove(recognitionRejected);
+        eventSink.recognitionCompleted.remove(recognitionCompleted);
     }
 
     public void enable(boolean enable) {
@@ -108,8 +122,17 @@ public class SpeechDetectionEventHandler {
                 return;
             } else {
                 hypothesisResult = null;
+                fireRecognitionStartedEvent(eventArgs);
             }
         };
+    }
+
+    private Event<AudioSignalProblemOccuredEventArgs> audioSignalProblemOccured() {
+        return this::fireAudioSignalProblemOccuredEvent;
+    }
+
+    private Event<AudioLevelUpdatedEventArgs> audioLevelUpdated() {
+        return this::fireAudioLevelUpdatedEvent;
     }
 
     private Event<SpeechRecognizedEventArgs> speechDetected() {
@@ -133,6 +156,7 @@ public class SpeechDetectionEventHandler {
                         }
                     }
                 }
+                fireSpeechDetectedEvent(eventArgs);
             }
         };
     }
@@ -151,6 +175,7 @@ public class SpeechDetectionEventHandler {
             if (!enabled) {
                 return;
             } else if (hypothesisResult == null) {
+                fireRecognitionRejectedEvent(eventArgs);
                 return;
             } else if (hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
@@ -163,6 +188,7 @@ public class SpeechDetectionEventHandler {
                 fireRecognitionCompletedEvent(elevatedRule);
             } else {
                 logger.info("rules \n{}", hypothesisResult.prettyPrint());
+                fireRecognitionRejectedEvent(eventArgs);
             }
         };
     }
@@ -200,6 +226,18 @@ public class SpeechDetectionEventHandler {
                 hypothesisResult.text, hypothesisResult.probability, expectedConfidence, reducedProbability);
     }
 
+    /*
+     * Fixed StackOverflow caused by rejected speech rule accepted again
+     * 
+     * + rule was rejected by firing rejected event downstream, but all events are are processed by both hypothesis
+     * handler and input method -> hypothesis handler detects this situation
+     * 
+     * It's a workaround, the right solution would be to separate events -> hypothesis handler receives events from
+     * recognizer and passes them on through a second event system to input method - make sr events private to see who's
+     * consuming them
+     * 
+     * TODO Split event source in hypothesis sink and forward source
+     */
     private Event<SpeechRecognizedEventArgs> recognitionCompleted() {
         return eventArgs -> {
             Rule recognitionCompletedResult = eventArgs.result[0];
@@ -217,6 +255,8 @@ public class SpeechDetectionEventHandler {
                         recognitionCompletedResult, hypothesisResult, elevatedRule);
 
                 fireRecognitionCompletedEvent(elevatedRule);
+            } else {
+                fireRecognitionCompletedEvent(eventArgs);
             }
         };
     }
@@ -225,9 +265,32 @@ public class SpeechDetectionEventHandler {
         return result.confidence.probability >= confidence.probability;
     }
 
+    private void fireRecognitionStartedEvent(SpeechRecognitionStartedEventArgs eventArgs) {
+        eventForwardingSource.recognitionStarted.run(eventArgs);
+    }
+
+    private void fireAudioSignalProblemOccuredEvent(AudioSignalProblemOccuredEventArgs eventArgs) {
+        eventForwardingSource.audioSignalProblemOccured.run(eventArgs);
+    }
+
+    private void fireAudioLevelUpdatedEvent(AudioLevelUpdatedEventArgs eventArgs) {
+        eventForwardingSource.audioLevelUpdated.run(eventArgs);
+    }
+
+    private void fireSpeechDetectedEvent(SpeechRecognizedEventArgs eventArgs) {
+        eventForwardingSource.speechDetected.run(eventArgs);
+    }
+
+    private void fireRecognitionRejectedEvent(SpeechRecognizedEventArgs eventArgs) {
+        eventForwardingSource.recognitionRejected.run(eventArgs);
+    }
+
+    private void fireRecognitionCompletedEvent(SpeechRecognizedEventArgs eventArgs) {
+        eventForwardingSource.recognitionCompleted.run(eventArgs);
+    }
+
     private void fireRecognitionCompletedEvent(Rule result) {
-        SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(result);
-        speechRecognizer.events.recognitionCompleted.run(recognitionCompletedEventArgs);
+        eventForwardingSource.recognitionCompleted.run(new SpeechRecognizedEventArgs(result));
     }
 
     public Rule getHypothesis() {

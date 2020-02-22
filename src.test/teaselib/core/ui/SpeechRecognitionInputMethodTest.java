@@ -1,23 +1,29 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.ui;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
-import teaselib.core.ui.Choice;
-import teaselib.core.ui.Choices;
-import teaselib.core.ui.Prompt;
-import teaselib.core.ui.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.Confidence;
+import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionTestUtils;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.test.TestScript;
 
 public class SpeechRecognitionInputMethodTest {
@@ -92,7 +98,7 @@ public class SpeechRecognitionInputMethodTest {
         try {
             inputMethod.show(prompt);
             sr.emulateRecogntion(SpeechRecognitionTestUtils.withoutPunctation(expected));
-            prompt.click.await(1, TimeUnit.SECONDS);
+            assertTrue(prompt.click.await(1, TimeUnit.SECONDS));
             inputMethod.dismiss(prompt);
         } finally {
             prompt.lock.unlock();
@@ -116,7 +122,7 @@ public class SpeechRecognitionInputMethodTest {
             try {
                 inputMethod1.show(prompt1);
                 sr.emulateRecogntion("Bar");
-                prompt1.click.await(1, TimeUnit.SECONDS);
+                assertFalse(prompt1.click.await(1, TimeUnit.SECONDS));
                 inputMethod1.dismiss(prompt1);
                 assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
 
@@ -128,7 +134,7 @@ public class SpeechRecognitionInputMethodTest {
                 try {
                     inputMethod2.show(prompt2);
                     sr.emulateRecogntion("Bar");
-                    prompt2.click.await(1, TimeUnit.SECONDS);
+                    assertTrue(prompt2.click.await(1, TimeUnit.SECONDS));
                     inputMethod2.dismiss(prompt2);
                     assertEquals(new Prompt.Result(0), prompt2.result());
                 } finally {
@@ -137,7 +143,7 @@ public class SpeechRecognitionInputMethodTest {
 
                 inputMethod1.show(prompt1);
                 sr.emulateRecogntion("Foo");
-                prompt1.click.await(1, TimeUnit.SECONDS);
+                assertTrue(prompt1.click.await(1, TimeUnit.SECONDS));
                 assertEquals(new Prompt.Result(0), prompt1.result());
             } finally {
                 prompt1.lock.unlock();
@@ -163,4 +169,22 @@ public class SpeechRecognitionInputMethodTest {
             }, "Foo"));
         }
     }
+
+    @Test
+    public void testCommonDistinctValue() {
+        Integer[][] array = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 }, { 2, 5 }, };
+        List<Set<Integer>> values = Arrays.stream(array).map(Arrays::asList).map(HashSet::new)
+                .collect(Collectors.toList());
+        assertEquals(2, SpeechRecognitionInputMethod.getCommonDistinctValue(values).orElseThrow().intValue());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testCommonDistinctValueNotPresent() {
+        Integer[][] array = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 }, { 2, 5 },
+                { 0, 5 } };
+        List<Set<Integer>> values = Arrays.stream(array).map(Arrays::asList).map(HashSet::new)
+                .collect(Collectors.toList());
+        assertEquals(2, SpeechRecognitionInputMethod.getCommonDistinctValue(values).orElseThrow().intValue());
+    }
+
 }

@@ -335,11 +335,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
         Event<SpeechRecognizedEventArgs> recognitionRejected;
         SpeechRecognition speechRecognizer = teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale());
-        EventSource<SpeechRecognizedEventArgs> speechDetectedEvents = speechRecognizer.events.recognitionRejected;
+        EventSource<SpeechRecognizedEventArgs> speechDetectedEvents = speechRecognizer.events.speechDetected;
         if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
             Thread scriptFunctionThread = Thread.currentThread();
-            // TODO Should be SpeechDetectedEvent
-            recognitionRejected = (eventArgs) -> {
+            recognitionRejected = eventArgs -> {
                 if (!ignoreTimeoutInDubioMitius.get()) {
                     logger.info("-{} - : timeout disabled {}", scriptFunctionThread.getName(), timeoutBehavior);
                     ignoreTimeoutInDubioMitius.set(true);

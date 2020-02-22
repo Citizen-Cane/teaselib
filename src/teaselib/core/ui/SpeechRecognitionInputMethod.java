@@ -1,6 +1,6 @@
 package teaselib.core.ui;
 
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -192,7 +192,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         fireRecognitionRejectedEvent(eventArgs);
     }
 
-    private static Optional<Integer> getCommonDistinctValue(List<Set<Integer>> indicesSets) {
+    static Optional<Integer> getCommonDistinctValue(List<Set<Integer>> indicesSets) {
         if (indicesSets.isEmpty())
             return Optional.empty();
 

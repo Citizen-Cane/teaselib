@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.core.ui.Choice;
@@ -20,15 +19,6 @@ public class SpeechRecognitionTests {
     private static final Choices TestChoices = new Choices(
             Arrays.asList(choice("I've spurted off, Miss"), choice("I give up, Miss"), choice("I have a dream")));
     private static final Confidence TestConfidence = Confidence.High;
-
-    private boolean enableSpeechHypothesisHandler = false;
-
-    @Before
-    public void init() {
-        if (enableSpeechHypothesisHandler) {
-            System.setProperty(SpeechRecognition.EnableSpeechHypothesisHandlerGlobally, Boolean.toString(true));
-        }
-    }
 
     @Test
     public void testSpeechRecognitionInputMethod() throws InterruptedException {

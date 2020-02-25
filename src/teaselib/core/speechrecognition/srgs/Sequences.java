@@ -1,9 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static java.lang.Math.min;
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -203,14 +203,19 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     public static <T> List<Sequences<T>> reduce(List<List<Sequences<T>>> candidates) {
         return candidates.stream().reduce((a, b) -> {
-            int ca = commonness(a);
-            int cb = commonness(b);
-            if (ca == cb) {
-                return max(a) > max(b) ? a : b;
+            int cAa = averageCommonness(a);
+            int cAb = averageCommonness(b);
+            if (cAa == cAb) {
+                int maxCa = maxCommmonness(a);
+                int maxCb = maxCommmonness(b);
+                if (maxCa == maxCb) {
+                    return a.size() < b.size() ? a : b;
+                } else {
+                    return maxCa > maxCb ? a : b;
+                }
             } else {
-                return ca > cb ? a : b;
+                return cAa > cAb ? a : b;
             }
-
         }).orElseThrow();
     }
 
@@ -219,7 +224,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 (x, y) -> x + y - 1);
     }
 
-    public static <T> int max(List<Sequences<T>> sequences) {
+    public static <T> int maxCommmonness(List<Sequences<T>> sequences) {
         return sequences.stream().map(Sequences::max).reduce(Math::max).orElse(0);
     }
 
@@ -228,7 +233,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 .orElse(0);
     }
 
-    public static <T> int commonness(List<Sequences<T>> sequences) {
+    public static <T> int averageCommonness(List<Sequences<T>> sequences) {
         return sequences.stream().map(Sequences::commonness).reduce(0, (x, y) -> x + y);
     }
 

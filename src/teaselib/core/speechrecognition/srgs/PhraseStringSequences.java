@@ -1,8 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
-import static teaselib.core.speechrecognition.srgs.PhraseString.*;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -14,7 +15,7 @@ public class PhraseStringSequences extends Sequences<PhraseString> {
         this(Stream.of(choices).collect(toList()));
     }
 
-    PhraseStringSequences(List<Sequence<PhraseString>> choices) {
+    PhraseStringSequences(Collection<Sequence<PhraseString>> choices) {
         super(choices, Traits);
     }
 

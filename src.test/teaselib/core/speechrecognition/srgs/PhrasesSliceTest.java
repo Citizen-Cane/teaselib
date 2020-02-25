@@ -1,7 +1,12 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.speechrecognition.srgs.Sequences.averageCommonness;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,16 +28,16 @@ public class PhrasesSliceTest {
     }
 
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();
-    final List<Sequences<PhraseString>> soFar = new ArrayList<>();
+    final DebugPhraseStringSequencesList soFar = new DebugPhraseStringSequencesList();
 
     private Sequences<PhraseString> advance(PhraseStringSequences choices) {
-        Sequences<PhraseString> slice = choices.slice(candidates, soFar);
+        DebugPhraseStringSequences slice = new DebugPhraseStringSequences(choices.slice(candidates, soFar));
         soFar.add(slice);
         return slice;
     }
 
-    private List<Sequences<PhraseString>> complete(PhraseStringSequences choices) {
-        while (!advance(choices).isEmpty()) {
+    private DebugPhraseStringSequencesList complete(PhraseStringSequences choices) {
+        while (!advance(choices).isEmpty()) { //
         }
         return soFar;
     }
@@ -81,8 +86,8 @@ public class PhrasesSliceTest {
 
         List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
         assertNotEquals(optimal, subOptimal);
-        assertEquals(6, Sequences.commonness(optimal));
-        assertEquals(6, Sequences.commonness(subOptimal));
+        assertEquals(6, Sequences.averageCommonness(optimal));
+        assertEquals(6, Sequences.averageCommonness(subOptimal));
     }
 
     @Test
@@ -102,8 +107,8 @@ public class PhrasesSliceTest {
         candidates.add(subOptimal);
         List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
         assertNotEquals(optimal, subOptimal);
-        assertEquals(19, Sequences.commonness(optimal));
-        assertEquals(17, Sequences.commonness(subOptimal));
+        assertEquals(19, Sequences.averageCommonness(optimal));
+        assertEquals(17, Sequences.averageCommonness(subOptimal));
 
         assertEquals(new PhraseStringSequences(result("Yes", 0, 1, 2), result("No", 3, 4, 5)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("Miss", 0, 3)), optimal.get(1));
@@ -125,8 +130,8 @@ public class PhrasesSliceTest {
         candidates.add(subOptimal);
         List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
         assertNotEquals(optimal, subOptimal);
-        assertEquals(9, Sequences.commonness(optimal));
-        assertEquals(9, Sequences.commonness(subOptimal));
+        assertEquals(9, Sequences.averageCommonness(optimal));
+        assertEquals(9, Sequences.averageCommonness(subOptimal));
 
         assertEquals(new PhraseStringSequences(result("Miss", 0, 3)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("of course", 0, 1, 2, 3)), optimal.get(1));
@@ -163,7 +168,7 @@ public class PhrasesSliceTest {
         candidates.add(subOptimal);
         List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
         assertEquals(optimal, subOptimal);
-        assertEquals(10, Sequences.commonness(optimal));
+        assertEquals(10, Sequences.averageCommonness(optimal));
     }
 
     @Test
@@ -224,6 +229,58 @@ public class PhrasesSliceTest {
         assertEquals(new PhraseStringSequences(result("d", 0, 1, 2, 3)), slice4);
 
         assertTrue(empty.isEmpty());
+    }
+
+    @Test
+    public void testPunctationMarksIndependence() {
+        PhraseStringSequences choices = new PhraseStringSequences(choice("A B C", 0), choice("A,B C.", 1),
+                choice("a B,C.", 2));
+
+        Sequences<PhraseString> slice1 = advance(choices);
+        assertEquals(new PhraseStringSequences(result("a b c", 0, 1, 2)), slice1);
+        Sequences<PhraseString> empty = advance(choices);
+        assertTrue(empty.isEmpty());
+
+        List<Sequences<PhraseString>> subOptimal = complete(choices);
+        candidates.add(subOptimal);
+        assertEquals(1, candidates.size());
+
+        List<Sequences<PhraseString>> optimal = Sequences.reduce(candidates);
+        assertEquals(8, Sequences.averageCommonness(optimal));
+    }
+
+    @Test
+    public void testSliceMultipleCommon3() {
+        // D is correctly split between phrase 1 and 4 to allow A in phrase 1 to be distinct
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("A B C, D E F G", 0), //
+                choice("D E F H, B C", 1), //
+                choice("D I J, B C", 2), //
+                choice("A, D I K L, B C", 3), //
+                choice("D I F M, B C", 4), //
+                choice("N B C, O", 5));
+
+        List<Sequences<PhraseString>> subOptimal = complete(choices);
+        candidates.add(subOptimal);
+        DebugPhraseStringSequencesList optimal = new DebugPhraseStringSequencesList(Sequences.reduce(candidates));
+        assertEquals(18, Sequences.averageCommonness(subOptimal));
+        assertEquals(20, Sequences.averageCommonness(optimal));
+
+        List<DebugPhraseStringSequencesList> allOptimal = candidates.stream().filter(s -> averageCommonness(s) >= 20)
+                .map(DebugPhraseStringSequencesList::new).collect(toList());
+
+        assertEquals(4, allOptimal.size());
+
+        assertEquals(8, allOptimal.get(0).size());
+        assertEquals(20, Sequences.averageCommonness(allOptimal.get(0)));
+        assertEquals(7, allOptimal.get(1).size());
+        assertEquals(20, Sequences.averageCommonness(allOptimal.get(1)));
+        assertEquals(8, allOptimal.get(2).size());
+        assertEquals(20, Sequences.averageCommonness(allOptimal.get(2)));
+        assertEquals(10, allOptimal.get(3).size());
+        assertEquals(20, Sequences.averageCommonness(allOptimal.get(3)));
+
+        assertEquals(7, optimal.size());
     }
 
 }

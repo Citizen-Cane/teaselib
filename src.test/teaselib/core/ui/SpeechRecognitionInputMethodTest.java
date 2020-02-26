@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -21,6 +20,7 @@ import org.junit.Test;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.speechrecognition.Confidence;
+import teaselib.core.speechrecognition.RuleIndicesList;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionTestUtils;
 import teaselib.core.speechrecognition.SpeechRecognizer;
@@ -173,18 +173,18 @@ public class SpeechRecognitionInputMethodTest {
     @Test
     public void testCommonDistinctValue() {
         Integer[][] array = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 }, { 2, 5 }, };
-        List<Set<Integer>> values = Arrays.stream(array).map(Arrays::asList).map(HashSet::new)
-                .collect(Collectors.toList());
-        assertEquals(2, SpeechRecognitionInputMethod.getCommonDistinctValue(values).orElseThrow().intValue());
+        RuleIndicesList values = new RuleIndicesList(
+                Arrays.stream(array).map(Arrays::asList).map(HashSet::new).collect(Collectors.toList()));
+        assertEquals(2, values.getCommonDistinctValue().orElseThrow().intValue());
     }
 
     @Test(expected = NoSuchElementException.class)
     public void testCommonDistinctValueNotPresent() {
         Integer[][] array = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 }, { 2, 5 },
                 { 0, 5 } };
-        List<Set<Integer>> values = Arrays.stream(array).map(Arrays::asList).map(HashSet::new)
-                .collect(Collectors.toList());
-        assertEquals(2, SpeechRecognitionInputMethod.getCommonDistinctValue(values).orElseThrow().intValue());
+        RuleIndicesList values = new RuleIndicesList(
+                Arrays.stream(array).map(Arrays::asList).map(HashSet::new).collect(Collectors.toList()));
+        assertEquals(2, values.getCommonDistinctValue().orElseThrow().intValue());
     }
 
 }

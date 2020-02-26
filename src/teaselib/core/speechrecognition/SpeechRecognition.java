@@ -226,7 +226,7 @@ public class SpeechRecognition {
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
             delegateThread.run(() -> {
-                enableSR(SpeechRecognition.this.srgs);
+                enableSR();
                 logger.info("Speech recognition started");
             });
         } else {
@@ -249,7 +249,7 @@ public class SpeechRecognition {
         if (sr != null) {
             delegateThread.run(() -> {
                 if (srgs != null) {
-                    enableSR(srgs);
+                    enableSR();
                     logger.info("Speech recognition resumed");
                 } else {
                     logger.info("Speech recognition already stopped");
@@ -270,7 +270,7 @@ public class SpeechRecognition {
                     // TODO Phrases field may conflict with Prompt stacking because SR is not supposed to remember this
                     // -> needs map of phrases->grammar hash to enable/disable the right grammar (and to remove it when
                     // dismissed)
-                    enableSR(srgs);
+                    enableSR();
                     logger.info("Speech recognition restarted");
                 } else {
                     logger.warn("Speech recognition already stopped");
@@ -297,7 +297,7 @@ public class SpeechRecognition {
         }
     }
 
-    private void enableSR(byte[] srgs) {
+    private void enableSR() {
         setChoices(srgs);
 
         speechDetectionEventHandler.setChoices(firstPhraseOfEachChoice());

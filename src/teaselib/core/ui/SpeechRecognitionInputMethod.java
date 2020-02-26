@@ -2,15 +2,12 @@ package teaselib.core.ui;
 
 import static java.util.Arrays.asList;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -21,6 +18,7 @@ import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.AudioSignalProblems;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.RuleIndicesList;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
@@ -106,7 +104,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                     }
 
                     try {
-                        List<Set<Integer>> choices = result.gather();
+                        RuleIndicesList choices = result.gather();
 
                         double penalty = audioSignalProblems.penalty();
                         if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
@@ -144,7 +142,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     public static Optional<Rule> distinct(List<Rule> result) {
-        return result.stream().filter(r -> getCommonDistinctValue(r.gather()).isPresent()).reduce(Rule::maxProbability);
+        return result.stream().filter(r -> r.gather().getCommonDistinctValue().isPresent())
+                .reduce(Rule::maxProbability);
     }
 
     private void handleNoChoices(SpeechRecognizedEventArgs eventArgs, Rule result) {
@@ -154,7 +153,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     private Prompt handleMultipleChoices(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
-            List<Set<Integer>> choices) {
+            RuleIndicesList choices) {
         List<Integer> distinctChoices = choices.stream().map(indices -> indices.size() == 1 ? indices.iterator().next()
                 : Prompt.Result.UNDEFINED.elements.iterator().next()).collect(Collectors.toList());
         Prompt.Result promptResult = new Prompt.Result(distinctChoices);
@@ -169,8 +168,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     private Prompt handleDistinctChoice(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
-            List<Set<Integer>> choices) {
-        Optional<Integer> distinctChoice = getCommonDistinctValue(choices);
+            RuleIndicesList choices) {
+        Optional<Integer> distinctChoice = choices.getCommonDistinctValue();
         if (distinctChoice.isPresent()) {
             accept(prompt, new Prompt.Result(speechRecognizer.mapPhraseToChoice(distinctChoice.get())));
             return null;
@@ -190,26 +189,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private void reject(SpeechRecognizedEventArgs eventArgs) {
         eventArgs.consumed = true;
         fireRecognitionRejectedEvent(eventArgs);
-    }
-
-    static Optional<Integer> getCommonDistinctValue(List<Set<Integer>> indicesSets) {
-        if (indicesSets.isEmpty())
-            return Optional.empty();
-
-        Set<Integer> candidates = new HashSet<>(indicesSets.get(0));
-        for (Integer candidate : new ArrayList<>(candidates)) {
-            for (int i = 1; i < indicesSets.size(); i++) {
-                if (!indicesSets.get(i).contains(candidate)) {
-                    candidates.remove(candidate);
-                    if (candidates.isEmpty())
-                        return Optional.empty();
-                    else
-                        break;
-                }
-            }
-        }
-
-        return candidates.size() == 1 ? Optional.of(candidates.iterator().next()) : Optional.empty();
     }
 
     private void fireRecognitionRejectedEvent(SpeechRecognizedEventArgs eventArgs) {
@@ -316,4 +295,5 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     public String toString() {
         return "SpeechRecognizer=" + speechRecognizer + " confidence=" + expectedConfidence;
     }
+
 }

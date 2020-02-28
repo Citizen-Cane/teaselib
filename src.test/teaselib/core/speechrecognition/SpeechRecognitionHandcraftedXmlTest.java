@@ -1,9 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
-import static teaselib.core.speechrecognition.srgs.StringSequence.*;
+import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult;
+import static teaselib.core.speechrecognition.srgs.StringSequence.splitWords;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +18,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.Stream;
@@ -58,25 +59,24 @@ public class SpeechRecognitionHandcraftedXmlTest {
                 splitWords(emulatedRecognitionResult).stream().collect(joining(" ")), emulatedRecognitionResult);
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
         byte[] xml = Stream.toByteArray(resources.get(resource));
-        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
+
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class);
+        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty()) {
             @Override
-            byte[] srgs(Choices choices) {
-                mapper = index -> index;
-                return xml;
+            public Setup getSetup(Choices choices) {
+                Setup setup = super.getSetup(choices);
+                return new Setup() {
+                    @Override
+                    public void apply() {
+                        setup.apply();
+                        sr.setChoices(choices, xml, value -> value);
+                    }
+                };
             }
+
         };
-
-        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod), mode);
-
-        prompt.lock.lockInterruptibly();
-        try {
-            inputMethod.show(prompt);
-            return awaitResult(sr, prompt, emulatedRecognitionResult, expected);
-        } finally {
-            prompt.lock.unlock();
-            sr.close();
-        }
+        Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
+        return awaitResult(inputMethod, sr, prompt, emulatedRecognitionResult, expected);
     }
 
     @Test

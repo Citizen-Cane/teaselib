@@ -344,8 +344,8 @@ public abstract class Script {
         QualifiedItem value = QualifiedItem.of(teaseLib.config.get(intention));
         Confidence recognitionConfidence = ReflectionUtils.getEnum(Confidence.class, value);
 
+        InputMethods inputMethods = getInputMethods(scriptFunction, recognitionConfidence, answers);
         Choices choices = choices(answers);
-        InputMethods inputMethods = getInputMethods(scriptFunction, recognitionConfidence, choices);
 
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
@@ -367,6 +367,7 @@ public abstract class Script {
         List<Choice> choices = answers.stream().map(answer -> new Choice(answer,
                 expandTextVariables(selectPhrase(answer)), expandTextVariables(answer.text)))
                 .collect(Collectors.toList());
+
         return new Choices(choices);
     }
 
@@ -397,7 +398,7 @@ public abstract class Script {
     }
 
     private InputMethods getInputMethods(ScriptFunction scriptFunction, Confidence recognitionConfidence,
-            Choices choices) {
+            List<Answer> answers) {
         InputMethods inputMethods = new InputMethods(teaseLib.globals.get(InputMethods.class));
         inputMethods.add(teaseLib.host.inputMethod());
 
@@ -409,7 +410,7 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied()
-                && HeadGestureInputMethod.distinctGestures(choices)) {
+                && HeadGestureInputMethod.distinctGestures(answers)) {
             inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getInputMethodExecutorService(),
                     teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
         }

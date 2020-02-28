@@ -63,7 +63,7 @@ public class SpeechRecognitionInputMethodTest {
             SpeechRecognition sr = speechRecognizer.get(new Locale(locale));
             SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
                     Optional.empty());
-            awaitRecognition(sr, inputMethod, new Prompt(choices, Arrays.asList(inputMethod)), expected);
+            awaitRecognition(sr, inputMethod, new Prompt(choices, new InputMethods(inputMethod)), expected);
         }
     }
 
@@ -76,7 +76,7 @@ public class SpeechRecognitionInputMethodTest {
             SpeechRecognition sr = speechRecognizer.get(Locale.US);
             SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
                     Optional.empty());
-            Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
+            Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
 
             for (int i = 0; i < 10; i++) {
                 prompt.lock.lockInterruptibly();
@@ -117,34 +117,39 @@ public class SpeechRecognitionInputMethodTest {
             SpeechRecognitionInputMethod inputMethod1 = new SpeechRecognitionInputMethod(sr, confidence,
                     Optional.empty());
             Choices choices1 = new Choices(choice("Foo"));
-            Prompt prompt1 = new Prompt(choices1, Arrays.asList(inputMethod1));
+            Prompt prompt1 = new Prompt(choices1, new InputMethods(inputMethod1));
             prompt1.lock.lockInterruptibly();
             try {
                 inputMethod1.show(prompt1);
+                assertTrue(sr.isActive());
                 sr.emulateRecogntion("Bar");
                 assertFalse(prompt1.click.await(1, TimeUnit.SECONDS));
                 inputMethod1.dismiss(prompt1);
                 assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
+                assertFalse(sr.isActive());
 
                 SpeechRecognitionInputMethod inputMethod2 = new SpeechRecognitionInputMethod(sr, confidence,
                         Optional.empty());
                 Choices choices2 = new Choices(choice("Bar"));
-                Prompt prompt2 = new Prompt(choices2, Arrays.asList(inputMethod2));
+                Prompt prompt2 = new Prompt(choices2, new InputMethods(inputMethod2));
                 prompt2.lock.lockInterruptibly();
                 try {
                     inputMethod2.show(prompt2);
+                    assertTrue(sr.isActive());
                     sr.emulateRecogntion("Bar");
                     assertTrue(prompt2.click.await(1, TimeUnit.SECONDS));
-                    inputMethod2.dismiss(prompt2);
                     assertEquals(new Prompt.Result(0), prompt2.result());
+                    assertFalse(sr.isActive());
                 } finally {
                     prompt2.lock.unlock();
                 }
 
                 inputMethod1.show(prompt1);
+                assertTrue(sr.isActive());
                 sr.emulateRecogntion("Foo");
                 assertTrue(prompt1.click.await(1, TimeUnit.SECONDS));
                 assertEquals(new Prompt.Result(0), prompt1.result());
+                assertFalse(sr.isActive());
             } finally {
                 prompt1.lock.unlock();
             }

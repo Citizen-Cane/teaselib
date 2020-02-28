@@ -13,6 +13,7 @@ import org.junit.Test;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 
@@ -26,16 +27,10 @@ public class SpeechRecognitionSimpleTest {
         for (Choice choice : choices) {
             SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
                     Optional.empty());
-            Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
-            prompt.lock.lockInterruptibly();
-            try {
-                inputMethod.show(prompt);
-                String emulatedSpeech = choice.phrases.get(0);
-                awaitResult(sr, prompt, SpeechRecognitionTestUtils.withoutPunctation(emulatedSpeech),
-                        new Prompt.Result(choices.indexOf(choice)));
-            } finally {
-                prompt.lock.unlock();
-            }
+            Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
+            String emulatedSpeech = choice.phrases.get(0);
+            awaitResult(inputMethod, sr, prompt, SpeechRecognitionTestUtils.withoutPunctation(emulatedSpeech),
+                    new Prompt.Result(choices.indexOf(choice)));
         }
     }
 
@@ -44,14 +39,8 @@ public class SpeechRecognitionSimpleTest {
         for (String speech : rejected) {
             SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
                     Optional.empty());
-            Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
-            prompt.lock.lockInterruptibly();
-            try {
-                inputMethod.show(prompt);
-                awaitResult(sr, prompt, SpeechRecognitionTestUtils.withoutPunctation(speech), null);
-            } finally {
-                prompt.lock.unlock();
-            }
+            Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
+            awaitResult(inputMethod, sr, prompt, SpeechRecognitionTestUtils.withoutPunctation(speech), null);
         }
     }
 

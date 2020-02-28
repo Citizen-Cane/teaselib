@@ -22,11 +22,6 @@ public abstract class BasicSplitter implements PromptSplitter {
         this.minimumForHypothesisRecognition = minimumNumberOfWordsForHypothesisRecognition;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.core.speechrecognition.PromptSplitter#getHypothesisMinimumCount( java.util.List)
-     */
     @Override
     public int getMinimumForHypothesisRecognition(List<String> choices) {
         return getMinimumForHypothesisRecognition() + numberOfSameItemsInAnyTwoAtStart(choices);
@@ -90,19 +85,9 @@ public abstract class BasicSplitter implements PromptSplitter {
     }
 
     private static String removePunctation(String text) {
-        text = text.replace(".", " ");
-        text = text.replace(":", " ");
-        text = text.replace(",", " ");
-        text = text.replace(";", " ");
-        text = text.replace("!", " ");
-        text = text.replace("-", " ");
-        text = text.replace("(", " ");
-        text = text.replace(")", " ");
-        text = text.replace("\"", " ");
-        text = text.replace("'", " ");
-        text = text.replace("  ", " ");
-        text.trim();
-        return text;
+        return text.replace(".", " ").replace(":", " ").replace(",", " ").replace(";", " ").replace("!", " ")
+                .replace("-", " ").replace("(", " ").replace(")", " ").replace("\"", " ").replace("'", " ")
+                .replace("  ", " ").trim();
     }
 
     protected abstract String[] split(String text);

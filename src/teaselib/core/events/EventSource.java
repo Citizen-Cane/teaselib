@@ -63,7 +63,7 @@ public class EventSource<T extends EventArgs> {
         for (Event<T> delegate : new ArrayList<>(delegates)) {
             runDelegate(eventArgs, delegate);
             if (eventArgs.consumed) {
-                logger.info("Event {} consumed", eventArgs);
+                logger.debug("Event {} consumed", eventArgs);
                 break;
             }
         }

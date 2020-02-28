@@ -1,7 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,13 +113,17 @@ public class SpeechRecognitionTest {
     public void testSRGSBuilderSimilarEndAmbiguity() throws InterruptedException {
         Choices choices = new Choices(new Choice("Yes I have"), new Choice("No I haven't"));
 
-        List<Rule> result = new ArrayList<>();
-        result.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
-        result.addAll(assertRejected(choices, "Yes I haven't"));
-        assertEquals(2, result.size());
+        List<Rule> expected = new ArrayList<>();
+        expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
+        assertEquals(1, expected.size());
 
-        Rule distinct = SpeechRecognitionInputMethod.distinct(result).orElseThrow();
-        assertEquals(result.get(0), distinct);
+        List<Rule> rejected = new ArrayList<>();
+        rejected.addAll(assertRejected(choices, "Yes I haven't"));
+        assertEquals(1, rejected.size());
+
+        Rule distinct = SpeechRecognitionInputMethod.distinct(expected).orElseThrow();
+        assertEquals(expected.get(0), distinct);
+        assertNotEquals(expected.get(0), rejected.get(0));
 
         assertRejected(choices, "Yes I haven't");
         assertRejected(choices, "No I have");
@@ -127,13 +133,17 @@ public class SpeechRecognitionTest {
     public void testSRGSBuilderSimilarEndAmbiguity2() throws InterruptedException {
         Choices choices = new Choices(new Choice("Yes I have"), new Choice("No I haven't"));
 
-        List<Rule> result = new ArrayList<>();
-        result.addAll(assertRejected(choices, "Yes I haven't"));
-        result.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
-        assertEquals(2, result.size());
+        List<Rule> rejected = new ArrayList<>();
+        rejected.addAll(assertRejected(choices, "Yes I haven't"));
+        assertEquals(1, rejected.size());
 
-        Rule distinct = SpeechRecognitionInputMethod.distinct(result).orElseThrow();
-        assertEquals(result.get(1), distinct);
+        List<Rule> expected = new ArrayList<>();
+        expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
+        assertEquals(1, expected.size());
+
+        Rule distinct = SpeechRecognitionInputMethod.distinct(expected).orElseThrow();
+        assertEquals(expected.get(0), distinct);
+        assertNotEquals(expected.get(0), rejected.get(0));
     }
 
 }

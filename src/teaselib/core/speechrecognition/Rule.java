@@ -1,9 +1,10 @@
 package teaselib.core.speechrecognition;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Citizen-Cane
@@ -49,8 +50,8 @@ public class Rule {
     }
 
     public Rule withDistinctChoiceProbability(int choiceCount) {
-        List<Rule> childrenWithChoices = children.stream().filter(child -> (child.choiceIndices.size() < choiceCount))
-                .collect(Collectors.toList());
+        List<Rule> childrenWithChoices = children.stream().filter(child -> child.choiceIndices.size() < choiceCount)
+                .collect(toList());
         float average = (float) childrenWithChoices.stream().mapToDouble(child -> child.probability).average()
                 .orElse(0.0f);
 
@@ -81,11 +82,12 @@ public class Rule {
     }
 
     private static StringBuilder prettyPrint(StringBuilder rules, Rule rule, int indention) {
+        rules.append("\n");
+
         for (int i = 0; i < indention; ++i) {
             rules.append("\t");
         }
         rules.append(rule);
-        rules.append("\n");
 
         if (!rule.children.isEmpty()) {
             rule.children.stream().forEach(child -> prettyPrint(rules, child, indention + 1));

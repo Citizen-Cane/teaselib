@@ -94,9 +94,12 @@ public class Prompt {
 
     public final Script script;
     public final Choices choices;
+
     public final Result.Accept acceptedResult;
 
-    final List<InputMethod> inputMethods;
+    final InputMethods inputMethods;
+    final InputMethods.Initializers inputMethodInitializers;
+
     final ScriptFutureTask scriptTask;
 
     public final ReentrantLock lock;
@@ -110,19 +113,20 @@ public class Prompt {
     String inputHandlerKey = NONE;
     private InputMethod resultInputMethod;
 
-    public Prompt(Choices choices, List<InputMethod> inputMethods) {
+    public Prompt(Choices choices, InputMethods inputMethods) {
         this(null, choices, inputMethods, null, Result.Accept.AllSame);
     }
 
-    public Prompt(Choices choices, List<InputMethod> inputMethods, Result.Accept mode) {
+    public Prompt(Choices choices, InputMethods inputMethods, Result.Accept mode) {
         this(null, choices, inputMethods, null, mode);
     }
 
-    public Prompt(Script script, Choices choices, List<InputMethod> inputMethods, ScriptFunction scriptFunction,
+    public Prompt(Script script, Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction,
             Result.Accept mode) {
         this.script = script;
         this.choices = choices;
         this.inputMethods = inputMethods;
+        this.inputMethodInitializers = inputMethods.initializers(choices);
         this.scriptTask = scriptFunction != null ? new ScriptFutureTask(script, scriptFunction, this) : null;
         this.acceptedResult = mode;
 
@@ -304,4 +308,5 @@ public class Prompt {
             return choice.stream().map(Choice::getDisplay).collect(Collectors.joining(" "));
         }
     }
+
 }

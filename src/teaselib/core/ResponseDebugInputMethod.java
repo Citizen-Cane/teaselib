@@ -14,6 +14,8 @@ import teaselib.core.Debugger.ResponseAction;
 import teaselib.core.debug.DebugResponses;
 import teaselib.core.debug.DebugResponses.Result;
 import teaselib.core.debug.TimeAdvanceListener;
+import teaselib.core.ui.AbstractInputMethod;
+import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
 
 /**
@@ -57,6 +59,11 @@ public class ResponseDebugInputMethod implements DebugInputMethod {
         } finally {
             prompt.lock.unlock();
         }
+    }
+
+    @Override
+    public Setup getSetup(Choices choices) {
+        return AbstractInputMethod.Unused;
     }
 
     @Override

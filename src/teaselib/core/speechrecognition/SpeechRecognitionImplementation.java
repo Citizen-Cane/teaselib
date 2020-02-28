@@ -7,14 +7,15 @@ import teaselib.core.Closeable;
 public abstract class SpeechRecognitionImplementation implements SpeechRecognitionControl, Closeable {
     protected String languageCode;
 
+    interface Setup<T extends SpeechRecognitionImplementation> {
+        void applyTo(T sr);
+    }
+
     protected static String languageCode(Locale locale) {
         return locale.toString().replace("_", "-");
     }
 
     protected abstract void dispose();
-
-    @Override
-    public abstract void close();
 
     public String getLanguageCode() {
         return languageCode;

@@ -13,6 +13,7 @@ import teaselib.core.speechrecognition.events.AudioLevelUpdatedEventArgs;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.ui.Choices;
 
 /**
  * Improve speech recognition user experience by just recognizing the first n words. Speaking a longer prompt often
@@ -98,14 +99,16 @@ public class SpeechDetectionEventHandler {
         this.enabled = enable;
     }
 
-    public void setChoices(List<String> choices) {
-        choiceCount = choices.size();
-        if (vowelSplitter.count(choices.get(0)) > 0) {
+    public void setChoices(Choices choices) {
+        // TODO must be all phrases
+        List<String> firstPhraseOfEach = choices.firstPhraseOfEach();
+        choiceCount = firstPhraseOfEach.size();
+        if (vowelSplitter.count(firstPhraseOfEach.get(0)) > 0) {
             promptSplitter = vowelSplitter;
         } else {
             promptSplitter = wordSplitter;
         }
-        minimumForHypothesisRecognition = promptSplitter.getMinimumForHypothesisRecognition(choices);
+        minimumForHypothesisRecognition = promptSplitter.getMinimumForHypothesisRecognition(firstPhraseOfEach);
     }
 
     public void setExpectedConfidence(Confidence expectedConfidence) {
@@ -144,14 +147,16 @@ public class SpeechDetectionEventHandler {
                     if (logger.isInfoEnabled()) {
                         logger.info("rules \n{}", result.prettyPrint());
                     }
-                    if (acceptHypothesis(result)) {
+                    if (isBetterHypothesis(result)) {
                         logger.info("Considering {}", result);
                         hypothesisResult = result;
                     } else {
+                        // TODO choice count must be choices.phrases.all instead of firstPhraseOfEach
                         Rule resultWithChoicePropability = result.withDistinctChoiceProbability(choiceCount);
-                        if (acceptHypothesis(resultWithChoicePropability)) {
+                        if (isBetterHypothesis(resultWithChoicePropability)) {
                             logger.info("Considering choice-propabilty-measured result {}",
                                     resultWithChoicePropability);
+                            resultWithChoicePropability.children.addAll(result.children);
                             hypothesisResult = resultWithChoicePropability;
                         }
                     }
@@ -161,7 +166,7 @@ public class SpeechDetectionEventHandler {
         };
     }
 
-    private boolean acceptHypothesis(Rule rule) {
+    private boolean isBetterHypothesis(Rule rule) {
         // TODO Check number of choices equal or higher to support multiple choices
         return hypothesisResult == null //
                 || rule.ruleIndex != hypothesisResult.ruleIndex //
@@ -177,7 +182,7 @@ public class SpeechDetectionEventHandler {
             } else if (hypothesisResult == null) {
                 fireRecognitionRejectedEvent(eventArgs);
                 return;
-            } else if (hypothesisIsAcceptable()) {
+            } else if (hypothesisIsAcceptable() && hypothesisIsDistinct()) {
                 eventArgs.consumed = true;
                 Rule elevatedRule = new Rule(hypothesisResult, expectedConfidence);
                 elevatedRule.children.addAll(hypothesisResult.children);
@@ -187,10 +192,14 @@ public class SpeechDetectionEventHandler {
 
                 fireRecognitionCompletedEvent(elevatedRule);
             } else {
-                logger.info("rules \n{}", hypothesisResult.prettyPrint());
                 fireRecognitionRejectedEvent(eventArgs);
             }
         };
+    }
+
+    private boolean hypothesisIsDistinct() {
+        // TODO only distinct hypothesis should be forwarded, with trailing null rules removed
+        return false;
     }
 
     private boolean hypothesisIsAcceptable() {

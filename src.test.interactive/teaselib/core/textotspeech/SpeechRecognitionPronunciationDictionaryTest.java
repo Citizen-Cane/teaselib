@@ -56,7 +56,8 @@ public class SpeechRecognitionPronunciationDictionaryTest {
             Event<SpeechRecognizedEventArgs> speechRecognized = (eventArgs) -> completed.countDown();
             speechRecognition.events.recognitionCompleted.add(speechRecognized);
             try {
-                speechRecognition.startRecognition(choices, Confidence.Normal);
+                speechRecognition.setChoices(choices);
+                speechRecognition.startRecognition(Confidence.Normal);
                 speechRecognition.emulateRecogntion("Hello");
                 // Speak (fr) "Madame" instead of (en) "Maydamm"
                 completed.await();

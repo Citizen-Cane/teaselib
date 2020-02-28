@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 
@@ -26,7 +27,7 @@ public class SpeechRecognitionTests {
 
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, TestConfidence,
                 Optional.empty());
-        Prompt prompt = new Prompt(TestChoices, Arrays.asList(inputMethod));
+        Prompt prompt = new Prompt(TestChoices, new InputMethods(inputMethod));
 
         prompt.lock.lockInterruptibly();
         try {

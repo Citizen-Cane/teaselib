@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import teaselib.Answer;
 import teaselib.Answer.Meaning;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
@@ -30,13 +31,18 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
     private static final List<Gesture> SupportedGestures = Arrays.asList(Gesture.Nod, Gesture.Shake);
 
     @Override
+    public Setup getSetup(Choices choices) {
+        return Unused;
+    }
+
+    @Override
     protected Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
         return awaitGesture(motionDetector.get(), prompt);
     }
 
-    public static boolean distinctGestures(Choices choices) {
-        boolean singleYes = choices.stream().filter(choice -> choice.answer.meaning == Meaning.YES).count() == 1;
-        boolean singleNo = choices.stream().filter(choice -> choice.answer.meaning == Meaning.NO).count() == 1;
+    public static boolean distinctGestures(List<Answer> answers) {
+        boolean singleYes = answers.stream().filter(answer -> answer.meaning == Meaning.YES).count() == 1;
+        boolean singleNo = answers.stream().filter(answer -> answer.meaning == Meaning.NO).count() == 1;
         return singleYes || singleNo;
     }
 

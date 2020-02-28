@@ -2,14 +2,17 @@ package teaselib.core.ui;
 
 import static java.util.Arrays.asList;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +23,15 @@ import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.RuleIndicesList;
 import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionChoices;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionSRGS;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.ui.Prompt.Result;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
@@ -81,11 +89,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
         this.recognitionCompleted = eventArgs -> {
             active.updateAndGet(prompt -> {
-                if (eventArgs.result.length > 1) {
-                    logger.info("More than one result:");
-                }
-                Arrays.stream(eventArgs.result).forEach(result -> logger.info("rules \n{}", result.prettyPrint()));
-
                 if (audioSignalProblems.occured()) {
                     logAudioSignalProblem(eventArgs.result);
                     return prompt;
@@ -233,10 +236,35 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     @Override
+    public Setup getSetup(Choices choices) {
+        SpeechRecognitionImplementation sr = speechRecognizer.sr;
+        if (sr instanceof SpeechRecognitionSRGS) {
+            try {
+                SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, sr.getLanguageCode());
+                if (logger.isInfoEnabled()) {
+                    logger.info("{}", builder.toXML());
+                }
+
+                IntUnaryOperator mapper = builder::map;
+                byte[] srgs = builder.toBytes();
+
+                return () -> speechRecognizer.setChoices(choices, srgs, mapper);
+            } catch (ParserConfigurationException | TransformerException e) {
+                throw ExceptionUtil.asRuntimeException(e);
+            }
+        } else if (sr instanceof SpeechRecognitionChoices) {
+            return () -> speechRecognizer.setChoices(choices, null, value -> value);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Override
     public void show(Prompt prompt) {
         Objects.requireNonNull(prompt);
         active.set(prompt);
-        startSpeechRecognition(prompt);
+        prompt.inputMethodInitializers.setup(this);
+        startSpeechRecognition();
     }
 
     @Override
@@ -255,30 +283,44 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     // TODO Resolve race condition: lazy initialization versus dismiss in main thread on timeout
     // -> recognition not started yet but main thread dismisses prompt
 
-    private void startSpeechRecognition(Prompt prompt) {
+    // TODO add events at startup and make InputMethod AutoCloseable -> less synchronization issues plus stable testing
+    // + event sources are synchronized
+    // + disabling the recognizer should be enough
+    // + events have to be added early in the queue because the SR input method consumes events and fires new events
+    // -> propagation doesn't work when events are added temporarily since they are added last
+    // Alternatively remove firing new events by moving rejection into the speech detection handler
+    // see also teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult(...)
+    private void startSpeechRecognition() {
         if (speechRecognizer.isActive()) {
             throw new IllegalStateException("Speech recognizer already active");
         }
 
+        addEvents();
+        speechRecognizer.startRecognition(expectedConfidence);
+    }
+
+    private void addEvents() {
         speechRecognizer.events.recognitionStarted.add(speechRecognitionStartedEventHandler);
         speechRecognizer.events.audioSignalProblemOccured.add(audioSignalProblemEventHandler);
         speechRecognizer.events.speechDetected.add(speechDetectedEventHandler);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-
-        speechRecognizer.startRecognition(prompt.choices, expectedConfidence);
     }
 
     private void endSpeechRecognition() {
         try {
             speechRecognizer.endRecognition();
         } finally {
-            speechRecognizer.events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
-            speechRecognizer.events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
-            speechRecognizer.events.speechDetected.remove(speechDetectedEventHandler);
-            speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
-            speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
+            removeEvents();
         }
+    }
+
+    private void removeEvents() {
+        speechRecognizer.events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
+        speechRecognizer.events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
+        speechRecognizer.events.speechDetected.remove(speechDetectedEventHandler);
+        speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
+        speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
     }
 
     @Override

@@ -25,6 +25,11 @@ public class HostInputMethod extends AbstractInputMethod {
     }
 
     @Override
+    public Setup getSetup(Choices choices) {
+        return Unused;
+    }
+
+    @Override
     protected Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
         return host.reply(prompt.choices);
     }

@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 import teaselib.core.ui.AbstractInputMethod;
+import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
 
@@ -12,6 +13,11 @@ public class ScriptEventInputMethod extends AbstractInputMethod {
 
     public ScriptEventInputMethod(ExecutorService executor) {
         super(executor);
+    }
+
+    @Override
+    public Setup getSetup(Choices choices) {
+        return Unused;
     }
 
     @Override

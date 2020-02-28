@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface SpeechRecognitionChoices {
 
-    void setChoices(List<String> choices);
+    void setChoices(List<String> phrases);
 
 }

@@ -18,6 +18,9 @@ import teaselib.core.util.ExceptionUtil;
  *
  */
 public abstract class AbstractInputMethod implements InputMethod {
+    public static final Setup Unused = () -> { //
+    };
+
     protected final ExecutorService executor;
     protected final ReentrantLock replySection = new ReentrantLock(true);
     protected final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
@@ -42,6 +45,7 @@ public abstract class AbstractInputMethod implements InputMethod {
                         notifyAll();
                     }
 
+                    prompt.inputMethodInitializers.setup(AbstractInputMethod.this);
                     return awaitAndSignalResult(prompt);
                 } catch (InterruptedException | ScriptInterruptedException e) {
                     throw e;

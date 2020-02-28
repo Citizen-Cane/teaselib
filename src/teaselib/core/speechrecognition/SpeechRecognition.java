@@ -1,18 +1,12 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
+import java.util.function.IntUnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +19,6 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.implementation.Unsupported;
-import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.ui.Choices;
 import teaselib.core.util.Environment;
@@ -98,7 +91,7 @@ public class SpeechRecognition {
     private final SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
 
-    private SpeechRecognitionImplementation sr = null;
+    public SpeechRecognitionImplementation sr = null;
 
     /**
      * Locked if a recognition is in progress, e.g. a start event has been fired, but the the recognition has neither
@@ -130,7 +123,7 @@ public class SpeechRecognition {
 
     private Choices choices;
     private byte[] srgs;
-    Function<Integer, Integer> mapper;
+    IntUnaryOperator mapper;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
         delegateThread.run(() -> {
@@ -218,11 +211,20 @@ public class SpeechRecognition {
         events.recognitionRejected.run(new SpeechRecognizedEventArgs(result));
     }
 
+    @Deprecated
+    public void setChoices(Choices choices) {
+        throw new UnsupportedOperationException("Provide test method to generate impl specific srgs and mapper");
+    }
+
+    public void setChoices(Choices choices, byte[] srgs, IntUnaryOperator mapper) {
+        this.choices = choices;
+        this.srgs = srgs;
+        this.mapper = mapper;
+    }
+
     // TODO Make class stateless by moving sr process into new class with final state - remember that class upstream
     // TODO Add a prepare step to allow setup in advance - all cpu computations should be done beforehand
-    public void startRecognition(Choices choices, Confidence recognitionConfidence) {
-        this.choices = choices;
-        this.srgs = srgs(choices);
+    public void startRecognition(Confidence recognitionConfidence) {
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
             delegateThread.run(() -> {
@@ -284,9 +286,11 @@ public class SpeechRecognition {
     public void endRecognition() {
         if (sr != null) {
             delegateThread.run(() -> {
-                if (srgs != null) {
-                    srgs = null;
+                if (isActive()) {
                     disableSR();
+                    srgs = null;
+                    mapper = null;
+                    choices = null;
                     logger.info("Speech recognition stopped");
                 } else {
                     logger.warn("Speech recognition already stopped");
@@ -298,9 +302,16 @@ public class SpeechRecognition {
     }
 
     private void enableSR() {
-        setChoices(srgs);
+        if (sr instanceof SpeechRecognitionSRGS) {
+            ((SpeechRecognitionSRGS) sr).setChoices(srgs);
+        } else if (sr instanceof SpeechRecognitionChoices) {
+            ((SpeechRecognitionChoices) sr).setChoices(choices.firstPhraseOfEach());
+        } else {
+            throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
+        }
 
-        speechDetectionEventHandler.setChoices(firstPhraseOfEachChoice());
+        // TODO must be the same phrases used to setup sr implementation
+        speechDetectionEventHandler.setChoices(choices);
         speechDetectionEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
         speechDetectionEventHandler.enable(true);
 
@@ -314,39 +325,11 @@ public class SpeechRecognition {
     }
 
     private void disableSR() {
+        sr.stopRecognition();
         SpeechRecognition.this.speechRecognitionActive.set(false);
         speechDetectionEventHandler.enable(false);
         timeoutWatchdog.enable(false);
         unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
-        sr.stopRecognition();
-    }
-
-    private void setChoices(byte[] srgs) {
-        if (sr instanceof SpeechRecognitionSRGS) {
-            ((SpeechRecognitionSRGS) sr).setChoices(srgs);
-        } else if (sr instanceof SpeechRecognitionChoices) {
-            List<String> firstPhraseOfEachChoice = firstPhraseOfEachChoice();
-            ((SpeechRecognitionChoices) sr).setChoices(firstPhraseOfEachChoice);
-        } else {
-            throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
-        }
-    }
-
-    private List<String> firstPhraseOfEachChoice() {
-        return choices.stream().map(choice -> choice.phrases.get(0)).collect(toList());
-    }
-
-    byte[] srgs(Choices choices) {
-        try {
-            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, sr.languageCode);
-            if (logger.isInfoEnabled()) {
-                logger.info("{}", builder.toXML());
-            }
-            mapper = builder::map;
-            return builder.toBytes();
-        } catch (ParserConfigurationException | TransformerException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
     }
 
     private static void recognizerNotInitialized() {
@@ -397,6 +380,6 @@ public class SpeechRecognition {
     }
 
     public Integer mapPhraseToChoice(int index) {
-        return mapper.apply(index);
+        return mapper.applyAsInt(index);
     }
 }

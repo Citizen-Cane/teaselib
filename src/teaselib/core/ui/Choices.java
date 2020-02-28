@@ -1,5 +1,7 @@
 package teaselib.core.ui;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,7 +54,8 @@ public class Choices extends ArrayList<Choice> {
         }
     }
 
-    public Choices(int size) {
-        super(size);
+    public List<String> firstPhraseOfEach() {
+        return stream().map(choice -> choice.phrases.get(0)).collect(toList());
     }
+
 }

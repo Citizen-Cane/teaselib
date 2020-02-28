@@ -1,5 +1,8 @@
 package teaselib.core.speechrecognition.events;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import teaselib.core.speechrecognition.Rule;
 
 public class SpeechRecognizedEventArgs extends SpeechRecognitionEventArgs {
@@ -11,17 +14,7 @@ public class SpeechRecognizedEventArgs extends SpeechRecognitionEventArgs {
 
     @Override
     public String toString() {
-        StringBuilder resultString = new StringBuilder();
-        if (result != null) {
-            for (Rule rule : result) {
-                if (resultString.length() > 0) {
-                    resultString.append(", ");
-                }
-                resultString.append(rule.toString());
-            }
-        } else {
-            resultString.append("<none>");
-        }
-        return getClass().getSimpleName() + "Result = " + resultString;
+        return getClass().getSimpleName() + " Result = "
+                + Arrays.stream(result).map(Rule::prettyPrint).collect(Collectors.joining("\n"));
     }
 }

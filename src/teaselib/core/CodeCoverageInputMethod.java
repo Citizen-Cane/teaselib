@@ -15,6 +15,7 @@ import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.ui.AbstractInputMethod;
+import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 
@@ -33,6 +34,11 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     public CodeCoverageInputMethod(ExecutorService executor) {
         super(executor);
+    }
+
+    @Override
+    public Setup getSetup(Choices choices) {
+        return Unused;
     }
 
     @Override

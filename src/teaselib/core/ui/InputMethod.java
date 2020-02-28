@@ -8,6 +8,12 @@ import java.util.Map;
  */
 public interface InputMethod {
 
+    public interface Setup {
+        void apply();
+    }
+
+    Setup getSetup(Choices choices);
+
     void show(Prompt prompt) throws InterruptedException;
 
     boolean dismiss(Prompt prompt) throws InterruptedException;

@@ -77,7 +77,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
     private native void initSREventThread(SpeechRecognitionEvents events, CountDownLatch signalInitialized);
 
     @Override
-    public native void setChoices(List<String> choices);
+    public native void setChoices(List<String> phrases);
 
     /* @Override */
     public native void setChoices(byte[] srgs);
@@ -100,5 +100,10 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
     @Override
     public void close() {
         dispose();
+        try {
+            eventThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

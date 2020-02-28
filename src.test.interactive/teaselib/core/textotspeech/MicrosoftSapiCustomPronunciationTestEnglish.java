@@ -138,7 +138,8 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
             Event<SpeechRecognizedEventArgs> event = speechRecognition.events.recognitionCompleted
                     .add(events -> completed.countDown());
             try {
-                speechRecognition.startRecognition(choices, Confidence.Normal);
+                speechRecognition.setChoices(choices);
+                speechRecognition.startRecognition(Confidence.Normal);
                 completed.await();
             } finally {
                 speechRecognition.events.recognitionCompleted.remove(event);

@@ -37,15 +37,18 @@ extern "C"
 	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_addLexiconEntry
 		(JNIEnv *env, jobject jthis, jstring locale, jstring word,  jint partOfSpeech, jstring pronunciation) {
 			try {
+				Objects::requireNonNull(L"locale", locale);
+				Objects::requireNonNull(L"pronunciation", pronunciation);
+
 				SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
 				if (!speechSynthesizer) {
 					speechSynthesizer = new SpeechSynthesizer(env, jthis);
 				}
 				speechSynthesizer->addLexiconEntry(JNIString(env, locale), JNIString(env, word), static_cast<SPPARTOFSPEECH>(partOfSpeech), JNIString(env, pronunciation));
-			} catch (NativeException *e) {
+			} catch (NativeException& e) {
 				JNIException::throwNew(env, e);
-			} catch (JNIException* e) {
-				e->rethrow();
+			} catch (JNIException& e) {
+				e.rethrow();
 			}
 		}
 
@@ -62,10 +65,10 @@ extern "C"
 				speechSynthesizer = new SpeechSynthesizer(env, jthis);
 			}
 			return speechSynthesizer->voiceList();
-		} catch (NativeException *e) {
+		} catch (NativeException& e) {
 			JNIException::throwNew(env, e);
-		} catch (JNIException* e) {
-			e->rethrow();
+		} catch (JNIException& e) {
+			e.rethrow();
 		}
 		return nullptr;
 	}
@@ -78,16 +81,18 @@ extern "C"
     JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_setVoice
     (JNIEnv *env, jobject jthis, jobject jvoice) {
         try {
+			Objects::requireNonNull(L"voice", jvoice);
+
 			SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
 			NativeObject::checkInitializedOrThrow(speechSynthesizer);
 
 			const Voice* voice = static_cast<const Voice*>(NativeObject::get(env, jvoice));
             // A null voice is a valid value, it denotes the system default voice
 			speechSynthesizer->setVoice(voice);
-		} catch (NativeException* e) {
+		} catch (NativeException& e) {
 			JNIException::throwNew(env, e);
-		} catch (JNIException* e) {
-			e->rethrow();
+		} catch (JNIException& e) {
+			e.rethrow();
 		}
     }
 
@@ -96,7 +101,7 @@ extern "C"
 			jclass jclass = env->GetObjectClass(jthis);
 			jobjectArray hints = (jobjectArray)env->GetObjectField(jthis, env->GetFieldID(jclass, "hints", "[Ljava/lang/String;"));
 			if (env->ExceptionCheck()) {
-				throw new JNIException(env);
+				throw JNIException(env);
 			}
 			return hints;
 		}
@@ -110,14 +115,16 @@ extern "C"
     JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_speak__Ljava_lang_String_2
     (JNIEnv *env, jobject jthis, jstring prompt) {
         try {
-            SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
+			Objects::requireNonNull(L"prompt", prompt);
+			
+			SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechSynthesizer);
             speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
             speechSynthesizer->speak(JNIString(env, prompt));
-		} catch (NativeException* e) {
+		} catch (NativeException& e) {
 			JNIException::throwNew(env, e);
-		} catch (JNIException* e) {
-			e->rethrow();
+		} catch (JNIException& e) {
+			e.rethrow();
 		}
     }
 
@@ -130,15 +137,18 @@ extern "C"
     (JNIEnv *env, jobject jthis, jstring prompt, jstring path) {
         jstring actualPath = NULL;
         try {
-            SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
+			Objects::requireNonNull(L"prompt", prompt);
+			Objects::requireNonNull(L"path", path);
+			
+			SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechSynthesizer);
             speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
             const std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
             actualPath = JNIString(env, soundFile.c_str()).detach();
-		} catch (NativeException* e) {
+		} catch (NativeException& e) {
 			JNIException::throwNew(env, e);
-		} catch (JNIException* e) {
-			e->rethrow();
+		} catch (JNIException& e) {
+			e.rethrow();
 		}
         return actualPath;
     }
@@ -155,10 +165,10 @@ extern "C"
         SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
         NativeObject::checkInitializedOrThrow(speechSynthesizer);
         speechSynthesizer->stop();
-	} catch (NativeException* e) {
+	} catch (NativeException& e) {
 		JNIException::throwNew(env, e);
-	} catch (JNIException* e) {
-		e->rethrow();
+	} catch (JNIException& e) {
+		e.rethrow();
 	}
 
     /*

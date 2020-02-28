@@ -45,31 +45,31 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
 	LPWSTR id;
 	HRESULT hr = pVoiceToken->GetId(&id);
 	guid = ::PathFindFileName(id);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	Language language(pVoiceToken);
 
 	// Gender
 	LPWSTR gender;
 	hr = SpGetAttribute(pVoiceToken, L"Gender", &gender);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	jobject jgender = getGenderField(env, gender);
-	if (env->ExceptionCheck()) throw new JNIException(env);
+	if (env->ExceptionCheck()) throw JNIException(env);
 
 
 	jobject jvoiceInfo; {
 		// Full name (Vendor, version, Name)
 		LPWSTR vendor;
 		hr = SpGetAttribute(pVoiceToken, L"Vendor", &vendor);
-		if (FAILED(hr)) throw new COMException(hr);
+		if (FAILED(hr)) throw COMException(hr);
 
 		// Name
 		LPWSTR voiceName;
 		hr = pVoiceToken->GetStringValue(NULL, &voiceName);
-		if (FAILED(hr)) throw new COMException(hr);
+		if (FAILED(hr)) throw COMException(hr);
 
 		jclass clazz = env->FindClass("teaselib/core/texttospeech/VoiceInfo");
-		if (env->ExceptionCheck()) throw new JNIException(env);
+		if (env->ExceptionCheck()) throw JNIException(env);
 		const char* signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
 
 		jvoiceInfo = env->NewObject(
@@ -78,12 +78,12 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
 			JNIString(env, vendor).operator jstring(),
 			JNIString(env, language.displayName).operator jstring(),
 			JNIString(env, voiceName).operator jstring());
-		if (env->ExceptionCheck()) throw new JNIException(env);
+		if (env->ExceptionCheck()) throw JNIException(env);
 	}
 
 	{
 		jclass clazz = env->FindClass("teaselib/core/texttospeech/NativeVoice");
-		if (env->ExceptionCheck()) throw new JNIException(env);
+		if (env->ExceptionCheck()) throw JNIException(env);
 
 		const char* signature = "(JLteaselib/core/texttospeech/TextToSpeechImplementation;Ljava/lang/String;Ljava/lang/String;Lteaselib/Sexuality$Gender;Lteaselib/core/texttospeech/VoiceInfo;)V";
 		jthis = env->NewGlobalRef(env->NewObject(
@@ -95,12 +95,8 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
 			JNIString(env, language.sname).operator jstring(),
 			jgender,
 			jvoiceInfo));
-		if (env->ExceptionCheck()) throw new JNIException(env);
+        if (env->ExceptionCheck()) throw JNIException(env);
 	}
-
-	if (env->ExceptionCheck()) {
-        throw new JNIException(env);
-    }
 }
 
 Voice::~Voice() {

@@ -6,6 +6,11 @@
 
 #include "JNIClass.h"
 
+class Objects {
+public:
+	static void requireNonNull(const wchar_t* name, jobject jobj);
+};
+
 template<class T> class JNIObject
 {
 public:
@@ -40,4 +45,3 @@ protected:
 	JNIEnv *env;
 	T jthis;
 };
-

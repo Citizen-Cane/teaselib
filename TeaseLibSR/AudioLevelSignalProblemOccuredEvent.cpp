@@ -48,7 +48,7 @@ void AudioLevelSignalProblemOccuredEvent::fire(const SPINTERFERENCE interference
                             JNIClass::getMethodID(env, eventClass, "<init>", "(Lteaselib/core/speechrecognition/SpeechRecognition$AudioSignalProblem;)V"),
                             audioSignalProblem);
     if (env->ExceptionCheck()) {
-        throw new JNIException(env);
+        throw JNIException(env);
     }
     __super::fire(eventArgs);
 }

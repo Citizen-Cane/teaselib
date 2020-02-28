@@ -6,16 +6,31 @@
 #include "JNIString.h"
 #include "NativeException.h"
 
-void JNIException::throwNew(JNIEnv* env, NativeException *e) {
+void JNIException::throwNew(JNIEnv* env, NativeException& e) {
 	assert(!env->ExceptionCheck());
-	jclass runtimeClass = env->FindClass(e->runtimeClass);
-	JNIString message(env, e->message.c_str());
-	jthrowable throwable = static_cast<jthrowable>(env->NewObject(
-		runtimeClass,
-		env->GetMethodID(runtimeClass, "<init>", "(ILjava/lang/String;)V"),
-		e->errorCode,
-		message.detach()));
-	env->Throw(throwable);
+	jclass runtimeClass = env->FindClass(e.runtimeClass);
+	JNIString message(env, e.message.c_str());
+
+	jmethodID methodId = env->GetMethodID(runtimeClass, "<init>", "(ILjava/lang/String;)V");
+	if (methodId != nullptr) {
+		jthrowable throwable = static_cast<jthrowable>(env->NewObject(
+			runtimeClass,
+			methodId,
+			e.errorCode,
+			message.detach()));
+		assert(throwable);
+		env->Throw(throwable);
+	}
+	else {
+		jmethodID methodId = env->GetMethodID(runtimeClass, "<init>", "(Ljava/lang/String;)V");
+		assert(methodId);
+		jthrowable throwable = static_cast<jthrowable>(env->NewObject(
+			runtimeClass,
+			methodId,
+			message.detach()));
+		assert(throwable);
+		env->Throw(throwable);
+	}
 }
 
 JNIException::JNIException(JNIEnv *env)

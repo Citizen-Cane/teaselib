@@ -43,11 +43,11 @@ public:
 
 	NativeObject(JNIEnv *env, jobject jthis) : JObject(env, jthis) {
 		jclass nativeObjectClass = env->GetObjectClass(jthis);
-		if (env->ExceptionCheck()) throw new JNIException(env);
+		if (env->ExceptionCheck()) throw JNIException(env);
 
 		const jlong nativeObject = reinterpret_cast<jlong>(this);
 		env->SetLongField(jthis, env->GetFieldID(nativeObjectClass, "nativeObject", "J"), nativeObject);
-		if (env->ExceptionCheck()) throw new JNIException(env);
+		if (env->ExceptionCheck()) throw JNIException(env);
 	}
 
 	virtual ~NativeObject() {
@@ -58,9 +58,9 @@ public:
 
 		// Won't get the private field from the base class, but from the derived class
 		jclass nativeObjectClass = env->GetObjectClass(jthis);
-		if (env->ExceptionCheck()) throw new JNIException(env);
+		if (env->ExceptionCheck()) throw JNIException(env);
 		const jlong nativeObject = env->GetLongField(jthis, env->GetFieldID(nativeObjectClass, "nativeObject", "J"));
-		if (env->ExceptionCheck()) throw new JNIException(env);
+		if (env->ExceptionCheck()) throw JNIException(env);
 
 		return reinterpret_cast<NativeObject*>(nativeObject);
 	}
@@ -70,10 +70,10 @@ public:
 			NativeObject* nativeObject = get(env, jthis);
 			delete nativeObject;
 		}
-		catch (NativeException* e) {
+		catch (NativeException& e) {
 			JNIException::throwNew(env, e);
 		}
-		catch (JNIException* /*e*/)	{
+		catch (JNIException& /*e*/)	{
 			// Forwarded automatically
 		}
 		catch (...)	{
@@ -84,7 +84,7 @@ public:
 	static void checkInitializedOrThrow(const NativeObject* nativeObject) {
 		if (nativeObject == NULL) {
 			assert(false);
-			throw new NativeException(E_POINTER, L"Unitialized native object");
+			throw NativeException(E_POINTER, L"Unitialized native object");
 		}
 	}
 };

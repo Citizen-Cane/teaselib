@@ -26,7 +26,7 @@ Language::~Language() {
 LANGID Language::getLangID(ISpObjectToken * pVoiceToken) {
 	LANGID langID;
 	HRESULT hr = SpGetLanguageFromToken(pVoiceToken, &langID);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	return langID;
 }
 
@@ -34,7 +34,7 @@ LANGID Language::getLangID(const wchar_t* locale) {
 	TCHAR languageID[MAX_PATH];
 	const int charSize = GetLocaleInfoEx(locale, LOCALE_ILANGUAGE, languageID, MAX_PATH);
 	assert(charSize > 0);
-	if (charSize == 0) throw new COMException(E_INVALIDARG);
+	if (charSize == 0) throw COMException(E_INVALIDARG);
 
 	return wcstol(languageID, nullptr, 16);
 }
@@ -43,7 +43,7 @@ std::wstring Language::getLangIDStringWithoutLeadingZeros(const wchar_t* locale)
 	TCHAR languageID[MAX_PATH];
 	const int charSize = GetLocaleInfoEx(locale, LOCALE_ILANGUAGE, languageID, MAX_PATH);
 	assert(charSize > 0);
-	if (charSize == 0) throw new COMException(E_INVALIDARG);
+	if (charSize == 0) throw COMException(E_INVALIDARG);
 
 	const wchar_t* langIDWithoutTrailingZeros = languageID;
 	while (*langIDWithoutTrailingZeros == '0') {

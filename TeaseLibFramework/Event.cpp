@@ -31,5 +31,5 @@ void Event::fire(jobject eventArgs) {
         eventSource,
         JNIClass::getMethodID(env, eventSource, "run", "(Lteaselib/core/events/EventArgs;)V"),
          eventArgs);
-    if (env->ExceptionCheck()) throw new JNIException(env);
+    if (env->ExceptionCheck()) throw JNIException(env);
 }

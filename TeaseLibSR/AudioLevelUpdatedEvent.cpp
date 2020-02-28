@@ -16,7 +16,7 @@ void AudioLevelUpdatedEvent::fire(const int audioLevel) {
                             JNIClass::getMethodID(env, eventClass, "<init>", "(I)V"),
                             static_cast<jint>(audioLevel));
     if (env->ExceptionCheck()) {
-        throw new JNIException(env);
+        throw JNIException(env);
     }
     __super::fire(eventArgs);
 }

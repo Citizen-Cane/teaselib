@@ -9,7 +9,7 @@ template<> JNIStringT<wchar_t>::JNIStringT(JNIEnv *env, jstring string)
 }
 
 template<> JNIStringT<wchar_t>::JNIStringT(JNIEnv *env, const wchar_t * const string) 
-	: JNIObject(env, env->NewString(reinterpret_cast<const jchar*>(string), wcslen(string))) {
+	: JNIObject(env, env->NewString(reinterpret_cast<const jchar*>(string), static_cast<jsize>(wcslen(string)))) {
 	jboolean isCopy;
 	this->string = reinterpret_cast<const wchar_t*>(env->GetStringChars(jthis, &isCopy));
 }

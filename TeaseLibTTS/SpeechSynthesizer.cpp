@@ -41,7 +41,7 @@ SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject ttsImpl)
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
-        throw new COMException(hr);
+        throw COMException(hr);
     }
 
 }
@@ -56,7 +56,7 @@ jobject SpeechSynthesizer::voiceList() {
 		std::vector<Voice*> voices;
 		for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
 			HRESULT hr = addVoices(voiceCategories[i], voices);
-			if (FAILED(hr)) throw new COMException(hr);
+			if (FAILED(hr)) throw COMException(hr);
 		}
 		jvoices = env->NewGlobalRef(jvoiceList(voices));
 	}
@@ -101,13 +101,13 @@ jobject SpeechSynthesizer::jvoiceList(const std::vector<Voice*>& voices) {
 		listClass,
 		JNIClass::getMethodID(env, listClass, "<init>", "(I)V"),
 		voices.size());
-	if (env->ExceptionCheck()) throw new JNIException(env);
+	if (env->ExceptionCheck()) throw JNIException(env);
 
 	std::for_each(voices.begin(), voices.end(), [&](const Voice * voice) {
 		env->CallObjectMethod(
 			jvoiceList,
 			env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z"), voice->operator jobject());
-		if (env->ExceptionCheck()) throw new JNIException(env);
+		if (env->ExceptionCheck()) throw JNIException(env);
 	});
 
 	return jvoiceList;
@@ -127,28 +127,28 @@ void SpeechSynthesizer::addLexiconEntry(const wchar_t * const  locale, const wch
 
 	HRESULT hr = SpCreatePhoneConverter(langID, NULL, NULL, &cpPhoneConv);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	
 	SPPHONEID wszId[SP_MAX_PRON_LENGTH];
 	hr = cpPhoneConv->PhoneToId(pronunciation, wszId);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	hr = lexicon.pLexicon->AddPronunciation(word, langID, partOfSpeech, wszId);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 }
 
 void SpeechSynthesizer::setVoice(const Voice * voice) {
-	if (voice == nullptr) throw new COMException(E_POINTER);
+	if (voice == nullptr) throw COMException(E_POINTER);
 
 	HRESULT hr = pVoice->SetVoice(*voice);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	hr = pVoice->SetVolume(static_cast<USHORT>(volumeNeutral));
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 }
 
 void SpeechSynthesizer::applyHints(const vector<wstring>& hints) {
@@ -171,17 +171,17 @@ void SpeechSynthesizer::applyHints(const vector<wstring>& hints) {
 				}
 			}
 		}
-		if (FAILED(hr)) throw new COMException(hr);	
+		if (FAILED(hr)) throw COMException(hr);	
 	});
 
 	// Defaults
 	if (!volumeChanged)	{
 		HRESULT hr = pVoice->SetVolume(static_cast<USHORT>(volumeNeutral));
-		if (FAILED(hr)) throw new COMException(hr);
+		if (FAILED(hr)) throw COMException(hr);
 	}
 	if (!rateChanged) {
 		HRESULT hr = pVoice->SetRate(rateNeutral);
-		if (FAILED(hr)) throw new COMException(hr);
+		if (FAILED(hr)) throw COMException(hr);
 	}
 }
 
@@ -205,7 +205,7 @@ void SpeechSynthesizer::speak(const wchar_t *prompt) {
 		}
     }
     if (FAILED(hr)) {
-        throw new COMException(hr);
+        throw COMException(hr);
     }
 }
 
@@ -248,10 +248,10 @@ std::wstring SpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path
     }
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
-        throw new COMException(hr);
+        throw COMException(hr);
     }
     if (FAILED(hr2)) {
-        throw new COMException(hr2);
+        throw COMException(hr2);
     }
     return soundFile;
 }

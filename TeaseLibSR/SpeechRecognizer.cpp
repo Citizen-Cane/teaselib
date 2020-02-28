@@ -36,16 +36,18 @@ SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, const wchar_t* lo
     assert(env);
     assert(jthis);
     assert(locale);
-    if (locale == NULL) throw new NativeException(E_POINTER, L"Locale");
+    if (locale == NULL) throw NativeException(E_POINTER, L"Locale");
 
 	initContext();
 }
 
 SpeechRecognizer::~SpeechRecognizer() {
 	// takes up to 5 seconds, and is little rude as long as other rules are active
-	HRESULT hr = cpRecognizer->SetRecoState(SPRST_INACTIVE);
+#ifdef _DEBUG
+	HRESULT hr = 
+#endif
+		cpRecognizer->SetRecoState(SPRST_INACTIVE);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
 
 	delete eventHandler;
 }
@@ -54,7 +56,7 @@ void SpeechRecognizer::initContext() {
 	TCHAR languageID[MAX_PATH];
 	const int size = GetLocaleInfoEx(locale.c_str(), LOCALE_ILANGUAGE, languageID, MAX_PATH);
 	assert(size > 0);
-	if (size == 0) throw new NativeException(E_INVALIDARG, locale.c_str());
+	if (size == 0) throw NativeException(E_INVALIDARG, locale.c_str());
 
 	const wchar_t* langIDWithoutTrailingZeros = languageID;
 	while (*langIDWithoutTrailingZeros == '0') {
@@ -65,49 +67,49 @@ void SpeechRecognizer::initContext() {
 	CComPtr<ISpObjectToken> cpRecognizerToken;
 	HRESULT hr = SpFindBestToken(SPCAT_RECOGNIZERS, recognizerAttributes.c_str(), NULL, &cpRecognizerToken);
 	if (cpRecognizerToken == NULL || hr == SPERR_NOT_FOUND) {
-		throw new UnsupportedLanguageException(FAILED(hr) ? hr : E_INVALIDARG, (std::wstring(L"Unsupported language or region '") + locale +
+		throw UnsupportedLanguageException(FAILED(hr) ? hr : E_INVALIDARG, (std::wstring(L"Unsupported language or region '") + locale +
 			L"'. Please install the corresponding Windows language pack.").c_str());
 	} else if (FAILED(hr)) {
 		assert(SUCCEEDED(hr));
-		throw new COMException(hr);
+		throw COMException(hr);
 	}
 
 	hr = grammarCompiler.CoCreateInstance(CLSID_SpW3CGrammarCompiler);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	// Get the lang id in order to be able reset the grammar
 	hr = SpGetLanguageFromToken(cpRecognizerToken, &langID);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	// Create a recognizer and immediately set its state to inactive
 	hr = cpRecognizer.CoCreateInstance(CLSID_SpInprocRecognizer);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	hr = cpRecognizer->SetRecognizer(cpRecognizerToken);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	hr = cpRecognizer->SetRecoState(SPRST_INACTIVE);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	// Create a new recognition context from the recognizer
 	hr = cpRecognizer->CreateRecoContext(&cpContext);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	hr = cpContext->SetContextState(SPCS_DISABLED);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	hr = cpContext->CreateGrammar(0, &cpGrammar);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	hr = speechRecognitionInitAudio();
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 }
 
@@ -143,7 +145,7 @@ SpeechRecognizer::EventHandler::EventHandler(JNIEnv* env, jobject jevents, ISpRe
 {
 	assert(hExitEvent);
 	if (hExitEvent == NULL) {
-		throw new NativeException(E_FAIL, L"Exit Event");
+		throw NativeException(E_FAIL, L"Exit Event");
 	}
 }
 
@@ -280,17 +282,17 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 							break;
 						}
                     }
-				} catch (std::exception *e) {
+				} catch (std::exception& e) {
 					assert(false);
-					wprintf(L"std::exception: %hs\n", e->what());
-				} catch (NativeException *e) {
+					wprintf(L"std::exception: %hs\n", e.what());
+				} catch (NativeException& e) {
 					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
 					assert(false);
-					wprintf(L"Native exception 0x%x: %s\n", e->errorCode, e->message.c_str());
-				} catch (JNIException *e) {
+					wprintf(L"Native exception 0x%x: %s\n", e.errorCode, e.message.c_str());
+				} catch (JNIException& e) {
 					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
 					assert(false);
-					JNIString message = e->getMessage();
+					JNIString message = e.getMessage();
 					wprintf(L"JNI exception: %s\n", message.operator LPCWSTR());
 				}
             }
@@ -310,7 +312,7 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 
 	UpdateGrammar code(cpContext, [&choices, this]() {
 		HRESULT hr = resetGrammar();
-		if (FAILED(hr)) throw new COMException(hr);
+		if (FAILED(hr)) throw COMException(hr);
 
 		// Add a rule for each choice, index them so we can return the proper index in the recognitino result
 		int n = 0;
@@ -321,20 +323,20 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 			ruleName << L"Choice_0_" << n;
 			HRESULT hr = cpGrammar->GetRule(ruleName.str().c_str(), n++, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
 			assert(SUCCEEDED(hr));
-			if (FAILED(hr)) throw new COMException(hr);
+			if (FAILED(hr)) throw COMException(hr);
 			hr = cpGrammar->AddWordTransition(hRule, NULL, choice.c_str(), L" ", SPWT_LEXICAL, 1, NULL);
 			assert(SUCCEEDED(hr));
-			if (FAILED(hr)) throw new COMException(hr);
+			if (FAILED(hr)) throw COMException(hr);
 		});
 
 		hr = cpGrammar->Commit(0);
 		assert(SUCCEEDED(hr));
-		if (FAILED(hr)) throw new COMException(hr);
+		if (FAILED(hr)) throw COMException(hr);
 
 		// Set all top-level rules in the new grammar to the active state
 		hr = cpGrammar->SetRuleState(NULL, NULL, SPRS_ACTIVE);
 		assert(SUCCEEDED(hr));
-		if (FAILED(hr)) throw new COMException(hr);
+		if (FAILED(hr)) throw COMException(hr);
 	});
 }
 
@@ -390,15 +392,15 @@ void SpeechRecognizer::setChoices(CComPtr<IStream>& srgs) {
 	checkRecogizerStatus();
 
 	CComPtr<IStream> cfg = SHCreateMemStream(NULL, 999999);
-	if (!cfg) throw new COMException(E_OUTOFMEMORY);
+	if (!cfg) throw COMException(E_OUTOFMEMORY);
 
 	CComObject<ErrorLog>* errors;
 	HRESULT hr = CComObject<ErrorLog>::CreateInstance(&errors);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	CComPtr<ErrorLog> pErrors = errors;
 	hr = grammarCompiler->CompileStream(srgs, cfg, NULL, NULL, pErrors, 0);
-	if (!errors->empty()) throw new NativeException(hr, *errors);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (!errors->empty()) throw NativeException(hr, *errors);
+	if (FAILED(hr)) throw COMException(hr);
 
 	const LARGE_INTEGER start = { 0,0 };
 	ULARGE_INTEGER size = { 0,0 };
@@ -407,21 +409,21 @@ void SpeechRecognizer::setChoices(CComPtr<IStream>& srgs) {
 
 	CComPtr<IStream> buffer;
 	hr = ::CreateStreamOnHGlobal(NULL, true, &buffer);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	hr = IStream_Copy(cfg, buffer, size.LowPart);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 	
 	HGLOBAL hGrammar;
 	hr = GetHGlobalFromStream(buffer, &hGrammar);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	hr = cpGrammar->LoadCmdFromMemory((SPBINARYGRAMMAR *)::GlobalLock(hGrammar), SPLO_DYNAMIC /* SPLO_STATIC*/);
 	GlobalUnlock(hGrammar);
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	hr = cpGrammar->SetRuleState(NULL, NULL, SPRS_ACTIVE);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 }
 
 void SpeechRecognizer::setMaxAlternates(const int maxAlternates) {
@@ -429,7 +431,7 @@ void SpeechRecognizer::setMaxAlternates(const int maxAlternates) {
 	
 	HRESULT hr = cpContext->SetMaxAlternates(maxAlternates);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 }
 
 void SpeechRecognizer::startRecognition() {
@@ -437,11 +439,11 @@ void SpeechRecognizer::startRecognition() {
 
 	HRESULT hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
     assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	hr = cpContext->SetContextState(SPCS_ENABLED);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 }
 
 void SpeechRecognizer::stopRecognition() {
@@ -449,7 +451,7 @@ void SpeechRecognizer::stopRecognition() {
 
     HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
     assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 }
 
 void SpeechRecognizer::emulateRecognition(const wchar_t * emulatedRecognitionResult) {
@@ -458,11 +460,11 @@ void SpeechRecognizer::emulateRecognition(const wchar_t * emulatedRecognitionRes
 	CComPtr<ISpPhraseBuilder> cpPhrase;
 	HRESULT hr = CreatePhraseFromText(emulatedRecognitionResult, &cpPhrase, langID);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	hr = cpRecognizer->EmulateRecognition(cpPhrase);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 }
 
@@ -480,10 +482,10 @@ void SpeechRecognizer::checkRecogizerStatus() {
 
 	if (FAILED(eventHandler->recognizerStatus)) {
 		assert(false);
-		throw new COMException(eventHandler->recognizerStatus);
+		throw COMException(eventHandler->recognizerStatus);
 	}
 
 	if (!cpContext) {
-		throw new COMException(E_UNEXPECTED);
+		throw COMException(E_UNEXPECTED);
 	}
 }

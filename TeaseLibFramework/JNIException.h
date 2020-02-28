@@ -10,7 +10,7 @@ class NativeException;
 class JNIException : public JNIObject<jthrowable>
 {
 public:
-	static void throwNew(JNIEnv* env, NativeException *e);
+	static void throwNew(JNIEnv* env, NativeException &e);
 
 	JNIException(JNIEnv *env);
 	JNIException(JNIEnv *env, jthrowable throwable);

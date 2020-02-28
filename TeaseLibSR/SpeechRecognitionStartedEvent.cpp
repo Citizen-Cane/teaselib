@@ -14,7 +14,7 @@ void SpeechRecognitionStartedEvent::fire() {
                             eventClass,
                             JNIClass::getMethodID(env, eventClass, "<init>", "()V"));
     if (env->ExceptionCheck()) {
-        throw new JNIException(env);
+        throw JNIException(env);
     }
     __super::fire(eventArgs);
 }

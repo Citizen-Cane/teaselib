@@ -40,16 +40,16 @@ void Lexicon::createApplicationLexicon() {
 		&cpToken,
 		&cpDataKeyAttributes);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 
 	hr = SpCreateObjectFromToken(cpToken, &pLexicon);
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw COMException(hr);
 }
 
 /// The global lexicon is persisted between session, which is not what we want at all
 void Lexicon::createGlobalLexicon() {
 	HRESULT hr = ::CoCreateInstance(CLSID_SpLexicon, NULL, CLSCTX_INPROC_SERVER, IID_ISpLexicon, reinterpret_cast<void**>(&pLexicon));
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr))	throw new COMException(hr);
+	if (FAILED(hr))	throw COMException(hr);
 }

@@ -13,7 +13,7 @@ COMUser::COMUser()
 	if (initiailized == refCount.end()) {
 		HRESULT hr = ::CoInitialize(NULL);
 		if (FAILED(hr)) {
-			throw new COMException(hr);
+			throw COMException(hr);
 		}
 		refCount.insert({ threadId, 1 });
 	} else {
@@ -36,6 +36,6 @@ COMUser::~COMUser() {
 void COMUser::checkThread() const {
 	if (threadId != GetCurrentThreadId()) {
 		assert(false);
-		throw new COMException(E_UNEXPECTED, L"COM-code called from wrong thread");
+		throw COMException(E_UNEXPECTED, L"COM-code called from wrong thread");
 	}
 }

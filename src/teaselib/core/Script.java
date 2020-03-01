@@ -346,15 +346,14 @@ public abstract class Script {
 
         InputMethods inputMethods = getInputMethods(scriptFunction, recognitionConfidence, answers);
         Choices choices = choices(answers);
+        Prompt prompt = getPrompt(choices, inputMethods, scriptFunction);
 
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             scriptRenderer.stopBackgroundRenderers();
         }
 
-        Prompt prompt = getPrompt(choices, inputMethods, scriptFunction);
         Choice choice = showPrompt(prompt).get(0);
-        // TODO Multiple choices
 
         String chosen = "< " + choice;
         logger.info("{}", chosen);

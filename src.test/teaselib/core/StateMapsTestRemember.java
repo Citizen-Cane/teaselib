@@ -97,7 +97,7 @@ public class StateMapsTestRemember extends StateMaps {
     }
 
     @Test
-    public void testRememberedItemsAreCompletlyRemovedAfterSessionRestore() {
+    public void testRememberedItemsAreCompletelyRemovedAfterSessionRestore() {
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS)
                 .remember(Until.Removed);

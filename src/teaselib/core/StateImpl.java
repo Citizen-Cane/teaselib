@@ -166,12 +166,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             ItemImpl peer = ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, storage);
             addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
         } else {
-            addAppliedOrPersistedPeer(Persist.<Object> from(persistedPeer));
+            Object peer = Persist.from(persistedPeer);
+            addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
         }
-    }
-
-    private void addAppliedOrPersistedPeer(Object peer) {
-        addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
     }
 
     private void addPeerThatHasBeenPersistedWithMe(Object peer, QualifiedItem qualifiedPeer) {
@@ -183,6 +180,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             peers.add(peer);
         } else if (qualifiedPeer.value() instanceof Item) {
             peers.add(peer);
+        } else if (ItemGuid.isGuid(peer)) {
+            peers.add(ItemGuid.fromGuid(peer.toString()));
         }
     }
 

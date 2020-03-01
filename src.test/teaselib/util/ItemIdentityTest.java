@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -25,6 +26,7 @@ import teaselib.Toys.Gags;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.Persist;
+import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.Storage;
 import teaselib.test.TestScript;
@@ -506,6 +508,55 @@ public class ItemIdentityTest {
         Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         assertTrue(restored.applied());
         assertTrue(script.state(Toys.Gag).applied());
+    }
+
+    @Test
+    public void testThatRestoredItemCanBeRemoved() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+        assertTrue(gag.applied());
+        assertTrue(script.state(Toys.Gag).applied());
+
+        gag.remove();
+        assertFalse(gag.applied());
+        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+
+        script.debugger.clearStateMaps();
+
+        Item restored = script.item(Toys.Gag);
+        assertTrue(restored.applied());
+        assertTrue(script.state(Toys.Gag).applied());
+
+        restored.remove();
+        assertFalse(restored.applied());
+    }
+
+    @Test
+    public void testThatItemGuidIsRestoredProperly() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+
+        script.debugger.clearStateMaps();
+
+        State gagState = script.state(Toys.Gag);
+
+        TeaseLib.PersistentString persistentString = script.teaseLib.new PersistentString(TeaseLib.DefaultDomain,
+                "Toys", "Gag.state.peers");
+        String persisted = persistentString.value();
+        assertNotEquals("", persisted);
+        List<String> peers = new PersistedObject(ArrayList.class, persisted).toValues();
+        assertEquals(3, peers.size());
+
+        for (String persistedPeer : peers) {
+            Object peer = Persist.from(persistedPeer);
+            assertTrue("State is missing persisted " + peer, gagState.is(peer));
+        }
     }
 
     @Test

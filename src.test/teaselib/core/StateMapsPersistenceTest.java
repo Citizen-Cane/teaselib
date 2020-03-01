@@ -184,18 +184,22 @@ public class StateMapsPersistenceTest extends StateMaps {
         clearStatesMapsOrNot();
 
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
+        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).is(NestedTestBody.SomethingOnPenis));
+        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).is(NestedTestBody.CannotJerkOff));
         assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
+        assertEquals(!isRemembered(),
+                state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).is(NestedTestBody.CannotJerkOff));
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
 
         state(TEST_DOMAIN, NestedTestToys.Chastity_Device).remove();
 
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
@@ -338,9 +342,9 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertFalse(state(TEST_DOMAIN, Toys_Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body_SomethingOnPenis).applied());
+
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
         // wrists still tied behind back -> cannot jerk off
-
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());

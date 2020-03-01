@@ -196,15 +196,17 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
-        peers = StateMaps.flatten(peers);
+        return applyToFlattenedPeers(StateMaps.flatten(peers));
+    }
 
+    private State.Options applyToFlattenedPeers(Object[] flattenedPeers) {
         applyInstanceTo(defaultPeers);
-        applyInstanceTo(peers);
+        applyInstanceTo(flattenedPeers);
 
         StateImpl state = state(value);
         applyMyAttributesTo(state);
         state.applyTo(this.guid);
-        return state.applyTo(peers);
+        return state.applyTo(flattenedPeers);
     }
 
     private void applyMyAttributesTo(StateImpl state) {
@@ -241,6 +243,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             if (state.peers().isEmpty()) {
                 state.remove();
             }
+        } else {
+            throw new IllegalStateException("This item is not applied: " + guid);
         }
     }
 
@@ -254,6 +258,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                     peerState.removeFrom(this);
                 }
             }
+        } else {
+            throw new IllegalStateException("This item is not applied: " + guid);
         }
     }
 

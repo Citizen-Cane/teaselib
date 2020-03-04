@@ -4,6 +4,7 @@ import static java.util.Arrays.asList;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,8 +25,10 @@ import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.RuleIndicesList;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionChoices;
+import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionSRGS;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -38,15 +41,16 @@ import teaselib.util.SpeechRecognitionRejectedScript;
  * @author Citizen-Cane
  *
  */
-public class SpeechRecognitionInputMethod implements InputMethod {
+public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.Closeable {
     private static final double AUDIO_PROBLEM_PENALTY_WEIGHT = 0.005;
 
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
     private static final String RECOGNITION_REJECTED_HANDLER_KEY = "Recognition Rejected";
 
-    final SpeechRecognition speechRecognizer;
-    final Confidence expectedConfidence;
+    final SpeechRecognizer speechRecognizers;
+    private final Map<Locale, SpeechRecognition> usedRecognizers = new HashMap<>();
+
     final Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript;
     final AudioSignalProblems audioSignalProblems;
 
@@ -59,10 +63,9 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private final AtomicReference<Prompt> active = new AtomicReference<>();
     private boolean speechRecognitionRejectedHandlerSignaled = false;
 
-    public SpeechRecognitionInputMethod(SpeechRecognition speechRecognizer, Confidence expectedConfidence,
+    public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizers,
             Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript) {
-        this.speechRecognizer = speechRecognizer;
-        this.expectedConfidence = expectedConfidence;
+        this.speechRecognizers = speechRecognizers;
         this.speechRecognitionRejectedScript = speechRecognitionRejectedScript;
         this.audioSignalProblems = new AudioSignalProblems();
 
@@ -71,9 +74,9 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.audioSignalProblemEventHandler = audioSignal -> audioSignalProblems.add(audioSignal.problem);
 
         this.speechDetectedEventHandler = eventArgs -> {
-            if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
+            if (audioSignalProblems.occured() && getRecognizer().speechRecognitionInProgress()) {
                 logAudioSignalProblem(eventArgs.result);
-                speechRecognizer.restartRecognition();
+                getRecognizer().restartRecognition();
             }
         };
 
@@ -110,11 +113,12 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         RuleIndicesList choices = result.gather();
 
                         double penalty = audioSignalProblems.penalty();
-                        if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
-                            if (confidenceIsHighEnough(result, expectedConfidence, 0)) {
-                                logAudioSignalProblemPenalty(result, penalty);
+                        Confidence expected = getRecognizer(prompt.choices.locale).getRecognitionConfidence();
+                        if (!confidenceIsHighEnough(result, expected, penalty)) {
+                            if (confidenceIsHighEnough(result, expected, 0)) {
+                                logAudioSignalProblemPenalty(result, expected, penalty);
                             } else {
-                                logLackOfConfidence(result);
+                                logLackOfConfidence(result, expected);
                             }
                             reject(eventArgs);
                             return prompt;
@@ -132,12 +136,27 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         }
                     } catch (Exception e) {
                         prompt.setException(e);
-                        endSpeechRecognition();
+                        getRecognizer(prompt.choices.locale).endRecognition();
                         return null;
                     }
                 }
             });
         };
+    }
+
+    private SpeechRecognition getRecognizer() {
+        Prompt prompt = active.get();
+        if (prompt == null)
+            throw new IllegalStateException("Prompt not set");
+        return getRecognizer(prompt.choices.locale);
+    }
+
+    private SpeechRecognition getRecognizer(Locale locale) {
+        SpeechRecognition recognizer = speechRecognizers.get(locale);
+        if (usedRecognizers.put(recognizer.locale, recognizer) == null) {
+            addEvents(recognizer);
+        }
+        return recognizer;
     }
 
     private static Optional<Rule> distinct(Rule... result) {
@@ -174,7 +193,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             RuleIndicesList choices) {
         Optional<Integer> distinctChoice = choices.getCommonDistinctValue();
         if (distinctChoice.isPresent()) {
-            accept(prompt, new Prompt.Result(speechRecognizer.mapPhraseToChoice(distinctChoice.get())));
+            accept(prompt, new Prompt.Result(getRecognizer().mapPhraseToChoice(distinctChoice.get())));
             return null;
         } else {
             logger.warn("No distinct choice {} in {} - rejecting", choices, result);
@@ -184,7 +203,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     private Prompt accept(Prompt prompt, Prompt.Result promptResult) {
-        endSpeechRecognition();
+        getRecognizer(prompt.choices.locale).endRecognition();
         signal(prompt, promptResult);
         return null;
     }
@@ -195,20 +214,20 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     private void fireRecognitionRejectedEvent(SpeechRecognizedEventArgs eventArgs) {
-        speechRecognizer.events.recognitionRejected.run(new SpeechRecognizedEventArgs(eventArgs.result));
+        getRecognizer().events.recognitionRejected.run(new SpeechRecognizedEventArgs(eventArgs.result));
     }
 
-    private void logLackOfConfidence(Rule result) {
-        logger.info("Rejecting result '{}' due to lack of confidence (expected {})", result, expectedConfidence);
+    private static void logLackOfConfidence(Rule result, Confidence confidence) {
+        logger.info("Rejecting result '{}' due to lack of confidence (expected {})", result, confidence);
     }
 
     private void logAudioSignalProblem(Rule[] result) {
         logger.info("Rejecting result '{}' due to audio signal problems {}", result, audioSignalProblems);
     }
 
-    private void logAudioSignalProblemPenalty(Rule result, double penalty) {
-        logger.info("Rejecting result '{}' due to audio signal problem penalty  (required  {} + {} + = {})", result,
-                expectedConfidence, penalty, expectedConfidence.probability + penalty);
+    private static void logAudioSignalProblemPenalty(Rule result, Confidence confidence, double penalty) {
+        logger.info("Rejecting result '{}' due to audio signal problem penalty (required  {} + {} + = {})", result,
+                confidence, penalty, confidence.probability + penalty);
     }
 
     private static boolean confidenceIsHighEnough(Rule result, Confidence expected, double penalty) {
@@ -237,7 +256,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     @Override
     public Setup getSetup(Choices choices) {
-        SpeechRecognitionImplementation sr = speechRecognizer.sr;
+        SpeechRecognition recognizer = getRecognizer(choices.locale);
+        SpeechRecognitionImplementation sr = recognizer.sr;
         if (sr instanceof SpeechRecognitionSRGS) {
             try {
                 SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, sr.getLanguageCode());
@@ -248,12 +268,12 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 IntUnaryOperator mapper = builder::map;
                 byte[] srgs = builder.toBytes();
 
-                return () -> speechRecognizer.setChoices(choices, srgs, mapper);
+                return () -> recognizer.setChoices(choices, srgs, mapper);
             } catch (ParserConfigurationException | TransformerException e) {
                 throw ExceptionUtil.asRuntimeException(e);
             }
         } else if (sr instanceof SpeechRecognitionChoices) {
-            return () -> speechRecognizer.setChoices(choices, null, value -> value);
+            return () -> recognizer.setChoices(choices, null, value -> value);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -262,9 +282,12 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     @Override
     public void show(Prompt prompt) {
         Objects.requireNonNull(prompt);
-        active.set(prompt);
+        Prompt previousPrompt = active.getAndSet(prompt);
+        if (previousPrompt != null) {
+            throw new IllegalStateException("Trying to show prompt when already showing another");
+        }
         prompt.inputMethodInitializers.setup(this);
-        startSpeechRecognition();
+        startSpeechRecognition(prompt);
     }
 
     @Override
@@ -275,7 +298,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         } else if (activePrompt != prompt) {
             throw new IllegalStateException("Trying to dismiss wrong prompt");
         } else {
-            endSpeechRecognition();
+            getRecognizer(prompt.choices.locale).endRecognition();
             return true;
         }
     }
@@ -290,37 +313,45 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     // -> propagation doesn't work when events are added temporarily since they are added last
     // Alternatively remove firing new events by moving rejection into the speech detection handler
     // see also teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult(...)
-    private void startSpeechRecognition() {
-        if (speechRecognizer.isActive()) {
+    private void startSpeechRecognition(Prompt prompt) {
+        SpeechRecognition recognizer = getRecognizer(prompt.choices.locale);
+        if (recognizer.isActive()) {
             throw new IllegalStateException("Speech recognizer already active");
         }
 
-        addEvents();
-        speechRecognizer.startRecognition(expectedConfidence);
+        recognizer.startRecognition(map(prompt.choices.intention));
     }
 
-    private void addEvents() {
-        speechRecognizer.events.recognitionStarted.add(speechRecognitionStartedEventHandler);
-        speechRecognizer.events.audioSignalProblemOccured.add(audioSignalProblemEventHandler);
-        speechRecognizer.events.speechDetected.add(speechDetectedEventHandler);
-        speechRecognizer.events.recognitionRejected.add(recognitionRejected);
-        speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-    }
-
-    private void endSpeechRecognition() {
-        try {
-            speechRecognizer.endRecognition();
-        } finally {
-            removeEvents();
+    private static Confidence map(Intention intention) {
+        switch (intention) {
+        case Chat:
+            return Confidence.Low;
+        case Confirm:
+            return Confidence.Normal;
+        case Decide:
+            return Confidence.High;
+        default:
+            throw new IllegalArgumentException(intention.toString());
         }
+
     }
 
-    private void removeEvents() {
-        speechRecognizer.events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
-        speechRecognizer.events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
-        speechRecognizer.events.speechDetected.remove(speechDetectedEventHandler);
-        speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
-        speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
+    private void addEvents(SpeechRecognition recognizer) {
+        SpeechRecognitionEvents events = recognizer.events;
+        events.recognitionStarted.add(speechRecognitionStartedEventHandler);
+        events.audioSignalProblemOccured.add(audioSignalProblemEventHandler);
+        events.speechDetected.add(speechDetectedEventHandler);
+        events.recognitionRejected.add(recognitionRejected);
+        events.recognitionCompleted.add(recognitionCompleted);
+    }
+
+    private void removeEvents(SpeechRecognition speechRecognizer) {
+        SpeechRecognitionEvents events = speechRecognizer.events;
+        events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
+        events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
+        events.speechDetected.remove(speechDetectedEventHandler);
+        events.recognitionRejected.remove(recognitionRejected);
+        events.recognitionCompleted.remove(recognitionCompleted);
     }
 
     @Override
@@ -335,7 +366,17 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     @Override
     public String toString() {
-        return "SpeechRecognizer=" + speechRecognizer + " confidence=" + expectedConfidence;
+        Prompt prompt = active.get();
+        String object = prompt != null ? getRecognizer(prompt.choices.locale).toString() : "<inactive>";
+        String expectedConfidence = prompt != null
+                ? getRecognizer(prompt.choices.locale).getRecognitionConfidence().toString()
+                : "<?>";
+        return "SpeechRecognizer=" + object + " confidence=" + expectedConfidence;
+    }
+
+    @Override
+    public void close() {
+        usedRecognizers.values().stream().forEach(this::removeEvents);
     }
 
 }

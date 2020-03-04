@@ -7,7 +7,6 @@ import static teaselib.core.speechrecognition.srgs.StringSequence.splitWords;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -19,14 +18,14 @@ import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;
+import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.Stream;
 
 public class SpeechRecognitionHandcraftedXmlTest {
-    private static final Choices Foobar = new Choices(
-            Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar"), new Choice("My name is Foobar")));
-    private static final Confidence confidence = Confidence.High;
+    private static final Choices Foobar = new Choices(Locale.ENGLISH, Intention.Decide, //
+            new Choice("My name is Foo"), new Choice("My name is Bar"), new Choice("My name is Foobar"));
 
     private static List<Rule> assertRecognized(String resource, String emulatedRecognitionResult,
             Prompt.Result expected) throws IOException, InterruptedException {
@@ -60,23 +59,22 @@ public class SpeechRecognitionHandcraftedXmlTest {
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
         byte[] xml = Stream.toByteArray(resources.get(resource));
 
-        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class);
-        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty()) {
-            @Override
-            public Setup getSetup(Choices choices) {
-                Setup setup = super.getSetup(choices);
-                return new Setup() {
-                    @Override
-                    public void apply() {
+        try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSRGS.class);) {
+            SpeechRecognition sr = sR.get(Foobar.locale);
+            try (SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR, Optional.empty()) {
+                @Override
+                public Setup getSetup(Choices choices) {
+                    Setup setup = super.getSetup(choices);
+                    return () -> {
                         setup.apply();
                         sr.setChoices(choices, xml, value -> value);
-                    }
-                };
+                    };
+                }
+            };) {
+                Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
+                return awaitResult(inputMethod, sr, prompt, emulatedRecognitionResult, expected);
             }
-
-        };
-        Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
-        return awaitResult(inputMethod, sr, prompt, emulatedRecognitionResult, expected);
+        }
     }
 
     @Test

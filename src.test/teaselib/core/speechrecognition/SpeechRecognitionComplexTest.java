@@ -1,11 +1,16 @@
 package teaselib.core.speechrecognition;
 
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.withoutPunctation;
+
+import java.util.Locale;
 
 import org.junit.Test;
 
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 
 /**
@@ -16,13 +21,15 @@ public class SpeechRecognitionComplexTest {
 
     @Test
     public void testRejected() throws InterruptedException {
-        Choices choices = new Choices(new Choice("Foo", "Foo", "Foo"));
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Foo", "Foo", "Foo"));
         assertRejected(choices, "Bar");
     }
 
     private static Choices singleChoiceMultiplePhrasesAreDistinct() {
         String[] yes = { "Yes Miss, of course", "Of course, Miss" };
-        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes));
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes #title, of course", "Yes Miss, of course", yes));
     }
 
     @Test
@@ -40,7 +47,8 @@ public class SpeechRecognitionComplexTest {
     private static Choices multipleChoicesAlternativePhrases() {
         String[] yes = { "Yes Miss, of course", "Yes, of course, Miss", "Yes, of course", "Of course" };
         String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not", "Of course not" };
-        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
     }
 
@@ -66,7 +74,8 @@ public class SpeechRecognitionComplexTest {
     }
 
     private static Choices optionalPhraseToDistiniguishMulitpleChoices() {
-        return new Choices(new Choice("I have it"), new Choice("I don't have it"));
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("I have it"), new Choice("I don't have it"));
     }
 
     @Test
@@ -79,7 +88,8 @@ public class SpeechRecognitionComplexTest {
     private static Choices multiplePhrasesOfMultipleChoicesAreDistinct() {
         String[] yes = { "Yes Miss, of course", "Yes, of course, Miss", "Yes, of course" };
         String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not" };
-        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
     }
 
@@ -109,7 +119,8 @@ public class SpeechRecognitionComplexTest {
         String[] yes = { "Yes Miss, of course", "Yes, of course, Miss", "Yes, of course", "Of course", "I have it" };
         String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not", "Of course not",
                 "I don't have it" };
-        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
     }
 
@@ -140,7 +151,8 @@ public class SpeechRecognitionComplexTest {
     private static Choices multiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts() {
         String[] yes = { "Yes Miss, of course", "Yes, of course, Miss", "Yes, of course", "I have it" };
         String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not", "I don't have it" };
-        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
     }
 
@@ -172,7 +184,8 @@ public class SpeechRecognitionComplexTest {
     private static Choices phrasesWithMultipleCommonStartGroups() {
         String[] cum = { "Dear mistress, may I cum", "Please mistress, may I cum" };
         String[] wank = { "Dear mistress, may I wank", "Please mistress, may I wank" };
-        return new Choices(new Choice("Dear mistress, may I cum", "Dear mistress, may I cum", cum),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Dear mistress, may I cum", "Dear mistress, may I cum", cum),
                 new Choice("Dear mistress, may I wank", "Dear mistress, may I wank", wank));
     }
 
@@ -198,7 +211,8 @@ public class SpeechRecognitionComplexTest {
     private static Choices phrasesWithMultipleCommonEndGroups() {
         String[] cum = { "May I cum, please", "May I cum, dear Mistress" };
         String[] wank = { "May I wank, please", "May I wank, dear Mistress" };
-        return new Choices(new Choice("May I cum, please", "May I cum, please", cum),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("May I cum, please", "May I cum, please", cum),
                 new Choice("May I wank, please", "May I wank, please", wank));
     }
 
@@ -222,7 +236,8 @@ public class SpeechRecognitionComplexTest {
     private static Choices identicalPhrasesInDifferentChoices() {
         String[] yes = { "Yes Miss, of course", "Yes, of course, Miss" };
         String[] no = { "Yes Miss, of course", "No, of course not, Miss" };
-        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
     }
 
@@ -241,7 +256,8 @@ public class SpeechRecognitionComplexTest {
     private static Choices oneOfCommonAndChoicesMixed() {
         String[] yes = { "Yes Miss, of course", "Yes, of course, Miss" };
         String[] no = { "No Miss, of course", "No, of course not, Miss" };
-        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
     }
 
@@ -258,7 +274,8 @@ public class SpeechRecognitionComplexTest {
     }
 
     private static Choices distinctChociesWithPairwiseCommonParts() {
-        return new Choices(new Choice("A at M attached"), new Choice("A at N attached"), new Choice("B at N attached"),
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("A at M attached"), new Choice("A at N attached"), new Choice("B at N attached"),
                 new Choice("B at M attached"));
     }
 
@@ -273,7 +290,8 @@ public class SpeechRecognitionComplexTest {
     }
 
     private static Choices distinctChociesWithPairwiseCommonPartsShort() {
-        return new Choices(new Choice("A M"), new Choice("A N"), new Choice("B N"), new Choice("B M"));
+        return new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("A M"), new Choice("A N"), new Choice("B N"), new Choice("B M"));
     }
 
     @Test
@@ -288,7 +306,7 @@ public class SpeechRecognitionComplexTest {
 
     @Test
     public void testSRGSBuilderMultiLevelCommon() throws InterruptedException {
-        Choices choices = new Choices( //
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice("A B0 C0 D"), //
                 new Choice("A B1 C0 D"), //
                 new Choice("A B2 C2 D"));
@@ -300,7 +318,7 @@ public class SpeechRecognitionComplexTest {
 
     @Test
     public void testSRGSBuilderMultiLevelCommon2() throws InterruptedException {
-        Choices choices = new Choices( //
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice("A B0 C0 D"), //
                 new Choice("A B1 C0 D"), //
                 new Choice("A B2 C2 D"), //

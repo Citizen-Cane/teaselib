@@ -1,6 +1,5 @@
 package teaselib.core.speechrecognition;
 
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -9,6 +8,7 @@ import org.junit.Test;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;
+import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 
@@ -17,25 +17,22 @@ public class SpeechRecognitionTests {
         return new Choice(text, text);
     }
 
-    private static final Choices TestChoices = new Choices(
-            Arrays.asList(choice("I've spurted off, Miss"), choice("I give up, Miss"), choice("I have a dream")));
-    private static final Confidence TestConfidence = Confidence.High;
+    private static final Choices TestChoices = new Choices(Locale.US, Intention.Decide, //
+            choice("I've spurted off, Miss"), choice("I give up, Miss"), choice("I have a dream"));
 
     @Test
     public void testSpeechRecognitionInputMethod() throws InterruptedException {
-        SpeechRecognition sr = new SpeechRecognition(new Locale("en-us"));
+        try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizers();
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR, Optional.empty());) {
 
-        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, TestConfidence,
-                Optional.empty());
-        Prompt prompt = new Prompt(TestChoices, new InputMethods(inputMethod));
-
-        prompt.lock.lockInterruptibly();
-        try {
-            inputMethod.show(prompt);
-            prompt.click.await();
-            inputMethod.dismiss(prompt);
-        } finally {
-            prompt.lock.unlock();
+            Prompt prompt = new Prompt(TestChoices, new InputMethods(inputMethod));
+            prompt.lock.lockInterruptibly();
+            try {
+                inputMethod.show(prompt);
+                prompt.click.await();
+            } finally {
+                prompt.lock.unlock();
+            }
         }
     }
 }

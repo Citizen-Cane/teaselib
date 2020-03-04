@@ -6,13 +6,14 @@ import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertR
 import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.Test;
 
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 
@@ -24,7 +25,8 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testSRGSBuilderSinglePhrase() throws InterruptedException {
-        Choices choices = new Choices(Arrays.asList(new Choice("Foo bar")));
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Foo bar"));
 
         assertRecognized(choices, "Foo bar", new Prompt.Result(0));
         assertRejected(choices, "Foo");
@@ -33,7 +35,9 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testSRGSBuilderCommonStart() throws InterruptedException {
-        Choices choices = new Choices(new Choice("Please Miss, one more"), new Choice("Please Miss, one less"),
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Please Miss, one more"), //
+                new Choice("Please Miss, one less"), //
                 new Choice("Please Miss, two more"));
 
         assertRecognized(choices, "Please Miss one more", new Prompt.Result(0));
@@ -45,8 +49,8 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testSRGSBuilderCommonEnd() throws InterruptedException {
-        Choices choices = new Choices(new Choice("I've spurted my load, Dear Mistress"),
-                new Choice("I didn't spurt off, Dear Mistress"));
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("I've spurted my load, Dear Mistress"), new Choice("I didn't spurt off, Dear Mistress"));
 
         assertRecognized(choices, "I've spurted my load Dear Mistress", new Prompt.Result(0));
         assertRecognized(choices, "I didn't spurt off Dear Mistress", new Prompt.Result(1));
@@ -56,8 +60,8 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testSRGSBuilderCommonMiddleEnd() throws InterruptedException {
-        Choices choices = new Choices(new Choice("Yes Miss, I've spurted off"),
-                new Choice("No Miss, I didn't spurt off"));
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes Miss, I've spurted off"), new Choice("No Miss, I didn't spurt off"));
 
         assertRecognized(choices, "Yes Miss I've spurted off", new Prompt.Result(0, 0));
         assertRecognized(choices, "No Miss I didn't spurt off", new Prompt.Result(1, 1));
@@ -69,7 +73,8 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testSRGSBuilderCommonStartEnd() throws InterruptedException {
-        Choices choices = new Choices(new Choice("Dear Mistress, I've spurted my load, Miss"),
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Dear Mistress, I've spurted my load, Miss"),
                 new Choice("Dear Mistress I didn't spurt off, Miss"));
 
         assertRecognized(choices, "Dear Mistress I've spurted my load Miss", new Prompt.Result(0));
@@ -86,8 +91,8 @@ public class SpeechRecognitionTest {
         String ready2 = "Yes,it's ready, Miss";
         String ready3 = "It's ready, Miss";
 
-        Choices choices = new Choices(Arrays.asList(new Choice(sorry), new Choice(ready), new Choice(haveIt),
-                new Choice(ready2), new Choice(ready3)));
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice(sorry), new Choice(ready), new Choice(haveIt), new Choice(ready2), new Choice(ready3));
 
         assertRecognized(choices, sorry, new Prompt.Result(0));
         assertRecognized(choices, ready, new Prompt.Result(1));
@@ -102,7 +107,8 @@ public class SpeechRecognitionTest {
         String o = "Öh";
         String u = "Üh";
 
-        Choices choices = new Choices(Arrays.asList(new Choice(a), new Choice(o), new Choice(u)));
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice(a), new Choice(o), new Choice(u));
 
         assertRecognized(choices, a, new Prompt.Result(0));
         assertRecognized(choices, o, new Prompt.Result(1));
@@ -111,7 +117,9 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testSRGSBuilderSimilarEndAmbiguity() throws InterruptedException {
-        Choices choices = new Choices(new Choice("Yes I have"), new Choice("No I haven't"));
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes I have"), //
+                new Choice("No I haven't"));
 
         List<Rule> expected = new ArrayList<>();
         expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
@@ -131,7 +139,9 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testSRGSBuilderSimilarEndAmbiguity2() throws InterruptedException {
-        Choices choices = new Choices(new Choice("Yes I have"), new Choice("No I haven't"));
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes I have"), //
+                new Choice("No I haven't"));
 
         List<Rule> rejected = new ArrayList<>();
         rejected.addAll(assertRejected(choices, "Yes I haven't"));

@@ -6,10 +6,11 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
-import teaselib.Config;
 import teaselib.core.Closeable;
 import teaselib.core.configuration.Configuration;
+import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 
 /**
  * @author Citizen-Cane
@@ -20,17 +21,38 @@ public class SpeechRecognizer implements Closeable {
 
     private final Configuration config;
 
+    enum Config {
+        SpeechRecognitionImplementation;
+    }
+
+    private Class<? extends SpeechRecognitionImplementation> srClass;
+
+    @SuppressWarnings("unchecked")
     public SpeechRecognizer(Configuration config) {
         this.config = config;
+        if (config.has(Config.SpeechRecognitionImplementation)) {
+            String className = config.get(Config.SpeechRecognitionImplementation);
+            try {
+                this.srClass = (Class<? extends SpeechRecognitionImplementation>) Class.forName(className);
+            } catch (ClassNotFoundException e) {
+                throw new NoSuchElementException(Config.SpeechRecognitionImplementation + ": " + className);
+            }
+        } else {
+            this.srClass = TeaseLibSRGS.class;
+        }
     }
 
     public SpeechRecognition get(Locale locale) {
         synchronized (speechRecognitionInstances) {
             if (speechRecognitionInstances.containsKey(locale)) {
-                return speechRecognitionInstances.get(locale);
+                SpeechRecognition speechRecognition = speechRecognitionInstances.get(locale);
+                if (speechRecognition.sr.getClass() != srClass) {
+                    throw new UnsupportedOperationException("SR implementation already set for locale " + locale);
+                }
+                return speechRecognition;
             } else {
-                if (Boolean.parseBoolean(config.get(Config.InputMethod.SpeechRecognition))) {
-                    SpeechRecognition speechRecognition = new SpeechRecognition(locale);
+                if (Boolean.parseBoolean(config.get(teaselib.Config.InputMethod.SpeechRecognition))) {
+                    SpeechRecognition speechRecognition = new SpeechRecognition(locale, srClass);
                     speechRecognitionInstances.put(locale, speechRecognition);
                     return speechRecognition;
                 } else {

@@ -60,7 +60,9 @@ public class ExceptionUtil {
     }
 
     public static RuntimeException asRuntimeException(Throwable t) {
-        if (t instanceof RuntimeException) {
+        if (t instanceof Error) {
+            throw (Error) t;
+        } else if (t instanceof RuntimeException) {
             return (RuntimeException) t;
         } else {
             String name = t.getClass().getSimpleName();

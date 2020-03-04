@@ -20,7 +20,6 @@ import teaselib.Actor;
 import teaselib.Answer;
 import teaselib.Body;
 import teaselib.Config;
-import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.Duration;
 import teaselib.Gadgets;
 import teaselib.Message;
@@ -42,13 +41,12 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.HeadGestureInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.InputMethods;
+import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
-import teaselib.core.util.QualifiedItem;
-import teaselib.core.util.ReflectionUtils;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
@@ -90,6 +88,14 @@ public abstract class Script {
         // TODO start only once but not here - KeyReleaseSetup must not be a script - device?
         boolean startOnce = teaseLib.globals.get(SCRIPT_INSTANCES) == null;
         if (startOnce) {
+            if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
+                // TODO call srRejectedScript handler via events (listen to input method)
+                InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
+                inputMethods.add(new SpeechRecognitionInputMethod( //
+                        teaseLib.globals.get(SpeechRecognizer.class), //
+                        Optional.empty())); // speechRecognitioneRejectedScript(scriptFunction)));
+            }
+
             handleAutoRemove();
             script(KeyReleaseSetup.class).init();
 
@@ -334,18 +340,14 @@ public abstract class Script {
      * @return The choice made by the user, {@link ScriptFunction#Timeout} if the function has ended, or a custom result
      *         value set by the script function.
      */
-    protected Answer showChoices(List<Answer> answers, ScriptFunction scriptFunction,
-            Config.SpeechRecognition.Intention intention) {
+    protected Answer showChoices(List<Answer> answers, ScriptFunction scriptFunction, Intention intention) {
         if (scriptRenderer.hasPrependedMessages()) {
             Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
             scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech));
         }
 
-        QualifiedItem value = QualifiedItem.of(teaseLib.config.get(intention));
-        Confidence recognitionConfidence = ReflectionUtils.getEnum(Confidence.class, value);
-
-        InputMethods inputMethods = getInputMethods(scriptFunction, recognitionConfidence, answers);
-        Choices choices = choices(answers);
+        InputMethods inputMethods = getInputMethods(answers);
+        Choices choices = choices(answers, intention);
         Prompt prompt = getPrompt(choices, inputMethods, scriptFunction);
 
         waitToStartScriptFunction(scriptFunction);
@@ -362,12 +364,12 @@ public abstract class Script {
         return choice.answer;
     }
 
-    private Choices choices(List<Answer> answers) {
+    private Choices choices(List<Answer> answers, Intention intention) {
         List<Choice> choices = answers.stream().map(answer -> new Choice(answer,
                 expandTextVariables(selectPhrase(answer)), expandTextVariables(answer.text)))
                 .collect(Collectors.toList());
 
-        return new Choices(choices);
+        return new Choices(actor.locale(), intention, choices);
     }
 
     private String selectPhrase(Answer answer) {
@@ -396,17 +398,11 @@ public abstract class Script {
         return choice;
     }
 
-    private InputMethods getInputMethods(ScriptFunction scriptFunction, Confidence recognitionConfidence,
-            List<Answer> answers) {
+    private InputMethods getInputMethods(List<Answer> answers) {
         InputMethods inputMethods = new InputMethods(teaseLib.globals.get(InputMethods.class));
         inputMethods.add(teaseLib.host.inputMethod());
 
-        if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
-            inputMethods.add(
-                    new SpeechRecognitionInputMethod(teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale()),
-                            recognitionConfidence, speechRecognitioneRejectedScript(scriptFunction)));
-        }
-
+        // TODO Move this into head gestures method
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied()
                 && HeadGestureInputMethod.distinctGestures(answers)) {

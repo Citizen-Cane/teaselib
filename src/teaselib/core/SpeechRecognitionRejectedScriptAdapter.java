@@ -6,10 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Answer;
-import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.Message;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
+import teaselib.core.ui.Intention;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionRejectedScript {

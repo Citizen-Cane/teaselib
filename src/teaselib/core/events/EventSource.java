@@ -76,8 +76,10 @@ public class EventSource<T extends EventArgs> {
         try {
             delegate.run(eventArgs);
         } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             throw ExceptionUtil.asRuntimeException(e);
         } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
             throw ExceptionUtil.asRuntimeException(t);
         }
     }

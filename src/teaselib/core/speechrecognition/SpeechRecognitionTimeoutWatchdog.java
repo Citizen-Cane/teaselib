@@ -3,7 +3,7 @@ package teaselib.core.speechrecognition;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,17 +21,25 @@ public class SpeechRecognitionTimeoutWatchdog {
     static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTimeoutWatchdog.class);
     static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(2);
 
-    final SpeechRecognitionEvents events;
-    final AtomicBoolean active = new AtomicBoolean(false);
-    final Timer timer = new Timer(getClass().getSimpleName());
-
-    TimerTask task = null;
-
-    final Runnable timeoutAction;
+    private final AtomicReference<Timer> timer = new AtomicReference<>(null);
+    private final SpeechRecognitionEvents events;
+    private final Runnable timeoutAction;
 
     public SpeechRecognitionTimeoutWatchdog(SpeechRecognitionEvents events, Runnable timeoutAction) {
         this.events = events;
         this.timeoutAction = timeoutAction;
+    }
+
+    private TimerTask timerTask(Runnable timeoutAction) {
+        return new TimerTask() {
+            @Override
+            public void run() {
+                if (enabled()) {
+                    logger.info("Timeout after {}ms", TIMEOUT_MILLIS);
+                    timeoutAction.run();
+                }
+            }
+        };
     }
 
     public void addEvents() {
@@ -51,14 +59,15 @@ public class SpeechRecognitionTimeoutWatchdog {
     }
 
     public boolean enabled() {
-        return active.get();
+        return timer.get() != null;
     }
 
     public void enable(boolean enabled) {
-        active.set(enabled);
-        TimerTask t = task;
-        if (!enabled && t != null) {
+        if (enabled) {
+            timer.set(newTimer());
+        } else {
             stopTimerTask();
+            timer.set(null);
         }
     }
 
@@ -69,43 +78,38 @@ public class SpeechRecognitionTimeoutWatchdog {
     };
 
     private Event<AudioSignalProblemOccuredEventArgs> updateAudioProblemStatus = args -> {
-        if (enabled() && task != null) {
+        if (enabled()) {
             updateStatus();
         }
     };
 
     private Event<SpeechRecognizedEventArgs> updateSpeechDetectionStatus = args -> {
-        if (enabled() && task != null) {
+        if (enabled()) {
             updateStatus();
         }
     };
 
     private Event<SpeechRecognizedEventArgs> stopWatching = args -> {
-        if (enabled() && task != null) {
+        if (enabled()) {
             stopTimerTask();
-            timer.purge();
             logger.info("Timeout watchdog stopped");
         }
     };
 
     private void startTimerTask() {
-        if (task == null) {
-            logger.info("Starting timeout watchdog");
-        } else {
+        if (enabled()) {
             logger.info("Restarting timeout watchdog");
+        } else {
+            logger.info("Starting timeout watchdog");
         }
 
-        TimerTask t = new TimerTask() {
-            @Override
-            public void run() {
-                if (enabled() && task != null) {
-                    logger.info("Timeout after {}ms", TIMEOUT_MILLIS);
-                    timeoutAction.run();
-                }
-            }
-        };
-        this.task = t;
-        timer.schedule(t, TIMEOUT_MILLIS);
+        Timer newTimer = newTimer();
+        timer.set(newTimer);
+        newTimer.schedule(timerTask(timeoutAction), TIMEOUT_MILLIS);
+    }
+
+    private Timer newTimer() {
+        return new Timer(getClass().getSimpleName());
     }
 
     private void updateStatus() {
@@ -114,8 +118,10 @@ public class SpeechRecognitionTimeoutWatchdog {
     }
 
     private void stopTimerTask() {
-        task.cancel();
-        task = null;
+        Timer t = timer.get();
+        if (t != null) {
+            t.cancel();
+        }
     }
 
 }

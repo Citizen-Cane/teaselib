@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import teaselib.core.speechrecognition.Rule;
 
 public class SpeechRecognizedEventArgs extends SpeechRecognitionEventArgs {
-    public final Rule result[];
+    public final Rule[] result;
 
     public SpeechRecognizedEventArgs(Rule... result) {
         this.result = result;

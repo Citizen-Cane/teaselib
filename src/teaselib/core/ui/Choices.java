@@ -7,12 +7,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import teaselib.Answer.Meaning;
 
 public class Choices extends ArrayList<Choice> {
     private static final long serialVersionUID = 1L;
+
+    public final Locale locale;
+    public final Intention intention;
 
     public List<String> toText() {
         return stream().map(choice -> choice.answer.text.get(0)).collect(Collectors.toList());
@@ -26,12 +30,14 @@ public class Choices extends ArrayList<Choice> {
         return stream().map(choice -> choice.phrases).collect(Collectors.toList());
     }
 
-    public Choices(Choice... choices) {
-        this(Arrays.asList(choices));
+    public Choices(Locale locale, Intention intention, Choice... choices) {
+        this(locale, intention, Arrays.asList(choices));
     }
 
-    public Choices(List<Choice> choices) {
+    public Choices(Locale locale, Intention intention, List<Choice> choices) {
         super(choices);
+        this.locale = locale;
+        this.intention = intention;
         checkForDuplicates(this);
     }
 

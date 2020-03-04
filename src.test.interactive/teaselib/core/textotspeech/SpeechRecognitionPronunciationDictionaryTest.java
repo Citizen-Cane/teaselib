@@ -19,6 +19,7 @@ import teaselib.core.texttospeech.PronunciationDictionary;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.Intention;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SpeechRecognitionPronunciationDictionaryTest {
@@ -51,7 +52,7 @@ public class SpeechRecognitionPronunciationDictionaryTest {
         try (SpeechRecognizer speechRecognizer = new SpeechRecognizer(new Configuration());) {
             SpeechRecognition speechRecognition = speechRecognizer.get(Locale.US);
             CountDownLatch completed = new CountDownLatch(1);
-            Choices choices = new Choices(new Choice("Bereit"), new Choice("Madame"));
+            Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, new Choice("Bereit"), new Choice("Madame"));
 
             Event<SpeechRecognizedEventArgs> speechRecognized = (eventArgs) -> completed.countDown();
             speechRecognition.events.recognitionCompleted.add(speechRecognized);

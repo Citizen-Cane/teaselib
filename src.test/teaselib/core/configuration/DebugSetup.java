@@ -8,7 +8,6 @@ import java.io.IOException;
 import teaselib.Config;
 import teaselib.core.UserItemsImpl;
 import teaselib.core.devices.remote.LocalNetworkDevice;
-import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
 
@@ -47,10 +46,6 @@ public final class DebugSetup implements Setup {
         config.set(Config.InputMethod.SpeechRecognition, Boolean.toString(enableInput));
         config.set(Config.InputMethod.GameController, Boolean.toString(enableInput));
         config.set(Config.InputMethod.HeadGestures, Boolean.toString(enableInput));
-
-        config.set(Config.SpeechRecognition.Intention.Chat, Confidence.Low);
-        config.set(Config.SpeechRecognition.Intention.Confirm, Confidence.Normal);
-        config.set(Config.SpeechRecognition.Intention.Decide, Confidence.High);
     }
 
     protected void applyOutput(Configuration config) {

@@ -42,12 +42,4 @@ public enum Config {
         HeadGestures,
     }
 
-    public enum SpeechRecognition {
-        ;
-        public enum Intention {
-            Chat,
-            Confirm,
-            Decide
-        }
-    }
 }

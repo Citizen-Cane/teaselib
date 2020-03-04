@@ -62,7 +62,7 @@ public class Shower {
         }
     }
 
-    private void throwScriptTaskException(Prompt prompt) throws InterruptedException {
+    private static void throwScriptTaskException(Prompt prompt) throws InterruptedException {
         ScriptFutureTask scriptTask = prompt.scriptTask;
         if (scriptTask != null) {
             try {
@@ -92,9 +92,7 @@ public class Shower {
 
     private List<Choice> result(Prompt prompt, Prompt.Result result) throws InterruptedException {
         if (result.equals(Prompt.Result.DISMISSED)) {
-            // TODO join with else-branch, but the DISMISSED case must be first
-            prompt.cancelScriptTask();
-            return prompt.choice(result);
+            return cancelSCriptTaskAndReturnResult(prompt, result);
         } else if (prompt.inputHandlerKey != Prompt.NONE) {
             try {
                 invokeHandler(prompt);
@@ -106,9 +104,13 @@ public class Shower {
             }
             return result(prompt, promptQueue.awaitResult(prompt));
         } else {
-            prompt.cancelScriptTask();
-            return prompt.choice(result);
+            return cancelSCriptTaskAndReturnResult(prompt, result);
         }
+    }
+
+    private static List<Choice> cancelSCriptTaskAndReturnResult(Prompt prompt, Prompt.Result result) {
+        prompt.cancelScriptTask();
+        return prompt.choice(result);
     }
 
     private void invokeHandler(Prompt prompt) {

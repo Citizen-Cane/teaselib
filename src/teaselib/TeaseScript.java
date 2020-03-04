@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Answer.Meaning;
-import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
@@ -26,6 +25,7 @@ import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.ui.Intention;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.WildcardPattern;
 import teaselib.functional.CallableScript;
@@ -351,7 +351,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         try {
             teaseLib.sleep(seconds, TimeUnit.SECONDS);
             if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
-                    && speechRecognizer.isSpeechRecognitionInProgress()) {
+                    && speechRecognizer.speechRecognitionInProgress()) {
                 logger.info("Completing speech recognition {}", timeoutBehavior);
                 SpeechRecognition.completeSpeechRecognitionInProgress();
             }

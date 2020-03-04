@@ -23,8 +23,18 @@ public class Prompt {
             .singletonList(new Choice(ScriptFunction.Timeout));
 
     public static class Result {
-        public static final Result UNDEFINED = new Result(Integer.MIN_VALUE);
-        public static final Result DISMISSED = new Result(-1);
+        public static final Result UNDEFINED = new Result(Integer.MIN_VALUE) {
+            @Override
+            public String toString() {
+                return "UNDEFINED";
+            }
+        };
+        public static final Result DISMISSED = new Result(-1) {
+            @Override
+            public String toString() {
+                return "DISMISSED";
+            }
+        };
 
         public enum Accept {
             AllSame,
@@ -150,7 +160,7 @@ public class Prompt {
         }
     }
 
-    // Eliminate result parameter -> it's always called with this.result
+    // TODO Eliminate result parameter -> it's always called with this.result
     List<Choice> choice(Result result) {
         List<Choice> choice;
         if (result.equals(Prompt.Result.DISMISSED) || result.equals(Prompt.Result.UNDEFINED)) {

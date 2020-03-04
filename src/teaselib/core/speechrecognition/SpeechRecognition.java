@@ -85,7 +85,7 @@ public class SpeechRecognition {
     }
 
     public final SpeechRecognitionEvents events;
-    private final Locale locale;
+    public final Locale locale;
 
     private final SpeechDetectionEventHandler speechDetectionEventHandler;
     private final SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
@@ -196,30 +196,40 @@ public class SpeechRecognition {
     }
 
     void close() {
-        sr.close();
-        delegateThread.shutdown();
+        timeoutWatchdog.enable(false);
         timeoutWatchdog.removeEvents();
+
         speechDetectionEventHandler.removeEventListeners();
+
+        sr.close();
         sr = null;
+
+        unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
+        delegateThread.shutdown();
     }
 
     private void handleRecognitionTimeout() {
-        Rule result = speechDetectionEventHandler.getHypothesis();
-        if (result == null) {
-            result = new Rule("", "", Integer.MIN_VALUE, Collections.emptySet(), 0, 0, 0.0f, Confidence.Noise);
+        if (speechRecognitionInProgress()) {
+            Rule result = speechDetectionEventHandler.getHypothesis();
+            if (result == null) {
+                result = new Rule("Noise", "", Integer.MIN_VALUE, Collections.emptySet(), 0, 0, 0.0f, Confidence.Noise);
+            }
+            events.recognitionRejected.run(new SpeechRecognizedEventArgs(result));
         }
-        events.recognitionRejected.run(new SpeechRecognizedEventArgs(result));
     }
 
-    @Deprecated
     public void setChoices(Choices choices) {
-        throw new UnsupportedOperationException("Provide test method to generate impl specific srgs and mapper");
+        setChoices(choices, null, result -> result);
     }
 
     public void setChoices(Choices choices, byte[] srgs, IntUnaryOperator mapper) {
         this.choices = choices;
         this.srgs = srgs;
         this.mapper = mapper;
+    }
+
+    public Confidence getRecognitionConfidence() {
+        return recognitionConfidence;
     }
 
     // TODO Make class stateless by moving sr process into new class with final state - remember that class upstream
@@ -336,13 +346,13 @@ public class SpeechRecognition {
         throw new IllegalStateException("Recognizer not initialized");
     }
 
-    public static boolean isSpeechRecognitionInProgress() {
+    public static boolean speechRecognitionInProgress() {
         return SpeechRecognitionInProgress.isLocked();
     }
 
     // TODO Move to SpeechRecognizer and make it non-static
     public static void completeSpeechRecognitionInProgress() {
-        if (isSpeechRecognitionInProgress()) {
+        if (speechRecognitionInProgress()) {
             logger.info("Waiting for speech recognition to complete");
             try {
                 SpeechRecognitionInProgress.lockInterruptibly();
@@ -382,4 +392,5 @@ public class SpeechRecognition {
     public Integer mapPhraseToChoice(int index) {
         return mapper.applyAsInt(index);
     }
+
 }

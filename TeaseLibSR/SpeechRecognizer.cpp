@@ -266,14 +266,12 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 						}
 						case SPEI_TTS_AUDIO_LEVEL: {
 							// Audio level for level meter
-							assert(spevent.lParam == 0);
 							AudioLevelUpdatedEvent(env, jthis, "audioLevelUpdated").fire(spevent.wParam);
 							break;
 						}
 						case SPEI_INTERFERENCE: {
 							// Audio interference
 							SPINTERFERENCE interference = static_cast<SPINTERFERENCE>(spevent.lParam);
-							assert(spevent.wParam == 0);
 							AudioLevelSignalProblemOccuredEvent(env, jthis, "audioSignalProblemOccured").fire(interference);
 							break;
 						}
@@ -284,16 +282,16 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
                     }
 				} catch (std::exception& e) {
 					assert(false);
-					wprintf(L"std::exception: %hs\n", e.what());
+					wprintf(L"SpeechRecognizer::EventHandler::eventLoop std::exception: %hs\n", e.what());
 				} catch (NativeException& e) {
 					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
 					assert(false);
-					wprintf(L"Native exception 0x%x: %s\n", e.errorCode, e.message.c_str());
+					wprintf(L"SpeechRecognizer::EventHandler::eventLoop Native exception 0x%x: %s\n", e.errorCode, e.message.c_str());
 				} catch (JNIException& e) {
 					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
 					assert(false);
 					JNIString message = e.getMessage();
-					wprintf(L"JNI exception: %s\n", message.operator LPCWSTR());
+					wprintf(L"SpeechRecognizer::EventHandler::eventLoop JNI exception : %s\n", message.operator LPCWSTR());
 				}
             }
             break;

@@ -27,6 +27,7 @@ import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.Intention;
 import teaselib.core.util.Environment;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -134,7 +135,8 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
             SpeechRecognition speechRecognition = speechRecognizer.get(Locale.US);
             CountDownLatch completed = new CountDownLatch(1);
             // "P DISP=\"replace\" PRON=\"H EH 1 L OW W ER 1 L D\"> replace </P>"
-            Choices choices = new Choices(new Choice("<P>/Display/Word/H EH 1 L OW;</P>"));
+            Choices choices = new Choices(Locale.ENGLISH, Intention.Decide,
+                    new Choice("<P>/Display/Word/H EH 1 L OW;</P>"));
             Event<SpeechRecognizedEventArgs> event = speechRecognition.events.recognitionCompleted
                     .add(events -> completed.countDown());
             try {

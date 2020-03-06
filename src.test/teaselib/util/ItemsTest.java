@@ -617,6 +617,25 @@ public class ItemsTest {
     }
 
     @Test
+    public void testApplyToRemoveFrom() {
+        TeaseScript script = TestScript.getOne();
+        State pegs = script.state(Household.Clothes_Pegs);
+        State nips = script.state(Body.OnNipples);
+
+        script.item(Household.Clothes_Pegs).applyTo(Body.OnNipples);
+        assertTrue(nips.applied());
+        assertTrue(nips.is(Household.Clothes_Pegs));
+        assertTrue(pegs.applied());
+        assertTrue(pegs.is(Household.Clothes_Pegs));
+
+        script.item(Household.Clothes_Pegs).removeFrom(Body.OnNipples);
+        assertFalse(nips.applied());
+        assertFalse(nips.is(Household.Clothes_Pegs));
+        assertFalse(pegs.applied());
+        assertFalse(pegs.is(Household.Clothes_Pegs));
+    }
+
+    @Test
     public void testThatApplyingItemsIsCompatibleToApplyingSingleItem() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();

@@ -258,6 +258,11 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                     peerState.removeFrom(this);
                 }
             }
+
+            releaseInstanceGuid();
+            if (state.peers().isEmpty()) {
+                state.remove();
+            }
         } else {
             throw new IllegalStateException("This item is not applied: " + guid);
         }

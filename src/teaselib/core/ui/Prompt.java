@@ -5,9 +5,11 @@ package teaselib.core.ui;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -100,8 +102,6 @@ public class Prompt {
 
     }
 
-    static final String NONE = "None";
-
     public final Script script;
     public final Choices choices;
 
@@ -116,11 +116,12 @@ public class Prompt {
     public final Condition click;
 
     private final AtomicBoolean paused = new AtomicBoolean(false);
+    final Map<InputMethod.Notification, Action> inputMethodEventActions = new HashMap<>();
+    final AtomicReference<InputMethodEventArgs> inputMethodEventArgs = new AtomicReference<>();
 
     private Result result;
     private Throwable exception;
 
-    String inputHandlerKey = NONE;
     private InputMethod resultInputMethod;
 
     public Prompt(Choices choices, InputMethods inputMethods) {
@@ -171,16 +172,18 @@ public class Prompt {
         return choice;
     }
 
-    void executeInputMethodHandler() {
-        String key = inputHandlerKey;
-        for (InputMethod inputMethod : this.inputMethods) {
-            Map<String, Runnable> handlers = inputMethod.getHandlers();
-            if (handlers.containsKey(key)) {
-                handlers.get(key).run();
-                return;
+    void executeInputMethodHandler(InputMethodEventArgs eventArgs) {
+        try {
+            Action action;
+            synchronized (inputMethodEventActions) {
+                action = inputMethodEventActions.get(eventArgs.source);
             }
+            if (action != null) {
+                action.run(eventArgs);
+            }
+        } finally {
+            inputMethodEventArgs.set(null);
         }
-        forwardToScriptAndThrow(new IllegalArgumentException("No handler for " + key + " in " + this));
     }
 
     public synchronized Result result() {
@@ -236,12 +239,6 @@ public class Prompt {
         throw e;
     }
 
-    public void signalHandlerInvocation(String handlerKey) {
-        pause();
-        inputHandlerKey = handlerKey;
-        click.signalAll();
-    }
-
     public void pause() {
         paused.set(true);
     }
@@ -283,6 +280,49 @@ public class Prompt {
                 click.signal();
             } finally {
                 lock.unlock();
+            }
+        }
+    }
+
+    public interface Action {
+        void run(InputMethodEventArgs eventArgs);
+    }
+
+    public class EventSource {
+        final InputMethod.Notification handler;
+
+        public EventSource(InputMethod.Notification eventType) {
+            this.handler = eventType;
+        }
+
+        public void run(Action action) {
+            synchronized (Prompt.this.inputMethodEventActions) {
+                Prompt.this.inputMethodEventActions.put(handler, action);
+            }
+        }
+    }
+
+    public EventSource when(InputMethod.Notification eventType) {
+        return new EventSource(eventType);
+    }
+
+    public void remove(InputMethod.Notification eventType) {
+        synchronized (inputMethodEventActions) {
+            inputMethodEventActions.remove(eventType);
+        }
+    }
+
+    public synchronized void signalHandlerInvocation(InputMethodEventArgs eventArgs) {
+        if (!paused()) {
+            boolean actionAvailable;
+            synchronized (inputMethodEventActions) {
+                actionAvailable = inputMethodEventActions.containsKey(eventArgs.source);
+            }
+
+            if (actionAvailable) {
+                pause();
+                inputMethodEventArgs.set(eventArgs);
+                click.signalAll();
             }
         }
     }

@@ -1,9 +1,7 @@
 package teaselib.core.ui;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -81,11 +79,6 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
     @Override
     protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
         return true;
-    }
-
-    @Override
-    public Map<String, Runnable> getHandlers() {
-        return Collections.emptyMap();
     }
 
     @Override

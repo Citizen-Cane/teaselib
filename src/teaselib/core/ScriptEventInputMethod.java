@@ -5,11 +5,15 @@ import java.util.concurrent.ExecutorService;
 
 import teaselib.core.ui.AbstractInputMethod;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
 
 public class ScriptEventInputMethod extends AbstractInputMethod {
-    private static final String EVENT_HANDLER_KEY = "Event Received";
+
+    public enum Notification implements InputMethod.Notification {
+        ScriptEvent
+    }
 
     public ScriptEventInputMethod(ExecutorService executor) {
         super(executor);
@@ -31,9 +35,13 @@ public class ScriptEventInputMethod extends AbstractInputMethod {
         return false;
     }
 
-    public void signalEvent(Runnable action) {
-        SingleShotHandler singleShotHandler = new SingleShotHandler(EVENT_HANDLER_KEY, action);
-        signal(singleShotHandler);
+    /**
+     * if there is an active prompt, execute the action in the script thread.
+     * 
+     * @param action
+     */
+    public boolean signalEvent(Runnable action) {
+        return signalActivePrompt(action, new ScriptEventInputMethodEventArgs(Notification.ScriptEvent));
     }
 
 }

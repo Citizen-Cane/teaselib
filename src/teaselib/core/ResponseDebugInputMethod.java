@@ -1,7 +1,5 @@
 package teaselib.core;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -16,6 +14,7 @@ import teaselib.core.debug.DebugResponses.Result;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.ui.AbstractInputMethod;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 
 /**
@@ -25,16 +24,18 @@ import teaselib.core.ui.Prompt;
 public class ResponseDebugInputMethod implements DebugInputMethod {
     private static final Logger logger = LoggerFactory.getLogger(ResponseDebugInputMethod.class);
 
-    private static final String DEBUG_INPUT_METHOD_HANDLER = "DebugInputMethodHandler";
+    public enum Notification implements InputMethod.Notification {
+        DebugInput
+    }
 
     private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
     private final AtomicLong elapsed = new AtomicLong();
 
     private final DebugResponses responses = new DebugResponses();
-    private final Runnable debugInputMethodHandler;
+    private final Runnable debugAction;
 
-    public ResponseDebugInputMethod(Runnable debugInputMethodHandler) {
-        this.debugInputMethodHandler = debugInputMethodHandler;
+    public ResponseDebugInputMethod(Runnable debugAction) {
+        this.debugAction = debugAction;
     }
 
     private final TimeAdvanceListener timeAdvanceListener = e -> {
@@ -87,7 +88,8 @@ public class ResponseDebugInputMethod implements DebugInputMethod {
         new Thread(() -> {
             prompt.lock.lock();
             try {
-                prompt.signalHandlerInvocation(DEBUG_INPUT_METHOD_HANDLER);
+                AbstractInputMethod.signal(prompt, debugAction,
+                        new ResponseDebugInputMethodEventArgs(Notification.DebugInput));
                 responses.replace(new ResponseAction(result.match, Response.Choose));
             } finally {
                 prompt.lock.unlock();
@@ -101,32 +103,15 @@ public class ResponseDebugInputMethod implements DebugInputMethod {
         return true;
     }
 
-    @Override
-    public Map<String, Runnable> getHandlers() {
-        HashMap<String, Runnable> handlers = new HashMap<>();
-        handlers.put(DEBUG_INPUT_METHOD_HANDLER, debugInputMethodHandler);
-        return handlers;
-    }
-
     public DebugResponses getResponses() {
         return responses;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.core.DebugInputMethod#attach(teaselib.core.TeaseLib)
-     */
     @Override
     public void attach(TeaseLib teaseLib) {
         teaseLib.addTimeAdvancedListener(timeAdvanceListener);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.core.DebugInputMethod#detach(teaselib.core.TeaseLib)
-     */
     @Override
     public void detach(TeaseLib teaseLib) {
         teaseLib.removeTimeAdvancedListener(timeAdvanceListener);

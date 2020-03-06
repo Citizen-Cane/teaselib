@@ -35,16 +35,20 @@ import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HeadGestureInputMethod;
 import teaselib.core.ui.InputMethod;
+import teaselib.core.ui.InputMethodEventArgs;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
+import teaselib.core.ui.Prompt.Action;
 import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
+import teaselib.core.ui.SpeechRecognitionInputMethodEventArgs;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
 import teaselib.motiondetection.MotionDetector;
@@ -89,11 +93,10 @@ public abstract class Script {
         boolean startOnce = teaseLib.globals.get(SCRIPT_INSTANCES) == null;
         if (startOnce) {
             if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
-                // TODO call srRejectedScript handler via events (listen to input method)
                 InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
                 inputMethods.add(new SpeechRecognitionInputMethod( //
                         teaseLib.globals.get(SpeechRecognizer.class), //
-                        Optional.empty())); // speechRecognitioneRejectedScript(scriptFunction)));
+                        Optional.empty()));
             }
 
             handleAutoRemove();
@@ -355,6 +358,12 @@ public abstract class Script {
             scriptRenderer.stopBackgroundRenderers();
         }
 
+        Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript = speechRecognitioneRejectedScript(
+                scriptFunction);
+        if (speechRecognitionRejectedScript.isPresent()) {
+            addRecognitionRejectedAction(prompt, speechRecognitionRejectedScript.get());
+        }
+
         Choice choice = showPrompt(prompt).get(0);
 
         String chosen = "< " + choice;
@@ -362,6 +371,23 @@ public abstract class Script {
         teaseLib.transcript.info(chosen);
 
         return choice.answer;
+    }
+
+    private static void addRecognitionRejectedAction(Prompt prompt, SpeechRecognitionRejectedScript script) {
+        prompt.when(SpeechRecognitionInputMethod.Notification.RecognitionRejected).run(new Action() {
+            boolean speechRecognitionRejectedHandlerSignaled = false;
+
+            @Override
+            public void run(InputMethodEventArgs e) {
+                SpeechRecognizedEventArgs eventArgs = ((SpeechRecognitionInputMethodEventArgs) e).eventArgs;
+                if (eventArgs.result != null && eventArgs.result.length == 1) {
+                    if (!speechRecognitionRejectedHandlerSignaled && script.canRun()) {
+                        speechRecognitionRejectedHandlerSignaled = true;
+                        script.run();
+                    }
+                }
+            }
+        });
     }
 
     private Choices choices(List<Answer> answers, Intention intention) {

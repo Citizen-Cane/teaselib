@@ -93,18 +93,17 @@ public class Shower {
     private List<Choice> result(Prompt prompt, Prompt.Result result) throws InterruptedException {
         if (result.equals(Prompt.Result.DISMISSED)) {
             return cancelSCriptTaskAndReturnResult(prompt, result);
-        } else if (prompt.inputHandlerKey != Prompt.NONE) {
-            try {
-                invokeHandler(prompt);
-            } finally {
-                prompt.inputHandlerKey = Prompt.NONE;
-            }
-            if (promptQueue.getActive() != prompt) {
-                promptQueue.resume(prompt);
-            }
-            return result(prompt, promptQueue.awaitResult(prompt));
         } else {
-            return cancelSCriptTaskAndReturnResult(prompt, result);
+            InputMethodEventArgs eventArgs = prompt.inputMethodEventArgs.getAndSet(null);
+            if (eventArgs != null) {
+                invokeHandler(prompt, eventArgs);
+                if (promptQueue.getActive() != prompt) {
+                    promptQueue.resume(prompt);
+                }
+                return result(prompt, promptQueue.awaitResult(prompt));
+            } else {
+                return cancelSCriptTaskAndReturnResult(prompt, result);
+            }
         }
     }
 
@@ -113,13 +112,13 @@ public class Shower {
         return prompt.choice(result);
     }
 
-    private void invokeHandler(Prompt prompt) {
+    private void invokeHandler(Prompt prompt, InputMethodEventArgs eventArgs) {
         if (!prompt.result().equals(Prompt.Result.UNDEFINED)) {
             throw new IllegalStateException("Prompt selected while invoking handler: " + prompt);
         }
 
-        if (!executingAlready(prompt.inputHandlerKey)) {
-            prompt.executeInputMethodHandler();
+        if (!executingAlready(eventArgs.source)) {
+            prompt.executeInputMethodHandler(eventArgs);
         }
 
         if (stack.peek() != prompt) {
@@ -127,10 +126,10 @@ public class Shower {
         }
     }
 
-    private boolean executingAlready(String inputHandlerKey) {
+    private boolean executingAlready(InputMethod.Notification eventType) {
         Prompt current = stack.peek();
         for (Prompt prompt : stack) {
-            if (prompt != current && prompt.inputHandlerKey == inputHandlerKey) {
+            if (prompt != current && prompt.inputMethodEventArgs.get().source == eventType) {
                 return true;
             }
         }

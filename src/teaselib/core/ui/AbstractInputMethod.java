@@ -1,7 +1,5 @@
 package teaselib.core.ui;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -9,7 +7,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-import teaselib.Replay;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.ExceptionUtil;
 
@@ -24,8 +21,6 @@ public abstract class AbstractInputMethod implements InputMethod {
     protected final ExecutorService executor;
     protected final ReentrantLock replySection = new ReentrantLock(true);
     protected final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
-
-    private final HashMap<String, Runnable> handlers = new HashMap<>();
 
     private Future<Prompt.Result> worker;
 
@@ -87,6 +82,31 @@ public abstract class AbstractInputMethod implements InputMethod {
         }
     }
 
+    protected <T extends InputMethodEventArgs> boolean signalActivePrompt(Runnable action, T eventArgs) {
+        Prompt prompt = activePrompt.get();
+        if (prompt != null) {
+            return signal(prompt, action, eventArgs);
+        } else {
+            return false;
+        }
+    }
+
+    public static <T extends InputMethodEventArgs> boolean signal(Prompt prompt, Runnable action, T eventArgs) {
+        prompt.when(eventArgs.source).run(e -> {
+            prompt.remove(e.source);
+            action.run();
+        });
+        
+        prompt.lock.lock();
+        try {
+            prompt.signalHandlerInvocation(eventArgs);
+        } finally {
+            prompt.lock.unlock();
+        }
+        
+        return true;
+    }
+
     @Override
     public final boolean dismiss(Prompt prompt) throws InterruptedException {
         Prompt active = activePrompt.getAndSet(null);
@@ -135,66 +155,5 @@ public abstract class AbstractInputMethod implements InputMethod {
     }
 
     protected abstract boolean handleDismiss(Prompt prompt) throws InterruptedException;
-
-    @Override
-    public Map<String, Runnable> getHandlers() {
-        return handlers;
-    }
-
-    protected class SingleShotHandler {
-        final String key;
-        final Runnable action;
-
-        public SingleShotHandler(String key, Runnable action) {
-            this.key = key;
-            this.action = action;
-            add(this);
-        }
-
-        public void run() {
-            try {
-                action.run();
-            } finally {
-                remove(this);
-            }
-        }
-    }
-
-    public void add(SingleShotHandler singleShotHandler) {
-        handlers.put(singleShotHandler.key, singleShotHandler.action);
-    }
-
-    public void remove(SingleShotHandler singleShotHandler) {
-        handlers.remove(singleShotHandler.key);
-    }
-
-    protected void signal(SingleShotHandler singleShotHandler) {
-        activePrompt.getAndUpdate(prompt -> {
-            // TODO Parameterize handler to avoid signaling while script functions are running
-            if (prompt != null /* && !prompt.hasScriptFunction() */) {
-                prompt.script.endAll();
-                Replay previous = prompt.script.getReplay();
-
-                // TODO perform interjection as prompt.script actor - not as creator of script
-                // -> interjections must use prompt.script.actor, not the one that created the script
-                prompt.lock.lock();
-                try {
-                    prompt.signalHandlerInvocation(singleShotHandler.key);
-                } finally {
-                    prompt.lock.unlock();
-                }
-
-                // TODO intercept renderMessage/Intertitle & showChoices (like SpeechRecognitionrScriptAdapter)
-                // -> use events
-                boolean finishedWithPrompt = true;
-                if (finishedWithPrompt) {
-                    previous.replay(Replay.Position.FromMandatory);
-                } else {
-                    previous.replay(Replay.Position.End);
-                }
-            }
-            return prompt;
-        });
-    }
 
 }

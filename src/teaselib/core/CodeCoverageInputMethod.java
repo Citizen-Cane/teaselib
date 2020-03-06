@@ -1,8 +1,6 @@
 package teaselib.core;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
@@ -128,17 +126,11 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     @Override
     public boolean handleDismiss(Prompt prompt) {
         synchronized (this) {
-            // activePrompt.set(null);
             checkPointScriptFunctionFinished.reset();
             firePromptDismissed(prompt);
             notifyAll();
         }
         return true;
-    }
-
-    @Override
-    public Map<String, Runnable> getHandlers() {
-        return Collections.emptyMap();
     }
 
     @Override

@@ -46,7 +46,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
-    private static final String RECOGNITION_REJECTED_HANDLER_KEY = "Recognition Rejected";
+    public enum Notification implements InputMethod.Notification {
+        RecognitionRejected
+    }
 
     final SpeechRecognizer speechRecognizers;
     private final Map<Locale, SpeechRecognition> usedRecognizers = new HashMap<>();
@@ -61,7 +63,6 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
-    private boolean speechRecognitionRejectedHandlerSignaled = false;
 
     public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizers,
             Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript) {
@@ -81,13 +82,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         };
 
         this.recognitionRejected = eventArgs -> {
-            if (eventArgs.result != null && eventArgs.result.length == 1) {
-                if (!speechRecognitionRejectedHandlerSignaled && speechRecognitionRejectedScript.isPresent()
-                        && speechRecognitionRejectedScript.get().canRun()) {
-                    speechRecognitionRejectedHandlerSignaled = true;
-                    signalHandlerInvocation(RECOGNITION_REJECTED_HANDLER_KEY);
-                }
-            }
+            signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
         };
 
         this.recognitionCompleted = eventArgs -> {
@@ -244,13 +239,15 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
     }
 
-    private void signalHandlerInvocation(String handlerKey) {
+    private void signalHandlerInvocation(InputMethod.Notification eventType, SpeechRecognizedEventArgs eventArgs) {
         Prompt prompt = active.get();
-        prompt.lock.lock();
-        try {
-            prompt.signalHandlerInvocation(handlerKey);
-        } finally {
-            prompt.lock.unlock();
+        if (prompt != null) {
+            prompt.lock.lock();
+            try {
+                prompt.signalHandlerInvocation(new SpeechRecognitionInputMethodEventArgs(eventType, eventArgs));
+            } finally {
+                prompt.lock.unlock();
+            }
         }
     }
 
@@ -352,16 +349,6 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         events.speechDetected.remove(speechDetectedEventHandler);
         events.recognitionRejected.remove(recognitionRejected);
         events.recognitionCompleted.remove(recognitionCompleted);
-    }
-
-    @Override
-    public Map<String, Runnable> getHandlers() {
-        HashMap<String, Runnable> handlers = new HashMap<>();
-        if (speechRecognitionRejectedScript.isPresent()) {
-            SpeechRecognitionRejectedScript script = speechRecognitionRejectedScript.get();
-            handlers.put(RECOGNITION_REJECTED_HANDLER_KEY, script::run);
-        }
-        return handlers;
     }
 
     @Override

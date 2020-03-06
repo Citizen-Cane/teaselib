@@ -1,8 +1,6 @@
 package teaselib.core.ui;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -37,11 +35,6 @@ public class HostInputMethod extends AbstractInputMethod {
     @Override
     protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
         return host.dismissChoices(prompt.choices);
-    }
-
-    @Override
-    public Map<String, Runnable> getHandlers() {
-        return Collections.emptyMap();
     }
 
     @Override

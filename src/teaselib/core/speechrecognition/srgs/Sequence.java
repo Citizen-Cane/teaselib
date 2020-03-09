@@ -83,6 +83,10 @@ public class Sequence<T> extends ArrayList<T> {
         return -1;
     }
 
+    public boolean matches(Sequence<T> sequence) {
+        return matchesAt(sequence, 0);
+    }
+
     /**
      * @param elements
      * @param index

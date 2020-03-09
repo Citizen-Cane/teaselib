@@ -73,13 +73,14 @@ class SequenceLookup<T> {
     boolean occursLaterInAnotherSequence(List<T> elements) {
         String key = elements.stream().map(Objects::toString).map(String::toLowerCase).collect(Collectors.joining(" "));
         AtomicInteger n = startElementIndicess.get(key);
-        return n != null && n.intValue() > 1 && startElementIndicess.entrySet().stream()
-                .filter(entry -> entry.getValue().intValue() > 1).anyMatch(entry -> {
-                    return startElementSequences.get(entry.getKey()).stream().anyMatch(seq -> {
-                        String lowerCase = seq.toString().toLowerCase();
-                        return lowerCase.contains(key) && !lowerCase.startsWith(key);
-                    });
-                });
+        return n != null && n.intValue() > 1 && startElementIndicess.entrySet().stream().filter(entry -> {
+            return entry.getValue().intValue() > 1;
+        }).anyMatch(entry -> {
+            return startElementSequences.get(entry.getKey()).stream().anyMatch(seq -> {
+                String lowerCase = seq.toString().toLowerCase();
+                return lowerCase.contains(key) && !lowerCase.startsWith(key);
+            });
+        });
     }
 
     public boolean hasCommonStartElements() {

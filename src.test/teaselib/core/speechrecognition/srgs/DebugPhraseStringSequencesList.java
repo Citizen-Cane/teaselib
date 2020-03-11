@@ -20,6 +20,12 @@ public class DebugPhraseStringSequencesList extends ArrayList<Sequences<PhraseSt
         StringBuilder phrases = new StringBuilder();
         phrases.append("Commonness=");
         phrases.append(Sequences.averageCommonness(this));
+        phrases.append(" ");
+        phrases.append("Symbol count=");
+        phrases.append(Sequences.symbolCount(this));
+        phrases.append(" ");
+        phrases.append("duplicated=");
+        phrases.append(Sequences.duplicatedSymbolsCount(this));
         phrases.append("\n");
 
         phrases.append(this.stream().map(Object::toString).collect(Collectors.joining("\n")));

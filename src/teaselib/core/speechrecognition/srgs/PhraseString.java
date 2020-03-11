@@ -69,13 +69,17 @@ class PhraseString {
             throw new NoSuchElementException("Empty phrases cannot be concatenated since they don't provide indices");
         }
 
-        Set<Integer> choice = strings.stream().map(phrase -> phrase.indices).reduce(PhraseString::intersect)
+        Set<Integer> choice = strings.stream().map(phrase -> phrase.indices).reduce(PhraseString::intersection)
                 .orElseThrow();
         return new PhraseString(strings.stream().map(element -> element.phrase).collect(joining(" ")).trim(), choice);
     }
 
-    private static <T> Set<T> intersect(Set<T> a, Set<T> b) {
+    static <T> Set<T> intersection(Set<T> a, Set<T> b) {
         return a.stream().filter(b::contains).collect(toSet());
+    }
+
+    static <T> boolean intersect(Set<T> a, Set<T> b) {
+        return a.stream().anyMatch(b::contains);
     }
 
     @Override

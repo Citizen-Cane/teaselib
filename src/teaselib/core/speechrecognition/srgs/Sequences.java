@@ -6,6 +6,7 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -85,9 +87,71 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     private static <T> List<Sequences<T>> slice(List<List<Sequences<T>>> candidates, List<Sequences<T>> slices,
             Sequences<T> sequences) {
         while (sequences.maxLength() > 0) {
-            slices.add(sequences.slice(candidates, slices));
+            Sequences<T> slice = sequences.slice(candidates, slices);
+            addCompact(slices, slice);
         }
         return slices;
+    }
+
+    private static <T> void addCompact(List<Sequences<T>> slices, Sequences<T> slice) {
+        if (!slices.isEmpty()) {
+            moveDisjunct(slice, slices);
+        }
+
+        if (!slice.isEmpty()) {
+            slices.add(slice);
+        }
+    }
+
+    static final BiPredicate<PhraseString, Collection<PhraseString>> joinable = (phrase, collection) -> {
+        Set<Integer> collect = collection.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
+        return !PhraseString.intersect(phrase.indices, collect);
+    };
+
+    private static <T> void moveDisjunct_old(Sequences<T> slice, List<Sequences<T>> slices) {
+        Sequences<T> last = slices.get(slices.size() - 1);
+        PhraseStringSequences previousSlice = new PhraseStringSequences((Sequences<PhraseString>) last);
+        PhraseStringSequences phraseStringSequences = new PhraseStringSequences((Sequences<PhraseString>) slice);
+        for (Sequence<PhraseString> phraseStringSequence : phraseStringSequences) {
+            PhraseString phrase = phraseStringSequence.joinedSequence();
+            if (Boolean.TRUE.equals(joinable.test(phrase,
+                    previousSlice.stream().flatMap(Sequence::stream).collect(Collectors.toList())))) {
+                last.add((Sequence<T>) phraseStringSequence);
+                slice.remove(phraseStringSequence);
+            }
+        }
+    }
+
+    private static <T> void moveDisjunct(Sequences<T> slice, List<Sequences<T>> slices) {
+        PhraseStringSequences phraseStringSequences = new PhraseStringSequences((Sequences<PhraseString>) slice);
+        for (Sequence<PhraseString> phraseStringSequence : new ArrayList<>(phraseStringSequences)) {
+            PhraseString phrase = phraseStringSequence.joinedSequence();
+            Sequences<T> sourceSlice = slice;
+            for (int j = slices.size() - 1; j >= 0; j--) {
+                Sequences<T> targetSlice = slices.get(j);
+                if (Boolean.TRUE.equals(joinable.test(phrase, targetSlice.stream().flatMap(Sequence::stream)
+                        .map(e -> (PhraseString) e).collect(Collectors.toList())))) {
+                    sourceSlice.remove(phraseStringSequence);
+                    Sequences<T> joinedTargetSlice = targetSlice.joinWith((Sequence<T>) phraseStringSequence);
+                    slices.set(j, joinedTargetSlice);
+                    targetSlice = joinedTargetSlice;
+                    sourceSlice = targetSlice;
+                } else {
+                    for (Sequence<T> targetSequence : new ArrayList<>(targetSlice)) {
+                        T targetPhrase = targetSequence.joinedSequence();
+                        if (phrase.indices.equals(((PhraseString) targetPhrase).indices)) {
+                            sourceSlice.remove(phraseStringSequence);
+                            targetSequence.add((T) phrase);
+                            targetSlice.remove(targetSequence);
+                            targetSlice.add(new Sequence<T>(Arrays.asList((T) targetSequence.joinedSequence()),
+                                    targetSlice.traits));
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -167,7 +231,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                                     current.stream().filter(Sequence::nonEmpty).map(traits.joinSequenceOperator::apply)
                                             .map(joined -> new Sequence<>(joined, traits)).collect(toList()),
                                     traits);
-                            candidate.add(current);
+                            addCompact(candidate, current);
 
                             Sequences<T> withoutElement = new Sequences<>(this);
                             withoutElement.get(i).remove(element);
@@ -208,18 +272,18 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     public static <T> List<Sequences<T>> reduce(List<List<Sequences<T>>> candidates) {
         return candidates.stream().reduce((a, b) -> {
-            int cAa = averageCommonness(a);
-            int cAb = averageCommonness(b);
+            long cAa = duplicatedSymbolsCount(a);
+            long cAb = duplicatedSymbolsCount(b);
             if (cAa == cAb) {
-                int maxCa = maxCommmonness(a);
-                int maxCb = maxCommmonness(b);
-                if (maxCa == maxCb) {
-                    return a.size() < b.size() ? a : b;
+                int sizeCa = a.size();
+                int sizeCb = b.size();
+                if (sizeCa == sizeCb) {
+                    return maxCommmonness(a) > maxCommmonness(b) ? a : b;
                 } else {
-                    return maxCa > maxCb ? a : b;
+                    return a.size() < b.size() ? a : b;
                 }
             } else {
-                return cAa > cAb ? a : b;
+                return cAa < cAb ? a : b;
             }
         }).orElseThrow();
     }
@@ -227,6 +291,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     public int commonness() {
         return stream().flatMap(Sequence::stream).collect(Collectors.summingInt(
                 v -> traits.commonnessOperator.applyAsInt(v) > 1 ? traits.commonnessOperator.applyAsInt(v) : 0));
+    }
+
+    public long symbolCount() {
+        return stream().flatMap(Sequence::stream).map(traits.splitter::apply).flatMap(List::stream).count();
     }
 
     public static <T> int maxCommmonness(List<Sequences<T>> sequences) {
@@ -239,7 +307,19 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public static <T> int averageCommonness(List<Sequences<T>> sequences) {
-        return sequences.stream().collect(Collectors.summingInt(value -> value.commonness()));
+        return sequences.stream().collect(Collectors.summingInt(Sequences::commonness));
+    }
+
+    public static <T> long symbolCount(List<Sequences<T>> sequences) {
+        return sequences.stream().collect(Collectors.summingLong(Sequences::symbolCount));
+    }
+
+    public static <T> long duplicatedSymbolsCount(List<Sequences<T>> sequences) {
+        long symbols = symbolCount(sequences);
+        Traits<T> traits = sequences.get(0).traits;
+        long distinct = sequences.stream().flatMap(Sequences::stream).flatMap(Sequence::stream)
+                .map(traits.splitter::apply).flatMap(List::stream).map(T::toString).distinct().count();
+        return symbols - distinct;
     }
 
     private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {
@@ -272,7 +352,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                         // Nothing to do
                     } else {
                         List<Sequences<T>> soFarClone = clone(soFar);
-                        soFarClone.add(new Sequences<>(gatherCommonSlice(shorter), traits));
+                        addCompact(soFarClone, new Sequences<>(gatherCommonSlice(shorter), traits));
+
                         Sequences<T> withoutElement = new Sequences<>(this);
                         withoutElement.removeCommon(shorter);
                         List<Sequences<T>> candidate = slice(candidates, soFarClone, withoutElement);
@@ -355,7 +436,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     private List<Sequences<T>> sliceCommonWithoutStartElements(List<List<Sequences<T>>> candidates,
             List<Sequences<T>> soFar, Sequence<T> startElements) {
         List<Sequences<T>> candidate = clone(soFar);
-        candidate.add(new Sequences<>(singleton(startElements), traits));
+
+        addCompact(candidate, new Sequences<>(singleton(startElements), traits));
 
         Sequences<T> withoutElement = new Sequences<>(this);
         for (Sequence<T> sequence : withoutElement) {
@@ -563,6 +645,27 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 elements.addAll(second.get(i));
                 joined.add(new Sequence<>(traits.joinSequenceOperator.apply(elements), traits));
             }
+        }
+        return joined;
+    }
+
+    public Sequences<T> joinWith(Sequence<T> sequence) {
+        PhraseString t = (PhraseString) sequence.joinedSequence();
+        boolean isJoined = false;
+        Sequences<T> joined = new Sequences<>(traits);
+        for (Sequence<T> element : this) {
+            T joinedSequence = element.joinedSequence();
+            if (traits.equalsOperator.test(joinedSequence, (T) t)) {
+                joined.add(
+                        new Sequence<>(traits.joinCommonOperator.apply(Arrays.asList(joinedSequence, (T) t)), traits));
+                isJoined = true;
+            } else {
+                joined.add(element);
+            }
+        }
+
+        if (!isJoined) {
+            joined.add(sequence);
         }
         return joined;
     }

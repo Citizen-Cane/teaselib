@@ -137,10 +137,10 @@ public class PhrasesSliceTest {
         List<List<Sequences<PhraseString>>> results = slice(choices);
         List<Sequences<PhraseString>> optimal = Sequences.reduce(results);
 
-        assertEquals(new PhraseStringSequences(result("No", 0), result("Yes", 1, 3), result("I have it", 2)),
+        assertEquals(new PhraseStringSequences(result("No", 0), result("I have it", 2), result("Yes", 1, 3)),
                 optimal.get(0));
-        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2)), optimal.get(1));
-        assertEquals(new PhraseStringSequences(result("I'm", 0, 1), result("it's", 3, 4)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("Miss", 0, 1, 2), result("it's", 3, 4)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(2));
         assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1, 3, 4)), optimal.get(3));
         assertEquals(new PhraseStringSequences(result("Miss", 3, 4)), optimal.get(4));
         assertEquals(5, optimal.size());
@@ -206,21 +206,20 @@ public class PhrasesSliceTest {
         List<List<Sequences<PhraseString>>> results = slice(choices);
         List<Sequences<PhraseString>> optimal = Sequences.reduce(results);
 
-        // List<DebugPhraseStringSequencesList> allOptimal = candidates.stream().filter(s -> s.size() == 7)
-        // .map(DebugPhraseStringSequencesList::new).collect(toList());
-        // assertEquals(20, Sequences.averageCommonness(allOptimal.get(0)));
+        // List<DebugPhraseStringSequencesList> allOptimal = candidates.stream().filter(s -> s.size() == 6)
+        // .map(DebugPhraseStringSequencesList::new).collect(Collectors.toList());
 
         // List<DebugPhraseStringSequencesList> allOptimal = candidates.stream()
         // .filter(s -> s.get(0).get(0).size() == 1 && s.get(0).get(0).get(0).phrase.equals("N"))
         // .filter(s -> Sequences.maxCommmonness(s) >= 10).map(DebugPhraseStringSequencesList::new)
         // .collect(toList());
 
-        assertEquals(new PhraseStringSequences(result("N", 5)), optimal.get(0));
-        assertEquals(new PhraseStringSequences(result("A", 0, 3), result("D", 1, 2, 4)), optimal.get(1));
-        assertEquals(new PhraseStringSequences(result("B C", 0, 5), result("I", 2, 4)), optimal.get(2));
-        // TODO result with size 7 available, but average commonness is measured wrong -> optimze formula
-        // teaselib.core.speechrecognition.srgs.Sequences.averageCommonness(List<Sequences<T>>) - sequences.size()
-        assertEquals(7, optimal.size());
+        // TODO 6 slices possible - compress
+        assertEquals(new PhraseStringSequences(result("N", 5), result("A", 0, 3), result("D", 1, 2, 4)),
+                optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("B C", 0, 5), result("I", 2, 4)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("O", 5), result("D", 0, 3)), optimal.get(2));
+        assertEquals(6, optimal.size());
     }
 
     @Test
@@ -233,7 +232,6 @@ public class PhrasesSliceTest {
         List<List<Sequences<PhraseString>>> results = slice(choices);
         List<Sequences<PhraseString>> optimal = Sequences.reduce(results);
 
-        // TODO The worst solution has the least elements, best solution same size as suboptimal
         assertEquals(new PhraseStringSequences(result("A", 0, 1)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("B", 0, 1, 2, 3)), optimal.get(1));
         assertEquals(2, optimal.size());
@@ -275,7 +273,7 @@ public class PhrasesSliceTest {
 
         assertEquals(new PhraseStringSequences(result("A", 0, 1, 8, 10)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("B C", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), optimal.get(1));
-        assertEquals(9, optimal.size());
+        assertEquals(7, optimal.size());
     }
 
 }

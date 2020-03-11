@@ -141,6 +141,10 @@ public class Sequence<T> extends ArrayList<T> {
         }
     }
 
+    public T joinedSequence() {
+        return traits.joinSequenceOperator.apply(this);
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;

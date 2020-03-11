@@ -18,6 +18,10 @@ public class DebugPhraseStringSequencesList extends ArrayList<Sequences<PhraseSt
     @Override
     public String toString() {
         StringBuilder phrases = new StringBuilder();
+        phrases.append("Commonness=");
+        phrases.append(Sequences.averageCommonness(this));
+        phrases.append("\n");
+
         phrases.append(this.stream().map(Object::toString).collect(Collectors.joining("\n")));
         return phrases.toString();
     }

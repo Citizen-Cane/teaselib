@@ -51,11 +51,6 @@ class PhraseString {
         }
     }
 
-    // TODO split collecting and computing the values
-    // private static int commonness(List<List<PhraseString>> elements) {
-    // return elements.stream().flatMap(List::stream).map(element -> (element).indices.size()).reduce(0,
-    // (x, y) -> x + y - 1);
-    // }
     private static int commonness(PhraseString element) {
         return element.indices.size() * element.words().size();
     }

@@ -225,8 +225,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public int commonness() {
-        return stream().flatMap(Sequence::stream).map(traits.commonnessOperator::applyAsInt).reduce(0,
-                (x, y) -> x + y - 1);
+        return stream().flatMap(Sequence::stream).collect(Collectors.summingInt(
+                v -> traits.commonnessOperator.applyAsInt(v) > 1 ? traits.commonnessOperator.applyAsInt(v) : 0));
     }
 
     public static <T> int maxCommmonness(List<Sequences<T>> sequences) {
@@ -239,7 +239,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public static <T> int averageCommonness(List<Sequences<T>> sequences) {
-        return sequences.stream().map(Sequences::commonness).reduce(0, (x, y) -> x + y);
+        return sequences.stream().collect(Collectors.summingInt(value -> value.commonness()));
     }
 
     private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {
@@ -263,38 +263,27 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             while (true) {
                 SequenceLookup<T> distinct = new SequenceLookup<>(this);
                 distinct.scan(length);
-                boolean nothingFound = true;
-                for (int i = 0; i < size(); i++) {
-                    Sequence<T> sequence = get(i);
-                    if (sequence.size() >= length) {
-                        List<T> startElements = sequence.subList(0, length);
-                        if (distinct.othersStartWith(startElements)) {
-                            common.set(i, new Sequence<>(startElements, traits));
-                            nothingFound = false;
-                        }
-                    }
-                }
-
-                if (nothingFound) {
+                boolean success = setCommonToStartElements(common, length, distinct);
+                if (!success) {
                     break;
                 } else {
-                    common = computeShorterCommmon(common);
-
-                    Optional<Integer> nextMaxCommon = maxCommonAfter(common);
-                    if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon.get())) {
-                        Sequences<T> slice = gatherCommonElements(common);
-                        for (int i = slice.size() - 1; i >= 0; i--) {
-                            Sequence<T> startElements = slice.get(i);
-                            if (distinct.occursLaterInAnotherSequence(startElements)) {
-                                List<Sequences<T>> candidate = sliceCommonWithoutStartElements(candidates, soFar,
-                                        startElements);
-                                candidates.add(candidate);
-                                // TODO Breaking here should reduce computation time, but doesn't, plus some tests fail
-                            }
-                        }
-                        length++;
+                    Sequences<T> shorter = computeShorterCommmon(common);
+                    if (shorter.equals(common)) {
+                        // Nothing to do
                     } else {
+                        List<Sequences<T>> soFarClone = clone(soFar);
+                        soFarClone.add(new Sequences<>(gatherCommonSlice(shorter), traits));
+                        Sequences<T> withoutElement = new Sequences<>(this);
+                        withoutElement.removeCommon(shorter);
+                        List<Sequences<T>> candidate = slice(candidates, soFarClone, withoutElement);
+                        candidates.add(candidate);
+                    }
+
+                    boolean canExit = inspectElementsThatOccurLater(candidates, soFar, common, maxCommon, distinct);
+                    if (canExit) {
                         break;
+                    } else {
+                        length++;
                     }
                 }
             }
@@ -303,6 +292,41 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Sequences<T> commonSlice = gatherCommonSlice(common);
         removeCommon(common);
         return commonSlice;
+    }
+
+    private boolean setCommonToStartElements(Sequences<T> common, int length, SequenceLookup<T> distinct) {
+        boolean success = false;
+        for (int i = 0; i < size(); i++) {
+            Sequence<T> sequence = get(i);
+            if (sequence.size() >= length) {
+                List<T> startElements = sequence.subList(0, length);
+                if (distinct.othersStartWith(startElements)) {
+                    common.set(i, new Sequence<>(startElements, traits));
+                    success = true;
+                }
+            }
+        }
+        return success;
+    }
+
+    private boolean inspectElementsThatOccurLater(List<List<Sequences<T>>> candidates, List<Sequences<T>> soFar,
+            Sequences<T> common, Optional<Integer> maxCommon, SequenceLookup<T> distinct) {
+        boolean canExit = false;
+        Optional<Integer> nextMaxCommon = maxCommonAfter(common);
+        if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon.get())) {
+            Sequences<T> slice = gatherCommonElements(common);
+            for (int i = slice.size() - 1; i >= 0; i--) {
+                Sequence<T> startElements = slice.get(i);
+                if (distinct.occursLaterInAnotherSequence(startElements)) {
+                    List<Sequences<T>> candidate = sliceCommonWithoutStartElements(candidates, soFar, startElements);
+                    candidates.add(candidate);
+                    break;
+                }
+            }
+        } else {
+            canExit = true;
+        }
+        return canExit;
     }
 
     private Sequences<T> computeShorterCommmon(Sequences<T> common) {
@@ -552,9 +576,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (!super.equals(obj))
+        else if (!super.equals(obj))
             return false;
-        if (this.getClass().isAssignableFrom(obj.getClass()) || obj.getClass().isAssignableFrom(getClass()))
+        else if (this.getClass().isAssignableFrom(obj.getClass()) || obj.getClass().isAssignableFrom(getClass()))
             return true;
         return false;
     }

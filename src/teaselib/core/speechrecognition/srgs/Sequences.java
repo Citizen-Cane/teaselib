@@ -103,24 +103,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
     }
 
+    // TODO make generic
     static final BiPredicate<PhraseString, Collection<PhraseString>> joinable = (phrase, collection) -> {
         Set<Integer> collect = collection.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
         return !PhraseString.intersect(phrase.indices, collect);
     };
-
-    private static <T> void moveDisjunct_old(Sequences<T> slice, List<Sequences<T>> slices) {
-        Sequences<T> last = slices.get(slices.size() - 1);
-        PhraseStringSequences previousSlice = new PhraseStringSequences((Sequences<PhraseString>) last);
-        PhraseStringSequences phraseStringSequences = new PhraseStringSequences((Sequences<PhraseString>) slice);
-        for (Sequence<PhraseString> phraseStringSequence : phraseStringSequences) {
-            PhraseString phrase = phraseStringSequence.joinedSequence();
-            if (Boolean.TRUE.equals(joinable.test(phrase,
-                    previousSlice.stream().flatMap(Sequence::stream).collect(Collectors.toList())))) {
-                last.add((Sequence<T>) phraseStringSequence);
-                slice.remove(phraseStringSequence);
-            }
-        }
-    }
 
     private static <T> void moveDisjunct(Sequences<T> slice, List<Sequences<T>> slices) {
         PhraseStringSequences phraseStringSequences = new PhraseStringSequences((Sequences<PhraseString>) slice);
@@ -143,8 +130,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                             sourceSlice.remove(phraseStringSequence);
                             targetSequence.add((T) phrase);
                             targetSlice.remove(targetSequence);
-                            targetSlice.add(new Sequence<T>(Arrays.asList((T) targetSequence.joinedSequence()),
-                                    targetSlice.traits));
+                            targetSlice.add(
+                                    new Sequence<>(Arrays.asList(targetSequence.joinedSequence()), targetSlice.traits));
                             break;
                         }
                     }
@@ -621,53 +608,26 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return reduced.isPresent() ? reduced.get().size() : 0;
     }
 
-    public List<String> toStrings() {
-        return stream().map(Sequence::toString).collect(Collectors.toList());
-    }
-
-    public Sequences<T> joinWith(Sequences<T> second) {
-        Sequences<T> joined = new Sequences<>(traits);
-        if (this.size() > second.size()) {
-            for (int i = 0; i < this.size(); i++) {
-                List<T> elements = new ArrayList<>(get(i));
-                elements.addAll(second.get(0));
-                joined.add(new Sequence<>(traits.joinSequenceOperator.apply(elements), traits));
-            }
-        } else if (this.size() < second.size()) {
-            for (int i = 0; i < second.size(); i++) {
-                List<T> elements = new ArrayList<>(get(0));
-                elements.addAll(second.get(i));
-                joined.add(new Sequence<>(traits.joinSequenceOperator.apply(elements), traits));
-            }
-        } else {
-            for (int i = 0; i < second.size(); i++) {
-                List<T> elements = new ArrayList<>(get(i));
-                elements.addAll(second.get(i));
-                joined.add(new Sequence<>(traits.joinSequenceOperator.apply(elements), traits));
-            }
-        }
-        return joined;
-    }
-
     public Sequences<T> joinWith(Sequence<T> sequence) {
-        PhraseString t = (PhraseString) sequence.joinedSequence();
+        T me = sequence.joinedSequence();
         boolean isJoined = false;
-        Sequences<T> joined = new Sequences<>(traits);
+        Sequences<T> joinedSequences = new Sequences<>(traits);
         for (Sequence<T> element : this) {
-            T joinedSequence = element.joinedSequence();
-            if (traits.equalsOperator.test(joinedSequence, (T) t)) {
-                joined.add(
-                        new Sequence<>(traits.joinCommonOperator.apply(Arrays.asList(joinedSequence, (T) t)), traits));
+            T joinedElement = element.joinedSequence();
+            if (traits.equalsOperator.test(joinedElement, me)) {
+                joinedSequences
+                        .add(new Sequence<>(traits.joinCommonOperator.apply(Arrays.asList(joinedElement, me)), traits));
                 isJoined = true;
             } else {
-                joined.add(element);
+                joinedSequences.add(element);
             }
         }
 
         if (!isJoined) {
-            joined.add(sequence);
+            joinedSequences.add(sequence);
         }
-        return joined;
+
+        return joinedSequences;
     }
 
     @Override

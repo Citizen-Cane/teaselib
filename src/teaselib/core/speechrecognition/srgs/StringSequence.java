@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 
 import java.util.List;
 
@@ -9,7 +9,8 @@ public class StringSequence extends Sequence<String> {
     private static final long serialVersionUID = 1L;
 
     public static final Traits<String> Traits = new Traits<>(String::equalsIgnoreCase, StringSequence::splitWords,
-            StringSequence::commonness, StringSequences::joinCommon, StringSequences::joinSequence);
+            StringSequence::commonness, StringSequences::joinCommon, StringSequences::joinSequence, (a, b) -> true,
+            (a, b) -> false);
 
     private StringSequence(List<String> elements) {
         super(elements, Traits);

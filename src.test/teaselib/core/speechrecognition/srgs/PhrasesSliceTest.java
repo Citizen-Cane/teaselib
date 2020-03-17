@@ -2,16 +2,23 @@ package teaselib.core.speechrecognition.srgs;
 
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PhrasesSliceTest {
+    private static final Logger logger = LoggerFactory.getLogger(PhrasesSliceTest.class);
 
     static Sequence<PhraseString> choice(String string, Integer... choices) {
         return new Sequence<>(new PhraseString(string, Stream.of(choices).collect(toSet())).words(),
@@ -24,21 +31,26 @@ public class PhrasesSliceTest {
     }
 
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();
-    final DebugPhraseStringSequencesList soFar = new DebugPhraseStringSequencesList();
-
-    private Sequences<PhraseString> advance(PhraseStringSequences choices) {
-        DebugPhraseStringSequences slice = new DebugPhraseStringSequences(choices.slice(candidates, soFar));
-        if (!slice.isEmpty()) {
-            soFar.add(slice);
-        }
-        return slice;
-    }
 
     private List<List<Sequences<PhraseString>>> slice(PhraseStringSequences choices) {
-        while (!advance(choices).isEmpty()) { //
-        }
-        candidates.add(soFar);
+        candidates.add(Sequences.slice(candidates, choices));
         return candidates.stream().map(DebugPhraseStringSequencesList::new).collect(Collectors.toList());
+    }
+
+    @Test
+    public void testPhraseIntersect() {
+        assertTrue(PhraseString.intersect(new HashSet<>(Arrays.asList(0, 1)), new HashSet<>(Arrays.asList(0, 1))));
+        assertTrue(PhraseString.intersect(new HashSet<>(Arrays.asList(0, 2)), new HashSet<>(Arrays.asList(0, 1))));
+        assertFalse(PhraseString.intersect(new HashSet<>(Arrays.asList(3, 2)), new HashSet<>(Arrays.asList(0, 1))));
+        assertFalse(PhraseString.intersect(new HashSet<>(Arrays.asList()), new HashSet<>(Arrays.asList(0, 1))));
+    }
+
+    @Test
+    public void testPhraseStringEquals() {
+        assertEquals(new PhraseString("N", 5), new PhraseString("N", 5));
+        assertEquals(new PhraseString("N", 5), new PhraseString("N", Integer.valueOf(5)));
+        assertEquals(new PhraseString("N", 5), new PhraseString("N", Collections.singleton(5)));
+        assertEquals(new PhraseString("N", 5), new PhraseString("n", 5));
     }
 
     @Test
@@ -195,7 +207,6 @@ public class PhrasesSliceTest {
 
     @Test
     public void testSliceMultipleCommon3() {
-        // D is correctly split between phrase 1 and 4 to allow A in phrase 1 to be distinct
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("A B C, D E F G", 0), //
                 choice("D E F H, B C", 1), //
@@ -203,22 +214,29 @@ public class PhrasesSliceTest {
                 choice("A, D I K L, B C", 3), //
                 choice("D I F M, B C", 4), //
                 choice("N B C, O", 5));
+
+        long start = System.currentTimeMillis();
         List<List<Sequences<PhraseString>>> results = slice(choices);
+        long end = System.currentTimeMillis();
+        logger.info("Slicing duration = {}ms", end - start);
+
+        start = System.currentTimeMillis();
         List<Sequences<PhraseString>> optimal = Sequences.reduce(results);
+        end = System.currentTimeMillis();
+        logger.info("Reducing duration = {}ms", end - start);
 
-        // List<DebugPhraseStringSequencesList> allOptimal = candidates.stream().filter(s -> s.size() == 6)
-        // .map(DebugPhraseStringSequencesList::new).collect(Collectors.toList());
-
-        // List<DebugPhraseStringSequencesList> allOptimal = candidates.stream()
-        // .filter(s -> s.get(0).get(0).size() == 1 && s.get(0).get(0).get(0).phrase.equals("N"))
-        // .filter(s -> Sequences.maxCommmonness(s) >= 10).map(DebugPhraseStringSequencesList::new)
-        // .collect(toList());
-
-        // TODO 6 slices possible - compress
-        assertEquals(new PhraseStringSequences(result("N", 5), result("A", 0, 3), result("D", 1, 2, 4)),
-                optimal.get(0));
-        assertEquals(new PhraseStringSequences(result("B C", 0, 5), result("I", 2, 4)), optimal.get(1));
-        assertEquals(new PhraseStringSequences(result("O", 5), result("D", 0, 3)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(//
+                result("N", 5), result("A", 0, 3), result("D", 1, 2, 4)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(//
+                result("B C", 0, 5)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(//
+                result("O", 5), result("D", 0, 3)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(//
+                result("E F", 0, 1), result("I", 2, 3, 4)), optimal.get(3));
+        assertEquals(new PhraseStringSequences(//
+                result("G", 0), result("H", 1), result("J", 2), result("K L", 3), result("F M", 4)), optimal.get(4));
+        assertEquals(new PhraseStringSequences(//
+                result("B C", 1, 2, 3, 4)), optimal.get(5));
         assertEquals(6, optimal.size());
     }
 

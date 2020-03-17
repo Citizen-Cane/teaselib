@@ -19,7 +19,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -79,7 +78,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return Sequences.reduce(candidates);
     }
 
-    private static <T> List<Sequences<T>> slice(List<List<Sequences<T>>> candidates, Sequences<T> sequences) {
+    static <T> List<Sequences<T>> slice(List<List<Sequences<T>>> candidates, Sequences<T> sequences) {
         List<Sequences<T>> slices = new ArrayList<>();
         return slice(candidates, slices, sequences);
     }
@@ -103,35 +102,29 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
     }
 
-    // TODO make generic
-    static final BiPredicate<PhraseString, Collection<PhraseString>> joinable = (phrase, collection) -> {
-        Set<Integer> collect = collection.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
-        return !PhraseString.intersect(phrase.indices, collect);
-    };
-
     private static <T> void moveDisjunct(Sequences<T> slice, List<Sequences<T>> slices) {
-        PhraseStringSequences phraseStringSequences = new PhraseStringSequences((Sequences<PhraseString>) slice);
-        for (Sequence<PhraseString> phraseStringSequence : new ArrayList<>(phraseStringSequences)) {
-            PhraseString phrase = phraseStringSequence.joinedSequence();
+        for (Sequence<T> sequence : new ArrayList<>(slice)) {
             Sequences<T> sourceSlice = slice;
             for (int j = slices.size() - 1; j >= 0; j--) {
+                T phrase = sequence.joined();
                 Sequences<T> targetSlice = slices.get(j);
-                if (Boolean.TRUE.equals(joinable.test(phrase, targetSlice.stream().flatMap(Sequence::stream)
-                        .map(e -> (PhraseString) e).collect(Collectors.toList())))) {
-                    sourceSlice.remove(phraseStringSequence);
-                    Sequences<T> joinedTargetSlice = targetSlice.joinWith((Sequence<T>) phraseStringSequence);
+                if (slice.traits.joinableSequences.test(phrase,
+                        targetSlice.stream().flatMap(Sequence::stream).collect(Collectors.toList()))) {
+                    sourceSlice.remove(sequence);
+                    Sequences<T> joinedTargetSlice = targetSlice.joinWith(sequence);
                     slices.set(j, joinedTargetSlice);
                     targetSlice = joinedTargetSlice;
                     sourceSlice = targetSlice;
+                    sequence = sourceSlice.stream()
+                            .filter(moved -> slice.traits.equalsOperator.test(moved.joined(), phrase)).findFirst()
+                            .orElseThrow();
                 } else {
                     for (Sequence<T> targetSequence : new ArrayList<>(targetSlice)) {
-                        T targetPhrase = targetSequence.joinedSequence();
-                        if (phrase.indices.equals(((PhraseString) targetPhrase).indices)) {
-                            sourceSlice.remove(phraseStringSequence);
-                            targetSequence.add((T) phrase);
+                        if (slice.traits.joinablePhrases.test(phrase, targetSequence.joined())) {
+                            sourceSlice.remove(sequence);
+                            targetSequence.add(phrase);
                             targetSlice.remove(targetSequence);
-                            targetSlice.add(
-                                    new Sequence<>(Arrays.asList(targetSequence.joinedSequence()), targetSlice.traits));
+                            targetSlice.add(new Sequence<>(asList(targetSequence.joined()), targetSlice.traits));
                             break;
                         }
                     }
@@ -609,11 +602,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public Sequences<T> joinWith(Sequence<T> sequence) {
-        T me = sequence.joinedSequence();
+        T me = sequence.joined();
         boolean isJoined = false;
         Sequences<T> joinedSequences = new Sequences<>(traits);
         for (Sequence<T> element : this) {
-            T joinedElement = element.joinedSequence();
+            T joinedElement = element.joined();
             if (traits.equalsOperator.test(joinedElement, me)) {
                 joinedSequences
                         .add(new Sequence<>(traits.joinCommonOperator.apply(Arrays.asList(joinedElement, me)), traits));

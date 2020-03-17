@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -18,14 +19,19 @@ public class Sequence<T> extends ArrayList<T> {
         final Function<List<T>, T> joinCommonOperator;
         final ToIntFunction<T> commonnessOperator;
         final Function<List<T>, T> joinSequenceOperator;
+        final BiPredicate<T, Collection<T>> joinableSequences;
+        final BiPredicate<T, T> joinablePhrases;
 
         Traits(BiPredicate<T, T> equalsOperator, Function<T, List<T>> splitter, ToIntFunction<T> commonnessOperator,
-                Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator) {
+                Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator,
+                BiPredicate<T, Collection<T>> joinableSequences, BiPredicate<T, T> joinablePhrases) {
             this.equalsOperator = equalsOperator;
             this.splitter = splitter;
             this.commonnessOperator = commonnessOperator;
             this.joinCommonOperator = joinCommonOperator;
             this.joinSequenceOperator = joinSequenceOperator;
+            this.joinableSequences = joinableSequences;
+            this.joinablePhrases = joinablePhrases;
         }
     }
 
@@ -141,7 +147,7 @@ public class Sequence<T> extends ArrayList<T> {
         }
     }
 
-    public T joinedSequence() {
+    public T joined() {
         return traits.joinSequenceOperator.apply(this);
     }
 

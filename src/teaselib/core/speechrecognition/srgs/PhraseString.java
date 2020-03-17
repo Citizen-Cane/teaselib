@@ -7,28 +7,36 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
 class PhraseString {
     static final Sequence.Traits<PhraseString> Traits = new Traits<>(PhraseString::samePhrase, PhraseString::words,
-            PhraseString::commonness, PhraseString::joinCommon, PhraseString::joinSequence);
+            PhraseString::commonness, PhraseString::joinCommon, PhraseString::joinSequence,
+            PhraseString::joinableSequences, PhraseString::joinablePhrases);
 
     final String phrase;
     final Set<Integer> indices;
 
-    PhraseString(String phrase, int indices) {
-        super();
+    PhraseString(String phrase, int index) {
         this.phrase = phrase;
-        this.indices = singleton(indices);
+        this.indices = singleton(index);
+    }
+
+    PhraseString(String phrase, Integer... indices) {
+        this.phrase = phrase;
+        this.indices = new HashSet<>(Arrays.asList(indices));
     }
 
     PhraseString(String phrase, Set<Integer> indices) {
-        super();
         this.phrase = phrase;
         this.indices = indices;
     }
@@ -72,6 +80,15 @@ class PhraseString {
         Set<Integer> choice = strings.stream().map(phrase -> phrase.indices).reduce(PhraseString::intersection)
                 .orElseThrow();
         return new PhraseString(strings.stream().map(element -> element.phrase).collect(joining(" ")).trim(), choice);
+    }
+
+    static boolean joinableSequences(PhraseString phrase, Collection<PhraseString> collection) {
+        Set<Integer> collect = collection.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
+        return !PhraseString.intersect(phrase.indices, collect);
+    }
+
+    static boolean joinablePhrases(PhraseString phrase1, PhraseString phrase2) {
+        return phrase1.indices.equals(phrase2.indices);
     }
 
     static <T> Set<T> intersection(Set<T> a, Set<T> b) {

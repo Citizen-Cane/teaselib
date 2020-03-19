@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -85,8 +87,7 @@ public class ListSequenceTest {
     public void testCommonStart3() {
         Sequence<String> commonStart = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
                 "The dog jumped over the fence", "The dog jumped over the fence").commonStart();
-        assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits),
-                commonStart);
+        assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits), commonStart);
     }
 
     @Test
@@ -121,8 +122,7 @@ public class ListSequenceTest {
     public void testCommonEnd3() {
         Sequence<String> commonEnd = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
                 "The dog jumped over the fence", "The dog jumped over the fence").commonEnd();
-        assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits),
-                commonEnd);
+        assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits), commonEnd);
     }
 
     @Test
@@ -164,8 +164,7 @@ public class ListSequenceTest {
     public void testCommonMiddle3() {
         Sequence<String> commonMiddle = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
                 "The dog jumped over the fence", "The dog jumped over the fence").commonMiddle();
-        assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits),
-                commonMiddle);
+        assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits), commonMiddle);
     }
 
     @Test
@@ -186,87 +185,91 @@ public class ListSequenceTest {
     public void testCommonMiddleFindsEnd3() {
         Sequence<String> commonEnd = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
                 "The dog jumped over the fence", "The dog jumped over the fence").commonMiddle();
-        assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits),
-                commonEnd);
+        assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits), commonEnd);
+    }
+
+    private static List<Sequences<String>> slice(Sequences<String> choices) {
+        SlicedPhrases<String> sliced = new SlicedPhrases<>(choices);
+        return sliced.result();
     }
 
     @Test
     public void testSliceStart() {
-        List<Sequences<String>> slices = StringSequences.of( //
+        List<Sequences<String>> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped under the fence", //
                 "The dog jumped over my sofa", //
-                "The dog looked over the fence, did he?");
+                "The dog looked over the fence, did he?"));
         assertFalse(slices.isEmpty());
     }
 
     @Test
     public void testSliceStartSameSize() {
-        List<Sequences<String>> slices = StringSequences.of( //
+        List<Sequences<String>> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence,", //
                 "The dog jumped under the fence", //
                 "The dog jumped over my sofa", //
-                "The dog looked over the fence");
+                "The dog looked over the fence"));
         assertFalse(slices.isEmpty());
     }
 
     @Test
     public void testSliceMiddle() {
-        List<Sequences<String>> slices = StringSequences.of( //
+        List<Sequences<String>> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped over the fence", //
                 "My cat jumped over my sofa", //
-                "The dog looked over the fence, did he?");
+                "The dog looked over the fence, did he?"));
         assertFalse(slices.isEmpty());
     }
 
     @Test
     public void testSliceMiddleSameSize() {
-        List<Sequences<String>> slices = StringSequences.of( //
+        List<Sequences<String>> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence", //
                 "My cat jumped over my sofa", //
-                "The dog looked over the fence");
+                "The dog looked over the fence"));
         assertFalse(slices.isEmpty());
     }
 
     @Test
     public void testSliceEnd() {
-        List<Sequences<String>> slices = StringSequences.of( //
+        List<Sequences<String>> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped over the fence", //
                 "Your cat crawled under my fence", //
-                "The dog looked over the fence, did he?");
+                "The dog looked over the fence, did he?"));
         assertFalse(slices.isEmpty());
     }
 
     @Test
     public void testSliceEndSameSize() {
-        List<Sequences<String>> slices = StringSequences.of( //
+        List<Sequences<String>> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence", //
                 "Your cat crawled under my fence", //
-                "The dog looked over the fence");
+                "The dog looked over the fence"));
         assertFalse(slices.isEmpty());
     }
 
     @Test
     public void testSliceAllDifferent() {
-        List<Sequences<String>> slices = StringSequences.of( //
+        List<Sequences<String>> slices = slice(StringSequences.of( //
                 "No dog jumped over the fence, you know?", //
                 "The dog jumped under the fence", //
                 "The cat looked over my sofa", //
-                "The dog jumped over the fence, sure?");
+                "The dog jumped over the fence, sure?"));
         assertFalse(slices.isEmpty());
     }
 
     @Test
     public void testSliceAllSame() {
-        List<Sequences<String>> slices = StringSequences.of( //
+        List<Sequences<String>> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence.", //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence.", //
-                "The dog jumped over the fence.");
+                "The dog jumped over the fence."));
         assertFalse(slices.isEmpty());
     }
 

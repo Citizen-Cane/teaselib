@@ -55,27 +55,18 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
     }
 
-    public static <T> List<Sequences<T>> of(Iterable<T> elements, Traits<T> traits) {
+    static <T> Sequences<T> of(Iterable<T> elements, Traits<T> traits) {
         Iterator<T> choices = elements.iterator();
         if (!choices.hasNext()) {
-            return Collections.emptyList();
+            return new Sequences<>(traits);
         } else {
             Sequences<T> sequences = new Sequences<>(traits);
             for (T choice : elements) {
                 Sequence<T> e = new Sequence<>(traits.splitter.apply(choice), traits);
                 sequences.add(e);
             }
-            return slice(sequences);
+            return sequences;
         }
-    }
-
-    private static <T> List<Sequences<T>> slice(Sequences<T> sequences) {
-        List<List<Sequences<T>>> candidates = new ArrayList<>();
-
-        List<Sequences<T>> candidate = slice(candidates, sequences);
-        candidates.add(candidate);
-
-        return Sequences.reduce(candidates);
     }
 
     static <T> List<Sequences<T>> slice(List<List<Sequences<T>>> candidates, Sequences<T> sequences) {

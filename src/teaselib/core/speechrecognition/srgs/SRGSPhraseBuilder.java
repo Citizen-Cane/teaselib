@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -94,7 +96,8 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     private void createNodes(Element grammar, Element main) {
-        List<Sequences<PhraseString>> slices = PhraseStringSequences.slice(phrases);
+        SlicedPhrases<PhraseString> slicedPhrases = new SlicedPhrases<>(PhraseStringSequences.of(phrases));
+        List<Sequences<PhraseString>> slices = slicedPhrases.result();
 
         Indices<Element> current = new Indices<>(phrases.size(), main);
         Indices<Element> next = new Indices<>(current);

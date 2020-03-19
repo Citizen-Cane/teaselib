@@ -19,7 +19,7 @@ public class PhraseStringSequences extends Sequences<PhraseString> {
         super(choices, Traits);
     }
 
-    public static List<Sequences<PhraseString>> slice(List<PhraseString> choices) {
+    public static Sequences<PhraseString> of(List<PhraseString> choices) {
         return Sequences.of(choices, Traits);
     }
 

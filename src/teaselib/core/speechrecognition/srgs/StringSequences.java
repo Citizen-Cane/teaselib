@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static teaselib.core.speechrecognition.srgs.StringSequence.*;
+import static teaselib.core.speechrecognition.srgs.StringSequence.Traits;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,16 +25,8 @@ public class StringSequences extends Sequences<String> {
         return String.join(" ", elements);
     }
 
-    public static Sequences<String> of(int capacity) {
-        return new StringSequences(capacity);
-    }
-
-    public static List<Sequences<String>> of(String... choices) {
-        return of(Arrays.asList(choices));
-    }
-
-    private static List<Sequences<String>> of(List<String> choices) {
-        return Sequences.of(choices, Traits);
+    public static Sequences<String> of(String... choices) {
+        return Sequences.of(Arrays.asList(choices), Traits);
     }
 
 }

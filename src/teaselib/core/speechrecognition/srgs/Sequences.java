@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -387,86 +386,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 }
             }
         }
-    }
-
-    Sequence<T> commonStart() {
-        Sequence<T> sequence = new Sequence<>(get(0), traits);
-        for (int i = sequence.size(); i >= 1; --i) {
-            if (allStartWithSequence(sequence)) {
-                return common(sequence);
-            }
-            sequence.remove(sequence.size() - 1);
-        }
-
-        return new Sequence<>(Collections.emptyList(), traits);
-    }
-
-    private boolean allStartWithSequence(Sequence<T> sequence) {
-        for (int j = 1; j < size(); ++j) {
-            if (!get(j).startsWith(sequence)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    Sequence<T> commonEnd() {
-        Sequence<T> sequence = new Sequence<>(get(0), traits);
-        for (int i = sequence.size(); i >= 1; --i) {
-            if (allEndWithSequence(sequence)) {
-                return common(sequence);
-            }
-            sequence.remove(0);
-        }
-
-        return new Sequence<>(Collections.emptyList(), traits);
-    }
-
-    private boolean allEndWithSequence(Sequence<T> sequence) {
-        for (int j = 1; j < size(); ++j) {
-            if (!get(j).endsWith(sequence)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    Sequence<T> commonMiddle() {
-        Sequence<T> sequence = new Sequence<>(get(0), traits);
-
-        int lastElement = sequence.size() - 1;
-        if (lastElement > 0 && sequence.get(lastElement).toString().isBlank()) {
-            sequence.remove(lastElement);
-        }
-
-        List<Sequence<T>> candidates = sequence.subLists();
-        for (Sequence<T> candidate : candidates) {
-            if (allContainMiddleSequence(candidate)) {
-                return common(candidate);
-            }
-        }
-
-        return new Sequence<>(Collections.emptyList(), traits);
-    }
-
-    private Sequence<T> common(Sequence<T> candidate) {
-        List<Sequence<T>> common = stream().map(s -> s.subList(candidate)).collect(toList());
-        List<T> joined = new ArrayList<>(candidate.size());
-        for (int i = 0; i < candidate.size(); i++) {
-            final int index = i;
-            List<T> slice = common.stream().map(e -> e.get(index)).collect(toList());
-            joined.add(traits.joinCommonOperator.apply(slice));
-        }
-        return new Sequence<>(joined, traits);
-    }
-
-    private boolean allContainMiddleSequence(Sequence<T> sequence) {
-        for (int j = 1; j < size(); ++j) {
-            if (get(j).indexOf(sequence) == -1) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public int maxLength() {

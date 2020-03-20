@@ -9,8 +9,8 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 
 class ReducingList<T> implements List<T> {
-    final BiFunction<T, T, T> reducer;
-    T element = null;
+    private final BiFunction<T, T, T> reducer;
+    private T element = null;
 
     public ReducingList(BinaryOperator<T> reducer) {
         this.reducer = reducer;
@@ -34,7 +34,7 @@ class ReducingList<T> implements List<T> {
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {
-            boolean hasNext = element != null;
+            boolean hasNext = getResult() != null;
 
             @Override
             public boolean hasNext() {
@@ -47,7 +47,7 @@ class ReducingList<T> implements List<T> {
                     throw new NoSuchElementException();
                 } else {
                     hasNext = false;
-                    return element;
+                    return getResult();
                 }
             }
 
@@ -174,6 +174,10 @@ class ReducingList<T> implements List<T> {
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
         throw new UnsupportedOperationException();
+    }
+
+    public T getResult() {
+        return element;
     }
 
 }

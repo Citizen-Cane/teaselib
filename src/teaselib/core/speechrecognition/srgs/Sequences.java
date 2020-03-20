@@ -469,10 +469,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return true;
     }
 
-    public boolean containsOptionalParts() {
-        return stream().map(Sequence<T>::toString).anyMatch(String::isEmpty);
-    }
-
     public int maxLength() {
         Optional<? extends Sequence<T>> reduced = stream().reduce((a, b) -> a.size() > b.size() ? a : b);
         return reduced.isPresent() ? reduced.get().size() : 0;

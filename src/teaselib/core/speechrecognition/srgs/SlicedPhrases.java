@@ -23,7 +23,7 @@ public class SlicedPhrases<T> {
         Sequences<T> sequences = joinDistinctElements(phrases);
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         candidates.add(slice(candidates, sequences));
-        return candidates.element;
+        return candidates.getResult();
     }
 
     private static <T> Sequences<T> joinDistinctElements(Sequences<T> phrases) {

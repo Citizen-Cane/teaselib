@@ -21,9 +21,9 @@ public class SlicedPhrases<T> {
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
         Sequences<T> sequences = joinDistinctElements(phrases);
-        List<SlicedPhrases<T>> candidates = new ArrayList<>();
+        ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         candidates.add(slice(candidates, sequences));
-        return reduce(candidates);
+        return candidates.element;
     }
 
     private static <T> Sequences<T> joinDistinctElements(Sequences<T> phrases) {
@@ -64,22 +64,20 @@ public class SlicedPhrases<T> {
         return sequences.sliceAll(candidates, slices);
     }
 
-    static <T> SlicedPhrases<T> reduce(List<SlicedPhrases<T>> candidates) {
-        return candidates.stream().reduce((a, b) -> {
-            long cAa = a.duplicatedSymbolsCount();
-            long cAb = b.duplicatedSymbolsCount();
-            if (cAa == cAb) {
-                int sizeCa = a.size();
-                int sizeCb = b.size();
-                if (sizeCa == sizeCb) {
-                    return a.maxCommmonness() > b.maxCommmonness() ? a : b;
-                } else {
-                    return a.size() < b.size() ? a : b;
-                }
+    private static <T> SlicedPhrases<T> leastDuplicatedSymbols(SlicedPhrases<T> a, SlicedPhrases<T> b) {
+        long cAa = a.duplicatedSymbolsCount();
+        long cAb = b.duplicatedSymbolsCount();
+        if (cAa == cAb) {
+            int sizeCa = a.size();
+            int sizeCb = b.size();
+            if (sizeCa == sizeCb) {
+                return a.maxCommmonness() > b.maxCommmonness() ? a : b;
             } else {
-                return cAa < cAb ? a : b;
+                return a.size() < b.size() ? a : b;
             }
-        }).orElseThrow();
+        } else {
+            return cAa < cAb ? a : b;
+        }
     }
 
     public SlicedPhrases() {

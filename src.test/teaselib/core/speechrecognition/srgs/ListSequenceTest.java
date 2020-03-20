@@ -188,14 +188,13 @@ public class ListSequenceTest {
         assertEquals(new Sequence<>(splitWords("The dog jumped over the fence"), StringSequence.Traits), commonEnd);
     }
 
-    private static List<Sequences<String>> slice(Sequences<String> choices) {
-        SlicedPhrases<String> sliced = new SlicedPhrases<>(choices);
-        return sliced.result();
+    private static SlicedPhrases<String> slice(Sequences<String> choices) {
+        return SlicedPhrases.of(choices);
     }
 
     @Test
     public void testSliceStart() {
-        List<Sequences<String>> slices = slice(StringSequences.of( //
+        SlicedPhrases<String> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped under the fence", //
                 "The dog jumped over my sofa", //
@@ -205,7 +204,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceStartSameSize() {
-        List<Sequences<String>> slices = slice(StringSequences.of( //
+        SlicedPhrases<String> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence,", //
                 "The dog jumped under the fence", //
                 "The dog jumped over my sofa", //
@@ -215,7 +214,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceMiddle() {
-        List<Sequences<String>> slices = slice(StringSequences.of( //
+        SlicedPhrases<String> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped over the fence", //
                 "My cat jumped over my sofa", //
@@ -225,7 +224,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceMiddleSameSize() {
-        List<Sequences<String>> slices = slice(StringSequences.of( //
+        SlicedPhrases<String> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence", //
                 "My cat jumped over my sofa", //
@@ -235,7 +234,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceEnd() {
-        List<Sequences<String>> slices = slice(StringSequences.of( //
+        SlicedPhrases<String> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped over the fence", //
                 "Your cat crawled under my fence", //
@@ -245,7 +244,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceEndSameSize() {
-        List<Sequences<String>> slices = slice(StringSequences.of( //
+        SlicedPhrases<String> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence", //
                 "Your cat crawled under my fence", //
@@ -255,7 +254,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceAllDifferent() {
-        List<Sequences<String>> slices = slice(StringSequences.of( //
+        SlicedPhrases<String> slices = slice(StringSequences.of( //
                 "No dog jumped over the fence, you know?", //
                 "The dog jumped under the fence", //
                 "The cat looked over my sofa", //
@@ -265,7 +264,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceAllSame() {
-        List<Sequences<String>> slices = slice(StringSequences.of( //
+        SlicedPhrases<String> slices = slice(StringSequences.of( //
                 "The dog jumped over the fence.", //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence.", //

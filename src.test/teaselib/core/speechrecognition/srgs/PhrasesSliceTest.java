@@ -31,10 +31,9 @@ public class PhrasesSliceTest {
 
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();
 
-    private static List<Sequences<PhraseString>> slice(PhraseStringSequences choices) {
+    private static SlicedPhrases<PhraseString> slice(PhraseStringSequences choices) {
         long start = System.currentTimeMillis();
-        SlicedPhrases<PhraseString> sliced = new SlicedPhrases<>(choices);
-        List<Sequences<PhraseString>> optimal = sliced.result();
+        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices);
         long end = System.currentTimeMillis();
         logger.info("Slicing duration = {}ms", end - start);
         return optimal;
@@ -59,7 +58,7 @@ public class PhrasesSliceTest {
     @Test
     public void testCommonStart() {
         PhraseStringSequences choices = new PhraseStringSequences(choice("A, B", 0), choice("A, C", 1));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(choice("A", 0, 1)), optimal.get(0));
         assertEquals(new PhraseStringSequences(choice("B", 0), choice("C", 1)), optimal.get(1));
@@ -69,7 +68,7 @@ public class PhrasesSliceTest {
     @Test
     public void testCommonEnd() {
         PhraseStringSequences choices = new PhraseStringSequences(choice("A, C", 0), choice("B, C", 1));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(choice("A", 0), choice("B", 1)), optimal.get(0));
         assertEquals(new PhraseStringSequences(choice("C", 0, 1)), optimal.get(1));
@@ -80,7 +79,7 @@ public class PhrasesSliceTest {
     public void testThatChoiceStringYes3() {
         PhraseStringSequences choices = new PhraseStringSequences(choice("yes Miss, of course", 0),
                 choice("Yes, of Course, Miss", 1), choice("Of course", 2));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("Yes", 0, 1)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("Miss", 0)), optimal.get(1));
@@ -98,7 +97,7 @@ public class PhrasesSliceTest {
                 choice("No Miss, of course not", 3), //
                 choice("No, of Course not, Miss", 4), //
                 choice("No, Of course not", 5));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("Yes", 0, 1, 2), result("No", 3, 4, 5)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("Miss", 0, 3)), optimal.get(1));
@@ -115,7 +114,7 @@ public class PhrasesSliceTest {
                 choice("of Course, Miss", 1), //
                 choice("of course", 2), //
                 choice("Miss, of course, Miss", 3));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("Miss", 0, 3)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("of course", 0, 1, 2, 3)), optimal.get(1));
@@ -127,7 +126,7 @@ public class PhrasesSliceTest {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("yes Miss, of course", 0), //
                 choice("No, of Course not, Miss", 1));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("yes Miss", 0), result("No", 1)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("of course", 0, 1)), optimal.get(1));
@@ -143,7 +142,7 @@ public class PhrasesSliceTest {
                 choice("I have it, Miss", 2), //
                 choice("Yes,it's ready, Miss", 3), //
                 choice("It's ready, Miss", 4));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("No", 0), result("I have it", 2), result("Yes", 1, 3)),
                 optimal.get(0));
@@ -160,7 +159,7 @@ public class PhrasesSliceTest {
                 choice("A B0 C0 D", 0), //
                 choice("A B1 C0 D", 1), //
                 choice("A B2 C2 D", 2));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("A", 0, 1, 2)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("b0", 0), result("b1", 1), result("b2 c2", 2)), optimal.get(1));
@@ -176,7 +175,7 @@ public class PhrasesSliceTest {
                 choice("A B1 C0 D", 1), //
                 choice("A B2 C2 D", 2), //
                 choice("A B3 C2 D", 3));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("A", 0, 1, 2, 3)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("b0", 0), result("b1", 1), result("b2", 2), result("b3", 3)),
@@ -192,7 +191,7 @@ public class PhrasesSliceTest {
                 choice("A B C", 0), //
                 choice("A,B C.", 1), //
                 choice("a B,C.", 2));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("A B C", 0, 1, 2)), optimal.get(0));
         assertEquals(1, optimal.size());
@@ -207,7 +206,7 @@ public class PhrasesSliceTest {
                 choice("A, D I K L, B C", 3), //
                 choice("D I F M, B C", 4), //
                 choice("N B C, O", 5));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(//
                 result("N", 5), result("A", 0, 3), result("D", 1, 2, 4)), optimal.get(0));
@@ -231,7 +230,7 @@ public class PhrasesSliceTest {
                 choice("A B", 1), //
                 choice("B", 2), //
                 choice("B", 3));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("A", 0, 1)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("B", 0, 1, 2, 3)), optimal.get(1));
@@ -245,7 +244,7 @@ public class PhrasesSliceTest {
                 choice("A B C E", 1), //
                 choice("B C F", 2), //
                 choice("B C G", 3));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("A", 0, 1)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("B C", 0, 1, 2, 3)), optimal.get(1));
@@ -268,7 +267,7 @@ public class PhrasesSliceTest {
                 choice("A B C X Y U Z", 8), //
                 choice("B C 1 2 3-4 5", 9), //
                 choice("A B C F 6 7", 10));
-        List<Sequences<PhraseString>> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("A", 0, 1, 8, 10)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("B C", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), optimal.get(1));

@@ -96,14 +96,12 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     private void createNodes(Element grammar, Element main) {
-        SlicedPhrases<PhraseString> slicedPhrases = new SlicedPhrases<>(PhraseStringSequences.of(phrases));
-        List<Sequences<PhraseString>> slices = slicedPhrases.result();
+        SlicedPhrases<PhraseString> slices = SlicedPhrases.of(PhraseStringSequences.of(phrases));
 
         Indices<Element> current = new Indices<>(phrases.size(), main);
         Indices<Element> next = new Indices<>(current);
-        int n = 0;
-        while (!slices.isEmpty()) {
-            List<PhraseString> slice = slices.remove(0).stream().map(e -> e.get(0)).collect(toList());
+        for (int i = 0; i < slices.size(); i++) {
+            List<PhraseString> slice = slices.get(i).stream().map(e -> e.get(0)).collect(toList());
 
             Set<Integer> coverage = slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
             Set<Integer> missingIndices = allIndices();
@@ -113,7 +111,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
                 for (PhraseString phrase : slice) {
                     Set<Integer> indices = phrase.indices;
-                    String ruleName = choiceName(n, indices);
+                    String ruleName = choiceName(i, indices);
                     Element ruleRef = ruleRef(ruleName);
                     ruleRefs.add(ruleRef);
                     missingIndices.removeAll(indices);
@@ -122,7 +120,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                 }
 
                 if (!missingIndices.isEmpty()) {
-                    String ruleName = choiceName(n, missingIndices);
+                    String ruleName = choiceName(i, missingIndices);
                     ruleRefs.add(ruleRef(ruleName));
                     specialRule(grammar, ruleName);
                     next.add(missingIndices, common);
@@ -136,7 +134,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                     Set<Integer> indices = phrase.indices;
                     Set<Element> nodes = current.collect(indices);
                     for (Element element : nodes) {
-                        String ruleName = choiceName(n, indices);
+                        String ruleName = choiceName(i, indices);
                         Element ruleRef = ruleRef(ruleName);
                         ruleRefs.computeIfAbsent(element, e -> new ArrayList<>()).add(ruleRef);
                         next.add(indices, element);
@@ -146,7 +144,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                 }
 
                 if (!missingIndices.isEmpty()) {
-                    String ruleName = choiceName(n, missingIndices);
+                    String ruleName = choiceName(i, missingIndices);
                     Element ruleRef = ruleRef(ruleName);
                     Set<Element> nodes = current.collect(missingIndices);
                     for (Element element : nodes) {
@@ -162,8 +160,6 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                 }
 
             }
-
-            n++;
             current = next;
         }
     }

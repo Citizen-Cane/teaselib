@@ -1,11 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-public class DebugPhraseStringSequencesList extends ArrayList<Sequences<PhraseString>> {
-    private static final long serialVersionUID = 1L;
+public class DebugPhraseStringSequencesList extends SlicedPhrases<PhraseString> {
 
     public DebugPhraseStringSequencesList(Collection<? extends Sequences<PhraseString>> c) {
         super(c.stream().map(DebugPhraseStringSequences::new).collect(Collectors.toList()));
@@ -19,16 +17,16 @@ public class DebugPhraseStringSequencesList extends ArrayList<Sequences<PhraseSt
     public String toString() {
         StringBuilder phrases = new StringBuilder();
         phrases.append("Commonness=");
-        phrases.append(Sequences.averageCommonness(this));
+        phrases.append(averageCommonness());
         phrases.append(" ");
         phrases.append("Symbol count=");
-        phrases.append(Sequences.symbolCount(this));
+        phrases.append(symbolCount());
         phrases.append(" ");
         phrases.append("duplicated=");
-        phrases.append(Sequences.duplicatedSymbolsCount(this));
+        phrases.append(duplicatedSymbolsCount());
         phrases.append("\n");
 
-        phrases.append(this.stream().map(Object::toString).collect(Collectors.joining("\n")));
+        phrases.append(stream().map(Object::toString).collect(Collectors.joining("\n")));
         return phrases.toString();
     }
 

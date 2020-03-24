@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
+import teaselib.core.speechrecognition.srgs.Sequences.SliceInProgress;
 
 public class SlicedPhrases<T> {
     static class Rating {
@@ -22,7 +23,16 @@ public class SlicedPhrases<T> {
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
         Sequences<T> sequences = joinDistinctElements(phrases);
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
-        candidates.add(slice(candidates, sequences));
+        slice(candidates, sequences);
+        return candidates.getResult();
+    }
+
+    public static <T> SlicedPhrases<T> of(Sequences<T> phrases, List<SlicedPhrases<T>> results) {
+        Sequences<T> sequences = joinDistinctElements(phrases);
+        slice(results, sequences);
+
+        ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
+        results.forEach(candidates::add);
         return candidates.getResult();
     }
 
@@ -59,9 +69,15 @@ public class SlicedPhrases<T> {
         }
     }
 
-    static <T> SlicedPhrases<T> slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences) {
-        SlicedPhrases<T> slices = new SlicedPhrases<>();
-        return sequences.sliceAll(candidates, slices);
+    static <T> void slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences) {
+        List<SliceInProgress<T>> more = sequences.sliceAll(candidates, new SlicedPhrases<>());
+        while (!more.isEmpty()) {
+            ArrayList<Sequences.SliceInProgress<T>> evenMore = new ArrayList<>();
+            for (SliceInProgress<T> sliceInProgress : more) {
+                evenMore.addAll(sliceInProgress.unsliced.sliceAll(candidates, sliceInProgress.soFar));
+            }
+            more = evenMore;
+        }
     }
 
     private static <T> SlicedPhrases<T> leastDuplicatedSymbols(SlicedPhrases<T> a, SlicedPhrases<T> b) {
@@ -71,7 +87,8 @@ public class SlicedPhrases<T> {
             int sizeCa = a.size();
             int sizeCb = b.size();
             if (sizeCa == sizeCb) {
-                return a.maxCommmonness() > b.maxCommmonness() ? a : b;
+                // TODO check overall number of symbols (lower) and average commonness (higher) first - better
+                return a.maxCommonness() > b.maxCommonness() ? a : b;
             } else {
                 return a.size() < b.size() ? a : b;
             }
@@ -118,7 +135,7 @@ public class SlicedPhrases<T> {
         return clone;
     }
 
-    public int maxCommmonness() {
+    public int maxCommonness() {
         return elements.stream().map(Sequences::max).reduce(Math::max).orElse(0);
     }
 
@@ -134,7 +151,8 @@ public class SlicedPhrases<T> {
         long symbols = symbolCount();
         Traits<T> traits = elements.get(0).traits;
         long distinct = elements.stream().flatMap(Sequences::stream).flatMap(Sequence::stream)
-                .map(traits.splitter::apply).flatMap(List::stream).map(T::toString).distinct().count();
+                .map(traits.splitter::apply).flatMap(List::stream).map(T::toString).map(String::toLowerCase).distinct()
+                .count();
         return symbols - distinct;
     }
 
@@ -178,6 +196,26 @@ public class SlicedPhrases<T> {
                 }
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder phrases = new StringBuilder();
+        phrases.append("Cmax=");
+        phrases.append(maxCommonness());
+        phrases.append(" ");
+        phrases.append("Cav=");
+        phrases.append(averageCommonness());
+        phrases.append(" ");
+        phrases.append("Symbol count=");
+        phrases.append(symbolCount());
+        phrases.append(" ");
+        phrases.append("duplicated=");
+        phrases.append(duplicatedSymbolsCount());
+        phrases.append("\n");
+
+        phrases.append(stream().map(Object::toString).collect(Collectors.joining("\n")));
+        return phrases.toString();
     }
 
 }

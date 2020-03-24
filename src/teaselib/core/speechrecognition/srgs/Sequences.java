@@ -28,6 +28,19 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     final Sequence.Traits<T> traits;
 
+    static class SliceInProgress<T> {
+        final SlicedPhrases<T> soFar;
+        final Sequences<T> unsliced;
+
+        public SliceInProgress(SlicedPhrases<T> soFar, Sequences<T> unsliced) {
+            super();
+            this.soFar = soFar;
+            this.unsliced = unsliced;
+        }
+    }
+
+    public final List<SliceInProgress<T>> later = new ArrayList<>();
+
     public Sequences(Traits<T> traits) {
         super();
         this.traits = traits;
@@ -68,9 +81,14 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
     }
 
-    public SlicedPhrases<T> sliceAll(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> slices) {
+    public List<SliceInProgress<T>> sliceAll(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> slices) {
+        candidates.add(slice(candidates, slices));
+        return later;
+    }
+
+    private SlicedPhrases<T> slice(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> slices) {
         while (maxLength() > 0) {
-            Sequences<T> slice = splitDisjunct(candidates, slices);
+            Sequences<T> slice = splitDisjunct(slices);
             if (slice.isEmpty()) {
                 slice = splitCommon(candidates, slices);
             }
@@ -113,7 +131,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return disjunct;
     }
 
-    private Sequences<T> splitDisjunct(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar) {
+    private Sequences<T> splitDisjunct(SlicedPhrases<T> soFar) {
         Sequences<T> disjunct = removeDisjunctElements();
         int length = 1;
         while (!isEmpty()) {
@@ -138,8 +156,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
                             Sequences<T> withoutElement = new Sequences<>(this);
                             withoutElement.get(i).remove(element);
-                            SlicedPhrases<T> slices = withoutElement.sliceAll(candidates, candidate);
-                            candidates.add(slices);
+
+                            later.add(new SliceInProgress<>(candidate, withoutElement));
                         } else {
                             disjunct.get(i, () -> new Sequence<>(traits)).add(element);
                             sequence.remove(element);
@@ -212,11 +230,12 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
                         Sequences<T> withoutElement = new Sequences<>(this);
                         withoutElement.removeCommon(shorter);
-                        SlicedPhrases<T> candidate = withoutElement.sliceAll(candidates, soFarClone);
+                        SlicedPhrases<T> candidate = withoutElement.slice(candidates, soFarClone);
                         candidates.add(candidate);
                     }
 
-                    boolean canExit = inspectElementsThatOccurLater(candidates, soFar, common, maxCommon, distinct);
+                    boolean canExit = inspectElementsThatOccurLater(candidates, soFar, common, maxCommon.get(),
+                            distinct);
                     if (canExit) {
                         break;
                     } else {
@@ -247,10 +266,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private boolean inspectElementsThatOccurLater(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar,
-            Sequences<T> common, Optional<Integer> maxCommon, SequenceLookup<T> distinct) {
+            Sequences<T> common, Integer maxCommon, SequenceLookup<T> distinct) {
         boolean canExit = false;
         Optional<Integer> nextMaxCommon = maxCommonAfter(common);
-        if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon.get())) {
+        if (nextMaxCommon.isEmpty() || nextMaxCommon.get().equals(maxCommon)) {
             Sequences<T> slice = gatherCommonElements(common);
             for (int i = slice.size() - 1; i >= 0; i--) {
                 Sequence<T> startElements = slice.get(i);
@@ -302,7 +321,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        return withoutElement.sliceAll(candidates, candidate);
+        return withoutElement.slice(candidates, candidate);
     }
 
     private Sequences<T> gatherCommonElements(List<Sequence<T>> candidates) {

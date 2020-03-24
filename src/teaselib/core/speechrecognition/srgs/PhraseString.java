@@ -111,7 +111,7 @@ class PhraseString {
         if (!(obj instanceof PhraseString))
             return false;
         PhraseString other = (PhraseString) obj;
-        return Objects.equals(indices, other.indices) && samePhrase(other);
+        return joinablePhrases(this, other) && samePhrase(other);
     }
 
 }

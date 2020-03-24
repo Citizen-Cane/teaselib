@@ -1,9 +1,11 @@
 package teaselib.core.speechrecognition.srgs;
 
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,13 +22,11 @@ public class PhrasesSliceTest {
     private static final Logger logger = LoggerFactory.getLogger(PhrasesSliceTest.class);
 
     static Sequence<PhraseString> choice(String string, Integer... choices) {
-        return new Sequence<>(new PhraseString(string, Stream.of(choices).collect(toSet())).words(),
-                PhraseString.Traits);
+        return Sequence.of(new PhraseString(string, Stream.of(choices).collect(toSet())), Traits);
     }
 
     static Sequence<PhraseString> result(String string, Integer... choices) {
-        return new Sequence<>(Collections.singletonList(new PhraseString(string, Stream.of(choices).collect(toSet()))),
-                PhraseString.Traits);
+        return new Sequence<>(singletonList(new PhraseString(string, Stream.of(choices).collect(toSet()))), Traits);
     }
 
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();
@@ -34,6 +34,15 @@ public class PhrasesSliceTest {
     private static SlicedPhrases<PhraseString> slice(PhraseStringSequences choices) {
         long start = System.currentTimeMillis();
         SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices);
+        long end = System.currentTimeMillis();
+        logger.info("Slicing duration = {}ms", end - start);
+        return optimal;
+    }
+
+    private static SlicedPhrases<PhraseString> sliceAndCollect(PhraseStringSequences choices) {
+        List<SlicedPhrases<PhraseString>> candidates = new ArrayList<>();
+        long start = System.currentTimeMillis();
+        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices, candidates);
         long end = System.currentTimeMillis();
         logger.info("Slicing duration = {}ms", end - start);
         return optimal;
@@ -135,14 +144,14 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testSliceMultipleChoiceIrregularPhrases() {
+    public void testSliceMultipleChoiceIrregularPhrasesMixedCase() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("No Miss, I'm sorry", 0), //
                 choice("Yes Miss, I'm ready", 1), //
                 choice("I have it, Miss", 2), //
                 choice("Yes,it's ready, Miss", 3), //
                 choice("It's ready, Miss", 4));
-        SlicedPhrases<PhraseString> optimal = slice(choices);
+        SlicedPhrases<PhraseString> optimal = sliceAndCollect(choices);
 
         assertEquals(new PhraseStringSequences(result("No", 0), result("I have it", 2), result("Yes", 1, 3)),
                 optimal.get(0));

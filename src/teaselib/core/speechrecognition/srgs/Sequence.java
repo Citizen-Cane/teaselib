@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
@@ -37,6 +36,10 @@ public class Sequence<T> extends ArrayList<T> {
 
     final Sequence.Traits<T> traits;
 
+    public static <T> Sequence<T> of(T t, Traits<T> traits) {
+        return new Sequence<>(traits.splitter.apply(t), traits);
+    }
+
     public Sequence(Sequence<T> elements) {
         this(elements, elements.traits);
     }
@@ -59,29 +62,12 @@ public class Sequence<T> extends ArrayList<T> {
         return indexOf(elements) == 0;
     }
 
-    public boolean endsWith(List<? extends T> elements) {
-        return lastIndexOf(elements) == size() - elements.size();
-    }
-
     public int indexOf(List<? extends T> elements) {
         if (elements.isEmpty()) {
             throw new IllegalArgumentException("Empty sequence");
         }
 
         for (int i = 0; i <= size() - elements.size(); ++i) {
-            if (matchesAt(elements, i)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public int lastIndexOf(List<? extends T> elements) {
-        if (elements.isEmpty()) {
-            throw new IllegalArgumentException("Empty sequence");
-        }
-
-        for (int i = size() - elements.size(); i >= 0; --i) {
             if (matchesAt(elements, i)) {
                 return i;
             }
@@ -153,10 +139,7 @@ public class Sequence<T> extends ArrayList<T> {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = super.hashCode();
-        result = prime * result + Objects.hash(traits.equalsOperator);
-        return result;
+        return super.hashCode();
     }
 
     @Override

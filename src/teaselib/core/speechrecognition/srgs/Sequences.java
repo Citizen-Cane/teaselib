@@ -6,7 +6,6 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -180,11 +179,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 .map(traits.joinSequenceOperator::apply).map(element -> new Sequence<>(element, traits))
                 .collect(toList());
         return new Sequences<>(elements, traits);
-    }
-
-    public int commonness() {
-        return stream().flatMap(Sequence::stream).collect(Collectors.summingInt(
-                v -> traits.commonnessOperator.applyAsInt(v) > 1 ? traits.commonnessOperator.applyAsInt(v) : 0));
     }
 
     public long symbolCount() {
@@ -412,26 +406,29 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return reduced.isPresent() ? reduced.get().size() : 0;
     }
 
+    public boolean isJoinableWith(T phrase) {
+        return traits.joinableSequences.test(phrase, stream().flatMap(Sequence::stream).collect(Collectors.toList()));
+    }
+
     public Sequences<T> joinWith(Sequence<T> sequence) {
-        T me = sequence.joined();
-        boolean isJoined = false;
-        Sequences<T> joinedSequences = new Sequences<>(traits);
+        T phrase = sequence.joined();
+        boolean merged = false;
+        Sequences<T> joined = new Sequences<>(traits);
         for (Sequence<T> element : this) {
             T joinedElement = element.joined();
-            if (traits.equalsOperator.test(joinedElement, me)) {
-                joinedSequences
-                        .add(new Sequence<>(traits.joinCommonOperator.apply(Arrays.asList(joinedElement, me)), traits));
-                isJoined = true;
+            if (!merged && traits.equalsOperator.test(joinedElement, phrase)) {
+                joined.add(new Sequence<>(traits.joinCommonOperator.apply(asList(joinedElement, phrase)), traits));
+                merged = true;
             } else {
-                joinedSequences.add(element);
+                joined.add(element);
             }
         }
 
-        if (!isJoined) {
-            joinedSequences.add(sequence);
+        if (!merged) {
+            joined.add(sequence);
         }
 
-        return joinedSequences;
+        return joined;
     }
 
     @Override

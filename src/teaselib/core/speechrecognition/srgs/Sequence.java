@@ -94,6 +94,10 @@ public class Sequence<T> extends ArrayList<T> {
         return true;
     }
 
+    public boolean mergeableWith(T phrase) {
+        return traits.joinablePhrases.test(phrase, joined());
+    }
+
     /**
      * Get all sub-sequences, starting with the largest
      * 

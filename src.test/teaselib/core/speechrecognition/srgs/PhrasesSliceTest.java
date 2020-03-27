@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -32,19 +33,23 @@ public class PhrasesSliceTest {
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();
 
     private static SlicedPhrases<PhraseString> slice(PhraseStringSequences choices) {
-        long start = System.currentTimeMillis();
-        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices);
-        long end = System.currentTimeMillis();
-        logger.info("Slicing duration = {}ms", end - start);
-        return optimal;
-    }
-
-    private static SlicedPhrases<PhraseString> sliceAndCollect(PhraseStringSequences choices) {
         List<SlicedPhrases<PhraseString>> candidates = new ArrayList<>();
         long start = System.currentTimeMillis();
         SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices, candidates);
         long end = System.currentTimeMillis();
         logger.info("Slicing duration = {}ms", end - start);
+
+        assertEquals("Distinct symbol count", Collections.singletonList((int) optimal.distinctSymbolsCount()),
+                candidates.stream().map(e -> e.rating.symbols.size()).distinct().collect(Collectors.toList()));
+
+        for (SlicedPhrases<PhraseString> candidate : candidates) {
+            assertEquals(candidate.toString() + "\t duplicates", candidate.duplicatedSymbolsCount(),
+                    candidate.rating.duplicatedSymbols);
+
+            assertEquals(candidate.toString() + "\t max commonness", candidate.maxCommonness(),
+                    candidate.rating.maxCommonness);
+        }
+
         return optimal;
     }
 
@@ -151,7 +156,7 @@ public class PhrasesSliceTest {
                 choice("I have it, Miss", 2), //
                 choice("Yes,it's ready, Miss", 3), //
                 choice("It's ready, Miss", 4));
-        SlicedPhrases<PhraseString> optimal = sliceAndCollect(choices);
+        SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertEquals(new PhraseStringSequences(result("No", 0), result("I have it", 2), result("Yes", 1, 3)),
                 optimal.get(0));

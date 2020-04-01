@@ -70,6 +70,38 @@ public class PhrasesSliceTest {
     }
 
     @Test
+    public void testProductionSlice() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("A B C D", 0), //
+                choice("B C D", 1), //
+                choice("C D", 2), //
+                choice("D", 3));
+        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices);
+
+        assertEquals(4, optimal.size());
+        assertEquals(new PhraseStringSequences(result("A", 0)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("B", 0, 1)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("C", 0, 1, 2)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("D", 0, 1, 2, 3)), optimal.get(3));
+    }
+
+    @Test
+    public void testProductionSlice2() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("A", 0), //
+                choice("A B", 1), //
+                choice("A B C", 2), //
+                choice("A B C D", 3));
+        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices);
+
+        assertEquals(4, optimal.size());
+        assertEquals(new PhraseStringSequences(result("A", 0, 1, 2, 3)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("B", 1, 2, 3)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("C", 2, 3)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("D", 3)), optimal.get(3));
+    }
+
+    @Test
     public void testCommonStart() {
         PhraseStringSequences choices = new PhraseStringSequences(choice("A, B", 0), choice("A, C", 1));
         SlicedPhrases<PhraseString> optimal = slice(choices);

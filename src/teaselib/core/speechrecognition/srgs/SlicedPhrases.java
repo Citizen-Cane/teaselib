@@ -17,7 +17,7 @@ public class SlicedPhrases<T> {
         final Set<String> symbols;
         int duplicatedSymbols = 0;
         int maxCommonness = 0;
-        
+
         Rating() {
             this.symbols = new HashSet<>();
         }
@@ -27,7 +27,7 @@ public class SlicedPhrases<T> {
             this.duplicatedSymbols = other.duplicatedSymbols;
             this.maxCommonness = other.maxCommonness;
         }
-        
+
         void update(Sequences<T> slice) {
             slice.stream().forEach(this::update);
             maxCommonness = Math.max(maxCommonness, slice.max());
@@ -67,6 +67,16 @@ public class SlicedPhrases<T> {
             rating.append("]");
             return rating.toString();
         }
+
+        public void invalidate() {
+            symbols.clear();
+            duplicatedSymbols = Integer.MAX_VALUE;
+            maxCommonness = Integer.MIN_VALUE;
+        }
+
+        public boolean isInvalidated() {
+            return maxCommonness < 0;
+        }
     }
 
     private final List<Sequences<T>> elements;
@@ -84,7 +94,8 @@ public class SlicedPhrases<T> {
         slice(results, sequences);
 
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
-        results.forEach(candidates::add);
+        results.removeIf(candidate -> candidate.rating.isInvalidated());
+        results.stream().forEach(candidates::add);
         return candidates.getResult();
     }
 
@@ -280,6 +291,19 @@ public class SlicedPhrases<T> {
 
         phrases.append(stream().map(Object::toString).collect(Collectors.joining("\n")));
         return phrases.toString();
+    }
+
+    public boolean worseThan(List<SlicedPhrases<T>> candidates) {
+        if (candidates.isEmpty()) {
+            return false;
+        } else {
+            return SlicedPhrases.leastDuplicatedSymbols(this, candidates.get(0)) != this;
+        }
+    }
+
+    public void drop() {
+        elements.clear();
+        rating.invalidate();
     }
 
 }

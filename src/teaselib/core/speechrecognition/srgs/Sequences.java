@@ -92,6 +92,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 slice = splitCommon(candidates, slices);
             }
             slices.addCompact(slice);
+            if (slices.worseThan(candidates)) {
+                slices.drop();
+                break;
+            }
         }
         return slices;
     }
@@ -115,9 +119,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 T element = sequence.get(0);
                 while (!distinct.othersStartWith(element) && !distinct.occursInAnotherDistinctSequence(element)) {
                     disjunct.get(i, () -> new Sequence<>(traits)).add(element);
-                    // Invalidates distinct lookup
-                    sequence.remove(element);
-                    distinct.scan(1);
+                    distinct.removeAndRescan(sequence, element, 1);
                     if (sequence.isEmpty()) {
                         break;
                     } else {
@@ -159,8 +161,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                             later.add(new SliceInProgress<>(candidate, withoutElement));
                         } else {
                             disjunct.get(i, () -> new Sequence<>(traits)).add(element);
-                            sequence.remove(element);
-                            distinct.scan(1);
+                            distinct.removeAndRescan(sequence, element, 1);
                             elementRemoved = true;
                         }
                     }

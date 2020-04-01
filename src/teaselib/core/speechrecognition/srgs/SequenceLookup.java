@@ -42,9 +42,13 @@ class SequenceLookup<T> {
         });
     }
 
+    public void removeAndRescan(Sequence<T> sequence, T element, int length) {
+        sequence.remove(element);
+        scan(length);
+    }
+
     boolean sequenceContains(List<T> sequence, String key) {
         return sequence.stream().anyMatch(element -> element.toString().equalsIgnoreCase(key));
-
     }
 
     boolean othersStartWith(T element) {

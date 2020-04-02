@@ -101,7 +101,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         Indices<Element> current = new Indices<>(phrases.size(), main);
         Indices<Element> next = new Indices<>(current);
         for (int i = 0; i < slices.size(); i++) {
-            List<PhraseString> slice = slices.get(i).stream().map(e -> e.get(0)).collect(toList());
+            List<PhraseString> slice = slices.get(i).stream().map(Sequence::joined).collect(toList());
 
             Set<Integer> coverage = slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
             Set<Integer> missingIndices = allIndices();

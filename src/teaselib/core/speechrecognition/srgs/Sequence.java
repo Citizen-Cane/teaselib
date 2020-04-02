@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -18,12 +17,12 @@ public class Sequence<T> extends ArrayList<T> {
         final Function<List<T>, T> joinCommonOperator;
         final ToIntFunction<T> commonnessOperator;
         final Function<List<T>, T> joinSequenceOperator;
-        final BiPredicate<T, Collection<T>> joinableSequences;
-        final BiPredicate<T, T> joinablePhrases;
+        final BiPredicate<List<T>, List<T>> joinableSequences;
+        final BiPredicate<List<T>, List<T>> joinablePhrases;
 
         Traits(BiPredicate<T, T> equalsOperator, Function<T, List<T>> splitter, ToIntFunction<T> commonnessOperator,
                 Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator,
-                BiPredicate<T, Collection<T>> joinableSequences, BiPredicate<T, T> joinablePhrases) {
+                BiPredicate<List<T>, List<T>> joinableSequences, BiPredicate<List<T>, List<T>> joinablePhrases) {
             this.equalsOperator = equalsOperator;
             this.splitter = splitter;
             this.commonnessOperator = commonnessOperator;
@@ -86,6 +85,10 @@ public class Sequence<T> extends ArrayList<T> {
      * @return
      */
     private boolean matchesAt(List<? extends T> elements, int index) {
+        if (elements.size() + index > size()) {
+            return false;
+        }
+
         for (int i = 0; i < elements.size(); i++) {
             if (!traits.equalsOperator.test(get(index + i), elements.get(i))) {
                 return false;
@@ -94,8 +97,8 @@ public class Sequence<T> extends ArrayList<T> {
         return true;
     }
 
-    public boolean mergeableWith(T phrase) {
-        return traits.joinablePhrases.test(phrase, joined());
+    public boolean mergeableWith(Sequence<T> other) {
+        return traits.joinablePhrases.test(this, other);
     }
 
     /**

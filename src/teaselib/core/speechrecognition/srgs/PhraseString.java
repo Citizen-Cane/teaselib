@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -79,15 +78,20 @@ class PhraseString {
 
         Set<Integer> choice = strings.stream().map(phrase -> phrase.indices).reduce(PhraseString::intersection)
                 .orElseThrow();
-        return new PhraseString(strings.stream().map(element -> element.phrase).collect(joining(" ")).trim(), choice);
+        return new PhraseString(strings.stream().map(element -> element.phrase).collect(joining(" ")), choice);
     }
 
-    static boolean joinableSequences(PhraseString phrase, Collection<PhraseString> collection) {
-        Set<Integer> collect = collection.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
-        return !PhraseString.intersect(phrase.indices, collect);
+    static boolean joinableSequences(List<PhraseString> sequence1, List<PhraseString> sequence2) {
+        Set<Integer> indices1 = sequence1.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
+        Set<Integer> indices2 = sequence2.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
+        return !PhraseString.intersect(indices1, indices2);
     }
 
-    static boolean joinablePhrases(PhraseString phrase1, PhraseString phrase2) {
+    static boolean joinablePhrases(List<PhraseString> phrases1, List<PhraseString> phrases2) {
+        return phrases1.get(0).indices.equals(phrases2.get(0).indices);
+    }
+
+    private static boolean joinablePhrases(PhraseString phrase1, PhraseString phrase2) {
         return phrase1.indices.equals(phrase2.indices);
     }
 

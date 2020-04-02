@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,6 +29,12 @@ public class PhrasesSliceTest {
 
     static Sequence<PhraseString> result(String string, Integer... choices) {
         return new Sequence<>(singletonList(new PhraseString(string, Stream.of(choices).collect(toSet()))), Traits);
+    }
+
+    static Sequence<PhraseString> result(List<String> strings, Integer... choices) {
+        Set<Integer> indices = Stream.of(choices).collect(toSet());
+        return new Sequence<>(
+                strings.stream().map(phrase -> new PhraseString(phrase, indices)).collect(Collectors.toList()), Traits);
     }
 
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();
@@ -257,7 +264,7 @@ public class PhrasesSliceTest {
         assertEquals(new PhraseStringSequences(//
                 result("N", 5), result("A", 0, 3), result("D", 1, 2, 4)), optimal.get(0));
         assertEquals(new PhraseStringSequences(//
-                result("B C", 0, 5)), optimal.get(1));
+                result(Arrays.asList("B", "C"), 0, 5)), optimal.get(1));
         assertEquals(new PhraseStringSequences(//
                 result("O", 5), result("D", 0, 3)), optimal.get(2));
         assertEquals(new PhraseStringSequences(//

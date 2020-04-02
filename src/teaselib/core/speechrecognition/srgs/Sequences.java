@@ -365,23 +365,16 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         for (int i = 0; i < candidates.size(); i++) {
             Sequence<T> elements = candidates.get(i);
             if (!elements.isEmpty()) {
-                Sequence<T> candidate = new Sequence<>(elements, traits);
-                if (!candidate.isEmpty()) {
-                    // TODO 1.b resolve conflict with equalsOperator result, use type T instead of String
-                    String key = traits.joinSequenceOperator.apply(candidate).toString().toLowerCase();
-                    if (reduced.containsKey(key)) {
-                        Sequence<T> existing = reduced.get(key);
-                        Sequence<T> joined = new Sequence<>(existing, traits);
-                        joined.addAll(candidate);
-                        Sequence<T> joinedElements = new Sequence<>(traits);
-                        for (int j = 0; j < existing.size(); j++) {
-                            joinedElements
-                                    .add(traits.joinCommonOperator.apply(asList(candidate.get(j), existing.get(j))));
-                        }
-                        reduced.put(key, joinedElements);
-                    } else {
-                        reduced.put(key, candidate);
+                String key = traits.joinSequenceOperator.apply(elements).toString().toLowerCase();
+                if (reduced.containsKey(key)) {
+                    Sequence<T> joinedElements = new Sequence<>(traits);
+                    Sequence<T> existing = reduced.get(key);
+                    for (int j = 0; j < existing.size(); j++) {
+                        joinedElements.add(traits.joinCommonOperator.apply(asList(elements.get(j), existing.get(j))));
                     }
+                    reduced.put(key, joinedElements);
+                } else {
+                    reduced.put(key, elements);
                 }
             }
         }
@@ -392,11 +385,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         for (int i = 0; i < common.size(); i++) {
             Sequence<T> commonSlice = common.get(i);
             if (!commonSlice.isEmpty()) {
-                // TODO Generalize and use op
                 Sequence<T> sequence = get(i);
                 if (!sequence.isEmpty()) {
-                    int l = commonSlice.toString().split(" ").length;
-                    sequence.remove(0, l);
+                    sequence.remove(0, commonSlice.size());
                 }
             }
         }
@@ -407,18 +398,18 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return reduced.isPresent() ? reduced.get().size() : 0;
     }
 
-    public boolean isJoinableWith(T phrase) {
-        return traits.joinableSequences.test(phrase, stream().flatMap(Sequence::stream).collect(Collectors.toList()));
+    public boolean isJoinableWith(Sequence<T> sequence) {
+        return traits.joinableSequences.test(sequence, stream().flatMap(Sequence::stream).collect(Collectors.toList()));
     }
 
     public Sequences<T> joinWith(Sequence<T> sequence) {
-        T phrase = sequence.joined();
         boolean merged = false;
         Sequences<T> joined = new Sequences<>(traits);
         for (Sequence<T> element : this) {
-            T joinedElement = element.joined();
-            if (!merged && traits.equalsOperator.test(joinedElement, phrase)) {
-                joined.add(new Sequence<>(traits.joinCommonOperator.apply(asList(joinedElement, phrase)), traits));
+            if (!merged && sequence.matches(element)) {
+                Sequence<T> joinedSequence = new Sequence<>(element);
+                joinedSequence.addAll(sequence);
+                joined.add(joinedSequence);
                 merged = true;
             } else {
                 joined.add(element);

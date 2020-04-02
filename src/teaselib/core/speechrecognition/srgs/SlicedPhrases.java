@@ -1,7 +1,5 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.asList;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -83,53 +81,17 @@ public class SlicedPhrases<T> {
     final Rating<T> rating;
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
-        Sequences<T> sequences = joinDistinctElements(phrases);
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
-        slice(candidates, sequences);
+        slice(candidates, phrases);
         return candidates.getResult();
     }
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases, List<SlicedPhrases<T>> results) {
-        Sequences<T> sequences = joinDistinctElements(phrases);
-        slice(results, sequences);
-
+        slice(results, phrases);
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         results.removeIf(candidate -> candidate.rating.isInvalidated());
         results.stream().forEach(candidates::add);
         return candidates.getResult();
-    }
-
-    private static <T> Sequences<T> joinDistinctElements(Sequences<T> phrases) {
-        SequencesSymbolCount<T> symbols = new SequencesSymbolCount<>(phrases);
-        for (Sequence<T> sequence : phrases) {
-            for (int i = 0; i < sequence.size(); i++) {
-                T t = sequence.get(i);
-                if (symbols.get(t) == 1) {
-                    joinDistinctElements(sequence, symbols, i, t);
-                }
-            }
-        }
-        return phrases;
-    }
-
-    private static <T> void joinDistinctElements(Sequence<T> sequence, SequencesSymbolCount<T> symbols, int i, T t) {
-        int j = i + 1;
-        Sequence<T> distinctSymbols = null;
-        while (j < sequence.size()) {
-            T u = sequence.get(j);
-            if (symbols.get(u) == 1) {
-                if (distinctSymbols == null) {
-                    distinctSymbols = new Sequence<>(t, sequence.traits);
-                }
-                sequence.remove(j);
-                distinctSymbols.add(u);
-            } else {
-                break;
-            }
-        }
-        if (distinctSymbols != null) {
-            sequence.set(i, distinctSymbols.joined());
-        }
     }
 
     static <T> void slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences) {
@@ -231,28 +193,26 @@ public class SlicedPhrases<T> {
 
             Sequences<T> sourceSlice = slice;
             for (int j = elements.size() - 1; j >= 0; j--) {
-                T joinedSequence = sequence.joined();
                 Sequences<T> targetSlice = elements.get(j);
-                if (targetSlice.isJoinableWith(joinedSequence)) {
+                if (targetSlice.isJoinableWith(sequence)) {
                     int sizeBefore = targetSlice.size();
 
                     sourceSlice.remove(sequence);
                     sourceSlice = targetSlice.joinWith(sequence);
                     elements.set(j, sourceSlice);
-                    sequence = sourceSlice.stream()
-                            .filter(moved -> slice.traits.equalsOperator.test(moved.joined(), joinedSequence))
-                            .findFirst().orElseThrow();
+                    Sequence<T> _sequence = sequence;
+                    sequence = sourceSlice.stream().filter(moved -> moved.matches(_sequence)).findFirst().orElseThrow();
 
                     joined |= sizeBefore + 1 == sourceSlice.size();
                     merged = sizeBefore == sourceSlice.size();
                     rating.updateMaxCommonness(sourceSlice);
                 } else {
                     for (Sequence<T> targetSequence : targetSlice) {
-                        if (targetSequence.mergeableWith(joinedSequence)) {
+                        if (targetSequence.mergeableWith(sequence)) {
                             sourceSlice.remove(sequence);
-                            targetSequence.add(joinedSequence);
+                            targetSequence.addAll(sequence);
                             targetSlice.remove(targetSequence);
-                            targetSlice.add(new Sequence<>(asList(targetSequence.joined()), targetSlice.traits));
+                            targetSlice.add(new Sequence<>(targetSequence, targetSlice.traits));
 
                             rating.update(sequence);
                             rating.updateMaxCommonness(targetSlice);

@@ -150,10 +150,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
                             Sequences<T> current = new Sequences<>(disjunct);
                             current.get(i, () -> new Sequence<>(traits)).add(element);
-                            current = new Sequences<>(
-                                    current.stream().filter(Sequence::nonEmpty).map(traits.joinSequenceOperator::apply)
-                                            .map(joined -> new Sequence<>(joined, traits)).collect(toList()),
-                                    traits);
+                            current = new Sequences<>(current.stream().filter(Sequence::nonEmpty)
+                                    .map(joined -> new Sequence<>(joined, traits)).collect(toList()), traits);
                             candidate.addCompact(current);
 
                             Sequences<T> withoutElement = new Sequences<>(this);
@@ -178,8 +176,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     private Sequences<T> createDisjunctSlice(Sequences<T> disjunct) {
         List<Sequence<T>> elements = disjunct.stream().filter(Objects::nonNull).filter(Sequence::nonEmpty)
-                .map(traits.joinSequenceOperator::apply).map(element -> new Sequence<>(element, traits))
-                .collect(toList());
+                .map(element -> new Sequence<>(element, traits)).collect(toList());
         return new Sequences<>(elements, traits);
     }
 
@@ -188,8 +185,13 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public int max() {
-        return stream().flatMap(Sequence::stream).map(traits.commonnessOperator::applyAsInt).reduce(Math::max)
-                .orElse(0);
+        int max = Integer.MIN_VALUE;
+        for (Sequence<T> sequence : this) {
+            for (T element : sequence) {
+                max = Math.max(max, traits.commonnessOperator.applyAsInt(element));
+            }
+        }
+        return max;
     }
 
     private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {
@@ -285,10 +287,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Sequences<T> commonElements = new Sequences<>(this).gatherCommonElements(common);
         Sequences<T> shorter = new Sequences<>(traits);
         Set<Sequence<T>> remove = new HashSet<>();
-        for (int i = 0; i < common.size(); i++) {
+        int size = common.size();
+        for (int i = 0; i < size; i++) {
             Sequence<T> sequence = common.get(i);
             for (Sequence<T> sequence2 : commonElements) {
-                if (new Sequence<>(this.get(i).subList(sequence.size()), traits).startsWith(sequence2)) {
+                if (get(i).matchesAt(sequence2, sequence.size())) {
                     remove.add(sequence2);
                     break;
                 }
@@ -321,10 +324,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private Sequences<T> gatherCommonElements(List<Sequence<T>> candidates) {
-        Map<String, Sequence<T>> distinct = distinct(candidates);
-        Sequences<T> common = new Sequences<>(traits);
-        distinct.values().stream().map(Sequence<T>::new).forEach(common::add);
-        return common;
+        return new Sequences<>(distinct(candidates).values(), traits);
     }
 
     private Optional<Integer> maxCommonAfter(List<Sequence<T>> sequences) {
@@ -346,11 +346,26 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     private Optional<Integer> maxCommon(int start, int length) {
         Map<String, AtomicInteger> distinct = new HashMap<>(size());
-        // TODO use generic equalsOperator to accumulate occurrence into distinct map
-        stream().filter(seq -> seq.size() > start).map(seq -> seq.subList(start, min(start + length, seq.size())))
-                .map(Objects::toString).map(String::toLowerCase)
-                .forEach(s -> distinct.computeIfAbsent(s, t -> new AtomicInteger(0)).incrementAndGet());
-        return distinct.values().stream().map(AtomicInteger::intValue).reduce(Math::max);
+
+        for (Sequence<T> sequence : this) {
+            int size = sequence.size();
+            if (size > start) {
+                String key = sequence.subList(start, min(start + length, size)).toString().toLowerCase();
+                distinct.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
+            }
+        }
+
+        if (distinct.isEmpty()) {
+            return Optional.empty();
+        }
+
+        int max = Integer.MIN_VALUE;
+        for (AtomicInteger value : distinct.values()) {
+            int v = value.get();
+            if (v > max)
+                max = v;
+        }
+        return Optional.of(max);
     }
 
     private Map<String, Sequence<T>> distinct(List<Sequence<T>> candidates) {
@@ -359,9 +374,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             Sequence<T> elements = candidates.get(i);
             if (!elements.isEmpty()) {
                 String key = elements.joined().toString().toLowerCase();
-                if (reduced.containsKey(key)) {
+                Sequence<T> existing = reduced.get(key);
+                if (existing != null) {
                     Sequence<T> joinedElements = new Sequence<>(traits);
-                    Sequence<T> existing = reduced.get(key);
                     for (int j = 0; j < existing.size(); j++) {
                         joinedElements.add(traits.joinCommonOperator.apply(asList(elements.get(j), existing.get(j))));
                     }

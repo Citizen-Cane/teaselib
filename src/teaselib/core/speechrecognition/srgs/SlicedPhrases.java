@@ -34,17 +34,14 @@ public class SlicedPhrases<T> {
         }
 
         public void update(Sequence<T> sequence) {
-            sequence.stream() //
-                    // TODO duplicated code from duplicatedSymbolsCount
-                    .flatMap(e -> sequence.traits.splitter.apply(e).stream()).map(sequence.traits.splitter::apply)
-                    .flatMap(List::stream).map(T::toString).map(String::toLowerCase) //
-                    .forEach(element -> {
-                        if (symbols.contains(element)) {
-                            duplicatedSymbols++;
-                        } else {
-                            symbols.add(element);
-                        }
-                    });
+            for (T element : sequence) {
+                String symbol = element.toString().toLowerCase();
+                if (symbols.contains(symbol)) {
+                    duplicatedSymbols++;
+                } else {
+                    symbols.add(symbol);
+                }
+            }
         }
 
         public void updateMaxCommonness(Sequences<T> slice) {
@@ -179,7 +176,7 @@ public class SlicedPhrases<T> {
 
     public void addCompact(Sequences<T> slice) {
         if (!elements.isEmpty()) {
-            moveDisjunct(slice);
+            move(slice);
         }
 
         if (!slice.isEmpty()) {
@@ -188,7 +185,7 @@ public class SlicedPhrases<T> {
         }
     }
 
-    private void moveDisjunct(Sequences<T> slice) {
+    private void move(Sequences<T> slice) {
         for (Sequence<T> sequence : new ArrayList<>(slice)) {
             boolean joined = false;
             boolean merged = false;

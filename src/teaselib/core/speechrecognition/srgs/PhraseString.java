@@ -59,7 +59,7 @@ class PhraseString {
     }
 
     private static int commonness(PhraseString element) {
-        return element.indices.size() * element.words().size();
+        return element.indices.size();
     }
 
     public static PhraseString joinCommon(List<PhraseString> strings) {

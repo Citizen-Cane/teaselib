@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -32,13 +31,11 @@ class SequenceLookup<T> {
             startElementIndicess.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
             startElementSequences.computeIfAbsent(key, t -> new ArrayList<>()).add(sequence);
 
-            sequences.stream().filter(Sequence::nonEmpty).filter(seq -> {
-                return sequenceContains(seq.subList(1), key);
-            }).filter(seq -> {
-                return seq != sequence;
-            }).forEach(seq -> {
-                laterOccurrences.computeIfAbsent(key, t -> new ArrayList<>()).add(seq);
-            });
+            for (Sequence<T> seq : sequences) {
+                if (sequence != seq && !seq.isEmpty() && sequenceContains(seq.subList(1), key)) {
+                    laterOccurrences.computeIfAbsent(key, t -> new ArrayList<>()).add(seq);
+                }
+            }
         });
     }
 
@@ -48,26 +45,25 @@ class SequenceLookup<T> {
     }
 
     boolean sequenceContains(List<T> sequence, String key) {
-        return sequence.stream().anyMatch(element -> element.toString().equalsIgnoreCase(key));
+        return sequence.toString().toLowerCase().contains(key);
     }
 
     boolean othersStartWith(T element) {
         List<Sequence<T>> list = startElementSequences.get(key(element));
-        return list != null ? list.size() > 1 : false;
+        return list != null && list.size() > 1;
     }
 
     boolean othersStartWith(List<T> elements) {
         List<Sequence<T>> list = startElementSequences.get(key(elements));
-        return list != null ? list.size() > 1 : false;
+        return list != null && list.size() > 1;
     }
 
     String key(List<T> elements) {
-        return sequences.traits.joinSequenceOperator.apply(elements).toString().toLowerCase();
+        return elements.stream().map(this::key).collect(Collectors.joining(" "));
     }
 
     boolean occursInAnotherDistinctSequence(T element) {
         return laterOccurrences.containsKey(key(element));
-
     }
 
     private String key(T element) {
@@ -75,14 +71,15 @@ class SequenceLookup<T> {
     }
 
     boolean occursLaterInAnotherSequence(List<T> elements) {
-        String key = elements.stream().map(Objects::toString).map(String::toLowerCase).collect(Collectors.joining(" "));
+        String key = key(elements);
         AtomicInteger n = startElementIndicess.get(key);
         return n != null && n.intValue() > 1 && startElementIndicess.entrySet().stream().filter(entry -> {
             return entry.getValue().intValue() > 1;
         }).anyMatch(entry -> {
-            return startElementSequences.get(entry.getKey()).stream().anyMatch(seq -> {
-                String lowerCase = seq.toString().toLowerCase();
-                return lowerCase.contains(key) && !lowerCase.startsWith(key);
+            List<Sequence<T>> startElementSequencesForElements = startElementSequences.get(entry.getKey());
+            return startElementSequencesForElements.stream().anyMatch(sequence -> {
+                String phrase = key(sequence.subList(1));
+                return phrase.contains(key);
             });
         });
     }

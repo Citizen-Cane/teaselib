@@ -61,26 +61,13 @@ public class Sequence<T> extends ArrayList<T> {
         return matchesAt(elements, 0);
     }
 
-    public int indexOf(List<? extends T> elements) {
-        if (elements.isEmpty()) {
-            throw new IllegalArgumentException("Empty sequence");
-        }
-
-        for (int i = 0; i <= size() - elements.size(); ++i) {
-            if (matchesAt(elements, i)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     /**
      * @param elements
      * @param index
      *            ranging from 0 to size() - elements.size()
      * @return
      */
-    private boolean matchesAt(List<? extends T> elements, int index) {
+    public boolean matchesAt(List<? extends T> elements, int index) {
         if (elements.size() + index > size()) {
             return false;
         }
@@ -95,26 +82,6 @@ public class Sequence<T> extends ArrayList<T> {
 
     public boolean mergeableWith(Sequence<T> other) {
         return traits.joinablePhrases.test(this, other);
-    }
-
-    /**
-     * Get all sub-sequences, starting with the largest
-     * 
-     * @return
-     */
-    public List<Sequence<T>> subLists() {
-        List<Sequence<T>> candidates = new ArrayList<>();
-        for (int n = size(); n > 0; --n) {
-            for (int i = 0; i <= size() - n; ++i) {
-                candidates.add(new Sequence<>(this.subList(i, i + n), traits));
-            }
-        }
-        return candidates;
-    }
-
-    public Sequence<T> subList(Sequence<T> list) {
-        int from = indexOf(list);
-        return new Sequence<>(subList(from, from + list.size()), traits);
     }
 
     public List<T> subList(int from) {

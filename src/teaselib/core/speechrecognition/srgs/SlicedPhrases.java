@@ -3,6 +3,8 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -201,7 +203,14 @@ public class SlicedPhrases<T> {
                     sourceSlice = targetSlice.joinWith(sequence);
                     elements.set(j, sourceSlice);
                     Sequence<T> _sequence = sequence;
-                    sequence = sourceSlice.stream().filter(moved -> moved.matches(_sequence)).findFirst().orElseThrow();
+                    // TODO replace startsWith() with equals() - but resolve performance drop
+                    Optional<Sequence<T>> findFirst = sourceSlice.stream().filter(moved -> moved.startsWith(_sequence))
+                            .findFirst();
+                    if (findFirst.isPresent()) {
+                        sequence = findFirst.get();
+                    } else {
+                        throw new NoSuchElementException(sequence.toString());
+                    }
 
                     joined |= sizeBefore + 1 == sourceSlice.size();
                     merged = sizeBefore == sourceSlice.size();

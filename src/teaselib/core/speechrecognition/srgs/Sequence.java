@@ -58,7 +58,7 @@ public class Sequence<T> extends ArrayList<T> {
     }
 
     public boolean startsWith(List<? extends T> elements) {
-        return indexOf(elements) == 0;
+        return matchesAt(elements, 0);
     }
 
     public int indexOf(List<? extends T> elements) {
@@ -72,10 +72,6 @@ public class Sequence<T> extends ArrayList<T> {
             }
         }
         return -1;
-    }
-
-    public boolean matches(Sequence<T> sequence) {
-        return matchesAt(sequence, 0);
     }
 
     /**

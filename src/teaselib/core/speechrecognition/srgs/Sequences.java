@@ -6,6 +6,7 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -221,7 +222,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                         // Nothing to do
                     } else {
                         SlicedPhrases<T> soFarClone = soFar.clone();
-                        soFarClone.addCompact(new Sequences<>(gatherCommonSlice(shorter), traits));
+                        soFarClone.addCompact(new Sequences<>(gatherCommonElements(shorter), traits));
 
                         Sequences<T> withoutElement = new Sequences<>(this);
                         withoutElement.removeCommon(shorter);
@@ -240,7 +241,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        Sequences<T> commonSlice = gatherCommonSlice(common);
+        Sequences<T> commonSlice = gatherCommonElements(common);
         removeCommon(common);
         return commonSlice;
     }
@@ -296,7 +297,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
         for (int i = 0; i < shorter.size(); i++) {
             Sequence<T> sequence = shorter.get(i);
-            if (remove.stream().anyMatch(e -> e.matches(sequence))) {
+            if (remove.stream().anyMatch(e -> e.startsWith(sequence))) {
                 shorter.set(i, new Sequence<>(traits));
             }
         }
@@ -323,14 +324,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Map<String, Sequence<T>> distinct = distinct(candidates);
         Sequences<T> common = new Sequences<>(traits);
         distinct.values().stream().map(Sequence<T>::new).forEach(common::add);
-        return common;
-    }
-
-    private Sequences<T> gatherCommonSlice(List<Sequence<T>> candidates) {
-        Map<String, Sequence<T>> distinct = distinct(candidates);
-        Sequences<T> common = new Sequences<>(traits);
-        distinct.values().stream().map(traits.joinSequenceOperator::apply)
-                .map(element -> new Sequence<>(element, traits)).forEach(common::add);
         return common;
     }
 
@@ -365,7 +358,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         for (int i = 0; i < candidates.size(); i++) {
             Sequence<T> elements = candidates.get(i);
             if (!elements.isEmpty()) {
-                String key = traits.joinSequenceOperator.apply(elements).toString().toLowerCase();
+                String key = elements.joined().toString().toLowerCase();
                 if (reduced.containsKey(key)) {
                     Sequence<T> joinedElements = new Sequence<>(traits);
                     Sequence<T> existing = reduced.get(key);
@@ -406,9 +399,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         boolean merged = false;
         Sequences<T> joined = new Sequences<>(traits);
         for (Sequence<T> element : this) {
-            if (!merged && sequence.matches(element)) {
-                Sequence<T> joinedSequence = new Sequence<>(element);
-                joinedSequence.addAll(sequence);
+            if (!merged && sequence.equals(element)) {
+                Sequence<T> joinedSequence = new Sequence<>(traits);
+                for (int i = 0; i < sequence.size(); i++) {
+                    joinedSequence.add(traits.joinCommonOperator.apply(Arrays.asList(sequence.get(i), element.get(i))));
+                }
                 joined.add(joinedSequence);
                 merged = true;
             } else {

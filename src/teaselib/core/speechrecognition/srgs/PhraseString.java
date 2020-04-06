@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
 class PhraseString {
-    static final Sequence.Traits<PhraseString> Traits = new Traits<>(PhraseString::samePhrase, PhraseString::words,
+    static final Sequence.Traits<PhraseString> Traits = new Traits<>(PhraseString::compareTo, PhraseString::words,
             PhraseString::commonness, PhraseString::joinCommon, PhraseString::joinSequence,
             PhraseString::joinableSequences, PhraseString::joinablePhrases);
 
@@ -45,8 +45,8 @@ class PhraseString {
         return phrase;
     }
 
-    public boolean samePhrase(PhraseString other) {
-        return phrase.equalsIgnoreCase(other.phrase);
+    public int compareTo(PhraseString other) {
+        return phrase.compareToIgnoreCase(other.phrase);
     }
 
     public List<PhraseString> words() {
@@ -82,8 +82,10 @@ class PhraseString {
     }
 
     static boolean joinableSequences(List<PhraseString> sequence1, List<PhraseString> sequence2) {
-        Set<Integer> indices1 = sequence1.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
-        Set<Integer> indices2 = sequence2.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
+        Set<Integer> indices1 = sequence1.size() == 1 ? sequence1.get(0).indices
+                : sequence1.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
+        Set<Integer> indices2 = sequence2.size() == 1 ? sequence2.get(0).indices
+                : sequence2.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
         return !PhraseString.intersect(indices1, indices2);
     }
 
@@ -115,7 +117,7 @@ class PhraseString {
         if (!(obj instanceof PhraseString))
             return false;
         PhraseString other = (PhraseString) obj;
-        return joinablePhrases(this, other) && samePhrase(other);
+        return joinablePhrases(this, other) && compareTo(other) == 0;
     }
 
 }

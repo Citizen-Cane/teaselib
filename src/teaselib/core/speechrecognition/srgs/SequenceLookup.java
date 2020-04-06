@@ -1,24 +1,24 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 class SequenceLookup<T> {
     final Sequences<T> sequences;
-    final Map<String, AtomicInteger> startElementIndicess;
-    final Map<String, List<Sequence<T>>> startElementSequences;
-    final Map<String, List<Sequence<T>>> laterOccurrences;
+    final Map<List<T>, AtomicInteger> startElementIndicess;
+    final Map<List<T>, List<Sequence<T>>> startElementSequences;
+    final Map<List<T>, List<Sequence<T>>> laterOccurrences;
 
-    SequenceLookup(Sequences<T> sequences) {
+    SequenceLookup(Sequences<T> sequences, Comparator<List<T>> comparator) {
         this.sequences = sequences;
-        int size = sequences.size();
-        this.startElementIndicess = new HashMap<>(size);
-        this.startElementSequences = new HashMap<>(size);
-        this.laterOccurrences = new HashMap<>(size);
+        this.startElementIndicess = new TreeMap<>(comparator);
+        this.startElementSequences = new TreeMap<>(comparator);
+        this.laterOccurrences = new TreeMap<>(comparator);
     }
 
     void scan(int length) {
@@ -27,12 +27,12 @@ class SequenceLookup<T> {
         laterOccurrences.clear();
 
         sequences.stream().filter(Sequence::nonEmpty).forEach(sequence -> {
-            String key = key(sequence.subList(0, Math.min(length, sequence.size())));
+            List<T> key = sequence.subList(0, Math.min(length, sequence.size()));
             startElementIndicess.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
             startElementSequences.computeIfAbsent(key, t -> new ArrayList<>()).add(sequence);
 
             for (Sequence<T> seq : sequences) {
-                if (sequence != seq && !seq.isEmpty() && sequenceContains(seq.subList(1), key)) {
+                if (sequence != seq && !seq.isEmpty() && seq.indexOf(key, 1) > 0) {
                     laterOccurrences.computeIfAbsent(key, t -> new ArrayList<>()).add(seq);
                 }
             }
@@ -44,42 +44,29 @@ class SequenceLookup<T> {
         scan(length);
     }
 
-    boolean sequenceContains(List<T> sequence, String key) {
-        return sequence.toString().toLowerCase().contains(key);
-    }
-
     boolean othersStartWith(T element) {
-        List<Sequence<T>> list = startElementSequences.get(key(element));
+        List<Sequence<T>> list = startElementSequences.get(Collections.singletonList(element));
         return list != null && list.size() > 1;
     }
 
     boolean othersStartWith(List<T> elements) {
-        List<Sequence<T>> list = startElementSequences.get(key(elements));
+        List<Sequence<T>> list = startElementSequences.get(elements);
         return list != null && list.size() > 1;
     }
 
-    String key(List<T> elements) {
-        return elements.stream().map(this::key).collect(Collectors.joining(" "));
-    }
-
     boolean occursInAnotherDistinctSequence(T element) {
-        return laterOccurrences.containsKey(key(element));
-    }
-
-    private String key(T element) {
-        return element.toString().toLowerCase();
+        return laterOccurrences.containsKey(Collections.singletonList(element));
     }
 
     boolean occursLaterInAnotherSequence(List<T> elements) {
-        String key = key(elements);
+        List<T> key = elements;
         AtomicInteger n = startElementIndicess.get(key);
         return n != null && n.intValue() > 1 && startElementIndicess.entrySet().stream().filter(entry -> {
             return entry.getValue().intValue() > 1;
         }).anyMatch(entry -> {
             List<Sequence<T>> startElementSequencesForElements = startElementSequences.get(entry.getKey());
             return startElementSequencesForElements.stream().anyMatch(sequence -> {
-                String phrase = key(sequence.subList(1));
-                return phrase.contains(key);
+                return sequence.indexOf(key, 1) > 0;
             });
         });
     }

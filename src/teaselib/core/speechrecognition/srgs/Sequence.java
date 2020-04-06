@@ -2,6 +2,7 @@ package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -12,7 +13,7 @@ public class Sequence<T> extends ArrayList<T> {
     private static final long serialVersionUID = 1L;
 
     static class Traits<T> {
-        final BiPredicate<T, T> equalsOperator;
+        final Comparator<T> comparator;
         final Function<T, List<T>> splitter;
         final Function<List<T>, T> joinCommonOperator;
         final ToIntFunction<T> commonnessOperator;
@@ -20,10 +21,10 @@ public class Sequence<T> extends ArrayList<T> {
         final BiPredicate<List<T>, List<T>> joinableSequences;
         final BiPredicate<List<T>, List<T>> joinablePhrases;
 
-        Traits(BiPredicate<T, T> equalsOperator, Function<T, List<T>> splitter, ToIntFunction<T> commonnessOperator,
+        Traits(Comparator<T> comperator, Function<T, List<T>> splitter, ToIntFunction<T> commonnessOperator,
                 Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator,
                 BiPredicate<List<T>, List<T>> joinableSequences, BiPredicate<List<T>, List<T>> joinablePhrases) {
-            this.equalsOperator = equalsOperator;
+            this.comparator = comperator;
             this.splitter = splitter;
             this.commonnessOperator = commonnessOperator;
             this.joinCommonOperator = joinCommonOperator;
@@ -73,11 +74,32 @@ public class Sequence<T> extends ArrayList<T> {
         }
 
         for (int i = 0; i < elements.size(); i++) {
-            if (!traits.equalsOperator.test(get(index + i), elements.get(i))) {
+            if (traits.comparator.compare(get(index + i), elements.get(i)) != 0) {
                 return false;
             }
         }
         return true;
+    }
+
+    public int indexOf(List<? extends T> elements) {
+        return indexOf(elements, 0);
+    }
+
+    public int indexOf(List<? extends T> elements, int start) {
+        int size = size();
+        int limit = size - elements.size();
+        if (elements.isEmpty()) {
+            throw new IllegalArgumentException("Empty sequence");
+        } else if (start > limit) {
+            return -1;
+        }
+
+        for (int i = start; i <= limit; ++i) {
+            if (matchesAt(elements, i)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public boolean mergeableWith(Sequence<T> other) {
@@ -104,7 +126,11 @@ public class Sequence<T> extends ArrayList<T> {
     }
 
     public T joined() {
-        return traits.joinSequenceOperator.apply(this);
+        if (size() == 1) {
+            return get(0);
+        } else {
+            return traits.joinSequenceOperator.apply(this);
+        }
     }
 
     @Override

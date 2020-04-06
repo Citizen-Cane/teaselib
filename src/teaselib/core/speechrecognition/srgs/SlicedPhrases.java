@@ -1,11 +1,14 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,16 +17,17 @@ import teaselib.core.speechrecognition.srgs.Sequences.SliceInProgress;
 
 public class SlicedPhrases<T> {
     static class Rating<T> {
-        final Set<String> symbols;
+        final Set<T> symbols;
         int duplicatedSymbols = 0;
         int maxCommonness = 0;
 
-        Rating() {
-            this.symbols = new HashSet<>();
+        Rating(Comparator<T> comparator) {
+            this.symbols = new TreeSet<>(comparator);
         }
 
-        Rating(Rating<T> other) {
-            this.symbols = new HashSet<>(other.symbols);
+        Rating(Rating<T> other, Comparator<T> comparator) {
+            this.symbols = new TreeSet<>(comparator);
+            this.symbols.addAll(other.symbols);
             this.duplicatedSymbols = other.duplicatedSymbols;
             this.maxCommonness = other.maxCommonness;
         }
@@ -34,8 +38,7 @@ public class SlicedPhrases<T> {
         }
 
         public void update(Sequence<T> sequence) {
-            for (T element : sequence) {
-                String symbol = element.toString().toLowerCase();
+            for (T symbol : sequence) {
                 if (symbols.contains(symbol)) {
                     duplicatedSymbols++;
                 } else {
@@ -78,23 +81,27 @@ public class SlicedPhrases<T> {
 
     private final List<Sequences<T>> elements;
     final Rating<T> rating;
+    private final Function<Sequences<T>, String> prettyPrint;
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
-        slice(candidates, phrases);
+        slice(candidates, phrases, Objects::toString);
         return candidates.getResult();
     }
 
-    public static <T> SlicedPhrases<T> of(Sequences<T> phrases, List<SlicedPhrases<T>> results) {
-        slice(results, phrases);
+    public static <T> SlicedPhrases<T> of(Sequences<T> phrases, List<SlicedPhrases<T>> results,
+            Function<Sequences<T>, String> prettyPrint) {
+        slice(results, phrases, prettyPrint);
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         results.removeIf(candidate -> candidate.rating.isInvalidated());
         results.stream().forEach(candidates::add);
         return candidates.getResult();
     }
 
-    static <T> void slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences) {
-        List<SliceInProgress<T>> more = sequences.sliceAll(candidates, new SlicedPhrases<>());
+    static <T> void slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences,
+            Function<Sequences<T>, String> prettyPrint) {
+        List<SliceInProgress<T>> more = sequences.sliceAll(candidates,
+                new SlicedPhrases<>(prettyPrint, sequences.traits.comparator));
         while (!more.isEmpty()) {
             ArrayList<Sequences.SliceInProgress<T>> evenMore = new ArrayList<>();
             for (SliceInProgress<T> sliceInProgress : more) {
@@ -120,18 +127,21 @@ public class SlicedPhrases<T> {
         }
     }
 
-    public SlicedPhrases() {
+    public SlicedPhrases(Function<Sequences<T>, String> prettyPrint, Comparator<T> comparator) {
         this.elements = new ArrayList<>();
-        this.rating = new Rating<>();
+        this.rating = new Rating<>(comparator);
+        this.prettyPrint = prettyPrint;
     }
 
-    public SlicedPhrases(List<Sequences<T>> elements, Rating<T> rating) {
+    private SlicedPhrases(List<Sequences<T>> elements, Rating<T> rating, Sequence.Traits<T> traits,
+            Function<Sequences<T>, String> prettyPrint) {
         this.elements = new ArrayList<>(elements.size());
         for (int i = 0; i < elements.size(); i++) {
             Sequences<T> sequences = elements.get(i);
             this.elements.add(new Sequences<>(sequences));
         }
-        this.rating = new Rating<>(rating);
+        this.rating = new Rating<>(rating, traits.comparator);
+        this.prettyPrint = prettyPrint;
     }
 
     public boolean isEmpty() {
@@ -150,8 +160,8 @@ public class SlicedPhrases<T> {
         return elements.stream();
     }
 
-    public SlicedPhrases<T> clone() {
-        return new SlicedPhrases<>(elements, rating);
+    public SlicedPhrases<T> clone(Sequence.Traits<T> traits) {
+        return new SlicedPhrases<>(elements, rating, traits, prettyPrint);
     }
 
     public int maxCommonness() {
@@ -255,7 +265,7 @@ public class SlicedPhrases<T> {
         phrases.append(duplicatedSymbolsCount());
         phrases.append("\n");
 
-        phrases.append(stream().map(Object::toString).collect(Collectors.joining("\n")));
+        phrases.append(stream().map(prettyPrint).collect(Collectors.joining("\n")));
         return phrases.toString();
     }
 

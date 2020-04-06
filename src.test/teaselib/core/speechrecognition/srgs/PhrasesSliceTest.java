@@ -1,10 +1,12 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
 
@@ -40,9 +42,10 @@ public class PhrasesSliceTest {
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();
 
     private static SlicedPhrases<PhraseString> slice(PhraseStringSequences choices) {
+
         List<SlicedPhrases<PhraseString>> candidates = new ArrayList<>();
         long start = System.currentTimeMillis();
-        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices, candidates);
+        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices, candidates, PhrasesSliceTest::prettyPrint);
         long end = System.currentTimeMillis();
         logger.info("Slicing duration = {}ms", end - start);
 
@@ -59,11 +62,16 @@ public class PhrasesSliceTest {
             assertEquals(candidate.toString() + "\t max commonness", candidate.maxCommonness(),
                     candidate.rating.maxCommonness);
 
-            assertEquals(candidate.toString() + "\t all symbols mut be split", 1,
-                    candidate.rating.symbols.stream().map(e -> e.split(" ").length).distinct().collect(toSet()).size());
+            assertEquals(candidate.toString() + "\t all symbols mut be split", 1, candidate.rating.symbols.stream()
+                    .map(e -> e.toString().split(" ").length).distinct().collect(toSet()).size());
         }
 
         return optimal;
+    }
+
+    private static String prettyPrint(Sequences<PhraseString> slice) {
+        return slice.stream().map(Sequence<PhraseString>::joined)
+                .map(element -> "\t\"" + element.phrase + "\"=" + element.indices + " ").collect(joining(" "));
     }
 
     @Test
@@ -158,7 +166,7 @@ public class PhrasesSliceTest {
                 choice("No, Of course not", 5));
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
-        assertEquals(new PhraseStringSequences(result("Yes", 0, 1, 2), result("No", 3, 4, 5)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("No", 3, 4, 5), result("Yes", 0, 1, 2)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result("Miss", 0, 3)), optimal.get(1));
         assertEquals(new PhraseStringSequences(result(Arrays.asList("of", "course"), 0, 1, 2, 3, 4, 5)),
                 optimal.get(2));
@@ -205,6 +213,35 @@ public class PhrasesSliceTest {
                 choice("It's ready, Miss", 4));
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
+        assertEquals(new PhraseStringSequences(result("No", 0), result(Arrays.asList("I", "have", "it"), 2),
+                result("Yes", 1, 3)), optimal.get(0));
+        assertEquals(new PhraseStringSequences(result("it's", 3, 4), result("Miss", 0, 1, 2)), optimal.get(1));
+        assertEquals(new PhraseStringSequences(result("I'm", 0, 1)), optimal.get(2));
+        assertEquals(new PhraseStringSequences(result("sorry", 0), result("ready", 1, 3, 4)), optimal.get(3));
+        assertEquals(new PhraseStringSequences(result("Miss", 3, 4)), optimal.get(4));
+        assertEquals(5, optimal.size());
+    }
+
+    // @Test
+    public void testSliceMultipleChoiceIrregularPhrasesMixedCaseShorter() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("No Miss, I'm sorry", 0), //
+                choice("Yes Miss, I'm ready", 1), //
+                choice("I have it, Miss", 2), //
+                choice("Yes,it's ready, Miss", 3), //
+                choice("It's ready, Miss", 4));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        // TODO disabling teaselib.core.speechrecognition.srgs.SlicedPhrases.worseThan(List<SlicedPhrases<T>>)
+        // reveals that move() doesn't merge "Miss" and "it's" in some cases
+        // -> slices are usually dropped but if not the duplicated count will be wrong
+
+        // TODO has worked when string matching in distinctLookup matched "I" in "I'm"
+        // - using single symbols none of the candidates produces Miss(2, 3, 4) at the end anymore
+        // -> this is because a short common results a candidate with common miss(0,1,2),
+        // but the common part is not split up into several candidates miss(0,1)(0,2),(1,2)
+
+        // It's shorter, and models the symbol better - also allows to spread "I have it" ahead to avoid srgs NULL rules
         assertEquals(new PhraseStringSequences(result("No", 0), result("Yes", 1, 3),
                 result(Arrays.asList("I", "have", "it"), 2)), optimal.get(0));
         assertEquals(new PhraseStringSequences(result(Arrays.asList("Miss", "I'm"), 0, 1), result("it's", 3, 4)),
@@ -286,6 +323,32 @@ public class PhrasesSliceTest {
         assertEquals(6, optimal.size());
     }
 
+    public static void main(String argv[]) {
+        new PhrasesSliceTest().testSliceMultipleCommon3Performance();
+    }
+
+    // @Test
+    public void testSliceMultipleCommon3Performance() {
+        SlicedPhrases<PhraseString> optimal = null;
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 20; i++) {
+            PhraseStringSequences choices = new PhraseStringSequences( //
+                    choice("A B C, D E F G", 0), //
+                    choice("D E F H, B C", 1), //
+                    choice("D I J, B C", 2), //
+                    choice("A, D I K L, B C", 3), //
+                    choice("D I F M, B C", 4), //
+                    choice("N B C, O", 5));
+            optimal = slice(choices);
+        }
+        long end = System.currentTimeMillis();
+        logger.info("---------------------------------");
+        logger.info("Overall = {}ms", end - start);
+
+        assertNotNull(optimal);
+    }
+
     @Test
     public void testSliceSplitShort() {
         PhraseStringSequences choices = new PhraseStringSequences( //
@@ -336,6 +399,34 @@ public class PhrasesSliceTest {
         assertEquals(new PhraseStringSequences(result(Arrays.asList("B", "C"), 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)),
                 optimal.get(1));
         assertEquals(7, optimal.size());
+    }
+
+    @Test
+    public void testSliceDepth() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("A B C D E", 0), //
+                choice("E A B C D", 1), //
+                choice("D E A B C", 2), //
+                choice("C D E A B", 3), //
+                choice("B C D E A", 4));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertEquals(new PhraseStringSequences(result("E", 0, 1, 2, 3, 4)), optimal.get(4));
+        assertEquals(9, optimal.size());
+    }
+
+    @Test
+    public void testSliceDepthReverse() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("B C D E A", 0), //
+                choice("C D E A B", 1), //
+                choice("D E A B C", 2), //
+                choice("E A B C D", 3), //
+                choice("A B C D E", 4));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertEquals(new PhraseStringSequences(result("A", 0, 1, 2, 3, 4)), optimal.get(4));
+        assertEquals(9, optimal.size());
     }
 
 }

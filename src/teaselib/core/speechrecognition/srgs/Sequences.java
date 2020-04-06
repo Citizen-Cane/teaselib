@@ -8,15 +8,14 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -112,7 +111,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             disjunct.add(null);
         }
 
-        SequenceLookup<T> distinct = new SequenceLookup<>(this);
+        SequenceLookup<T> distinct = new SequenceLookup<>(this, this::sequenceAsKey);
         distinct.scan(1);
         for (int i = 0; i < size(); i++) {
             Sequence<T> sequence = get(i);
@@ -137,7 +136,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Sequences<T> disjunct = removeDisjunctElements();
         int length = 1;
         while (!isEmpty()) {
-            SequenceLookup<T> distinct = new SequenceLookup<>(this);
+            SequenceLookup<T> distinct = new SequenceLookup<>(this, this::sequenceAsKey);
             distinct.scan(length);
             boolean elementRemoved = false;
             for (int i = 0; i < size(); i++) {
@@ -146,7 +145,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     T element = sequence.get(0);
                     if (!distinct.othersStartWith(element)) {
                         if (distinct.occursInAnotherDistinctSequence(element) && distinct.hasCommonStartElements()) {
-                            SlicedPhrases<T> candidate = soFar.clone();
+                            SlicedPhrases<T> candidate = soFar.clone(traits);
 
                             Sequences<T> current = new Sequences<>(disjunct);
                             current.get(i, () -> new Sequence<>(traits)).add(element);
@@ -213,7 +212,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         if (maxCommon.isPresent()) {
             int length = 1;
             while (true) {
-                SequenceLookup<T> distinct = new SequenceLookup<>(this);
+                SequenceLookup<T> distinct = new SequenceLookup<>(this, this::sequenceAsKey);
                 distinct.scan(length);
                 boolean success = setCommonToStartElements(common, length, distinct);
                 if (!success) {
@@ -223,7 +222,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     if (shorter.equals(common)) {
                         // Nothing to do
                     } else {
-                        SlicedPhrases<T> soFarClone = soFar.clone();
+                        SlicedPhrases<T> soFarClone = soFar.clone(traits);
                         soFarClone.addCompact(new Sequences<>(gatherCommonElements(shorter), traits));
 
                         Sequences<T> withoutElement = new Sequences<>(this);
@@ -309,7 +308,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     private SlicedPhrases<T> sliceCommonWithoutStartElements(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar,
             Sequence<T> startElements) {
-        SlicedPhrases<T> candidate = soFar.clone();
+        SlicedPhrases<T> candidate = soFar.clone(traits);
 
         candidate.addCompact(new Sequences<>(singleton(startElements), traits));
 
@@ -345,12 +344,12 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private Optional<Integer> maxCommon(int start, int length) {
-        Map<String, AtomicInteger> distinct = new HashMap<>(size());
+        Map<List<T>, AtomicInteger> distinct = new TreeMap<>(this::sequenceAsKey);
 
         for (Sequence<T> sequence : this) {
             int size = sequence.size();
             if (size > start) {
-                String key = sequence.subList(start, min(start + length, size)).toString().toLowerCase();
+                List<T> key = sequence.subList(start, min(start + length, size));
                 distinct.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
             }
         }
@@ -368,12 +367,28 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return Optional.of(max);
     }
 
-    private Map<String, Sequence<T>> distinct(List<Sequence<T>> candidates) {
-        Map<String, Sequence<T>> reduced = new LinkedHashMap<>();
+    int sequenceAsKey(List<T> s1, List<T> s2) {
+        int size1 = s1.size();
+        int size2 = s2.size();
+        if (size1 != size2) {
+            return size2 - size1;
+        } else {
+            for (int i = 0; i < size1; i++) {
+                int c = traits.comparator.compare(s1.get(i), s2.get(i));
+                if (c != 0) {
+                    return c;
+                }
+            }
+            return 0;
+        }
+    }
+
+    private Map<Sequence<T>, Sequence<T>> distinct(List<Sequence<T>> candidates) {
+        Map<Sequence<T>, Sequence<T>> reduced = new TreeMap<>(this::sequenceAsKey);
         for (int i = 0; i < candidates.size(); i++) {
             Sequence<T> elements = candidates.get(i);
             if (!elements.isEmpty()) {
-                String key = elements.joined().toString().toLowerCase();
+                Sequence<T> key = elements;
                 Sequence<T> existing = reduced.get(key);
                 if (existing != null) {
                     Sequence<T> joinedElements = new Sequence<>(traits);

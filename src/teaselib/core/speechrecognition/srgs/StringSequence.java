@@ -8,7 +8,7 @@ import java.util.List;
 public class StringSequence extends Sequence<String> {
     private static final long serialVersionUID = 1L;
 
-    public static final Traits<String> Traits = new Traits<>(String::equalsIgnoreCase, StringSequence::splitWords,
+    public static final Traits<String> Traits = new Traits<>(String::compareTo, StringSequence::splitWords,
             StringSequence::commonness, StringSequences::joinCommon, StringSequences::joinSequence, (a, b) -> true,
             (a, b) -> false);
 

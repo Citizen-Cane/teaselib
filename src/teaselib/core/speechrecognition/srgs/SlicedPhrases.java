@@ -1,11 +1,10 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -34,7 +33,7 @@ public class SlicedPhrases<T> {
 
         void update(Sequences<T> slice) {
             slice.stream().forEach(this::update);
-            maxCommonness = Math.max(maxCommonness, slice.max());
+            maxCommonness = Math.max(maxCommonness, slice.maxCommonness());
         }
 
         public void update(Sequence<T> sequence) {
@@ -48,7 +47,11 @@ public class SlicedPhrases<T> {
         }
 
         public void updateMaxCommonness(Sequences<T> slice) {
-            maxCommonness = Math.max(maxCommonness, slice.max());
+            maxCommonness = Math.max(maxCommonness, slice.maxCommonness());
+        }
+
+        public void updateMaxCommonness(Sequence<T> sequence) {
+            maxCommonness = Math.max(maxCommonness, sequence.maxCommonness());
         }
 
         @Override
@@ -165,7 +168,7 @@ public class SlicedPhrases<T> {
     }
 
     public int maxCommonness() {
-        return elements.stream().map(Sequences::max).reduce(Math::max).orElse(0);
+        return elements.stream().map(Sequences::maxCommonness).reduce(Math::max).orElse(0);
     }
 
     public long distinctSymbolsCount() {
@@ -197,56 +200,65 @@ public class SlicedPhrases<T> {
 
     private void move(Sequences<T> slice) {
         for (Sequence<T> sequence : new ArrayList<>(slice)) {
-            boolean joined = false;
-            boolean merged = false;
-
+            boolean symbolsAppended = false;
+            Sequence<T> newSymbols = sequence;
             Sequences<T> sourceSlice = slice;
+
             for (int j = elements.size() - 1; j >= 0; j--) {
                 Sequences<T> targetSlice = elements.get(j);
-                if (targetSlice.isJoinableWith(sequence)) {
-                    int sizeBefore = targetSlice.size();
-
-                    sourceSlice.remove(sequence);
-                    sourceSlice = targetSlice.joinWith(sequence);
-                    elements.set(j, sourceSlice);
-                    Sequence<T> _sequence = sequence;
-                    // TODO replace startsWith() with equals() - but resolve performance drop
-                    Optional<Sequence<T>> findFirst = sourceSlice.stream().filter(moved -> moved.startsWith(_sequence))
-                            .findFirst();
-                    if (findFirst.isPresent()) {
-                        sequence = findFirst.get();
-                    } else {
-                        throw new NoSuchElementException(sequence.toString());
-                    }
-
-                    joined |= sizeBefore + 1 == sourceSlice.size();
-                    merged = sizeBefore == sourceSlice.size();
-                    rating.updateMaxCommonness(sourceSlice);
-                } else {
-                    for (Sequence<T> targetSequence : targetSlice) {
-                        if (targetSequence.mergeableWith(sequence)) {
-                            sourceSlice.remove(sequence);
-                            targetSequence.addAll(sequence);
-                            targetSlice.remove(targetSequence);
-                            targetSlice.add(new Sequence<>(targetSequence, targetSlice.traits));
-
-                            rating.update(sequence);
-                            rating.updateMaxCommonness(targetSlice);
-                            merged = true;
-                            break;
+                boolean moveableSequence = true;
+                Sequence<T> mergeableSequence = null;
+                int targetSliceSize = targetSlice.size();
+                for (int k = 0; k < targetSliceSize; k++) {
+                    Sequence<T> targetSequence = targetSlice.get(k);
+                    if (sequence.joinableSequences(targetSequence)) {
+                        // merge sequence into target
+                        if (sequence.compareTo(targetSequence) == 0) {
+                            mergeableSequence = targetSequence;
                         }
+                    } else if (sequence.joinablePhrase(targetSequence)) {
+                        // Append sequence to target sequence
+                        sourceSlice.remove(sequence);
+                        targetSequence.addAll(sequence);
+                        symbolsAppended = true;
+                        moveableSequence = false;
+                        break;
+                    } else {
+                        moveableSequence = false;
                     }
-                    break;
                 }
-                if (merged) {
+
+                if (moveableSequence) {
+                    if (mergeableSequence != null) {
+                        sourceSlice.remove(sequence);
+                        // merge sequence into target
+                        int size = sequence.size();
+                        for (int i = 0; i < size; i++) {
+                            mergeableSequence.set(i, targetSlice.traits.joinCommonOperator
+                                    .apply(Arrays.asList(sequence.get(i), mergeableSequence.get(i))));
+                        }
+                        rating.updateMaxCommonness(mergeableSequence);
+                        sequence = mergeableSequence;
+                        symbolsAppended = false;
+                        break;
+                    } else {
+                        // Move sequence
+                        sourceSlice.remove(sequence);
+                        targetSlice.add(sequence);
+                        symbolsAppended = true;
+                        sourceSlice = targetSlice;
+                    }
+                } else {
                     break;
                 }
             }
 
-            if (joined && !merged) {
-                rating.update(sequence);
+            if (symbolsAppended) {
+                rating.update(newSymbols);
+                rating.updateMaxCommonness(newSymbols);
             }
         }
+
     }
 
     @Override

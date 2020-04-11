@@ -1,12 +1,11 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static java.lang.Math.min;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singleton;
-import static java.util.stream.Collectors.toList;
+import static java.util.Arrays.*;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,7 +17,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
@@ -183,12 +181,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return stream().flatMap(Sequence::stream).map(traits.splitter::apply).flatMap(List::stream).count();
     }
 
-    public int max() {
+    public int maxCommonness() {
         int max = Integer.MIN_VALUE;
         for (Sequence<T> sequence : this) {
-            for (T element : sequence) {
-                max = Math.max(max, traits.commonnessOperator.applyAsInt(element));
-            }
+            max = Math.max(max, sequence.maxCommonness());
         }
         return max;
     }
@@ -208,6 +204,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             common.add(new Sequence<>(traits));
         }
 
+        // This loop computes the maximum commonness for elements and successors up to "length"
+        // as in testSliceMultipleChoiceIrregularPhrasesMixedCase -> {Yes, Miss} -> "widest common"
         Optional<Integer> maxCommon = maxCommon(0, 1);
         if (maxCommon.isPresent()) {
             int length = 1;
@@ -422,30 +420,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public boolean isJoinableWith(Sequence<T> sequence) {
-        return traits.joinableSequences.test(sequence, stream().flatMap(Sequence::stream).collect(Collectors.toList()));
-    }
-
-    public Sequences<T> joinWith(Sequence<T> sequence) {
-        boolean merged = false;
-        Sequences<T> joined = new Sequences<>(traits);
-        for (Sequence<T> element : this) {
-            if (!merged && sequence.equals(element)) {
-                Sequence<T> joinedSequence = new Sequence<>(traits);
-                for (int i = 0; i < sequence.size(); i++) {
-                    joinedSequence.add(traits.joinCommonOperator.apply(Arrays.asList(sequence.get(i), element.get(i))));
-                }
-                joined.add(joinedSequence);
-                merged = true;
-            } else {
-                joined.add(element);
-            }
-        }
-
-        if (!merged) {
-            joined.add(sequence);
-        }
-
-        return joined;
+        return traits.joinableSequences.test(sequence, stream().flatMap(Sequence::stream).collect(toList()));
     }
 
     @Override

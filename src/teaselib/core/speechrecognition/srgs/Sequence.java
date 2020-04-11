@@ -45,7 +45,11 @@ public class Sequence<T> extends ArrayList<T> {
     }
 
     public Sequence(Traits<T> traits) {
-        super();
+        this.traits = traits;
+    }
+
+    public Sequence(Traits<T> traits, int capacity) {
+        super(capacity);
         this.traits = traits;
     }
 
@@ -102,8 +106,20 @@ public class Sequence<T> extends ArrayList<T> {
         return -1;
     }
 
-    public boolean mergeableWith(Sequence<T> other) {
+    public boolean joinableSequences(Sequence<T> other) {
+        return traits.joinableSequences.test(this, other);
+    }
+
+    public boolean joinablePhrase(Sequence<T> other) {
         return traits.joinablePhrases.test(this, other);
+    }
+
+    public int maxCommonness() {
+        int max = Integer.MIN_VALUE;
+        for (T element : this) {
+            max = Math.max(max, traits.commonnessOperator.applyAsInt(element));
+        }
+        return max;
     }
 
     public List<T> subList(int from) {
@@ -136,6 +152,38 @@ public class Sequence<T> extends ArrayList<T> {
     @Override
     public int hashCode() {
         return super.hashCode();
+    }
+
+    public int comparator(List<T> s1, List<T> s2) {
+        int size1 = s1.size();
+        int size2 = s2.size();
+        if (size1 != size2) {
+            return size2 - size1;
+        } else {
+            for (int i = 0; i < size1; i++) {
+                int c = traits.comparator.compare(s1.get(i), s2.get(i));
+                if (c != 0) {
+                    return c;
+                }
+            }
+            return 0;
+        }
+    }
+
+    public int compareTo(Sequence<T> other) {
+        int size = size();
+        int otherSize = other.size();
+        if (size != otherSize) {
+            return otherSize - size;
+        } else {
+            for (int i = 0; i < size; i++) {
+                int compare = traits.comparator.compare(get(i), other.get(i));
+                if (compare != 0) {
+                    return compare;
+                }
+            }
+            return 0;
+        }
     }
 
     @Override

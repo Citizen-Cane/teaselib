@@ -1,14 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.srgs.PhraseString.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -427,6 +422,24 @@ public class PhrasesSliceTest {
 
         assertEquals(new PhraseStringSequences(result("A", 0, 1, 2, 3, 4)), optimal.get(4));
         assertEquals(9, optimal.size());
+    }
+
+    @Test
+    public void testStackOverflow() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("Yes Miss, of course", 0), //
+                choice("Yes, of course, Miss", 1), //
+                choice("Yes, of course", 2), //
+                choice("Of course", 3), //
+                choice("No Miss, of course not", 4), //
+                choice("No, of course not, Miss", 5), //
+                choice("No, of course not", 6), //
+                choice("Of course not", 7));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertEquals(5, optimal.size());
+        assertEquals(1, optimal.rating.duplicatedSymbols);
+        assertEquals(8, optimal.rating.maxCommonness);
     }
 
 }

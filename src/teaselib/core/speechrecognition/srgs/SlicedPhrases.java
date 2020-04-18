@@ -3,6 +3,7 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -14,7 +15,7 @@ import java.util.stream.Stream;
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 import teaselib.core.speechrecognition.srgs.Sequences.SliceInProgress;
 
-public class SlicedPhrases<T> {
+public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     static class Rating<T> {
         final Set<T> symbols;
         int duplicatedSymbols = 0;
@@ -172,9 +173,13 @@ public class SlicedPhrases<T> {
     }
 
     public long distinctSymbolsCount() {
-        Traits<T> traits = elements.get(0).traits;
-        return elements.stream().flatMap(Sequences::stream).flatMap(Sequence::stream).map(traits.splitter::apply)
-                .flatMap(List::stream).map(T::toString).map(String::toLowerCase).distinct().count();
+        if (elements.isEmpty()) {
+            return 0;
+        } else {
+            Traits<T> traits = elements.get(0).traits;
+            return elements.stream().flatMap(Sequences::stream).flatMap(Sequence::stream).map(traits.splitter::apply)
+                    .flatMap(List::stream).map(T::toString).map(String::toLowerCase).distinct().count();
+        }
     }
 
     public long symbolCount() {
@@ -263,22 +268,26 @@ public class SlicedPhrases<T> {
 
     @Override
     public String toString() {
-        StringBuilder phrases = new StringBuilder();
-        phrases.append(rating.toString());
-        phrases.append("\n");
-        phrases.append("Cmax=");
-        phrases.append(maxCommonness());
-        phrases.append(" ");
-        phrases.append(" ");
-        phrases.append("distinct=");
-        phrases.append(distinctSymbolsCount());
-        phrases.append(" ");
-        phrases.append("duplicates=");
-        phrases.append(duplicatedSymbolsCount());
-        phrases.append("\n");
+        if (rating.isInvalidated()) {
+            return "dropped";
+        } else {
+            StringBuilder phrases = new StringBuilder();
+            phrases.append(rating.toString());
+            phrases.append("\n");
+            phrases.append("Cmax=");
+            phrases.append(maxCommonness());
+            phrases.append(" ");
+            phrases.append(" ");
+            phrases.append("distinct=");
+            phrases.append(distinctSymbolsCount());
+            phrases.append(" ");
+            phrases.append("duplicates=");
+            phrases.append(duplicatedSymbolsCount());
+            phrases.append("\n");
 
-        phrases.append(stream().map(prettyPrint).collect(Collectors.joining("\n")));
-        return phrases.toString();
+            phrases.append(stream().map(prettyPrint).collect(Collectors.joining("\n")));
+            return phrases.toString();
+        }
     }
 
     public boolean worseThan(List<SlicedPhrases<T>> candidates) {
@@ -292,6 +301,11 @@ public class SlicedPhrases<T> {
     public void drop() {
         elements.clear();
         rating.invalidate();
+    }
+
+    @Override
+    public Iterator<Sequences<T>> iterator() {
+        return elements.iterator();
     }
 
 }

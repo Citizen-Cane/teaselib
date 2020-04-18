@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toList;
-import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.speechrecognition.srgs.PhraseString.*;
 
 import java.util.Collection;
 import java.util.List;

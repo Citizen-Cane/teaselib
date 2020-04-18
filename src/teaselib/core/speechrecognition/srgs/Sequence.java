@@ -14,6 +14,7 @@ public class Sequence<T> extends ArrayList<T> {
 
     static class Traits<T> {
         final Comparator<T> comparator;
+        final Comparator<List<T>> listComparator;
         final Function<T, List<T>> splitter;
         final Function<List<T>, T> joinCommonOperator;
         final ToIntFunction<T> commonnessOperator;
@@ -25,6 +26,7 @@ public class Sequence<T> extends ArrayList<T> {
                 Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator,
                 BiPredicate<List<T>, List<T>> joinableSequences, BiPredicate<List<T>, List<T>> joinablePhrases) {
             this.comparator = comperator;
+            this.listComparator = this::compare;
             this.splitter = splitter;
             this.commonnessOperator = commonnessOperator;
             this.joinCommonOperator = joinCommonOperator;
@@ -32,6 +34,25 @@ public class Sequence<T> extends ArrayList<T> {
             this.joinableSequences = joinableSequences;
             this.joinablePhrases = joinablePhrases;
         }
+
+        int compare(List<T> s1, List<T> s2) {
+            if (s1 == s2)
+                return 0;
+            int size1 = s1.size();
+            int size2 = s2.size();
+            if (size1 != size2) {
+                return size2 - size1;
+            } else {
+                for (int i = 0; i < size1; i++) {
+                    int c = comparator.compare(s1.get(i), s2.get(i));
+                    if (c != 0) {
+                        return c;
+                    }
+                }
+                return 0;
+            }
+        }
+
     }
 
     final Sequence.Traits<T> traits;
@@ -83,6 +104,16 @@ public class Sequence<T> extends ArrayList<T> {
             }
         }
         return true;
+    }
+
+    public int indexOf(T element, int start) {
+        int size = size();
+        for (int i = start; i < size; ++i) {
+            if (traits.comparator.compare(get(i), element) == 0) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public int indexOf(List<? extends T> elements) {

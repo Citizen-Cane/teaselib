@@ -157,6 +157,24 @@ public class PhrasesSliceTest {
     }
 
     @Test
+    public void testProductionSlice2Reverse() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("A B C D", 0), //
+                choice("A B C", 1), //
+                choice("A B", 2), //
+                choice("A", 3)); //
+        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices);
+
+        assertEquals(4, optimal.size());
+        assertSequence(results(result("A", 0, 1, 2, 3)), optimal, 0);
+        assertSequence(results(result("B", 0, 1, 2)), optimal, 1);
+        assertSequence(results(result("C", 0, 1)), optimal, 2);
+        assertSequence(results(result("D", 0)), optimal, 3);
+        assertEquals(0, optimal.rating.duplicatedSymbols);
+        assertEquals(4, optimal.rating.maxCommonness);
+    }
+
+    @Test
     public void testCommonStart() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("A, B", 0), //
@@ -185,7 +203,7 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testThatChoiceStringYes3() {
+    public void testYes3() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("yes Miss, of course", 0), //
                 choice("Yes, of Course, Miss", 1), //
@@ -202,7 +220,7 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testThatChoiceStringYes3b() {
+    public void testYes3b() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("Miss, of course", 0), //
                 choice("Yes, of Course, Miss", 1), //
@@ -256,15 +274,96 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testSliceMultipleChoiceSinglePhraseOfStringsOneOptionalPart() {
+    public void testSliceAllDisjunctPartOccurLaterInAnotherSequenceAtDistance1() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("yes Miss, of course", 0), //
                 choice("No, of Course not, Miss", 1));
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
+        assertEquals(3, optimal.size());
+        assertEquals(1, optimal.rating.duplicatedSymbols);
+        assertEquals(2, optimal.rating.maxCommonness);
+
         assertSequence(results(result(Arrays.asList("yes", "Miss"), 0), result("No", 1)), optimal, 0);
         assertSequence(results(result(Arrays.asList("of", "course"), 0, 1)), optimal, 1);
         assertSequence(results(result(Arrays.asList("not", "Miss"), 1)), optimal, 2);
+    }
+
+    @Test
+    public void testSliceAllDisjunctPartOccurLaterInAnotherSequenceAtDistance1Reverse() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("No, of Course not, Miss", 0), //
+                choice("yes Miss, of course", 1));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertEquals(3, optimal.size());
+        assertEquals(1, optimal.rating.duplicatedSymbols);
+        assertEquals(2, optimal.rating.maxCommonness);
+
+        assertSequence(results(result("No", 0), result(Arrays.asList("yes", "Miss"), 1)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("of", "course"), 0, 1)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("not", "Miss"), 0)), optimal, 2);
+    }
+
+    @Test
+    public void testSliceAllDisjunctPartOccurLaterInAnotherSequenceAtDistance2() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("yes Mistress Lee, of course", 0), //
+                choice("No, of Course not, Mistress", 1));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertSequence(results(result(Arrays.asList("yes", "Mistress", "Lee"), 0), result("No", 1)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("of", "course"), 0, 1)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("not", "Mistress"), 1)), optimal, 2);
+
+        assertEquals(3, optimal.size());
+        assertEquals(1, optimal.rating.duplicatedSymbols);
+        assertEquals(2, optimal.rating.maxCommonness);
+    }
+
+    @Test
+    public void testSliceAllDisjunctPartOccurLaterInAnotherSequenceAtDistance2Reverse() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("No, of Course not, Mistress", 0), //
+                choice("yes Mistress Lee, of course", 1));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertSequence(results(result("No", 0), result(Arrays.asList("yes", "Mistress", "Lee"), 1)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("of", "course"), 0, 1)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("not", "Mistress"), 0)), optimal, 2);
+
+        assertEquals(3, optimal.size());
+        assertEquals(1, optimal.rating.duplicatedSymbols);
+        assertEquals(2, optimal.rating.maxCommonness);
+    }
+
+    @Test
+    public void testSliceAllDisjunctPartOccurLaterInAnotherSequenceAtDistance3() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("yes Mistress Lee La, of course", 0), //
+                choice("No, of Course not, Mistress", 1));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertSequence(results(result(Arrays.asList("yes", "Mistress", "Lee", "La"), 0), result("No", 1)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("of", "course"), 0, 1)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("not", "Mistress"), 1)), optimal, 2);
+
+        assertEquals(3, optimal.size());
+        assertEquals(1, optimal.rating.duplicatedSymbols);
+        assertEquals(2, optimal.rating.maxCommonness);
+    }
+
+    @Test
+    public void testSliceAllDisjunctPartOccurLaterInAnotherSequenceAtDistance3Reverse() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("No, of Course not, Mistress", 0), //
+                choice("yes Mistress Lee La, of course", 1));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertSequence(results(result("No", 0), result(Arrays.asList("yes", "Mistress", "Lee", "La"), 1)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("of", "course"), 0, 1)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("not", "Mistress"), 0)), optimal, 2);
+
         assertEquals(3, optimal.size());
         assertEquals(1, optimal.rating.duplicatedSymbols);
         assertEquals(2, optimal.rating.maxCommonness);
@@ -280,15 +379,16 @@ public class PhrasesSliceTest {
                 choice("It's ready, Miss", 4));
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
+        assertEquals(4, optimal.size());
+        assertEquals(1, optimal.rating.duplicatedSymbols);
+        assertEquals(3, optimal.rating.maxCommonness);
+
         // "I have it" is eventually sliced and moved, but pushes common "Miss" to match at the end
         assertSequence(results(result("No", 0), result(Arrays.asList("I", "have", "it"), 2), result("Yes", 1, 3)),
                 optimal, 0);
         assertSequence(results(result(Arrays.asList("Miss", "I'm"), 0, 1), result("it's", 3, 4)), optimal, 1);
         assertSequence(results(result("ready", 1, 3, 4), result("sorry", 0)), optimal, 2);
         assertSequence(results(result("Miss", 2, 3, 4)), optimal, 3);
-        assertEquals(4, optimal.size());
-        assertEquals(1, optimal.rating.duplicatedSymbols);
-        assertEquals(3, optimal.rating.maxCommonness);
     }
 
     @Test
@@ -304,6 +404,7 @@ public class PhrasesSliceTest {
         assertEquals(5, optimal.size());
         assertEquals(1, optimal.rating.duplicatedSymbols);
         assertEquals(5, optimal.rating.maxCommonness);
+
         // "okay" is sliced immediately which makes common "Miss" to match next
         assertSequence(results(result("Yes", 1, 3), result("No", 0), result("Okay", 2)), optimal, 0);
         assertSequence(results(result(Arrays.asList("It's", "ready"), 3, 4)), optimal, 1);
@@ -372,21 +473,18 @@ public class PhrasesSliceTest {
                 choice("N B C, O", 5));
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
+        assertSequence(results(result("A", 0, 3), result("N", 5)), optimal, 0);
+        assertSequence(result(Arrays.asList("B", "C"), 0, 5), optimal, 1);
+        assertSequence(results(result("O", 5), result("D", 0, 1, 2, 3, 4)), optimal, 2);
         assertSequence(results(//
-                result("A", 0, 3), result("N", 5)), optimal, 0);
+                result(Arrays.asList("E", "F"), 0, 1), result("I", 2, 3, 4)), optimal, 3);
         assertSequence(results(//
-                result("D", 1, 2, 3, 4), result(Arrays.asList("B", "C", "D"), 0)), optimal, 1);
+                result("G", 0), result("H", 1), result("J", 2), //
+                result(Arrays.asList("K", "L"), 3), //
+                result(Arrays.asList("F", "M"), 4)), optimal, 4);
         assertSequence(results(//
-                result("E", 0, 1), result("I", 2, 3, 4)), optimal, 2);
-        assertSequence(results(//
-                result(Arrays.asList("F"), 0, 1, 4), result("J", 2), result(Arrays.asList("K", "L"), 3)), optimal, 3);
-        assertSequence(results(//
-                result("H", 1), result("M", 4), result("G", 0)), optimal, 4);
-        assertSequence(results(//
-                result(Arrays.asList("B", "C"), 1, 2, 3, 4, 5)), optimal, 5);
-        assertSequence(//
-                result("O", 5), optimal, 6);
-        assertEquals(7, optimal.size());
+                result(Arrays.asList("B", "C"), 1, 2, 3, 4)), optimal, 5);
+        assertEquals(6, optimal.size());
         assertEquals(3, optimal.rating.duplicatedSymbols);
         assertEquals(5, optimal.rating.maxCommonness);
     }
@@ -479,7 +577,7 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testSliceDepth() {
+    public void testUnsliceableSliceOrderInvariance() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("A B C D E", 0), //
                 choice("E A B C D", 1), //
@@ -488,25 +586,23 @@ public class PhrasesSliceTest {
                 choice("B C D E A", 4));
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
-        assertEquals(7, optimal.size());
-        assertEquals(9, optimal.rating.duplicatedSymbols);
-        assertEquals(4, optimal.rating.maxCommonness);
+        assertEquals(9, optimal.size());
+        assertEquals(4, optimal.rating.duplicatedSymbols);
+        assertEquals(5, optimal.rating.maxCommonness);
 
-        assertSequence(
-                results(result("A", 0), result(Arrays.asList("E", "A", "B", "C"), 1), result("D", 2), result("C", 3)),
-                optimal, 0);
-        assertSequence(result(Arrays.asList("B", "C"), 0, 4), optimal, 1);
-        assertSequence(result("D", 0, 1, 3, 4), optimal, 2);
-        assertSequence(result("E", 0, 2, 3, 4), optimal, 3);
-        assertSequence(result("A", 2, 3, 4), optimal, 4);
-        assertSequence(result("B", 2, 3), optimal, 5);
-        assertSequence(result("C", 2), optimal, 6);
+        assertSequence(results(result(Arrays.asList("E"), 1)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("A"), 0, 1)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("B"), 0, 1, 4)), optimal, 2);
+        assertSequence(results(result(Arrays.asList("C"), 0, 1, 3, 4)), optimal, 3);
+        assertSequence(results(result(Arrays.asList("D"), 0, 1, 2, 3, 4)), optimal, 4);
+        assertSequence(results(result(Arrays.asList("E"), 0, 2, 3, 4)), optimal, 5);
+        assertSequence(results(result(Arrays.asList("A"), 2, 3, 4)), optimal, 6);
+        assertSequence(results(result(Arrays.asList("B"), 2, 3)), optimal, 7);
+        assertSequence(results(result(Arrays.asList("C"), 2)), optimal, 8);
     }
 
-    // TODO sliceDepth and sliceDepthReverse should be the same but aren't
-
     @Test
-    public void testSliceDepthReverse() {
+    public void testUnsliceableSliceOrderInvarianceReverse() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("B C D E A", 0), //
                 choice("C D E A B", 1), //
@@ -515,17 +611,19 @@ public class PhrasesSliceTest {
                 choice("A B C D E", 4));
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
-        assertEquals(7, optimal.size());
-        assertEquals(6, optimal.rating.duplicatedSymbols);
+        assertEquals(9, optimal.size());
+        assertEquals(4, optimal.rating.duplicatedSymbols);
         assertEquals(5, optimal.rating.maxCommonness);
 
-        assertSequence(results(result("B", 0), result("D", 2), result(Arrays.asList("A", "B"), 4)), optimal, 0);
-        assertSequence(result(Arrays.asList("C", "D"), 0, 1, 4), optimal, 1);
-        assertSequence(result("E", 0, 1, 2, 3, 4), optimal, 2);
-        assertSequence(result("A", 0, 1, 2, 3), optimal, 3);
-        assertSequence(result("B", 1, 2, 3), optimal, 4);
-        assertSequence(result("C", 2, 3), optimal, 5);
-        assertSequence(result("D", 3), optimal, 6);
+        assertSequence(results(result(Arrays.asList("E"), 3)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("A"), 3, 4)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("B"), 0, 3, 4)), optimal, 2);
+        assertSequence(results(result(Arrays.asList("C"), 0, 1, 3, 4)), optimal, 3);
+        assertSequence(results(result(Arrays.asList("D"), 0, 1, 2, 3, 4)), optimal, 4);
+        assertSequence(results(result(Arrays.asList("E"), 0, 1, 2, 4)), optimal, 5);
+        assertSequence(results(result(Arrays.asList("A"), 0, 1, 2)), optimal, 6);
+        assertSequence(results(result(Arrays.asList("B"), 1, 2)), optimal, 7);
+        assertSequence(results(result(Arrays.asList("C"), 2)), optimal, 8);
     }
 
     @Test

@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static java.lang.Math.min;
-import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
@@ -11,10 +10,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -97,116 +98,76 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return slices;
     }
 
-    static class SliceCollector<T> {
-        final Sequences<T> sequences;
-        boolean modified = false;
-        boolean isEmpty = true;
-
-        /**
-         * @param sequences
-         */
-        public SliceCollector(int size, Sequence.Traits<T> traits) {
-            this.sequences = new Sequences<>(traits);
-            for (int i = 0; i < size; i++) {
-                sequences.add(null);
-            }
-        }
-
-        public SliceCollector(int size, Sequence.Traits<T> traits, Supplier<Sequence<T>> supplier) {
-            this.sequences = new Sequences<>(traits);
-            for (int i = 0; i < size; i++) {
-                sequences.add(supplier.get());
-            }
-        }
-
-        public SliceCollector(Sequences<T> sequences) {
-            this.sequences = sequences;
-        }
-
-        public void add(T element) {
-            throw new UnsupportedOperationException("Add " + element);
-        }
-
-        public void add(int index, T element) {
-            sequences.get(index, () -> new Sequence<>(sequences.traits)).add(element);
-            modified = true;
-            isEmpty = false;
-        }
-
-        Sequences<T> slice() {
-            List<Sequence<T>> elements = sequences.stream().filter(Objects::nonNull).filter(Sequence::nonEmpty)
-                    .map(element -> new Sequence<>(element, sequences.traits)).collect(toList());
-            return new Sequences<>(elements, sequences.traits);
-        }
-
-        Sequences<T> gather() {
-            return new Sequences<>(distinct().values(), sequences.traits);
-        }
-
-        private Map<Sequence<T>, Sequence<T>> distinct() {
-            Map<Sequence<T>, Sequence<T>> reduced = new TreeMap<>(sequences.traits.listComparator);
-            for (int i = 0; i < sequences.size(); i++) {
-                Sequence<T> elements = sequences.get(i);
-                if (!elements.isEmpty()) {
-                    Sequence<T> key = elements;
-                    List<T> existing = reduced.get(key);
-                    if (existing != null) {
-                        Sequence<T> joinedElements = new Sequence<>(sequences.traits);
-                        for (int j = 0; j < existing.size(); j++) {
-                            joinedElements.add(sequences.traits.joinCommonOperator
-                                    .apply(asList(elements.get(j), existing.get(j))));
-                        }
-                        reduced.put(key, joinedElements);
-                    } else {
-                        reduced.put(key, elements);
-                    }
-                }
-            }
-            return reduced;
-        }
-
-        @Override
-        public String toString() {
-            return sequences.toString();
-        }
-
-    }
-
     private Sequences<T> splitDisjunct(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar) {
-        SliceCollector<T> disjunct = new SliceCollector<>(size(), traits);
-        SliceCollector<T> disjunctWithoutLaterOccurences = new SliceCollector<>(size(), traits);
-
         SequenceLookupDisjunct<T> lookup = new SequenceLookupDisjunct<>(this);
         lookup.scan();
 
-        if (lookup.hasCommonStartElements() && disjunctWithoutLaterOccurences.isEmpty) {
+        int size = size();
+        SliceCollector<T> disjunct = new SliceCollector<>(size, traits);
+        if (lookup.hasCommonStartElements()) {
             sliceDisjunctVariation(candidates, soFar, disjunct.sequences);
         }
 
-        for (int i = 0; i < size(); i++) {
+        SliceCollector<T> disjunctWithLaterOccurences = new SliceCollector<>(size, traits);
+        SliceCollector<T> disjunctWithoutLaterOccurences = new SliceCollector<>(size, traits);
+
+        for (int i = 0; i < size; i++) {
             Sequence<T> sequence = get(i);
-            if (lookup.advance[i] < sequence.size()) {
-                T element = sequence.get(lookup.advance[i]);
+            if (!sequence.isEmpty()) {
+                T element = sequence.get(0);
                 boolean othersStartWithElement = lookup.othersStartWith(element);
                 if (!othersStartWithElement) {
                     disjunct.add(i, element);
-                    if (!lookup.occursLaterInAnotherSequence(sequence, element)) {
-                        // works for i == 0 only - afterwards ordering is messed up
+                    if (lookup.occursLaterInAnotherSequence(sequence, element)) {
+                        disjunctWithLaterOccurences.add(i, element);
+                    } else {
                         disjunctWithoutLaterOccurences.add(i, element);
                     }
-                    lookup.advance(i);
                 }
-
             }
         }
 
+        Map<Integer, Set<T>> distances = new SymbolDistances<>(this).groups();
+        for (Entry<Integer, Set<T>> distance : distances.entrySet()) {
+            Set<T> symbols = distance.getValue();
+            if (symbols.size() == size) {
+                // same distance for all symbols -> slice with all but one to end recursion
+                for (T element : symbols) {
+                    TreeSet<T> symbolsWithoutElement = new TreeSet<>(traits.comparator);
+                    symbolsWithoutElement.addAll(symbols);
+                    symbolsWithoutElement.remove(element);
+                    sliceWithLaterOccurrences(candidates, soFar, disjunct, symbolsWithoutElement);
+                }
+            } else {
+                sliceWithLaterOccurrences(candidates, soFar, disjunct, symbols);
+            }
+        }
+
+        // TODO find out why this block can be deleted
         if (disjunctWithoutLaterOccurences.modified) {
-            sliceDisjunctVariation(candidates, soFar, disjunctWithoutLaterOccurences.sequences);
             disjunctWithoutLaterOccurences.modified = false;
+            // without later occurrences there will be no symbols in <distance>
+            // -> speed bump * 2 compared to !disjunct.equals(disjunctWithoutLaterOccurences)
+            if (distances.isEmpty()) {
+                sliceDisjunctVariation(candidates, soFar, disjunctWithoutLaterOccurences.sequences);
+            }
         }
 
         remove(disjunct.sequences.sizes());
         return disjunct.slice();
+    }
+
+    private void sliceWithLaterOccurrences(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar,
+            SliceCollector<T> disjunct, Set<T> symbolsWithLaterOccurence) {
+        SliceCollector<T> disjunctWithoutLaterOccurrencesAtDistance = disjunct.without(symbolsWithLaterOccurence);
+
+        if (disjunctWithoutLaterOccurrencesAtDistance.modified) {
+            disjunctWithoutLaterOccurrencesAtDistance.modified = false;
+            if (!disjunctWithoutLaterOccurrencesAtDistance.sequences.equals(disjunct.sequences)) {
+                sliceDisjunctVariation(candidates, soFar, disjunctWithoutLaterOccurrencesAtDistance.sequences);
+            }
+        }
+
     }
 
     private void sliceDisjunctVariation(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar,
@@ -251,7 +212,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return max;
     }
 
-    private Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {
+    Sequence<T> get(int index, Supplier<Sequence<T>> supplier) {
         Sequence<T> sequence = get(index);
         if (sequence == null) {
             sequence = supplier.get();

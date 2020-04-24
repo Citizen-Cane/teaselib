@@ -590,15 +590,15 @@ public class PhrasesSliceTest {
         assertEquals(4, optimal.rating.duplicatedSymbols);
         assertEquals(5, optimal.rating.maxCommonness);
 
-        assertSequence(results(result(Arrays.asList("E"), 1)), optimal, 0);
-        assertSequence(results(result(Arrays.asList("A"), 0, 1)), optimal, 1);
-        assertSequence(results(result(Arrays.asList("B"), 0, 1, 4)), optimal, 2);
-        assertSequence(results(result(Arrays.asList("C"), 0, 1, 3, 4)), optimal, 3);
-        assertSequence(results(result(Arrays.asList("D"), 0, 1, 2, 3, 4)), optimal, 4);
-        assertSequence(results(result(Arrays.asList("E"), 0, 2, 3, 4)), optimal, 5);
-        assertSequence(results(result(Arrays.asList("A"), 2, 3, 4)), optimal, 6);
-        assertSequence(results(result(Arrays.asList("B"), 2, 3)), optimal, 7);
-        assertSequence(results(result(Arrays.asList("C"), 2)), optimal, 8);
+        assertSequence(results(result(Arrays.asList("A"), 0)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("B"), 0, 4)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("C"), 0, 3, 4)), optimal, 2);
+        assertSequence(results(result(Arrays.asList("D"), 0, 2, 3, 4)), optimal, 3);
+        assertSequence(results(result(Arrays.asList("E"), 0, 1, 2, 3, 4)), optimal, 4);
+        assertSequence(results(result(Arrays.asList("A"), 1, 2, 3, 4)), optimal, 5);
+        assertSequence(results(result(Arrays.asList("B"), 1, 2, 3)), optimal, 6);
+        assertSequence(results(result(Arrays.asList("C"), 1, 2)), optimal, 7);
+        assertSequence(results(result(Arrays.asList("D"), 1)), optimal, 8);
     }
 
     @Test
@@ -615,15 +615,15 @@ public class PhrasesSliceTest {
         assertEquals(4, optimal.rating.duplicatedSymbols);
         assertEquals(5, optimal.rating.maxCommonness);
 
-        assertSequence(results(result(Arrays.asList("E"), 3)), optimal, 0);
-        assertSequence(results(result(Arrays.asList("A"), 3, 4)), optimal, 1);
-        assertSequence(results(result(Arrays.asList("B"), 0, 3, 4)), optimal, 2);
-        assertSequence(results(result(Arrays.asList("C"), 0, 1, 3, 4)), optimal, 3);
-        assertSequence(results(result(Arrays.asList("D"), 0, 1, 2, 3, 4)), optimal, 4);
-        assertSequence(results(result(Arrays.asList("E"), 0, 1, 2, 4)), optimal, 5);
-        assertSequence(results(result(Arrays.asList("A"), 0, 1, 2)), optimal, 6);
-        assertSequence(results(result(Arrays.asList("B"), 1, 2)), optimal, 7);
-        assertSequence(results(result(Arrays.asList("C"), 2)), optimal, 8);
+        assertSequence(results(result(Arrays.asList("A"), 4)), optimal, 0);
+        assertSequence(results(result(Arrays.asList("B"), 0, 4)), optimal, 1);
+        assertSequence(results(result(Arrays.asList("C"), 0, 1, 4)), optimal, 2);
+        assertSequence(results(result(Arrays.asList("D"), 0, 1, 2, 4)), optimal, 3);
+        assertSequence(results(result(Arrays.asList("E"), 0, 1, 2, 3, 4)), optimal, 4);
+        assertSequence(results(result(Arrays.asList("A"), 0, 1, 2, 3)), optimal, 5);
+        assertSequence(results(result(Arrays.asList("B"), 1, 2, 3)), optimal, 6);
+        assertSequence(results(result(Arrays.asList("C"), 2, 3)), optimal, 7);
+        assertSequence(results(result(Arrays.asList("D"), 3)), optimal, 8);
     }
 
     @Test

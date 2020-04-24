@@ -143,16 +143,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             }
         }
 
-        // TODO find out why this block can be deleted
-        if (disjunctWithoutLaterOccurences.modified) {
-            disjunctWithoutLaterOccurences.modified = false;
-            // without later occurrences there will be no symbols in <distance>
-            // -> speed bump * 2 compared to !disjunct.equals(disjunctWithoutLaterOccurences)
-            if (distances.isEmpty()) {
-                sliceDisjunctVariation(candidates, soFar, disjunctWithoutLaterOccurences.sequences);
-            }
-        }
-
         remove(disjunct.sequences.sizes());
         return disjunct.slice();
     }

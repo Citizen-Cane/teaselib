@@ -90,7 +90,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         slice(candidates, phrases, Objects::toString);
-        return candidates.getResult();
+        return reduceNullRules(candidates.getResult());
     }
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases, List<SlicedPhrases<T>> results,
@@ -99,7 +99,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         results.removeIf(candidate -> candidate.rating.isInvalidated());
         results.stream().forEach(candidates::add);
-        return candidates.getResult();
+        return reduceNullRules(candidates.getResult());
     }
 
     static <T> void slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences,
@@ -129,6 +129,25 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         } else {
             return dA < dB ? a : b;
         }
+    }
+
+    private static <T> SlicedPhrases<T> reduceNullRules(SlicedPhrases<T> result) {
+        List<Sequences<T>> slices = result.elements;
+        int size = slices.size();
+        for (int i = 0; i < size - 1; i++) {
+            Sequences<T> slice = slices.get(i);
+            for (int k = 0; k < slice.size(); k++) {
+                Sequence<T> sequence = slice.get(k);
+                if (sequence.size() > 1) {
+                    Sequences<T> next = slices.get(i + 1);
+                    if (next.isJoinableWith(sequence)) {
+                        T element = sequence.remove(0);
+                        next.add(slice.set(k, new Sequence<>(element, sequence.traits)));
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     public SlicedPhrases(Function<Sequences<T>, String> prettyPrint, Comparator<T> comparator) {

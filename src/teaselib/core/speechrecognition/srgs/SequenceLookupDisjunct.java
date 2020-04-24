@@ -24,14 +24,15 @@ class SequenceLookupDisjunct<T> {
         startElementSequence.clear();
         laterOccurrences.clear();
 
-        for (int k = 0; k < sequences.size(); k++) {
+        int size = sequences.size();
+        for (int k = 0; k < size; k++) {
             Sequence<T> sequence = sequences.get(k);
             if (!sequence.isEmpty()) {
                 T key = sequence.get(0);
                 startElementIndices.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
                 startElementSequence.computeIfAbsent(key, t -> new ArrayList<>()).add(sequence);
 
-                for (int i = 0; i < sequences.size(); i++) {
+                for (int i = 0; i < size; i++) {
                     Sequence<T> seq = sequences.get(i);
                     if (sequence != seq && !seq.isEmpty() && seq.size() > 1 && seq.indexOf(key, 1) > 0) {
                         laterOccurrences.computeIfAbsent(key, t -> new ArrayList<>()).add(seq);
@@ -52,13 +53,12 @@ class SequenceLookupDisjunct<T> {
             return false;
         }
 
-        for (int i = 0; i < occurrences.size(); i++) {
-            Sequence<T> seq = occurrences.get(i);
-            if (seq != sequence && seq.indexOf(element, 1) > 0) {
+        for (Sequence<T> occurrence : occurrences) {
+            if (occurrence == sequence)
+                return false;
+            else if (occurrence.indexOf(element, 1) > 0)
                 return true;
-            }
         }
-
         return false;
     }
 

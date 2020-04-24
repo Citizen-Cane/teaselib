@@ -94,11 +94,12 @@ public class Sequence<T> extends ArrayList<T> {
      * @return
      */
     public boolean matchesAt(List<? extends T> elements, int index) {
-        if (elements.size() + index > size()) {
+        int size = elements.size();
+        if (size + index > size()) {
             return false;
         }
 
-        for (int i = 0; i < elements.size(); i++) {
+        for (int i = 0; i < size; i++) {
             if (traits.comparator.compare(get(index + i), elements.get(i)) != 0) {
                 return false;
             }
@@ -153,10 +154,6 @@ public class Sequence<T> extends ArrayList<T> {
         return max;
     }
 
-    public List<T> subList(int from) {
-        return subList(from, size());
-    }
-
     public boolean nonEmpty() {
         return size() > 0;
     }
@@ -183,22 +180,6 @@ public class Sequence<T> extends ArrayList<T> {
     @Override
     public int hashCode() {
         return super.hashCode();
-    }
-
-    public int comparator(List<T> s1, List<T> s2) {
-        int size1 = s1.size();
-        int size2 = s2.size();
-        if (size1 != size2) {
-            return size2 - size1;
-        } else {
-            for (int i = 0; i < size1; i++) {
-                int c = traits.comparator.compare(s1.get(i), s2.get(i));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return 0;
-        }
     }
 
     public int compareTo(Sequence<T> other) {

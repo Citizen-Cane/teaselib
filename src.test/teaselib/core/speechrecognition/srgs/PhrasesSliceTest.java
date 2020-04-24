@@ -1,5 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
+import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 import static org.junit.Assert.*;
@@ -154,6 +155,23 @@ public class PhrasesSliceTest {
         assertSequence(results(result("D", 3)), optimal, 3);
         assertEquals(0, optimal.rating.duplicatedSymbols);
         assertEquals(4, optimal.rating.maxCommonness);
+    }
+
+    @Test
+    public void testProducetionSliceNullRuleElimination() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("A B0 C0 D", 0), //
+                choice("A B1 C0 D", 1), //
+                choice("A B2 C2 D", 2));
+        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(choices);
+
+        assertSequence(results(result("A", 0, 1, 2)), optimal, 0);
+        assertSequence(results(result("b0", 0), result("b1", 1), result("b2", 2)), optimal, 1);
+        assertSequence(results(result("c0", 0, 1), result("c2", 2)), optimal, 2);
+        assertSequence(results(result("d", 0, 1, 2)), optimal, 3);
+        assertEquals(4, optimal.size());
+        assertEquals(0, optimal.rating.duplicatedSymbols);
+        assertEquals(3, optimal.rating.maxCommonness);
     }
 
     @Test
@@ -384,10 +402,10 @@ public class PhrasesSliceTest {
         assertEquals(3, optimal.rating.maxCommonness);
 
         // "I have it" is eventually sliced and moved, but pushes common "Miss" to match at the end
-        assertSequence(results(result("No", 0), result(Arrays.asList("I", "have", "it"), 2), result("Yes", 1, 3)),
-                optimal, 0);
-        assertSequence(results(result(Arrays.asList("Miss", "I'm"), 0, 1), result("it's", 3, 4)), optimal, 1);
-        assertSequence(results(result("ready", 1, 3, 4), result("sorry", 0)), optimal, 2);
+        assertSequence(results(result("No", 0), result("I", 2), result("Yes", 1, 3)), optimal, 0);
+        assertSequence(results(result(asList("Miss", "I'm"), 0, 1), result("it's", 3, 4), result("have", 2)), optimal,
+                1);
+        assertSequence(results(result("ready", 1, 3, 4), result("sorry", 0), result("it", 2)), optimal, 2);
         assertSequence(results(result("Miss", 2, 3, 4)), optimal, 3);
     }
 
@@ -414,7 +432,7 @@ public class PhrasesSliceTest {
     }
 
     @Test
-    public void testSliceMultipleCommon1() {
+    public void testSliceMultipleCommon1ReduceNullRulesProduction() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("A B0 C0 D", 0), //
                 choice("A B1 C0 D", 1), //
@@ -422,8 +440,8 @@ public class PhrasesSliceTest {
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertSequence(results(result("A", 0, 1, 2)), optimal, 0);
-        assertSequence(results(result("b0", 0), result("b1", 1), result(Arrays.asList("b2", "c2"), 2)), optimal, 1);
-        assertSequence(results(result("c0", 0, 1)), optimal, 2);
+        assertSequence(results(result("b0", 0), result("b1", 1), result("b2", 2)), optimal, 1);
+        assertSequence(results(result("c0", 0, 1), result("c2", 2)), optimal, 2);
         assertSequence(results(result("d", 0, 1, 2)), optimal, 3);
         assertEquals(4, optimal.size());
         assertEquals(0, optimal.rating.duplicatedSymbols);

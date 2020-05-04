@@ -1,19 +1,28 @@
 package teaselib.core.ui;
 
-import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.speechrecognition.srgs.PhraseString.words;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,15 +36,15 @@ import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionChoices;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionParameters;
 import teaselib.core.speechrecognition.SpeechRecognitionSRGS;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.ui.Prompt.Result;
-import teaselib.core.util.ExceptionUtil;
-import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
  * @author Citizen-Cane
@@ -50,11 +59,10 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         RecognitionRejected
     }
 
-    final SpeechRecognizer speechRecognizers;
+    private final SpeechRecognizer speechRecognizers;
     private final Map<Locale, SpeechRecognition> usedRecognizers = new HashMap<>();
 
-    final Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript;
-    final AudioSignalProblems audioSignalProblems;
+    private final AudioSignalProblems audioSignalProblems;
 
     private final Event<SpeechRecognitionStartedEventArgs> speechRecognitionStartedEventHandler;
     private final Event<AudioSignalProblemOccuredEventArgs> audioSignalProblemEventHandler;
@@ -63,86 +71,274 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
+    private Rule hypothesis;
 
-    public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizers,
-            Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript) {
+    public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizers) {
         this.speechRecognizers = speechRecognizers;
-        this.speechRecognitionRejectedScript = speechRecognitionRejectedScript;
         this.audioSignalProblems = new AudioSignalProblems();
 
-        this.speechRecognitionStartedEventHandler = eventArgs -> audioSignalProblems.clear();
+        this.speechRecognitionStartedEventHandler = this::handleRecognitionStarted;
+        this.audioSignalProblemEventHandler = this::handleAudioSignalProblemDetected;
+        this.speechDetectedEventHandler = this::handleSpeechDetected;
+        this.recognitionRejected = this::handleRecognitionRejected;
+        this.recognitionCompleted = this::handleRecogntionCompleted;
+    }
 
-        this.audioSignalProblemEventHandler = audioSignal -> audioSignalProblems.add(audioSignal.problem);
+    private void handleRecognitionStarted(@SuppressWarnings("unused") SpeechRecognitionStartedEventArgs eventArgs) {
+        active.updateAndGet(prompt -> {
+            audioSignalProblems.clear();
+            hypothesis = null;
+            return prompt;
+        });
+    }
 
-        this.speechDetectedEventHandler = eventArgs -> {
-            if (audioSignalProblems.occured() && getRecognizer().speechRecognitionInProgress()) {
-                logAudioSignalProblem(eventArgs.result);
+    private void handleAudioSignalProblemDetected(AudioSignalProblemOccuredEventArgs audioSignal) {
+        active.updateAndGet(prompt -> {
+            audioSignalProblems.add(audioSignal.problem);
+            return prompt;
+        });
+    }
+
+    private void handleSpeechDetected(SpeechRecognizedEventArgs eventArgs) {
+        active.updateAndGet(prompt -> {
+            if (audioSignalProblems.exceedLimits() && getRecognizer().speechRecognitionInProgress()) {
+                logTooManyAudioSignalProblems(eventArgs.result);
                 getRecognizer().restartRecognition();
-            }
-        };
-
-        this.recognitionRejected = eventArgs -> {
-            signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
-        };
-
-        this.recognitionCompleted = eventArgs -> {
-            active.updateAndGet(prompt -> {
-                if (audioSignalProblems.occured()) {
-                    logAudioSignalProblem(eventArgs.result);
-                    return prompt;
+            } else if (getRecognizer(prompt).implementation instanceof TeaseLibSRGS) {
+                if (prompt.acceptedResult == Result.Accept.Distinct) {
+                    buildDistinctHypothesis(eventArgs, prompt);
+                } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                    // Ignore
                 } else {
-                    Rule result = eventArgs.result[0];
-                    if (eventArgs.result.length > 1) {
-                        if (prompt.acceptedResult == Result.Accept.AllSame) {
-                            result = distinct(eventArgs.result).orElseThrow();
-                        } else {
-                            throw new UnsupportedOperationException("TODO Define best result for multiple choices");
-                        }
-                    } else if (eventArgs.result.length == 1) {
-                        result = eventArgs.result[0];
-                    } else {
-                        throw new IllegalStateException("RecognitionCompleted-event without result");
-                    }
-
-                    try {
-                        RuleIndicesList choices = result.gather();
-
-                        double penalty = audioSignalProblems.penalty();
-                        Confidence expected = getRecognizer(prompt.choices.locale).getRecognitionConfidence();
-                        if (!confidenceIsHighEnough(result, expected, penalty)) {
-                            if (confidenceIsHighEnough(result, expected, 0)) {
-                                logAudioSignalProblemPenalty(result, expected, penalty);
-                            } else {
-                                logLackOfConfidence(result, expected);
-                            }
-                            reject(eventArgs);
-                            return prompt;
-                        } else {
-                            if (choices.isEmpty()) {
-                                handleNoChoices(eventArgs, result);
-                                return prompt;
-                            } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                                return handleMultipleChoices(eventArgs, result, prompt, choices);
-                            } else if (prompt.acceptedResult == Result.Accept.AllSame) {
-                                return handleDistinctChoice(eventArgs, result, prompt, choices);
-                            } else {
-                                throw new UnsupportedOperationException(prompt.acceptedResult.toString());
-                            }
-                        }
-                    } catch (Exception e) {
-                        prompt.setException(e);
-                        getRecognizer(prompt.choices.locale).endRecognition();
-                        return null;
-                    }
+                    throw new UnsupportedOperationException(prompt.acceptedResult.toString());
                 }
-            });
-        };
+            }
+            return prompt;
+        });
+    }
+
+    private void buildDistinctHypothesis(SpeechRecognizedEventArgs eventArgs, Prompt prompt) {
+        // Caveats:
+
+        // DONE
+        // - trailing null rules make rule undefined (distinct [1], common [0,1], distinct NULL [0]
+        // -> remove trailing null rules because the available rules already define a distinct result
+        // + trailing null rules are at the end of the text (fromElement = size)
+
+        // DONE
+        // For single rules or long rules, confidence decreases with length
+        // -> forward earlier accepted hypothesis - this is already handled by the existing code
+        // + for single confirmations, confidence is normal anyway
+        // - longer rules within multiple choices may cause recognition problems
+        // -> remember earlier hypothesis
+
+        // DONE
+        // words are omitted in the main rule, instead there are NULL child rules
+        // Example: "Ja Mit <NULL> dicken Dildo Frau Streng" -> "Ja Mit "DEM" dicken Dildo Frau Streng" ->
+        // matches
+        // phrase
+        // -> for each NULL rule try to reconstruct the phrase by replacing the NULL rule with a valid phrase
+        // + if it matches a phrase, use that one (works for speechDetected as well as for
+        // recognitionCompleted/Rejected
+        // - the phrase should match the beginning of a single phrase - can rate incomplete phrases -> not needed
+
+        // DONE
+        // in the logs aborting recognition on audio problems looks suspicious in the log - multiple recognitions?
+        // -> only check for audio problems when rejecting speech - should be okay if recognized
+        // + make it as optional as possible
+
+        // RESOLVED by confidence function
+        // first child rule may have very low confidence value, second very high, how to measure minimal length
+        // -> number of distinct rules, words, or vowels -> words or vowels
+
+        // RESOLVED by confidence function
+        // - confidence decreases at the end of the hypothesis (distinct [1] = 0.79, common [0,1] = 0.76,
+        // distinct
+        // NULL [0]= 0.58;
+        // -> cut off hypothesis when probability falls below accepted threshold, or when average falls below
+        // threshold
+        //
+        // unrealized NULL rules seem to have confidence == 1.0 -> all NULL rules have C=1.0
+
+        // DONE
+        // map phrase to choice indices before evaluating best phrase
+        // -> better match on large phrase sets, supports hypothesis as well
+
+        List<Rule> candidates = new ArrayList<>(eventArgs.result.length);
+        for (Rule rule : eventArgs.result) {
+            rule.removeTrailingNullRules();
+            if (!rule.text.isBlank()) {
+                // TODO attempt to match beginning of existing phrase
+                // TODO matching rule indices during repair must map to choices
+                // -> avoids wrong repair in
+                // teaselib.core.speechrecognition.SpeechRecognitionComplexTest.testSRGSBuilderMultipleChoicesAlternativePhrases()
+                List<Rule> repaired = rule.repair(getRecognizer(prompt).getChoices().slicedPhrases);
+                if (repaired.isEmpty()) {
+                    candidates.add(rule);
+                } else {
+                    candidates.addAll(repaired);
+                }
+            }
+        }
+
+        validate(candidates);
+
+        Optional<Rule> result = bestSingleResult(candidates.stream(), toChoices(prompt));
+        if (result.isPresent()) {
+            Rule rule = result.get();
+            double expectedConfidence = expectedConfidence(prompt.choices, rule);
+            if (rule.probability >= expectedConfidence) {
+                hypothesis = rule;
+                logger.info("Considering as hypothesis");
+            }
+        }
+    }
+
+    private static void validate(List<Rule> candidates) {
+        candidates.stream().forEach(Rule::isValid);
+    }
+
+    private static double expectedConfidence(Choices choices, Rule rule) {
+        return confidence(choices.intention).weighted(words(rule.text).length, 2.0f);
+    }
+
+    private void handleRecognitionRejected(SpeechRecognizedEventArgs eventArgs) {
+        active.updateAndGet(prompt -> {
+            if (audioSignalProblems.exceedLimits()) {
+                logTooManyAudioSignalProblems(eventArgs.result);
+                return prompt;
+            } else {
+                if (hypothesis != null && hypothesis.probability >= expectedConfidence(prompt.choices, hypothesis)) {
+                    eventArgs.consumed = true;
+                    logger.info("Considering hypothesis");
+                    return handle(eventArgs, prompt, this::singleResult, hypothesis);
+                } else {
+                    signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
+                    return prompt;
+                }
+            }
+        });
+    }
+
+    private void handleRecogntionCompleted(SpeechRecognizedEventArgs eventArgs) {
+        active.updateAndGet(prompt -> {
+            if (audioSignalProblems.exceedLimits()) {
+                logTooManyAudioSignalProblems(eventArgs.result);
+                return prompt;
+            } else {
+                try {
+                    if (prompt.acceptedResult == Result.Accept.Distinct) {
+                        return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestSingleResult,
+                                this::singleResult);
+                    } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                        return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestMultipleChoices,
+                                this::multipleChoiceResults);
+                    } else {
+                        throw new UnsupportedOperationException(prompt.acceptedResult.toString());
+                    }
+                } catch (Exception e) {
+                    prompt.setException(e);
+                    getRecognizer(prompt.choices.locale).endRecognition();
+                    return null;
+                }
+            }
+        });
+    }
+
+    private Prompt.Result singleResult(Rule rule, IntUnaryOperator toChoices) {
+        Set<Integer> choices = choices(rule, toChoices);
+        if (choices.size() != 1) {
+            throw new NoSuchElementException("No distince choice: " + rule);
+        }
+        Integer distinctChoice = choices.iterator().next();
+        return new Prompt.Result(distinctChoice);
+    }
+
+    private Prompt handle(SpeechRecognizedEventArgs eventArgs, Prompt prompt,
+            BiFunction<Stream<Rule>, IntUnaryOperator, Optional<Rule>> matcher,
+            BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor) {
+        validate(Arrays.asList(eventArgs.result));
+
+        Optional<Rule> result = matcher.apply(Arrays.stream(eventArgs.result), toChoices(prompt));
+        if (result.isPresent() && hypothesis != null && hypothesis.probability > result.get().probability) {
+            return handle(eventArgs, prompt, resultor, hypothesis);
+        } else if (result.isPresent()) {
+            return handle(eventArgs, prompt, resultor, result.get());
+        } else {
+            logger.warn("No matching choice in {} - rejecting", eventArgs);
+            reject(eventArgs);
+            return prompt;
+        }
+    }
+
+    private Prompt handle(SpeechRecognizedEventArgs eventArgs, Prompt prompt,
+            BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule) {
+        double expectedConfidence = expectedConfidence(prompt.choices, rule);
+        double audioProblemPenalty = audioSignalProblems.penalty() * AUDIO_PROBLEM_PENALTY_WEIGHT;
+        if (rule.probability - audioProblemPenalty >= expectedConfidence) {
+            Prompt.Result promptResult = resultor.apply(rule, toChoices(prompt));
+            if (promptResult.elements.isEmpty()) {
+                logger.warn("Empty result {} : {} - rejecting", prompt.choices, rule);
+                reject(eventArgs);
+                return prompt;
+            } else if (promptResult.valid(prompt.choices)) {
+                accept(prompt, promptResult);
+                return null;
+            } else {
+                logger.warn("Undefined result index in {} : {} - rejecting", prompt.choices, rule);
+                reject(eventArgs);
+                return prompt;
+            }
+        } else if (rule.probability >= expectedConfidence) {
+            logAudioSignalProblemPenalty(rule, expectedConfidence, audioProblemPenalty);
+            reject(eventArgs);
+            return prompt;
+        } else {
+            logLackOfConfidence(rule, expectedConfidence);
+            reject(eventArgs);
+            return prompt;
+        }
+    }
+
+    private IntUnaryOperator toChoices(Prompt prompt) {
+        return getRecognizer(prompt).getChoices().mapper;
+    }
+
+    private Prompt.Result multipleChoiceResults(Rule rule, @SuppressWarnings("unused") IntUnaryOperator toChoices) {
+        RuleIndicesList choices = rule.indices();
+        List<Integer> multipleChoices = choices.stream().map(indices -> indices.size() == 1 ? indices.iterator().next()
+                : Prompt.Result.UNDEFINED.elements.iterator().next()).collect(toList());
+        return new Prompt.Result(multipleChoices);
+    }
+
+    public static Optional<Rule> bestSingleResult(Stream<Rule> stream, IntUnaryOperator toChoices) {
+        return stream.filter(rule -> {
+            Set<Integer> choices = choices(rule.indices(), toChoices);
+            return choices.size() == 1;
+        }).reduce(Rule::maxProbability);
+    }
+
+    public static Set<Integer> choices(Rule rule, IntUnaryOperator toChoices) {
+        return choices(rule.indices(), toChoices);
+    }
+
+    public static Set<Integer> choices(RuleIndicesList indices, IntUnaryOperator toChoices) {
+        return indices.intersection().stream().map(toChoices::applyAsInt).collect(Collectors.toSet());
+    }
+
+    public static Optional<Rule> bestMultipleChoices(Stream<Rule> stream,
+            @SuppressWarnings("unused") IntUnaryOperator toChoices) {
+        return stream.reduce(Rule::maxProbability);
     }
 
     private SpeechRecognition getRecognizer() {
         Prompt prompt = active.get();
         if (prompt == null)
             throw new IllegalStateException("Prompt not set");
+        return getRecognizer(prompt);
+    }
+
+    private SpeechRecognition getRecognizer(Prompt prompt) {
         return getRecognizer(prompt.choices.locale);
     }
 
@@ -152,49 +348,6 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             addEvents(recognizer);
         }
         return recognizer;
-    }
-
-    private static Optional<Rule> distinct(Rule... result) {
-        return distinct(asList(result));
-    }
-
-    public static Optional<Rule> distinct(List<Rule> result) {
-        return result.stream().filter(r -> r.gather().getCommonDistinctValue().isPresent())
-                .reduce(Rule::maxProbability);
-    }
-
-    private void handleNoChoices(SpeechRecognizedEventArgs eventArgs, Rule result) {
-        logger.warn("No choice rules in: {} - rejecting ", result);
-        eventArgs.consumed = true;
-        fireRecognitionRejectedEvent(eventArgs);
-    }
-
-    private Prompt handleMultipleChoices(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
-            RuleIndicesList choices) {
-        List<Integer> distinctChoices = choices.stream().map(indices -> indices.size() == 1 ? indices.iterator().next()
-                : Prompt.Result.UNDEFINED.elements.iterator().next()).collect(Collectors.toList());
-        Prompt.Result promptResult = new Prompt.Result(distinctChoices);
-        if (promptResult.valid(prompt.choices)) {
-            accept(prompt, promptResult);
-            return null;
-        } else {
-            logger.warn("Undefined result index in {} : {} - rejecting", choices, result);
-            reject(eventArgs);
-            return prompt;
-        }
-    }
-
-    private Prompt handleDistinctChoice(SpeechRecognizedEventArgs eventArgs, Rule result, Prompt prompt,
-            RuleIndicesList choices) {
-        Optional<Integer> distinctChoice = choices.getCommonDistinctValue();
-        if (distinctChoice.isPresent()) {
-            accept(prompt, new Prompt.Result(getRecognizer().mapPhraseToChoice(distinctChoice.get())));
-            return null;
-        } else {
-            logger.warn("No distinct choice {} in {} - rejecting", choices, result);
-            reject(eventArgs);
-            return prompt;
-        }
     }
 
     private Prompt accept(Prompt prompt, Prompt.Result promptResult) {
@@ -212,22 +365,17 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         getRecognizer().events.recognitionRejected.run(new SpeechRecognizedEventArgs(eventArgs.result));
     }
 
-    private static void logLackOfConfidence(Rule result, Confidence confidence) {
+    private static void logLackOfConfidence(Rule result, double confidence) {
         logger.info("Rejecting result '{}' due to lack of confidence (expected {})", result, confidence);
     }
 
-    private void logAudioSignalProblem(Rule[] result) {
-        logger.info("Rejecting result '{}' due to audio signal problems {}", result, audioSignalProblems);
+    private void logTooManyAudioSignalProblems(Rule[] result) {
+        logger.info("Rejecting result '{}' due to too many audio signal problems {}", result, audioSignalProblems);
     }
 
-    private static void logAudioSignalProblemPenalty(Rule result, Confidence confidence, double penalty) {
+    private static void logAudioSignalProblemPenalty(Rule result, double confidence, double penalty) {
         logger.info("Rejecting result '{}' due to audio signal problem penalty (required  {} + {} + = {})", result,
-                confidence, penalty, confidence.probability + penalty);
-    }
-
-    private static boolean confidenceIsHighEnough(Rule result, Confidence expected, double penalty) {
-        return result.probability - penalty * AUDIO_PROBLEM_PENALTY_WEIGHT >= expected.probability
-                && result.confidence.isAsHighAs(expected);
+                confidence, penalty, confidence + penalty);
     }
 
     private void signal(Prompt prompt, Prompt.Result result) {
@@ -254,26 +402,34 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     @Override
     public Setup getSetup(Choices choices) {
         SpeechRecognition recognizer = getRecognizer(choices.locale);
-        SpeechRecognitionImplementation sr = recognizer.sr;
-        if (sr instanceof SpeechRecognitionSRGS) {
-            try {
-                SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, sr.getLanguageCode());
-                if (logger.isInfoEnabled()) {
-                    logger.info("{}", builder.toXML());
-                }
-
-                IntUnaryOperator mapper = builder::map;
-                byte[] srgs = builder.toBytes();
-
-                return () -> recognizer.setChoices(choices, srgs, mapper);
-            } catch (ParserConfigurationException | TransformerException e) {
-                throw ExceptionUtil.asRuntimeException(e);
-            }
-        } else if (sr instanceof SpeechRecognitionChoices) {
-            return () -> recognizer.setChoices(choices, null, value -> value);
+        SpeechRecognitionImplementation implementation = recognizer.implementation;
+        if (implementation instanceof SpeechRecognitionSRGS) {
+            return srgsPhraseBuilder(choices, recognizer);
+        } else if (implementation instanceof SpeechRecognitionChoices) {
+            return simplePhraseBuilder(choices, recognizer);
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private static Setup srgsPhraseBuilder(Choices choices, SpeechRecognition recognizer)
+            throws TransformerFactoryConfigurationError {
+        try {
+            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, recognizer.implementation.getLanguageCode());
+            if (logger.isInfoEnabled()) {
+                logger.info("{}", builder.slices);
+                logger.info("{}", builder.toXML());
+            }
+            SpeechRecognitionParameters speechRecognitionParameters = new SpeechRecognitionParameters(builder);
+            return () -> recognizer.setChoices(speechRecognitionParameters);
+        } catch (ParserConfigurationException | TransformerException e) {
+            throw asRuntimeException(e);
+        }
+    }
+
+    private static Setup simplePhraseBuilder(Choices choices, SpeechRecognition recognizer) {
+        SpeechRecognitionParameters parameters = new SpeechRecognitionParameters(choices);
+        return () -> recognizer.setChoices(parameters);
     }
 
     @Override
@@ -300,26 +456,16 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
     }
 
-    // TODO Resolve race condition: lazy initialization versus dismiss in main thread on timeout
-    // -> recognition not started yet but main thread dismisses prompt
-
-    // TODO add events at startup and make InputMethod AutoCloseable -> less synchronization issues plus stable testing
-    // + event sources are synchronized
-    // + disabling the recognizer should be enough
-    // + events have to be added early in the queue because the SR input method consumes events and fires new events
-    // -> propagation doesn't work when events are added temporarily since they are added last
-    // Alternatively remove firing new events by moving rejection into the speech detection handler
-    // see also teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult(...)
     private void startSpeechRecognition(Prompt prompt) {
         SpeechRecognition recognizer = getRecognizer(prompt.choices.locale);
         if (recognizer.isActive()) {
             throw new IllegalStateException("Speech recognizer already active");
         }
 
-        recognizer.startRecognition(map(prompt.choices.intention));
+        recognizer.startRecognition();
     }
 
-    private static Confidence map(Intention intention) {
+    private static Confidence confidence(Intention intention) {
         switch (intention) {
         case Chat:
             return Confidence.Low;
@@ -355,9 +501,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     public String toString() {
         Prompt prompt = active.get();
         String object = prompt != null ? getRecognizer(prompt.choices.locale).toString() : "<inactive>";
-        String expectedConfidence = prompt != null
-                ? getRecognizer(prompt.choices.locale).getRecognitionConfidence().toString()
-                : "<?>";
+        String expectedConfidence = prompt != null ? confidence(prompt.choices.intention).toString() : "<?>";
         return "SpeechRecognizer=" + object + " confidence=" + expectedConfidence;
     }
 

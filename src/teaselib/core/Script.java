@@ -94,9 +94,7 @@ public abstract class Script {
         if (startOnce) {
             if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
                 InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
-                inputMethods.add(new SpeechRecognitionInputMethod( //
-                        teaseLib.globals.get(SpeechRecognizer.class), //
-                        Optional.empty()));
+                inputMethods.add(new SpeechRecognitionInputMethod(teaseLib.globals.get(SpeechRecognizer.class)));
             }
 
             handleAutoRemove();
@@ -382,6 +380,7 @@ public abstract class Script {
                 SpeechRecognizedEventArgs eventArgs = ((SpeechRecognitionInputMethodEventArgs) e).eventArgs;
                 if (eventArgs.result != null && eventArgs.result.length == 1) {
                     if (!speechRecognitionRejectedHandlerSignaled && script.canRun()) {
+                        // TODO generalize this -> invoke action once for this prompt, once for whole prompt stack
                         speechRecognitionRejectedHandlerSignaled = true;
                         script.run();
                     }
@@ -443,7 +442,7 @@ public abstract class Script {
     }
 
     private Prompt getPrompt(Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction) {
-        Prompt prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.AllSame);
+        Prompt prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct);
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {
             logger.info("{} {}", inputMethod.getClass().getSimpleName(), inputMethod);

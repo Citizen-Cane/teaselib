@@ -13,7 +13,8 @@ public enum Confidence {
     Noise(0.0f),
     Low(0.25f),
     Normal(0.5f),
-    High(0.75f);
+    High(0.75f),
+    Definite(1.0f);
 
     public static Confidence Default = Normal;
 
@@ -35,33 +36,26 @@ public enum Confidence {
         return higher(this);
     }
 
-    public double reducedProbability() {
-        return (probability + lower().probability) / 2.0;
+    public float slightlyRaisedProbability() {
+        return probability + (higher().probability - probability) * 3.0f / 10.0f;
     }
 
-    public boolean isAsHighAs(Confidence confidence) {
-        if (this.higherThan(confidence))
-            return true;
-        else
-            return this == confidence;
+    public float raisedProbability() {
+        return probability + (higher().probability - probability) / 2.0f;
     }
 
-    public boolean isLowerThan(Confidence confidence) {
-        return !isAsHighAs(confidence);
+    public float slightlyReducedProbability() {
+        return probability + (lower().probability - probability) * 3.0f / 10.0f;
     }
 
-    public boolean higherThan(Confidence confidence) {
-        if (this == Normal && confidence == Low)
-            return true;
-        if (this == High && confidence == Low)
-            return true;
-        if (this == High && confidence == Normal)
-            return true;
-        return false;
+    public float reducedProbability() {
+        return probability + (lower().probability - probability) / 2.0f;
     }
 
     public static Confidence lower(Confidence confidence) {
-        if (confidence == High)
+        if (confidence == Definite)
+            return High;
+        else if (confidence == High)
             return Normal;
         else if (confidence == Normal)
             return Low;
@@ -74,17 +68,37 @@ public enum Confidence {
             return Normal;
         else if (confidence == Normal)
             return High;
+        else if (confidence == High)
+            return Definite;
         else
             return confidence;
     }
 
     public static Confidence valueOf(float propability) {
-        if (propability > High.probability)
+        if (propability >= Definite.probability)
             return High;
-        if (propability > Normal.probability)
+        else if (propability >= High.probability)
+            return High;
+        else if (propability >= Normal.probability)
             return Normal;
-        if (propability > Low.probability)
+        else if (propability >= Low.probability)
             return Low;
-        return Noise;
+        else
+            return Noise;
     }
+
+    public float weighted(int n) {
+        return weighted(n, 2);
+    }
+
+    public float weighted(int n, float k) {
+        float start = slightlyRaisedProbability();
+        float limit = slightlyReducedProbability();
+        return weighted(n, k, start, limit);
+    }
+
+    public static float weighted(int n, float k, float start, float limit) {
+        return limit + (start - limit) / (1 + (n - 1) / k);
+    }
+
 }

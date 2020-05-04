@@ -1,12 +1,15 @@
 package teaselib.core.speechrecognition;
 
-import java.util.Collections;
-import java.util.EnumMap;
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.speechrecognition.Confidence.High;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.IntUnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +19,12 @@ import teaselib.core.events.DelegateExecutor;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.implementation.Unsupported;
+import teaselib.core.speechrecognition.implementation.UnsupportedLanguageException;
+import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.texttospeech.TextToSpeech;
+import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.util.Environment;
 import teaselib.core.util.ExceptionUtil;
@@ -27,16 +32,7 @@ import teaselib.core.util.ExceptionUtil;
 public class SpeechRecognition {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
 
-    private static final Map<Confidence, Confidence> confidenceMapping = confidenceMapping();
-
-    private static EnumMap<Confidence, Confidence> confidenceMapping() {
-        EnumMap<Confidence, Confidence> enumMap = new EnumMap<>(Confidence.class);
-        enumMap.put(Confidence.Noise, Confidence.Noise);
-        enumMap.put(Confidence.Low, Confidence.Low);
-        enumMap.put(Confidence.Normal, Confidence.Normal);
-        enumMap.put(Confidence.High, Confidence.High);
-        return enumMap;
-    }
+    static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptySet(), 0, 0, 1.0f, High);
 
     /**
      * How to handle speech recognition and timeout in script functions.
@@ -74,35 +70,20 @@ public class SpeechRecognition {
         }
     }
 
-    public enum AudioSignalProblem {
-        None,
-        Noise,
-        NoSignal,
-        TooLoud,
-        TooQuiet,
-        TooFast,
-        TooSlow
-    }
-
     public final SpeechRecognitionEvents events;
     public final Locale locale;
 
-    private final SpeechDetectionEventHandler speechDetectionEventHandler;
     private final SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
+    public final SpeechRecognitionImplementation implementation;
 
-    public SpeechRecognitionImplementation sr = null;
+    private SpeechRecognitionParameters parameters;
 
     /**
      * Locked if a recognition is in progress, e.g. a start event has been fired, but the the recognition has neither
      * been rejected or completed
      */
     private static final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
-
-    @Override
-    public String toString() {
-        return locale.toString();
-    }
 
     /**
      * Speech recognition has been started or resumed and is listening for voice input
@@ -118,12 +99,6 @@ public class SpeechRecognition {
 
     private Event<SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = (
             args) -> unlockSpeechRecognitionInProgressSyncObject();
-
-    private Confidence recognitionConfidence;
-
-    private Choices choices;
-    private byte[] srgs;
-    IntUnaryOperator mapper;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
         delegateThread.run(() -> {
@@ -159,25 +134,24 @@ public class SpeechRecognition {
     }
 
     SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass) {
-        // First add the progress events, because we don't want to get events
-        // consumed before setting the in-progress state
         this.events = new SpeechRecognitionEvents(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
-        speechDetectionEventHandler = new SpeechDetectionEventHandler(events);
         this.locale = locale;
         if (locale == null) {
-            sr = Unsupported.Instance;
+            implementation = Unsupported.Instance;
         } else {
-            delegateThread.run(() -> {
+            implementation = delegateThread.call(() -> {
                 try {
                     if (Environment.SYSTEM == Environment.Windows) {
-                        sr = srClass.getConstructor().newInstance();
-                        sr.init(speechDetectionEventHandler.eventSink, SpeechRecognition.this.locale);
+                        SpeechRecognitionImplementation instance = srClass.getConstructor().newInstance();
+                        instance.init(events, locale);
+                        return instance;
                     } else {
-                        sr = Unsupported.Instance;
+                        return Unsupported.Instance;
                     }
+                } catch (UnsupportedLanguageException e) {
+                    logger.warn(e.getMessage());
+                    throw e;
                 } catch (RuntimeException e) {
-                    // TODO Handle UnsupportedLanguageException and give instructions to
-                    // download speech recognition pack for the selected language
                     throw e;
                 } catch (Throwable t) {
                     throw ExceptionUtil.asRuntimeException(t);
@@ -185,11 +159,6 @@ public class SpeechRecognition {
             });
         }
 
-        // add the SpeechDetectionEventHandler listeners now to ensure
-        // other listeners downstream receive only the correct event,
-        // as the event handler may consume the
-        // RecognitionRejected-event and fire an recognized event instead
-        speechDetectionEventHandler.addEventListeners();
         // Add watchdog last, to receive speechRejected/completed from the hypothesis event handler
         this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(events, this::handleRecognitionTimeout);
         this.timeoutWatchdog.addEvents();
@@ -199,10 +168,7 @@ public class SpeechRecognition {
         timeoutWatchdog.enable(false);
         timeoutWatchdog.removeEvents();
 
-        speechDetectionEventHandler.removeEventListeners();
-
-        sr.close();
-        sr = null;
+        implementation.close();
 
         unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
         delegateThread.shutdown();
@@ -210,36 +176,27 @@ public class SpeechRecognition {
 
     private void handleRecognitionTimeout() {
         if (speechRecognitionInProgress()) {
-            Rule result = speechDetectionEventHandler.getHypothesis();
-            if (result == null) {
-                result = new Rule("Noise", "", Integer.MIN_VALUE, Collections.emptySet(), 0, 0, 0.0f, Confidence.Noise);
-            }
-            events.recognitionRejected.run(new SpeechRecognizedEventArgs(result));
+            events.recognitionRejected.run(new SpeechRecognizedEventArgs(TIMEOUT));
         }
     }
 
-    public void setChoices(Choices choices) {
-        setChoices(choices, null, result -> result);
+    public void setChoices(SpeechRecognitionParameters parameters) {
+        this.parameters = parameters;
     }
 
-    public void setChoices(Choices choices, byte[] srgs, IntUnaryOperator mapper) {
-        this.choices = choices;
-        this.srgs = srgs;
-        this.mapper = mapper;
+    public SpeechRecognitionParameters getChoices() {
+        return parameters;
     }
 
-    public Confidence getRecognitionConfidence() {
-        return recognitionConfidence;
-    }
-
-    // TODO Make class stateless by moving sr process into new class with final state - remember that class upstream
-    // TODO Add a prepare step to allow setup in advance - all cpu computations should be done beforehand
-    public void startRecognition(Confidence recognitionConfidence) {
-        this.recognitionConfidence = recognitionConfidence;
-        if (sr != null) {
+    public void startRecognition() {
+        if (implementation != null) {
             delegateThread.run(() -> {
-                enableSR();
-                logger.info("Speech recognition started");
+                if (!isActive()) {
+                    enableSR();
+                    logger.info("Speech recognition started");
+                } else {
+                    logger.warn("Speech recognition already running");
+                }
             });
         } else {
             recognizerNotInitialized();
@@ -247,10 +204,14 @@ public class SpeechRecognition {
     }
 
     public void pauseRecognition() {
-        if (sr != null) {
+        if (implementation != null) {
             delegateThread.run(() -> {
-                disableSR();
-                logger.info("Speech recognition paused");
+                if (isActive()) {
+                    disableSR();
+                    logger.info("Speech recognition paused");
+                } else {
+                    logger.warn("Speech recognition already stopped");
+                }
             });
         } else {
             recognizerNotInitialized();
@@ -258,13 +219,13 @@ public class SpeechRecognition {
     }
 
     public void resumeRecognition() {
-        if (sr != null) {
+        if (implementation != null) {
             delegateThread.run(() -> {
-                if (srgs != null) {
+                if (!isActive()) {
                     enableSR();
                     logger.info("Speech recognition resumed");
                 } else {
-                    logger.info("Speech recognition already stopped");
+                    logger.warn("Speech recognition already running");
                 }
             });
         } else {
@@ -273,15 +234,10 @@ public class SpeechRecognition {
     }
 
     public void restartRecognition() {
-        if (sr != null) {
+        if (implementation != null) {
             delegateThread.run(() -> {
-                sr.stopRecognition();
-                if (srgs != null) {
-                    // TODO Parse to srgs once before start - not on each resume
-                    // - needs grammar management since prompts may be paused and a different grammar loaded
-                    // TODO Phrases field may conflict with Prompt stacking because SR is not supposed to remember this
-                    // -> needs map of phrases->grammar hash to enable/disable the right grammar (and to remove it when
-                    // dismissed)
+                implementation.stopRecognition();
+                if (!isActive()) {
                     enableSR();
                     logger.info("Speech recognition restarted");
                 } else {
@@ -294,13 +250,11 @@ public class SpeechRecognition {
     }
 
     public void endRecognition() {
-        if (sr != null) {
+        if (implementation != null) {
             delegateThread.run(() -> {
                 if (isActive()) {
                     disableSR();
-                    srgs = null;
-                    mapper = null;
-                    choices = null;
+                    parameters = null;
                     logger.info("Speech recognition stopped");
                 } else {
                     logger.warn("Speech recognition already stopped");
@@ -312,32 +266,39 @@ public class SpeechRecognition {
     }
 
     private void enableSR() {
-        if (sr instanceof SpeechRecognitionSRGS) {
-            ((SpeechRecognitionSRGS) sr).setChoices(srgs);
-        } else if (sr instanceof SpeechRecognitionChoices) {
-            ((SpeechRecognitionChoices) sr).setChoices(choices.firstPhraseOfEach());
+        if (implementation instanceof SpeechRecognitionSRGS) {
+            ((SpeechRecognitionSRGS) implementation).setChoices(parameters.srgs);
+        } else if (implementation instanceof SpeechRecognitionChoices) {
+            ((SpeechRecognitionChoices) implementation).setChoices(firstPhraseOfEach(parameters.choices));
         } else {
             throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
         }
 
-        // TODO must be the same phrases used to setup sr implementation
-        speechDetectionEventHandler.setChoices(choices);
-        speechDetectionEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
-        speechDetectionEventHandler.enable(true);
-
         timeoutWatchdog.enable(true);
 
         synchronized (TextToSpeech.AudioOutput) {
-            sr.startRecognition();
+            implementation.startRecognition();
         }
 
         speechRecognitionActive.set(true);
     }
 
+    public List<String> firstPhraseOfEach(Choices choices) {
+        return choices.stream().map(SpeechRecognition::firstPhrase).map(SpeechRecognition::withoutPunctation)
+                .collect(toList());
+    }
+
+    private static String firstPhrase(Choice choice) {
+        return choice.phrases.get(0);
+    }
+
+    static String withoutPunctation(String text) {
+        return Arrays.stream(PhraseString.words(text)).collect(joining(" "));
+    }
+
     private void disableSR() {
-        sr.stopRecognition();
-        SpeechRecognition.this.speechRecognitionActive.set(false);
-        speechDetectionEventHandler.enable(false);
+        implementation.stopRecognition();
+        speechRecognitionActive.set(false);
         timeoutWatchdog.enable(false);
         unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
     }
@@ -375,9 +336,9 @@ public class SpeechRecognition {
     }
 
     public void emulateRecogntion(String emulatedRecognitionResult) {
-        if (sr != null) {
+        if (implementation != null) {
             delegateThread.run(() -> {
-                sr.emulateRecognition(emulatedRecognitionResult);
+                implementation.emulateRecognition(emulatedRecognitionResult);
                 logger.info("Emulating recognition for '{}'", emulatedRecognitionResult);
             });
         } else {
@@ -385,12 +346,9 @@ public class SpeechRecognition {
         }
     }
 
-    public Confidence userDefinedConfidence(Confidence expectedConfidence) {
-        return confidenceMapping.getOrDefault(expectedConfidence, expectedConfidence);
-    }
-
-    public Integer mapPhraseToChoice(int index) {
-        return mapper.applyAsInt(index);
+    @Override
+    public String toString() {
+        return locale.toString();
     }
 
 }

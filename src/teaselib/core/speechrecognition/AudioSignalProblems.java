@@ -5,13 +5,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import teaselib.core.speechrecognition.SpeechRecognition.AudioSignalProblem;
-
 public class AudioSignalProblems {
-    private final Map<SpeechRecognition.AudioSignalProblem, AtomicInteger> problems = new EnumMap<>(
+    private final Map<AudioSignalProblem, AtomicInteger> problems = new EnumMap<>(
             AudioSignalProblem.class);
-    private final Map<SpeechRecognition.AudioSignalProblem, Integer> limits = new EnumMap<>(AudioSignalProblem.class);
-    private final Map<SpeechRecognition.AudioSignalProblem, Double> penalties = new EnumMap<>(AudioSignalProblem.class);
+    private final Map<AudioSignalProblem, Integer> limits = new EnumMap<>(AudioSignalProblem.class);
+    private final Map<AudioSignalProblem, Double> penalties = new EnumMap<>(AudioSignalProblem.class);
 
     public AudioSignalProblems() {
         clear();
@@ -47,7 +45,7 @@ public class AudioSignalProblems {
         problems.getOrDefault(audioSignalProblem, new AtomicInteger(0)).incrementAndGet();
     }
 
-    public boolean occured() {
+    public boolean exceedLimits() {
         for (Entry<AudioSignalProblem, AtomicInteger> problem : problems.entrySet()) {
             if (problem.getValue().get() > limits.get(problem.getKey())) {
                 return true;

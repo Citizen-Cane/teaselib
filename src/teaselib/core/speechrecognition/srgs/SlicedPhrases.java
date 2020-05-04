@@ -85,7 +85,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
 
     private final List<Sequences<T>> elements;
     final Rating<T> rating;
-    private final Function<Sequences<T>, String> prettyPrint;
+    private final Function<Sequences<T>, String> toString;
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
@@ -93,9 +93,15 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         return reduceNullRules(candidates.getResult());
     }
 
+    public static <T> SlicedPhrases<T> of(Sequences<T> phrases, Function<Sequences<T>, String> toString) {
+        ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
+        slice(candidates, phrases, toString);
+        return reduceNullRules(candidates.getResult());
+    }
+
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases, List<SlicedPhrases<T>> results,
-            Function<Sequences<T>, String> prettyPrint) {
-        slice(results, phrases, prettyPrint);
+            Function<Sequences<T>, String> toString) {
+        slice(results, phrases, toString);
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         results.removeIf(candidate -> candidate.rating.isInvalidated());
         results.stream().forEach(candidates::add);
@@ -103,9 +109,8 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     }
 
     static <T> void slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences,
-            Function<Sequences<T>, String> prettyPrint) {
-        List<SliceInProgress<T>> more = sequences.sliceAll(candidates,
-                new SlicedPhrases<>(prettyPrint, sequences.traits.comparator));
+            Function<Sequences<T>, String> toString) {
+        List<SliceInProgress<T>> more = sequences.sliceAll(candidates, new SlicedPhrases<>(sequences.traits, toString));
         while (!more.isEmpty()) {
             ArrayList<Sequences.SliceInProgress<T>> evenMore = new ArrayList<>();
             for (SliceInProgress<T> sliceInProgress : more) {
@@ -150,21 +155,21 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         return result;
     }
 
-    public SlicedPhrases(Function<Sequences<T>, String> prettyPrint, Comparator<T> comparator) {
+    public SlicedPhrases(Sequence.Traits<T> traits, Function<Sequences<T>, String> toString) {
         this.elements = new ArrayList<>();
-        this.rating = new Rating<>(comparator);
-        this.prettyPrint = prettyPrint;
+        this.rating = new Rating<>(traits.comparator);
+        this.toString = toString;
     }
 
     private SlicedPhrases(List<Sequences<T>> elements, Rating<T> rating, Sequence.Traits<T> traits,
-            Function<Sequences<T>, String> prettyPrint) {
+            Function<Sequences<T>, String> toString) {
         this.elements = new ArrayList<>(elements.size());
         for (int i = 0; i < elements.size(); i++) {
             Sequences<T> sequences = elements.get(i);
             this.elements.add(new Sequences<>(sequences));
         }
         this.rating = new Rating<>(rating, traits.comparator);
-        this.prettyPrint = prettyPrint;
+        this.toString = toString;
     }
 
     public boolean isEmpty() {
@@ -184,7 +189,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     }
 
     public SlicedPhrases<T> clone(Sequence.Traits<T> traits) {
-        return new SlicedPhrases<>(elements, rating, traits, prettyPrint);
+        return new SlicedPhrases<>(elements, rating, traits, toString);
     }
 
     public int maxCommonness() {
@@ -304,7 +309,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
             phrases.append(duplicatedSymbolsCount());
             phrases.append("\n");
 
-            phrases.append(stream().map(prettyPrint).collect(Collectors.joining("\n")));
+            phrases.append(stream().map(toString).collect(Collectors.joining("\n")));
             return phrases.toString();
         }
     }

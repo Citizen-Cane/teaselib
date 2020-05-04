@@ -37,15 +37,15 @@ void AudioLevelSignalProblemOccuredEvent::fire(const SPINTERFERENCE interference
         assert(false);
         return;
     }
-    jclass audioSignalProblemClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/SpeechRecognition$AudioSignalProblem");
+    jclass audioSignalProblemClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/AudioSignalProblem");
     jobject audioSignalProblem = env->GetStaticObjectField(
                                      audioSignalProblemClass,
                                      JNIClass::getStaticFieldID(env, audioSignalProblemClass, audioSignalProblemFieldName,
-                                             "Lteaselib/core/speechrecognition/SpeechRecognition$AudioSignalProblem;"));
+                                             "Lteaselib/core/speechrecognition/AudioSignalProblem;"));
     jclass eventClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/events/AudioSignalProblemOccuredEventArgs");
     jobject eventArgs = env->NewObject(
                             eventClass,
-                            JNIClass::getMethodID(env, eventClass, "<init>", "(Lteaselib/core/speechrecognition/SpeechRecognition$AudioSignalProblem;)V"),
+                            JNIClass::getMethodID(env, eventClass, "<init>", "(Lteaselib/core/speechrecognition/AudioSignalProblem;)V"),
                             audioSignalProblem);
     if (env->ExceptionCheck()) {
         throw JNIException(env);

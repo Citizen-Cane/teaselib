@@ -1,7 +1,5 @@
 package teaselib.core.ui;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,10 +56,6 @@ public class Choices extends ArrayList<Choice> {
         if (choices.size() > new HashSet<>(choices).size()) {
             throw new IllegalArgumentException(message + ": " + choices);
         }
-    }
-
-    public List<String> firstPhraseOfEach() {
-        return stream().map(choice -> choice.phrases.get(0)).collect(toList());
     }
 
 }

@@ -11,8 +11,8 @@ import org.junit.runners.MethodSorters;
 
 import teaselib.core.configuration.Configuration;
 import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionParameters;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.PronunciationDictionary;
@@ -57,8 +57,8 @@ public class SpeechRecognitionPronunciationDictionaryTest {
             Event<SpeechRecognizedEventArgs> speechRecognized = (eventArgs) -> completed.countDown();
             speechRecognition.events.recognitionCompleted.add(speechRecognized);
             try {
-                speechRecognition.setChoices(choices);
-                speechRecognition.startRecognition(Confidence.Normal);
+                speechRecognition.setChoices(new SpeechRecognitionParameters(choices));
+                speechRecognition.startRecognition();
                 speechRecognition.emulateRecogntion("Hello");
                 // Speak (fr) "Madame" instead of (en) "Maydamm"
                 completed.await();

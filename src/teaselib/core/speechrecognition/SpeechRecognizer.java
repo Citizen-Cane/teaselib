@@ -46,7 +46,7 @@ public class SpeechRecognizer implements Closeable {
         synchronized (speechRecognitionInstances) {
             if (speechRecognitionInstances.containsKey(locale)) {
                 SpeechRecognition speechRecognition = speechRecognitionInstances.get(locale);
-                if (speechRecognition.sr.getClass() != srClass) {
+                if (speechRecognition.implementation.getClass() != srClass) {
                     throw new UnsupportedOperationException("SR implementation already set for locale " + locale);
                 }
                 return speechRecognition;

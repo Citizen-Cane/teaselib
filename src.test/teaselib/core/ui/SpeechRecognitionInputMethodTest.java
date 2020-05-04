@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -55,8 +54,7 @@ public class SpeechRecognitionInputMethodTest {
     private static void testSInputMethod(Choices choices, String expected, int resultIndex)
             throws InterruptedException {
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers();
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers,
-                        Optional.empty());) {
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             SpeechRecognition sr = recognizers.get(choices.locale);
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
             SpeechRecognitionTestUtils.awaitResult(inputMethod, sr, prompt, expected, new Prompt.Result(resultIndex));
@@ -69,8 +67,7 @@ public class SpeechRecognitionInputMethodTest {
         Choices choices = new Choices(Locale.US, Intention.Decide, new Choice(phrase));
 
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers();
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers,
-                        Optional.empty());) {
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
 
             boolean dismissed;
@@ -96,8 +93,7 @@ public class SpeechRecognitionInputMethodTest {
         DebugSetup setup = new DebugSetup().withInput();
         Configuration config = new Configuration(setup);
         try (SpeechRecognizer recognizer = new SpeechRecognizer(config);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer,
-                        Optional.empty());) {
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer);) {
             SpeechRecognition sr = recognizer.get(choices.locale);
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
 
@@ -119,8 +115,7 @@ public class SpeechRecognitionInputMethodTest {
     @Test
     public void testSpeechRecognitionInputMethodStacked() throws InterruptedException {
         try (SpeechRecognizer recognizer = SpeechRecognitionTestUtils.getRecognizers();
-                SpeechRecognitionInputMethod inputMethod1 = new SpeechRecognitionInputMethod(recognizer,
-                        Optional.empty());) {
+                SpeechRecognitionInputMethod inputMethod1 = new SpeechRecognitionInputMethod(recognizer);) {
             Choices choices1 = new Choices(Locale.ENGLISH, Intention.Confirm, choice("Foo"));
             SpeechRecognition sr = recognizer.get(choices1.locale);
 
@@ -182,20 +177,21 @@ public class SpeechRecognitionInputMethodTest {
     }
 
     @Test
-    public void testCommonDistinctValue() {
-        Integer[][] array = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 }, { 2, 5 }, };
-        RuleIndicesList values = new RuleIndicesList(
-                Arrays.stream(array).map(Arrays::asList).map(HashSet::new).collect(Collectors.toList()));
-        assertEquals(2, values.getCommonDistinctValue().orElseThrow().intValue());
+    public void testDistinctValue() {
+        Integer[][] values = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 },
+                { 2, 5 }, };
+        RuleIndicesList indices = new RuleIndicesList(
+                Arrays.stream(values).map(Arrays::asList).map(HashSet::new).collect(Collectors.toList()));
+        assertEquals(2, indices.singleResult().orElseThrow().intValue());
     }
 
     @Test(expected = NoSuchElementException.class)
-    public void testCommonDistinctValueNotPresent() {
-        Integer[][] array = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 }, { 2, 5 },
+    public void testSingleResultNotPresent() {
+        Integer[][] values = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 }, { 2, 5 },
                 { 0, 5 } };
-        RuleIndicesList values = new RuleIndicesList(
-                Arrays.stream(array).map(Arrays::asList).map(HashSet::new).collect(Collectors.toList()));
-        assertEquals(2, values.getCommonDistinctValue().orElseThrow().intValue());
+        RuleIndicesList indices = new RuleIndicesList(
+                Arrays.stream(values).map(Arrays::asList).map(HashSet::new).collect(Collectors.toList()));
+        assertEquals(2, indices.singleResult().orElseThrow().intValue());
     }
 
 }

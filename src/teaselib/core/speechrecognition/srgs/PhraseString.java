@@ -17,13 +17,13 @@ import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
-class PhraseString {
+public class PhraseString {
     static final Sequence.Traits<PhraseString> Traits = new Traits<>(PhraseString::compareTo, PhraseString::words,
             PhraseString::commonness, PhraseString::joinCommon, PhraseString::joinSequence,
             PhraseString::joinableSequences, PhraseString::joinablePhrases);
 
-    final String phrase;
-    final Set<Integer> indices;
+    public final String phrase;
+    public final Set<Integer> indices;
 
     PhraseString(String phrase, int index) {
         this.phrase = phrase;
@@ -53,16 +53,20 @@ class PhraseString {
         if (phrase.isEmpty()) {
             return singletonList(this);
         } else {
-            String[] words = phrase.split("[ .:,;\t\n_()]+");
+            String[] words = words(phrase);
             return stream(words).map(word -> new PhraseString(word, indices)).collect(toList());
         }
+    }
+
+    public static String[] words(String phrase) {
+        return phrase.split("[ .:,;\t\n_()]+");
     }
 
     private static int commonness(PhraseString element) {
         return element.indices.size();
     }
 
-    public static PhraseString joinCommon(List<PhraseString> strings) {
+    static PhraseString joinCommon(List<PhraseString> strings) {
         if (strings.isEmpty()) {
             throw new NoSuchElementException();
         }
@@ -71,7 +75,7 @@ class PhraseString {
         return new PhraseString(strings.get(0).phrase, results);
     }
 
-    public static PhraseString joinSequence(List<PhraseString> strings) {
+    static PhraseString joinSequence(List<PhraseString> strings) {
         if (strings.isEmpty()) {
             throw new NoSuchElementException("Empty phrases cannot be concatenated since they don't provide indices");
         }
@@ -97,11 +101,11 @@ class PhraseString {
         return phrase1.indices.equals(phrase2.indices);
     }
 
-    static <T> Set<T> intersection(Set<T> a, Set<T> b) {
+    public static <T> Set<T> intersection(Set<T> a, Set<T> b) {
         return a.stream().filter(b::contains).collect(toSet());
     }
 
-    static <T> boolean intersect(Set<T> a, Set<T> b) {
+    public static <T> boolean intersect(Set<T> a, Set<T> b) {
         return a.stream().anyMatch(b::contains);
     }
 

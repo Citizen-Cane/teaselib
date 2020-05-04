@@ -1,7 +1,9 @@
 package teaselib.core.speechrecognition;
 
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
+
 import java.util.Locale;
-import java.util.Optional;
 
 import org.junit.Test;
 
@@ -28,12 +30,10 @@ public class SpeechRecognitionSimpleTest {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, new Choice("My name is Foobar"));
 
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSR.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers,
-                        Optional.empty())) {
-            SpeechRecognitionTestUtils.assertRecognized(recognizers, inputMethod, choices);
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
-            SpeechRecognitionTestUtils.assertRejected(recognizers, inputMethod, choices, //
-                    "My name is Foo", "FooBar");
+            assertRecognized(recognizers, inputMethod, choices);
+            assertRejected(recognizers, inputMethod, choices, "My name is Foo", "FooBar");
         }
     }
 
@@ -44,11 +44,10 @@ public class SpeechRecognitionSimpleTest {
                 new Choice("My name is Bar"), //
                 new Choice("My name is Foobar"));
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSR.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers,
-                        Optional.empty())) {
-            SpeechRecognitionTestUtils.assertRecognized(recognizers, inputMethod, choices);
-            SpeechRecognitionTestUtils.assertRejected(recognizers, inputMethod, choices, //
-                    "My name is", "FooBar");
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+
+            assertRecognized(recognizers, inputMethod, choices);
+            assertRejected(recognizers, inputMethod, choices, "My name is", "FooBar");
         }
     }
 
@@ -59,11 +58,11 @@ public class SpeechRecognitionSimpleTest {
                 new Choice("My name is Bar, Mam"), //
                 new Choice("My name is Foobar, Mam"));
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSR.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers,
-                        Optional.empty())) {
-            SpeechRecognitionTestUtils.assertRecognized(recognizers, inputMethod, choices);
-            SpeechRecognitionTestUtils.assertRejected(recognizers, inputMethod, choices, //
-                    "My name is Foobar", "Mam");
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+
+            assertRecognized(recognizers, inputMethod, choices);
+            assertRejected(recognizers, inputMethod, choices, "My name is Foobar");
+            assertRejected(recognizers, inputMethod, choices, "Mam");
         }
     }
 
@@ -74,11 +73,11 @@ public class SpeechRecognitionSimpleTest {
                 new Choice("My name is foobar, Mam"), //
                 new Choice("There is Foobar, Mam"));
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSR.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers,
-                        Optional.empty())) {
-            SpeechRecognitionTestUtils.assertRecognized(recognizers, inputMethod, choices);
-            SpeechRecognitionTestUtils.assertRejected(recognizers, inputMethod, choices, //
-                    "My name is foobar", "Mam");
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+
+            assertRecognized(recognizers, inputMethod, choices);
+            assertRejected(recognizers, inputMethod, choices, "My name is foobar");
+            assertRejected(recognizers, inputMethod, choices, "Mam");
         }
     }
 
@@ -89,11 +88,26 @@ public class SpeechRecognitionSimpleTest {
                 new Choice("My name is foobar, Miss"), //
                 new Choice("There is Foobar, Mistress"));
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSR.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers,
-                        Optional.empty())) {
-            SpeechRecognitionTestUtils.assertRecognized(recognizers, inputMethod, choices);
-            SpeechRecognitionTestUtils.assertRejected(recognizers, inputMethod, choices, //
-                    "My name is Foobar", "Miss");
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+
+            assertRecognized(recognizers, inputMethod, choices);
+            assertRejected(recognizers, inputMethod, choices, "My name is Foobar");
+            assertRejected(recognizers, inputMethod, choices, "Miss");
+        }
+    }
+
+    @Test
+    public void testSimpleSRMultiplePhrasesHypothesis() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("My name is Foo, Mam"), //
+                new Choice("My name is Bar, Mam"), //
+                new Choice("My name is Foobar, Mam"));
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSR.class);
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+
+            assertRejected(recognizers, inputMethod, choices, "My name is");
+            assertRejected(recognizers, inputMethod, choices, "My name is Foo");
+            assertRejected(recognizers, inputMethod, choices, "My name is Foobar");
         }
     }
 
@@ -109,11 +123,12 @@ public class SpeechRecognitionSimpleTest {
                 new Choice(sorry), new Choice(ready), new Choice(haveIt), new Choice(ready2), new Choice(ready3));
 
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSR.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers,
-                        Optional.empty())) {
-            SpeechRecognitionTestUtils.assertRecognized(recognizers, inputMethod, choices);
-            SpeechRecognitionTestUtils.assertRejected(recognizers, inputMethod, choices, //
-                    "No, Miss", "Yes, Miss", "I'm Sorry", "Ready, Miss", "It's ready", "Ready");
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+
+            assertRecognized(recognizers, inputMethod, choices);
+            assertRejected(recognizers, inputMethod, choices, "Yes Miss");
+            assertRejected(recognizers, inputMethod, choices, "It's ready");
+            assertRejected(recognizers, inputMethod, choices, "I'm Sorry", "Ready, Miss", "Ready");
         }
     }
 

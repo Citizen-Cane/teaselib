@@ -1,5 +1,6 @@
 package teaselib.core.events;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +34,22 @@ public class DelegateExecutor {
                 return null;
             });
             future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+        }
+    }
+
+    public <T> T call(Callable<T> delegate) {
+        try {
+            Future<T> future = workerThread.submit(() -> {
+                return delegate.call();
+            });
+            return future.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);

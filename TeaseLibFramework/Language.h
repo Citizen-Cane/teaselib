@@ -13,8 +13,8 @@ public:
 	static LANGID getLangID(ISpObjectToken * pVoiceToken);
 	static LANGID getLangID(const wchar_t* locale);
 	static std::wstring Language::getLangIDStringWithoutLeadingZeros(const wchar_t* locale);
-	static void getName(LANGID langID, wchar_t* sname, size_t size);
-	static void getDisplayName(LANGID langID, wchar_t* displayName, size_t size);
+	static void getName(LANGID langID, wchar_t* sname, int size);
+	static void getDisplayName(LANGID langID, wchar_t* displayName, int size);
 
 	LANGID langID;
 	TCHAR sname[6];

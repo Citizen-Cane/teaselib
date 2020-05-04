@@ -36,7 +36,7 @@ LANGID Language::getLangID(const wchar_t* locale) {
 	assert(charSize > 0);
 	if (charSize == 0) throw COMException(E_INVALIDARG);
 
-	return wcstol(languageID, nullptr, 16);
+	return static_cast<WORD>(wcstol(languageID, nullptr, 16));
 }
 
 std::wstring Language::getLangIDStringWithoutLeadingZeros(const wchar_t* locale) {
@@ -53,13 +53,13 @@ std::wstring Language::getLangIDStringWithoutLeadingZeros(const wchar_t* locale)
 	return langIDWithoutTrailingZeros;
 }
 
-void Language::getName(LANGID langID, wchar_t * sname, size_t size) {
+void Language::getName(LANGID langID, wchar_t * sname, int size) {
 	// locale e.g. "en-AU"
 	wcscpy_s(sname, size, L"??-??");
 	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, sname, size);
 }
 
-void Language::getDisplayName(LANGID langID, wchar_t * displayName, size_t size) {
+void Language::getDisplayName(LANGID langID, wchar_t * displayName, int size) {
 	// locale e.g. "en-AU"
 	wcscpy_s(displayName, size, L"Unknown");
 	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLOCALIZEDDISPLAYNAME, displayName, size);

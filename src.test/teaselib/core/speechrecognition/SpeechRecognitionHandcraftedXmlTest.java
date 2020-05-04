@@ -3,18 +3,21 @@ package teaselib.core.speechrecognition;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult;
-import static teaselib.core.speechrecognition.srgs.StringSequence.splitWords;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;
@@ -24,6 +27,8 @@ import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.Stream;
 
 public class SpeechRecognitionHandcraftedXmlTest {
+    static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionHandcraftedXmlTest.class);
+
     private static final Choices Foobar = new Choices(Locale.ENGLISH, Intention.Decide, //
             new Choice("My name is Foo"), new Choice("My name is Bar"), new Choice("My name is Foobar"));
 
@@ -55,33 +60,36 @@ public class SpeechRecognitionHandcraftedXmlTest {
     private static List<Rule> emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
             Prompt.Result expected, Prompt.Result.Accept mode) throws IOException, InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
-                splitWords(emulatedRecognitionResult).stream().collect(joining(" ")), emulatedRecognitionResult);
+                Arrays.stream(PhraseString.words(emulatedRecognitionResult)).collect(joining(" ")),
+                emulatedRecognitionResult);
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
-        byte[] xml = Stream.toByteArray(resources.get(resource));
-
-        try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSRGS.class);) {
-            SpeechRecognition sr = sR.get(Foobar.locale);
-            try (SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR, Optional.empty()) {
-                @Override
-                public Setup getSetup(Choices choices) {
-                    Setup setup = super.getSetup(choices);
-                    return () -> {
-                        setup.apply();
-                        sr.setChoices(choices, xml, value -> value);
-                    };
+        try (InputStream inputStream = resources.get(resource);) {
+            byte[] xml = Stream.toByteArray(inputStream);
+            try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSRGS.class);) {
+                SpeechRecognition sr = sR.get(Foobar.locale);
+                try (SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR) {
+                    @Override
+                    public Setup getSetup(Choices choices) {
+                        Setup setup = super.getSetup(choices);
+                        return () -> {
+                            setup.apply();
+                            String xmlToString = new String(xml);
+                            logger.info("Injecting handcrafted xml\n{}", xmlToString);
+                            sr.setChoices(new SpeechRecognitionParameters(choices, null, xml, index -> index));
+                        };
+                    }
+                };) {
+                    Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
+                    return awaitResult(inputMethod, sr, prompt, emulatedRecognitionResult, expected);
                 }
-            };) {
-                Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
-                return awaitResult(inputMethod, sr, prompt, emulatedRecognitionResult, expected);
             }
         }
     }
 
     @Test
-    public void testMicrosoftSRGSExampleCities() throws InterruptedException, IOException {
+    public void testMicrosoftSRGSExampleCitiesRejectedSinceItDoesntContainTesaseLibSrRules()
+            throws InterruptedException, IOException {
         String resource = "srgs/experimental/cities_srg.xml";
-        // Not recognized since the example doesn't contain rules
-        // that match the TeaseLib srgs speech recognition naming scheme
         assertRejected(resource, "I would like to fly from Miami to Los Angeles");
         assertRejected(resource, "I would like to fly from Paris to Moscow");
     }
@@ -186,13 +194,13 @@ public class SpeechRecognitionHandcraftedXmlTest {
         String srgs = "srgs/handcrafted_delayed_phrase_start_with_garbage.xml";
 
         List<Rule> results = new ArrayList<>();
-        results.addAll(assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.AllSame));
-        results.addAll(assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.AllSame));
+        results.addAll(assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.Distinct));
+        results.addAll(assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.Distinct));
         assertEquals("sr result contains ambiguous rules since gargabe also matches allowed phrases", 2,
                 results.size());
 
-        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.AllSame);
-        assertRejected(srgs, "of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.Distinct);
+        assertRejected(srgs, "of course", Prompt.Result.Accept.Distinct);
     }
 
     /**
@@ -206,13 +214,13 @@ public class SpeechRecognitionHandcraftedXmlTest {
         String srgs = "srgs/handcrafted_delayed_phrase_start_with_garbage_RuleRef.xml";
 
         List<Rule> results = new ArrayList<>();
-        results.addAll(assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.AllSame));
-        results.addAll(assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.AllSame));
+        results.addAll(assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.Distinct));
+        results.addAll(assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.Distinct));
         assertEquals("sr result contains ambiguous rules since gargabe also matches allowed phrases", 2,
                 results.size());
 
-        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.AllSame);
-        assertRejected(srgs, "of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.Distinct);
+        assertRejected(srgs, "of course", Prompt.Result.Accept.Distinct);
     }
 
     /**
@@ -224,14 +232,14 @@ public class SpeechRecognitionHandcraftedXmlTest {
     public void testHandcraftedDelayedPhraseStartWithNull() throws InterruptedException, IOException {
         String srgs = "srgs/handcrafted_delayed_phrase_start_with_null.xml";
         List<Rule> result1 = assertRecognized(srgs, "Yes of course", new Prompt.Result(0),
-                Prompt.Result.Accept.AllSame);
+                Prompt.Result.Accept.Distinct);
         assertEquals(1, result1.size());
         List<Rule> result2 = assertRecognized(srgs, "Of course Miss", new Prompt.Result(1),
-                Prompt.Result.Accept.AllSame);
+                Prompt.Result.Accept.Distinct);
         assertEquals(1, result2.size());
 
-        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.AllSame);
-        assertRejected(srgs, "of course", Prompt.Result.Accept.AllSame);
+        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.Distinct);
+        assertRejected(srgs, "of course", Prompt.Result.Accept.Distinct);
     }
 
     /**
@@ -246,11 +254,11 @@ public class SpeechRecognitionHandcraftedXmlTest {
     @Test
     public void testHandcraftedDelayedPhraseStartWithNullRuleRef() throws InterruptedException, IOException {
         String srgs = "srgs/handcrafted_delayed_phrase_start_with_null_RuleRef.xml";
-        assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.AllSame);
-        assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.AllSame);
-        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.AllSame);
-        assertRejected(srgs, "of course", Prompt.Result.Accept.AllSame);
-        assertRejected(srgs, "any", Prompt.Result.Accept.AllSame);
+        assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.Distinct);
+        assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.Distinct);
+        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.Distinct);
+        assertRejected(srgs, "of course", Prompt.Result.Accept.Distinct);
+        assertRejected(srgs, "any", Prompt.Result.Accept.Distinct);
     }
 
     /**

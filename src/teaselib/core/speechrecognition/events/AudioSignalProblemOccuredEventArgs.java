@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.events;
 
-import teaselib.core.speechrecognition.SpeechRecognition.AudioSignalProblem;
+import teaselib.core.speechrecognition.AudioSignalProblem;
 
 public class AudioSignalProblemOccuredEventArgs extends SpeechRecognitionEventArgs
 {

@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition;
 
 import java.util.Locale;
-import java.util.Optional;
 
 import org.junit.Test;
 
@@ -23,8 +22,7 @@ public class SpeechRecognitionTests {
     @Test
     public void testSpeechRecognitionInputMethod() throws InterruptedException {
         try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizers();
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR, Optional.empty());) {
-
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR);) {
             Prompt prompt = new Prompt(TestChoices, new InputMethods(inputMethod));
             prompt.lock.lockInterruptibly();
             try {

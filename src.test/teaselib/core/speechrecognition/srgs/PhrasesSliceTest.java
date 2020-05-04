@@ -1,10 +1,16 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.srgs.PhraseString.*;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
+import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.prettyPrint;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,15 +28,15 @@ import org.slf4j.LoggerFactory;
 public class PhrasesSliceTest {
     private static final Logger logger = LoggerFactory.getLogger(PhrasesSliceTest.class);
 
-    static Sequence<PhraseString> choice(String string, Integer... choices) {
+    public static Sequence<PhraseString> choice(String string, Integer... choices) {
         return Sequence.of(new PhraseString(string, Stream.of(choices).collect(toSet())), Traits);
     }
 
-    static Sequence<PhraseString> result(String string, Integer... choices) {
+    public static Sequence<PhraseString> result(String string, Integer... choices) {
         return new Sequence<>(singletonList(new PhraseString(string, Stream.of(choices).collect(toSet()))), Traits);
     }
 
-    static Sequence<PhraseString> result(List<String> strings, Integer... choices) {
+    public static Sequence<PhraseString> result(List<String> strings, Integer... choices) {
         Set<Integer> indices = Stream.of(choices).collect(toSet());
         return new Sequence<>(strings.stream().map(phrase -> new PhraseString(phrase, indices)).collect(toList()),
                 Traits);
@@ -43,11 +49,11 @@ public class PhrasesSliceTest {
 
     final List<List<Sequences<PhraseString>>> candidates = new ArrayList<>();
 
-    private static SlicedPhrases<PhraseString> slice(PhraseStringSequences choices) {
+    public static SlicedPhrases<PhraseString> slice(PhraseStringSequences choices) {
         List<SlicedPhrases<PhraseString>> candidates = new ArrayList<>();
         long start = System.currentTimeMillis();
         SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(new PhraseStringSequences(choices), candidates,
-                PhrasesSliceTest::prettyPrint);
+                PhraseStringSequences::prettyPrint);
         long end = System.currentTimeMillis();
         logger.info("Slicing duration = {}ms", end - start);
 
@@ -71,11 +77,6 @@ public class PhrasesSliceTest {
         }
 
         return optimal;
-    }
-
-    private static String prettyPrint(Sequences<PhraseString> slice) {
-        return slice.stream().map(Sequence<PhraseString>::joined)
-                .map(element -> "\t\"" + element.phrase + "\"=" + element.indices + " ").collect(joining(" "));
     }
 
     static void assertSliced(PhraseStringSequences choices, SlicedPhrases<PhraseString> sliced) {

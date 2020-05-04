@@ -22,15 +22,6 @@ import teaselib.core.ui.Intention;
 public class SRGSPhraseBuilderTest {
 
     @Test
-    public void verifyThatStringSequenceToStringOutputsPlainWords() {
-        StringSequence test = StringSequence.ignoreCase("Foo bar");
-
-        assertEquals("Foo bar", test.toString());
-        assertFalse(test.toString().startsWith("["));
-        assertFalse(test.toString().endsWith("]"));
-    }
-
-    @Test
     public void verifyThatPhraseStringSequenceToStringOutputsPlainWords() {
         Sequence<PhraseString> test = new Sequence<>(
                 Arrays.asList(new PhraseString("Foo", 0), new PhraseString("bar", 0)), PhraseString.Traits);
@@ -138,7 +129,7 @@ public class SRGSPhraseBuilderTest {
         Choice[][] args = { material, dogToy, formOfAddress };
 
         List<Sequences<PhraseString>> slices = new ArrayList<>();
-        for (String word : StringSequence.splitWords(template)) {
+        for (String word : PhraseString.words(template)) {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
                 PhraseStringSequences items = new PhraseStringSequences();

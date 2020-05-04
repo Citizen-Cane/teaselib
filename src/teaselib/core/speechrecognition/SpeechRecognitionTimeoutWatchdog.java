@@ -3,7 +3,6 @@ package teaselib.core.speechrecognition;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +18,14 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  */
 public class SpeechRecognitionTimeoutWatchdog {
     static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTimeoutWatchdog.class);
+
     static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(2);
 
-    private final AtomicReference<Timer> timer = new AtomicReference<>(null);
     private final SpeechRecognitionEvents events;
     private final Runnable timeoutAction;
+
+    private boolean enabled = false;
+    private Timer timer = null;
 
     public SpeechRecognitionTimeoutWatchdog(SpeechRecognitionEvents events, Runnable timeoutAction) {
         this.events = events;
@@ -59,68 +61,57 @@ public class SpeechRecognitionTimeoutWatchdog {
     }
 
     public boolean enabled() {
-        return timer.get() != null;
+        return enabled;
     }
 
     public void enable(boolean enabled) {
-        if (enabled) {
-            timer.set(newTimer());
-        } else {
-            stopTimerTask();
-            timer.set(null);
+        this.enabled = enabled;
+        if (!enabled) {
+            stopRecognitionTimout();
         }
     }
 
     private Event<SpeechRecognitionStartedEventArgs> startWatching = args -> {
         if (enabled()) {
-            startTimerTask();
+            stopRecognitionTimout();
+            startRecognitionTimeout("Starting timeout watchdog");
         }
     };
 
     private Event<AudioSignalProblemOccuredEventArgs> updateAudioProblemStatus = args -> {
         if (enabled()) {
-            updateStatus();
+            restartRecognitionTimout();
         }
     };
 
     private Event<SpeechRecognizedEventArgs> updateSpeechDetectionStatus = args -> {
         if (enabled()) {
-            updateStatus();
+            restartRecognitionTimout();
         }
     };
 
     private Event<SpeechRecognizedEventArgs> stopWatching = args -> {
         if (enabled()) {
-            stopTimerTask();
+            stopRecognitionTimout();
             logger.info("Timeout watchdog stopped");
         }
     };
 
-    private void startTimerTask() {
-        if (enabled()) {
-            logger.info("Restarting timeout watchdog");
-        } else {
-            logger.info("Starting timeout watchdog");
-        }
-
-        Timer newTimer = newTimer();
-        timer.set(newTimer);
-        newTimer.schedule(timerTask(timeoutAction), TIMEOUT_MILLIS);
+    private void startRecognitionTimeout(String message) {
+        logger.info(message);
+        timer = new Timer(getClass().getSimpleName());
+        timer.schedule(timerTask(timeoutAction), TIMEOUT_MILLIS);
     }
 
-    private Timer newTimer() {
-        return new Timer(getClass().getSimpleName());
+    private void restartRecognitionTimout() {
+        stopRecognitionTimout();
+        startRecognitionTimeout("Restarting timeout watchdog");
     }
 
-    private void updateStatus() {
-        stopTimerTask();
-        startTimerTask();
-    }
-
-    private void stopTimerTask() {
-        Timer t = timer.get();
-        if (t != null) {
-            t.cancel();
+    private void stopRecognitionTimout() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
         }
     }
 

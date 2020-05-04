@@ -39,7 +39,7 @@ public class Prompt {
         };
 
         public enum Accept {
-            AllSame,
+            Distinct,
             Multiple
         }
 
@@ -125,7 +125,7 @@ public class Prompt {
     private InputMethod resultInputMethod;
 
     public Prompt(Choices choices, InputMethods inputMethods) {
-        this(null, choices, inputMethods, null, Result.Accept.AllSame);
+        this(null, choices, inputMethods, null, Result.Accept.Distinct);
     }
 
     public Prompt(Choices choices, InputMethods inputMethods, Result.Accept mode) {

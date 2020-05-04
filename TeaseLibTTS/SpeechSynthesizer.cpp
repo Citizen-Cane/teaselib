@@ -152,8 +152,8 @@ void SpeechSynthesizer::setVoice(const Voice * voice) {
 }
 
 void SpeechSynthesizer::applyHints(const vector<wstring>& hints) {
-	hintsPromptPrefix.empty();
-	hintsPromptPostfix.empty();
+	hintsPromptPrefix.clear();
+	hintsPromptPostfix.clear();
 
 	// Changing the volume via xml tags didn't work as expected,
 	// because for a fraction of a second the voice sounded at normal volume

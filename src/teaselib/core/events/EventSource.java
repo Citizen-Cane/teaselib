@@ -82,6 +82,9 @@ public class EventSource<T extends EventArgs> {
             logger.error(t.getMessage(), t);
             throw ExceptionUtil.asRuntimeException(t);
         }
+
+        // TODO collect exceptions and report as first and suppressed exception
+        // -> guarantees that all listeners will be executed
     }
 
     @Override

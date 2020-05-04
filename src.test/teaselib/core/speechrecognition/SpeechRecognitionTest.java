@@ -3,7 +3,9 @@ package teaselib.core.speechrecognition;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
 import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.ui.SpeechRecognitionInputMethod.bestSingleResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +13,7 @@ import java.util.Locale;
 
 import org.junit.Test;
 
+import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
@@ -29,7 +32,7 @@ public class SpeechRecognitionTest {
                 new Choice("Foo bar"));
 
         assertRecognized(choices, "Foo bar", new Prompt.Result(0));
-        assertRejected(choices, "Foo");
+        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(choices, "Foo", new Prompt.Result(0));
         assertRejected(choices, "Bar");
     }
 
@@ -54,8 +57,8 @@ public class SpeechRecognitionTest {
 
         assertRecognized(choices, "I've spurted my load Dear Mistress", new Prompt.Result(0));
         assertRecognized(choices, "I didn't spurt off Dear Mistress", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(choices, "I didn't spurt off Dear", new Prompt.Result(1));
         assertRejected(choices, "I didn't spurt my load Dear Mistress");
-        assertRejected(choices, "I didn't spurt off Dear");
     }
 
     @Test
@@ -65,6 +68,7 @@ public class SpeechRecognitionTest {
 
         assertRecognized(choices, "Yes Miss I've spurted off", new Prompt.Result(0, 0));
         assertRecognized(choices, "No Miss I didn't spurt off", new Prompt.Result(1, 1));
+
         assertRejected(choices, "Yes Miss I didn't spurt off");
         assertRejected(choices, "No Miss I've spurted off");
         assertRejected(choices, "Miss I've spurted off");
@@ -79,8 +83,23 @@ public class SpeechRecognitionTest {
 
         assertRecognized(choices, "Dear Mistress I've spurted my load Miss", new Prompt.Result(0));
         assertRecognized(choices, "Dear Mistress I didn't spurt off Miss", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(choices, "Dear Mistress I didn't spurt off", new Prompt.Result(1));
         assertRejected(choices, "I didn't spurt my load Miss");
-        assertRejected(choices, "Dear Mistress I didn't spurt off");
+    }
+
+    @Test
+    public void tesSRGSMultiplePhrasesHypothesis() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("My name is Foo, Mam"), //
+                new Choice("My name is Bar, Mam"), //
+                new Choice("My name is Foobar, Mam"));
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSRGS.class);
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+
+            assertRejected(recognizers, inputMethod, choices, "My name is");
+            assertRecognizedAsHypothesis(recognizers, inputMethod, choices, "My name is Foo", new Prompt.Result(0));
+            assertRecognizedAsHypothesis(recognizers, inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
+        }
     }
 
     @Test
@@ -129,7 +148,7 @@ public class SpeechRecognitionTest {
         rejected.addAll(assertRejected(choices, "Yes I haven't"));
         assertEquals(1, rejected.size());
 
-        Rule distinct = SpeechRecognitionInputMethod.distinct(expected).orElseThrow();
+        Rule distinct = bestSingleResult(expected.stream(), index -> index).orElseThrow();
         assertEquals(expected.get(0), distinct);
         assertNotEquals(expected.get(0), rejected.get(0));
 
@@ -151,7 +170,7 @@ public class SpeechRecognitionTest {
         expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
         assertEquals(1, expected.size());
 
-        Rule distinct = SpeechRecognitionInputMethod.distinct(expected).orElseThrow();
+        Rule distinct = bestSingleResult(expected.stream(), index -> index).orElseThrow();
         assertEquals(expected.get(0), distinct);
         assertNotEquals(expected.get(0), rejected.get(0));
     }

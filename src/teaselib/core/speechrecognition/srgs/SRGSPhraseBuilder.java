@@ -24,9 +24,11 @@ import teaselib.core.ui.Choices;
 
 public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
-    final Choices choices;
-    private IndexMap<Integer> index2choices;
-    private List<PhraseString> phrases;
+    public final Choices choices;
+    public final SlicedPhrases<PhraseString> slices;
+
+    private final IndexMap<Integer> index2choices;
+    private final List<PhraseString> phrases;
 
     int guid = 0;
 
@@ -34,11 +36,13 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
         super(languageCode);
         this.choices = choices;
+
         this.index2choices = new IndexMap<>();
         this.phrases = choices.stream()
                 .flatMap(choice -> choice.phrases.stream()
                         .map(phrase -> new PhraseString(phrase, index2choices.add(choices.indexOf(choice)))))
                 .collect(Collectors.toList());
+        this.slices = SlicedPhrases.of(PhraseStringSequences.of(phrases), PhraseStringSequences::prettyPrint);
 
         buildXML();
     }
@@ -96,8 +100,6 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     private void createNodes(Element grammar, Element main) {
-        SlicedPhrases<PhraseString> slices = SlicedPhrases.of(PhraseStringSequences.of(phrases));
-
         Indices<Element> current = new Indices<>(phrases.size(), main);
         Indices<Element> next = new Indices<>(current);
         for (int i = 0; i < slices.size(); i++) {

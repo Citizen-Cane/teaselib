@@ -1,7 +1,10 @@
 package teaselib.core.speechrecognition;
 
+import static java.util.stream.Collectors.toSet;
+
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -15,20 +18,20 @@ public class RuleIndicesList extends ArrayList<Set<Integer>> {
         gather(rule);
     }
 
-    public RuleIndicesList(List<HashSet<Integer>> values) {
+    public RuleIndicesList(List<Set<Integer>> values) {
         super(values);
     }
 
     private void gather(Rule rule) {
-        if (!rule.choiceIndices.isEmpty() && rule.choiceIndices.stream()
+        if (!rule.indices.isEmpty() && rule.indices.stream()
                 // TODO looks redundant - remove when tests succeed again
                 .allMatch(choiceIndex -> choiceIndex > Prompt.Result.DISMISSED.elements.get(0))) {
-            add(rule.choiceIndices);
+            add(rule.indices);
         }
-        rule.children.stream().forEach(child -> addAll(child.gather()));
+        rule.children.stream().forEach(child -> addAll(child.indices()));
     }
 
-    public Optional<Integer> getCommonDistinctValue() {
+    public Optional<Integer> singleResult() {
         if (isEmpty())
             return Optional.empty();
 
@@ -48,4 +51,13 @@ public class RuleIndicesList extends ArrayList<Set<Integer>> {
         return candidates.size() == 1 ? Optional.of(candidates.iterator().next()) : Optional.empty();
     }
 
+    public Set<Integer> intersection() {
+        Iterator<Set<Integer>> iterator = this.iterator();
+        Set<Integer> intersection = iterator.next();
+        while (iterator.hasNext()) {
+            Set<Integer> next = iterator.next();
+            intersection = intersection.stream().filter(next::contains).collect(toSet());
+        }
+        return intersection;
+    }
 }

@@ -26,6 +26,7 @@ import teaselib.Config.Debug;
 import teaselib.Message;
 import teaselib.MessagePart;
 import teaselib.core.AbstractMessage;
+import teaselib.core.AudioSync;
 import teaselib.core.ResourceLoader;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.util.ExceptionUtil;
@@ -43,6 +44,8 @@ public class TextToSpeechPlayer {
 
     private final PreferredVoices preferredVoices = new PreferredVoices();
     private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<>();
+
+    public final AudioSync audioSync;
 
     /**
      * voice guid to voice
@@ -97,6 +100,7 @@ public class TextToSpeechPlayer {
         this.config = config;
         this.textToSpeech = textToSpeech;
         this.pronunciationDictionary = pronunciationDictionary;
+        this.audioSync = textToSpeech.audioSync;
 
         if (Boolean.parseBoolean(config.get(Config.Render.Speech))) {
             loadVoices();

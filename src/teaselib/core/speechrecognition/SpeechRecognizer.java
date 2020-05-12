@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
+import teaselib.core.AudioSync;
 import teaselib.core.Closeable;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
@@ -17,9 +18,9 @@ import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
  *
  */
 public class SpeechRecognizer implements Closeable {
-    private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
-
     private final Configuration config;
+    private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
+    private final AudioSync audioSync;
 
     enum Config {
         SpeechRecognitionImplementation;
@@ -27,9 +28,14 @@ public class SpeechRecognizer implements Closeable {
 
     private Class<? extends SpeechRecognitionImplementation> srClass;
 
-    @SuppressWarnings("unchecked")
     public SpeechRecognizer(Configuration config) {
+        this(config, new AudioSync());
+    }
+
+    @SuppressWarnings("unchecked")
+    public SpeechRecognizer(Configuration config, AudioSync audioSync) {
         this.config = config;
+        this.audioSync = audioSync;
         if (config.has(Config.SpeechRecognitionImplementation)) {
             String className = config.get(Config.SpeechRecognitionImplementation);
             try {
@@ -52,7 +58,7 @@ public class SpeechRecognizer implements Closeable {
                 return speechRecognition;
             } else {
                 if (Boolean.parseBoolean(config.get(teaselib.Config.InputMethod.SpeechRecognition))) {
-                    SpeechRecognition speechRecognition = new SpeechRecognition(locale, srClass);
+                    SpeechRecognition speechRecognition = new SpeechRecognition(locale, srClass, audioSync);
                     speechRecognitionInstances.put(locale, speechRecognition);
                     return speechRecognition;
                 } else {

@@ -49,10 +49,13 @@ public class ScriptRenderer implements Closeable {
     public final ScriptEvents events;
     final ScriptEventInputMethod scriptEventInputMethod;
 
+    public final AudioSync audioSync;
+
     ScriptRenderer(TeaseLib teaseLib) {
         this.messageRenderer = new MessageRendererQueue(teaseLib, new MediaRendererQueue(renderQueue));
         scriptEventInputMethod = new ScriptEventInputMethod(inputMethodExecutor);
         this.events = new ScriptEvents(scriptEventInputMethod);
+        this.audioSync = messageRenderer.textToSpeechPlayer.audioSync;
     }
 
     @Override

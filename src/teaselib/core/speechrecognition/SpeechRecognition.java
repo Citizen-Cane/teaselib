@@ -9,12 +9,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.ScriptInterruptedException;
+import teaselib.core.AudioSync;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
@@ -23,7 +22,6 @@ import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.implementation.Unsupported;
 import teaselib.core.speechrecognition.implementation.UnsupportedLanguageException;
 import teaselib.core.speechrecognition.srgs.PhraseString;
-import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.util.Environment;
@@ -80,12 +78,6 @@ public class SpeechRecognition {
     private SpeechRecognitionParameters parameters;
 
     /**
-     * Locked if a recognition is in progress, e.g. a start event has been fired, but the the recognition has neither
-     * been rejected or completed
-     */
-    private static final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
-
-    /**
      * Speech recognition has been started or resumed and is listening for voice input
      */
     private AtomicBoolean speechRecognitionActive = new AtomicBoolean(false);
@@ -97,45 +89,48 @@ public class SpeechRecognition {
         }
     };
 
-    private Event<SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = (
-            args) -> unlockSpeechRecognitionInProgressSyncObject();
+    private Event<SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = args -> unlockSpeechRecognitionInProgressSyncObject();
+
+    public final AudioSync audioSync;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
         delegateThread.run(() -> {
             // RenetrantLock is ref-counted,
             // and startRecognition events can occur more than once
-            if (!SpeechRecognitionInProgress.isLocked()) {
+            if (!audioSync.speechRecognitionInProgress()) {
                 logger.debug("Locking speech recognition sync object");
-                SpeechRecognitionInProgress.lockInterruptibly();
+                audioSync.startSpeechRecognition();
             }
         });
     }
 
     private void unlockSpeechRecognitionInProgressSyncObject() {
-        delegateThread.run(SpeechRecognition::unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread);
+        delegateThread.run(this::unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread);
     }
 
-    private static void unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread() {
+    private void unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread() {
         // Check because this is called as a completion event by the
         // event source, and might be called twice when the
         // hypothesis event handler generates a Completion event
-        if (SpeechRecognitionInProgress.isLocked()) {
+        if (audioSync.speechRecognitionInProgress()) {
             logger.debug("Unlocking speech recognition sync object");
-            SpeechRecognitionInProgress.unlock();
+            audioSync.endSpeechRecognition();
         }
     }
 
     SpeechRecognition() {
-        this(null);
+        this(null, null);
     }
 
-    SpeechRecognition(Locale locale) {
-        this(locale, TeaseLibSRGS.class);
+    SpeechRecognition(Locale locale, AudioSync audioSync) {
+        this(locale, TeaseLibSRGS.class, audioSync);
     }
 
-    SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass) {
+    SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass, AudioSync audioSync) {
         this.events = new SpeechRecognitionEvents(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
         this.locale = locale;
+        this.audioSync = audioSync;
+
         if (locale == null) {
             implementation = Unsupported.Instance;
         } else {
@@ -175,7 +170,7 @@ public class SpeechRecognition {
     }
 
     private void handleRecognitionTimeout() {
-        if (speechRecognitionInProgress()) {
+        if (audioSync.speechRecognitionInProgress()) {
             events.recognitionRejected.fire(new SpeechRecognizedEventArgs(TIMEOUT));
         }
     }
@@ -274,12 +269,9 @@ public class SpeechRecognition {
             throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
         }
 
+        audioSync.whenSpeechCompleted(implementation::startRecognition);
+
         timeoutWatchdog.enable(true);
-
-        synchronized (TextToSpeech.AudioOutput) {
-            implementation.startRecognition();
-        }
-
         speechRecognitionActive.set(true);
     }
 
@@ -305,25 +297,6 @@ public class SpeechRecognition {
 
     private static void recognizerNotInitialized() {
         throw new IllegalStateException("Recognizer not initialized");
-    }
-
-    public static boolean speechRecognitionInProgress() {
-        return SpeechRecognitionInProgress.isLocked();
-    }
-
-    // TODO Move to SpeechRecognizer and make it non-static
-    public static void completeSpeechRecognitionInProgress() {
-        if (speechRecognitionInProgress()) {
-            logger.info("Waiting for speech recognition to complete");
-            try {
-                SpeechRecognitionInProgress.lockInterruptibly();
-                SpeechRecognitionInProgress.unlock();
-                logger.info("Speech recognition in progress completed");
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        }
     }
 
     /**

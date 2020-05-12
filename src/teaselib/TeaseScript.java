@@ -358,9 +358,9 @@ public abstract class TeaseScript extends TeaseScriptMath {
         try {
             teaseLib.sleep(seconds, TimeUnit.SECONDS);
             if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
-                    && SpeechRecognition.speechRecognitionInProgress()) {
+                    && scriptRenderer.audioSync.speechRecognitionInProgress()) {
                 logger.info("Completing speech recognition {}", timeoutBehavior);
-                SpeechRecognition.completeSpeechRecognitionInProgress();
+                scriptRenderer.audioSync.completeSpeechRecognition();
             }
         } finally {
             if (speechDetectedEventSource != null && recognitionRejected != null) {

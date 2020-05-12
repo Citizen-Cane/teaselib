@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.AudioSync;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.events.Event;
@@ -45,7 +46,7 @@ public class SpeechRecognitionTestUtils {
         Configuration config = new Configuration();
         setup.applyTo(config);
         config.set(SpeechRecognizer.Config.SpeechRecognitionImplementation, srClass.getName());
-        return new SpeechRecognizer(config);
+        return new SpeechRecognizer(config, new AudioSync());
     }
 
     private SpeechRecognitionTestUtils() {

@@ -7,6 +7,7 @@ import java.util.Locale;
 
 import org.junit.Test;
 
+import teaselib.core.AudioSync;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -21,7 +22,7 @@ public class SpeechRecognitionSimpleTest {
 
     @Test
     public void testResourceHandling() {
-        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class, new AudioSync());
         sr.close();
     }
 

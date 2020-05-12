@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import teaselib.Sexuality.Gender;
+import teaselib.core.AudioSync;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 import teaselib.core.texttospeech.implementation.Unsupported;
@@ -56,7 +57,8 @@ public class TextToSpeech {
     private static final Map<Class<? extends TextToSpeechImplementation>, TextToSpeechImplementation> ttsSDKCLass2Implementation = new LinkedHashMap<>();
     private static final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
     private static final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
-    public static final Object AudioOutput = new Object();
+
+    public final AudioSync audioSync;
 
     private final Map<String, Voice> voices = new LinkedHashMap<>();
 
@@ -73,17 +75,15 @@ public class TextToSpeech {
     }
 
     public TextToSpeech(Set<String> speechProviderClassNames) {
+        this.audioSync = new AudioSync();
         for (String name : speechProviderClassNames) {
             addImplementation(name);
         }
     }
 
     public TextToSpeech(TextToSpeechImplementation ttsImpl) {
+        this.audioSync = new AudioSync();
         addSDK(ttsImpl, newDelegateExecutor(ttsImpl.sdkName()));
-    }
-
-    public TextToSpeech(Class<TextToSpeechImplementation> ttsClass) {
-        addImplementation(ttsClass);
     }
 
     static Set<String> ttsProviderClassNames() {
@@ -103,7 +103,9 @@ public class TextToSpeech {
 
     private void addImplementation(String className) {
         try {
-            Class<?> ttsClass = getClass().getClassLoader().loadClass(className);
+            @SuppressWarnings("unchecked")
+            Class<? extends TextToSpeechImplementation> ttsClass = (Class<? extends TextToSpeechImplementation>) getClass()
+                    .getClassLoader().loadClass(className);
             if (ttsSDKClasses.contains(ttsClass)) {
                 addNewVoices(getVoices(ttsSDKCLass2Implementation.get(ttsClass)));
             } else {
@@ -168,9 +170,6 @@ public class TextToSpeech {
         return voices;
     }
 
-    /**
-     * @param voices
-     */
     private static boolean isBlackListed(Voice voice) {
         return BlackList.contains(voice.guid());
     }
@@ -190,19 +189,19 @@ public class TextToSpeech {
         TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
-            run(tts, () -> {
-                synchronized (AudioOutput) {
-                    try {
-                        tts.setVoice(voice);
-                        tts.setHints(hints);
-                        tts.speak(prompt);
-                    } finally {
-                        tts.setHints(NoHints);
-                    }
-                }
-            });
+            run(tts, () -> audioSync.produceSpeech(() -> speak(voice, prompt, hints, tts)));
         } else {
             ttsEngineNotInitialized();
+        }
+    }
+
+    private static void speak(Voice voice, String prompt, String[] hints, TextToSpeechImplementation tts) {
+        try {
+            tts.setVoice(voice);
+            tts.setHints(hints);
+            tts.speak(prompt);
+        } finally {
+            tts.setHints(NoHints);
         }
     }
 

@@ -115,7 +115,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleSpeechDetected(SpeechRecognizedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            if (audioSignalProblems.exceedLimits() && getRecognizer().speechRecognitionInProgress()) {
+            if (audioSignalProblems.exceedLimits() && getRecognizer().audioSync.speechRecognitionInProgress()) {
                 logTooManyAudioSignalProblems(eventArgs.result);
                 getRecognizer().restartRecognition();
             } else if (getRecognizer(prompt).implementation instanceof TeaseLibSRGS) {

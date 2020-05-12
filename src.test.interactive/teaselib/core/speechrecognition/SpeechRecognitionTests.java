@@ -21,7 +21,7 @@ public class SpeechRecognitionTests {
 
     @Test
     public void testSpeechRecognitionInputMethod() throws InterruptedException {
-        try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizers();
+        try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizer();
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR);) {
             Prompt prompt = new Prompt(TestChoices, new InputMethods(inputMethod));
             prompt.lock.lockInterruptibly();

@@ -265,6 +265,8 @@ public class SpeechRecognition {
             ((SpeechRecognitionSRGS) implementation).setChoices(parameters.srgs);
         } else if (implementation instanceof SpeechRecognitionChoices) {
             ((SpeechRecognitionChoices) implementation).setChoices(firstPhraseOfEach(parameters.choices));
+        } else if (implementation instanceof Unsupported) {
+            return;
         } else {
             throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
         }

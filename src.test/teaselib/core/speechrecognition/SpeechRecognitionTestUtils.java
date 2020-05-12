@@ -37,11 +37,11 @@ public class SpeechRecognitionTestUtils {
     private static final int RECOGNITION_TIMEOUT_MILLIS = 5000;
     static final Confidence confidence = Confidence.High;
 
-    public static SpeechRecognizer getRecognizers() {
-        return getRecognizers(TeaseLibSRGS.class);
+    public static SpeechRecognizer getRecognizer() {
+        return getRecognizer(TeaseLibSRGS.class);
     }
 
-    public static SpeechRecognizer getRecognizers(Class<? extends SpeechRecognitionImplementation> srClass) {
+    public static SpeechRecognizer getRecognizer(Class<? extends SpeechRecognitionImplementation> srClass) {
         DebugSetup setup = new DebugSetup().withInput();
         Configuration config = new Configuration();
         setup.applyTo(config);
@@ -62,10 +62,9 @@ public class SpeechRecognitionTestUtils {
         return emulateSpeechRecognition(choices, phrase, expected);
     }
 
-    public static void assertRecognizedAsHypothesis(SpeechRecognizer recognizers,
-            SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase, Prompt.Result expected)
-            throws InterruptedException {
-        emulateSpeechRecognition(recognizers, inputMethod, choices, phrase, expected);
+    public static void assertRecognizedAsHypothesis(SpeechRecognitionInputMethod inputMethod, Choices choices,
+            String phrase, Prompt.Result expected) throws InterruptedException {
+        emulateSpeechRecognition(inputMethod, choices, phrase, expected);
     }
 
     static List<Rule> assertRejected(Choices choices, String phrase) throws InterruptedException {
@@ -74,40 +73,38 @@ public class SpeechRecognitionTestUtils {
 
     public static List<Rule> emulateSpeechRecognition(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
-        try (SpeechRecognizer recognizers = getRecognizers();
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
-            return emulateSpeechRecognition(recognizers, inputMethod, choices, phrase, expected);
+        try (SpeechRecognizer recognizer = getRecognizer();
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
+            return emulateSpeechRecognition(inputMethod, choices, phrase, expected);
         }
     }
 
-    private static List<Rule> emulateSpeechRecognition(SpeechRecognizer recognizers,
-            SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase, Prompt.Result expected)
-            throws InterruptedException {
+    private static List<Rule> emulateSpeechRecognition(SpeechRecognitionInputMethod inputMethod, Choices choices,
+            String phrase, Prompt.Result expected) throws InterruptedException {
         Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
-        SpeechRecognition sr = recognizers.get(choices.locale);
-        return awaitResult(inputMethod, sr, prompt, withoutPunctation(phrase), expected);
+        return awaitResult(inputMethod, prompt, withoutPunctation(phrase), expected);
     }
 
-    public static void assertRecognized(SpeechRecognizer recognizers, SpeechRecognitionInputMethod inputMethod,
-            Choices choices) throws InterruptedException {
+    public static void assertRecognized(SpeechRecognitionInputMethod inputMethod, Choices choices)
+            throws InterruptedException {
         for (Choice choice : choices) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
             String emulatedSpeech = choice.phrases.get(0);
-            awaitResult(inputMethod, recognizers.get(choices.locale), prompt, withoutPunctation(emulatedSpeech),
+            awaitResult(inputMethod, prompt, withoutPunctation(emulatedSpeech),
                     new Prompt.Result(choices.indexOf(choice)));
         }
     }
 
-    public static void assertRejected(SpeechRecognizer recognizers, SpeechRecognitionInputMethod inputMethod,
-            Choices choices, String... rejected) throws InterruptedException {
+    public static void assertRejected(SpeechRecognitionInputMethod inputMethod, Choices choices, String... rejected)
+            throws InterruptedException {
         for (String speech : rejected) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
-            awaitResult(inputMethod, recognizers.get(choices.locale), prompt, withoutPunctation(speech), null);
+            awaitResult(inputMethod, prompt, withoutPunctation(speech), null);
         }
     }
 
-    public static List<Rule> awaitResult(SpeechRecognitionInputMethod inputMethod, SpeechRecognition sr, Prompt prompt,
-            String phrase, Prompt.Result expectedRules) throws InterruptedException {
+    public static List<Rule> awaitResult(SpeechRecognitionInputMethod inputMethod, Prompt prompt, String phrase,
+            Prompt.Result expectedRules) throws InterruptedException {
         assertEquals("Phrase may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
 
         List<Rule> results = new ArrayList<>();
@@ -130,7 +127,7 @@ public class SpeechRecognitionTestUtils {
             prompt.lock.lockInterruptibly();
             try {
                 inputMethod.show(prompt);
-                sr.emulateRecogntion(phrase);
+                inputMethod.emulateRecogntion(phrase);
                 dismissed = prompt.click.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
             } finally {
                 prompt.lock.unlock();
@@ -170,10 +167,9 @@ public class SpeechRecognitionTestUtils {
         assertEquals("Expected choice " + expectedRules, expectedRules.elements.get(0), choices.get(0));
     }
 
-    static void emulateRecognition(SpeechRecognition sr, SpeechRecognitionInputMethod inputMethod, Choices choices,
-            String phrase) throws InterruptedException {
+    static void emulateRecognition(SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase) throws InterruptedException {
         Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
-        awaitResult(inputMethod, sr, prompt, withoutPunctation(phrase),
+        awaitResult(inputMethod, prompt, withoutPunctation(phrase),
                 new Prompt.Result(choices.toText().indexOf(phrase)));
     }
 

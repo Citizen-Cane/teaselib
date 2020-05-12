@@ -7,7 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.ScriptRenderer;
 import teaselib.core.TeaseLib;
-import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.ui.InputMethods;
+import teaselib.core.ui.SpeechRecognitionInputMethod;
 
 public abstract class RenderSpeech extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderSpeech.class);
@@ -21,17 +22,21 @@ public abstract class RenderSpeech extends MediaRendererThread {
         logger.info("{} started", this);
         // Suspend speech recognition while speaking, to avoid wrong
         // recognitions - and the mistress speech isn't to be interrupted anyway
-        teaseLib.globals.get(ScriptRenderer.class).audioSync.completeSpeechRecognition();
-        Runnable resumeSpeechRecognition = teaseLib.globals.get(SpeechRecognizer.class).pauseRecognition();
+
+        @SuppressWarnings("resource")
+        ScriptRenderer scriptRenderer = teaseLib.globals.get(ScriptRenderer.class);
+        scriptRenderer.audioSync.completeSpeechRecognition();
         startCompleted();
 
-        try {
+        InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
+        @SuppressWarnings("resource")
+        SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
+        try (SpeechRecognitionInputMethod.ResumeRecognition closeable = inputMethod.pauseRecognition()) {
             renderSpeech();
         } catch (IOException e) {
             handleIOException(e);
         } finally {
             mandatoryCompleted();
-            resumeSpeechRecognition.run();
         }
 
         logger.info("{} completed", this);

@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Answer;
 import teaselib.Body;
-import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Gadgets;
 import teaselib.Message;
@@ -82,8 +81,6 @@ public abstract class Script {
 
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
-        getOrDefault(teaseLib, SpeechRecognizer.class,
-                () -> new SpeechRecognizer(teaseLib.config, scriptRenderer.audioSync));
 
         try {
             teaseLib.config.addScriptSettings(namespace, namespace);
@@ -91,17 +88,14 @@ public abstract class Script {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
         }
 
-        // TODO start only once but not here - KeyReleaseSetup must not be a script - device?
         boolean startOnce = teaseLib.globals.get(SCRIPT_INSTANCES) == null;
         if (startOnce) {
-            if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
-                InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
-                inputMethods.add(new SpeechRecognitionInputMethod(teaseLib.globals.get(SpeechRecognizer.class)));
-                // inputMethods.add(new SpeechRecognitionInputMethod(new SpeechRecognizer(teaseLib.config,
-                // scriptRenderer.audioSync)));
-            }
+            InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
+            AudioSync audioSync = scriptRenderer.audioSync;
+            inputMethods.add(new SpeechRecognitionInputMethod(new SpeechRecognizer(teaseLib.config, audioSync)));
 
             handleAutoRemove();
+            // TODO start only once but not here - KeyReleaseSetup must not be a script - device?
             script(KeyReleaseSetup.class).init();
 
             bindMotionDetectorToVideoRenderer();

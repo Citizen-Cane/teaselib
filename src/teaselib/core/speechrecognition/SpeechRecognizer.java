@@ -12,6 +12,7 @@ import teaselib.core.AudioSync;
 import teaselib.core.Closeable;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.implementation.Unsupported;
 
 /**
  * @author Citizen-Cane
@@ -36,15 +37,19 @@ public class SpeechRecognizer implements Closeable {
     public SpeechRecognizer(Configuration config, AudioSync audioSync) {
         this.config = config;
         this.audioSync = audioSync;
-        if (config.has(Config.SpeechRecognitionImplementation)) {
-            String className = config.get(Config.SpeechRecognitionImplementation);
-            try {
-                this.srClass = (Class<? extends SpeechRecognitionImplementation>) Class.forName(className);
-            } catch (ClassNotFoundException e) {
-                throw new NoSuchElementException(Config.SpeechRecognitionImplementation + ": " + className);
+        if (Boolean.parseBoolean(config.get(teaselib.Config.InputMethod.SpeechRecognition))) {
+            if (config.has(Config.SpeechRecognitionImplementation)) {
+                String className = config.get(Config.SpeechRecognitionImplementation);
+                try {
+                    this.srClass = (Class<? extends SpeechRecognitionImplementation>) Class.forName(className);
+                } catch (ClassNotFoundException e) {
+                    throw new NoSuchElementException(Config.SpeechRecognitionImplementation + ": " + className);
+                }
+            } else {
+                this.srClass = TeaseLibSRGS.class;
             }
         } else {
-            this.srClass = TeaseLibSRGS.class;
+            this.srClass = Unsupported.class;
         }
     }
 
@@ -57,15 +62,9 @@ public class SpeechRecognizer implements Closeable {
                 }
                 return speechRecognition;
             } else {
-                if (Boolean.parseBoolean(config.get(teaselib.Config.InputMethod.SpeechRecognition))) {
-                    SpeechRecognition speechRecognition = new SpeechRecognition(locale, srClass, audioSync);
-                    speechRecognitionInstances.put(locale, speechRecognition);
-                    return speechRecognition;
-                } else {
-                    SpeechRecognition none = new SpeechRecognition();
-                    speechRecognitionInstances.put(locale, none);
-                    return none;
-                }
+                SpeechRecognition speechRecognition = new SpeechRecognition(locale, srClass, audioSync);
+                speechRecognitionInstances.put(locale, speechRecognition);
+                return speechRecognition;
             }
         }
     }

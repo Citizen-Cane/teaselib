@@ -93,12 +93,12 @@ public class SpeechRecognitionTest {
                 new Choice("My name is Foo, Mam"), //
                 new Choice("My name is Bar, Mam"), //
                 new Choice("My name is Foobar, Mam"));
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSRGS.class);
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
-            assertRejected(recognizers, inputMethod, choices, "My name is");
-            assertRecognizedAsHypothesis(recognizers, inputMethod, choices, "My name is Foo", new Prompt.Result(0));
-            assertRecognizedAsHypothesis(recognizers, inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
+            assertRejected(inputMethod, choices, "My name is");
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foo", new Prompt.Result(0));
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
         }
     }
 

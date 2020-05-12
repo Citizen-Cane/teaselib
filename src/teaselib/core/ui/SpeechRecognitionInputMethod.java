@@ -44,6 +44,7 @@ import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.implementation.Unsupported;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.ui.Prompt.Result;
 
@@ -60,8 +61,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         RecognitionRejected
     }
 
-    private final SpeechRecognizer speechRecognizers;
-    private final Map<Locale, SpeechRecognition> usedRecognizers = new HashMap<>();
+    private final SpeechRecognizer speechRecognizer;
+    private final Map<Locale, SpeechRecognition> usedRecognitionInstances = new HashMap<>();
     private final AudioSignalProblems audioSignalProblems;
     public final SpeechRecognitionEvents events;
 
@@ -76,7 +77,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private Rule hypothesis;
 
     public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizers) {
-        this.speechRecognizers = speechRecognizers;
+        this.speechRecognizer = speechRecognizers;
         this.audioSignalProblems = new AudioSignalProblems();
         this.events = new SpeechRecognitionEvents();
 
@@ -370,8 +371,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private SpeechRecognition getRecognizer(Locale locale) {
-        SpeechRecognition recognizer = speechRecognizers.get(locale);
-        if (usedRecognizers.put(recognizer.locale, recognizer) == null) {
+        SpeechRecognition recognizer = speechRecognizer.get(locale);
+        if (usedRecognitionInstances.put(recognizer.locale, recognizer) == null) {
             addEvents(recognizer);
         }
         return recognizer;
@@ -425,6 +426,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             return srgsPhraseBuilder(choices, recognizer);
         } else if (implementation instanceof SpeechRecognitionChoices) {
             return simplePhraseBuilder(choices, recognizer);
+        } else if (implementation instanceof Unsupported) {
+            return () -> { //
+            };
         } else {
             throw new UnsupportedOperationException();
         }
@@ -483,6 +487,33 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         recognizer.startRecognition();
     }
 
+    public static final class ResumeRecognition implements teaselib.core.Closeable {
+        private final Runnable runnable;
+
+        public ResumeRecognition(Runnable resumeRecognition) {
+            this.runnable = resumeRecognition;
+        }
+
+        @Override
+        public void close() {
+            runnable.run();
+        }
+
+    }
+
+    public ResumeRecognition pauseRecognition() {
+        return new ResumeRecognition(speechRecognizer.pauseRecognition());
+    }
+
+    public void emulateRecogntion(String phrase) {
+        Prompt activePrompt = active.get();
+        if (activePrompt == null) {
+            throw new NoSuchElementException("Active prompt");
+        } else {
+            getRecognizer(activePrompt).emulateRecogntion(phrase);
+        }
+    }
+
     private static Confidence confidence(Intention intention) {
         switch (intention) {
         case Chat:
@@ -494,7 +525,6 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         default:
             throw new IllegalArgumentException(intention.toString());
         }
-
     }
 
     private void addEvents(SpeechRecognition recognizer) {
@@ -527,7 +557,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     @Override
     public void close() {
-        usedRecognizers.values().stream().forEach(this::removeEvents);
+        usedRecognitionInstances.values().stream().forEach(this::removeEvents);
     }
 
 }

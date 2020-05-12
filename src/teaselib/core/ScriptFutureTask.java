@@ -41,7 +41,6 @@ public class ScriptFutureTask extends FutureTask<Answer> {
             } catch (Throwable t) {
                 script.endAll();
                 throw t;
-            } finally {
             }
         });
         this.scriptFunction = scriptFunction;

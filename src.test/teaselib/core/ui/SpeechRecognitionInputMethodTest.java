@@ -53,11 +53,11 @@ public class SpeechRecognitionInputMethodTest {
 
     private static void testSInputMethod(Choices choices, String expected, int resultIndex)
             throws InterruptedException {
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers();
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer();
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             SpeechRecognition sr = recognizers.get(choices.locale);
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
-            SpeechRecognitionTestUtils.awaitResult(inputMethod, sr, prompt, expected, new Prompt.Result(resultIndex));
+            SpeechRecognitionTestUtils.awaitResult(inputMethod, prompt, expected, new Prompt.Result(resultIndex));
         }
     }
 
@@ -66,7 +66,7 @@ public class SpeechRecognitionInputMethodTest {
         String phrase = "Foobar";
         Choices choices = new Choices(Locale.US, Intention.Decide, new Choice(phrase));
 
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizers();
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer();
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
 
@@ -108,13 +108,13 @@ public class SpeechRecognitionInputMethodTest {
                 }
             }
 
-            SpeechRecognitionTestUtils.awaitResult(inputMethod, sr, prompt, "Yes Miss", new Prompt.Result(0));
+            SpeechRecognitionTestUtils.awaitResult(inputMethod, prompt, "Yes Miss", new Prompt.Result(0));
         }
     }
 
     @Test
     public void testSpeechRecognitionInputMethodStacked() throws InterruptedException {
-        try (SpeechRecognizer recognizer = SpeechRecognitionTestUtils.getRecognizers();
+        try (SpeechRecognizer recognizer = SpeechRecognitionTestUtils.getRecognizer();
                 SpeechRecognitionInputMethod inputMethod1 = new SpeechRecognitionInputMethod(recognizer);) {
             Choices choices1 = new Choices(Locale.ENGLISH, Intention.Confirm, choice("Foo"));
             SpeechRecognition sr = recognizer.get(choices1.locale);
@@ -162,18 +162,17 @@ public class SpeechRecognitionInputMethodTest {
         TestScript script = TestScript.getOne(new DebugSetup().withInput());
         script.debugger.detach();
 
-        try (SpeechRecognizer speechRecognizer = script.teaseLib.globals.get(SpeechRecognizer.class)) {
-            SpeechRecognition sr = speechRecognizer.get(script.actor.locale());
+        InputMethods inputMethods = script.teaseLib.globals.get(InputMethods.class);
+        SpeechRecognitionInputMethod speechRecognition = inputMethods.get(SpeechRecognitionInputMethod.class);
 
-            assertEquals("Foo", script.reply(() -> {
-                assertEquals("Bar", script.reply(() -> {
-                    sr.emulateRecogntion("Bar");
-                    script.sleep(1, TimeUnit.SECONDS);
-                }, "Bar"));
-                sr.emulateRecogntion("Foo");
+        assertEquals("Foo", script.reply(() -> {
+            assertEquals("Bar", script.reply(() -> {
+                speechRecognition.emulateRecogntion("Bar");
                 script.sleep(1, TimeUnit.SECONDS);
-            }, "Foo"));
-        }
+            }, "Bar"));
+            speechRecognition.emulateRecogntion("Foo");
+            script.sleep(1, TimeUnit.SECONDS);
+        }, "Foo"));
     }
 
     @Test

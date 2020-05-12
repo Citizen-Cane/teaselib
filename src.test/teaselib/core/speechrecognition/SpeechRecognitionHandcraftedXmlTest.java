@@ -65,7 +65,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
         try (InputStream inputStream = resources.get(resource);) {
             byte[] xml = Stream.toByteArray(inputStream);
-            try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizers(TeaseLibSRGS.class);) {
+            try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.class);) {
                 SpeechRecognition sr = sR.get(Foobar.locale);
                 try (SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR) {
                     @Override
@@ -80,7 +80,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
                     }
                 };) {
                     Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
-                    return awaitResult(inputMethod, sr, prompt, emulatedRecognitionResult, expected);
+                    return awaitResult(inputMethod, prompt, emulatedRecognitionResult, expected);
                 }
             }
         }

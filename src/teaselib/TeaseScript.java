@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -334,14 +333,14 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
     @SuppressWarnings("resource")
     protected Answer awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
-        Optional<SpeechRecognitionInputMethod> inputMethod = teaseLib.globals.get(InputMethods.class)
-                .getOptional(SpeechRecognitionInputMethod.class);
+        SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
+                .get(SpeechRecognitionInputMethod.class);
         AtomicBoolean ignoreTimeoutInDubioMitius = new AtomicBoolean(false);
 
         EventSource<SpeechRecognizedEventArgs> speechDetectedEventSource;
         Event<SpeechRecognizedEventArgs> recognitionRejected;
-        if (inputMethod.isPresent() && timeoutBehavior == TimeoutBehavior.InDubioMitius) {
-            speechDetectedEventSource = inputMethod.get().events.speechDetected;
+        if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
+            speechDetectedEventSource = inputMethod.events.speechDetected;
             Thread scriptFunctionThread = Thread.currentThread();
             recognitionRejected = eventArgs -> {
                 if (!ignoreTimeoutInDubioMitius.get()) {
@@ -359,7 +358,6 @@ public abstract class TeaseScript extends TeaseScriptMath {
             teaseLib.sleep(seconds, TimeUnit.SECONDS);
             if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
                     && scriptRenderer.audioSync.speechRecognitionInProgress()) {
-                logger.info("Completing speech recognition {}", timeoutBehavior);
                 scriptRenderer.audioSync.completeSpeechRecognition();
             }
         } finally {

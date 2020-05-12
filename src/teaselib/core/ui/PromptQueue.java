@@ -19,7 +19,9 @@ public class PromptQueue {
         }
 
         makePromptActive(prompt);
-
+        // TODO Start script task before making the prompt active:
+        // -> to avoid deadlock when canceling if making active fails
+        // - however this currently makes some checkpoint tests fail
         if (prompt.scriptTask != null) {
             prompt.executeScriptTask();
         }

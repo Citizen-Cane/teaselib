@@ -176,7 +176,7 @@ public class SpeechRecognition {
 
     private void handleRecognitionTimeout() {
         if (speechRecognitionInProgress()) {
-            events.recognitionRejected.run(new SpeechRecognizedEventArgs(TIMEOUT));
+            events.recognitionRejected.fire(new SpeechRecognizedEventArgs(TIMEOUT));
         }
     }
 

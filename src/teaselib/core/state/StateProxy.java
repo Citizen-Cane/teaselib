@@ -27,7 +27,7 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     public Options apply() {
         injectNamespace();
         StateOptionsProxy options = new StateOptionsProxy(namespace, state.apply(), events);
-        events.stateApplied.run(new ScriptEvents.StateChangedEventArgs(state));
+        events.stateApplied.fire(new ScriptEvents.StateChangedEventArgs(state));
         return options;
     }
 
@@ -35,7 +35,7 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     public Options applyTo(Object... items) {
         injectNamespace();
         StateOptionsProxy options = new StateOptionsProxy(namespace, state.applyTo(items), events);
-        events.stateApplied.run(new ScriptEvents.StateChangedEventArgs(state));
+        events.stateApplied.fire(new ScriptEvents.StateChangedEventArgs(state));
         return options;
     }
 
@@ -70,13 +70,13 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
 
     @Override
     public void remove() {
-        events.stateRemoved.run(new ScriptEvents.StateChangedEventArgs(state));
+        events.stateRemoved.fire(new ScriptEvents.StateChangedEventArgs(state));
         state.remove();
     }
 
     @Override
     public void removeFrom(Object... peers) {
-        events.stateRemoved.run(new ScriptEvents.StateChangedEventArgs(state));
+        events.stateRemoved.fire(new ScriptEvents.StateChangedEventArgs(state));
         state.removeFrom(peers);
     }
 

@@ -29,7 +29,7 @@ void Event::fire(jobject eventArgs) {
 
     env->CallObjectMethod(
         eventSource,
-        JNIClass::getMethodID(env, eventSource, "run", "(Lteaselib/core/events/EventArgs;)V"),
+        JNIClass::getMethodID(env, eventSource, "fire", "(Lteaselib/core/events/EventArgs;)V"),
          eventArgs);
     if (env->ExceptionCheck()) throw JNIException(env);
 }

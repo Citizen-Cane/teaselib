@@ -21,7 +21,6 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
-import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
@@ -62,8 +61,9 @@ public class SpeechRecognitionTestUtils {
         return emulateSpeechRecognition(choices, phrase, expected);
     }
 
-    public static void assertRecognizedAsHypothesis(SpeechRecognizer recognizers, InputMethod inputMethod,
-            Choices choices, String phrase, Prompt.Result expected) throws InterruptedException {
+    public static void assertRecognizedAsHypothesis(SpeechRecognizer recognizers,
+            SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase, Prompt.Result expected)
+            throws InterruptedException {
         emulateSpeechRecognition(recognizers, inputMethod, choices, phrase, expected);
     }
 
@@ -79,15 +79,16 @@ public class SpeechRecognitionTestUtils {
         }
     }
 
-    private static List<Rule> emulateSpeechRecognition(SpeechRecognizer recognizers, InputMethod inputMethod,
-            Choices choices, String phrase, Prompt.Result expected) throws InterruptedException {
+    private static List<Rule> emulateSpeechRecognition(SpeechRecognizer recognizers,
+            SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase, Prompt.Result expected)
+            throws InterruptedException {
         Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
         SpeechRecognition sr = recognizers.get(choices.locale);
         return awaitResult(inputMethod, sr, prompt, withoutPunctation(phrase), expected);
     }
 
-    public static void assertRecognized(SpeechRecognizer recognizers, InputMethod inputMethod, Choices choices)
-            throws InterruptedException {
+    public static void assertRecognized(SpeechRecognizer recognizers, SpeechRecognitionInputMethod inputMethod,
+            Choices choices) throws InterruptedException {
         for (Choice choice : choices) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
             String emulatedSpeech = choice.phrases.get(0);
@@ -96,16 +97,16 @@ public class SpeechRecognitionTestUtils {
         }
     }
 
-    public static void assertRejected(SpeechRecognizer recognizers, InputMethod inputMethod, Choices choices,
-            String... rejected) throws InterruptedException {
+    public static void assertRejected(SpeechRecognizer recognizers, SpeechRecognitionInputMethod inputMethod,
+            Choices choices, String... rejected) throws InterruptedException {
         for (String speech : rejected) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
             awaitResult(inputMethod, recognizers.get(choices.locale), prompt, withoutPunctation(speech), null);
         }
     }
 
-    public static List<Rule> awaitResult(InputMethod inputMethod, SpeechRecognition sr, Prompt prompt, String phrase,
-            Prompt.Result expectedRules) throws InterruptedException {
+    public static List<Rule> awaitResult(SpeechRecognitionInputMethod inputMethod, SpeechRecognition sr, Prompt prompt,
+            String phrase, Prompt.Result expectedRules) throws InterruptedException {
         assertEquals("Phrase may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
 
         List<Rule> results = new ArrayList<>();
@@ -114,14 +115,14 @@ public class SpeechRecognitionTestUtils {
             results.addAll(asList(eventArgs.result));
             logger.info("Recognized '{}'", eventArgs.result[0].text);
         };
-        sr.events.recognitionCompleted.add(completedHandler);
+        inputMethod.events.recognitionCompleted.add(completedHandler);
 
         Event<SpeechRecognizedEventArgs> rejectedHandler = eventArgs -> {
             results.addAll(asList(eventArgs.result));
             Rule result = eventArgs.result[0];
             logger.info("Rejected '{}'", result.text.isBlank() ? result.name : result.text);
         };
-        sr.events.recognitionRejected.add(rejectedHandler);
+        inputMethod.events.recognitionRejected.add(rejectedHandler);
 
         try {
             boolean dismissed;
@@ -155,8 +156,8 @@ public class SpeechRecognitionTestUtils {
                 assertEquals("Undefined result", Result.UNDEFINED, result);
             }
         } finally {
-            sr.events.recognitionRejected.remove(rejectedHandler);
-            sr.events.recognitionCompleted.remove(completedHandler);
+            inputMethod.events.recognitionRejected.remove(rejectedHandler);
+            inputMethod.events.recognitionCompleted.remove(completedHandler);
         }
 
         return results;

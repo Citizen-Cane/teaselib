@@ -75,6 +75,7 @@ public abstract class Script {
      * @param teaseLib
      * @param locale
      */
+    @SuppressWarnings("resource")
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace, //
                 getOrDefault(teaseLib, ScriptRenderer.class, () -> new ScriptRenderer(teaseLib)));
@@ -403,7 +404,7 @@ public abstract class Script {
     }
 
     private List<Choice> showPrompt(Prompt prompt) {
-        scriptRenderer.events.beforeChoices.run(new ScriptEventArgs());
+        scriptRenderer.events.beforeChoices.fire(new ScriptEventArgs());
 
         List<Choice> choice;
         try {
@@ -416,7 +417,7 @@ public abstract class Script {
         // -> integrate this with endScene() which is just there to workaround the delay until the next say() command
         endAll();
 
-        scriptRenderer.events.afterChoices.run(new ScriptEventArgs());
+        scriptRenderer.events.afterChoices.fire(new ScriptEventArgs());
 
         teaseLib.host.endScene();
 

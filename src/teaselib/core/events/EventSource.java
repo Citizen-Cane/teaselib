@@ -37,8 +37,7 @@ public class EventSource<T extends EventArgs> {
     public synchronized void remove(Event<T> delegate) {
         boolean removed = delegates.remove(delegate);
         if (!removed) {
-            throw new NoSuchElementException(
-                    "Event " + delegate + " has already been removed from event source '" + name + "'.");
+            throw new NoSuchElementException("Event " + delegate + " in event source '" + name + "'.");
         }
     }
 
@@ -46,49 +45,49 @@ public class EventSource<T extends EventArgs> {
         return delegates.contains(delegate);
     }
 
-    /**
-     * Returns the number of user events
-     * 
-     * @return
-     */
     public synchronized int size() {
         return delegates.size();
     }
 
-    public synchronized void run(T eventArgs) {
+    public synchronized void fire(T eventArgs) {
+        List<Throwable> throwables = new ArrayList<>(delegates.size());
+
         logger.info("{} , {} listeners {}", name, delegates.size(), eventArgs);
         if (initial != null) {
-            runDelegate(eventArgs, initial);
+            runAndCatchThrowable(eventArgs, initial, throwables);
         }
+
         for (Event<T> delegate : new ArrayList<>(delegates)) {
-            runDelegate(eventArgs, delegate);
+            runAndCatchThrowable(eventArgs, delegate, throwables);
             if (eventArgs.consumed) {
                 logger.debug("Event {} consumed", eventArgs);
                 break;
             }
         }
+
         if (completing != null) {
-            runDelegate(eventArgs, completing);
+            runAndCatchThrowable(eventArgs, completing, throwables);
+        }
+
+        if (!throwables.isEmpty()) {
+            Throwable first = throwables.remove(0);
+            throwables.stream().forEach(first::addSuppressed);
+            throw ExceptionUtil.asRuntimeException(first);
         }
     }
 
-    private void runDelegate(T eventArgs, Event<T> delegate) {
+    private void runAndCatchThrowable(T eventArgs, Event<T> delegate, List<Throwable> throwables) {
         try {
             delegate.run(eventArgs);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            throw ExceptionUtil.asRuntimeException(e);
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
-            throw ExceptionUtil.asRuntimeException(t);
+            throwables.add(t);
         }
-
-        // TODO collect exceptions and report as first and suppressed exception
-        // -> guarantees that all listeners will be executed
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + " " + name + "(" + hashCode() + ")";
     }
+
 }

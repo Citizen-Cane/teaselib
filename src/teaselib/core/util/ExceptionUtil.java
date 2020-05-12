@@ -64,11 +64,22 @@ public class ExceptionUtil {
             throw (Error) t;
         } else if (t instanceof RuntimeException) {
             return (RuntimeException) t;
+        } else if (t instanceof Exception) {
+            Exception e = reduce((Exception) t);
+            if (e != t) {
+                return asRuntimeException(e);
+            } else {
+                return wrapped(t);
+            }
         } else {
-            String name = t.getClass().getSimpleName();
-            String message = t.getMessage();
-            return new RuntimeException(name + (message != null ? ": " + message : ""), t);
+            return wrapped(t);
         }
+    }
+
+    private static RuntimeException wrapped(Throwable t) {
+        String name = t.getClass().getSimpleName();
+        String message = t.getMessage();
+        return new RuntimeException(name + (message != null ? ": " + message : ""), t);
     }
 
     public static RuntimeException asRuntimeException(Exception e) {

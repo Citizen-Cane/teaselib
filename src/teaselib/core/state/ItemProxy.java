@@ -63,14 +63,14 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
         @Override
         public Persistence over(long duration, TimeUnit unit) {
             Persistence persistence = options.over(duration, unit);
-            events.itemDuration.run(new ItemChangedEventArgs(item));
+            events.itemDuration.fire(new ItemChangedEventArgs(item));
             return persistence;
         }
 
         @Override
         public Persistence over(Duration duration) {
             Persistence persistence = options.over(duration);
-            events.itemDuration.run(new ItemChangedEventArgs(item));
+            events.itemDuration.fire(new ItemChangedEventArgs(item));
             return persistence;
         }
     }
@@ -79,7 +79,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     public Options applyTo(Object... items) {
         injectNamespace();
         StateOptionsProxy options = new StateOptionsProxy(namespace, item.applyTo(items), events);
-        events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
+        events.itemApplied.fire(new ScriptEvents.ItemChangedEventArgs(item));
         return new ItemEventProxy(item, events, options);
     }
 
@@ -95,7 +95,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
 
         injectNamespace();
         StateOptionsProxy options = new StateOptionsProxy(namespace, item.apply(), events);
-        events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
+        events.itemApplied.fire(new ScriptEvents.ItemChangedEventArgs(item));
         return new ItemEventProxy(item, events, options);
     }
 
@@ -109,13 +109,13 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
             throw new IllegalStateException(AbstractProxy.itemImpl(item).guid + " is not applied");
         }
 
-        events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
+        events.itemRemoved.fire(new ScriptEvents.ItemChangedEventArgs(item));
         item.remove();
     }
 
     @Override
     public void removeFrom(Object... peers) {
-        events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
+        events.itemRemoved.fire(new ScriptEvents.ItemChangedEventArgs(item));
         item.removeFrom(peers);
     }
 

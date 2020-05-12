@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -23,9 +24,10 @@ import teaselib.core.media.RenderDesktopItem;
 import teaselib.core.media.RenderSound;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Intention;
+import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.WildcardPattern;
 import teaselib.functional.CallableScript;
@@ -330,13 +332,16 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Answers.of(text, more), new ScriptFunction(stringAdapter)).text.get(0);
     }
 
+    @SuppressWarnings("resource")
     protected Answer awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+        Optional<SpeechRecognitionInputMethod> inputMethod = teaseLib.globals.get(InputMethods.class)
+                .getOptional(SpeechRecognitionInputMethod.class);
         AtomicBoolean ignoreTimeoutInDubioMitius = new AtomicBoolean(false);
 
+        EventSource<SpeechRecognizedEventArgs> speechDetectedEventSource;
         Event<SpeechRecognizedEventArgs> recognitionRejected;
-        SpeechRecognition speechRecognizer = teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale());
-        EventSource<SpeechRecognizedEventArgs> speechDetectedEvents = speechRecognizer.events.speechDetected;
-        if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
+        if (inputMethod.isPresent() && timeoutBehavior == TimeoutBehavior.InDubioMitius) {
+            speechDetectedEventSource = inputMethod.get().events.speechDetected;
             Thread scriptFunctionThread = Thread.currentThread();
             recognitionRejected = eventArgs -> {
                 if (!ignoreTimeoutInDubioMitius.get()) {
@@ -344,22 +349,25 @@ public abstract class TeaseScript extends TeaseScriptMath {
                     ignoreTimeoutInDubioMitius.set(true);
                 }
             };
-            speechDetectedEvents.add(recognitionRejected);
+            speechDetectedEventSource.add(recognitionRejected);
         } else {
+            speechDetectedEventSource = null;
             recognitionRejected = null;
         }
+
         try {
             teaseLib.sleep(seconds, TimeUnit.SECONDS);
             if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
-                    && speechRecognizer.speechRecognitionInProgress()) {
+                    && SpeechRecognition.speechRecognitionInProgress()) {
                 logger.info("Completing speech recognition {}", timeoutBehavior);
                 SpeechRecognition.completeSpeechRecognitionInProgress();
             }
         } finally {
-            if (recognitionRejected != null) {
-                speechDetectedEvents.remove(recognitionRejected);
+            if (speechDetectedEventSource != null && recognitionRejected != null) {
+                speechDetectedEventSource.remove(recognitionRejected);
             }
         }
+
         Answer result;
         if (ignoreTimeoutInDubioMitius.get()) {
             logger.info(/* relation + */ " timeout ignored {}", timeoutBehavior);

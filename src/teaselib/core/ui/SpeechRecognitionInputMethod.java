@@ -39,6 +39,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionParameters;
 import teaselib.core.speechrecognition.SpeechRecognitionSRGS;
 import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.events.AudioLevelUpdatedEventArgs;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -61,10 +62,11 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private final SpeechRecognizer speechRecognizers;
     private final Map<Locale, SpeechRecognition> usedRecognizers = new HashMap<>();
-
     private final AudioSignalProblems audioSignalProblems;
+    public final SpeechRecognitionEvents events;
 
     private final Event<SpeechRecognitionStartedEventArgs> speechRecognitionStartedEventHandler;
+    private final Event<AudioLevelUpdatedEventArgs> audioLevelUpdatedEventHandler;
     private final Event<AudioSignalProblemOccuredEventArgs> audioSignalProblemEventHandler;
     private final Event<SpeechRecognizedEventArgs> speechDetectedEventHandler;
     private final Event<SpeechRecognizedEventArgs> recognitionRejected;
@@ -76,25 +78,37 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizers) {
         this.speechRecognizers = speechRecognizers;
         this.audioSignalProblems = new AudioSignalProblems();
+        this.events = new SpeechRecognitionEvents();
 
         this.speechRecognitionStartedEventHandler = this::handleRecognitionStarted;
+        this.audioLevelUpdatedEventHandler = this::handleAudioLevelUpdated;
         this.audioSignalProblemEventHandler = this::handleAudioSignalProblemDetected;
         this.speechDetectedEventHandler = this::handleSpeechDetected;
         this.recognitionRejected = this::handleRecognitionRejected;
         this.recognitionCompleted = this::handleRecogntionCompleted;
     }
 
-    private void handleRecognitionStarted(@SuppressWarnings("unused") SpeechRecognitionStartedEventArgs eventArgs) {
+    private void handleRecognitionStarted(SpeechRecognitionStartedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
             audioSignalProblems.clear();
             hypothesis = null;
+            events.recognitionStarted.fire(eventArgs);
             return prompt;
         });
     }
 
-    private void handleAudioSignalProblemDetected(AudioSignalProblemOccuredEventArgs audioSignal) {
+    private void handleAudioLevelUpdated(AudioLevelUpdatedEventArgs audioLevelUpdatedEventArgs) {
         active.updateAndGet(prompt -> {
-            audioSignalProblems.add(audioSignal.problem);
+            events.audioLevelUpdated.fire(audioLevelUpdatedEventArgs);
+            return prompt;
+        });
+    }
+
+    private void handleAudioSignalProblemDetected(
+            AudioSignalProblemOccuredEventArgs audioSignalProblemOccuredEventArgs) {
+        active.updateAndGet(prompt -> {
+            audioSignalProblems.add(audioSignalProblemOccuredEventArgs.problem);
+            events.audioSignalProblemOccured.fire(audioSignalProblemOccuredEventArgs);
             return prompt;
         });
     }
@@ -190,6 +204,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             if (rule.probability >= expectedConfidence) {
                 hypothesis = rule;
                 logger.info("Considering as hypothesis");
+                events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
             }
         }
     }
@@ -206,13 +221,14 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         active.updateAndGet(prompt -> {
             if (audioSignalProblems.exceedLimits()) {
                 logTooManyAudioSignalProblems(eventArgs.result);
+                events.recognitionRejected.fire(eventArgs);
                 return prompt;
             } else {
                 if (hypothesis != null && hypothesis.probability >= expectedConfidence(prompt.choices, hypothesis)) {
-                    eventArgs.consumed = true;
                     logger.info("Considering hypothesis");
-                    return handle(eventArgs, prompt, this::singleResult, hypothesis);
+                    return handle(prompt, this::singleResult, hypothesis);
                 } else {
+                    events.recognitionRejected.fire(eventArgs);
                     signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
                     return prompt;
                 }
@@ -261,43 +277,54 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
         Optional<Rule> result = matcher.apply(Arrays.stream(eventArgs.result), toChoices(prompt));
         if (result.isPresent() && hypothesis != null && hypothesis.probability > result.get().probability) {
-            return handle(eventArgs, prompt, resultor, hypothesis);
+            return handle(prompt, resultor, hypothesis);
         } else if (result.isPresent()) {
-            return handle(eventArgs, prompt, resultor, result.get());
+            return handle(prompt, resultor, result.get());
         } else {
-            logger.warn("No matching choice in {} - rejecting", eventArgs);
-            reject(eventArgs);
+            reject(eventArgs, "No matching choice");
             return prompt;
         }
     }
 
-    private Prompt handle(SpeechRecognizedEventArgs eventArgs, Prompt prompt,
-            BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule) {
+    private Prompt handle(Prompt prompt, BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule) {
         double expectedConfidence = expectedConfidence(prompt.choices, rule);
         double audioProblemPenalty = audioSignalProblems.penalty() * AUDIO_PROBLEM_PENALTY_WEIGHT;
         if (rule.probability - audioProblemPenalty >= expectedConfidence) {
             Prompt.Result promptResult = resultor.apply(rule, toChoices(prompt));
             if (promptResult.elements.isEmpty()) {
-                logger.warn("Empty result {} : {} - rejecting", prompt.choices, rule);
-                reject(eventArgs);
+                reject(prompt, rule, "Empty result");
                 return prompt;
             } else if (promptResult.valid(prompt.choices)) {
+                events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rule));
                 accept(prompt, promptResult);
                 return null;
             } else {
-                logger.warn("Undefined result index in {} : {} - rejecting", prompt.choices, rule);
-                reject(eventArgs);
+                reject(prompt, rule, "Undefined result index");
                 return prompt;
             }
         } else if (rule.probability >= expectedConfidence) {
             logAudioSignalProblemPenalty(rule, expectedConfidence, audioProblemPenalty);
-            reject(eventArgs);
+            reject(rule);
             return prompt;
         } else {
             logLackOfConfidence(rule, expectedConfidence);
-            reject(eventArgs);
+            reject(rule);
             return prompt;
         }
+    }
+
+    private void reject(Prompt prompt, Rule rule, String reason) {
+        logger.info("{} in {} : {} - rejecting", reason, prompt.choices, rule);
+        reject(rule);
+    }
+
+    private void reject(SpeechRecognizedEventArgs eventArgs, String reason) {
+        logger.info("{} in {} - rejecting", reason, eventArgs);
+        events.recognitionRejected.fire(eventArgs);
+    }
+
+    private void reject(Rule rule) {
+        events.recognitionRejected.fire(new SpeechRecognizedEventArgs(rule));
     }
 
     private IntUnaryOperator toChoices(Prompt prompt) {
@@ -354,15 +381,6 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         getRecognizer(prompt.choices.locale).endRecognition();
         signal(prompt, promptResult);
         return null;
-    }
-
-    private void reject(SpeechRecognizedEventArgs eventArgs) {
-        eventArgs.consumed = true;
-        fireRecognitionRejectedEvent(eventArgs);
-    }
-
-    private void fireRecognitionRejectedEvent(SpeechRecognizedEventArgs eventArgs) {
-        getRecognizer().events.recognitionRejected.run(new SpeechRecognizedEventArgs(eventArgs.result));
     }
 
     private static void logLackOfConfidence(Rule result, double confidence) {
@@ -482,6 +500,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private void addEvents(SpeechRecognition recognizer) {
         SpeechRecognitionEvents events = recognizer.events;
         events.recognitionStarted.add(speechRecognitionStartedEventHandler);
+        events.audioLevelUpdated.add(audioLevelUpdatedEventHandler);
         events.audioSignalProblemOccured.add(audioSignalProblemEventHandler);
         events.speechDetected.add(speechDetectedEventHandler);
         events.recognitionRejected.add(recognitionRejected);
@@ -491,6 +510,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private void removeEvents(SpeechRecognition speechRecognizer) {
         SpeechRecognitionEvents events = speechRecognizer.events;
         events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
+        events.audioLevelUpdated.remove(audioLevelUpdatedEventHandler);
         events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
         events.speechDetected.remove(speechDetectedEventHandler);
         events.recognitionRejected.remove(recognitionRejected);

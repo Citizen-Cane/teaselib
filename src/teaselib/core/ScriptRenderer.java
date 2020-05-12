@@ -204,7 +204,7 @@ public class ScriptRenderer implements Closeable {
                 queuedRenderers.clear();
 
                 completeMandatory();
-                events.beforeMessage.run(new ScriptEventArgs());
+                events.beforeMessage.fire(new ScriptEventArgs());
 
                 // Now the current set can be completed, and canceling the
                 // current set will result in an empty next set

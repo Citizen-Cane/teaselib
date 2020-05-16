@@ -1,7 +1,6 @@
 package teaselib.core;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,7 +48,6 @@ import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.ui.SpeechRecognitionInputMethodEventArgs;
 import teaselib.core.util.ExceptionUtil;
-import teaselib.core.util.ObjectMap;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
@@ -88,19 +86,23 @@ public abstract class Script {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
         }
 
-        boolean startOnce = teaseLib.globals.get(SCRIPT_INSTANCES) == null;
+        boolean startOnce = teaseLib.globals.get(ScriptCache.OBJECTMAP_NAME) == null;
         if (startOnce) {
-            InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
-            AudioSync audioSync = scriptRenderer.audioSync;
-            inputMethods.add(new SpeechRecognitionInputMethod(new SpeechRecognizer(teaseLib.config, audioSync)));
-
+            syncAudioAndSpeechRecognition(teaseLib);
             handleAutoRemove();
+
             // TODO start only once but not here - KeyReleaseSetup must not be a script - device?
             script(KeyReleaseSetup.class).init();
 
             bindMotionDetectorToVideoRenderer();
             bindNetworkProperties();
         }
+    }
+
+    private void syncAudioAndSpeechRecognition(TeaseLib teaseLib) {
+        InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
+        AudioSync audioSync = scriptRenderer.audioSync;
+        inputMethods.add(new SpeechRecognitionInputMethod(new SpeechRecognizer(teaseLib.config, audioSync)));
     }
 
     protected void handleAutoRemove() {
@@ -197,50 +199,9 @@ public abstract class Script {
         scriptRenderer.messageRenderer.textToSpeechPlayer.acquireVoice(actor, resources);
     }
 
-    private static final String SCRIPT_INSTANCES = "ScriptInstances";
-
-    @SuppressWarnings("resource")
     public <T extends Script> T script(Class<T> scriptClass) {
-        ObjectMap scripts = getScriptStorage();
-        return getScript(scriptClass, scripts);
-    }
-
-    @SuppressWarnings("resource")
-    private ObjectMap getScriptStorage() {
-        ObjectMap scripts = teaseLib.globals.get(SCRIPT_INSTANCES);
-        if (scripts == null) {
-            scripts = teaseLib.globals.store(SCRIPT_INSTANCES, new ObjectMap());
-        }
-        return scripts;
-    }
-
-    private <T extends Script> T getScript(Class<T> scriptClass, ObjectMap scripts) {
-        T script = scripts.get(scriptClass);
-        if (script == null) {
-            try {
-                Constructor<T> constructor = findScriptConstructor(scriptClass);
-                script = scripts.store(constructor.newInstance(this));
-            } catch (ReflectiveOperationException e) {
-                throw ExceptionUtil.asRuntimeException(e);
-            }
-        }
-        return script;
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T extends Script> Constructor<T> findScriptConstructor(Class<T> scriptClass) {
-        Class<?> type = this.getClass();
-        while (type != null) {
-            for (Constructor<T> constructor : (Constructor<T>[]) scriptClass.getDeclaredConstructors()) {
-                Class<?>[] parameterTypes = constructor.getParameterTypes();
-                if (parameterTypes.length == 1 && parameterTypes[0] == type) {
-                    return constructor;
-                }
-            }
-            type = type.getSuperclass();
-        }
-
-        throw new NoSuchMethodError("Constructor " + scriptClass.getName() + "(" + this.getClass().getName() + ")");
+        ScriptCache scripts = teaseLib.globals.getOrDefault(ScriptCache.OBJECTMAP_NAME, ScriptCache::new);
+        return scripts.get(this, scriptClass);
     }
 
     public void completeStarts() {

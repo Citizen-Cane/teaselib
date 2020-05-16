@@ -15,14 +15,13 @@ public class ObjectMap implements Closeable {
 
     private final boolean writeOnce = true;
 
-    public <T extends Supplier<?>> ObjectMap store(Object key, T supplier) {
+    public <T extends Supplier<?>> void store(Object key, T supplier) {
         dontOverwrite(key);
-        return storeInternal(key, supplier);
+        storeInternal(key, supplier);
     }
 
-    private <T extends Supplier<?>> ObjectMap storeInternal(Object key, T supplier) {
+    private <T extends Supplier<?>> void storeInternal(Object key, T supplier) {
         suppliers.put(key, supplier);
-        return this;
     }
 
     public <T> T store(T value) {
@@ -54,7 +53,12 @@ public class ObjectMap implements Closeable {
 
     public <T> T getOrDefault(Class<T> clazz, Supplier<T> supplier) {
         T t = get(clazz);
-        return t != null ? t : store(clazz, supplier).get(clazz);
+        if (t != null) {
+            return t;
+        } else {
+            store(clazz, supplier);
+            return get(clazz);
+        }
     }
 
     public <T> T get(Class<T> clazz) {
@@ -63,7 +67,12 @@ public class ObjectMap implements Closeable {
 
     public <T> T getOrDefault(Object key, Supplier<T> supplier) {
         T t = get(key);
-        return t != null ? t : store(key, supplier).get(key);
+        if (t != null) {
+            return t;
+        } else {
+            store(key, supplier);
+            return get(key);
+        }
     }
 
     public <T> T get(Object key) {
@@ -84,11 +93,6 @@ public class ObjectMap implements Closeable {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.io.Closeable#close()
-     */
     @Override
     public void close() {
         Exception first = null;
@@ -113,4 +117,5 @@ public class ObjectMap implements Closeable {
             throw ExceptionUtil.asRuntimeException(first);
         }
     }
+
 }

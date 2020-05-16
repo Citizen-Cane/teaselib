@@ -1,6 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 import java.util.Optional;
 
@@ -45,6 +48,7 @@ public class ScriptTest {
     @Test
     public void testScriptVariableOverrideUpdatesAlias() {
         Script script = TestScript.getOne();
+
         script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
         Message message = new Message(script.actor, "Listen #slave:");
 
@@ -79,9 +83,64 @@ public class ScriptTest {
         assertEquals("Listen slave:", text(script, message));
     }
 
+    public static class FoobarScript extends Script {
+        public FoobarScript(Script script) {
+            super(script, script.actor);
+        }
+    }
+
+    @Test
+    public void testScriptsAreCachedByActor() {
+        Script one = TestScript.getOne();
+        Script another = TestScript.getOne();
+
+        FoobarScript foo = one.script(FoobarScript.class);
+        FoobarScript fooAsWell = one.script(FoobarScript.class);
+        assertSame(foo, fooAsWell);
+
+        FoobarScript bar = another.script(FoobarScript.class);
+        assertNotSame(foo, bar);
+    }
+
+    public class NotAStaticClassScript extends Script {
+        public NotAStaticClassScript(Script script) {
+            super(script, script.actor);
+        }
+    }
+
+    @Test(expected = NoSuchMethodError.class)
+    public void testScriptClassNestedInNonScriptClasFails() throws NoSuchMethodError {
+        Script one = TestScript.getOne();
+
+        NotAStaticClassScript foo = one.script(NotAStaticClassScript.class);
+        assertNotNull(foo);
+    }
+
+    static class StaticTestScript extends Script {
+        public StaticTestScript(TestScript script) {
+            super(script, script.actor);
+        }
+
+        public class NestedScriptClass extends Script {
+            public NestedScriptClass(Script script) {
+                super(script, script.actor);
+            }
+        }
+    }
+
+    @Test
+    public void testNestedScriptClass() {
+        TestScript main = TestScript.getOne();
+        Script script = new StaticTestScript(main);
+
+        StaticTestScript.NestedScriptClass foo = script.script(StaticTestScript.NestedScriptClass.class);
+        assertNotNull(foo);
+    }
+
     private static String text(Script script, Message message) {
         Decorator[] decorators = script.decorators(Optional.empty());
         return RenderedMessage.of(message, decorators).stream().filter(part -> part.type == Type.Text)
-                .map(part -> part.value).findFirst().get();
+                .map(part -> part.value).findFirst().orElseThrow();
     }
+
 }

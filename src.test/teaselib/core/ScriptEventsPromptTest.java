@@ -34,7 +34,7 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
     @Before
     public void setup() {
         script = TestScript.getOne(new DebugSetup());
-        keyReleaseSetup = script.script(KeyReleaseSetup.class);
+        keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
 
         // script.debugger.freezeTime();
 

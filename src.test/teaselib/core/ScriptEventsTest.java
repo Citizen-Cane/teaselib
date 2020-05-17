@@ -37,7 +37,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     @Before
     public void setupActuators() {
         script = TestScript.getOne(new DebugSetup());
-        keyReleaseSetup = script.script(KeyReleaseSetup.class);
+        keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
         keyRelease = new KeyReleaseMock(actuatorMocks);
         keyReleaseSetup.deviceConnected(new DeviceEventMock(keyRelease));
 

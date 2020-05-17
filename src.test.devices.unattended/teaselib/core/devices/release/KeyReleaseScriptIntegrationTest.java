@@ -30,7 +30,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     final TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
     final ScriptEvents events = script.events();
-    final KeyReleaseSetup keyReleaseSetup = script.script(KeyReleaseSetup.class);
+    final KeyReleaseSetup keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
     KeyRelease keyReleaseDevice;
 
     @Before
@@ -39,7 +39,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         // - for subsequent tests, no startup message is received
         // -> LocalNetworkDevice returns no devices
         awaitConnection(script.teaseLib.devices.get(KeyRelease.class));
-        keyReleaseSetup.say(FOOBAR);
+        script.say(FOOBAR);
 
         keyReleaseDevice = script.teaseLib.devices.getDefaultDevice(KeyRelease.class);
         releaseAllRunningActuators(keyReleaseDevice);
@@ -63,7 +63,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
-        keyReleaseSetup.say(FOOBAR);
+        script.say(FOOBAR);
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
@@ -82,7 +82,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
-        keyReleaseSetup.say(FOOBAR);
+        script.say(FOOBAR);
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
@@ -102,7 +102,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
-        keyReleaseSetup.say(FOOBAR);
+        script.say(FOOBAR);
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
@@ -122,7 +122,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
-        keyReleaseSetup.say(FOOBAR);
+        script.say(FOOBAR);
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);

@@ -3,8 +3,6 @@
  */
 package teaselib;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +12,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
+import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
@@ -51,9 +50,8 @@ public abstract class TeaseScriptPersistence extends Script {
             }
         }
 
-        public Items items(Items items) {
-            return proxiesOf(
-                    new Items(items.stream().map(AbstractProxy::itemImpl).map(this::getItemByGuid).collect(toList())));
+        public Items related(Items items) {
+            return proxiesOf(teaseLib.relatedItems(name, items));
         }
 
         private Item getItemByGuid(ItemImpl item) {
@@ -137,7 +135,11 @@ public abstract class TeaseScriptPersistence extends Script {
     public final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain);
 
     public Domain domain(Enum<?> domain) {
-        return new Domain(QualifiedItem.of(domain).toString());
+        return domain(new QualifiedEnum(domain));
+    }
+
+    public Domain domain(QualifiedItem domain) {
+        return domain(domain.toString());
     }
 
     public Domain domain(String domain) {

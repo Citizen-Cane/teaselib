@@ -79,6 +79,7 @@ public abstract class Script {
 
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
+        getOrDefault(teaseLib, ScriptInteractions.class, this::initScriptInteractions);
 
         try {
             teaseLib.config.addScriptSettings(namespace, namespace);
@@ -86,17 +87,19 @@ public abstract class Script {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
         }
 
-        boolean startOnce = teaseLib.globals.get(ScriptCache.OBJECTMAP_NAME) == null;
+        boolean startOnce = teaseLib.globals.get(ScriptCache.class) == null;
         if (startOnce) {
             syncAudioAndSpeechRecognition(teaseLib);
             handleAutoRemove();
-
-            // TODO start only once but not here - KeyReleaseSetup must not be a script - device?
-            script(KeyReleaseSetup.class).init();
-
             bindMotionDetectorToVideoRenderer();
             bindNetworkProperties();
         }
+    }
+
+    private ScriptInteractions initScriptInteractions() {
+        ScriptInteractions scriptInteractions = new ScriptInteractions();
+        scriptInteractions.add(KeyReleaseSetup.class, () -> new KeyReleaseSetup(teaseLib));
+        return scriptInteractions;
     }
 
     private void syncAudioAndSpeechRecognition(TeaseLib teaseLib) {
@@ -200,8 +203,12 @@ public abstract class Script {
     }
 
     public <T extends Script> T script(Class<T> scriptClass) {
-        ScriptCache scripts = teaseLib.globals.getOrDefault(ScriptCache.OBJECTMAP_NAME, ScriptCache::new);
+        ScriptCache scripts = teaseLib.globals.getOrDefault(ScriptCache.class, ScriptCache::new);
         return scripts.get(this, scriptClass);
+    }
+
+    public <T extends ScriptInteraction> T interaction(Class<T> scriptInteractionClass) {
+        return teaseLib.globals.get(ScriptInteractions.class).get(scriptInteractionClass);
     }
 
     public void completeStarts() {

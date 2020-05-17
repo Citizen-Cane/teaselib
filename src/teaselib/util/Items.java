@@ -690,7 +690,7 @@ public class Items implements Iterable<Item> {
     }
 
     public Items of(TeaseScriptPersistence.Domain domain) {
-        return domain.items(this);
+        return domain.related(this);
     }
 
     public boolean isEmpty() {

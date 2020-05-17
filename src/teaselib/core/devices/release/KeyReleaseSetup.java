@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -18,19 +17,19 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import teaselib.Actor;
 import teaselib.Duration;
 import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.State.Options;
 import teaselib.State.Persistence.Until;
-import teaselib.TeaseScript;
 import teaselib.Toys;
-import teaselib.core.Script;
 import teaselib.core.ScriptEventArgs;
 import teaselib.core.ScriptEvents;
 import teaselib.core.ScriptEvents.ItemEventAction;
+import teaselib.core.ScriptInteraction;
+import teaselib.core.ScriptRenderer;
 import teaselib.core.StateImpl;
+import teaselib.core.TeaseLib;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.DeviceListener;
@@ -38,6 +37,7 @@ import teaselib.core.events.Event;
 import teaselib.core.events.EventArgs;
 import teaselib.core.events.EventSource;
 import teaselib.core.state.AbstractProxy;
+import teaselib.core.util.QualifiedEnum;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
@@ -50,8 +50,7 @@ import teaselib.util.Items;
  * @author Citizen-Cane
  *
  */
-public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRelease> {
-
+public class KeyReleaseSetup extends ScriptInteraction implements DeviceListener<KeyRelease> {
     public final Map<Items, Long> itemDurationSeconds = new LinkedHashMap<>();
     public final Map<Items, Consumer<Items>> acquireKeys = new LinkedHashMap<>();
     public final Map<Items, Consumer<Items>> acquireKeysAgain = new LinkedHashMap<>();
@@ -65,26 +64,14 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
     public final Map<Actuator, ItemEventAction> installedCountDownActions = new HashMap<>();
     public final Map<Actuator, Event<ScriptEventArgs>> installedRenewHoldEvents = new HashMap<>();
 
+    private final TeaseLib teaseLib;
     private final ScriptEvents events;
 
-    public KeyReleaseSetup(TeaseScript script) {
-        super(script, actor(script, Locale.ENGLISH));
-        this.events = scriptRenderer.events;
-    }
-
-    public void init() {
+    public KeyReleaseSetup(TeaseLib teaseLib) {
+        this.teaseLib = teaseLib;
+        this.events = teaseLib.globals.get(ScriptRenderer.class).events;
         defaults();
         teaseLib.devices.get(KeyRelease.class).addDeviceListener(this);
-    }
-
-    private static Actor actor(Script script, Locale locale) {
-        if (script.actor.locale().getLanguage().equalsIgnoreCase(locale.getLanguage())) {
-            return script.actor;
-        } else {
-            Actor defaultDominant = script.teaseLib.getDominant(script.actor.gender, locale);
-            defaultDominant.images = script.actor.images;
-            return defaultDominant;
-        }
     }
 
     private static String qualifiedName(Actuator actuator) {
@@ -109,14 +96,14 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         String actuatorName = actuatorName(actuator);
 
         StateImpl actuatorState = (StateImpl) AbstractProxy
-                .removeProxy(domain(Gadgets.Key_Release).state(actuatorName));
+                .removeProxy(teaseLib.state(new QualifiedEnum(Gadgets.Key_Release).toString(), actuatorName));
         Items handled = new Items(actuatorState.peers().stream().filter(peer -> peer instanceof Item)
                 .map(item -> (Item) item).collect(Collectors.toList()));
 
         if (!handled.equals(Items.None)) {
-            Items items = handled.of(defaultDomain);
+            Items items = teaseLib.relatedItems(TeaseLib.DefaultDomain, handled);
             Options appliedToItems = items.apply();
-            Duration remaining = duration(actuator.remaining(TimeUnit.SECONDS), TimeUnit.SECONDS);
+            Duration remaining = teaseLib.duration(actuator.remaining(TimeUnit.SECONDS), TimeUnit.SECONDS);
 
             if (!remaining.expired()) {
                 appliedToItems.over(remaining);
@@ -142,13 +129,15 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         // - find a way to specify that anklets/wristlets can be detached -> via removeFrom Hands/Wrists Tied
         // -> blocks applying/removing all states with applying/removing an item - but that feature isn't needed anyway
         Items cuffs = new Items( //
-                items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable), //
-                items(Toys.Collar, Toys.Humbler).matching(Features.Lockable) //
+                teaseLib.items(TeaseLib.DefaultDomain, Toys.Wrist_Restraints, Toys.Ankle_Restraints)
+                        .matching(Features.Detachable), //
+                teaseLib.items(TeaseLib.DefaultDomain, Toys.Collar, Toys.Humbler).matching(Features.Lockable) //
         );
 
         Items handcuffs = new Items( //
-                items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).without(Features.Detachable), //
-                items(Toys.Chains).matching(Features.Lockable) //
+                teaseLib.items(TeaseLib.DefaultDomain, Toys.Wrist_Restraints, Toys.Ankle_Restraints)
+                        .without(Features.Detachable), //
+                teaseLib.items(TeaseLib.DefaultDomain, Toys.Chains).matching(Features.Lockable) //
         );
 
         prepare(handcuffs, 1, TimeUnit.HOURS, defaultInstructions);
@@ -206,12 +195,7 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
     }
 
     private Consumer<Items> defaultInstructions = items -> {
-        // TODO perform interjection as prompt.script actor - not as creator of script
-        // - interjections must use prompt.script.actor, not the one that created the script
-        // -> until then, avoid speech & form of address
-        show(items);
-        showInterTitle("Place the keys on the hook!");
-        reply("Done");
+        // No verbose default instruction - actuator is activated when applying items
     };
 
     // TODO prefer lockable items as long as a key release device is available
@@ -230,17 +214,32 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
         for (Items items : pendingPreparations) {
             Optional<Actuator> actuator = chooseUnboundActuator(items);
             if (actuator.isPresent()) {
-                bind(items, actuator.get());
-                Consumer<Items> instructions = instructions(items);
-                if (instructions != defaultInstructions) {
-                    acquireKeys(items, actuator.get(), instructions);
-                }
+                bindAndAcquireKeys(actuator.get(), items);
             } else {
                 unassigned.add(items);
             }
         }
         pendingPreparations.clear();
         pendingPreparations.addAll(unassigned);
+    }
+
+    void replaceWithPendingPreparation(Actuator actuator, Items removed) {
+        for (Items items : pendingPreparations) {
+            if (removed.intersection(items).anyAvailable()) {
+                unbind(actuator);
+                bindAndAcquireKeys(actuator, items);
+                pendingPreparations.remove(items);
+                break;
+            }
+        }
+    }
+
+    private void bindAndAcquireKeys(Actuator actuator, Items items) {
+        bind(items, actuator);
+        Consumer<Items> instructions = instructions(items);
+        if (instructions != defaultInstructions) {
+            acquireKeys(items, actuator, instructions);
+        }
     }
 
     @Override
@@ -421,7 +420,7 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
             acquireKeys(items, actuator, instructions);
         }
 
-        Items handled = items.of(domain(Gadgets.Key_Release));
+        Items handled = teaseLib.relatedItems(Gadgets.Key_Release, items);
         if (!handled.anyApplied()) {
             // TODO Duration should be updated during each hold event
             handled.applyTo(actuatorName(actuator)).over(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS)
@@ -454,10 +453,15 @@ public class KeyReleaseSetup extends TeaseScript implements DeviceListener<KeyRe
             handled.removeFrom(actuatorName(actuator));
             removeEvents(actuator);
 
+            if (!pendingPreparations.isEmpty()) {
+                replaceWithPendingPreparation(actuator, items);
+            }
+
             Optional<Consumer<Items>> instructionsAgain = instructionsAgain(items);
             if (instructionsAgain.isPresent()) {
                 acquireKeys(items, actuator, instructionsAgain.get());
             }
+
             installApplyLock(actuator, items, instructionsAgain.orElse(instructions(items)));
         });
     }

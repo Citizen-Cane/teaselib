@@ -8,8 +8,6 @@ import java.util.Map;
 import teaselib.core.util.ExceptionUtil;
 
 class ScriptCache {
-    static final String OBJECTMAP_NAME = "ScriptInstances";
-
     final Map<String, Map<Class<? extends Script>, Script>> scripts = new HashMap<>();
 
     @SuppressWarnings("unchecked")

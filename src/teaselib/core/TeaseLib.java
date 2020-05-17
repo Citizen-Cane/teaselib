@@ -1,6 +1,7 @@
 package teaselib.core;
 
 import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.stream.Collectors.toList;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -46,9 +47,11 @@ import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.Devices;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.ConfigFileMapping;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
+import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
 import teaselib.core.util.ReflectionUtils;
@@ -910,6 +913,19 @@ public class TeaseLib implements Closeable {
         return new Items(items);
     }
 
+    public Items relatedItems(Enum<?> domain, Items items) {
+        return relatedItems(new QualifiedEnum(domain), items);
+    }
+
+    public Items relatedItems(QualifiedItem domain, Items items) {
+        return relatedItems(domain.toString(), items);
+    }
+
+    public Items relatedItems(String domain, Items items) {
+        return new Items(items.stream().map(AbstractProxy::itemImpl).map(itemImpl -> getItemByGuid(domain, itemImpl))
+                .collect(toList()));
+    }
+
     /**
      * @return All temporary items
      */
@@ -947,6 +963,10 @@ public class TeaseLib implements Closeable {
         } else {
             return items(domain, item).get();
         }
+    }
+
+    public Item getItemByGuid(String domain, ItemImpl item) {
+        return getByGuid(domain, item.value, item.guid.name());
     }
 
     public Item getByGuid(String domain, Object item, String guid) {

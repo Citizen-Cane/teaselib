@@ -43,6 +43,7 @@ public class ScriptRenderer implements Closeable {
 
     List<MediaRenderer> playedRenderers = null;
     private final List<Message> prependedMessages = new ArrayList<>();
+    private Actor currentActor = null;
 
     final MessageRendererQueue messageRenderer;
 
@@ -105,7 +106,7 @@ public class ScriptRenderer implements Closeable {
         }
 
         RenderInterTitle interTitle = new RenderInterTitle(message, teaseLib);
-        renderMessage(teaseLib, interTitle);
+        renderMessage(teaseLib, message.actor, interTitle);
     }
 
     class ReplayImpl implements Replay {
@@ -165,24 +166,23 @@ public class ScriptRenderer implements Closeable {
         // -> only return the batch, don't run yet -> queue in batch.run()
         // TODO render section delay in queue, so it's not part of the paragraph anymore
 
-        // Workaround: keep it for now, renderer is started and queued
-        // waited for and ended
+        // Workaround: keep it for now, renderer is started and queued, waited for and ended
         MediaRenderer say = messageRenderer.say(actor, renderedMessages, resources);
-        renderMessage(teaseLib, say);
+        renderMessage(teaseLib, actor, say);
     }
 
     void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(singletonList(message), decorators);
-        MediaRenderer say = messageRenderer.append(actor, renderedMessages, resources);
-        renderMessage(teaseLib, say);
+        MediaRenderer appended = messageRenderer.append(actor, renderedMessages, resources);
+        renderMessage(teaseLib, actor, appended);
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(singletonList(message), decorators);
-        MediaRenderer say = messageRenderer.replace(actor, renderedMessages, resources);
-        renderMessage(teaseLib, say);
+        MediaRenderer replaced = messageRenderer.replace(actor, renderedMessages, resources);
+        renderMessage(teaseLib, actor, replaced);
     }
 
     private List<RenderedMessage> convertMessagesToRendered(List<Message> messages, Decorator[] decorators) {
@@ -193,29 +193,34 @@ public class ScriptRenderer implements Closeable {
         return renderedMessages;
     }
 
-    private void renderMessage(TeaseLib teaseLib, MediaRenderer renderMessage) {
-        synchronized (renderQueue) {
+    private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer renderMessage) {
+        synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
                 queueRenderer(renderMessage);
                 // Remember this set for replay
                 playedRenderers = new ArrayList<>(queuedRenderers);
+
                 // Remember in order to clear queued before completing previous set
                 List<MediaRenderer> nextSet = new ArrayList<>(queuedRenderers);
+
                 // Must clear queue for next set before completing current,
                 // because if the current set is cancelled,
                 // the next set must be discarded
                 queuedRenderers.clear();
-
                 completeMandatory();
-                events.beforeMessage.fire(new ScriptEventArgs());
 
                 // Now the current set can be completed, and canceling the
                 // current set will result in an empty next set
                 completeAll();
-                teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
-
-                // Start a new message in the log
+                // Start a new chapter in the transcript
                 teaseLib.transcript.info("");
+
+                teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
+                if (actor != currentActor) {
+                    currentActor = actor;
+                    events.actorChanged.fire(new ScriptEventArgs.ActorChanged(currentActor));
+                }
+                events.beforeMessage.fire(new ScriptEventArgs());
                 renderQueue.start(nextSet);
             }
             startBackgroundRenderers();

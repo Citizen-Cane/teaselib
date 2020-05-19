@@ -39,25 +39,24 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         script = TestScript.getOne(new DebugSetup());
         keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
         keyRelease = new KeyReleaseMock(actuatorMocks);
-        keyReleaseSetup.deviceConnected(new DeviceEventMock(keyRelease));
+        keyReleaseSetup.deviceInteraction.deviceConnected(new DeviceEventMock(keyRelease));
 
-        assertEquals(2, keyReleaseSetup.itemDurationSeconds.size());
-        assertEquals(0, keyReleaseSetup.itemActuators.size());
-        assertEquals(0, keyReleaseSetup.actuatorItems.size());
+        assertEquals(2, keyReleaseSetup.deviceInteraction.definitions(script.actor).size());
+        assertTrue(keyReleaseSetup.deviceAvailable());
     }
 
     @After
     public void detachDevice() {
-        keyReleaseSetup.deviceDisconnected(new DeviceEventMock(keyRelease));
+        keyReleaseSetup.deviceInteraction.deviceDisconnected(new DeviceEventMock(keyRelease));
     }
 
     @Test
     public void testPreparingRemovesDefaults() {
         Items appearingInMultipleDefaults = script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints);
-        assertEquals(2, keyReleaseSetup.itemDurationSeconds.size());
+        assertEquals(2, keyReleaseSetup.deviceInteraction.definitions(script.actor).size());
 
         keyReleaseSetup.prepare(appearingInMultipleDefaults, 1, TimeUnit.HOURS, script::show);
-        assertEquals(1, keyReleaseSetup.itemDurationSeconds.size());
+        assertEquals(1, keyReleaseSetup.deviceInteraction.definitions(script.actor).size());
     }
 
     @Test

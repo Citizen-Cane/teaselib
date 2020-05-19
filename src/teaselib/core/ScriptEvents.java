@@ -10,6 +10,8 @@ public class ScriptEvents {
     public final EventSource<ScriptEventArgs> beforeMessage = new EventSource<>("Before Message");
     public final EventSource<ScriptEventArgs> beforeChoices = new EventSource<>("Before Choices");
     public final EventSource<ScriptEventArgs> afterChoices = new EventSource<>("After Choices");
+    public final EventSource<ScriptEventArgs.ActorChanged> actorChanged = new EventSource<>("Actor changed");
+
     public final EventSource<StateChangedEventArgs> stateApplied = new EventSource<>("State applied");
     public final EventSource<StateChangedEventArgs> stateRemoved = new EventSource<>("State removed");
     public final EventSource<ItemChangedEventArgs> itemApplied = new EventSource<>("Item applied");
@@ -188,6 +190,6 @@ public class ScriptEvents {
                 }
             }
         }
-
     }
+
 }

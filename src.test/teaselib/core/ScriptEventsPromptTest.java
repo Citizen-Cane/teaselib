@@ -18,6 +18,7 @@ import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.release.KeyReleaseBaseTest;
+import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.test.TestScript;
 
@@ -29,20 +30,18 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
 
     private TestScript script;
     private KeyReleaseSetup keyReleaseSetup;
+    private KeyReleaseDeviceInteraction keyReleaseDeviceInteraction;
     private KeyRelease keyRelease;
 
     @Before
     public void setup() {
         script = TestScript.getOne(new DebugSetup());
         keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
-
-        // script.debugger.freezeTime();
-
     }
 
     @After
     public void detachDevice() {
-        keyReleaseSetup.deviceDisconnected(new DeviceEventMock(keyRelease));
+        keyReleaseSetup.deviceInteraction.deviceDisconnected(new DeviceEventMock(keyRelease));
     }
 
     @Test
@@ -50,16 +49,16 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
         script.debugger.addResponse(FOOBAR, Debugger.Response.Ignore);
         AtomicBoolean triggered = new AtomicBoolean();
         CountDownLatch done = new CountDownLatch(1);
-        keyReleaseSetup.prepare(script.items(Toys.Chains), items -> {
+        keyReleaseSetup.prepare(script.actor, script.items(Toys.Chains), items -> {
             triggered.set(true);
             done.countDown();
         });
         script.say(FOOBAR);
         script.reply(() -> {
             keyRelease = new KeyReleaseMock(actuatorMocks);
-            keyReleaseSetup.deviceConnected(new DeviceEventMock(keyRelease));
+            keyReleaseDeviceInteraction.deviceConnected(new DeviceEventMock(keyRelease));
             try {
-                assertTrue("Awaiting preare instruction timed out", done.await(5, TimeUnit.SECONDS));
+                assertTrue("Awaiting prepare instruction timed out", done.await(5, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);

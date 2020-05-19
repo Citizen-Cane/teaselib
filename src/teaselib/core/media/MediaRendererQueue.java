@@ -23,7 +23,7 @@ public class MediaRendererQueue {
 
     static final String RenderTaskBaseName = "RenderTask ";
 
-    private final Map<MediaRenderer.Threaded, Future<?>> activeRenderers = new HashMap<>();
+    public final Map<MediaRenderer.Threaded, Future<?>> activeRenderers = new HashMap<>();
     private final ExecutorService executor;
 
     public MediaRendererQueue() {
@@ -219,7 +219,7 @@ public class MediaRendererQueue {
             // TODO Must be managed by named executor service
             // setThreadName(nameForActiveThread());
             Future<?> future;
-            // TODO Batch renderer facade and ThreadedMediaRendererhave duplicated code -> merge
+            // TODO Batch renderer facade and ThreadedMediaRenderer have duplicated code -> merge
             // TODO encapsulate this instanceof branches into the referenced classes
             if (mediaRenderer instanceof Batch.RendererFacade) {
                 mediaRenderer.run();
@@ -245,14 +245,16 @@ public class MediaRendererQueue {
     }
 
     public Future<?> interrupt(MediaRenderer.Threaded mediaRenderer) {
-        Future<?> future = activeRenderers.remove(mediaRenderer);
-        if (future == null) {
-            throw new IllegalArgumentException(mediaRenderer.toString());
-        } else {
-            if (!future.isDone() && !future.isCancelled()) {
-                future.cancel(true);
+        synchronized (activeRenderers) {
+            Future<?> future = activeRenderers.remove(mediaRenderer);
+            if (future == null) {
+                throw new IllegalArgumentException(mediaRenderer.toString());
+            } else {
+                if (!future.isDone() && !future.isCancelled()) {
+                    future.cancel(true);
+                }
+                return future;
             }
-            return future;
         }
         // TODO Must be managed by named executor service
         // setThreadName(nameForSleepingThread());

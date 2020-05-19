@@ -42,6 +42,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         script.say(FOOBAR);
 
         keyReleaseDevice = script.teaseLib.devices.getDefaultDevice(KeyRelease.class);
+
         releaseAllRunningActuators(keyReleaseDevice);
 
         script.debugger.resumeTime();
@@ -53,7 +54,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     }
 
     private long availableSeconds(Items items) {
-        return keyReleaseSetup.getActuator(items).orElseThrow().available(SECONDS);
+        return keyReleaseSetup.deviceInteraction.getActuator(items).orElseThrow().available(SECONDS);
     }
 
     @Test
@@ -143,7 +144,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertEquals(0, events.itemRemoved.size());
         script.reply("Keys placed, #title");
 
-        Actuator actuator = keyReleaseSetup.getActuator(items.get()).orElseThrow();
+        Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(items.get()).orElseThrow();
         assertTrue(actuator.isRunning());
 
         script.say("Holding", Message.Delay10s);
@@ -162,7 +163,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     }
 
     private void assertApplied(Items items, long scheduledSeconds) {
-        Actuator actuator = keyReleaseSetup.getActuator(items).orElseThrow();
+        Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(items).orElseThrow();
         assertTrue(actuator.isRunning());
         assertEquals("Release timer not reset", scheduledSeconds, actuator.remaining(SECONDS), 1.0);
 
@@ -175,7 +176,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     }
 
     private void assertReleased(Items items) {
-        Actuator actuator = keyReleaseSetup.getActuator(items).orElseThrow();
+        Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(items).orElseThrow();
         assertFalse(actuator.isRunning());
         assertEquals(0, actuator.remaining(SECONDS), 1.0);
 
@@ -193,7 +194,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     // TODO Device becomes disconnected while sending command during sleep, but reconnect fails
     public void testScriptEventsWithItemsAndSleepWhileHolding() {
         Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
-        Actuator actuator = keyReleaseSetup.getActuator(cuffs).orElseThrow();
+        Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(cuffs).orElseThrow();
         long availableSeconds = actuator.available(TimeUnit.SECONDS);
 
         script.say("Arm", Message.Delay10s);

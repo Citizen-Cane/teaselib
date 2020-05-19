@@ -78,7 +78,7 @@ public class TypedObjectMap implements Closeable {
     @Override
     public void close() {
         Exception first = null;
-        Set<Object> closed = new HashSet<>();
+        Set<Class<?>> closed = new HashSet<>();
         for (Entry<Class<?>, Object> entry : realized.entrySet()) {
             if (entry.getValue() instanceof AutoCloseable) {
                 try {

@@ -27,7 +27,7 @@ import teaselib.ScriptFunction;
 import teaselib.State;
 import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.DeviceListener;
-import teaselib.core.devices.release.KeyReleaseSetup;
+import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.media.ScriptMessageDecorator;
@@ -79,7 +79,7 @@ public abstract class Script {
 
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
-        getOrDefault(teaseLib, ScriptInteractions.class, this::initScriptInteractions);
+        getOrDefault(teaseLib, ScriptInteractionImplementations.class, this::initScriptInteractions);
 
         try {
             teaseLib.config.addScriptSettings(namespace, namespace);
@@ -94,12 +94,15 @@ public abstract class Script {
             bindMotionDetectorToVideoRenderer();
             bindNetworkProperties();
         }
+
+        interactionImplementation(KeyReleaseDeviceInteraction.class).setDefaults(actor);
     }
 
-    private ScriptInteractions initScriptInteractions() {
-        ScriptInteractions scriptInteractions = new ScriptInteractions();
-        scriptInteractions.add(KeyReleaseSetup.class, () -> new KeyReleaseSetup(teaseLib));
-        return scriptInteractions;
+    private ScriptInteractionImplementations initScriptInteractions() {
+        ScriptInteractionImplementations scriptInteractionImplementations = new ScriptInteractionImplementations();
+        scriptInteractionImplementations.add(KeyReleaseDeviceInteraction.class,
+                () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer.events));
+        return scriptInteractionImplementations;
     }
 
     private void syncAudioAndSpeechRecognition(TeaseLib teaseLib) {
@@ -208,7 +211,14 @@ public abstract class Script {
     }
 
     public <T extends ScriptInteraction> T interaction(Class<T> scriptInteractionClass) {
-        return teaseLib.globals.get(ScriptInteractions.class).get(scriptInteractionClass);
+        ScriptInteractionCache scriptInteractions = teaseLib.globals.getOrDefault(ScriptInteractionCache.class,
+                ScriptInteractionCache::new);
+        return scriptInteractions.get(this, scriptInteractionClass);
+    }
+
+    private <T extends ScriptInteractionImplementation<?, ?>> T interactionImplementation(
+            Class<T> scriptInteractionClass) {
+        return teaseLib.globals.get(ScriptInteractionImplementations.class).get(scriptInteractionClass);
     }
 
     public void completeStarts() {

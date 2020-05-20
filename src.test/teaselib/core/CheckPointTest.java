@@ -1,11 +1,13 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction;
 import teaselib.core.Debugger.Response;
@@ -15,7 +17,9 @@ import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.test.TestScript;
 
 public class CheckPointTest {
-    static abstract class CheckPointTester implements CheckPointListener {
+    static final Logger logger = LoggerFactory.getLogger(CheckPointTest.class);
+
+    abstract static class CheckPointTester implements CheckPointListener {
         AtomicInteger actual = new AtomicInteger(0);
         AtomicReference<Exception> exception = new AtomicReference<>();
 
@@ -51,7 +55,7 @@ public class CheckPointTest {
     }
 
     private static CheckPointTester genericSequential() {
-        CheckPointTester checkPoints = new CheckPointTester() {
+        return new CheckPointTester() {
             @Override
             public void checkPointReached(CheckPoint checkPoint) {
                 if (checkPoint == CheckPoint.Script.NewMessage) {
@@ -61,7 +65,6 @@ public class CheckPointTest {
                 }
             }
         };
-        return checkPoints;
     }
 
     @Test
@@ -130,13 +133,14 @@ public class CheckPointTest {
         script.teaseLib.removeTimeAdvancedListener(tal);
 
         checkPoints.throwCatchedException();
-        assertEquals(0, checkPoints.actual.get());
+        assertEquals(2, checkPoints.actual.get());
     }
 
     private static CheckPointTester genericScriptFunction(boolean withTimeAdvanceListener) {
         return new CheckPointTester() {
             @Override
             public void checkPointReached(CheckPoint checkPoint) {
+                logger.info("Reached checkpoint {}", checkPoint);
                 if (checkPoint == CheckPoint.ScriptFunction.Started) {
                     assertEquals(1, actual.incrementAndGet());
                 } else if (checkPoint == CheckPoint.Script.NewMessage) {

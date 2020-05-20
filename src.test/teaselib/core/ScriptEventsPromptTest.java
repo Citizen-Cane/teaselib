@@ -18,7 +18,6 @@ import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.release.KeyReleaseBaseTest;
-import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.test.TestScript;
 
@@ -30,7 +29,6 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
 
     private TestScript script;
     private KeyReleaseSetup keyReleaseSetup;
-    private KeyReleaseDeviceInteraction keyReleaseDeviceInteraction;
     private KeyRelease keyRelease;
 
     @Before
@@ -56,7 +54,7 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
         script.say(FOOBAR);
         script.reply(() -> {
             keyRelease = new KeyReleaseMock(actuatorMocks);
-            keyReleaseDeviceInteraction.deviceConnected(new DeviceEventMock(keyRelease));
+            keyReleaseSetup.deviceInteraction.deviceConnected(new DeviceEventMock(keyRelease));
             try {
                 assertTrue("Awaiting prepare instruction timed out", done.await(5, TimeUnit.SECONDS));
             } catch (InterruptedException e) {

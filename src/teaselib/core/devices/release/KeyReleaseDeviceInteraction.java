@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -28,6 +29,7 @@ import teaselib.core.ScriptEventArgs;
 import teaselib.core.ScriptEvents;
 import teaselib.core.ScriptEvents.ItemEventAction;
 import teaselib.core.ScriptInteractionImplementation;
+import teaselib.core.ScriptRenderer;
 import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.DeviceCache;
@@ -54,22 +56,24 @@ import teaselib.util.Items;
 public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation<Items, Instructions>
         implements DeviceListener<KeyRelease> {
     static class Instructions {
+        public final Actor actor;
         public final Items items;
         public final long durationSeconds;
         public final Consumer<Items> acquireKeys;
         public final Optional<Consumer<Items>> acquireKeysAgain;
 
-        public Instructions(Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys) {
-            this(items, duration, unit, acquireKeys, Optional.empty());
+        public Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys) {
+            this(actor, items, duration, unit, acquireKeys, Optional.empty());
         }
 
-        public Instructions(Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys,
+        public Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys,
                 Consumer<Items> acquireKeysAgain) {
-            this(items, duration, unit, acquireKeys, Optional.ofNullable(acquireKeysAgain));
+            this(actor, items, duration, unit, acquireKeys, Optional.ofNullable(acquireKeysAgain));
         }
 
-        public Instructions(Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys,
+        public Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys,
                 Optional<Consumer<Items>> acquireKeysAgain) {
+            this.actor = actor;
             this.items = items;
             this.durationSeconds = TimeUnit.SECONDS.convert(duration, unit);
             this.acquireKeys = acquireKeys;
@@ -87,14 +91,16 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     private final Map<Actuator, Event<ScriptEventArgs>> installedRenewHoldEvents = new HashMap<>();
 
     private final TeaseLib teaseLib;
+    private final ScriptRenderer scriptRenderer;
     private final ScriptEvents events;
 
     private static BiPredicate<Items, Items> matchingItems = (a, b) -> !a.intersection(b).isEmpty();
 
-    public KeyReleaseDeviceInteraction(TeaseLib teaseLib, ScriptEvents events) {
+    public KeyReleaseDeviceInteraction(TeaseLib teaseLib, ScriptRenderer scriptRenderer) {
         super(matchingItems);
         this.teaseLib = teaseLib;
-        this.events = events;
+        this.scriptRenderer = scriptRenderer;
+        this.events = scriptRenderer.events;
         teaseLib.devices.get(KeyRelease.class).addDeviceListener(this);
     }
 
@@ -193,7 +199,7 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         }
 
         return definitions(actor).define(items,
-                new Instructions(items, duration, unit, instructions, instructionsAgain));
+                new Instructions(actor, items, duration, unit, instructions, instructionsAgain));
     }
 
     private Consumer<Items> defaultInstructions = items -> {
@@ -207,51 +213,88 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         KeyRelease device = e.getDevice();
         device.actuators().stream().forEach(actuators::add);
 
-        events.interjectScriptFragment(this::processPendingPreparations);
+        events.interjectScriptFragment(() -> {
+            processPendingPreparations();
+            processLateApply();
+        });
+
         restoreHandledItems();
     }
 
     private void processPendingPreparations() {
-        for (Actor actor : getActors()) {
-            Definitions definitions = definitions(actor);
-            Deque<Items> pendingPreparations = definitions.pending;
+        Actor actor = currentActor();
+        Definitions definitions = definitions(actor);
+        Deque<Items> pendingPreparations = definitions.pending;
 
-            List<Items> unassigned = new ArrayList<>();
-            for (Items items : pendingPreparations) {
-                Instructions definition = definitions.findMatching(items).orElseThrow();
-                Optional<Actuator> actuator = chooseUnboundActuator(definition);
-                if (actuator.isPresent()) {
-                    bindAndAcquireKeys(actuator.get(), definition);
-                } else {
-                    unassigned.add(items);
+        List<Items> unassigned = new ArrayList<>();
+        for (Items items : pendingPreparations) {
+            Instructions definition = definitions.findMatching(items).orElseThrow();
+            Optional<Actuator> actuator = chooseUnboundActuator(definition);
+            if (actuator.isPresent() && definition.items.noneApplied()) {
+                bind(actuator.get(), definition);
+                if (!isDefault(definition)) {
+                    acquireKeys(actuator.get(), definition);
                 }
+            } else {
+                unassigned.add(items);
             }
-            pendingPreparations.clear();
-            pendingPreparations.addAll(unassigned);
+        }
+        pendingPreparations.clear();
+        pendingPreparations.addAll(unassigned);
+    }
+
+    private void processLateApply() {
+        Actor actor = currentActor();
+        Definitions definitions = definitions(actor);
+
+        Predicate<Entry<Items, Instructions>> unbound = e -> getActuator(e.getKey()).isEmpty();
+        BinaryOperator<Entry<Items, Instructions>> maxApplied = (a,
+                b) -> a.getKey().getApplied().size() >= b.getKey().getApplied().size() ? a : b;
+
+        Optional<Instructions> definition = definitions.stream().filter(unbound).reduce(maxApplied)
+                .map(Entry::getValue);
+
+        if (definition.isPresent()) {
+            Optional<Actuator> actuator = chooseUnboundActuator(definition.get());
+            if (actuator.isPresent()) {
+                bindActuatorAfterApply(definition.get(), actuator.get());
+            }
         }
     }
 
-    private boolean replaceWithPendingPreparation(Actor actor, Actuator actuator, Items removed) {
+    private void bindActuatorAfterApply(Instructions definition, Actuator actuator) {
+        bind(actuator, definition);
+
+        actuator.arm();
+        events.itemApplied.remove(handledItems.get(actuator));
+        handledItems.remove(actuator);
+
+        installAfterApplyLock(actuator, definition, false);
+    }
+
+    private Actor currentActor() {
+        return scriptRenderer.currentActor();
+    }
+
+    private void passKeys(Actor actor, Actuator actuator, Items removed) {
         Definitions definitions = definitions(actor);
         Deque<Items> pendingPreparations = definitions.pending;
 
         for (Items items : pendingPreparations) {
             if (removed.intersection(items).anyAvailable()) {
                 unbind(actuator);
-                bindAndAcquireKeys(actuator, definitions.findMatching(items).orElseThrow());
+                Instructions definition = definitions.findMatching(items).orElseThrow();
+                bind(actuator, definition);
+                if (!isDefault(definition)) {
+                    acquireKeys(actuator, definition);
+                }
                 pendingPreparations.remove(items);
-                return true;
             }
         }
-        return false;
     }
 
-    private void bindAndAcquireKeys(Actuator actuator, Instructions definition) {
-        bind(definition, actuator);
-        // default instructions activate actuator at apply time
-        if (definition.acquireKeys != defaultInstructions) {
-            acquireKeys(actuator, definition);
-        }
+    private boolean isDefault(Instructions definition) {
+        return definition.acquireKeys == defaultInstructions;
     }
 
     @Override
@@ -265,18 +308,18 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     /**
      * Assign items to a key
      * 
-     * @param items
-     *            Items to be locked with the key
      * @param actuator
      *            Actuator to hold the key
+     * @param items
+     *            Items to be locked with the key
      */
-    private void bind(Instructions definition, Actuator actuator) {
+    private void bind(Actuator actuator, Instructions definition) {
         unbind(actuator);
 
         itemActuators.put(definition.items, actuator);
         actuatorItems.put(actuator, definition.items);
 
-        installApplyLock(actuator, definition, false);
+        installOnApplyLock(actuator, definition, false);
     }
 
     public boolean canPrepare(Item item) {
@@ -350,8 +393,10 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
             Instructions definition = assign(actor, items, duration, unit, instructions, instructionsAgain);
             Optional<Actuator> actuator = chooseUnboundActuator(definition);
             if (actuator.isPresent()) {
-                bind(definition, actuator.get());
-                acquireKeys(actuator.get(), definition);
+                bind(actuator.get(), definition);
+                if (!isDefault(definition)) {
+                    acquireKeys(actuator.get(), definition);
+                }
                 return true;
             } else {
                 definitions(actor).pending.addLast(items);
@@ -421,19 +466,39 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     }
 
     Optional<Actuator> getActuator(Items items) {
-        return itemActuators.entrySet().stream().filter(entry -> entry.getKey().containsAll(items))
+        return itemActuators.entrySet().stream().filter(entry -> entry.getKey().containsAny(items))
                 .map(Entry<Items, Actuator>::getValue).findAny();
     }
 
-    private void installApplyLock(Actuator actuator, Instructions definition, boolean acquireAgain) {
+    private void installOnApplyLock(Actuator actuator, Instructions definition, boolean acquireAgain) {
         ItemEventAction action = events.when(definition.items).applied().thenOnce(() -> {
             handledItems.remove(actuator);
-            lock(actuator, definition, acquireAgain);
+            lockOnApply(actuator, definition, acquireAgain);
         });
         handledItems.put(actuator, action);
     }
 
-    private void lock(Actuator actuator, Instructions definition, boolean acquireAgain) {
+    private void lockOnApply(Actuator actuator, Instructions definition, boolean acquireAgain) {
+        acquireKeysIfNecessary(actuator, definition, acquireAgain);
+        Items handled = handledItems(actuator, definition);
+        start(actuator, definition, handled);
+    }
+
+    private void installAfterApplyLock(Actuator actuator, Instructions definition, boolean acquireAgain) {
+        events.when().beforeMessage().thenOnce(() -> {
+            if (definition.items.anyApplied()) {
+                lockAfterApply(actuator, definition, acquireAgain);
+            }
+        });
+    }
+
+    private void lockAfterApply(Actuator actuator, Instructions definition, boolean acquireAgain) {
+        acquireKeysIfNecessary(actuator, definition, acquireAgain);
+        Items handled = handledItems(actuator, definition, actuator.remaining(TimeUnit.SECONDS), TimeUnit.SECONDS);
+        startAfterApply(actuator, definition, handled);
+    }
+
+    private void acquireKeysIfNecessary(Actuator actuator, Instructions definition, boolean acquireAgain) {
         if (!actuator.isRunning()) {
             if (acquireAgain) {
                 acquireKeysAgain(actuator, definition);
@@ -441,17 +506,38 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
                 acquireKeys(actuator, definition);
             }
         }
+    }
 
+    private Items handledItems(Actuator actuator, Instructions definition) {
         Items handled = teaseLib.relatedItems(Gadgets.Key_Release, definition.items);
         if (!handled.anyApplied()) {
-            // TODO Duration should be updated during each hold event
             handled.applyTo(actuatorName(actuator)).over(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS)
                     .remember(Until.Removed);
         }
+        return handled;
+    }
 
+    private Items handledItems(Actuator actuator, Instructions definition, long duration, TimeUnit unit) {
+        Items handled = teaseLib.relatedItems(Gadgets.Key_Release, definition.items);
+        if (!handled.anyApplied()) {
+            handled.applyTo(actuatorName(actuator)).over(duration, unit).remember(Until.Removed);
+        }
+        return handled;
+    }
+
+    private void start(Actuator actuator, Instructions definition, Items handled) {
         actuator.start();
         renewHold(actuator);
         singleRenewHoldEvent(actuator);
+        startCountdownAction(actuator, definition.items);
+        installReleaseAction(actuator, definition.items, handled, definition);
+    }
+
+    private void startAfterApply(Actuator actuator, Instructions definition, Items handled) {
+        actuator.start();
+        renewHold(actuator);
+        singleRenewHoldEvent(actuator);
+        // TODO apply countdown from item duration.remaining() to actuator
         startCountdownAction(actuator, definition.items);
         installReleaseAction(actuator, definition.items, handled, definition);
     }
@@ -484,9 +570,10 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
             handled.removeFrom(actuatorName(actuator));
             removeEvents(actuator);
 
-            for (Actor actor : getActors()) {
-                if (replaceWithPendingPreparation(actor, actuator, items)) {
-                    break;
+            if (definition.isPresent()) {
+                Actor currentActor = scriptRenderer.currentActor();
+                if (definition.get().actor != currentActor) {
+                    passKeys(currentActor, actuator, items);
                 }
             }
 
@@ -494,8 +581,11 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
                 Optional<Consumer<Items>> acquireKeysAgain = definition.get().acquireKeysAgain;
                 if (acquireKeysAgain.isPresent()) {
                     acquireKeysAgain(actuator, definition.get());
+                    installOnApplyLock(actuator, definition.get(), true);
+                } else {
+                    unbind(actuator);
+                    prepare(definition.get().actor, items, defaultInstructions);
                 }
-                installApplyLock(actuator, definition.get(), true);
             }
         });
     }

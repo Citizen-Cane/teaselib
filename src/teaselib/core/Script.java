@@ -101,7 +101,7 @@ public abstract class Script {
     private ScriptInteractionImplementations initScriptInteractions() {
         ScriptInteractionImplementations scriptInteractionImplementations = new ScriptInteractionImplementations();
         scriptInteractionImplementations.add(KeyReleaseDeviceInteraction.class,
-                () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer.events));
+                () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer));
         return scriptInteractionImplementations;
     }
 

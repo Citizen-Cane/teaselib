@@ -85,6 +85,16 @@ public abstract class AbstractInputMethod implements InputMethod {
     protected <T extends InputMethodEventArgs> boolean signalActivePrompt(Runnable action, T eventArgs) {
         Prompt prompt = activePrompt.get();
         if (prompt != null) {
+            if (prompt.paused()) {
+                // TODO calling this multiple times in a row is unstable
+                // - interjecting empty runnable results in previous interjection also not being called
+                // - works in debug mode
+                // -> need to wait until previous handler has finished and prompt is established again
+                // TODO sometimes throws java.util.NoSuchElementException:
+                // "Event teaselib.core.ScriptEvents$ScriptEventAction@1e4d3ce5 in event source 'Before Message'."
+                throw new UnsupportedOperationException(
+                        "Command queueing for signalActivePrompt(Runnable action, T eventArgs)");
+            }
             return signal(prompt, action, eventArgs);
         } else {
             return false;
@@ -96,14 +106,14 @@ public abstract class AbstractInputMethod implements InputMethod {
             prompt.remove(e.source);
             action.run();
         });
-        
+
         prompt.lock.lock();
         try {
             prompt.signalHandlerInvocation(eventArgs);
         } finally {
             prompt.lock.unlock();
         }
-        
+
         return true;
     }
 

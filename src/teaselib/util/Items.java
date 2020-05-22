@@ -111,6 +111,10 @@ public class Items implements Iterable<Item> {
         return elements.stream().allMatch(Item::canApply);
     }
 
+    public boolean noneApplied() {
+        return elements.stream().noneMatch(Item::applied);
+    }
+
     public boolean anyApplied() {
         return elements.stream().anyMatch(Item::applied);
     }
@@ -261,6 +265,10 @@ public class Items implements Iterable<Item> {
 
     public boolean contains(Item item) {
         return elements.contains(item);
+    }
+
+    public boolean containsAny(Items items) {
+        return !intersection(items).isEmpty();
     }
 
     public boolean containsAll(Items items) {

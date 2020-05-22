@@ -59,6 +59,10 @@ public class ScriptRenderer implements Closeable {
         this.audioSync = messageRenderer.textToSpeechPlayer.audioSync;
     }
 
+    public Actor currentActor() {
+        return currentActor;
+    }
+
     @Override
     public void close() {
         scriptFunctionExecutor.shutdown();

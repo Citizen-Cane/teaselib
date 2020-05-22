@@ -24,7 +24,7 @@ import teaselib.core.devices.DeviceListener;
 public class KeyReleaseBaseTest {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseBaseTest.class);
 
-    static final double WAIT_FOR_CONNECTION_SECONDS = 200020.0;
+    static final long WAIT_FOR_CONNECTION_SECONDS = 20;
     static final long HOLD_DURATION_MINUTES = 1;
 
     public static void releaseAllRunningActuators(KeyRelease keyRelease) {
@@ -273,7 +273,7 @@ public class KeyReleaseBaseTest {
             deviceCache.addDeviceListener(deviceListener);
             if (!deviceCache.getDefaultDevice().connected()) {
                 assertTrue("Didn't receive device connection event after" + WAIT_FOR_CONNECTION_SECONDS + " seconds",
-                        waitForConnection.await((int) WAIT_FOR_CONNECTION_SECONDS, TimeUnit.SECONDS));
+                        waitForConnection.await(WAIT_FOR_CONNECTION_SECONDS, TimeUnit.SECONDS));
             }
         } finally {
             deviceCache.removeDeviceListener(deviceListener);

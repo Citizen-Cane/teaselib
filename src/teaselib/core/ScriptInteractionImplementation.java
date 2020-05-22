@@ -5,12 +5,14 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
+import java.util.stream.Stream;
 
 import teaselib.Actor;
 
@@ -20,7 +22,7 @@ import teaselib.Actor;
  */
 public abstract class ScriptInteractionImplementation<K, V> {
 
-    protected class Definitions {
+    protected class Definitions implements Iterable<Map.Entry<K, V>> {
         final Actor actor;
         private final Map<K, V> elements = new LinkedHashMap<>();
         public final Deque<K> pending = new ArrayDeque<>();
@@ -55,6 +57,15 @@ public abstract class ScriptInteractionImplementation<K, V> {
 
         public int size() {
             return elements.size();
+        }
+
+        @Override
+        public Iterator<Entry<K, V>> iterator() {
+            return elements.entrySet().iterator();
+        }
+
+        public Stream<Entry<K, V>> stream() {
+            return elements.entrySet().stream();
         }
     }
 

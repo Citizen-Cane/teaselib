@@ -106,14 +106,19 @@ public class KeyReleaseBaseTest {
 
     protected static class ActuatorMock implements Actuator {
         final long availableSeconds;
+        long remainingSeconds;
+        boolean isRunning;
 
         public ActuatorMock(long availableDuration, TimeUnit unit) {
             availableSeconds = TimeUnit.SECONDS.convert(availableDuration, unit);
+            remainingSeconds = availableSeconds;
+            isRunning = false;
         }
 
         @Override
         public String getDevicePath() {
-            return getClass().getPackage().getName();
+            return DeviceCache.createDevicePath(getClass().getPackage().getName().replace('.', '/'),
+                    "Actuator:" + Long.toString(availableSeconds));
         }
 
         @Override
@@ -153,19 +158,27 @@ public class KeyReleaseBaseTest {
 
         @Override
         public boolean arm() {
+            isRunning = true;
             return false;
         }
 
         @Override
         public void hold() { // Mock
+            isRunning = true;
         }
 
         @Override
         public void start() { // Mock
+            isRunning = true;
         }
 
         @Override
-        public void start(long duration, TimeUnit unit) { // Mock
+        public void start(long duration, TimeUnit unit) {
+            long seconds = unit.toSeconds(duration);
+            if (seconds > availableSeconds)
+                throw new IllegalArgumentException(Long.toString(duration));
+            remainingSeconds = seconds;
+            isRunning = true;
         }
 
         @Override
@@ -180,7 +193,7 @@ public class KeyReleaseBaseTest {
 
         @Override
         public boolean isRunning() {
-            return false;
+            return isRunning;
         }
 
         @Override
@@ -190,11 +203,12 @@ public class KeyReleaseBaseTest {
 
         @Override
         public long remaining(TimeUnit unit) {
-            return 0;
+            return unit.convert(remainingSeconds, TimeUnit.SECONDS);
         }
 
         @Override
         public boolean release() {
+            isRunning = false;
             return true;
         }
 
@@ -203,6 +217,7 @@ public class KeyReleaseBaseTest {
             final int prime = 31;
             int result = 1;
             result = prime * result + (int) (availableSeconds ^ (availableSeconds >>> 32));
+            result = prime * result + (int) (remainingSeconds ^ (remainingSeconds >>> 32));
             return result;
         }
 
@@ -216,6 +231,8 @@ public class KeyReleaseBaseTest {
                 return false;
             ActuatorMock other = (ActuatorMock) obj;
             if (availableSeconds != other.availableSeconds)
+                return false;
+            if (remainingSeconds != other.remainingSeconds)
                 return false;
             return true;
         }

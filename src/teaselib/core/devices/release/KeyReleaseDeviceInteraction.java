@@ -84,11 +84,11 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
 
     private final Set<Actuator> actuators = new HashSet<>();
     private final Map<Items, Actuator> itemActuators = new HashMap<>();
-    private final Map<Actuator, Items> actuatorItems = new HashMap<>();
+    private final Map<String, Items> actuatorItems = new HashMap<>();
 
-    private final Map<Actuator, ItemEventAction> handledItems = new HashMap<>();
-    private final Map<Actuator, ItemEventAction> installedCountDownActions = new HashMap<>();
-    private final Map<Actuator, Event<ScriptEventArgs>> installedRenewHoldEvents = new HashMap<>();
+    private final Map<String, ItemEventAction> handledItems = new HashMap<>();
+    private final Map<String, ItemEventAction> installedCountDownActions = new HashMap<>();
+    private final Map<String, Event<ScriptEventArgs>> installedRenewHoldEvents = new HashMap<>();
 
     private final TeaseLib teaseLib;
     private final ScriptRenderer scriptRenderer;
@@ -104,9 +104,13 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         teaseLib.devices.get(KeyRelease.class).addDeviceListener(this);
     }
 
-    private static String qualifiedName(Actuator actuator) {
+    private static String actuatorName(Actuator actuator) {
         // TODO Implement white space handling in object persistence
         return DeviceCache.qualifiedName(actuator).replace(' ', '_');
+    }
+
+    private static String actuatorKey(Actuator actuator) {
+        return actuator.getDevicePath();
     }
 
     // TODO restore actuators from multiple devices depending on handled domain and running actuator
@@ -123,10 +127,8 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     }
 
     private void restore(Actuator actuator) {
-        String actuatorName = actuatorName(actuator);
-
         StateImpl actuatorState = (StateImpl) AbstractProxy
-                .removeProxy(teaseLib.state(new QualifiedEnum(Gadgets.Key_Release).toString(), actuatorName));
+                .removeProxy(teaseLib.state(new QualifiedEnum(Gadgets.Key_Release).toString(), actuatorName(actuator)));
         Items handled = new Items(actuatorState.peers().stream().filter(peer -> peer instanceof Item)
                 .map(item -> (Item) item).collect(Collectors.toList()));
 
@@ -265,11 +267,11 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     private void bindActuatorAfterApply(Instructions definition, Actuator actuator) {
         bind(actuator, definition);
 
-        actuator.arm();
-        events.itemApplied.remove(handledItems.get(actuator));
-        handledItems.remove(actuator);
+        events.itemApplied.remove(handledItems.get(actuatorKey(actuator)));
+        handledItems.remove(actuatorKey(actuator));
 
-        installAfterApplyLock(actuator, definition, false);
+        acquireKeysIfNecessary(actuator, definition, false);
+        installAfterApplyLock(actuator, definition);
     }
 
     private Actor currentActor() {
@@ -317,7 +319,7 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         unbind(actuator);
 
         itemActuators.put(definition.items, actuator);
-        actuatorItems.put(actuator, definition.items);
+        actuatorItems.put(actuatorKey(actuator), definition.items);
 
         installOnApplyLock(actuator, definition, false);
     }
@@ -356,7 +358,9 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     }
 
     public boolean isPrepared(Items items) {
-        List<Actuator> assignedActuators = assignedActuators(items);
+        List<Actuator> assignedActuators = itemActuators.entrySet().stream()
+                .filter(element -> matchingItems.test(element.getKey(), items)).map(Entry<Items, Actuator>::getValue)
+                .collect(toList());
         return assignedActuators.stream().filter(Actuator::isRunning).count() == assignedActuators.size();
     }
 
@@ -415,10 +419,30 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         return prepare(actor, items, duration, TimeUnit.SECONDS, instructions, instructionsAgain);
     }
 
+    public boolean clearAll(Actor actor) {
+        ScriptInteractionImplementation<Items, Instructions>.Definitions definitions = definitions(actor);
+        if (definitions.isEmpty()) {
+            return false;
+        } else {
+            definitions.clear();
+            return true;
+        }
+    }
+
+    public boolean clear(Actor actor, Items items) {
+        ScriptInteractionImplementation<Items, Instructions>.Definitions definitions = definitions(actor);
+        if (definitions.isEmpty()) {
+            return false;
+        } else {
+            return definitions.clear(items);
+        }
+    }
+
     private Optional<Actuator> chooseUnboundActuator(Instructions definition) {
         long duration = definition.durationSeconds;
         List<Actuator> matchingActuators = Actuators.matching(actuators, duration, TimeUnit.SECONDS);
-        return matchingActuators.stream().filter(Predicate.not(actuatorItems::containsKey)).findFirst();
+        return matchingActuators.stream()
+                .filter(Predicate.not(actuator -> actuatorItems.containsKey(actuatorKey(actuator)))).findFirst();
     }
 
     private static <T> Optional<T> assigned(Map<Items, T> map, Items items) {
@@ -445,18 +469,13 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         singleRenewHoldEvent(actuator);
     }
 
-    private List<Actuator> assignedActuators(Items items) {
-        return handledItems.entrySet().stream().filter(element -> matchingItems.test(element.getValue().items(), items))
-                .map(Entry<Actuator, ItemEventAction>::getKey).collect(toList());
-    }
-
     private void unbind(Actuator actuator) {
         removeEvents(actuator);
-        ItemEventAction applyEventAction = handledItems.remove(actuator);
+        ItemEventAction applyEventAction = handledItems.remove(actuatorKey(actuator));
         if (applyEventAction != null) {
             events.itemApplied.remove(applyEventAction);
         }
-        Items items = actuatorItems.remove(actuator);
+        Items items = actuatorItems.remove(actuatorKey(actuator));
         itemActuators.remove(items);
     }
 
@@ -472,10 +491,10 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
 
     private void installOnApplyLock(Actuator actuator, Instructions definition, boolean acquireAgain) {
         ItemEventAction action = events.when(definition.items).applied().thenOnce(() -> {
-            handledItems.remove(actuator);
+            handledItems.remove(actuatorKey(actuator));
             lockOnApply(actuator, definition, acquireAgain);
         });
-        handledItems.put(actuator, action);
+        handledItems.put(actuatorKey(actuator), action);
     }
 
     private void lockOnApply(Actuator actuator, Instructions definition, boolean acquireAgain) {
@@ -484,16 +503,15 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         start(actuator, definition, handled);
     }
 
-    private void installAfterApplyLock(Actuator actuator, Instructions definition, boolean acquireAgain) {
+    private void installAfterApplyLock(Actuator actuator, Instructions definition) {
         events.when().beforeMessage().thenOnce(() -> {
             if (definition.items.anyApplied()) {
-                lockAfterApply(actuator, definition, acquireAgain);
+                lockAfterApply(actuator, definition);
             }
         });
     }
 
-    private void lockAfterApply(Actuator actuator, Instructions definition, boolean acquireAgain) {
-        acquireKeysIfNecessary(actuator, definition, acquireAgain);
+    private void lockAfterApply(Actuator actuator, Instructions definition) {
         Items handled = handledItems(actuator, definition, actuator.remaining(TimeUnit.SECONDS), TimeUnit.SECONDS);
         startAfterApply(actuator, definition, handled);
     }
@@ -536,22 +554,29 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     private void startAfterApply(Actuator actuator, Instructions definition, Items handled) {
         actuator.start();
         renewHold(actuator);
-        singleRenewHoldEvent(actuator);
-        // TODO apply countdown from item duration.remaining() to actuator
+
         startCountdownAction(actuator, definition.items);
+        Optional<Long> durationSeconds = durationSeconds(definition.items);
+        if (durationSeconds.isPresent()) {
+            actuator.start(durationSeconds.get(), TimeUnit.SECONDS);
+            removeEvents(actuator);
+        } else {
+            singleRenewHoldEvent(actuator);
+        }
+
         installReleaseAction(actuator, definition.items, handled, definition);
     }
 
     private ItemEventAction startCountdownAction(Actuator actuator, Items items) {
-        return installedCountDownActions.computeIfAbsent(actuator, key //
+        return installedCountDownActions.computeIfAbsent(actuatorKey(actuator), key //
         -> events.when(items).duration().thenOnce(() -> {
-            events.afterChoices.remove(singleRenewHoldEvent(actuator));
+            removeEvent(actuatorKey(actuator), events.afterChoices, installedRenewHoldEvents);
             startCountDown(actuator, items);
         }));
     }
 
     private Event<ScriptEventArgs> singleRenewHoldEvent(Actuator actuator) {
-        return installedRenewHoldEvents.computeIfAbsent(actuator, key //
+        return installedRenewHoldEvents.computeIfAbsent(actuatorKey(actuator), key //
         -> events.afterChoices.add(eventArgs -> renewHold(actuator)));
     }
 
@@ -570,20 +595,23 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
             handled.removeFrom(actuatorName(actuator));
             removeEvents(actuator);
 
-            if (definition.isPresent()) {
-                Actor currentActor = scriptRenderer.currentActor();
+            Actor currentActor = scriptRenderer.currentActor();
+            Optional<Instructions> updated = definitions(currentActor).findMatching(items);
+            if (updated.isPresent() && definition.isPresent()) {
+                // doesn't work on restore() but then there's no previous actor anyway
                 if (definition.get().actor != currentActor) {
                     passKeys(currentActor, actuator, items);
                 }
             }
 
-            if (definition.isPresent()) {
-                Optional<Consumer<Items>> acquireKeysAgain = definition.get().acquireKeysAgain;
+            if (updated.isPresent()) {
+                Optional<Consumer<Items>> acquireKeysAgain = updated.get().acquireKeysAgain;
                 if (acquireKeysAgain.isPresent()) {
-                    acquireKeysAgain(actuator, definition.get());
-                    installOnApplyLock(actuator, definition.get(), true);
+                    acquireKeysAgain(actuator, updated.get());
+                    installOnApplyLock(actuator, updated.get(), true);
                 } else {
                     unbind(actuator);
+                    // doesn't work on restore() but this is code path is not called at startup
                     prepare(definition.get().actor, items, defaultInstructions);
                 }
             }
@@ -591,8 +619,8 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     }
 
     private void removeEvents(Actuator actuator) {
-        removeEvent(actuator, events.itemDuration, installedCountDownActions);
-        removeEvent(actuator, events.afterChoices, installedRenewHoldEvents);
+        removeEvent(actuatorKey(actuator), events.itemDuration, installedCountDownActions);
+        removeEvent(actuatorKey(actuator), events.afterChoices, installedRenewHoldEvents);
     }
 
     private static <K, S extends EventArgs, T extends Event<S>, E extends EventSource<S>> void removeEvent( //
@@ -604,14 +632,14 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         }
     }
 
-    private static String actuatorName(Actuator actuator) {
-        return qualifiedName(actuator);
+    private static void startCountDown(Actuator actuator, Items items) {
+        long seconds = durationSeconds(items).orElseThrow();
+        actuator.start(seconds, TimeUnit.SECONDS);
     }
 
-    private static void startCountDown(Actuator actuator, Items items) {
-        long seconds = items.stream().filter(item -> !item.expired()).map(Item::duration)
-                .map(duration -> duration.remaining(TimeUnit.SECONDS)).reduce(Math::min).orElseThrow();
-        actuator.start(seconds, TimeUnit.SECONDS);
+    private static Optional<Long> durationSeconds(Items items) {
+        return items.stream().filter(item -> !item.expired()).map(Item::duration)
+                .map(duration -> duration.remaining(TimeUnit.SECONDS)).reduce(Math::min);
     }
 
     private static void renewHold(Actuator actuator) {

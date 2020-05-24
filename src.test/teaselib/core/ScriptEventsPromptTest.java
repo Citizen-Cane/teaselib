@@ -47,7 +47,7 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
         script.debugger.addResponse(FOOBAR, Debugger.Response.Ignore);
         AtomicBoolean triggered = new AtomicBoolean();
         CountDownLatch done = new CountDownLatch(1);
-        keyReleaseSetup.prepare(script.actor, script.items(Toys.Chains), items -> {
+        keyReleaseSetup.prepare(script.items(Toys.Chains), items -> {
             triggered.set(true);
             done.countDown();
         });

@@ -3,7 +3,6 @@ package teaselib.core.devices.release;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import teaselib.Actor;
 import teaselib.core.Script;
 import teaselib.core.ScriptInteraction;
 import teaselib.core.ScriptInteractionImplementations;
@@ -62,8 +61,8 @@ public class KeyReleaseSetup implements ScriptInteraction {
         return deviceInteraction.prepare(script.actor, items, duration, unit, instructions);
     }
 
-    public boolean prepare(Actor actor, Items items, Consumer<Items> instructions) {
-        return deviceInteraction.prepare(actor, items, instructions);
+    public boolean prepare(Items items, Consumer<Items> instructions) {
+        return deviceInteraction.prepare(script.actor, items, instructions);
     }
 
     public boolean prepare(Items items, long duration, TimeUnit unit, Consumer<Items> instructions,
@@ -73,6 +72,14 @@ public class KeyReleaseSetup implements ScriptInteraction {
 
     public boolean prepare(Items items, Consumer<Items> instructions, Consumer<Items> instructionsAgain) {
         return deviceInteraction.prepare(script.actor, items, instructions, instructionsAgain);
+    }
+
+    public boolean clearAll() {
+        return deviceInteraction.clearAll(script.actor);
+    }
+
+    public boolean clear(Items items) {
+        return deviceInteraction.clear(script.actor, items);
     }
 
 }

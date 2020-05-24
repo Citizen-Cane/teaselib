@@ -1,5 +1,7 @@
 package teaselib.core;
 
+import static java.util.stream.Collectors.toSet;
+
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -55,6 +57,10 @@ public abstract class ScriptInteractionImplementation<K, V> {
                     .map(Entry<K, V>::getValue).findFirst();
         }
 
+        public boolean isEmpty() {
+            return elements.isEmpty();
+        }
+
         public int size() {
             return elements.size();
         }
@@ -67,6 +73,19 @@ public abstract class ScriptInteractionImplementation<K, V> {
         public Stream<Entry<K, V>> stream() {
             return elements.entrySet().stream();
         }
+
+        public void clear() {
+            elements.clear();
+            pending.clear();
+        }
+
+        public boolean clear(K key) {
+            Set<K> keys = elements.keySet().stream().filter(element -> matcher.test(key, element)).collect(toSet());
+            keys.stream().forEach(elements::remove);
+            pending.removeIf(keys::contains);
+            return !keys.isEmpty();
+        }
+
     }
 
     private final Map<Actor, Definitions> definitions = new HashMap<>();

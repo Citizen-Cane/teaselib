@@ -2,8 +2,8 @@
 
 #include <jni.h>
 
-#include <NativeException.h>
-#include <JNIException.h>
+#include "NativeException.h"
+#include "JNIException.h"
 
 class JObject {
 public:

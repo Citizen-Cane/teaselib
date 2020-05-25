@@ -5,12 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public abstract class TextToSpeechImplementation {
-    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechImplementation.class);
-
+public abstract class TextToSpeechImplementation implements teaselib.core.Closeable {
     public static final String IPA = "ipa";
     public static final String UPS = "ups";
 
@@ -50,13 +45,8 @@ public abstract class TextToSpeechImplementation {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        try {
-            dispose();
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
-        }
-        super.finalize();
+    public void close() {
+        dispose();
     }
 
     public abstract String sdkName();

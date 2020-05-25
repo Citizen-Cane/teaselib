@@ -25,6 +25,7 @@ import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.State;
+import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.DeviceListener;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
@@ -80,6 +81,7 @@ public abstract class Script {
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
         getOrDefault(teaseLib, ScriptInteractionImplementations.class, this::initScriptInteractions);
+        getOrDefault(teaseLib, TeaseLibAI.class, TeaseLibAI::new);
 
         try {
             teaseLib.config.addScriptSettings(namespace, namespace);

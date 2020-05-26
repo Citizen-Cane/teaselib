@@ -10,18 +10,10 @@ extern "C" {
 /*
  * Class:     teaselib_core_ai_perception_SceneCapture
  * Method:    init
- * Signature: (I)V
+ * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_init__I
-  (JNIEnv *, jobject, jint);
-
-/*
- * Class:     teaselib_core_ai_perception_SceneCapture
- * Method:    init
- * Signature: (Ljava/lang/String;)V
- */
-JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_init__Ljava_lang_String_2
-  (JNIEnv *, jobject, jstring);
+JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_SceneCapture_init
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     teaselib_core_ai_perception_SceneCapture

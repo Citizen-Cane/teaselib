@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     teaselib_core_jni_NativeObject
- * Method:    disposeNativeObject
+ * Method:    dispose
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_jni_NativeObject_disposeNativeObject
+JNIEXPORT void JNICALL Java_teaselib_core_jni_NativeObject_dispose
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus

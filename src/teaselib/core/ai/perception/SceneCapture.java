@@ -5,20 +5,17 @@ import teaselib.core.jni.NativeObject;
 public class SceneCapture extends NativeObject {
     final String name;
 
-    public SceneCapture(long nativeObject, String name, int id) {
-        super(nativeObject);
-        this.name = name;
-        init(id);
-    }
-
-    public SceneCapture(long nativeObject, String name, String path) {
+    SceneCapture(long nativeObject, String name) {
         super(nativeObject);
         this.name = name;
     }
 
-    native void init(int id);
+    public SceneCapture(String name, String path) {
+        super(init(path));
+        this.name = name;
+    }
 
-    native void init(String path);
+    private static native long init(String path);
 
     native void start();
 

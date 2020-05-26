@@ -59,7 +59,7 @@ jobject SpeechSynthesizer::voiceList() {
 			HRESULT hr = addVoices(voiceCategories[i], voices);
 			if (FAILED(hr)) throw COMException(hr);
 		}
-		jvoices = env->NewGlobalRef(JNIUtilities::jList(env, voices));
+		jvoices = env->NewGlobalRef(JNIUtilities::asList(env, voices));
 	}
 
 	return jvoices;

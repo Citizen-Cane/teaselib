@@ -6,7 +6,3 @@
 
 // TODO: reference any additional headers you need in STDAFX.H
 // and not in this file
-
-
-//// TODO This should be compiled into TeaseLibFramework
-#include "..\TeaseLibFramework\NativeObject.cpp"

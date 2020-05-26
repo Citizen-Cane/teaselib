@@ -10,10 +10,10 @@ public abstract class NativeObject implements Closeable {
         this.nativeObject = nativeObject;
     }
 
-    protected native void disposeNativeObject();
+    protected native void dispose();
 
     @Override
     public void close() {
-        disposeNativeObject();
+        dispose();
     }
 }

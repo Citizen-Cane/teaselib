@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     teaselib_core_ai_TeaseLibAI
+ * Method:    initOpenCL
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_TeaseLibAI_initOpenCL
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_TeaseLibAI
  * Method:    sceneCaptures
  * Signature: ()Ljava/util/List;
  */

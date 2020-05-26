@@ -9,11 +9,27 @@ extern "C" {
 #endif
 /*
  * Class:     teaselib_core_ai_perception_HumanPose
- * Method:    setAspects
+ * Method:    init
+ * Signature: (Lteaselib/core/ai/perception/SceneCapture;)J
+ */
+JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_HumanPose_init
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     teaselib_core_ai_perception_HumanPose
+ * Method:    setDesiredAspects
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setAspects
+JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setDesiredAspects
   (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     teaselib_core_ai_perception_HumanPose
+ * Method:    estimatePose
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_teaselib_core_ai_perception_HumanPose_estimatePose
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

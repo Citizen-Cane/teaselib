@@ -52,6 +52,7 @@ build/
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 
+#various Visual Studio generated files
 *_i.c
 *_p.c
 *.ilk
@@ -75,6 +76,9 @@ build/
 *.pidb
 *.log
 *.scc
+
+# Mini-crash-dumps
+*.mdmp
 
 # Visual C++ cache files
 ipch/

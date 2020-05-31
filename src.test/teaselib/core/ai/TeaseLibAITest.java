@@ -36,8 +36,8 @@ public class TeaseLibAITest {
         assertNotNull(teaseLibAI.sceneCaptures());
 
         String name = "images/p2_320x240_01.jpg";
-        String pattern = "p2_320x240_%2d.jpg";
-        SceneCapture scene = new SceneCapture("Test", getOpenCVImageSequence(name, pattern));
+        String pattern = "p2_320x240_%02d.jpg";
+        SceneCapture scene = new SceneCapture(getOpenCVImageSequence(name, pattern));
 
         try (HumanPose humanPose = new HumanPose(scene)) {
             int n = humanPose.estimate();

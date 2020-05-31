@@ -60,7 +60,7 @@ HumanPose::HumanPose(JNIEnv* env, jobject jdevice)
 	: NativeObject(env)
 	, jdevice(env->NewGlobalRef(jdevice))
 	, capture(reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jdevice)))
-	, poseEstimation()
+	, poseEstimation(aifx::PoseEstimation::Model::MobileNetThin)
 {
 }
 
@@ -71,6 +71,11 @@ HumanPose::~HumanPose()
 
 int HumanPose::estimate()
 {
-	*capture >> frame;
-	return poseEstimation(frame);
+	if (capture->started()) {
+		*capture >> frame;
+		return poseEstimation(frame);
+	}
+	else {
+		return -1;
+	}
 }

@@ -10,12 +10,12 @@ public class SceneCapture extends NativeObject {
         this.name = name;
     }
 
-    public SceneCapture(String name, String path) {
-        super(init(path));
-        this.name = name;
+    public SceneCapture(String openCVImagePattern) {
+        super(init(openCVImagePattern));
+        this.name = openCVImagePattern;
     }
 
-    private static native long init(String path);
+    private static native long init(String openCVImagePattern);
 
     native void start();
 

@@ -22,8 +22,7 @@ extern "C"
 	(JNIEnv* env, jclass, jstring jpath) {
 		try {
 			Objects::requireNonNull(L"path", jpath);
-			JNIStringUTF8 path(env, jpath);
-			aifx::VideoCapture* capture = new aifx::VideoCapture(path);
+			aifx::VideoCapture* capture = new aifx::VideoCapture(JNIStringUTF8(env, jpath));
 			return reinterpret_cast<jlong>(capture);
 		}
 		catch (NativeException& e) {

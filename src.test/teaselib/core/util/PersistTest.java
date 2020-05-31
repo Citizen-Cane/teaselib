@@ -78,7 +78,7 @@ public class PersistTest {
             super(values);
         }
 
-        public PersistableImplementation(Storage storage) {
+        public PersistableImplementation(Storage storage) throws ReflectiveOperationException {
             while (storage.hasNext()) {
                 add(storage.next());
             }
@@ -130,7 +130,7 @@ public class PersistTest {
             this.values = Arrays.asList(values);
         }
 
-        public NamedArrayList(Storage storage) {
+        public NamedArrayList(Storage storage) throws ReflectiveOperationException {
             this.name = storage.next();
             this.values = storage.next();
             assertFalse(storage.hasNext());
@@ -143,7 +143,7 @@ public class PersistTest {
     }
 
     @Test
-    public void testPersistableImplementationNested() throws Exception {
+    public void testPersistableImplementationNested() throws ReflectiveOperationException {
         Object[] values = { "Foo", 1, 2L, 2.7f, 3.14159, false, true };
 
         NamedArrayList persistable = new NamedArrayList("Test", values);
@@ -155,7 +155,7 @@ public class PersistTest {
     }
 
     @Test
-    public void testPersistRestore() throws Exception {
+    public void testPersistRestore() throws ReflectiveOperationException {
         List<Object> values = Arrays.asList(new Object[] { "Foo", 1, 2L, 2.7f, 3.14159, false, true });
 
         Persist.Persistable persistable = new PersistableImplementation<>(values);

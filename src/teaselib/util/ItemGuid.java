@@ -36,7 +36,7 @@ public class ItemGuid implements Persistable {
         }
     }
 
-    public ItemGuid(Storage storage) {
+    public ItemGuid(Storage storage) throws ReflectiveOperationException {
         this.name = storage.next();
         if (isGuid(name)) {
             throw new IllegalArgumentException("Already a formatted guid:" + name);

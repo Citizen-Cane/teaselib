@@ -30,15 +30,15 @@ public class Persist {
         return new PersistedObject(clazz, new PersistedObject(values).toValues()).toString();
     }
 
-    public static <T> T from(String persisted) {
+    public static <T> T from(String persisted) throws ReflectiveOperationException {
         return new PersistedObject(persisted).toInstance();
     }
 
-    public static <T> T from(Class<?> clazz, String persistedValue) {
+    public static <T> T from(Class<?> clazz, String persistedValue) throws ReflectiveOperationException {
         return new PersistedObject(clazz, persistedValue).toInstance();
     }
 
-    public static <T> T from(String persisted, Factory factory) {
+    public static <T> T from(String persisted, Factory factory) throws ReflectiveOperationException {
         return new PersistedObject(persisted).toInstance(factory);
     }
 }

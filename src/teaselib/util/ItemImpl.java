@@ -55,7 +55,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         this.attributes = attributes(item, attributes);
     }
 
-    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage) {
+    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
+            throws ReflectiveOperationException {
         String item = storage.next();
         ItemGuid guid = storage.next();
         return (ItemImpl) teaseLib.getByGuid(domain, item, guid.name());

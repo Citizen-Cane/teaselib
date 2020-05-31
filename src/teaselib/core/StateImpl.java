@@ -16,6 +16,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.TeaseLib.PersistentBoolean;
@@ -31,6 +34,8 @@ import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 public class StateImpl implements State, State.Options, StateMaps.Attributes {
+    private static final Logger logger = LoggerFactory.getLogger(State.class);
+
     private static final String TEMPORARY_KEYWORD = "TEMPORARY";
     private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
 
@@ -161,17 +166,24 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void restorePersistedPeer(String persistedPeer) {
-        if (PersistedObject.className(persistedPeer).equals(ItemImpl.class.getName())) {
-            Storage storage = Storage.from(persistedPeer);
-            ItemImpl peer = ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, storage);
-            addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
-        } else {
-            Object peer = Persist.from(persistedPeer);
-            addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
+        try {
+            addPeerThatHasBeenPersistedWithMe(getPersistedPeer(persistedPeer));
+        } catch (ReflectiveOperationException e) {
+            logger.warn("Peer {} not restored: {}", persistedPeer, e.getMessage());
         }
     }
 
-    private void addPeerThatHasBeenPersistedWithMe(Object peer, QualifiedItem qualifiedPeer) {
+    private Object getPersistedPeer(String persistedPeer) throws ReflectiveOperationException {
+        if (PersistedObject.className(persistedPeer).equals(ItemImpl.class.getName())) {
+            Storage storage = Storage.from(persistedPeer);
+            return ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, storage);
+        } else {
+            return Persist.from(persistedPeer);
+        }
+    }
+
+    private void addPeerThatHasBeenPersistedWithMe(Object peer) {
+        QualifiedItem qualifiedPeer = QualifiedItem.of(peer);
         if (isCached(qualifiedPeer)) {
             if (state(peer).applied()) {
                 peers.add(peer);
@@ -192,7 +204,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void restoreAttributes() {
         if (attributeStorage.available()) {
-            attributes.addAll(Persist.from(ArrayList.class, attributeStorage.value()));
+            try {
+                attributes.addAll(Persist.from(ArrayList.class, attributeStorage.value()));
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalArgumentException("Cannot restore attributes for state " + this.item + ": ", e);
+            }
         }
     }
 

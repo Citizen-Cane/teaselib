@@ -21,7 +21,7 @@ public class Storage {
         this.factory = Optional.of(factory);
     }
 
-    public <T> T next() {
+    public <T> T next() throws ReflectiveOperationException {
         return Persist.from(field.next());
     }
 

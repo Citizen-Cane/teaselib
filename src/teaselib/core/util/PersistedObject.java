@@ -128,11 +128,11 @@ public class PersistedObject {
         persisted.append(joinPersistedValues(values));
     }
 
-    public <T> T toInstance() {
+    public <T> T toInstance() throws ReflectiveOperationException {
         return deserialize(className, values, Optional.empty());
     }
 
-    public <T> T toInstance(Factory factory) {
+    public <T> T toInstance(Factory factory) throws ReflectiveOperationException {
         return deserialize(className, values, Optional.of(factory));
     }
 
@@ -185,40 +185,39 @@ public class PersistedObject {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T deserialize(String className, List<String> persistedValues, Optional<Factory> factory) {
-        try {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            Class<?> clazz = Class.forName(className, true, classLoader);
-            if (clazz.isEnum()) {
-                @SuppressWarnings("rawtypes")
-                Class<Enum> enumClass = (Class<Enum>) clazz;
-                // One field exactly
-                Enum<?> enumValue = Enum.valueOf(enumClass, persistedValues.get(0));
-                return (T) enumValue;
-            } else if (Iterable.class.isAssignableFrom(clazz)) {
-                Collection<?> restored = restoreOrReplaceCollectionInstance(clazz);
-                for (String value : persistedValues) {
-                    restored.add(new PersistedObject(value).toInstance());
-                }
-                return (T) restored;
-            } else if (Persist.Persistable.class.isAssignableFrom(clazz)) {
-                Constructor<?> constructor;
-                try {
-                    constructor = clazz.getDeclaredConstructor(Storage.class);
-                } catch (NoSuchMethodException e) {
-                    throw new NoSuchMethodException(
-                            "Constructor " + clazz.getSimpleName() + "(Storage) missing for class " + clazz.getName());
-                }
-                // n fields, followed by more fields
-                Storage storage = factory.isPresent() ? new Storage(persistedValues, factory.get())
-                        : new Storage(persistedValues);
-                return (T) constructor.newInstance(storage);
-            } else { // default string constructor
-                Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
-                return (T) constructor.newInstance(persistedValues.get(0));
+    private static <T> T deserialize(String className, List<String> persistedValues, Optional<Factory> factory)
+            throws ReflectiveOperationException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Class<?> clazz = Class.forName(className, true, classLoader);
+        if (clazz.isEnum()) {
+            @SuppressWarnings("rawtypes")
+            Class<Enum> enumClass = (Class<Enum>) clazz;
+            // One field exactly
+            Enum<?> enumValue = Enum.valueOf(enumClass, persistedValues.get(0));
+            return (T) enumValue;
+        } else if (Iterable.class.isAssignableFrom(clazz)) {
+            Collection<?> restored = restoreOrReplaceCollectionInstance(clazz);
+            for (String value : persistedValues) {
+                restored.add(new PersistedObject(value).toInstance());
             }
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalArgumentException("Cannot restore " + className + ":" + persistedValues, e);
+            return (T) restored;
+        } else if (Persist.Persistable.class.isAssignableFrom(clazz)) {
+            // n fields, followed by more fields
+            Storage storage = factory.isPresent() ? new Storage(persistedValues, factory.get())
+                    : new Storage(persistedValues);
+            return (T) getStorageConstructor(clazz).newInstance(storage);
+        } else { // default string constructor
+            Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
+            return (T) constructor.newInstance(persistedValues.get(0));
+        }
+    }
+
+    private static Constructor<?> getStorageConstructor(Class<?> clazz) throws NoSuchMethodException {
+        try {
+            return clazz.getDeclaredConstructor(Storage.class);
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodException(
+                    "Constructor " + clazz.getSimpleName() + "(Storage) missing for class " + clazz.getName());
         }
     }
 

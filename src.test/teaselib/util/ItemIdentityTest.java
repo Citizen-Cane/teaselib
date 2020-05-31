@@ -297,7 +297,7 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testItemImplPersistance() {
+    public void testItemImplPersistance() throws ReflectiveOperationException {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
         ItemImpl gag = (ItemImpl) ((ItemProxy) script.item(Toys.Gag)).item;
@@ -535,7 +535,7 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testThatItemGuidIsRestoredProperly() {
+    public void testThatItemGuidIsRestoredProperly() throws ReflectiveOperationException {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 

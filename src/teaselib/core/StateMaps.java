@@ -92,7 +92,12 @@ public class StateMaps {
                 return existing;
             } else {
                 String persistedKey = item.toString();
-                State state = Persist.from(persistedKey, clazz -> teaseLib);
+                State state;
+                try {
+                    state = Persist.from(persistedKey, clazz -> teaseLib);
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalArgumentException("Cannot restore state " + item + ": ", e);
+                }
                 stateMapForPersistedKey.put(persistedKey, state);
 
                 QualifiedItem qualifiedItem = QualifiedItem.of(((StateImpl) state).item);

@@ -5,6 +5,7 @@
 #include <JNIObject.h>
 #include <JNIUtilities.h>
 
+#include <teaselib_core_ai_perception_SceneCapture.h>
 #include <teaselib_core_ai_perception_HumanPose.h>
 
 #include "HumanPose.h"
@@ -60,7 +61,7 @@ HumanPose::HumanPose(JNIEnv* env, jobject jdevice)
 	: NativeObject(env)
 	, jdevice(env->NewGlobalRef(jdevice))
 	, capture(reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jdevice)))
-	, poseEstimation(aifx::PoseEstimation::Model::MobileNetThin)
+	, poseEstimation(aifx::PoseEstimation::Model::MobileNetThin128x96)
 {
 }
 
@@ -73,9 +74,13 @@ int HumanPose::estimate()
 {
 	if (capture->started()) {
 		*capture >> frame;
-		return poseEstimation(frame);
-	}
-	else {
-		return -1;
+		if (frame.empty()) {
+			return teaselib_core_ai_perception_SceneCapture_NoImage;
+		}
+		else {
+			return poseEstimation(frame);
+		}
+	} else {
+		return teaselib_core_ai_perception_SceneCapture_NoImage;
 	}
 }

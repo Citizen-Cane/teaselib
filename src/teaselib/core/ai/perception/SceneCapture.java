@@ -3,6 +3,8 @@ package teaselib.core.ai.perception;
 import teaselib.core.jni.NativeObject;
 
 public class SceneCapture extends NativeObject {
+    public static final int NoImage = -1;
+
     final String name;
 
     SceneCapture(long nativeObject, String name) {

@@ -68,7 +68,6 @@ public class HumanPose extends NativeObject {
         if (device.isStarted()) {
             device.stop();
         }
-        device.close();
         super.close();
     }
 

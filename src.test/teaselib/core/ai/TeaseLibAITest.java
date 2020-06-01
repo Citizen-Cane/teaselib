@@ -37,11 +37,31 @@ public class TeaseLibAITest {
 
         String name = "images/p2_320x240_01.jpg";
         String pattern = "p2_320x240_%02d.jpg";
-        SceneCapture scene = new SceneCapture(getOpenCVImageSequence(name, pattern));
 
-        try (HumanPose humanPose = new HumanPose(scene)) {
+        try (SceneCapture scene = new SceneCapture(getOpenCVImageSequence(name, pattern));
+                HumanPose humanPose = new HumanPose(scene)) {
             int n = humanPose.estimate();
             assertEquals(2, n);
+        }
+    }
+
+    @Test
+    public void testMultipleModelsSharedCapture() {
+        TeaseLibAI teaseLibAI = new TeaseLibAI();
+        assertNotNull(teaseLibAI.sceneCaptures());
+
+        String name = "images/hand1_01.jpg";
+        String pattern = "hand1_%02d.jpg";
+
+        try (SceneCapture scene = new SceneCapture(getOpenCVImageSequence(name, pattern));
+                HumanPose humanPose1 = new HumanPose(scene);
+                HumanPose humanPose2 = new HumanPose(scene)) {
+            int n1 = humanPose1.estimate();
+            assertEquals(1, n1);
+            int n2 = humanPose2.estimate();
+            assertEquals(1, n2);
+            int n3 = humanPose2.estimate();
+            assertEquals("Expected end of capture stream", SceneCapture.NoImage, n3);
         }
     }
 

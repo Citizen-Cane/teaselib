@@ -7,6 +7,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef teaselib_core_ai_perception_SceneCapture_NoImage
+#define teaselib_core_ai_perception_SceneCapture_NoImage -1L
 /*
  * Class:     teaselib_core_ai_perception_SceneCapture
  * Method:    init

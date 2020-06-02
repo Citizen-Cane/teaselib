@@ -91,6 +91,18 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return item;
     }
 
+    public <T> List<T> randomOrderedElements(List<T> elements, int n) {
+        List<T> selected = new ArrayList<>(elements);
+        int k = elements.size() - n;
+        if (k < 0)
+            throw new IndexOutOfBoundsException(n);
+        for (int i = 0; i < k; i++) {
+            int index = random(0, selected.size() - 1);
+            selected.remove(index);
+        }
+        return selected;
+    }
+
     public <T> List<T> randomized(T[] items, int elements) {
         return randomized(null, 0, items, elements);
     }

@@ -185,6 +185,10 @@ public class Items implements Iterable<Item> {
         return item(QualifiedItem.of(item));
     }
 
+    public final Item get(int index) {
+        return elements.get(index);
+    }
+
     /**
      * Return applied or first available item with the supplied value.
      * 

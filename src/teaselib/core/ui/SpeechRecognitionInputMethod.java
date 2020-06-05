@@ -53,9 +53,9 @@ import teaselib.core.ui.Prompt.Result;
  *
  */
 public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.Closeable {
-    private static final double AUDIO_PROBLEM_PENALTY_WEIGHT = 0.005;
-
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
+
+    private static final double AUDIO_PROBLEM_PENALTY_WEIGHT = 0.005;
 
     public enum Notification implements InputMethod.Notification {
         RecognitionRejected
@@ -74,7 +74,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
-    private Rule hypothesis;
+    private Rule hypothesis = null;;
+    private float awarenessBonus = 0.0f;
 
     public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizers) {
         this.speechRecognizer = speechRecognizers;
@@ -201,7 +202,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         Optional<Rule> result = bestSingleResult(candidates.stream(), toChoices(prompt));
         if (result.isPresent()) {
             Rule rule = result.get();
-            double expectedConfidence = expectedConfidence(prompt.choices, rule);
+            double expectedConfidence = expectedConfidence(prompt.choices, rule, awarenessBonus);
             if (rule.probability >= expectedConfidence) {
                 hypothesis = rule;
                 logger.info("Considering as hypothesis");
@@ -214,8 +215,14 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         candidates.stream().forEach(Rule::isValid);
     }
 
-    private static double expectedConfidence(Choices choices, Rule rule) {
-        return confidence(choices.intention).weighted(words(rule.text).length, 2.0f);
+    private static double expectedConfidence(Choices choices, Rule rule, float awarenessBonus) {
+        float weighted = confidence(choices.intention).weighted(words(rule.text).length, 2.0f);
+        float expectedCOnfidence = weighted - awarenessBonus;
+        if (awarenessBonus > 0.0f) {
+            logger.info("Weighted confidence {} - Awareness bonus {} =  expected confidence {}", weighted,
+                    awarenessBonus, expectedCOnfidence);
+        }
+        return expectedCOnfidence;
     }
 
     private void handleRecognitionRejected(SpeechRecognizedEventArgs eventArgs) {
@@ -225,7 +232,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 events.recognitionRejected.fire(eventArgs);
                 return prompt;
             } else {
-                if (hypothesis != null && hypothesis.probability >= expectedConfidence(prompt.choices, hypothesis)) {
+                if (hypothesis != null
+                        && hypothesis.probability >= expectedConfidence(prompt.choices, hypothesis, awarenessBonus)) {
                     logger.info("Considering hypothesis");
                     return handle(prompt, this::singleResult, hypothesis);
                 } else {
@@ -288,7 +296,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private Prompt handle(Prompt prompt, BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule) {
-        double expectedConfidence = expectedConfidence(prompt.choices, rule);
+        double expectedConfidence = expectedConfidence(prompt.choices, rule, awarenessBonus);
         double audioProblemPenalty = audioSignalProblems.penalty() * AUDIO_PROBLEM_PENALTY_WEIGHT;
         if (rule.probability - audioProblemPenalty >= expectedConfidence) {
             Prompt.Result promptResult = resultor.apply(rule, toChoices(prompt));
@@ -558,6 +566,10 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     @Override
     public void close() {
         usedRecognitionInstances.values().stream().forEach(this::removeEvents);
+    }
+
+    public void setAwareness(boolean aware) {
+        awarenessBonus = aware ? Confidence.High.probability - Confidence.Normal.probability : 0.0f;
     }
 
 }

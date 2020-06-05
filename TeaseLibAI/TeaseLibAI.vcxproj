@@ -109,6 +109,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="SceneCapture.h" />
     <ClInclude Include="HumanPose.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

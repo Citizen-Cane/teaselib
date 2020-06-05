@@ -8,17 +8,14 @@
 class JObject {
 public:
 	JObject(JNIEnv* env);
-
 	JObject(JNIEnv* env, jobject jthis);
-
 	virtual ~JObject();
 
 	operator jobject() const;
-
 	JObject& operator=(jobject rvalue);
 
 protected:
-	JNIEnv* env;
+	JNIEnv* const env;
 	jobject jthis;
 };
 

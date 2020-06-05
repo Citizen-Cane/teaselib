@@ -2,9 +2,10 @@ package teaselib.core.ai;
 
 import java.util.List;
 
+import teaselib.core.Closeable;
 import teaselib.core.ai.perception.SceneCapture;
 
-public class TeaseLibAI {
+public class TeaseLibAI implements Closeable {
     final boolean haveAccelleratedImageProcesing;
 
     public TeaseLibAI() throws UnsatisfiedLinkError {
@@ -12,8 +13,13 @@ public class TeaseLibAI {
         haveAccelleratedImageProcesing = initOpenCL();
     }
 
-    native boolean initOpenCL();
+    private native boolean initOpenCL();
 
-    native List<SceneCapture> sceneCaptures();
+    public native List<SceneCapture> sceneCaptures();
+
+    @Override
+    public void close() {
+        //
+    }
 
 }

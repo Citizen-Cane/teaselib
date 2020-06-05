@@ -9,6 +9,7 @@
 #include <AIfxPoseEstimation.h>
 
 #include <teaselib_core_ai_perception_SceneCapture.h>
+#include "SceneCapture.h"
 
 extern "C"
 {
@@ -92,4 +93,18 @@ extern "C"
 		}
 	}
 
+}
+
+SceneCapture::SceneCapture(JNIEnv* env, int id, const wchar_t* name)
+	: NativeObject(env), device(new aifx::VideoCapture(id))
+{
+	jclass clazz = env->FindClass("teaselib/core/ai/perception/SceneCapture");
+	if (env->ExceptionCheck()) throw JNIException(env);
+
+	const char* signature = "(JLjava/lang/String;)V";
+	jthis = env->NewGlobalRef(env->NewObject(clazz,
+		JNIClass::getMethodID(env, clazz, "<init>", signature),
+		reinterpret_cast<jlong>(device.get()),
+		JNIString(env, name).operator jstring()));
+	if (env->ExceptionCheck()) throw JNIException(env);
 }

@@ -281,4 +281,14 @@ public class ScriptRenderer implements Closeable {
         return inputMethodExecutor;
     }
 
+    public void makeActive() {
+        // TODO transistion to active state
+        // TODO defer transistion back to inactive for a while
+    }
+
+    public void makeInactive() {
+        // TODO transistion to inactive state
+        // TODO defer transistion back to active for a while
+    }
+
 }

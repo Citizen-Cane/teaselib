@@ -36,6 +36,16 @@ extern "C"
 
 	/*
 	 * Class:     teaselib_core_ai_perception_HumanPose
+	 * Method:    setDesiredAspects
+	 * Signature: (I)V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setDesiredAspects
+	(JNIEnv* env, jobject jthis, jint aspectMask) {
+		// TODO choose inference model according to desired aspects
+	}
+
+	/*
+	 * Class:     teaselib_core_ai_perception_HumanPose
 	 * Method:    estimatePose
 	 * Signature: ()I
 	 */
@@ -61,9 +71,8 @@ HumanPose::HumanPose(JNIEnv* env, jobject jdevice)
 	: NativeObject(env)
 	, jdevice(env->NewGlobalRef(jdevice))
 	, capture(reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jdevice)))
-	, poseEstimation(aifx::PoseEstimation::Model::MobileNetThin128x96)
-{
-}
+	, poseEstimation(aifx::PoseEstimation::Model::MobileNetThin128x96, TfLiteInterpreter::ComputationMode::CPU)
+{}
 
 HumanPose::~HumanPose()
 {

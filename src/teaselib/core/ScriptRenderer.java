@@ -282,13 +282,15 @@ public class ScriptRenderer implements Closeable {
     }
 
     public void makeActive() {
-        // TODO transistion to active state
-        // TODO defer transistion back to inactive for a while
+        Host host = messageRenderer.teaseLib.host;
+        host.setFocusLevel(1.0f);
+        host.show();
     }
 
     public void makeInactive() {
-        // TODO transistion to inactive state
-        // TODO defer transistion back to active for a while
+        Host host = messageRenderer.teaseLib.host;
+        host.setFocusLevel(0.0f);
+        host.show();
     }
 
 }

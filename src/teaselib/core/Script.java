@@ -121,18 +121,17 @@ public abstract class Script {
         HumanPoseInteraction humanPoseInteraction = interactionImplementation(HumanPoseInteraction.class);
         humanPoseInteraction.definitions(actor).define(HumanPose.Aspect.Awareness,
                 new HumanPoseInteraction.Reaction(HumanPose.Aspect.Awareness, pose -> {
+
+                    SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
+                            .get(SpeechRecognitionInputMethod.class);
+                    inputMethod.setAwareness(pose.aspect == Aspect.Awareness);
+
                     if (pose.aspect == Aspect.Awareness) {
                         scriptRenderer.makeActive();
                     } else {
                         scriptRenderer.makeInactive();
                     }
-                }));
 
-        humanPoseInteraction.definitions(actor).define(HumanPose.Aspect.Awareness,
-                new HumanPoseInteraction.Reaction(HumanPose.Aspect.Awareness, pose -> {
-                    SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
-                            .get(SpeechRecognitionInputMethod.class);
-                    inputMethod.setAwareness(pose.aspect == Aspect.Awareness);
                 }));
     }
 

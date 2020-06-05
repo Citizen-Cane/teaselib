@@ -23,6 +23,10 @@ public interface Host {
      */
     void show(byte[] imageBytes, String text);
 
+    void setFocusLevel(float focusLevel);
+
+    void show();
+
     /**
      * Shows an intertitle similar to the ones in old movies. Use it for informations that cannot be told by actors but
      * are important for the story.
@@ -73,5 +77,4 @@ public interface Host {
     }
 
     File getLocation(Location folder);
-
 }

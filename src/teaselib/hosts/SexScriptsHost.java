@@ -219,15 +219,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         };
     }
 
-    private void setImage(byte[] imageBytes) {
-        Image image = null;
-        if (imageBytes != null) {
-            try {
-                image = ImageIO.read(new ByteArrayInputStream(imageBytes));
-            } catch (IOException e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
+    private void setImage(Image image) {
         if (image != null) {
             if (renderBackgroundImage) {
                 setBackgroundImage(image);
@@ -297,6 +289,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 int left = 0;
                 int top = (bounds.height - height) / 2;
                 g2d.drawImage(image, left, top, width, height, null);
+                int alpha = (int) ((1.0 - focusLevel) * 127.0f);
+                Color fill = new Color(0, 0, 0, alpha);
+                g2d.setColor(fill);
+                g2d.fillRect(0, 0, bounds.width, bounds.height);
                 backgroundImageIcon.setImage(bi);
             } else {
                 backgroundImageIcon.setImage(backgroundImage);
@@ -340,12 +336,35 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         ss.show(message);
     }
 
+    Image currentImage;
+    String currentText;
+
     @Override
     public void show(byte[] imageBytes, String text) {
+        currentImage = null;
+        if (imageBytes != null) {
+            try {
+                currentImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+
+        currentText = text;
+        show();
+    }
+
+    float focusLevel = 1.0f;
+
+    public void setFocusLevel(float focusLevel) {
+        this.focusLevel = focusLevel;
+    }
+
+    public void show() {
         EventQueue.invokeLater(() -> {
-            setImage(imageBytes);
+            setImage(currentImage);
             intertitleActive = false;
-            show(text);
+            show(currentText);
         });
     }
 

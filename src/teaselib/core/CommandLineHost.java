@@ -43,6 +43,16 @@ public class CommandLineHost implements Host {
     }
 
     @Override
+    public void setFocusLevel(float focusLevel) {
+        // Ignore
+    }
+
+    @Override
+    public void show() {
+        // Ignore
+    }
+
+    @Override
     public void showInterTitle(String text) {
         // Ignore
     }

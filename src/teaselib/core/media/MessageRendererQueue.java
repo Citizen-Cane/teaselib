@@ -46,7 +46,7 @@ public class MessageRendererQueue implements Closeable {
 
     private static final double DELAY_AT_END_OF_MESSAGE = 2.0;
 
-    final TeaseLib teaseLib;
+    public final TeaseLib teaseLib;
     private final MediaRendererQueue renderQueue;
     // TODO Handle message decorator processing here in order to make textToSpeechPlayer private
     public final TextToSpeechPlayer textToSpeechPlayer;

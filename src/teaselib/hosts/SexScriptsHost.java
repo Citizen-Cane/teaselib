@@ -1,5 +1,6 @@
 package teaselib.hosts;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.EventQueue;
@@ -13,7 +14,15 @@ import java.awt.event.WindowListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
+import java.awt.image.ColorModel;
+import java.awt.image.ConvolveOp;
+import java.awt.image.Kernel;
+import java.awt.image.Raster;
+import java.awt.image.RasterOp;
+import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -92,8 +101,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
     IScript ss;
-
-    private static final boolean renderBackgroundImage = true;
 
     final MainFrame mainFrame;
     private final ImageIcon backgroundImageIcon;
@@ -221,33 +228,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     private void setImage(Image image) {
         if (image != null) {
-            if (renderBackgroundImage) {
-                setBackgroundImage(image);
-            } else {
-                setImageAdjustedToMaximizeImageSize(image);
-            }
+            setBackgroundImage(image);
         } else {
             setImageInternal(null);
             setBackgroundImage(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
-        }
-    }
-
-    private void setImageAdjustedToMaximizeImageSize(Image image) {
-        int width = image.getWidth(null);
-        int height = image.getHeight(null);
-        boolean portrait = width < height;
-        if (portrait) {
-            // Enlarge the image with alpha pixels left and right to make
-            // the text area a bit smaller
-            // Improves readability on wide screen displays, as the text is
-            // laid out a bit more portrait (instead of landscape)
-            // TODO SS scales down when expanding too much
-            BufferedImage expanded = new BufferedImage(height, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = (Graphics2D) expanded.getGraphics();
-            g2d.drawImage(image, (expanded.getWidth() - width) / 2, 0, null);
-            setImageInternal(expanded);
-        } else {
-            setImageInternal(image);
         }
     }
 
@@ -263,45 +247,174 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private void setBackgroundImage(Image image) {
         try {
             ss.desktop.MainFrame mainFrame = getMainFrame();
-            // bounds
             Rectangle bounds = getContentBounds(mainFrame);
-            // Spacer to keep text at the right
+            // keep text at the right
             BufferedImage spacer = new BufferedImage(bounds.width, 16, BufferedImage.TYPE_INT_ARGB);
             setImageInternal(spacer);
             // actual image
             if (image != null) {
-                BufferedImage bi = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g2d = (Graphics2D) bi.getGraphics();
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                // Draw original background image
-                g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
-                // TODO scale image into bi
-                int width = image.getWidth(null);
-                int height = image.getHeight(null);
-                if (height > bounds.height) {
-                    width = width * bounds.height / height;
-                    height = bounds.height;
-                }
-                if (width > bounds.width) {
-                    height = height * bounds.width / width;
-                    width = bounds.width;
-                }
-                int left = 0;
-                int top = (bounds.height - height) / 2;
-                g2d.drawImage(image, left, top, width, height, null);
-                int alpha = (int) ((1.0 - focusLevel) * 127.0f);
-                Color fill = new Color(0, 0, 0, alpha);
-                g2d.setColor(fill);
-                g2d.fillRect(0, 0, bounds.width, bounds.height);
-                backgroundImageIcon.setImage(bi);
+                currentBackgroundImage = renderBackgroundImage(image, bounds);
+
+                // TODO use this to simulate lighting condition as detected by perception AI
+                // int alpha = (int) ((1.0 - focusLevel) * 127.0f);
+                // if (alpha > 0) {
+                // Color fill = new Color(0, 0, 0, alpha);
+                // g2d.setColor(fill);
+                // g2d.fillRect(0, 0, bounds.width, bounds.height);
+                // }
+
             } else {
-                backgroundImageIcon.setImage(backgroundImage);
+                currentBackgroundImage = null;
             }
-            // Update
-            mainFrame.repaint();
         } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException e) {
             logger.error(e.getMessage(), e);
         }
+    }
+
+    private void show(BufferedImage image) {
+        if (image != null) {
+            if (focusLevel < 1.0) {
+                float b = 0.20f;
+                float m = 0.80f;
+                int width = (int) (currentBackgroundImage.getWidth() * (b + focusLevel * m));
+                int height = (int) (currentBackgroundImage.getHeight() * (b + focusLevel * m));
+                BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D resizedg2d = (Graphics2D) resized.getGraphics();
+                BufferedImageOp blurOp = getBlurOp(7);
+                resizedg2d.drawImage(currentBackgroundImage, 0, 0, width, height, null);
+
+                BufferedImage blurred = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D blurredg2d = (Graphics2D) blurred.getGraphics();
+                blurredg2d.drawImage(resized, blurOp, 0, 0);
+                backgroundImageIcon.setImage(blurred);
+            } else {
+                backgroundImageIcon.setImage(currentBackgroundImage);
+            }
+        } else {
+            backgroundImageIcon.setImage(backgroundImage);
+        }
+        mainFrame.repaint();
+    }
+
+    private BufferedImage renderBackgroundImage(Image image, Rectangle bounds) {
+        BufferedImage bi = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = (Graphics2D) bi.getGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        // Draw original background image
+        g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
+        // TODO scale image into bi
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
+        if (height > bounds.height) {
+            width = width * bounds.height / height;
+            height = bounds.height;
+        }
+        if (width > bounds.width) {
+            height = height * bounds.width / width;
+            width = bounds.width;
+        }
+        int left = 0;
+        int top = (bounds.height - height) / 2;
+        g2d.drawImage(image, left, top, width, height, null);
+        return bi;
+    }
+
+    private BufferedImageOp getBlurOp(int n) {
+        return new ConvolveEdgeReflectOp(blurKernel(n));
+    }
+
+    private int blurKernelSize(float intensity) {
+        return (int) (intensity * 30.0f) * 2 + 1;
+    }
+
+    private Kernel blurKernel(int n) {
+        int size = n * n;
+        float nth = 1.0f / size;
+        float[] data = new float[size];
+        for (int i = 0; i < size; i++) {
+            data[i] = nth;
+        }
+        return new Kernel(n, n, data);
+    }
+
+    public static class ConvolveEdgeReflectOp implements BufferedImageOp, RasterOp {
+        private final ConvolveOp convolve;
+
+        public ConvolveEdgeReflectOp(Kernel kernel) {
+            this.convolve = new ConvolveOp(kernel, ConvolveOp.EDGE_NO_OP, null);
+        }
+
+        @Override
+        public BufferedImage filter(BufferedImage source, BufferedImage destination) {
+            Kernel kernel = convolve.getKernel();
+            int borderWidth = kernel.getWidth() / 2;
+            int borderHeight = kernel.getHeight() / 2;
+
+            BufferedImage original = addBorder(source, borderWidth, borderHeight);
+            return convolve.filter(original, destination) //
+                    .getSubimage(borderWidth, borderHeight, source.getWidth(), source.getHeight());
+        }
+
+        private BufferedImage addBorder(BufferedImage image, int borderWidth, int borderHeight) {
+            int w = image.getWidth();
+            int h = image.getHeight();
+
+            ColorModel cm = image.getColorModel();
+            WritableRaster raster = cm.createCompatibleWritableRaster(w + 2 * borderWidth, h + 2 * borderHeight);
+            BufferedImage bordered = new BufferedImage(cm, raster, cm.isAlphaPremultiplied(), null);
+            Graphics2D g = bordered.createGraphics();
+            try {
+                g.setComposite(AlphaComposite.Src);
+                g.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE);
+                g.drawImage(image, borderWidth, borderHeight, null);
+                g.drawImage(image, borderWidth, 0, borderWidth + w, borderHeight, 0, 0, w, 1, null);
+                g.drawImage(image, -w + borderWidth, borderHeight, borderWidth, h + borderHeight, 0, 0, 1, h, null);
+                g.drawImage(image, w + borderWidth, borderHeight, 2 * borderWidth + w, h + borderHeight, w - 1, 0, w, h,
+                        null);
+                g.drawImage(image, borderWidth, borderHeight + h, borderWidth + w, 2 * borderHeight + h, 0, h - 1, w, h,
+                        null);
+            } finally {
+                g.dispose();
+            }
+
+            return bordered;
+        }
+
+        @Override
+        public WritableRaster filter(Raster src, WritableRaster dst) {
+            return convolve.filter(src, dst);
+        }
+
+        @Override
+        public BufferedImage createCompatibleDestImage(BufferedImage src, ColorModel destCM) {
+            return convolve.createCompatibleDestImage(src, destCM);
+        }
+
+        @Override
+        public WritableRaster createCompatibleDestRaster(Raster src) {
+            return convolve.createCompatibleDestRaster(src);
+        }
+
+        @Override
+        public Rectangle2D getBounds2D(BufferedImage src) {
+            return convolve.getBounds2D(src);
+        }
+
+        @Override
+        public Rectangle2D getBounds2D(Raster src) {
+            return convolve.getBounds2D(src);
+        }
+
+        @Override
+        public Point2D getPoint2D(Point2D srcPt, Point2D dstPt) {
+            return convolve.getPoint2D(srcPt, dstPt);
+        }
+
+        @Override
+        public RenderingHints getRenderingHints() {
+            return convolve.getRenderingHints();
+        }
+
     }
 
     private static Rectangle getContentBounds(ss.desktop.MainFrame mainFrame) {
@@ -338,6 +451,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     Image currentImage;
     String currentText;
+    BufferedImage currentBackgroundImage;
 
     @Override
     public void show(byte[] imageBytes, String text) {
@@ -351,6 +465,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         }
 
         currentText = text;
+        intertitleActive = false;
+        setImage(currentImage);
         show();
     }
 
@@ -362,9 +478,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     public void show() {
         EventQueue.invokeLater(() -> {
-            setImage(currentImage);
-            intertitleActive = false;
-            show(currentText);
+            if (intertitleActive) {
+                showInterTitle(currentText);
+            } else {
+                show(currentBackgroundImage);
+                show(currentText);
+            }
         });
     }
 

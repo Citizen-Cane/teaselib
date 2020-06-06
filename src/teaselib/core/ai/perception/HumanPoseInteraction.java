@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Aspect;
 import teaselib.core.ai.perception.HumanPoseInteraction.Reaction;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.util.math.Hysteresis;
 
 public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanPose.Aspect, Reaction>
         implements Closeable {
@@ -117,18 +119,14 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
 
         private HumanPoseInteraction interactions;
 
+        private final UnaryOperator<Float> awarenessHysteresis = Hysteresis.function(0.0f, 1.0f, 0.25f);
+
         PoseEstimationTask(HumanPoseInteraction interactions) {
             this.interactions = interactions;
             // TODO init all in worker task
             this.teaseLibAI = new TeaseLibAI();
             List<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures();
             this.humanPose = new HumanPose(sceneCaptures.get(0));
-            // TODO thin_80x64 is just good for detecting incoming humans
-            // -> but it's not 4:3
-            // TODO thin_128_96 is a bit better, and is 4:3
-            // TODO thin_144_108 is also 4:3
-            // TODO thin_192_144 is also 4:3
-            // TODO thin_256_192 is also 4:3
         }
 
         @Override
@@ -147,9 +145,9 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
                         int n = humanPose.estimate();
                         if (actor == interactions.scriptRenderer.currentActor()) {
                             if (aspects.contains(Aspect.Awareness)) {
-                                pose = new Pose(n == 1 ? Aspect.Awareness : Aspect.None);
-                                // TODO use TimeLine in order to filter out estimation drop-outs in dark surroundings
-                                // - estimation for small input images may drop out as well
+
+                                float y = awarenessHysteresis.apply(n >= 1 ? 1.0f : 0.0f);
+                                pose = new Pose(y >= 0.5f ? Aspect.Awareness : Aspect.None);
                                 // TODO define max-reliable distance for each model to avoid dropouts in the distance
                                 Pose current = interactions.current;
                                 if (!pose.equals(current)) {

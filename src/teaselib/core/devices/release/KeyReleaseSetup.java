@@ -61,6 +61,10 @@ public class KeyReleaseSetup implements ScriptInteraction {
         return deviceInteraction.prepare(script.actor, items, duration, unit, instructions);
     }
 
+    public boolean prepare(Items items) {
+        return deviceInteraction.prepare(script.actor, items);
+    }
+
     public boolean prepare(Items items, Consumer<Items> instructions) {
         return deviceInteraction.prepare(script.actor, items, instructions);
     }

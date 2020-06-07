@@ -5,17 +5,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 public class CommandLineParameters<T extends Enum<T>> extends EnumMap<T, List<String>> {
     private static final long serialVersionUID = 1L;
 
     protected static final List<String> EMPTY = Collections.emptyList();
 
-    protected T defaultKeyword;
+    protected final T defaultKeyword;
 
-    public CommandLineParameters(Map<T, List<String>> args, Class<T> keyType) {
+    public CommandLineParameters(CommandLineParameters<T> args, Class<T> keyType) {
         super(keyType);
+        this.defaultKeyword = args.defaultKeyword;
         putAll(args);
     }
 

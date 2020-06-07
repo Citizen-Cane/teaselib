@@ -372,6 +372,10 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
         return prepare(actor, items, instructions, null);
     }
 
+    public boolean prepare(Actor actor, Items items) {
+        return prepare(actor, items, defaultInstructions);
+    }
+
     /**
      * Obtain the key and attach it to a previously assigned actuator.
      * <p>

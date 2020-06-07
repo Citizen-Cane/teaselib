@@ -281,4 +281,16 @@ public class ScriptRenderer implements Closeable {
         return inputMethodExecutor;
     }
 
+    public void makeActive() {
+        Host host = messageRenderer.teaseLib.host;
+        host.setFocusLevel(1.0f);
+        host.show();
+    }
+
+    public void makeInactive() {
+        Host host = messageRenderer.teaseLib.host;
+        host.setFocusLevel(0.0f);
+        host.show();
+    }
+
 }

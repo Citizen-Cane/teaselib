@@ -184,6 +184,7 @@ public class Configuration {
         return has(QualifiedItem.of(property));
     }
 
+    // TODO has(...) does not traverse defaults chain
     public boolean has(QualifiedItem property) {
         String item = property.toString();
         return sessionProperties.containsKey(item) || System.getProperties().containsKey(item)

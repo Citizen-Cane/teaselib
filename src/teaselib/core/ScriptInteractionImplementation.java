@@ -5,7 +5,6 @@ import static java.util.stream.Collectors.toSet;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -13,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
@@ -38,6 +38,10 @@ public abstract class ScriptInteractionImplementation<K, V> {
             remove(pending, key);
             elements.put(key, value);
             return value;
+        }
+
+        public V get(K key) {
+            return elements.get(key);
         }
 
         private void remove(Collection<K> collection, K key) {
@@ -88,7 +92,7 @@ public abstract class ScriptInteractionImplementation<K, V> {
 
     }
 
-    private final Map<Actor, Definitions> definitions = new HashMap<>();
+    private final Map<Actor, Definitions> definitions = new ConcurrentHashMap<>();
     final BiPredicate<K, K> matcher;
 
     protected ScriptInteractionImplementation(BiPredicate<K, K> matcher) {

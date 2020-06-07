@@ -8,8 +8,9 @@
 
 #include <sphelper.h>
 
-#include "COMException.h"
-#include "Language.h"
+#include <COMException.h>
+#include <JNIUtilities.h>
+#include <Language.h>
 
 #include "SpeechSynthesizer.h"
 #include "Voice.h"
@@ -53,18 +54,18 @@ SpeechSynthesizer::~SpeechSynthesizer() {
 
 jobject SpeechSynthesizer::voiceList() {
 	if (!jvoices) {
-		std::vector<Voice*> voices;
+		std::vector<NativeObject*> voices;
 		for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
 			HRESULT hr = addVoices(voiceCategories[i], voices);
 			if (FAILED(hr)) throw COMException(hr);
 		}
-		jvoices = env->NewGlobalRef(jvoiceList(voices));
+		jvoices = env->NewGlobalRef(JNIUtilities::asList(env, voices));
 	}
 
 	return jvoices;
 }
 
-HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<Voice*>& voices) {
+HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<NativeObject*>& voices) {
 	CComPtr<IEnumSpObjectTokens> cpEnum;
 	HRESULT hr = SpEnumTokens(pszCatName, NULL, NULL, &cpEnum);
 	const bool succeeded = SUCCEEDED(hr);
@@ -94,25 +95,6 @@ HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<Voic
 
 	return hr;
 }
-
-jobject SpeechSynthesizer::jvoiceList(const std::vector<Voice*>& voices) {
-	jclass listClass = JNIClass::getClass(env, "java/util/ArrayList");
-	jobject jvoiceList = env->NewObject(
-		listClass,
-		JNIClass::getMethodID(env, listClass, "<init>", "(I)V"),
-		voices.size());
-	if (env->ExceptionCheck()) throw JNIException(env);
-
-	std::for_each(voices.begin(), voices.end(), [&](const Voice * voice) {
-		env->CallObjectMethod(
-			jvoiceList,
-			env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z"), voice->operator jobject());
-		if (env->ExceptionCheck()) throw JNIException(env);
-	});
-
-	return jvoiceList;
-}
-
 
 // Well, I didn't have much luck with the XML tags,
 // because I couldn't reset values in the postfix part of the final prompt

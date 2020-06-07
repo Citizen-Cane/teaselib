@@ -2,11 +2,7 @@ package teaselib.core.jni;
 
 import java.io.Closeable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public abstract class NativeObject implements Closeable {
-    private static final Logger logger = LoggerFactory.getLogger(NativeObject.class);
 
     private final long nativeObject;
 
@@ -14,10 +10,10 @@ public abstract class NativeObject implements Closeable {
         this.nativeObject = nativeObject;
     }
 
-    protected native void disposeNativeObject();
+    protected native void dispose();
 
     @Override
     public void close() {
-        disposeNativeObject();
+        dispose();
     }
 }

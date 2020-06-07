@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Answer;
 import teaselib.Body;
+import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Gadgets;
 import teaselib.Message;
@@ -25,6 +26,9 @@ import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.State;
+import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.ai.perception.HumanPose.Aspect;
+import teaselib.core.ai.perception.HumanPoseInteraction;
 import teaselib.core.devices.DeviceEvent;
 import teaselib.core.devices.DeviceListener;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
@@ -80,6 +84,7 @@ public abstract class Script {
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
         getOrDefault(teaseLib, ScriptInteractionImplementations.class, this::initScriptInteractions);
+        // getOrDefault(teaseLib, TeaseLibAI.class, TeaseLibAI::new);
 
         try {
             teaseLib.config.addScriptSettings(namespace, namespace);
@@ -91,10 +96,46 @@ public abstract class Script {
         if (startOnce) {
             syncAudioAndSpeechRecognition(teaseLib);
             handleAutoRemove();
-            bindMotionDetectorToVideoRenderer();
+            // bindMotionDetectorToVideoRenderer();
             bindNetworkProperties();
         }
 
+        // TODO for multiple actors within the same namespace,
+        // this needs to be moved to the Script(Script ...) constructors
+        scriptRenderer.events.when().actorChanged(actor).thenOnce(e -> {
+            if (e.actor == actor) {
+                // TODO DebugSetup.applyTo(config) must set only defined aspects
+                // - currently it's always enabled
+                // -> massive change to test scripts
+                // Configuration persistent properties fails to lookup values in default properties file
+                if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
+                    defineHumanPoseInteractions(actor);
+                }
+            }
+        });
+        // TODO initializing in actorChanged-event breaks device handling
+        defineKeyReleaseInteractions(actor);
+    }
+
+    private void defineHumanPoseInteractions(Actor actor) {
+        HumanPoseInteraction humanPoseInteraction = interactionImplementation(HumanPoseInteraction.class);
+        humanPoseInteraction.definitions(actor).define(HumanPose.Aspect.Awareness,
+                new HumanPoseInteraction.Reaction(HumanPose.Aspect.Awareness, pose -> {
+
+                    SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
+                            .get(SpeechRecognitionInputMethod.class);
+                    inputMethod.setAwareness(pose.aspect == Aspect.Awareness);
+
+                    if (pose.aspect == Aspect.Awareness) {
+                        scriptRenderer.makeActive();
+                    } else {
+                        scriptRenderer.makeInactive();
+                    }
+
+                }));
+    }
+
+    private void defineKeyReleaseInteractions(Actor actor) {
         interactionImplementation(KeyReleaseDeviceInteraction.class).setDefaults(actor);
     }
 
@@ -102,6 +143,8 @@ public abstract class Script {
         ScriptInteractionImplementations scriptInteractionImplementations = new ScriptInteractionImplementations();
         scriptInteractionImplementations.add(KeyReleaseDeviceInteraction.class,
                 () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer));
+        scriptInteractionImplementations.add(HumanPoseInteraction.class,
+                () -> new HumanPoseInteraction(scriptRenderer));
         return scriptInteractionImplementations;
     }
 
@@ -149,7 +192,7 @@ public abstract class Script {
         State untilExpired = teaseLib.state(domain, State.Persistence.Until.Expired);
         Set<Object> peers = ((StateImpl) untilExpired).peers();
 
-        for (Object peer : peers) {
+        for (Object peer : new ArrayList<>(peers)) {
             State state = teaseLib.state(domain, peer);
             if (state.expired()) {
                 state.remove();

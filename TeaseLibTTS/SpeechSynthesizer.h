@@ -16,7 +16,7 @@ public:
     virtual ~SpeechSynthesizer();
 
 	jobject voiceList();
-	HRESULT addVoices(const wchar_t* pszCatName, std::vector<Voice*>& voices);
+	HRESULT addVoices(const wchar_t* pszCatName, std::vector<NativeObject*>& voices);
 
 	void addLexiconEntry(const wchar_t * const  locale, const wchar_t * const  word, const SPPARTOFSPEECH partOfSpeech, const wchar_t * const  pronunciation);
 	void setVoice(const Voice *voice);
@@ -26,8 +26,6 @@ public:
     void stop();
 
 private:
-	jobject jvoiceList(const std::vector<Voice*>& voices);
-
     ISpVoice *pVoice;
 	volatile bool cancelSpeech;
 

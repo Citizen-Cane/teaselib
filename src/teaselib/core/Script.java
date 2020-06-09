@@ -171,7 +171,7 @@ public abstract class Script {
         State untilRemoved = teaseLib.state(domain, State.Persistence.Until.Removed);
         Set<Object> peers = ((StateImpl) untilRemoved).peers();
 
-        for (Object peer : peers) {
+        for (Object peer : new ArrayList<>(peers)) {
             State state = teaseLib.state(domain, peer);
             if (state.expired()) {
                 Duration duration = state.duration();

@@ -65,7 +65,7 @@ public class ScriptEvents {
 
     public static class ScriptEventTarget<E extends ScriptEventArgs> {
         private final ScriptEventSource source;
-        private final EventSource<E> eventSource;
+        final EventSource<E> eventSource;
 
         public ScriptEventTarget(ScriptEventSource source, EventSource<E> eventSource) {
             this.source = source;

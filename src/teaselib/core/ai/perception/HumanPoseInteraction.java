@@ -25,14 +25,14 @@ import teaselib.util.math.Hysteresis;
 
 public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanPose.Aspect, Reaction>
         implements Closeable {
-    private static final Logger logger = LoggerFactory.getLogger(HumanPoseInteraction.class);
+    static final Logger logger = LoggerFactory.getLogger(HumanPoseInteraction.class);
 
     private final NamedExecutorService poseEstimation;
     private final PoseEstimationTask task;
     private Future<Pose> future = null;
-    private final ScriptRenderer scriptRenderer;
+    final ScriptRenderer scriptRenderer;
 
-    private Pose current = new Pose(Aspect.None);
+    Pose current = new Pose(Aspect.None);
 
     public static class Reaction {
         final Aspect aspect;
@@ -48,7 +48,7 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
 
         public final Aspect aspect;
 
-        private Pose(Aspect aspect) {
+        Pose(Aspect aspect) {
             this.aspect = aspect;
         }
 
@@ -113,11 +113,15 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
         return current;
     }
 
+    ScriptInteractionImplementation<Aspect, Reaction>.Definitions defs(Actor actor) {
+        return super.definitions(actor);
+    }
+
     static class PoseEstimationTask implements Callable<Pose> {
         private final TeaseLibAI teaseLibAI;
         private final HumanPose humanPose;
 
-        private HumanPoseInteraction interactions;
+        HumanPoseInteraction interactions;
 
         private final UnaryOperator<Float> awarenessHysteresis = Hysteresis.function(0.0f, 1.0f, 0.25f);
 
@@ -135,8 +139,7 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
             try {
                 while (!Thread.interrupted()) {
                     Actor actor = interactions.scriptRenderer.currentActor();
-                    ScriptInteractionImplementation<Aspect, Reaction>.Definitions reactions = interactions
-                            .definitions(actor);
+                    ScriptInteractionImplementation<Aspect, Reaction>.Definitions reactions = interactions.defs(actor);
                     Set<Aspect> aspects = reactions.stream().map(Map.Entry<Aspect, Reaction>::getValue)
                             .map(e -> e.aspect).collect(toSet());
 

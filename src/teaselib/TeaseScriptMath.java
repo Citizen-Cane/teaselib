@@ -91,11 +91,22 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return item;
     }
 
+    /**
+     * Selects n random elements while preserving the order of those elements. If elements.size() is smaller than n, all
+     * elements are returned.
+     * 
+     * @param <T>
+     * @param elements
+     *            Elements to choose from
+     * @param n
+     *            Number of elements to choose
+     * @return The selected n elements. If elements.size() is smaller than n, all elements are returned.
+     */
     public <T> List<T> randomOrderedElements(List<T> elements, int n) {
         List<T> selected = new ArrayList<>(elements);
         int k = elements.size() - n;
-        if (k < 0)
-            throw new IndexOutOfBoundsException(n);
+        if (k <= 0)
+            return selected;
         for (int i = 0; i < k; i++) {
             int index = random(0, selected.size() - 1);
             selected.remove(index);

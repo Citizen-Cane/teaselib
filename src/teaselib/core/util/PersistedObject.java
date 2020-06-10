@@ -193,7 +193,13 @@ public class PersistedObject {
             @SuppressWarnings("rawtypes")
             Class<Enum> enumClass = (Class<Enum>) clazz;
             // One field exactly
-            Enum<?> enumValue = Enum.valueOf(enumClass, persistedValues.get(0));
+            Enum<?> enumValue;
+            String value = persistedValues.get(0);
+            try {
+                enumValue = Enum.valueOf(enumClass, value);
+            } catch (IllegalArgumentException e) {
+                throw new InstantiationException(value);
+            }
             return (T) enumValue;
         } else if (Iterable.class.isAssignableFrom(clazz)) {
             Collection<?> restored = restoreOrReplaceCollectionInstance(clazz);
@@ -208,7 +214,8 @@ public class PersistedObject {
             return (T) getStorageConstructor(clazz).newInstance(storage);
         } else { // default string constructor
             Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
-            return (T) constructor.newInstance(persistedValues.get(0));
+            String value = persistedValues.get(0);
+            return (T) constructor.newInstance(value);
         }
     }
 

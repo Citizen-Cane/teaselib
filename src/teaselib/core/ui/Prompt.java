@@ -14,6 +14,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import teaselib.Answer;
 import teaselib.ScriptFunction;
 import teaselib.core.Script;
 import teaselib.core.ScriptFutureTask;
@@ -21,8 +22,7 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
-    private static final List<Choice> SCRIPTFUNCTION_TIMEOUT = Collections
-            .singletonList(new Choice(ScriptFunction.Timeout));
+    private static final List<Choice> SCRIPTFUNCTION_TIMEOUT = Collections.singletonList(new Choice(Answer.Timeout));
 
     public static class Result {
         public static final Result UNDEFINED = new Result(Integer.MIN_VALUE) {

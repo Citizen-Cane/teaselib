@@ -19,8 +19,14 @@ public class Answer {
     public enum Meaning {
         YES,
         NO,
-        RESUME
+        RESUME,
+        TIMEOUT
     }
+
+    /**
+     * Returned when a sccript function has timed out.
+     */
+    public static Answer Timeout = new Answer(Meaning.TIMEOUT, ScriptFunction.TimeoutString);
 
     public final Meaning meaning;
     public final List<String> text;

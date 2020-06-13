@@ -14,11 +14,6 @@ public class ScriptFunction {
     public static final String TimeoutString = "Timeout";
 
     /**
-     * Return value to state that the script function has timed out.
-     */
-    public static final Answer Timeout = Answer.resume(TimeoutString);
-
-    /**
      * To sleep infinitely.
      */
     public static final long Infinite = Long.MAX_VALUE;
@@ -51,7 +46,7 @@ public class ScriptFunction {
     public ScriptFunction(RunnableScript script, Relation relation) {
         this(() -> {
             script.run();
-            return Timeout;
+            return Answer.Timeout;
         }, relation);
     }
 

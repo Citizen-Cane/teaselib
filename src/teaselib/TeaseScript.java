@@ -372,7 +372,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             result = null;
         } else {
             logger.info("Script function confirm timeout");
-            result = ScriptFunction.Timeout;
+            result = Answer.Timeout;
         }
 
         return result;
@@ -380,7 +380,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
     /**
      * Wait until the timeout duration has elapsed, wait for ongoing speech recognition to complete, dismiss the buttons
-     * and return {@link teaselib.ScriptFunction#Timeout} instead of a choice
+     * and return {@link teaselib.Answer#Timeout} instead of a choice
      * 
      * The function waits until speech recognition is completed before marking the choice as "Timed out", because the
      * user has usually completed the requested action before uttering a choice, and because speaking takes more time
@@ -561,15 +561,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean deny(ScriptFunction scriptFunction, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), scriptFunction) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(Answer.no(no)), scriptFunction) != Answer.Timeout;
     }
 
     public final boolean deny(RunnableScript script, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != Answer.Timeout;
     }
 
     public final boolean deny(CallableScript<Answer> script, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != Answer.Timeout;
     }
 
     public final void agree(String yes) {
@@ -577,15 +577,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean agree(ScriptFunction scriptFunction, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction) != Answer.Timeout;
     }
 
     public final boolean agree(RunnableScript script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != Answer.Timeout;
     }
 
     public final boolean agree(CallableScript<Answer> script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != Answer.Timeout;
     }
 
     public final void chat(String chat) {
@@ -609,15 +609,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean chat(ScriptFunction scriptFunction, Answer chat) {
-        return showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat) != Answer.Timeout;
     }
 
     public final boolean chat(RunnableScript script, Answer chat) {
-        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat) != Answer.Timeout;
     }
 
     public final boolean chat(CallableScript<Answer> script, Answer chat) {
-        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat) != ScriptFunction.Timeout;
+        return showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat) != Answer.Timeout;
     }
 
     /**

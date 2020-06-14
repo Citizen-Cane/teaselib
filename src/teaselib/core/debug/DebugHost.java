@@ -1,5 +1,6 @@
 package teaselib.core.debug;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -217,5 +218,17 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
             return getLocation(Location.Host);
         else
             throw new IllegalArgumentException(Objects.toString(folder));
+    }
+
+    @Override
+    public void setGaze(Point2D gaze) {
+        // Ignore
+        
+    }
+
+    @Override
+    public void setPlayerDistance(float distance) {
+        // Ignore
+        
     }
 }

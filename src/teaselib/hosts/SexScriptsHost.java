@@ -297,25 +297,56 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     private BufferedImage renderBackgroundImage(Image image, Rectangle bounds) {
+
+        if (playerDistance < 0.8f) {
+            return render(image, ActorPart.Boots, bounds);
+        } else if (playerDistance > 1.25f || playerDistance != playerDistance /* Float.NaN */) {
+            return render(image, ActorPart.Torso, bounds);
+        } else {
+            return render(image, ActorPart.Face, bounds);
+        }
+    }
+
+    enum ActorPart {
+        Face,
+        Torso,
+        Boots
+    }
+
+    private BufferedImage render(Image image, ActorPart part, Rectangle bounds) {
         BufferedImage bi = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = (Graphics2D) bi.getGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         // Draw original background image
         g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
-        // TODO scale image into bi
-        int width = image.getWidth(null);
-        int height = image.getHeight(null);
-        if (height > bounds.height) {
-            width = width * bounds.height / height;
-            height = bounds.height;
-        }
-        if (width > bounds.width) {
-            height = height * bounds.width / width;
-            width = bounds.width;
-        }
+
+        // eye contact
+        int width = (int) (bounds.width * 0.8f);
+        int height = bounds.height;
         int left = 0;
         int top = (bounds.height - height) / 2;
-        g2d.drawImage(image, left, top, width, height, null);
+
+        int rows = (int) (image.getWidth(null) * (float) height / (float) width);
+        int show;
+        if (part == ActorPart.Face) {
+            int face = 0;
+            show = face;
+        } else if (part == ActorPart.Boots) {
+            int boots = image.getHeight(null) - rows;
+            show = boots;
+        } else if (part == ActorPart.Torso) {
+            int torso = (image.getHeight(null) - rows) / 2;
+            show = torso;
+        } else {
+            throw new UnsupportedOperationException(part.name());
+        }
+
+        int sx1 = 0;
+        int sy1 = show;
+        int sx2 = sx1 + image.getWidth(null);
+        int sy2 = sy1 + rows;
+
+        g2d.drawImage(image, left, top, width, height, sx1, sy1, sx2, sy2, null);
         return bi;
     }
 
@@ -449,13 +480,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         ss.show(message);
     }
 
-    Image currentImage;
     String currentText;
+    Image currentImage = null;
     BufferedImage currentBackgroundImage;
 
     @Override
     public void show(byte[] imageBytes, String text) {
-        currentImage = null;
         if (imageBytes != null) {
             try {
                 currentImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
@@ -472,11 +502,29 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     float focusLevel = 1.0f;
 
+    @Override
     public void setFocusLevel(float focusLevel) {
         this.focusLevel = focusLevel;
     }
 
+    Point2D gaze = new Point2D.Double(0.5, 0.5); // The middle of the screen, complete image
+
+    @Override
+    public void setGaze(Point2D gaze) {
+        this.gaze = gaze;
+    }
+
+    float playerDistance = 1.0f;
+
+    @Override
+    public void setPlayerDistance(float distance) {
+        this.playerDistance = distance;
+    }
+
+    @Override
     public void show() {
+        Rectangle bounds = getContentBounds(mainFrame);
+        currentBackgroundImage = renderBackgroundImage(currentImage, bounds);
         EventQueue.invokeLater(() -> {
             if (intertitleActive) {
                 showInterTitle(currentText);

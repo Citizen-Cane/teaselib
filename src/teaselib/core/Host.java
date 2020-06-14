@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.List;
 
@@ -77,4 +78,8 @@ public interface Host {
     }
 
     File getLocation(Location folder);
+
+    void setGaze(Point2D gaze);
+
+    void setPlayerDistance(float distance);
 }

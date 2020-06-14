@@ -283,13 +283,13 @@ public class ScriptRenderer implements Closeable {
 
     public void makeActive() {
         Host host = messageRenderer.teaseLib.host;
-        host.setFocusLevel(1.0f);
+        host.setPlayerDistance(1.0f);
         host.show();
     }
 
     public void makeInactive() {
         Host host = messageRenderer.teaseLib.host;
-        host.setFocusLevel(0.0f);
+        host.setPlayerDistance(Float.NaN);
         host.show();
     }
 

@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,5 +106,17 @@ public class CommandLineHost implements Host {
             return getLocation(Location.Host);
         else
             throw new IllegalArgumentException(Objects.toString(folder));
+    }
+
+    @Override
+    public void setGaze(Point2D gaze) {
+        // Ignore
+        
+    }
+
+    @Override
+    public void setPlayerDistance(float distance) {
+        // Ignore
+        
     }
 }

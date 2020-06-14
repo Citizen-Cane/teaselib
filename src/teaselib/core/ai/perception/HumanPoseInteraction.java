@@ -148,7 +148,6 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
                         int n = humanPose.estimate();
                         if (actor == interactions.scriptRenderer.currentActor()) {
                             if (aspects.contains(Aspect.Awareness)) {
-
                                 float y = awarenessHysteresis.apply(n >= 1 ? 1.0f : 0.0f);
                                 pose = new Pose(y >= 0.5f ? Aspect.Awareness : Aspect.None);
                                 // TODO define max-reliable distance for each model to avoid dropouts in the distance
@@ -157,16 +156,12 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
                                     reactions.get(Aspect.Awareness).consumer.accept(pose);
                                     interactions.current = pose;
                                 }
-                            } else {
-                                synchronized (this) {
-                                    wait(1000);
-                                }
                             }
                         }
                     }
 
                     synchronized (this) {
-                        wait(500);
+                        wait(2000);
                     }
                 }
             } catch (InterruptedException e) {

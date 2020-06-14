@@ -172,6 +172,8 @@ public class SpeechRecognition {
     private void handleRecognitionTimeout() {
         if (audioSync.speechRecognitionInProgress()) {
             events.recognitionRejected.fire(new SpeechRecognizedEventArgs(TIMEOUT));
+            // TODO should be emmitted by sr implementation
+            events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
         }
     }
 

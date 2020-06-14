@@ -3,6 +3,7 @@ package teaselib.core.speechrecognition;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -52,12 +53,16 @@ public class RuleIndicesList extends ArrayList<Set<Integer>> {
     }
 
     public Set<Integer> intersection() {
-        Iterator<Set<Integer>> iterator = this.iterator();
-        Set<Integer> intersection = iterator.next();
-        while (iterator.hasNext()) {
-            Set<Integer> next = iterator.next();
-            intersection = intersection.stream().filter(next::contains).collect(toSet());
+        if (isEmpty()) {
+            return Collections.emptySet();
+        } else {
+            Iterator<Set<Integer>> iterator = this.iterator();
+            Set<Integer> intersection = iterator.next();
+            while (iterator.hasNext()) {
+                Set<Integer> next = iterator.next();
+                intersection = intersection.stream().filter(next::contains).collect(toSet());
+            }
+            return intersection;
         }
-        return intersection;
     }
 }

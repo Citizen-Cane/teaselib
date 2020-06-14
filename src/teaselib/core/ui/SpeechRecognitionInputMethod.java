@@ -181,6 +181,11 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         // map phrase to choice indices before evaluating best phrase
         // -> better match on large phrase sets, supports hypothesis as well
 
+        // TODO only keep hypothesis that extends
+        // + keep all hypothesis results
+        // + keep those who continue in the next event
+        // + copy over confidence from previous hypothesis
+
         List<Rule> candidates = new ArrayList<>(eventArgs.result.length);
         for (Rule rule : eventArgs.result) {
             rule.removeTrailingNullRules();
@@ -205,7 +210,17 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             Rule rule = result.get();
             double expectedConfidence = expectedConfidence(prompt.choices, rule, awarenessBonus);
             if (rule.probability >= expectedConfidence) {
-                hypothesis = rule;
+                // TODO track multiple result hypothesis to maximize probability
+                // - first detections may contain multiple hypothesis results
+                // + remember all and forward the max probabilty as for a signle result
+                // -> when the recognition evolves towards completion,
+                // only one hypothesis will remain, with a higher probability
+                if (hypothesis != null && hypothesis.indices.containsAll(rule.indices)) {
+                    hypothesis = new Rule(rule, Math.max(hypothesis.probability, rule.probability), rule.confidence);
+                    hypothesis.children.addAll(rule.children);
+                } else {
+                    hypothesis = rule;
+                }
                 logger.info("Considering as hypothesis");
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
             }
@@ -273,8 +288,10 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private Prompt.Result singleResult(Rule rule, IntUnaryOperator toChoices) {
         Set<Integer> choices = choices(rule, toChoices);
-        if (choices.size() != 1) {
-            throw new NoSuchElementException("No distince choice: " + rule);
+        if (choices.size() == 0) {
+            throw new NoSuchElementException("No choice indices: " + rule);
+        } else if (choices.size() > 1) {
+            throw new NoSuchElementException("No distinct choice indices: " + rule);
         }
         Integer distinctChoice = choices.iterator().next();
         return new Prompt.Result(distinctChoice);

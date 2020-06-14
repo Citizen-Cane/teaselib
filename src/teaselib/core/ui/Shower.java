@@ -38,7 +38,7 @@ public class Shower {
             try {
                 choice = showNew(prompt);
             } catch (Exception e) {
-                resumeAfterException();
+                resumePreviousAfterException();
                 throwScriptTaskException(prompt);
                 throw e;
             }
@@ -69,17 +69,17 @@ public class Shower {
                 scriptTask.get();
             } catch (CancellationException ignore) {
                 // ignore
-            } catch (ExecutionException e1) {
-                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e1));
+            } catch (ExecutionException e) {
+                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
             }
         }
     }
 
-    private void resumeAfterException() {
+    private void resumePreviousAfterException() {
         try {
             resumePrevious();
         } catch (Exception ignore) {
-            logger.error(ignore.getMessage(), ignore);
+            logger.warn(ignore.getMessage(), "");
         }
     }
 

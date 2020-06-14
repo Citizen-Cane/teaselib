@@ -18,10 +18,12 @@ public class PromptQueue {
             pause(activePrompt);
         }
 
-        makePromptActive(prompt);
-        // TODO Start script task before making the prompt active:
-        // -> to avoid deadlock when canceling if making active fails
-        // - however this currently makes some checkpoint tests fail
+        try {
+            activate(prompt);
+        } catch (Exception e) {
+            dismiss(prompt);
+        }
+
         if (prompt.scriptTask != null) {
             prompt.executeScriptTask();
         }
@@ -38,7 +40,7 @@ public class PromptQueue {
             prompt.setTimedOut();
         }
 
-        dismissPrompt(prompt);
+        dismiss(prompt);
         return prompt.result();
     }
 
@@ -57,10 +59,10 @@ public class PromptQueue {
             return;
 
         prompt.resume();
-        makePromptActive(prompt);
+        activate(prompt);
     }
 
-    private void makePromptActive(Prompt prompt) throws InterruptedException {
+    private void activate(Prompt prompt) throws InterruptedException {
         active.set(prompt);
         for (InputMethod inputMethod : prompt.inputMethods) {
             inputMethod.show(prompt);
@@ -70,13 +72,13 @@ public class PromptQueue {
     public boolean pause(Prompt prompt) {
         prompt.pause();
         if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
-            return dismissPrompt(prompt);
+            return dismiss(prompt);
         } else {
             return false;
         }
     }
 
-    private boolean dismissPrompt(Prompt prompt) {
+    private boolean dismiss(Prompt prompt) {
         Prompt activePrompt = active.get();
 
         if (activePrompt == null) {

@@ -120,6 +120,9 @@ public class CheckPointTest {
     }
 
     @Test
+    // TODO make test succeed after changing PromptQueue to make prompt actice, the nstart script function
+    // -> to avoid deadlock when canceling script function after showing a prompt failed
+    // showing prompt first also reduces complexity, and makes error handling easier
     public void testCheckPointScriptFunctionAndTimeListenerWithResponse() throws Exception {
         TestScript script = TestScript.getOne();
         CheckPointTester checkPoints = genericScriptFunction(true);

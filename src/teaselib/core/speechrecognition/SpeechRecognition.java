@@ -84,7 +84,7 @@ public class SpeechRecognition {
 
     // Allow other threads to wait for speech recognition to complete
     private Event<SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = args -> {
-        if (isActive()) {
+        if (isActiveCalledFromDelegateThread()) {
             lockSpeechRecognitionInProgressSyncObject();
         }
     };
@@ -186,11 +186,11 @@ public class SpeechRecognition {
     public void startRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
-                if (!isActive()) {
+                if (isActiveCalledFromDelegateThread()) {
+                    logger.warn("Speech recognition already running");
+                } else {
                     enableSR();
                     logger.info("Speech recognition started");
-                } else {
-                    logger.warn("Speech recognition already running");
                 }
             });
         } else {
@@ -201,7 +201,7 @@ public class SpeechRecognition {
     public void pauseRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
-                if (isActive()) {
+                if (isActiveCalledFromDelegateThread()) {
                     disableSR();
                     logger.info("Speech recognition paused");
                 } else {
@@ -216,11 +216,11 @@ public class SpeechRecognition {
     public void resumeRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
-                if (!isActive()) {
+                if (isActiveCalledFromDelegateThread()) {
+                    logger.warn("Speech recognition already running on restart attempt");
+                } else {
                     enableSR();
                     logger.info("Speech recognition resumed");
-                } else {
-                    logger.warn("Speech recognition already running");
                 }
             });
         } else {
@@ -231,12 +231,12 @@ public class SpeechRecognition {
     public void restartRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
-                implementation.stopRecognition();
-                if (!isActive()) {
+                if (isActiveCalledFromDelegateThread()) {
+                    implementation.stopRecognition();
                     enableSR();
                     logger.info("Speech recognition restarted");
                 } else {
-                    logger.warn("Speech recognition already stopped");
+                    logger.warn("Speech recognition already stopped - restarting not allowed");
                 }
             });
         } else {
@@ -247,7 +247,7 @@ public class SpeechRecognition {
     public void endRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
-                if (isActive()) {
+                if (isActiveCalledFromDelegateThread()) {
                     disableSR();
                     parameters = null;
                     logger.info("Speech recognition stopped");
@@ -301,12 +301,16 @@ public class SpeechRecognition {
         throw new IllegalStateException("Recognizer not initialized");
     }
 
+    public boolean isActive() {
+        return delegateThread.call(this::isActiveCalledFromDelegateThread);
+    }
+
     /**
      * Determine whether speech recognition listens to voice input
      * 
      * @return True if speech recognition is listening to voice input
      */
-    public boolean isActive() {
+    private boolean isActiveCalledFromDelegateThread() {
         return speechRecognitionActive.get();
     }
 

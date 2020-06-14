@@ -29,30 +29,27 @@ public class SpeechRecognitionInputMethodTest {
 
     @Test
     public void testSpeechRecognitionInputMethodEnUs() throws InterruptedException {
-        testSInputMethod(new Choices(Locale.US, Intention.Decide, choice("Yes, Miss"), choice("No, Miss")), "Yes Miss",
-                0);
+        test(new Choices(Locale.US, Intention.Decide, choice("Yes, Miss"), choice("No, Miss")), "Yes Miss", 0);
     }
 
     @Test
     public void testSpeechRecognitionInputMethodEnUk() throws InterruptedException {
-        testSInputMethod(new Choices(Locale.ENGLISH, Intention.Decide, choice("Yes, Miss"), choice("No, Miss")),
-                "No Miss", 1);
+        test(new Choices(Locale.ENGLISH, Intention.Decide, choice("Yes, Miss"), choice("No, Miss")), "No Miss", 1);
     }
 
     @Test
     public void testSpeechRecognitionInputMethodDeDe() throws InterruptedException {
-        testSInputMethod(new Choices(Locale.GERMAN, Intention.Decide, choice("Jawohl, Meister"),
+        test(new Choices(Locale.GERMAN, Intention.Decide, choice("Jawohl, Meister"),
                 choice("Natürlich nicht, Meister")), "Natürlich nicht Meister", 1);
     }
 
     @Test
     public void testSpeechRecognitionInputMethodFrFr() throws InterruptedException {
-        testSInputMethod(new Choices(Locale.FRENCH, Intention.Decide, //
+        test(new Choices(Locale.FRENCH, Intention.Decide, //
                 choice("Qui, Madame"), choice("Non, Madame")), "Qui Madame", 0);
     }
 
-    private static void testSInputMethod(Choices choices, String expected, int resultIndex)
-            throws InterruptedException {
+    private static void test(Choices choices, String expected, int resultIndex) throws InterruptedException {
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer();
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             SpeechRecognition sr = recognizers.get(choices.locale);

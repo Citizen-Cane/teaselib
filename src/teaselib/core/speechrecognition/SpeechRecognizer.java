@@ -19,7 +19,6 @@ import teaselib.core.speechrecognition.implementation.Unsupported;
  *
  */
 public class SpeechRecognizer implements Closeable {
-    private final Configuration config;
     private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
     private final AudioSync audioSync;
 
@@ -35,7 +34,6 @@ public class SpeechRecognizer implements Closeable {
 
     @SuppressWarnings("unchecked")
     public SpeechRecognizer(Configuration config, AudioSync audioSync) {
-        this.config = config;
         this.audioSync = audioSync;
         if (Boolean.parseBoolean(config.get(teaselib.Config.InputMethod.SpeechRecognition))) {
             if (config.has(Config.SpeechRecognitionImplementation)) {
@@ -93,7 +91,9 @@ public class SpeechRecognizer implements Closeable {
             }
             return () -> {
                 for (SpeechRecognition sR : stoppedInstances) {
-                    sR.resumeRecognition();
+                    if (sR.isActive()) {
+                        sR.resumeRecognition();
+                    }
                 }
             };
         }

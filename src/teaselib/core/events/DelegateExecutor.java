@@ -46,9 +46,7 @@ public class DelegateExecutor {
 
     public <T> T call(Callable<T> delegate) {
         try {
-            Future<T> future = workerThread.submit(() -> {
-                return delegate.call();
-            });
+            Future<T> future = workerThread.submit(delegate::call);
             return future.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

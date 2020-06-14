@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -48,7 +49,7 @@ public class ScriptFunctionTest {
         return TEST;
     }
 
-    static abstract class RunnableTestScript extends TeaseScript implements RunnableScript {
+    abstract static class RunnableTestScript extends TeaseScript implements RunnableScript {
 
         public RunnableTestScript(TeaseLib teaseLib) {
             super(teaseLib, new ResourceLoader(RunnableTestScript.class), TestScript.newActor(), TestScript.NAMESPACE);

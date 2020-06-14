@@ -117,10 +117,11 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleSpeechDetected(SpeechRecognizedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            if (audioSignalProblems.exceedLimits() && getRecognizer().audioSync.speechRecognitionInProgress()) {
+            SpeechRecognition recognizer = getRecognizer(prompt);
+            if (audioSignalProblems.exceedLimits() && recognizer.audioSync.speechRecognitionInProgress()) {
                 logTooManyAudioSignalProblems(eventArgs.result);
-                getRecognizer().restartRecognition();
-            } else if (getRecognizer(prompt).implementation instanceof TeaseLibSRGS) {
+                recognizer.restartRecognition();
+            } else if (recognizer.implementation instanceof TeaseLibSRGS) {
                 if (prompt.acceptedResult == Result.Accept.Distinct) {
                     buildDistinctHypothesis(eventArgs, prompt);
                 } else if (prompt.acceptedResult == Result.Accept.Multiple) {
@@ -365,13 +366,6 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     public static Optional<Rule> bestMultipleChoices(Stream<Rule> stream,
             @SuppressWarnings("unused") IntUnaryOperator toChoices) {
         return stream.reduce(Rule::maxProbability);
-    }
-
-    private SpeechRecognition getRecognizer() {
-        Prompt prompt = active.get();
-        if (prompt == null)
-            throw new IllegalStateException("Prompt not set");
-        return getRecognizer(prompt);
     }
 
     private SpeechRecognition getRecognizer(Prompt prompt) {

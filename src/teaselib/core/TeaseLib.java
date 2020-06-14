@@ -189,19 +189,17 @@ public class TeaseLib implements Closeable {
         host.showInterTitle("");
         try {
             logger.info("Running script {}", scriptName);
-
             ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             @SuppressWarnings("unchecked")
             Class<RunnableScript> scriptClass = (Class<RunnableScript>) contextClassLoader.loadClass(scriptName);
             RunnableScript script = script(scriptClass);
             script.run();
-        } catch (Throwable t) {
+        } finally {
             try {
                 temporaryItems().remove();
             } catch (Throwable ignored) {
-                logger.error(ignored.getMessage(), ignored);
+                logger.warn(ignored.getMessage(), ignored);
             }
-            throw t;
         }
         host.show(null, "");
     }

@@ -22,7 +22,31 @@ public abstract class AbstractInputMethod implements InputMethod {
     protected final ReentrantLock replySection = new ReentrantLock(true);
     protected final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
 
-    private Future<Prompt.Result> worker;
+    private Callable<Prompt.Result> getResult = new Callable<Prompt.Result>() {
+        @Override
+        public Prompt.Result call() throws Exception {
+            Prompt prompt = activePrompt.get();
+
+            replySection.lock();
+            try {
+                synchronized (this) {
+                    notifyAll();
+                }
+
+                prompt.inputMethodInitializers.setup(AbstractInputMethod.this);
+                return awaitAndSignalResult(prompt);
+            } catch (InterruptedException | ScriptInterruptedException e) {
+                throw e;
+            } catch (Throwable e) {
+                prompt.setException(e);
+                throw e;
+            } finally {
+                replySection.unlock();
+            }
+        }
+    };
+
+    private Future<Prompt.Result> result;
 
     public AbstractInputMethod(ExecutorService executor) {
         this.executor = executor;
@@ -30,33 +54,11 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public final void show(Prompt prompt) throws InterruptedException {
-        activePrompt.set(prompt);
-        Callable<Prompt.Result> callable = new Callable<Prompt.Result>() {
-            @Override
-            public Prompt.Result call() throws Exception {
-                replySection.lock();
-                try {
-                    synchronized (this) {
-                        notifyAll();
-                    }
-
-                    prompt.inputMethodInitializers.setup(AbstractInputMethod.this);
-                    return awaitAndSignalResult(prompt);
-                } catch (InterruptedException | ScriptInterruptedException e) {
-                    throw e;
-                } catch (Throwable e) {
-                    prompt.setException(e);
-                    throw e;
-                } finally {
-                    replySection.unlock();
-                }
-            }
-        };
-
-        synchronized (callable) {
-            worker = executor.submit(callable);
+        synchronized (getResult) {
+            activePrompt.set(prompt);
+            result = executor.submit(getResult);
             while (!replySection.isLocked() && prompt.result().equals(Prompt.Result.UNDEFINED)) {
-                callable.wait();
+                getResult.wait();
             }
         }
     }
@@ -126,17 +128,17 @@ public abstract class AbstractInputMethod implements InputMethod {
             throw new IllegalStateException("Trying to dismiss wrong prompt");
         }
 
-        if (worker.isCancelled()) {
+        if (result.isCancelled()) {
             return false;
-        } else if (worker.isDone()) {
+        } else if (result.isDone()) {
             try {
-                worker.get();
+                result.get();
             } catch (ExecutionException e) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
             }
             return false;
         } else {
-            worker.cancel(true);
+            result.cancel(true);
         }
 
         try {

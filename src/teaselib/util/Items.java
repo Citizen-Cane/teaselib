@@ -160,6 +160,10 @@ public class Items implements Iterable<Item> {
         return new Items(filter(Item::applied));
     }
 
+    public Items getFree() {
+        return new Items(filter(Predicate.not(Item::applied)));
+    }
+
     public Items getExpired() {
         return new Items(filter(Item::expired));
     }

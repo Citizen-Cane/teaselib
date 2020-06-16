@@ -21,14 +21,12 @@ public class SpeechRecognitionTimeoutWatchdog {
 
     static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(2);
 
-    private final SpeechRecognitionEvents events;
     private final Runnable timeoutAction;
 
     private boolean enabled = false;
     private Timer timer = null;
 
-    public SpeechRecognitionTimeoutWatchdog(SpeechRecognitionEvents events, Runnable timeoutAction) {
-        this.events = events;
+    public SpeechRecognitionTimeoutWatchdog(Runnable timeoutAction) {
         this.timeoutAction = timeoutAction;
     }
 
@@ -44,20 +42,20 @@ public class SpeechRecognitionTimeoutWatchdog {
         };
     }
 
-    public void addEvents() {
-        this.events.recognitionStarted.add(startWatching);
-        this.events.audioSignalProblemOccured.add(updateAudioProblemStatus);
-        this.events.speechDetected.add(updateSpeechDetectionStatus);
-        this.events.recognitionRejected.add(stopWatching);
-        this.events.recognitionCompleted.add(stopWatching);
+    public void add(SpeechRecognitionEvents events) {
+        events.recognitionStarted.add(startWatching);
+        events.audioSignalProblemOccured.add(updateAudioProblemStatus);
+        events.speechDetected.add(updateSpeechDetectionStatus);
+        events.recognitionRejected.add(stopWatching);
+        events.recognitionCompleted.add(stopWatching);
     }
 
-    public void removeEvents() {
-        this.events.recognitionStarted.remove(startWatching);
-        this.events.audioSignalProblemOccured.remove(updateAudioProblemStatus);
-        this.events.speechDetected.add(updateSpeechDetectionStatus);
-        this.events.recognitionRejected.remove(stopWatching);
-        this.events.recognitionCompleted.remove(stopWatching);
+    public void remove(SpeechRecognitionEvents events) {
+        events.recognitionStarted.remove(startWatching);
+        events.audioSignalProblemOccured.remove(updateAudioProblemStatus);
+        events.speechDetected.add(updateSpeechDetectionStatus);
+        events.recognitionRejected.remove(stopWatching);
+        events.recognitionCompleted.remove(stopWatching);
     }
 
     public boolean enabled() {
@@ -74,7 +72,7 @@ public class SpeechRecognitionTimeoutWatchdog {
     private Event<SpeechRecognitionStartedEventArgs> startWatching = args -> {
         if (enabled()) {
             stopRecognitionTimout();
-            startRecognitionTimeout("Starting timeout watchdog");
+            startRecognitionTimeout("Started");
         }
     };
 
@@ -93,7 +91,7 @@ public class SpeechRecognitionTimeoutWatchdog {
     private Event<SpeechRecognizedEventArgs> stopWatching = args -> {
         if (enabled()) {
             stopRecognitionTimout();
-            logger.info("Timeout watchdog stopped");
+            logger.info("Stopped");
         }
     };
 
@@ -105,7 +103,7 @@ public class SpeechRecognitionTimeoutWatchdog {
 
     private void restartRecognitionTimout() {
         stopRecognitionTimout();
-        startRecognitionTimeout("Restarting timeout watchdog");
+        startRecognitionTimeout("Restarting");
     }
 
     private void stopRecognitionTimout() {

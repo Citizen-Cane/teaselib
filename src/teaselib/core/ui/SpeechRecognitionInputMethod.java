@@ -92,11 +92,15 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleRecognitionStarted(SpeechRecognitionStartedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            audioSignalProblems.clear();
-            hypothesis = null;
+            clearDetectedSpeech();
             events.recognitionStarted.fire(eventArgs);
             return prompt;
         });
+    }
+
+    private void clearDetectedSpeech() {
+        audioSignalProblems.clear();
+        hypothesis = null;
     }
 
     private void handleAudioLevelUpdated(AudioLevelUpdatedEventArgs audioLevelUpdatedEventArgs) {
@@ -208,18 +212,16 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         Optional<Rule> result = bestSingleResult(candidates.stream(), toChoices(prompt));
         if (result.isPresent()) {
             Rule rule = result.get();
-            double expectedConfidence = expectedConfidence(prompt.choices, rule, awarenessBonus);
-            if (rule.probability >= expectedConfidence) {
-                // TODO track multiple result hypothesis to maximize probability
-                // - first detections may contain multiple hypothesis results
-                // + remember all and forward the max probabilty as for a signle result
-                // -> when the recognition evolves towards completion,
-                // only one hypothesis will remain, with a higher probability
+            double expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
+            if (weightedProbability(prompt, rule) >= expectedConfidence) {
                 if (hypothesis != null && hypothesis.indices.containsAll(rule.indices)) {
-                    hypothesis = new Rule(rule, Math.max(hypothesis.probability, rule.probability), rule.confidence);
-                    hypothesis.children.addAll(rule.children);
+                    float hypothesisProbability = weightedProbability(prompt, hypothesis);
+                    float h = hypothesis.children.size();
+                    float r = rule.children.size();
+                    float average = (hypothesisProbability * h + rule.probability * r) / (h + r);
+                    setHypothesis(rule, Math.max(average, rule.probability));
                 } else {
-                    hypothesis = rule;
+                    setHypothesis(rule, weightedProbability(prompt, rule));
                 }
                 logger.info("Considering as hypothesis");
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
@@ -227,12 +229,22 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
     }
 
+    private float weightedProbability(Prompt prompt, Rule rule) {
+        // TODO use sequence length of detected speech, 0 if no match, ignore trailing null rules
+        return rule.probability * rule.indices().size() / getRecognizer(prompt).getChoices().slicedPhrases.size();
+    }
+
+    private void setHypothesis(Rule rule, float probability) {
+        hypothesis = new Rule(rule, probability, rule.confidence);
+        hypothesis.children.addAll(rule.children);
+    }
+
     private static void validate(List<Rule> candidates) {
         candidates.stream().forEach(Rule::isValid);
     }
 
-    private static double expectedConfidence(Choices choices, Rule rule, float awarenessBonus) {
-        float weighted = confidence(choices.intention).weighted(words(rule.text).length, 2.0f);
+    private static double expectedConfidence(Prompt prompt, Rule rule, float awarenessBonus) {
+        float weighted = confidence(prompt.choices.intention).weighted(words(rule.text).length, 2.0f);
         float expectedCOnfidence = weighted - awarenessBonus;
         if (awarenessBonus > 0.0f) {
             logger.info("Weighted confidence {} - Awareness bonus {} =  expected confidence {}", weighted,
@@ -243,52 +255,63 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleRecognitionRejected(SpeechRecognizedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            if (audioSignalProblems.exceedLimits()) {
-                logTooManyAudioSignalProblems(eventArgs.result);
-                events.recognitionRejected.fire(eventArgs);
-                return prompt;
-            } else {
-                if (hypothesis != null
-                        && hypothesis.probability >= expectedConfidence(prompt.choices, hypothesis, awarenessBonus)) {
-                    logger.info("Considering hypothesis");
-                    return handle(prompt, this::singleResult, hypothesis);
-                } else {
+            try {
+                if (audioSignalProblems.exceedLimits()) {
+                    logTooManyAudioSignalProblems(eventArgs.result);
                     events.recognitionRejected.fire(eventArgs);
-                    signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
                     return prompt;
+                } else {
+                    if (hypothesis != null
+                            && hypothesis.probability >= expectedConfidence(prompt, hypothesis, awarenessBonus)) {
+                        logger.info("Considering hypothesis");
+                        // rejectedResult may contain better result than hypothesis
+                        // TODO Are last speech detection and recognitionRejected result the same?
+                        // TODO accept only if hypothesis and recognitionRejected result have the same indices
+                        return handle(prompt, this::singleResult, hypothesis);
+                    } else {
+                        events.recognitionRejected.fire(eventArgs);
+                        signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
+                        return prompt;
+                    }
                 }
+            } finally {
+                clearDetectedSpeech();
             }
         });
     }
 
     private void handleRecogntionCompleted(SpeechRecognizedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            if (audioSignalProblems.exceedLimits()) {
-                logTooManyAudioSignalProblems(eventArgs.result);
-                return prompt;
-            } else {
-                try {
-                    if (prompt.acceptedResult == Result.Accept.Distinct) {
-                        return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestSingleResult,
-                                this::singleResult);
-                    } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                        return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestMultipleChoices,
-                                this::multipleChoiceResults);
-                    } else {
-                        throw new UnsupportedOperationException(prompt.acceptedResult.toString());
+            try {
+                if (audioSignalProblems.exceedLimits()) {
+                    logTooManyAudioSignalProblems(eventArgs.result);
+                    return prompt;
+                } else {
+                    try {
+                        if (prompt.acceptedResult == Result.Accept.Distinct) {
+                            return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestSingleResult,
+                                    this::singleResult);
+                        } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                            return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestMultipleChoices,
+                                    this::multipleChoiceResults);
+                        } else {
+                            throw new UnsupportedOperationException(prompt.acceptedResult.toString());
+                        }
+                    } catch (Exception e) {
+                        prompt.setException(e);
+                        getRecognizer(prompt.choices.locale).endRecognition();
+                        return null;
                     }
-                } catch (Exception e) {
-                    prompt.setException(e);
-                    getRecognizer(prompt.choices.locale).endRecognition();
-                    return null;
                 }
+            } finally {
+                clearDetectedSpeech();
             }
         });
     }
 
     private Prompt.Result singleResult(Rule rule, IntUnaryOperator toChoices) {
         Set<Integer> choices = choices(rule, toChoices);
-        if (choices.size() == 0) {
+        if (choices.isEmpty()) {
             throw new NoSuchElementException("No choice indices: " + rule);
         } else if (choices.size() > 1) {
             throw new NoSuchElementException("No distinct choice indices: " + rule);
@@ -314,9 +337,11 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private Prompt handle(Prompt prompt, BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule) {
-        double expectedConfidence = expectedConfidence(prompt.choices, rule, awarenessBonus);
+        double expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
         double audioProblemPenalty = audioSignalProblems.penalty() * AUDIO_PROBLEM_PENALTY_WEIGHT;
-        if (rule.probability - audioProblemPenalty >= expectedConfidence) {
+        // TODO Weighted probability should be calculated in bestSingleResult
+        float ruleProbability = weightedProbability(prompt, rule);
+        if (ruleProbability - audioProblemPenalty >= expectedConfidence) {
             Prompt.Result promptResult = resultor.apply(rule, toChoices(prompt));
             if (promptResult.elements.isEmpty()) {
                 reject(prompt, rule, "Empty result");
@@ -329,12 +354,12 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 reject(prompt, rule, "Undefined result index");
                 return prompt;
             }
-        } else if (rule.probability >= expectedConfidence) {
-            logAudioSignalProblemPenalty(rule, expectedConfidence, audioProblemPenalty);
+        } else if (ruleProbability >= expectedConfidence) {
+            logAudioSignalProblemPenalty(expectedConfidence, audioProblemPenalty);
             reject(rule);
             return prompt;
         } else {
-            logLackOfConfidence(rule, expectedConfidence);
+            logLackOfConfidence(expectedConfidence);
             reject(rule);
             return prompt;
         }
@@ -403,17 +428,17 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         return null;
     }
 
-    private static void logLackOfConfidence(Rule result, double confidence) {
-        logger.info("Rejecting result '{}' due to lack of confidence (expected {})", result, confidence);
+    private static void logLackOfConfidence(double expectedConfidence) {
+        logger.info("Lack of confidence (expected {})", expectedConfidence);
     }
 
     private void logTooManyAudioSignalProblems(Rule[] result) {
-        logger.info("Rejecting result '{}' due to too many audio signal problems {}", result, audioSignalProblems);
+        logger.info("Audio signal problems: {}", audioSignalProblems);
     }
 
-    private static void logAudioSignalProblemPenalty(Rule result, double confidence, double penalty) {
-        logger.info("Rejecting result '{}' due to audio signal problem penalty (required  {} + {} + = {})", result,
-                confidence, penalty, confidence + penalty);
+    private static void logAudioSignalProblemPenalty(double confidence, double penalty) {
+        logger.info("Audio signal problem penalty (required {} + penalty {} + = {})", confidence, penalty,
+                confidence + penalty);
     }
 
     private void signal(Prompt prompt, Prompt.Result result) {
@@ -580,7 +605,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     public void setAwareness(boolean aware) {
-        awarenessBonus = aware ? Confidence.High.probability - Confidence.Normal.probability : 0.0f;
+        awarenessBonus = aware ? Confidence.High.probability - Confidence.Normal.reducedProbability() : 0.0f;
     }
 
 }

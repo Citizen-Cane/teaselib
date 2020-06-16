@@ -91,6 +91,8 @@ public class SpeechRecognition {
 
     private Event<SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = args -> unlockSpeechRecognitionInProgressSyncObject();
 
+    private final Event<SpeechRecognizedEventArgs> handleMissingRecognitionStartedEvent;
+
     public final AudioSync audioSync;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
@@ -155,13 +157,23 @@ public class SpeechRecognition {
         }
 
         // Add watchdog last, to receive speechRejected/completed from the hypothesis event handler
-        this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(events, this::handleRecognitionTimeout);
-        this.timeoutWatchdog.addEvents();
+        this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(this::handleRecognitionTimeout);
+        this.timeoutWatchdog.add(events);
+
+        handleMissingRecognitionStartedEvent = e -> {
+            if (!audioSync.speechRecognitionInProgress()) {
+                events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
+            }
+        };
+
+        this.events.speechDetected.add(handleMissingRecognitionStartedEvent);
     }
 
     void close() {
+        this.events.speechDetected.remove(handleMissingRecognitionStartedEvent);
+
         timeoutWatchdog.enable(false);
-        timeoutWatchdog.removeEvents();
+        timeoutWatchdog.remove(events);
 
         implementation.close();
 
@@ -172,8 +184,6 @@ public class SpeechRecognition {
     private void handleRecognitionTimeout() {
         if (audioSync.speechRecognitionInProgress()) {
             events.recognitionRejected.fire(new SpeechRecognizedEventArgs(TIMEOUT));
-            // TODO should be emmitted by sr implementation
-            events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
         }
     }
 

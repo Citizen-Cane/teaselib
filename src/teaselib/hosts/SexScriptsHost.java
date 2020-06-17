@@ -345,17 +345,37 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         }
 
         int startRow;
-        if (part == ActorPart.Face) {
-            int face = 0;
-            startRow = face;
-        } else if (part == ActorPart.Boots) {
-            int boots = image.getHeight(null) - rows;
-            startRow = boots;
-        } else if (part == ActorPart.Torso) {
-            int torso = (image.getHeight(null) - rows) / 2;
-            startRow = torso;
+        if (fillWidth) {
+            // Pan
+            if (part == ActorPart.Face) {
+                int face = 0;
+                startRow = face;
+            } else if (part == ActorPart.Boots) {
+                int boots = image.getHeight(null) - rows;
+                startRow = boots;
+            } else if (part == ActorPart.Torso) {
+                int torso = (image.getHeight(null) - rows) / 2;
+                startRow = torso;
+            } else {
+                throw new UnsupportedOperationException(part.name());
+            }
         } else {
-            throw new UnsupportedOperationException(part.name());
+            if (part == ActorPart.Face) {
+                // Zoom in face (upper image part)
+                float pan = 0.25f;
+                float zoom = 1.25f;
+                sx1 = sx1 - (int) (sx1 * pan / 2.0f);
+                columns = (int) (columns / zoom);
+                rows = (int) (rows / zoom);
+                startRow = 0;
+            } else if (part == ActorPart.Boots) {
+                // Zoom to bottom
+                startRow = 0;
+            } else if (part == ActorPart.Torso) {
+                startRow = 0;
+            } else {
+                throw new UnsupportedOperationException(part.name());
+            }
         }
 
         int sy1 = startRow;

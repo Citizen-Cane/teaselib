@@ -45,7 +45,9 @@ import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.implementation.Unsupported;
+import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
+import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Prompt.Result;
 
 /**
@@ -230,8 +232,13 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private float weightedProbability(Prompt prompt, Rule rule) {
-        // TODO use sequence length of detected speech, 0 if no match, ignore trailing null rules
-        return rule.probability * rule.indices().size() / getRecognizer(prompt).getChoices().slicedPhrases.size();
+        SlicedPhrases<PhraseString> slicedPhrases = getRecognizer(prompt).getChoices().slicedPhrases;
+        if (slicedPhrases != null) {
+            // TODO use sequence length of detected speech, 0 if no match, ignore trailing null rules
+            return rule.probability * rule.indices().size() / slicedPhrases.size();
+        } else {
+            return 1.0f;
+        }
     }
 
     private void setHypothesis(Rule rule, float probability) {

@@ -297,7 +297,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     private BufferedImage renderBackgroundImage(Image image, Rectangle bounds) {
-
         if (playerDistance < 0.8f) {
             return render(image, ActorPart.Boots, bounds);
         } else if (playerDistance > 1.25f || playerDistance != playerDistance /* Float.NaN */) {
@@ -320,30 +319,47 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         // Draw original background image
         g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
 
-        // eye contact
-        int width = (int) (bounds.width * 0.8f);
+        float screenWidthFraction = 1.0f;
+
+        int width = (int) (bounds.width * screenWidthFraction);
         int height = bounds.height;
         int left = 0;
         int top = (bounds.height - height) / 2;
 
-        int rows = (int) (image.getWidth(null) * (float) height / (float) width);
-        int show;
+        float windowAspect = (float) bounds.width / (float) bounds.height;
+        float imageAspect = (float) image.getWidth(null) / (float) image.getHeight(null);
+
+        boolean fillWidth = imageAspect < windowAspect;
+
+        int sx1;
+        int columns;
+        int rows;
+        if (fillWidth) {
+            columns = (int) (image.getWidth(null) * 1.0f);
+            rows = (int) (image.getWidth(null) * (float) height / (float) width);
+            sx1 = 0;
+        } else {
+            columns = (int) (image.getHeight(null) * ((float) width / (float) height));
+            rows = (int) (image.getHeight(null) * 1.0f);
+            sx1 = (image.getWidth(null) - columns) / 2;
+        }
+
+        int startRow;
         if (part == ActorPart.Face) {
             int face = 0;
-            show = face;
+            startRow = face;
         } else if (part == ActorPart.Boots) {
             int boots = image.getHeight(null) - rows;
-            show = boots;
+            startRow = boots;
         } else if (part == ActorPart.Torso) {
             int torso = (image.getHeight(null) - rows) / 2;
-            show = torso;
+            startRow = torso;
         } else {
             throw new UnsupportedOperationException(part.name());
         }
 
-        int sx1 = 0;
-        int sy1 = show;
-        int sx2 = sx1 + image.getWidth(null);
+        int sy1 = startRow;
+        int sx2 = sx1 + columns;
         int sy2 = sy1 + rows;
 
         g2d.drawImage(image, left, top, width, height, sx1, sy1, sx2, sy2, null);
@@ -352,10 +368,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     private BufferedImageOp getBlurOp(int n) {
         return new ConvolveEdgeReflectOp(blurKernel(n));
-    }
-
-    private int blurKernelSize(float intensity) {
-        return (int) (intensity * 30.0f) * 2 + 1;
     }
 
     private Kernel blurKernel(int n) {
@@ -482,7 +494,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     String currentText;
     Image currentImage = null;
-    BufferedImage currentBackgroundImage;
+    BufferedImage currentBackgroundImage = null;
 
     @Override
     public void show(byte[] imageBytes, String text) {
@@ -490,6 +502,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             try {
                 currentImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
             } catch (IOException e) {
+                currentImage = null;
                 logger.error(e.getMessage(), e);
             }
         }
@@ -524,7 +537,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     @Override
     public void show() {
         Rectangle bounds = getContentBounds(mainFrame);
-        currentBackgroundImage = renderBackgroundImage(currentImage, bounds);
+        if (currentImage != null) {
+            currentBackgroundImage = renderBackgroundImage(currentImage, bounds);
+        } else {
+            currentBackgroundImage = null;
+        }
+
         EventQueue.invokeLater(() -> {
             if (intertitleActive) {
                 showInterTitle(currentText);

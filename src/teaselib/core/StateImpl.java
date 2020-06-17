@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
@@ -50,10 +51,102 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private final Set<Object> attributes = new HashSet<>();
     private boolean applied = false;
 
-    private final PersistentBoolean appliedStorage;
-    private final PersistentString durationStorage;
-    private final PersistentString peerStorage;
-    private final PersistentString attributeStorage;
+    static class StateStorage {
+        final PersistentBoolean appliedStorage;
+        final PersistentString durationStorage;
+        final PersistentString peerStorage;
+        final PersistentString attributeStorage;
+
+        StateStorage(TeaseLib teaseLib, String domain, Object item) {
+            this.appliedStorage = persistentApplied(teaseLib, domain, item);
+            this.durationStorage = persistentDuration(teaseLib, domain, item);
+            this.peerStorage = persistentPeers(teaseLib, domain, item);
+            this.attributeStorage = persistentAttributes(teaseLib, domain, item);
+        }
+
+        TeaseLib.PersistentBoolean persistentApplied(TeaseLib teaseLib, String domain, Object item) {
+            return persistentBoolean(teaseLib, domain, item, "applied");
+        }
+
+        TeaseLib.PersistentString persistentDuration(TeaseLib teaseLib, String domain, Object item) {
+            return persistentString(teaseLib, domain, item, "duration");
+        }
+
+        PersistentString persistentPeers(TeaseLib teaseLib, String domain, Object item) {
+            return persistentString(teaseLib, domain, item, "peers");
+        }
+
+        PersistentString persistentAttributes(TeaseLib teaseLib, String domain, Object item) {
+            return persistentString(teaseLib, domain, item, "attributes");
+        }
+
+        private PersistentBoolean persistentBoolean(TeaseLib teaseLib, String domain, Object item, String name) {
+            return teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item),
+                    QualifiedItem.nameOf(item) + ".state" + "." + name);
+        }
+
+        private PersistentString persistentString(TeaseLib teaseLib, String domain, Object item, String name) {
+            return teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
+                    QualifiedItem.nameOf(item) + ".state" + "." + name);
+        }
+
+        void deletePersistence() {
+            appliedStorage.clear();
+            durationStorage.clear();
+            peerStorage.clear();
+            attributeStorage.clear();
+        }
+
+        public static void delete(TeaseLib teaseLib, String domain, Object item) {
+            new StateImpl.StateStorage(teaseLib, domain, item).deletePersistence();
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((appliedStorage == null) ? 0 : appliedStorage.hashCode());
+            result = prime * result + ((attributeStorage == null) ? 0 : attributeStorage.hashCode());
+            result = prime * result + ((durationStorage == null) ? 0 : durationStorage.hashCode());
+            result = prime * result + ((peerStorage == null) ? 0 : peerStorage.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            StateStorage other = (StateStorage) obj;
+            if (appliedStorage == null) {
+                if (other.appliedStorage != null)
+                    return false;
+            } else if (!appliedStorage.equals(other.appliedStorage))
+                return false;
+            if (attributeStorage == null) {
+                if (other.attributeStorage != null)
+                    return false;
+            } else if (!attributeStorage.equals(other.attributeStorage))
+                return false;
+            if (durationStorage == null) {
+                if (other.durationStorage != null)
+                    return false;
+            } else if (!durationStorage.equals(other.durationStorage))
+                return false;
+            if (peerStorage == null) {
+                if (other.peerStorage != null)
+                    return false;
+            } else if (!peerStorage.equals(other.peerStorage))
+                return false;
+            return true;
+        }
+
+    };
+
+    private final StateStorage storage;
 
     private Duration duration;
 
@@ -82,10 +175,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
         this.domain = domain;
         this.item = item;
-        this.appliedStorage = persistentApplied(domain, item);
-        this.durationStorage = persistentDuration(domain, item);
-        this.peerStorage = persistentPeers(domain, item);
-        this.attributeStorage = persistentAttributes(domain, item);
+        this.storage = new StateStorage(this.stateMaps.teaseLib, domain, item);
 
         restoreApplied();
         restoreDuration();
@@ -97,40 +187,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         this(teaseLib.stateMaps, domain, item);
     }
 
-    private TeaseLib.PersistentBoolean persistentApplied(String domain, Object item) {
-        return persistentBoolean(domain, item, "applied");
-    }
-
-    private TeaseLib.PersistentString persistentDuration(String domain, Object item) {
-        return persistentString(domain, item, "duration");
-    }
-
-    private PersistentString persistentPeers(String domain, Object item) {
-        return persistentString(domain, item, "peers");
-    }
-
-    private PersistentString persistentAttributes(String domain, Object item) {
-        return persistentString(domain, item, "attributes");
-    }
-
-    private PersistentBoolean persistentBoolean(String domain, Object item, String name) {
-        return this.stateMaps.teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item),
-                QualifiedItem.nameOf(item) + ".state" + "." + name);
-    }
-
-    private PersistentString persistentString(String domain, Object item, String name) {
-        return this.stateMaps.teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
-                QualifiedItem.nameOf(item) + ".state" + "." + name);
-    }
-
     private void restoreApplied() {
-        applied = appliedStorage.value();
+        applied = storage.appliedStorage.value();
     }
 
     private void restoreDuration() {
         if (isPersisted()) {
             // TODO Refactor persistence to duration class
-            String[] argv = durationStorage.value().split(" ");
+            String[] argv = storage.durationStorage.value().split(" ");
             long start = Long.parseLong(argv[0]);
             long limit = string2limit(argv[1]);
             this.duration = new DurationImpl(this.stateMaps.teaseLib, start, limit, TimeUnit.SECONDS);
@@ -152,8 +216,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void restorePeers() {
-        if (peerStorage.available()) {
-            String persisted = peerStorage.value();
+        if (storage.peerStorage.available()) {
+            String persisted = storage.peerStorage.value();
             List<String> presistedPeers = new PersistedObject(ArrayList.class, persisted).toValues();
             for (String persistedPeer : presistedPeers) {
                 restorePersistedPeer(persistedPeer);
@@ -188,7 +252,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             if (state(peer).applied()) {
                 peers.add(peer);
             }
-        } else if (persistentDuration(domain, peer).available()) {
+        } else if (storage.persistentDuration(stateMaps.teaseLib, domain, peer).available()) {
             peers.add(peer);
         } else if (qualifiedPeer.value() instanceof Item) {
             peers.add(peer);
@@ -203,9 +267,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void restoreAttributes() {
-        if (attributeStorage.available()) {
+        if (storage.attributeStorage.available()) {
             try {
-                attributes.addAll(Persist.from(ArrayList.class, attributeStorage.value()));
+                attributes.addAll(Persist.from(ArrayList.class, storage.attributeStorage.value()));
             } catch (ReflectiveOperationException e) {
                 throw new IllegalArgumentException("Cannot restore attributes for state " + this.item + ": ", e);
             }
@@ -213,14 +277,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void persistApplied() {
-        appliedStorage.set(applied);
+        storage.appliedStorage.set(applied);
     }
 
     private void persistDuration() {
         String startValue = Long.toString(duration.start(TimeUnit.SECONDS));
         long limit = duration.limit(TimeUnit.SECONDS);
         String limitValue = limit2String(limit);
-        durationStorage.set(startValue + " " + limitValue);
+        storage.durationStorage.set(startValue + " " + limitValue);
 
     }
 
@@ -240,17 +304,17 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void persistPeers() {
         if (peers.isEmpty()) {
-            peerStorage.clear();
+            storage.peerStorage.clear();
         } else {
-            peerStorage.set(Persist.persistValues(peers));
+            storage.peerStorage.set(Persist.persistValues(peers));
         }
     }
 
     private void persistAttributes() {
         if (attributes.isEmpty()) {
-            attributeStorage.clear();
+            storage.attributeStorage.clear();
         } else {
-            attributeStorage.set(Persist.persistValues(attributes));
+            storage.attributeStorage.set(Persist.persistValues(attributes));
         }
     }
 
@@ -441,7 +505,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         attributes.clear();
         setRemoved();
         if (isPersisted()) {
-            removePersistence();
+            storage.deletePersistence();
         }
     }
 
@@ -471,7 +535,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             }
 
             if (allPeersAreTemporary() && isPersisted()) {
-                removePersistence();
+                storage.deletePersistence();
             }
         }
 
@@ -526,14 +590,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private boolean isPersisted() {
-        return appliedStorage.available();
-    }
-
-    private void removePersistence() {
-        appliedStorage.clear();
-        durationStorage.clear();
-        peerStorage.clear();
-        attributeStorage.clear();
+        return storage.appliedStorage.available();
     }
 
     private void setApplied() {
@@ -547,12 +604,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     @Override
     public String toString() {
         String name = "name=" + (domain.isEmpty() ? "" : domain) + QualifiedItem.nameOf(item);
-
-        Date date = new Date(duration.start(TimeUnit.MILLISECONDS));
-
-        long limit = duration.limit(TimeUnit.SECONDS);
+        Date date = new Date(duration.start(MILLISECONDS));
+        long limit = duration.limit(SECONDS);
         String timespan = (limit > 0 ? "+" : " ") + limit2String(limit);
-
         return name + " " + date + timespan + " peers=" + StateMaps.toStringWithoutRecursion(peers);
     }
 
@@ -561,14 +615,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         final int prime = 31;
         int result = 1;
         result = prime * result + this.stateMaps.hashCode();
-        result = prime * result + ((attributeStorage == null) ? 0 : attributeStorage.hashCode());
         result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-        result = prime * result + ((appliedStorage == null) ? 0 : appliedStorage.hashCode());
         result = prime * result + ((duration == null) ? 0 : duration.hashCode());
-        result = prime * result + ((durationStorage == null) ? 0 : durationStorage.hashCode());
         result = prime * result + ((item == null) ? 0 : item.hashCode());
-        result = prime * result + ((peerStorage == null) ? 0 : peerStorage.hashCode());
         result = prime * result + ((peers == null) ? 0 : peers.hashCode());
         return result;
     }
@@ -582,7 +632,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    private boolean generatedEqualsMethod(Object obj) {
+    public boolean generatedEqualsMethod(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
@@ -590,47 +640,34 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (getClass() != obj.getClass())
             return false;
         StateImpl other = (StateImpl) obj;
-        if (!this.stateMaps.equals(other.stateMaps))
+        if (applied != other.applied)
             return false;
-        if (attributeStorage == null) {
-            if (other.attributeStorage != null)
+        if (attributes == null) {
+            if (other.attributes != null)
                 return false;
-        } else if (!attributeStorage.equals(other.attributeStorage))
-            return false;
-        if (!attributes.equals(other.attributes))
+        } else if (!attributes.equals(other.attributes))
             return false;
         if (domain == null) {
             if (other.domain != null)
                 return false;
         } else if (!domain.equals(other.domain))
             return false;
-        if (appliedStorage == null) {
-            if (other.appliedStorage != null)
-                return false;
-        } else if (!appliedStorage.equals(other.appliedStorage))
-            return false;
         if (duration == null) {
             if (other.duration != null)
                 return false;
         } else if (!duration.equals(other.duration))
-            return false;
-        if (durationStorage == null) {
-            if (other.durationStorage != null)
-                return false;
-        } else if (!durationStorage.equals(other.durationStorage))
             return false;
         if (item == null) {
             if (other.item != null)
                 return false;
         } else if (!item.equals(other.item))
             return false;
-        if (peerStorage == null) {
-            if (other.peerStorage != null)
+        if (peers == null) {
+            if (other.peers != null)
                 return false;
-        } else if (!peerStorage.equals(other.peerStorage))
-            return false;
-        if (!peers.equals(other.peers))
+        } else if (!peers.equals(other.peers))
             return false;
         return true;
     }
+
 }

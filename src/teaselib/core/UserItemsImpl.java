@@ -99,6 +99,10 @@ public class UserItemsImpl implements UserItems {
         domainMap.clear();
     }
 
+    public void clearLoadOrder() {
+        loadOrder.clear();
+    }
+
     private List<ItemImpl> readItems(String domain, URL url) throws IOException {
         List<ItemImpl> items = new ArrayList<>();
 

@@ -1,17 +1,25 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.Household;
 import teaselib.Material;
+import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
@@ -175,4 +183,80 @@ public class UserItemsImplTest {
 
         fail("XML-Defined item not loaded");
     }
+
+    @Test
+    public void testRemoveUserItemUntilExpired() {
+        testRemoveUserItem(Until.Expired);
+    }
+
+    @Test
+    public void testRemoveUserItemUntilRemoved() {
+        testRemoveUserItem(Until.Removed);
+    }
+
+    private void testRemoveUserItem(Until until) {
+        TestScript script = TestScript.getOne();
+
+        // Default
+        {
+            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+            assertEquals("Humbler", humblers.next().displayName());
+            assertFalse(humblers.hasNext());
+        }
+
+        // additional items via custom user items
+        {
+            script.addTestUserItems2();
+            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+            assertEquals("Humbler", humblers.next().displayName());
+            Item myHhumbler = humblers.next();
+            assertEquals("My Humbler", myHhumbler.displayName());
+            assertFalse(humblers.hasNext());
+
+            myHhumbler.apply().over(1, TimeUnit.HOURS).remember(until);
+        }
+
+        script.debugger.clearStateMaps();
+        {
+            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+            Item notMyHumber = humblers.next();
+            assertFalse(notMyHumber.applied());
+            Item persistedHumbler = humblers.next();
+            assertTrue(persistedHumbler.applied());
+            assertEquals("My Humbler", persistedHumbler.displayName());
+            assertFalse(humblers.hasNext());
+        }
+
+        // Does not work at runtime as the item disappears, but peers are still applied
+        // TODO -> removing toys at runtime may break scripts -> stop if removed item is applied
+        script.debugger.resetUserItems();
+        script.debugger.clearStateMaps();
+        script.addTestUserItems();
+        {
+            // The following test code shows the wrong state - handled by auto-removing those items
+            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+            Item notMyHumber = humblers.next();
+            assertFalse("User items not reset", humblers.hasNext());
+            assertTrue(script.state(Toys.Humbler).applied());
+            try {
+                assertFalse(notMyHumber.applied());
+                fail("Removed item shouldn't be accessible anymore");
+            } catch (IllegalArgumentException e) {
+                // Expected
+            }
+
+            try {
+                script.item(Toys.Humbler).remove();
+                fail("Removed item shouldn't be accessible anymore");
+            } catch (IllegalArgumentException e) {
+                // Expected
+            }
+
+            script.handleAutoRemove();
+            assertFalse(script.state(Toys.Humbler).applied());
+            assertFalse(script.state(Body.OnBalls).applied());
+            assertFalse(notMyHumber.applied());
+        }
+    }
+
 }

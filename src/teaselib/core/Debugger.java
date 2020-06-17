@@ -124,6 +124,10 @@ public class Debugger {
         ((UserItemsImpl) teaseLib.userItems).clearCachedItems();
     }
 
+    public void resetUserItems() {
+        ((UserItemsImpl) teaseLib.userItems).clearLoadOrder();
+    }
+
     public void addResponses(Collection<ResponseAction> responses) {
         for (ResponseAction responseAction : responses) {
             addResponse(responseAction);

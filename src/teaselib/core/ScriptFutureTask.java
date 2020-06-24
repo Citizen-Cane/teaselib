@@ -53,10 +53,13 @@ public class ScriptFutureTask extends FutureTask<Answer> {
         try {
             super.run();
 
-            prompt.lock.lockInterruptibly();
             logger.info("Script task {} is finishing", prompt);
+            prompt.lock.lockInterruptibly();
             try {
-                prompt.click.signalAll();
+                if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
+                    prompt.setTimedOut();
+                    prompt.click.signalAll();
+                }
             } finally {
                 prompt.lock.unlock();
             }
@@ -67,8 +70,8 @@ public class ScriptFutureTask extends FutureTask<Answer> {
             handleException(e);
         } finally {
             cancellationCompletion.countDown();
-            logger.info("Script task {} finished", prompt);
         }
+        logger.info("Script task {} finished", prompt);
     }
 
     private void handleScriptTaskInterrupted() {

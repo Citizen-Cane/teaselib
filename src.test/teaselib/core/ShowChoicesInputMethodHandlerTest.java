@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -24,6 +24,9 @@ import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugPersistence;
 import teaselib.test.IntegrationTests;
 import teaselib.test.TestScript;
+
+// TODO sometimes blocks because timeAdvanceListener locks prompt in render thread to invoke a second handler
+// - find out who has locked the prompt
 
 @Category(IntegrationTests.class)
 @RunWith(Parameterized.class)
@@ -66,8 +69,7 @@ public class ShowChoicesInputMethodHandlerTest {
         RunnableTestScript debugInputMethodHandler = new RunnableTestScript(script) {
             @Override
             public void run() {
-                say("In Debug Handler");
-                count.incrementAndGet();
+                say("DebugInputMethod Handler called " + count.incrementAndGet() + " times.");
             }
         };
 

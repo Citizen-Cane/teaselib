@@ -44,27 +44,32 @@ public class Shower {
             }
 
             resumePrevious();
+
+            ScriptFutureTask scriptTask = prompt.scriptTask;
+            if (scriptTask != null) {
+                try {
+                    if (prompt.result().equals(Prompt.Result.UNDEFINED)
+                            || prompt.result().equals(Prompt.Result.DISMISSED)) {
+                        return Collections.singletonList(new Choice(scriptTask.get()));
+                    } else {
+                        return choice;
+                    }
+                } catch (CancellationException e) {
+                    return choice;
+                } catch (ExecutionException e) {
+                    throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+                }
+            } else {
+                return choice;
+            }
         } finally {
             prompt.lock.unlock();
-        }
-
-        ScriptFutureTask scriptTask = prompt.scriptTask;
-        if (scriptTask != null) {
-            try {
-                return Collections.singletonList(new Choice(scriptTask.get()));
-            } catch (CancellationException e) {
-                return choice;
-            } catch (ExecutionException e) {
-                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-            }
-        } else {
-            return choice;
         }
     }
 
     private static void throwScriptTaskException(Prompt prompt) throws InterruptedException {
         ScriptFutureTask scriptTask = prompt.scriptTask;
-        if (scriptTask != null) {
+        if (scriptTask != null && !scriptTask.isCancelled()) {
             try {
                 scriptTask.get();
             } catch (CancellationException ignore) {
@@ -92,29 +97,31 @@ public class Shower {
 
     private List<Choice> result(Prompt prompt, Prompt.Result result) throws InterruptedException {
         if (result.equals(Prompt.Result.DISMISSED)) {
-            return cancelSCriptTaskAndReturnResult(prompt, result);
+            return cancelScriptTaskAndReturnResult(prompt, result);
         } else {
             InputMethodEventArgs eventArgs = prompt.inputMethodEventArgs.getAndSet(null);
             if (eventArgs != null) {
                 invokeHandler(prompt, eventArgs);
-                if (promptQueue.getActive() != prompt) {
-                    promptQueue.resume(prompt);
-                }
                 return result(prompt, promptQueue.awaitResult(prompt));
             } else {
-                return cancelSCriptTaskAndReturnResult(prompt, result);
+                return cancelScriptTaskAndReturnResult(prompt, result);
             }
         }
     }
 
-    private static List<Choice> cancelSCriptTaskAndReturnResult(Prompt prompt, Prompt.Result result) {
+    private static List<Choice> cancelScriptTaskAndReturnResult(Prompt prompt, Prompt.Result result) {
         prompt.cancelScriptTask();
         return prompt.choice(result);
     }
 
-    private void invokeHandler(Prompt prompt, InputMethodEventArgs eventArgs) {
+    private void invokeHandler(Prompt prompt, InputMethodEventArgs eventArgs) throws InterruptedException {
+        if (promptQueue.getActive() != null) {
+            throw new IllegalStateException("No active prompt expected");
+        }
+        prompt.pause();
+
         if (!prompt.result().equals(Prompt.Result.UNDEFINED)) {
-            throw new IllegalStateException("Prompt selected while invoking handler: " + prompt);
+            throw new IllegalStateException("Prompt result already set when invoking handler: " + prompt);
         }
 
         if (!executingAlready(eventArgs.source)) {
@@ -124,11 +131,18 @@ public class Shower {
         if (stack.peek() != prompt) {
             throw new IllegalStateException("Not top-most: " + prompt);
         }
+
+        if (prompt.paused()) {
+            promptQueue.resume(prompt);
+        }
     }
 
     private boolean executingAlready(InputMethod.Notification eventType) {
         Prompt current = stack.peek();
         for (Prompt prompt : stack) {
+            // TODO non-working - blocks since while executing a handler on the prompt, the prompt is locked
+            // -> attempt to execute another handler on the same prompt results in a deadlock
+            // TODO NPE since prompt.inputMethodEventArgs is temporary and set back to null immediately
             if (prompt != current && prompt.inputMethodEventArgs.get().source == eventType) {
                 return true;
             }
@@ -139,8 +153,13 @@ public class Shower {
     private void pauseCurrent() {
         if (!stack.isEmpty()) {
             Prompt prompt = stack.peek();
-            if (!prompt.paused()) {
-                pause(prompt);
+            prompt.lock.lock();
+            try {
+                if (!prompt.paused()) {
+                    pause(prompt);
+                }
+            } finally {
+                prompt.lock.unlock();
             }
         }
     }
@@ -162,7 +181,13 @@ public class Shower {
         }
 
         if (!stack.isEmpty()) {
-            promptQueue.resume(stack.peek());
+            Prompt previous = stack.peek();
+            previous.lock.lock();
+            try {
+                promptQueue.resume(previous);
+            } finally {
+                previous.lock.unlock();
+            }
         }
     }
 }

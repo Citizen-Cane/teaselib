@@ -14,6 +14,7 @@ import teaselib.Answer.Meaning;
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
@@ -423,7 +424,11 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public ScriptFunction timeoutWithConfirmation(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
         return new ScriptFunction(() -> {
             Answer result = awaitTimeout(seconds, timeoutBehavior);
-            sleep(ScriptFunction.Infinite, TimeUnit.SECONDS);
+            try {
+                sleep(ScriptFunction.Infinite, TimeUnit.SECONDS);
+            } catch (ScriptInterruptedException e) {
+                // Consume
+            }
             return result;
         }, Relation.Confirmation);
     }

@@ -1,7 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -86,14 +88,12 @@ public class CheckPointTest {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
         CheckPointTester checkPoints = genericScriptFunction(false);
-        TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
 
         script.debugger.addResponse("Finished", Response.Ignore);
         script.teaseLib.addCheckPointListener(checkPoints);
-        script.teaseLib.addTimeAdvancedListener(tal);
+
         assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
         script.teaseLib.removeCheckPointListener(checkPoints);
-        script.teaseLib.removeTimeAdvancedListener(tal);
 
         checkPoints.throwCatchedException();
         assertEquals(3, checkPoints.actual.get());
@@ -120,23 +120,47 @@ public class CheckPointTest {
     }
 
     @Test
-    // TODO make test succeed after changing PromptQueue to make prompt actice, the nstart script function
-    // -> to avoid deadlock when canceling script function after showing a prompt failed
-    // showing prompt first also reduces complexity, and makes error handling easier
+    // TODO asserts sometimes
     public void testCheckPointScriptFunctionAndTimeListenerWithResponse() throws Exception {
         TestScript script = TestScript.getOne();
         CheckPointTester checkPoints = genericScriptFunction(true);
         TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
 
-        script.debugger.addResponse("Finished", Response.Choose);
+        CyclicBarrier inScriptFunction = new CyclicBarrier(2);
+        String answer = "Finished";
+        script.debugger.addResponse(answer, () -> {
+            inScriptFunction.await();
+            return Response.Choose;
+        });
         script.teaseLib.addCheckPointListener(checkPoints);
         script.teaseLib.addTimeAdvancedListener(tal);
-        assertEquals("Finished", script.reply(() -> script.say("test"), "Finished"));
+
+        assertEquals(answer, script.reply(() -> {
+            script.say("test");
+            try {
+                inScriptFunction.await();
+                waitForResponse();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            } catch (BrokenBarrierException e) {
+                throw new AssertionError(e.getMessage());
+            }
+        }, answer));
+
         script.teaseLib.removeCheckPointListener(checkPoints);
         script.teaseLib.removeTimeAdvancedListener(tal);
 
         checkPoints.throwCatchedException();
-        assertEquals(2, checkPoints.actual.get());
+        assertEquals("Script function dismissed with '" + answer + "'", 2, checkPoints.actual.get());
+    }
+
+    private void waitForResponse() throws InterruptedException {
+        synchronized (this) {
+            while (true) {
+                wait(Long.MAX_VALUE);
+            }
+        }
     }
 
     private static CheckPointTester genericScriptFunction(boolean withTimeAdvanceListener) {

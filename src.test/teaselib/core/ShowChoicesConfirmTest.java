@@ -1,15 +1,15 @@
 package teaselib.core;
 
 import static org.junit.Assert.*;
+import static teaselib.ScriptFunction.*;
+import static teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior.*;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import teaselib.ScriptFunction;
 import teaselib.core.Debugger.Response;
-import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
 import teaselib.test.TestScript;
 
 /**
@@ -17,39 +17,75 @@ import teaselib.test.TestScript;
  *
  */
 public class ShowChoicesConfirmTest {
+
     @Test
     public void testDismissScriptFunction() {
         TestScript script = TestScript.getOne();
-        String choice = "Dismiss";
+        String choice = "Foobar";
         script.debugger.addResponse(choice, Debugger.Response.Choose);
-
-        script.say("Foobar");
-        assertEquals(choice,
-                script.reply(script.timeoutWithConfirmation(1, TimeoutBehavior.InDubioContraReum), choice));
+        // TODO debug response input method fails to apply since the prompt is dismissed already
+        // -> affects tests in Mine since the flow of execution is changed
+        for (int i = 0; i < 10; i++) {
+            assertEquals(choice, script.reply(script.timeoutWithConfirmation(3, InDubioContraReum), choice));
+        }
     }
 
     @Test
-    public void testAwaitScriptFunctionTimeout() {
+    public void testDismissScriptFunctionRealTime() {
         TestScript script = TestScript.getOne();
-        String choice = "Dismiss";
-
-        long start = script.teaseLib.getTime(TimeUnit.MILLISECONDS);
-        script.debugger.addResponse(new Debugger.ResponseAction(choice, chooseAfterTimeout(script, start, 1000)));
-
-        script.say("Foobar");
-        assertEquals(ScriptFunction.TimeoutString,
-                script.reply(script.timeoutWithConfirmation(1, TimeoutBehavior.InDubioContraReum), choice));
+        String choice = "Foobar";
+        script.debugger.addResponse(choice, Debugger.Response.Choose);
+        script.debugger.resumeTime();
+        for (int i = 0; i < 10; i++) {
+            assertEquals(choice, script.reply(script.timeoutWithConfirmation(1, InDubioContraReum), choice));
+        }
     }
 
-    private static Callable<Response> chooseAfterTimeout(TestScript script, long startMillis,
-            @SuppressWarnings("unused") long timeoutMillis) {
+    @Test
+    public void testAwaitScriptFunctionConfirmTimeout() {
+        TestScript script = TestScript.getOne();
+        String choice = "Foobar";
+
+        script.debugger.addResponse(new Debugger.ResponseAction(choice, chooseAfterTimeout(script, 2000)));
+        assertEquals(TimeoutString, script.reply(script.timeoutWithConfirmation(1, InDubioContraReum), choice));
+    }
+
+    @Test
+    public void testAwaitScriptFunctionConfirmTimeoutRealTime() {
+        TestScript script = TestScript.getOne();
+        String choice = "Foobar";
+
+        script.debugger.resumeTime();
+        script.debugger.addResponse(new Debugger.ResponseAction(choice, chooseAfterTimeout(script, 2000)));
+        assertEquals(TimeoutString, script.reply(script.timeoutWithConfirmation(1, InDubioContraReum), choice));
+    }
+
+    @Test
+    public void testAwaitScriptFunctionAutoConfirmTimeout() {
+        TestScript script = TestScript.getOne();
+        String choice = "Foobar";
+
+        script.debugger.addResponse(new Debugger.ResponseAction(choice, chooseAfterTimeout(script, 2000)));
+        assertEquals(TimeoutString, script.reply(script.timeoutWithAutoConfirmation(1, InDubioContraReum), choice));
+    }
+
+    @Test
+    public void testAwaitScriptFunctionAutoConfirmTimeoutRealTime() {
+        TestScript script = TestScript.getOne();
+        String choice = "Foobar";
+
+        script.debugger.resumeTime();
+        script.debugger.addResponse(new Debugger.ResponseAction(choice, chooseAfterTimeout(script, 2000)));
+        assertEquals(TimeoutString, script.reply(script.timeoutWithAutoConfirmation(1, InDubioContraReum), choice));
+    }
+
+    private static Callable<Response> chooseAfterTimeout(TestScript script, long timeoutMillis) {
+        long startMillis = script.teaseLib.getTime(TimeUnit.MILLISECONDS);
         return () -> {
             long elapsedMillis = script.teaseLib.getTime(TimeUnit.MILLISECONDS);
             long duration = elapsedMillis - startMillis;
-            // TODO delay simulation is not correct, because it adds up the delays of all threads
-            // -> add up for each thread separately to allow comparing to timeoutMillis directly
-            long timeoutMillisWorkaround = Long.MAX_VALUE - elapsedMillis;
-            return duration == timeoutMillisWorkaround ? Debugger.Response.Choose : Debugger.Response.Ignore;
+            return duration >= timeoutMillis ? Debugger.Response.Choose : Debugger.Response.Ignore;
         };
     }
+
 }

@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -61,6 +60,7 @@ public class ScriptFunctionTest {
 
     }
 
+    @SuppressWarnings("resource")
     private static RunnableTestScript getMainScript() {
         return new RunnableTestScript(TestScript.teaseLib()) {
             @Override
@@ -150,6 +150,7 @@ public class ScriptFunctionTest {
             public void run() {
                 say("In main script.");
                 result.set(reply(() -> {
+                    // Empty
                 }, "Finished"));
                 say("Resuming main script.");
             }

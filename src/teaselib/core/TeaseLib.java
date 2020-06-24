@@ -1,7 +1,7 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.stream.Collectors.toList;
+import static java.util.concurrent.TimeUnit.*;
+import static java.util.stream.Collectors.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -244,23 +244,47 @@ public class TeaseLib implements Closeable {
     public void sleep(long duration, TimeUnit unit) {
         if (duration > 0) {
             if (isTimeFrozen()) {
-                if (timeAdvanceThread.get() == null || timeAdvanceThread.get() == Thread.currentThread()) {
-                    advanceTime(duration, unit);
-                    fireTimeAdvanced();
-                }
-                if (Thread.interrupted()) {
-                    throw new ScriptInterruptedException();
-                }
+                sleepWhileTimeIsFrozen(duration, unit);
             } else {
-                try {
-                    unit.sleep(duration);
-                    fireTimeAdvanced();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new ScriptInterruptedException(e);
-                }
+                sleepInRealTime(duration, unit);
             }
         }
+    }
+
+    private void sleepWhileTimeIsFrozen(long duration, TimeUnit unit) {
+        if (timeAdvanceThread.get() == null || timeAdvanceThread.get() == Thread.currentThread()) {
+            advanceTime(duration, unit);
+        } else {
+            advanceTime(0, unit);
+        }
+
+        if (Thread.interrupted()) {
+            throw new ScriptInterruptedException();
+        }
+        fireTimeAdvanced();
+        if (Thread.interrupted()) {
+            throw new ScriptInterruptedException();
+        }
+    }
+
+    private void sleepInRealTime(long duration, TimeUnit unit) {
+        try {
+            if (timeAdvanceListeners.isEmpty()) {
+                unit.sleep(duration);
+            } else {
+                long milliSeconds = duration == Long.MAX_VALUE ? Long.MAX_VALUE : MILLISECONDS.convert(duration, unit);
+                while (milliSeconds > 0) {
+                    TimeUnit.MILLISECONDS.sleep(Math.min(1000, milliSeconds));
+                    fireTimeAdvanced();
+                    milliSeconds -= 1000;
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        }
+
+        fireTimeAdvanced();
     }
 
     void addTimeAdvancedListener(TimeAdvanceListener listener) {

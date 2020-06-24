@@ -2,6 +2,8 @@ package teaselib.core.ui;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import teaselib.core.util.ExceptionUtil;
+
 /**
  * @author Citizen-Cane
  *
@@ -21,7 +23,10 @@ public class PromptQueue {
         try {
             activate(prompt);
         } catch (Exception e) {
-            dismiss(prompt);
+            if (prompt.scriptTask != null) {
+                prompt.scriptTask.cancel(true);
+            }
+            throw ExceptionUtil.asRuntimeException(e);
         }
 
         if (prompt.scriptTask != null) {
@@ -35,11 +40,6 @@ public class PromptQueue {
         if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
             prompt.click.await();
         }
-
-        if (prompt.result().equals(Prompt.Result.UNDEFINED) && !prompt.paused()) {
-            prompt.setTimedOut();
-        }
-
         dismiss(prompt);
         return prompt.result();
     }
@@ -63,10 +63,8 @@ public class PromptQueue {
     }
 
     private void activate(Prompt prompt) throws InterruptedException {
+        prompt.show();
         active.set(prompt);
-        for (InputMethod inputMethod : prompt.inputMethods) {
-            inputMethod.show(prompt);
-        }
     }
 
     public boolean pause(Prompt prompt) {
@@ -74,7 +72,8 @@ public class PromptQueue {
         if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
             return dismiss(prompt);
         } else {
-            return false;
+            // return false;
+            throw new IllegalStateException("Previous prompt already dismissed: " + prompt);
         }
     }
 
@@ -98,4 +97,10 @@ public class PromptQueue {
     public Prompt getActive() {
         return active.get();
     }
+
+    @Override
+    public String toString() {
+        return active.toString();
+    }
+
 }

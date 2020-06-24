@@ -1,8 +1,6 @@
 package teaselib.core.ui;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -67,17 +65,18 @@ public class SpeechRecognitionInputMethodTest {
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
 
+            Prompt.Result result;
             boolean dismissed;
             prompt.lock.lockInterruptibly();
             try {
                 inputMethod.show(prompt);
                 recognizers.get(choices.locale).emulateRecogntion(phrase);
                 dismissed = prompt.click.await(5, TimeUnit.SECONDS);
+                result = prompt.result();
             } finally {
                 prompt.lock.unlock();
             }
 
-            Prompt.Result result = prompt.result();
             assertEquals(phrase, new Prompt.Result(0), result);
             assertTrue("Expected dismissed prompt", dismissed);
         }

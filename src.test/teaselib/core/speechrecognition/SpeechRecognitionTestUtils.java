@@ -1,10 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.speechrecognition.SpeechRecognition.withoutPunctation;
+import static java.util.Arrays.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognition.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -124,22 +122,23 @@ public class SpeechRecognitionTestUtils {
 
         try {
             boolean dismissed;
+            Result result;
             prompt.lock.lockInterruptibly();
             try {
                 inputMethod.show(prompt);
                 inputMethod.emulateRecogntion(phrase);
                 dismissed = prompt.click.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+
+                if (!dismissed) {
+                    inputMethod.dismiss(prompt);
+                    result = prompt.result();
+                    assertEquals("Rejected prompt expected" + prompt, Result.UNDEFINED, result);
+                } else {
+                    result = prompt.result();
+                }
             } finally {
                 prompt.lock.unlock();
             }
-
-            if (!dismissed) {
-                inputMethod.dismiss(prompt);
-                Result result = prompt.result();
-                assertEquals("Rejected prompt expected" + prompt, Result.UNDEFINED, result);
-            }
-
-            Result result = prompt.result();
 
             if (expectedRules != null) {
                 assertTrue("Expected recognition:: \"" + phrase + "\"", dismissed);
@@ -167,7 +166,8 @@ public class SpeechRecognitionTestUtils {
         assertEquals("Expected choice " + expectedRules, expectedRules.elements.get(0), choices.get(0));
     }
 
-    static void emulateRecognition(SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase) throws InterruptedException {
+    static void emulateRecognition(SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase)
+            throws InterruptedException {
         Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
         awaitResult(inputMethod, prompt, withoutPunctation(phrase),
                 new Prompt.Result(choices.toText().indexOf(phrase)));

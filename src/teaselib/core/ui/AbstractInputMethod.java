@@ -46,7 +46,9 @@ public abstract class AbstractInputMethod implements InputMethod {
         }
     };
 
-    private Future<Prompt.Result> result;
+    // TODO result is returned but never used since it's signaled to prompt
+    // -> use or remove - either worker result or replySection
+    private Future<Prompt.Result> resultWorker;
 
     public AbstractInputMethod(ExecutorService executor) {
         this.executor = executor;
@@ -56,7 +58,7 @@ public abstract class AbstractInputMethod implements InputMethod {
     public final void show(Prompt prompt) throws InterruptedException {
         synchronized (getResult) {
             activePrompt.set(prompt);
-            result = executor.submit(getResult);
+            resultWorker = executor.submit(getResult);
             while (!replySection.isLocked() && prompt.result().equals(Prompt.Result.UNDEFINED)) {
                 getResult.wait();
             }
@@ -64,19 +66,22 @@ public abstract class AbstractInputMethod implements InputMethod {
     }
 
     Prompt.Result awaitAndSignalResult(Prompt prompt) throws InterruptedException, ExecutionException {
-        if (prompt.result() == Prompt.Result.UNDEFINED) {
+        if (prompt.unsynchronizedResult() == Prompt.Result.UNDEFINED) {
             Prompt.Result result = handleShow(prompt);
-            signalResult(prompt, result);
+            signal(prompt, result);
         }
-        return prompt.result();
+        return prompt.unsynchronizedResult();
     }
 
     protected abstract Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException;
 
-    private void signalResult(Prompt prompt, Prompt.Result result) throws InterruptedException {
+    private void signal(Prompt prompt, Prompt.Result result) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
-            if (!prompt.paused()) {
+            if (prompt.paused()) {
+                throw new UnsupportedOperationException(
+                        "Trying to signal result " + result + " to paused prompt " + prompt);
+            } else if (prompt.result().equals(Prompt.Result.UNDEFINED) && !prompt.paused()) {
                 prompt.signalResult(this, result);
             }
         } finally {
@@ -87,23 +92,30 @@ public abstract class AbstractInputMethod implements InputMethod {
     protected <T extends InputMethodEventArgs> boolean signalActivePrompt(Runnable action, T eventArgs) {
         Prompt prompt = activePrompt.get();
         if (prompt != null) {
-            if (prompt.paused()) {
-                // TODO calling this multiple times in a row is unstable
-                // - interjecting empty runnable results in previous interjection also not being called
-                // - works in debug mode
-                // -> need to wait until previous handler has finished and prompt is established again
-                // TODO sometimes throws java.util.NoSuchElementException:
-                // "Event teaselib.core.ScriptEvents$ScriptEventAction@1e4d3ce5 in event source 'Before Message'."
-                throw new UnsupportedOperationException(
-                        "Command queueing for signalActivePrompt(Runnable action, T eventArgs)");
+            prompt.lock.lock();
+            try {
+                if (prompt.paused()) {
+                    // TODO calling this multiple times in a row is unstable
+                    // - interjecting empty runnable results in previous interjection also not being called
+                    // - works in debug mode
+                    // -> need to wait until previous handler has finished and prompt is established again
+                    // TODO sometimes throws java.util.NoSuchElementException:
+                    // "Event teaselib.core.ScriptEvents$ScriptEventAction@1e4d3ce5 in event source 'Before Message'."
+                    throw new UnsupportedOperationException(
+                            "Command queueing for signalActivePrompt(Runnable action, T eventArgs)");
+                } else {
+                    return signal(prompt, action, eventArgs);
+                }
+            } finally {
+                prompt.lock.unlock();
             }
-            return signal(prompt, action, eventArgs);
         } else {
             return false;
         }
     }
 
     public static <T extends InputMethodEventArgs> boolean signal(Prompt prompt, Runnable action, T eventArgs) {
+
         prompt.when(eventArgs.source).run(e -> {
             prompt.remove(e.source);
             action.run();
@@ -128,17 +140,17 @@ public abstract class AbstractInputMethod implements InputMethod {
             throw new IllegalStateException("Trying to dismiss wrong prompt");
         }
 
-        if (result.isCancelled()) {
+        if (resultWorker.isCancelled()) {
             return false;
-        } else if (result.isDone()) {
+        } else if (resultWorker.isDone()) {
             try {
-                result.get();
+                resultWorker.get();
             } catch (ExecutionException e) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
             }
             return false;
         } else {
-            result.cancel(true);
+            resultWorker.cancel(true);
         }
 
         try {

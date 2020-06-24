@@ -173,6 +173,8 @@ public class Prompt {
     }
 
     void executeInputMethodHandler(InputMethodEventArgs eventArgs) {
+        throwIfNotLocked();
+
         try {
             Action action;
             synchronized (inputMethodEventActions) {
@@ -186,7 +188,22 @@ public class Prompt {
         }
     }
 
-    public synchronized Result result() {
+    public void show() throws InterruptedException {
+        throwIfNotLocked();
+        throwIfPaused();
+
+        for (InputMethod inputMethod : inputMethods) {
+            inputMethod.show(this);
+        }
+    }
+
+    public Result result() {
+        throwIfNotLocked();
+
+        return unsynchronizedResult();
+    }
+
+    public Result unsynchronizedResult() {
         if (exception != null) {
             if (exception instanceof Exception) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce((Exception) exception));
@@ -197,10 +214,17 @@ public class Prompt {
         return result;
     }
 
-    public synchronized void setResultOnce(InputMethod inputMethod, Result result) {
-        if (this.result.equals(Prompt.Result.UNDEFINED)) {
+    public void setResultOnce(InputMethod inputMethod, Result result) {
+        throwIfNotLocked();
+        throwIfPaused(inputMethod + " tried to set result");
+
+        if (result.equals(Prompt.Result.DISMISSED)) {
+            forwardToScriptAndThrow(
+                    new IllegalArgumentException(result + " is not a valid choice: " + this + ": " + inputMethod));
+        } else if (this.result.equals(Prompt.Result.UNDEFINED)) {
             if (!result.valid(choices)) {
-                forwardToScriptAndThrow(new IndexOutOfBoundsException(result + "->" + this + ": " + inputMethod));
+                forwardToScriptAndThrow(new IndexOutOfBoundsException(
+                        result + " is not a valid choice for " + this + ": " + inputMethod));
             } else {
                 this.resultInputMethod = inputMethod;
                 this.result = result;
@@ -210,9 +234,11 @@ public class Prompt {
         }
     }
 
-    public synchronized void setTimedOut() {
+    public void setTimedOut() {
+        throwIfNotLocked();
+        throwIfPaused("Trying to set timeout");
+
         if (result.equals(Prompt.Result.UNDEFINED)) {
-            // TODO Should be TIMED_OUT
             result = Prompt.Result.DISMISSED;
         } else {
             forwardAndThrowResultAlreadySet();
@@ -220,17 +246,16 @@ public class Prompt {
     }
 
     public void signalResult(InputMethod inputMethod, Result result) {
-        setResultOnce(inputMethod, result);
+        throwIfNotLocked();
+        throwIfPaused(inputMethod + " tried to signal result");
 
-        if (!paused()) {
-            click.signalAll();
-        } else {
-            forwardToScriptAndThrow(new IllegalStateException(inputMethod + " tried to signal paused prompt " + this));
-        }
+        setResultOnce(inputMethod, result);
+        click.signalAll();
     }
 
     private void forwardAndThrowResultAlreadySet() {
-        String message = "Prompt " + this + " already set to " + resultInputMethod + " -> " + result;
+        String message = "Prompt " + this + " already set to "
+                + (resultInputMethod != null ? resultInputMethod : "timeout") + " -> " + result;
         forwardToScriptAndThrow(new IllegalStateException(message));
     }
 
@@ -240,18 +265,23 @@ public class Prompt {
     }
 
     public void pause() {
+        throwIfNotLocked();
         paused.set(true);
     }
 
     public boolean paused() {
+        throwIfNotLocked();
         return paused.get();
     }
 
     public void resume() {
+        throwIfNotLocked();
         paused.set(false);
     }
 
     public boolean dismiss() {
+        throwIfNotLocked();
+
         try {
             boolean dismissed = false;
             for (InputMethod inputMethod : inputMethods) {
@@ -274,10 +304,10 @@ public class Prompt {
         this.exception = throwable;
         this.result = Prompt.Result.UNDEFINED;
         if (lock.isHeldByCurrentThread()) {
-            click.signal();
+            click.signalAll();
         } else if (lock.tryLock()) {
             try {
-                click.signal();
+                click.signalAll();
             } finally {
                 lock.unlock();
             }
@@ -312,18 +342,34 @@ public class Prompt {
         }
     }
 
-    public synchronized void signalHandlerInvocation(InputMethodEventArgs eventArgs) {
-        if (!paused()) {
-            boolean actionAvailable;
-            synchronized (inputMethodEventActions) {
-                actionAvailable = inputMethodEventActions.containsKey(eventArgs.source);
-            }
+    public void signalHandlerInvocation(InputMethodEventArgs eventArgs) {
+        throwIfNotLocked();
+        throwIfPaused(eventArgs + " tried to signal handler invocation");
 
-            if (actionAvailable) {
-                pause();
-                inputMethodEventArgs.set(eventArgs);
-                click.signalAll();
-            }
+        boolean actionAvailable;
+        synchronized (inputMethodEventActions) {
+            actionAvailable = inputMethodEventActions.containsKey(eventArgs.source);
+        }
+
+        if (actionAvailable) {
+            inputMethodEventArgs.set(eventArgs);
+            click.signalAll();
+        }
+    }
+
+    private void throwIfNotLocked() {
+        if (!lock.isHeldByCurrentThread()) {
+            throw new IllegalStateException("Prompt must be locked before changing state: " + this);
+        }
+    }
+
+    public void throwIfPaused() {
+        throwIfPaused("Trying to invoke active-only operation");
+    }
+
+    public void throwIfPaused(String reason) {
+        if (paused()) {
+            throw new IllegalStateException(reason + " on paused prompt: " + this);
         }
     }
 

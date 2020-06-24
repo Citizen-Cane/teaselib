@@ -144,4 +144,62 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
 
         assertEquals(4, count.get());
     }
+
+    @Test
+    public void testHandlerSingleInvocationRealTime() {
+        debugger.addResponse("No", Debugger.Response.Invoke);
+        debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
+        debugger.resumeTime();
+
+        script.say("Start.");
+        assertEquals("No", script.reply("Yes", "No"));
+        script.say("End.");
+
+        assertEquals(1, count.get());
+    }
+
+    @Test
+    public void testHandlerDoubleInvocationRealTime() {
+        debugger.addResponse("No", Debugger.Response.Invoke);
+        debugger.addResponse("Yes", Debugger.Response.Invoke);
+        debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
+        debugger.resumeTime();
+
+        script.say("Start.");
+        assertEquals("No", script.reply("Yes", "No"));
+        script.say("End.");
+
+        assertEquals(2, count.get());
+    }
+
+    @Test
+    public void testHandlerTripleInvocationRealTime() {
+        debugger.addResponse("No", Debugger.Response.Invoke);
+        debugger.addResponse("Yes", Debugger.Response.Invoke);
+        debugger.addResponse("Maybe", Debugger.Response.Invoke);
+        debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
+        debugger.resumeTime();
+
+        script.say("Start.");
+        assertEquals("No", script.reply("Yes", "No", "Maybe"));
+        script.say("End.");
+
+        assertEquals(3, count.get());
+    }
+
+    @Test
+    public void testHandlerQuadInvocationRealTime() {
+        debugger.addResponse("No", Debugger.Response.Invoke);
+        debugger.addResponse("Yes", Debugger.Response.Invoke);
+        debugger.addResponse("Maybe", Debugger.Response.Invoke);
+        debugger.addResponse("Later", Debugger.Response.Invoke);
+        debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
+        debugger.resumeTime();
+
+        script.say("Start.");
+        assertEquals("No", script.reply("Yes", "No", "Maybe", "Later"));
+        script.say("End.");
+
+        assertEquals(4, count.get());
+    }
 }

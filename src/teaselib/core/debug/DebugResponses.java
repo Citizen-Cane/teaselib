@@ -2,6 +2,7 @@ package teaselib.core.debug;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 import teaselib.core.Debugger.Response;
@@ -18,7 +19,7 @@ public class DebugResponses {
     public static final long IMMEDIATELY = 0;
     public static final long NEVER = Long.MAX_VALUE;
 
-    private List<ResponseAction> responses = new ArrayList<>();
+    private List<ResponseAction> responses = new CopyOnWriteArrayList<>();
 
     public static class Result {
         public final String match;
@@ -79,7 +80,7 @@ public class DebugResponses {
             if (choice.matcher(choices.get(i).answer.text.get(0)).matches()
                     && (bestResult == null || bestResult.response == Response.Ignore)) {
                 try {
-                    bestResult = new Result(entry.match, i, entry.getResponse().call());
+                    return new Result(entry.match, i, entry.getResponse().call());
                 } catch (Exception e) {
                     throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
                 }

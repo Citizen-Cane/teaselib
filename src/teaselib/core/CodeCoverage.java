@@ -86,11 +86,12 @@ public class CodeCoverage<T extends Script> {
                 return new Prompt.Result(result);
             }
 
+            // Now correct since the prompt is dismissed before determining the timeout state
             @Override
             public void promptDismissed(Prompt prompt) {
-                if (prompt.result().equals(Prompt.Result.UNDEFINED) && !prompt.paused()) {
-                    throw new IllegalStateException("Failed to dismiss prompt " + prompt);
-                }
+                // if (prompt.result().equals(Prompt.Result.UNDEFINED) && !prompt.paused()) {
+                // throw new IllegalStateException("Failed to dismiss prompt " + prompt);
+                // }
             }
 
         };

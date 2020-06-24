@@ -1,14 +1,15 @@
 package teaselib.core;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Debugger.Response;
 import teaselib.core.Debugger.ResponseAction;
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.debug.DebugResponses;
 import teaselib.core.debug.DebugResponses.Result;
 import teaselib.core.debug.TimeAdvanceListener;
@@ -21,86 +22,111 @@ import teaselib.core.ui.Prompt;
  * @author Citizen-Cane
  *
  */
-public class ResponseDebugInputMethod implements DebugInputMethod {
+public class ResponseDebugInputMethod extends AbstractInputMethod implements DebugInputMethod {
     private static final Logger logger = LoggerFactory.getLogger(ResponseDebugInputMethod.class);
 
     public enum Notification implements InputMethod.Notification {
         DebugInput
     }
 
-    private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
     private final AtomicLong elapsed = new AtomicLong();
 
     private final DebugResponses responses = new DebugResponses();
     private final Runnable debugAction;
 
+    Prompt.Result result;
+
     public ResponseDebugInputMethod(Runnable debugAction) {
+        super(NamedExecutorService.singleThreadedQueue(ResponseDebugInputMethod.class.getSimpleName()));
         this.debugAction = debugAction;
     }
 
     private final TimeAdvanceListener timeAdvanceListener = e -> {
-        Prompt prompt = activePrompt.get();
-        if (prompt != null) {
-            dismissExpectedPromptOrIgnore(prompt);
-            elapsed.addAndGet(e.teaseLib.getTime(TimeUnit.MILLISECONDS));
+        if (!dismissed()) {
+            Prompt prompt = activePrompt.get();
+            if (prompt != null) {
+                Thread t = new Thread(() -> {
+                    prompt.lock.lock();
+                    try {
+                        if (prompt.result() == Prompt.Result.UNDEFINED && !prompt.paused()) {
+                            dismissExpectedPromptOrIgnore(prompt);
+                            elapsed.addAndGet(e.teaseLib.getTime(TimeUnit.MILLISECONDS));
+                        }
+                    } finally {
+                        prompt.lock.unlock();
+                    }
+                });
+                t.setName(ResponseDebugInputMethod.class.getSimpleName() + " " + getClass().getSimpleName());
+                t.start();
+            }
         }
     };
 
     private void dismissExpectedPromptOrIgnore(Prompt prompt) {
-        prompt.lock.lock();
-        try {
-            Result result = responses.getResponse(prompt.choices);
-            if (result.response == Response.Choose) {
-                choose(prompt, result);
-            } else if (result.response == Response.Invoke) {
-                invokeHandlerOnce(prompt, result);
-            } else {
-                logger.info("Ignoring {}", result);
+        Result debugResponse = responses.getResponse(prompt.choices);
+        if (debugResponse.response == Response.Choose) {
+            synchronized (this) {
+                result = new Prompt.Result(debugResponse.index);
+                notifyAll();
             }
-        } finally {
-            prompt.lock.unlock();
+        } else if (debugResponse.response == Response.Invoke) {
+            invokeHandlerOnce(prompt, debugResponse);
+        } else if (debugResponse.response == Response.Ignore) {
+            logger.info("Ignoring {}", result);
+        } else {
+            throw new UnsupportedOperationException(debugResponse.toString());
         }
     }
 
     @Override
     public Setup getSetup(Choices choices) {
-        return AbstractInputMethod.Unused;
+        return () -> result = Prompt.Result.UNDEFINED;
     }
 
     @Override
-    public void show(Prompt prompt) {
-        dismissExpectedPromptOrShow(prompt);
+    protected Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
+        return dismissExpectedPromptOrShow(prompt);
     }
 
-    private void dismissExpectedPromptOrShow(Prompt prompt) {
-        Result result = responses.getResponse(prompt.choices);
-        if (result.response == Response.Choose) {
-            choose(prompt, result);
-        } else if (result.response == Response.Invoke) {
-            invokeHandlerOnce(prompt, result);
-        } else {
-            activePrompt.set(prompt);
-            elapsed.set(0);
+    @Override
+    protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
+        synchronized (this) {
+            notifyAll();
         }
+
+        if (prompt.result().equals(Prompt.Result.UNDEFINED) && dismissed()) {
+            prompt.setResultOnce(this, result);
+        }
+        return !dismissed();
+    }
+
+    private boolean dismissed() {
+        return !result.equals(Prompt.Result.UNDEFINED) && !result.equals(Prompt.Result.DISMISSED);
+    }
+
+    private Prompt.Result dismissExpectedPromptOrShow(Prompt prompt) throws InterruptedException {
+        synchronized (this) {
+
+            Result debugResponse = responses.getResponse(prompt.choices);
+            if (debugResponse.response == Response.Choose) {
+                result = new Prompt.Result(debugResponse.index);
+            } else if (debugResponse.response == Response.Invoke) {
+                invokeHandlerOnce(prompt, debugResponse);
+            } else {
+                elapsed.set(0);
+            }
+
+            while (result == Prompt.Result.UNDEFINED) {
+                wait();
+            }
+        }
+
+        return result;
     }
 
     private void invokeHandlerOnce(Prompt prompt, Result result) {
-        new Thread(() -> {
-            prompt.lock.lock();
-            try {
-                AbstractInputMethod.signal(prompt, debugAction,
-                        new ResponseDebugInputMethodEventArgs(Notification.DebugInput));
-                responses.replace(new ResponseAction(result.match, Response.Choose));
-            } finally {
-                prompt.lock.unlock();
-            }
-        }, "Debug Input Method Handler").start();
-    }
-
-    @Override
-    public boolean dismiss(Prompt prompt) throws InterruptedException {
-        activePrompt.set(null);
-        return true;
+        AbstractInputMethod.signal(prompt, debugAction, new ResponseDebugInputMethodEventArgs(Notification.DebugInput));
+        responses.replace(new ResponseAction(result.match, Response.Choose));
     }
 
     public DebugResponses getResponses() {
@@ -118,32 +144,22 @@ public class ResponseDebugInputMethod implements DebugInputMethod {
     }
 
     public void replyScriptFunction(String match) {
-        Prompt prompt = activePrompt.get();
-        if (prompt == null) {
-            throw new IllegalStateException("No active prompt: " + match);
-        } else {
-            prompt.lock.lock();
-            try {
-                Result result = DebugResponses.getResponse(prompt.choices, new ResponseAction(match), null);
-                if (result != null) {
-                    choose(prompt, result);
-                    try {
-                        prompt.click.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+        synchronized (this) {
+            if (!dismissed()) {
+                Prompt prompt = activePrompt.get();
+                if (prompt == null) {
+                    throw new IllegalStateException("No active prompt: " + match);
                 } else {
-                    throw new IllegalArgumentException("Prompt " + prompt + " doesn't match '" + match + "'");
+                    Result response = DebugResponses.getResponse(prompt.choices, new ResponseAction(match), null);
+                    if (response != null) {
+                        result = new Prompt.Result(response.index);
+                        notifyAll();
+                    } else {
+                        throw new IllegalArgumentException("Prompt " + prompt + " doesn't match '" + match + "'");
+                    }
                 }
-            } finally {
-                prompt.lock.unlock();
             }
         }
-    }
-
-    private void choose(Prompt prompt, Result result) {
-        logger.info("Choosing {}", result);
-        prompt.signalResult(this, new Prompt.Result(result.index));
     }
 
     @Override
@@ -155,4 +171,5 @@ public class ResponseDebugInputMethod implements DebugInputMethod {
             return "<no active prompt>";
         }
     }
+
 }

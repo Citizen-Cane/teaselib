@@ -95,7 +95,7 @@ extern "C"
 
 }
 
-SceneCapture::SceneCapture(JNIEnv* env, int id, const wchar_t* name)
+SceneCapture::SceneCapture(JNIEnv* env, int id, const char* name)
 	: NativeObject(env), device(new aifx::VideoCapture(id))
 {
 	jclass clazz = env->FindClass("teaselib/core/ai/perception/SceneCapture");
@@ -105,6 +105,6 @@ SceneCapture::SceneCapture(JNIEnv* env, int id, const wchar_t* name)
 	jthis = env->NewGlobalRef(env->NewObject(clazz,
 		JNIClass::getMethodID(env, clazz, "<init>", signature),
 		reinterpret_cast<jlong>(device.get()),
-		JNIString(env, name).operator jstring()));
+		JNIStringUTF8(env, name).operator jstring()));
 	if (env->ExceptionCheck()) throw JNIException(env);
 }

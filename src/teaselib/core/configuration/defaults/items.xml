@@ -322,19 +322,25 @@
 		<Item item="Pajamas" guid="pajamas" displayName="Pajamas">
 		</Item>
 		
-		<Item item="Socks" guid="socks" displayName="Socks">
+		<Item item="Socks" guid="socks" displayName="Socks">e
 		</Item>
 		
 		<Item item="Stockings" guid="stockings" displayName="Stockings">
 		</Item>
 		
-		<Item item="Swimwear" guid="bikini" displayName="Bikini">
+		
+		<Item item="Bra" guid="bikini" displayName="Bikini Top">
 			<Attribute> Clothes.SwimwearType.Bikini </Attribute>
 		</Item>
-		<Item item="Swimwear" guid="monokini" displayName="Monokini">
+		<Item item="Underpants" guid="bikini" displayName="Bikini Bottom">
+			<Attribute> Clothes.SwimwearType.Bikini </Attribute>
+		</Item>
+		
+		<Item item="Leotard" guid="monokini" displayName="Monokini">
 			<Attribute> Clothes.SwimwearType.Monokini </Attribute>
 		</Item>
-		<Item item="Swimwear" guid="swimsuit" displayName="Swimsuit">
+		
+		<Item item="Leotard" guid="swimsuit" displayName="Swimsuit">
 			<Attribute> Clothes.SwimwearType.Swimsuit </Attribute>
 		</Item>
 

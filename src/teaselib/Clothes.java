@@ -18,15 +18,16 @@ public enum Clothes {
     Catsuit,
     Garter_Belt,
     Leotard,
-    Nightie,
     Underpants,
     Pantyhose,
-    Pajamas,
     Socks,
     Stockings,
-    Swimwear,
 
-    // Attire
+    // Sleepwear
+    Nightie,
+    Pajamas,
+
+    // outer garments
     Blouse,
     Dress,
     Jacket,
@@ -69,9 +70,9 @@ public enum Clothes {
     }
 
     public enum SwimwearType {
-        Bikini,
-        Monokini,
-        Swimsuit,
+        Bikini, // bra/underpants
+        Monokini, // body/leotard
+        Swimsuit, // body/leotard
     }
 
     public enum GenitalAccessType {
@@ -98,28 +99,44 @@ public enum Clothes {
         None
     }
 
+    /**
+     * TODO classify clothing items by category to define catsuits as lingerie or outer garments
+     * <p>
+     * TODO also classify by {@link teaselib.Sexuality#Gender}
+     */
+    enum Category {
+        Lingerie,
+        Sleepwear,
+        Swimwear,
+        OuterGarments
+    }
+
     // Namespaces of wearers of the diverse clothing items
 
     public static final String Doll = "Doll";
     public static final String Partner = "Partner";
 
+    // Categories
+
     public static final Clothes[] Underwear = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Nightie, Underpants,
-            Pantyhose, Socks, Stockings, Swimwear };
+            Pantyhose, Socks, Stockings };
 
     public static final Clothes[] Clothing = { Shirt, Socks, Suit, Sweater, Trousers, TShirt };
 
     public static final Clothes[] MaleUnderwear = { Underpants, Socks, Pajamas };
     public static final Clothes[] MaleClothing = { Socks, Shirt, TShirt, Sweater, Trousers, Jacket, Suit, Vest, Shoes };
 
-    public static final Clothes[] FemaleUnderwear = { Underpants, Garter_Belt, Stockings, Pantyhose, Socks, Body, Bra,
-            Babydoll, Nightie, Pajamas, Leotard, Catsuit, Swimwear };
+    public static final Clothes[] Lingerie = { Underpants, Garter_Belt, Stockings, Pantyhose, Socks, Body, Bra,
+            Babydoll, Leotard, Catsuit };
+    public static final Clothes[] Sleepwear = { Nightie, Pajamas };
     public static final Clothes[] FemaleClothing = { Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
             Vest, Shoes };
 
-    public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, FemaleUnderwear, FemaleClothing };
+    public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, Lingerie, Sleepwear, FemaleClothing };
 
     @Override
     public String toString() {
         return super.toString();
     }
+
 }

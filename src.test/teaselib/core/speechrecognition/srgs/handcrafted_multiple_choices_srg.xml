@@ -5,13 +5,13 @@
 	 -->
 
 	<rule id="Main" scope="public">
-		<ruleref uri="#Rule_0" />
+		<ruleref uri="#r_0_0,1,2_1" />
 		<ruleref uri="#Choice_1" />
-		<ruleref uri="#Rule_2" />
+		<ruleref uri="#r_2_0,1,2_5" />
 		<ruleref uri="#Choice_3" />
 	</rule>
 
-	<rule id="Rule_0" scope="public">
+	<rule id="r_0_0,1,2_1" scope="public">
 			Please Miss
 	</rule>
 
@@ -19,21 +19,21 @@
 		<one-of>
 			<item>
 				one more
-				<tag> out.Choice_1_0 = rules.latest(); </tag>
+				<tag> out.r_1_0_2 = rules.latest(); </tag>
 			</item>
 			<item>
 				one less
-				<tag> out.Choice_1_1 = rules.latest(); </tag>
+				<tag> out.r_1_1_3 = rules.latest(); </tag>
 			</item>
 			<item>
 				two more
-				<tag> out.Choice_1_2 = rules.latest(); </tag>
+				<tag> out.r_1_2_4 = rules.latest(); </tag>
 			</item>
 		</one-of>
 	</rule>
 
 
-	<rule id="Rule_2" scope="public">
+	<rule id="r_2_0,1,2_5" scope="public">
 		strokes
 	    <tag> out.triggerSubsequentChoice_n_m_Properties = rules.latest(); </tag>
 	</rule>
@@ -42,11 +42,11 @@
 		<one-of>
 			<item>
 				okay
-				<tag> out.Choice_3_0 = rules.latest(); </tag>
+				<tag> out.r_3_0_6 = rules.latest(); </tag>
 			</item>
 			<item>
 				May I
-				<tag> out.Choice_3_1 = rules.latest(); </tag>
+				<tag> out.r_3_1_7 = rules.latest(); </tag>
 			</item>
 		</one-of>
 	</rule>

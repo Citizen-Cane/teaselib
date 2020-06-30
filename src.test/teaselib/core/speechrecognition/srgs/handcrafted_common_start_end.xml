@@ -9,31 +9,31 @@
 	 -->
 	
 	<rule id="Main" scope="public">
-		<ruleref uri="#Rule_0" />
+		<ruleref uri="#r_0_0,1_1" />
 		<one-of>
 			<item>
-				<ruleref uri="#Choice_1_0" />
+				<ruleref uri="#r_1_0_2" />
 			</item>
 			<item>
-				<ruleref uri="#Choice_1_1" />
+				<ruleref uri="#r_1_1_3" />
 			</item>
 		</one-of>
-		<ruleref uri="#Rule_2" />
+		<ruleref uri="#r_2_0,1_4" />
 	</rule>
 
-	<rule id="Rule_0" scope="private">
+	<rule id="r_0_0,1_1" scope="private">
 		Dear Mistress
 	</rule>
 
-	<rule id="Choice_1_0" scope="private">
+	<rule id="r_1_0_2" scope="private">
 		I've spurted my load
 	</rule>
 
-	<rule id="Choice_1_1" scope="private">
+	<rule id="r_1_1_3" scope="private">
 		I didn't spurt off
 	</rule>
 
-	<rule id="Rule_2" scope="private">
+	<rule id="r_2_0,1_4" scope="private">
 		Miss
 	</rule>
 </grammar>

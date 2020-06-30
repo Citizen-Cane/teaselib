@@ -290,6 +290,14 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
 
     }
 
+    public List<T> complete(T text) {
+        return elements.stream()
+                .map(sequences -> sequences.stream()
+                        .filter(sequence -> sequences.traits.intersectionPredicate.test(sequence.get(0), text))
+                        .reduce(Sequence::maxLength).orElse(new Sequence<T>(sequences.traits)))
+                .flatMap(Sequence::stream).collect(Collectors.toList());
+    }
+
     @Override
     public String toString() {
         if (rating.isInvalidated()) {

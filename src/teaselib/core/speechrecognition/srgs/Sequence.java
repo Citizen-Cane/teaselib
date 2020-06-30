@@ -21,10 +21,12 @@ public class Sequence<T> extends ArrayList<T> {
         final Function<List<T>, T> joinSequenceOperator;
         final BiPredicate<List<T>, List<T>> joinableSequences;
         final BiPredicate<List<T>, List<T>> joinablePhrases;
+        final BiPredicate<T, T> intersectionPredicate;
 
         Traits(Comparator<T> comperator, Function<T, List<T>> splitter, ToIntFunction<T> commonnessOperator,
                 Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator,
-                BiPredicate<List<T>, List<T>> joinableSequences, BiPredicate<List<T>, List<T>> joinablePhrases) {
+                BiPredicate<List<T>, List<T>> joinableSequences, BiPredicate<List<T>, List<T>> joinablePhrases,
+                BiPredicate<T, T> intersectionPredicate) {
             this.comparator = comperator;
             this.listComparator = this::compare;
             this.splitter = splitter;
@@ -33,6 +35,7 @@ public class Sequence<T> extends ArrayList<T> {
             this.joinSequenceOperator = joinSequenceOperator;
             this.joinableSequences = joinableSequences;
             this.joinablePhrases = joinablePhrases;
+            this.intersectionPredicate = intersectionPredicate;
         }
 
         int compare(List<T> s1, List<T> s2) {
@@ -152,6 +155,10 @@ public class Sequence<T> extends ArrayList<T> {
             max = Math.max(max, traits.commonnessOperator.applyAsInt(element));
         }
         return max;
+    }
+
+    public static <T> Sequence<T> maxLength(Sequence<T> a, Sequence<T> b) {
+        return a.size() > b.size() ? a : b;
     }
 
     public boolean nonEmpty() {

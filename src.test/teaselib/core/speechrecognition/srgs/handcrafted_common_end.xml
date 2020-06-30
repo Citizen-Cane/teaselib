@@ -11,24 +11,24 @@
 	<rule id="Main" scope="public">
 		<one-of>
 			<item>
-				<ruleref uri="#Choice_0_0" />
+				<ruleref uri="#r_0_0_0" />
 			</item>
 			<item>
-				<ruleref uri="#Choice_0_1" />
+				<ruleref uri="#r_0_1_1" />
 			</item>
 		</one-of>
-		<ruleref uri="#Rule_1" />
+		<ruleref uri="#r_1_0,1_2" />
 	</rule>
 
-	<rule id="Choice_0_0" scope="private">
+	<rule id="r_0_0_0" scope="private">
 		I've spurted my load
 	</rule>
 
-	<rule id="Choice_0_1" scope="private">
+	<rule id="r_0_1_1" scope="private">
 		I didn't spurt off
 	</rule>
 
-	<rule id="Rule_1" scope="private">
+	<rule id="r_1_0,1_2" scope="private">
 		Dear Mistress
 	</rule>
 </grammar>

@@ -19,13 +19,14 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import teaselib.core.speechrecognition.Rule;
+
 /**
  * @author Citizen-Cane
  * 
  */
 abstract class AbstractSRGSBuilder {
 
-    static final String MAIN_RULE_NAME = "Main";
     static final String CHOICE_NODE_PREFIX = "r_";
 
     private final String languageCode;
@@ -51,7 +52,7 @@ abstract class AbstractSRGSBuilder {
         addAttribute(grammar, "xml:lang", languageCode);
         addAttribute(grammar, "xmlns", "http://www.w3.org/2001/06/grammar");
         addAttribute(grammar, "tag-format", "semantics/1.0");
-        addAttribute(grammar, "root", MAIN_RULE_NAME);
+        addAttribute(grammar, "root", Rule.MAIN_RULE_NAME);
         return grammar;
     }
 

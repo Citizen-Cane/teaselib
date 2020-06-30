@@ -123,6 +123,24 @@ public class PhrasesSliceTest {
     }
 
     @Test
+    public void testCompletion() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("A B C D", 0), //
+                choice("B C D", 1), //
+                choice("C D", 2), //
+                choice("D", 3), //
+                choice("D E", 4));
+        SlicedPhrases<PhraseString> sliced = SlicedPhrases.of(choices);
+
+        assertEquals(4, sliced.complete(new PhraseString("A", 0)).size());
+        assertEquals(3, sliced.complete(new PhraseString("B", 1)).size());
+        assertEquals(2, sliced.complete(new PhraseString("Foo", 2)).size());
+        assertEquals(1, sliced.complete(new PhraseString("baz", 3)).size());
+        assertEquals(2, sliced.complete(new PhraseString("Bar", 4)).size());
+        assertEquals(2, sliced.complete(new PhraseString("Foo", 3, 4)).size());
+    }
+
+    @Test
     public void testProductionSlice() {
         PhraseStringSequences choices = new PhraseStringSequences( //
                 choice("A B C D", 0), //

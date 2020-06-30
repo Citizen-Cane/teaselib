@@ -11,40 +11,40 @@
 	<rule id="Main" scope="public">
 		<one-of>
 			<item>
-				<ruleref uri="#Choice_0_0" />
-				<ruleref uri="#Rule_1" />
-				<ruleref uri="#Choice_2_0" />
+				<ruleref uri="#r_0_0_1" />
+				<ruleref uri="#r_1_0,1_2" />
+				<ruleref uri="#r_2_0_4" />
 			</item>
 			<item>
-				<ruleref uri="#Choice_0_1" />
-				<ruleref uri="#Rule_1" />
-				<ruleref uri="#Choice_2_1" />
+				<ruleref uri="#r_0_1_3" />
+				<ruleref uri="#r_1_0,1_2" />
+				<ruleref uri="#r_2_1_5" />
 			</item>
 		</one-of>
-		<ruleref uri="#Rule_3" />
+		<ruleref uri="#r_3_0,1_6" />
 	</rule>
 
-	<rule id="Choice_0_0" scope="private">
+	<rule id="r_0_0_1" scope="private">
 		Yes
 	</rule>
 
-	<rule id="Choice_0_1" scope="private">
+	<rule id="r_0_1_3" scope="private">
 		No
 	</rule>
 
-	<rule id="Rule_1" scope="private">
+	<rule id="r_1_0,1_2" scope="private">
 		Miss
 	</rule>
 
-	<rule id="Choice_2_0" scope="private">
+	<rule id="r_2_0_4" scope="private">
 		I've spurted
 	</rule>
 
-	<rule id="Choice_2_1" scope="private">
+	<rule id="r_2_1_5" scope="private">
 		I didn't spurt
 	</rule>
 
-	<rule id="Rule_3" scope="private">
+	<rule id="r_3_0,1_6" scope="private">
 		off
 	</rule>
 

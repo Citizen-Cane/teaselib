@@ -10,26 +10,25 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import teaselib.core.ui.Prompt;
-
 public class RuleIndicesList extends ArrayList<Set<Integer>> {
     private static final long serialVersionUID = 1L;
 
     public RuleIndicesList(Rule rule) {
-        gather(rule);
+        if (rule.children.isEmpty()) {
+            add(rule.indices);
+        } else if (Rule.MAIN_RULE_NAME.equals(rule.name)) {
+            gatherChildren(rule);
+        } else {
+            throw new IllegalArgumentException("Not a main rule: " + rule);
+        }
     }
 
     public RuleIndicesList(List<Set<Integer>> values) {
         super(values);
     }
 
-    private void gather(Rule rule) {
-        if (!rule.indices.isEmpty() && rule.indices.stream()
-                // TODO looks redundant - remove when tests succeed again
-                .allMatch(choiceIndex -> choiceIndex > Prompt.Result.DISMISSED.elements.get(0))) {
-            add(rule.indices);
-        }
-        rule.children.stream().forEach(child -> addAll(child.indices()));
+    private void gatherChildren(Rule rule) {
+        rule.children.stream().forEach(child -> add(child.indices));
     }
 
     public Optional<Integer> singleResult() {

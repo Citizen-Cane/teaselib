@@ -20,22 +20,22 @@ import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 public class PhraseString {
     static final Sequence.Traits<PhraseString> Traits = new Traits<>(PhraseString::compareTo, PhraseString::words,
             PhraseString::commonness, PhraseString::joinCommon, PhraseString::joinSequence,
-            PhraseString::joinableSequences, PhraseString::joinablePhrases);
+            PhraseString::joinableSequences, PhraseString::joinablePhrases, PhraseString::intersectionPredicate);
 
     public final String phrase;
     public final Set<Integer> indices;
 
-    PhraseString(String phrase, int index) {
+    public PhraseString(String phrase, int index) {
         this.phrase = phrase;
         this.indices = singleton(index);
     }
 
-    PhraseString(String phrase, Integer... indices) {
+    public PhraseString(String phrase, Integer... indices) {
         this.phrase = phrase;
         this.indices = new HashSet<>(Arrays.asList(indices));
     }
 
-    PhraseString(String phrase, Set<Integer> indices) {
+    public PhraseString(String phrase, Set<Integer> indices) {
         this.phrase = phrase;
         this.indices = indices;
     }
@@ -99,6 +99,10 @@ public class PhraseString {
 
     private static boolean joinablePhrases(PhraseString phrase1, PhraseString phrase2) {
         return phrase1.indices.equals(phrase2.indices);
+    }
+
+    public static boolean intersectionPredicate(PhraseString a, PhraseString b) {
+        return intersect(a.indices, b.indices);
     }
 
     public static <T> Set<T> intersection(Set<T> a, Set<T> b) {

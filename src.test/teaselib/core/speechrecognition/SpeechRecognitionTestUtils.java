@@ -1,8 +1,10 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Arrays.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognition.*;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.speechrecognition.SpeechRecognition.withoutPunctation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,7 @@ import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;
+import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
@@ -57,12 +60,19 @@ public class SpeechRecognitionTestUtils {
 
     public static List<Rule> assertRecognizedAsHypothesis(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
-        return emulateSpeechRecognition(choices, phrase, expected);
+        try (SpeechRecognizer recognizer = getRecognizer();
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
+            return assertRecognizedAsHypothesis(inputMethod, choices, phrase, expected);
+        }
     }
 
-    public static void assertRecognizedAsHypothesis(SpeechRecognitionInputMethod inputMethod, Choices choices,
+    public static List<Rule> assertRecognizedAsHypothesis(SpeechRecognitionInputMethod inputMethod, Choices choices,
             String phrase, Prompt.Result expected) throws InterruptedException {
-        emulateSpeechRecognition(inputMethod, choices, phrase, expected);
+        return emulateSpeechRecognition(inputMethod, choices, phrase, expected);
+    }
+
+    public static Choices as(Choices choices, Intention intention) {
+        return new Choices(choices.locale, intention, choices);
     }
 
     static List<Rule> assertRejected(Choices choices, String phrase) throws InterruptedException {

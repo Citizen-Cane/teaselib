@@ -3,32 +3,32 @@
   <rule id="Main" scope="private">
     <one-of>
       <item>
-        <ruleref uri="#Choice_0_0__group_0"/>
-        <ruleref uri="#Rule_1__group_0"/>
-        <ruleref uri="#Choice_2_0__group_0"/>
+        <ruleref uri="#r_0_0_1"/>
+        <ruleref uri="#r_1_0,1_3"/>
+        <ruleref uri="#r_2_0_4"/>
       </item>
       <item>
-        <ruleref uri="#Choice_0_1__group_0"/>
-        <ruleref uri="#Rule_1__group_0"/>
-         <ruleref uri="#Choice_2_1__group_0"/>
+        <ruleref uri="#r_0_1_2"/>
+        <ruleref uri="#r_1_0,1_3"/>
+         <ruleref uri="#r_2_1_5"/>
       </item>
     </one-of>
   </rule>
-  <rule id="Choice_0_0__group_0" scope="private">
+  <rule id="r_0_0_1" scope="private">
     <one-of>
         <!-- must be common -->
       <item>Yes Miss</item>
       <item>Yes</item>
     </one-of>
   </rule>
-  <rule id="Choice_0_1__group_0" scope="private">
+  <rule id="r_0_1_2" scope="private">
     <one-of>
         <!-- must be common -->
       <item>Yes Miss</item>
       <item>No</item>
     </one-of>
   </rule>
-  <rule id="Rule_1__group_0" scope="private">of course</rule>
-  <rule id="Choice_2_1__group_0" scope="private">not Miss</rule>
-  <rule id="Choice_2_0__group_0" scope="private">Miss</rule>
+  <rule id="r_1_0,1_3" scope="private">of course</rule>
+  <rule id="r_2_0_4" scope="private">Miss</rule>
+  <rule id="r_2_1_5" scope="private">not Miss</rule>
 </grammar>

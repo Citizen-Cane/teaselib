@@ -2,6 +2,7 @@ package teaselib.core.speechrecognition;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.as;
 import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
 import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
 import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
@@ -32,7 +33,9 @@ public class SpeechRecognitionTest {
                 new Choice("Foo bar"));
 
         assertRecognized(choices, "Foo bar", new Prompt.Result(0));
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(choices, "Foo", new Prompt.Result(0));
+
+        Choices hypothized = as(choices, Intention.Confirm);
+        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "Foo", new Prompt.Result(0));
         assertRejected(choices, "Bar");
     }
 
@@ -96,9 +99,10 @@ public class SpeechRecognitionTest {
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
-            assertRejected(inputMethod, choices, "My name is");
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foo", new Prompt.Result(0));
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
+            
+            assertRejected(inputMethod, choices, "My name is");
         }
     }
 

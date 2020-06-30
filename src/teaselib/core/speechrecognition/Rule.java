@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -19,6 +20,9 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
  *
  */
 public class Rule {
+
+    public static final String MAIN_RULE_NAME = "Main";
+    public static final Set<Integer> NoIndices = Collections.emptySet();
 
     public final String name;
     public final String text;
@@ -55,6 +59,14 @@ public class Rule {
 
     public void add(Rule rule) {
         children.add(rule);
+
+        if (MAIN_RULE_NAME.equals(name)) {
+            if (indices.isEmpty()) {
+                indices.addAll(rule.indices);
+            } else {
+                indices.retainAll(rule.indices);
+            }
+        }
     }
 
     public Rule withDistinctChoiceProbability(int choiceCount) {
@@ -183,7 +195,7 @@ public class Rule {
                     r.toElement + elementOffset, r.probability, r.confidence));
         }
 
-        Rule repaired = new Rule("Repaired",
+        Rule repaired = new Rule(name,
                 repairedChildren.stream().map(r -> r.text).filter(Objects::nonNull).collect(joining(" ")), ruleIndex,
                 indices, fromElement, toElement + elementOffset, probability, confidence);
         repaired.children.addAll(repairedChildren);

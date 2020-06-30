@@ -43,4 +43,5 @@ private:
 	jobject  getConfidenceField(JNIEnv *env, signed char confidence) const;
 	const jclass ruleClass;
 	jobject getRule(ISpRecoResult* pResult, const SPPHRASERULE* rule, const SemanticResults& semanticResults) const;
+	jobject getChoiceIndices(const RuleName& ruleName) const;
 };

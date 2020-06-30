@@ -235,8 +235,6 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 							LPWSTR pszCoMemResultText = NULL;
 							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
 							if (SUCCEEDED(recognizerStatus)) {
-								// TODO No alternate phrases, but may produce the correct text -> create event with a single result object
-								// wprintf(L"Hypothesis event received, text=\"%s\"\r\n", pszCoMemResultText);
 								SpeechRecognizedEvent(env, jthis, "speechDetected").fire(pResult);
 							}
 							if (NULL != pszCoMemResultText) {
@@ -250,7 +248,6 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 							LPWSTR pszCoMemResultText = NULL;
 							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
 							if (SUCCEEDED(recognizerStatus)) {
-								// wprintf(L"False Recognition event received, text=\"%s\"\r\n", pszCoMemResultText);
 								SpeechRecognizedEvent(env, jthis, "recognitionRejected").fire(pResult);
 							}
 							if (NULL != pszCoMemResultText) {
@@ -281,17 +278,14 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 						}
                     }
 				} catch (std::exception& e) {
-					assert(false);
-					wprintf(L"SpeechRecognizer::EventHandler::eventLoop std::exception: %hs\n", e.what());
+					cerr << "Uncatched std exception in SpeechRecognizer::EventHandler::eventLoop: "
+						<< endl << e.what() << endl;
 				} catch (NativeException& e) {
-					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
-					assert(false);
-					wprintf(L"SpeechRecognizer::EventHandler::eventLoop Native exception 0x%x: %s\n", e.errorCode, e.message.c_str());
+					cerr << "Uncatched native exception in SpeechRecognizer::EventHandler::eventLoop: "
+						<< endl << e.message.c_str() << "(error code=" << e.errorCode << ")" << endl;
 				} catch (JNIException& e) {
-					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
-					assert(false);
-					JNIString message = e.getMessage();
-					wprintf(L"SpeechRecognizer::EventHandler::eventLoop JNI exception : %s\n", message.operator LPCWSTR());
+					JNIStringUTF8 message(env, e.getMessage());
+					cerr << "Uncatched JNI exception in SpeechRecognizer::EventHandler::eventLoop: "<< endl << message.operator LPCSTR() << endl;
 				}
             }
             break;
@@ -318,7 +312,7 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 		for_each(choices.begin(), choices.end(), [&cpGrammar, &n](const Choices::value_type & choice) {
 			SPSTATEHANDLE hRule;
 			std::wstringstream ruleName;
-			ruleName << L"Choice_0_" << n;
+			ruleName << L"r_0_" << n;
 			HRESULT hr = cpGrammar->GetRule(ruleName.str().c_str(), n++, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
 			assert(SUCCEEDED(hr));
 			if (FAILED(hr)) throw COMException(hr);

@@ -20,6 +20,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.w3c.dom.Element;
 
+import teaselib.core.speechrecognition.Rule;
 import teaselib.core.ui.Choices;
 
 public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
@@ -50,7 +51,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     @Override
     void buildXML() throws TransformerFactoryConfigurationError, TransformerException {
         Element grammar = createGrammar();
-        Element main = createMainRule(MAIN_RULE_NAME);
+        Element main = createMainRule(Rule.MAIN_RULE_NAME);
         grammar.appendChild(main);
 
         createNodes(grammar, main);

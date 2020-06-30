@@ -112,21 +112,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	if (FAILED(hr)) throw COMException(hr);
 
 	const RuleName ruleName(rule, semanticResults);
-
-	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");
-	jobject choiceIndices = env->NewObject(hashSetClass, JNIClass::getMethodID(env, hashSetClass, "<init>", "()V"));
-	if (env->ExceptionCheck()) throw JNIException(env);
-	jmethodID add = JNIClass::getMethodID(env, hashSetClass, "add", "(Ljava/lang/Object;)Z");
-
-	jclass integerClass = JNIClass::getClass(env, "java/lang/Integer");
-	jmethodID valueOf = JNIClass::getStaticMethodID(env, integerClass, "valueOf", "(I)Ljava/lang/Integer;");
-
-	std::for_each(ruleName.choice_indices.begin(), ruleName.choice_indices.end(), [&](const int index) {
-		jobject jchoiceIndex = env->CallStaticObjectMethod(integerClass, valueOf, index);
-		if (env->ExceptionCheck()) throw JNIException(env);
-		env->CallBooleanMethod(choiceIndices, add, jchoiceIndex);
-		if (env->ExceptionCheck()) throw JNIException(env);
-	});
+	jobject choiceIndices = getChoiceIndices(ruleName);
 
 	jobject jRule = env->NewObject(
 		ruleClass,
@@ -153,6 +139,25 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	}
 
 	return jRule;
+}
+
+jobject SpeechRecognizedEvent::getChoiceIndices(const RuleName& ruleName) const {
+	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");
+	jobject choiceIndices = env->NewObject(hashSetClass, JNIClass::getMethodID(env, hashSetClass, "<init>", "()V"));
+	if (env->ExceptionCheck()) throw JNIException(env);
+	jmethodID add = JNIClass::getMethodID(env, hashSetClass, "add", "(Ljava/lang/Object;)Z");
+
+	jclass integerClass = JNIClass::getClass(env, "java/lang/Integer");
+	jmethodID valueOf = JNIClass::getStaticMethodID(env, integerClass, "valueOf", "(I)Ljava/lang/Integer;");
+
+	std::for_each(ruleName.choice_indices.begin(), ruleName.choice_indices.end(), [&](const int index) {
+		jobject jchoiceIndex = env->CallStaticObjectMethod(integerClass, valueOf, index);
+		if (env->ExceptionCheck()) throw JNIException(env);
+		env->CallBooleanMethod(choiceIndices, add, jchoiceIndex);
+		if (env->ExceptionCheck()) throw JNIException(env);
+		});
+
+	return choiceIndices;
 }
 
 SemanticResults::SemanticResults(const SPPHRASEPROPERTY * pProperty) 
@@ -223,7 +228,7 @@ int RuleName::ruleIndex(const SPPHRASERULE * rule) const {
 
 std::vector<int> RuleName::choiceIndex(const SPPHRASERULE* rule) const {
 	if (args.size() < 3) {
-		return std::vector<int>({ INT_MIN });
+		return std::vector<int>();
 	} else {
 		try {
 			std::vector<int> choiceIndices;
@@ -237,7 +242,7 @@ std::vector<int> RuleName::choiceIndex(const SPPHRASERULE* rule) const {
 
 			return choiceIndices;
 		} catch (const std::exception& e) {
-			return std::vector<int>({ INT_MIN });
+			return std::vector<int>();
 		}
 	}
 }

@@ -191,10 +191,6 @@ public class SpeechRecognition {
         this.parameters = parameters;
     }
 
-    public SpeechRecognitionParameters getChoices() {
-        return parameters;
-    }
-
     public void startRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {

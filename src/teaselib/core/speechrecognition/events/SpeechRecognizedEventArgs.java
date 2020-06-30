@@ -15,6 +15,6 @@ public class SpeechRecognizedEventArgs extends SpeechRecognitionEventArgs {
     @Override
     public String toString() {
         return getClass().getSimpleName() + " Result = "
-                + Arrays.stream(result).map(Rule::prettyPrint).collect(Collectors.joining("\n"));
+                + Arrays.stream(result).map(Rule::prettyPrint).collect(Collectors.joining(""));
     }
 }

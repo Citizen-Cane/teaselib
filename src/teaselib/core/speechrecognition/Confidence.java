@@ -88,7 +88,7 @@ public enum Confidence {
     }
 
     public float weighted(int n) {
-        return weighted(n, 2);
+        return weighted(n, 2.0f);
     }
 
     public float weighted(int n, float k) {

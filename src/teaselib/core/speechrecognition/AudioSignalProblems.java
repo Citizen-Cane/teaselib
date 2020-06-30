@@ -6,10 +6,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AudioSignalProblems {
-    private final Map<AudioSignalProblem, AtomicInteger> problems = new EnumMap<>(
-            AudioSignalProblem.class);
+    private final Map<AudioSignalProblem, AtomicInteger> problems = new EnumMap<>(AudioSignalProblem.class);
     private final Map<AudioSignalProblem, Integer> limits = new EnumMap<>(AudioSignalProblem.class);
-    private final Map<AudioSignalProblem, Double> penalties = new EnumMap<>(AudioSignalProblem.class);
+    private final Map<AudioSignalProblem, Float> penalties = new EnumMap<>(AudioSignalProblem.class);
 
     public AudioSignalProblems() {
         clear();
@@ -28,13 +27,13 @@ public class AudioSignalProblems {
     }
 
     private void setPenalties() {
-        penalties.put(AudioSignalProblem.None, 0.0);
-        penalties.put(AudioSignalProblem.Noise, 1.0);
-        penalties.put(AudioSignalProblem.NoSignal, 1.0);
-        penalties.put(AudioSignalProblem.TooLoud, 1.0);
-        penalties.put(AudioSignalProblem.TooQuiet, 1.0);
-        penalties.put(AudioSignalProblem.TooFast, 1.0);
-        penalties.put(AudioSignalProblem.TooSlow, 1.0);
+        penalties.put(AudioSignalProblem.None, 0.0f);
+        penalties.put(AudioSignalProblem.Noise, 1.0f);
+        penalties.put(AudioSignalProblem.NoSignal, 1.0f);
+        penalties.put(AudioSignalProblem.TooLoud, 1.0f);
+        penalties.put(AudioSignalProblem.TooQuiet, 1.0f);
+        penalties.put(AudioSignalProblem.TooFast, 1.0f);
+        penalties.put(AudioSignalProblem.TooSlow, 1.0f);
     }
 
     public void clear() {
@@ -54,8 +53,8 @@ public class AudioSignalProblems {
         return false;
     }
 
-    public double penalty() {
-        double penalty = 0.0;
+    public float penalty() {
+        float penalty = 0.0f;
         for (Entry<AudioSignalProblem, AtomicInteger> problem : problems.entrySet()) {
             penalty += penalties.get(problem.getKey()) * limits.get(problem.getKey());
         }

@@ -1,7 +1,6 @@
 package teaselib.core.ui;
 
 import static java.util.stream.Collectors.toList;
-import static teaselib.core.speechrecognition.srgs.PhraseString.words;
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
@@ -57,7 +56,7 @@ import teaselib.core.ui.Prompt.Result;
 public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.Closeable {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
-    private static final double AUDIO_PROBLEM_PENALTY_WEIGHT = 0.005;
+    private static final float AUDIO_PROBLEM_PENALTY_WEIGHT = 0.005f;
 
     public enum Notification implements InputMethod.Notification {
         RecognitionRejected
@@ -76,11 +75,12 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
+    private SpeechRecognitionParameters speechRecognitionParameters = null;
     private Rule hypothesis = null;;
     private float awarenessBonus = 0.0f;
 
-    public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizers) {
-        this.speechRecognizer = speechRecognizers;
+    public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizer) {
+        this.speechRecognizer = speechRecognizer;
         this.audioSignalProblems = new AudioSignalProblems();
         this.events = new SpeechRecognitionEvents();
 
@@ -123,20 +123,27 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleSpeechDetected(SpeechRecognizedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            SpeechRecognition recognizer = getRecognizer(prompt);
-            if (audioSignalProblems.exceedLimits() && recognizer.audioSync.speechRecognitionInProgress()) {
-                logTooManyAudioSignalProblems(eventArgs.result);
-                recognizer.restartRecognition();
-            } else if (recognizer.implementation instanceof TeaseLibSRGS) {
-                if (prompt.acceptedResult == Result.Accept.Distinct) {
-                    buildDistinctHypothesis(eventArgs, prompt);
-                } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                    // Ignore
-                } else {
-                    throw new UnsupportedOperationException(prompt.acceptedResult.toString());
+            try {
+                SpeechRecognition recognizer = getRecognizer(prompt);
+                if (audioSignalProblems.exceedLimits() && recognizer.audioSync.speechRecognitionInProgress()) {
+                    logTooManyAudioSignalProblems(eventArgs.result);
+                    recognizer.restartRecognition();
+                } else if (recognizer.implementation instanceof TeaseLibSRGS) {
+                    if (prompt.acceptedResult == Result.Accept.Distinct) {
+                        buildDistinctHypothesis(eventArgs, prompt);
+                    } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                        // Ignore
+                    } else {
+                        throw new UnsupportedOperationException(prompt.acceptedResult.toString());
+                    }
                 }
+                return prompt;
+            } catch (Exception e) {
+                prompt.setException(e);
+                clearDetectedSpeech();
+                getRecognizer(prompt.choices.locale).endRecognition();
+                return null;
             }
-            return prompt;
         });
     }
 
@@ -200,7 +207,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 // TODO matching rule indices during repair must map to choices
                 // -> avoids wrong repair in
                 // teaselib.core.speechrecognition.SpeechRecognitionComplexTest.testSRGSBuilderMultipleChoicesAlternativePhrases()
-                List<Rule> repaired = rule.repair(getRecognizer(prompt).getChoices().slicedPhrases);
+                List<Rule> repaired = rule.repair(speechRecognitionParameters.slicedPhrases);
                 if (repaired.isEmpty()) {
                     candidates.add(rule);
                 } else {
@@ -215,30 +222,53 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         if (result.isPresent()) {
             Rule rule = result.get();
             double expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
-            if (weightedProbability(prompt, rule) >= expectedConfidence) {
+            // multiple teaselib.core.speechrecognition.SpeechRecognition*Test
+            // TODO Weighted probability too low in tests even when
+            // - hypothesis has optimal probability of 1.0
+            // - text is long but split in only two slices of three
+            // -> extend hypothesis to known choice indices (complicated)
+            float weightedProbability = weightedProbability(rule);
+            if (weightedProbability >= expectedConfidence) {
                 if (hypothesis != null && hypothesis.indices.containsAll(rule.indices)) {
-                    float hypothesisProbability = weightedProbability(prompt, hypothesis);
+                    float hypothesisProbability = weightedProbability(hypothesis);
                     float h = hypothesis.children.size();
                     float r = rule.children.size();
                     float average = (hypothesisProbability * h + rule.probability * r) / (h + r);
                     setHypothesis(rule, Math.max(average, rule.probability));
                 } else {
-                    setHypothesis(rule, weightedProbability(prompt, rule));
+                    setHypothesis(rule, weightedProbability);
                 }
                 logger.info("Considering as hypothesis");
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
+            } else {
+                logger.info("Weighted propability {} < expected probability {} - hypothesis ignored", //
+                        weightedProbability, expectedConfidence);
             }
         }
     }
 
-    private float weightedProbability(Prompt prompt, Rule rule) {
-        SlicedPhrases<PhraseString> slicedPhrases = getRecognizer(prompt).getChoices().slicedPhrases;
+    private float weightedProbability(Rule rule) {
+        if (rule.indices.equals(Rule.NoIndices))
+            throw new IllegalArgumentException("Rule contains no indices - consider updating it after adding children");
+
+        SlicedPhrases<PhraseString> slicedPhrases = speechRecognitionParameters.slicedPhrases;
+        PhraseString text;
+        List<PhraseString> complete;
         if (slicedPhrases != null) {
-            // TODO use sequence length of detected speech, 0 if no match, ignore trailing null rules
-            return rule.probability * rule.indices().size() / slicedPhrases.size();
+            text = new PhraseString(rule.text, rule.indices);
+            complete = slicedPhrases.complete(text);
         } else {
-            return 1.0f;
+            Integer index = rule.indices.iterator().next();
+            text = new PhraseString(rule.text, index);
+            complete = new PhraseString(speechRecognitionParameters.choices.get(index).phrases.get(0), index).words();
         }
+
+        float weight = (float) text.words().size() / (float) complete.size();
+        return rule.probability * lesser(weight);
+    }
+
+    private float lesser(float weight) {
+        return 1.0f - (1.0f - weight) * 0.4f;
     }
 
     private void setHypothesis(Rule rule, float probability) {
@@ -250,14 +280,14 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         candidates.stream().forEach(Rule::isValid);
     }
 
-    private static double expectedConfidence(Prompt prompt, Rule rule, float awarenessBonus) {
-        float weighted = confidence(prompt.choices.intention).weighted(words(rule.text).length, 2.0f);
-        float expectedCOnfidence = weighted - awarenessBonus;
+    private static float expectedConfidence(Prompt prompt, Rule rule, float awarenessBonus) {
+        float weighted = confidence(prompt.choices.intention).weighted(PhraseString.words(rule.text).length);
+        float expectedConfidence = weighted - awarenessBonus;
         if (awarenessBonus > 0.0f) {
             logger.info("Weighted confidence {} - Awareness bonus {} =  expected confidence {}", weighted,
-                    awarenessBonus, expectedCOnfidence);
+                    awarenessBonus, expectedConfidence);
         }
-        return expectedCOnfidence;
+        return expectedConfidence;
     }
 
     private void handleRecognitionRejected(SpeechRecognizedEventArgs eventArgs) {
@@ -281,6 +311,10 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                         return prompt;
                     }
                 }
+            } catch (Exception e) {
+                prompt.setException(e);
+                getRecognizer(prompt.choices.locale).endRecognition();
+                return null;
             } finally {
                 clearDetectedSpeech();
             }
@@ -294,22 +328,20 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                     logTooManyAudioSignalProblems(eventArgs.result);
                     return prompt;
                 } else {
-                    try {
-                        if (prompt.acceptedResult == Result.Accept.Distinct) {
-                            return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestSingleResult,
-                                    this::singleResult);
-                        } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                            return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestMultipleChoices,
-                                    this::multipleChoiceResults);
-                        } else {
-                            throw new UnsupportedOperationException(prompt.acceptedResult.toString());
-                        }
-                    } catch (Exception e) {
-                        prompt.setException(e);
-                        getRecognizer(prompt.choices.locale).endRecognition();
-                        return null;
+                    if (prompt.acceptedResult == Result.Accept.Distinct) {
+                        return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestSingleResult,
+                                this::singleResult);
+                    } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                        return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestMultipleChoices,
+                                this::multipleChoiceResults);
+                    } else {
+                        throw new UnsupportedOperationException(prompt.acceptedResult.toString());
                     }
                 }
+            } catch (Exception e) {
+                prompt.setException(e);
+                getRecognizer(prompt.choices.locale).endRecognition();
+                return null;
             } finally {
                 clearDetectedSpeech();
             }
@@ -344,10 +376,11 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private Prompt handle(Prompt prompt, BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule) {
-        double expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
-        double audioProblemPenalty = audioSignalProblems.penalty() * AUDIO_PROBLEM_PENALTY_WEIGHT;
+        float expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
+        float audioProblemPenalty = audioSignalProblems.penalty() * AUDIO_PROBLEM_PENALTY_WEIGHT;
         // TODO Weighted probability should be calculated in bestSingleResult
-        float ruleProbability = weightedProbability(prompt, rule);
+        float ruleProbability = prompt.acceptedResult == Result.Accept.Distinct ? weightedProbability(rule)
+                : rule.probability;
         if (ruleProbability - audioProblemPenalty >= expectedConfidence) {
             Prompt.Result promptResult = resultor.apply(rule, toChoices(prompt));
             if (promptResult.elements.isEmpty()) {
@@ -366,7 +399,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             reject(rule);
             return prompt;
         } else {
-            logLackOfConfidence(expectedConfidence);
+            logLackOfConfidence(ruleProbability, expectedConfidence);
             reject(rule);
             return prompt;
         }
@@ -387,13 +420,13 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private IntUnaryOperator toChoices(Prompt prompt) {
-        return getRecognizer(prompt).getChoices().mapper;
+        return speechRecognitionParameters.mapper;
     }
 
     private Prompt.Result multipleChoiceResults(Rule rule, @SuppressWarnings("unused") IntUnaryOperator toChoices) {
         RuleIndicesList choices = rule.indices();
-        List<Integer> multipleChoices = choices.stream().map(indices -> indices.size() == 1 ? indices.iterator().next()
-                : Prompt.Result.UNDEFINED.elements.iterator().next()).collect(toList());
+        List<Integer> multipleChoices = choices.stream().filter(indices -> indices.size() == 1)
+                .map(indices -> indices.iterator().next()).collect(toList());
         return new Prompt.Result(multipleChoices);
     }
 
@@ -435,8 +468,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         return null;
     }
 
-    private static void logLackOfConfidence(double expectedConfidence) {
-        logger.info("Lack of confidence (expected {})", expectedConfidence);
+    private static void logLackOfConfidence(float probability, float expectedConfidence) {
+        logger.info("Lack of probability {} < expected {})", probability, expectedConfidence);
     }
 
     private void logTooManyAudioSignalProblems(Rule[] result) {
@@ -485,7 +518,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
     }
 
-    private static Setup srgsPhraseBuilder(Choices choices, SpeechRecognition recognizer)
+    private Setup srgsPhraseBuilder(Choices choices, SpeechRecognition recognizer)
             throws TransformerFactoryConfigurationError {
         try {
             SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, recognizer.implementation.getLanguageCode());
@@ -493,16 +526,22 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 logger.info("{}", builder.slices);
                 logger.info("{}", builder.toXML());
             }
-            SpeechRecognitionParameters speechRecognitionParameters = new SpeechRecognitionParameters(builder);
-            return () -> recognizer.setChoices(speechRecognitionParameters);
+            SpeechRecognitionParameters parameters = new SpeechRecognitionParameters(builder);
+            return () -> {
+                SpeechRecognitionInputMethod.this.speechRecognitionParameters = parameters;
+                recognizer.setChoices(parameters);
+            };
         } catch (ParserConfigurationException | TransformerException e) {
             throw asRuntimeException(e);
         }
     }
 
-    private static Setup simplePhraseBuilder(Choices choices, SpeechRecognition recognizer) {
+    private Setup simplePhraseBuilder(Choices choices, SpeechRecognition recognizer) {
         SpeechRecognitionParameters parameters = new SpeechRecognitionParameters(choices);
-        return () -> recognizer.setChoices(parameters);
+        return () -> {
+            SpeechRecognitionInputMethod.this.speechRecognitionParameters = parameters;
+            recognizer.setChoices(parameters);
+        };
     }
 
     @Override
@@ -612,7 +651,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     public void setAwareness(boolean aware) {
-        awarenessBonus = aware ? Confidence.High.probability - Confidence.Normal.reducedProbability() : 0.0f;
+        awarenessBonus = aware ? Confidence.High.probability - Confidence.Normal.probability : 0.0f;
     }
 
 }

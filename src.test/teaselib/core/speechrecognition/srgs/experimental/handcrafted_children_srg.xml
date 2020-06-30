@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<grammar xmlns="http://www.w3.org/2001/06/grammar" root="Rule_0" tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
+<grammar xmlns="http://www.w3.org/2001/06/grammar" root="Main" tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
   <!-- handcrafted_srg.xml:   
     Defines an SRGS grammar for testing 
     SPPRHASEPROPERTIES pProperties structure: 
@@ -13,22 +13,22 @@
     -> indices to choices can be resolved by parsing the property name string
     elements seem to point to "the rest of the message"
     -->
-  <rule id="Rule_0" scope="public">
-    <item>Please Miss <ruleref uri="#Choice_1"/> </item>
-    <tag> out.Rule_1_Result = rules.latest(); </tag>
+  <rule id="Main" scope="public">
+    <item>Please Miss <ruleref uri="#r_1"/> </item>
+    <tag> out.AnyName = rules.latest(); </tag>
   </rule>
-  <rule id="Choice_1" scope="public">
+  <rule id="r_1" scope="public">
     <one-of>
-      <item>one more <tag> out.Choice_1_0 = rules.latest(); </tag> <ruleref uri="#Choice_2"/> </item>
-      <item>one less <tag> out.Choice_1_1 = rules.latest(); </tag> <ruleref uri="#Choice_2"/> </item>
-      <item>two more <tag> out.Choice_1_2 = rules.latest(); </tag> <ruleref uri="#Choice_2"/> </item>
+      <item>one more <tag> out.r_1_0 = rules.latest(); </tag> <ruleref uri="#r_2"/> </item>
+      <item>one less <tag> out.r_1_1 = rules.latest(); </tag> <ruleref uri="#r_2"/> </item>
+      <item>two more <tag> out.r_1_2 = rules.latest(); </tag> <ruleref uri="#r_2"/> </item>
     </one-of>
-    <tag> out.Choice_1_Result = rules.latest(); </tag>
+    <tag> out.AnyName = rules.latest(); </tag>
   </rule>
-  <rule id="Choice_2" scope="public">
+  <rule id="r_2" scope="public">
     <one-of>
-	    <item>okay <tag> out.Choice_2_0 = rules.latest(); </tag> </item>
-	    <item>May I <tag> out.Choice_2_1 = rules.latest(); </tag> </item>
+	    <item>okay <tag> out.r_2_0 = rules.latest(); </tag> </item>
+	    <item>May I <tag> out.r_2_1 = rules.latest(); </tag> </item>
     </one-of>
   </rule>
 </grammar>

@@ -41,7 +41,6 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     @Override
     public Prompt.Result handleShow(Prompt prompt) throws InterruptedException {
-        // activePrompt.set(prompt);
         result.set(Prompt.Result.UNDEFINED);
         if (prompt.hasScriptFunction()) {
             Prompt.Result choice = firePromptShown(prompt);
@@ -54,11 +53,10 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
             } catch (BrokenBarrierException e) {
                 throw new InterruptedException();
             } finally {
-                // activePrompt.set(null);
                 checkPointScriptFunctionFinished.reset();
             }
         } else {
-            return firePromptShown(activePrompt.get());
+            return firePromptShown(prompt);
         }
     }
 
@@ -80,19 +78,19 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         return prompt != null && prompt.hasScriptFunction();
     }
 
-    private boolean resultNotSet() {
-        return !resultSet();
+    private boolean resultNotSet(Prompt prompt) {
+        return !resultSet(prompt);
     }
 
-    private boolean resultSet() {
-        return result.get().valid(activePrompt.get().choices);
+    private boolean resultSet(Prompt prompt) {
+        return result.get().valid(prompt.choices);
     }
 
     private Prompt forwardResultAndHandleTimeout(Prompt prompt) {
-        if (hasScriptFunction(prompt) && resultSet()) {
+        if (hasScriptFunction(prompt) && resultSet(prompt)) {
             synchronized (this) {
-                if (resultSet()) {
-                    forwardResult();
+                if (resultSet(prompt)) {
+                    forwardResult(prompt);
                     try {
                         while (!Thread.currentThread().isInterrupted()) {
                             wait();
@@ -108,9 +106,9 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         }
     }
 
-    private void forwardResult() {
+    private void forwardResult(Prompt prompt) {
         try {
-            if (resultNotSet()) {
+            if (resultNotSet(prompt)) {
                 throw new IllegalArgumentException("Result must be set to choice");
             }
             synchronized (this) {
@@ -124,13 +122,12 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     @Override
-    public boolean handleDismiss(Prompt prompt) {
+    public void handleDismiss(Prompt prompt) {
         synchronized (this) {
             checkPointScriptFunctionFinished.reset();
             firePromptDismissed(prompt);
             notifyAll();
         }
-        return true;
     }
 
     @Override

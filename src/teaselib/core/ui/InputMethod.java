@@ -18,7 +18,7 @@ public interface InputMethod {
 
     void show(Prompt prompt) throws InterruptedException;
 
-    boolean dismiss(Prompt prompt) throws InterruptedException;
+    void dismiss(Prompt prompt) throws InterruptedException;
 
     public interface Listener {
         Prompt.Result promptShown(Prompt prompt);

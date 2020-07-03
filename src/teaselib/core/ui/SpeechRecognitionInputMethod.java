@@ -76,7 +76,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
     private SpeechRecognitionParameters speechRecognitionParameters = null;
-    private Rule hypothesis = null;;
+    private Rule hypothesis = null;
     private float awarenessBonus = 0.0f;
 
     public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizer) {
@@ -126,7 +126,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             try {
                 SpeechRecognition recognizer = getRecognizer(prompt);
                 if (audioSignalProblems.exceedLimits() && recognizer.audioSync.speechRecognitionInProgress()) {
-                    logTooManyAudioSignalProblems(eventArgs.result);
+                    logTooManyAudioSignalProblems();
                     recognizer.restartRecognition();
                 } else if (recognizer.implementation instanceof TeaseLibSRGS) {
                     if (prompt.acceptedResult == Result.Accept.Distinct) {
@@ -218,7 +218,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
         validate(candidates);
 
-        Optional<Rule> result = bestSingleResult(candidates.stream(), toChoices(prompt));
+        Optional<Rule> result = bestSingleResult(candidates.stream(), toChoices());
         if (result.isPresent()) {
             Rule rule = result.get();
             double expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
@@ -267,7 +267,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         return rule.probability * lesser(weight);
     }
 
-    private float lesser(float weight) {
+    private static float lesser(float weight) {
         return 1.0f - (1.0f - weight) * 0.4f;
     }
 
@@ -294,7 +294,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         active.updateAndGet(prompt -> {
             try {
                 if (audioSignalProblems.exceedLimits()) {
-                    logTooManyAudioSignalProblems(eventArgs.result);
+                    logTooManyAudioSignalProblems();
                     events.recognitionRejected.fire(eventArgs);
                     return prompt;
                 } else {
@@ -325,7 +325,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         active.updateAndGet(prompt -> {
             try {
                 if (audioSignalProblems.exceedLimits()) {
-                    logTooManyAudioSignalProblems(eventArgs.result);
+                    logTooManyAudioSignalProblems();
                     return prompt;
                 } else {
                     if (prompt.acceptedResult == Result.Accept.Distinct) {
@@ -364,7 +364,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor) {
         validate(Arrays.asList(eventArgs.result));
 
-        Optional<Rule> result = matcher.apply(Arrays.stream(eventArgs.result), toChoices(prompt));
+        Optional<Rule> result = matcher.apply(Arrays.stream(eventArgs.result), toChoices());
         if (result.isPresent() && hypothesis != null && hypothesis.probability > result.get().probability) {
             return handle(prompt, resultor, hypothesis);
         } else if (result.isPresent()) {
@@ -382,7 +382,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         float ruleProbability = prompt.acceptedResult == Result.Accept.Distinct ? weightedProbability(rule)
                 : rule.probability;
         if (ruleProbability - audioProblemPenalty >= expectedConfidence) {
-            Prompt.Result promptResult = resultor.apply(rule, toChoices(prompt));
+            Prompt.Result promptResult = resultor.apply(rule, toChoices());
             if (promptResult.elements.isEmpty()) {
                 reject(prompt, rule, "Empty result");
                 return prompt;
@@ -419,7 +419,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         events.recognitionRejected.fire(new SpeechRecognizedEventArgs(rule));
     }
 
-    private IntUnaryOperator toChoices(Prompt prompt) {
+    private IntUnaryOperator toChoices() {
         return speechRecognitionParameters.mapper;
     }
 
@@ -457,7 +457,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private SpeechRecognition getRecognizer(Locale locale) {
         SpeechRecognition recognizer = speechRecognizer.get(locale);
         if (usedRecognitionInstances.put(recognizer.locale, recognizer) == null) {
-            addEvents(recognizer);
+            add(recognizer.events);
         }
         return recognizer;
     }
@@ -472,7 +472,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         logger.info("Lack of probability {} < expected {})", probability, expectedConfidence);
     }
 
-    private void logTooManyAudioSignalProblems(Rule[] result) {
+    private void logTooManyAudioSignalProblems() {
         logger.info("Audio signal problems: {}", audioSignalProblems);
     }
 
@@ -484,7 +484,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private void signal(Prompt prompt, Prompt.Result result) {
         prompt.lock.lock();
         try {
-            prompt.signalResult(this, result);
+            prompt.signal(this, result);
         } finally {
             prompt.lock.unlock();
         }
@@ -495,7 +495,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         if (prompt != null) {
             prompt.lock.lock();
             try {
-                prompt.signalHandlerInvocation(new SpeechRecognitionInputMethodEventArgs(eventType, eventArgs));
+                prompt.signal(new SpeechRecognitionInputMethodEventArgs(eventType, eventArgs));
             } finally {
                 prompt.lock.unlock();
             }
@@ -547,25 +547,34 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     @Override
     public void show(Prompt prompt) {
         Objects.requireNonNull(prompt);
-        Prompt previousPrompt = active.getAndSet(prompt);
-        if (previousPrompt != null) {
-            throw new IllegalStateException("Trying to show prompt when already showing another");
-        }
-        prompt.inputMethodInitializers.setup(this);
-        startSpeechRecognition(prompt);
+
+        active.updateAndGet(previousPrompt -> {
+            if (previousPrompt != null) {
+                throw new IllegalStateException("Trying to show prompt " + prompt + "when already showing another");
+            }
+            prompt.inputMethodInitializers.setup(this);
+            startSpeechRecognition(prompt);
+            return prompt;
+        });
+
+    }
+
+    public Prompt getActivePrompt() {
+        return active.get();
     }
 
     @Override
-    public boolean dismiss(Prompt prompt) throws InterruptedException {
-        Prompt activePrompt = active.getAndSet(null);
-        if (activePrompt == null) {
-            return false;
-        } else if (activePrompt != prompt) {
-            throw new IllegalStateException("Trying to dismiss wrong prompt");
-        } else {
-            getRecognizer(prompt.choices.locale).endRecognition();
-            return true;
-        }
+    public void dismiss(Prompt prompt) throws InterruptedException {
+        active.getAndUpdate(activePrompt -> {
+            if (activePrompt == null) {
+                return null;
+            } else if (activePrompt != prompt) {
+                throw new IllegalStateException("Trying to dismiss wrong prompt: " + prompt);
+            } else {
+                getRecognizer(prompt.choices.locale).endRecognition();
+                return null;
+            }
+        });
     }
 
     private void startSpeechRecognition(Prompt prompt) {
@@ -617,24 +626,22 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
     }
 
-    private void addEvents(SpeechRecognition recognizer) {
-        SpeechRecognitionEvents events = recognizer.events;
-        events.recognitionStarted.add(speechRecognitionStartedEventHandler);
-        events.audioLevelUpdated.add(audioLevelUpdatedEventHandler);
-        events.audioSignalProblemOccured.add(audioSignalProblemEventHandler);
-        events.speechDetected.add(speechDetectedEventHandler);
-        events.recognitionRejected.add(recognitionRejected);
-        events.recognitionCompleted.add(recognitionCompleted);
+    private void add(SpeechRecognitionEvents speechRecognitionEvents) {
+        speechRecognitionEvents.recognitionStarted.add(speechRecognitionStartedEventHandler);
+        speechRecognitionEvents.audioLevelUpdated.add(audioLevelUpdatedEventHandler);
+        speechRecognitionEvents.audioSignalProblemOccured.add(audioSignalProblemEventHandler);
+        speechRecognitionEvents.speechDetected.add(speechDetectedEventHandler);
+        speechRecognitionEvents.recognitionRejected.add(recognitionRejected);
+        speechRecognitionEvents.recognitionCompleted.add(recognitionCompleted);
     }
 
-    private void removeEvents(SpeechRecognition speechRecognizer) {
-        SpeechRecognitionEvents events = speechRecognizer.events;
-        events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
-        events.audioLevelUpdated.remove(audioLevelUpdatedEventHandler);
-        events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
-        events.speechDetected.remove(speechDetectedEventHandler);
-        events.recognitionRejected.remove(recognitionRejected);
-        events.recognitionCompleted.remove(recognitionCompleted);
+    private void remove(SpeechRecognitionEvents speechRecognitionEvents) {
+        speechRecognitionEvents.recognitionStarted.remove(speechRecognitionStartedEventHandler);
+        speechRecognitionEvents.audioLevelUpdated.remove(audioLevelUpdatedEventHandler);
+        speechRecognitionEvents.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
+        speechRecognitionEvents.speechDetected.remove(speechDetectedEventHandler);
+        speechRecognitionEvents.recognitionRejected.remove(recognitionRejected);
+        speechRecognitionEvents.recognitionCompleted.remove(recognitionCompleted);
     }
 
     @Override
@@ -647,7 +654,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     @Override
     public void close() {
-        usedRecognitionInstances.values().stream().forEach(this::removeEvents);
+        usedRecognitionInstances.values().stream().map(recognizer -> recognizer.events).forEach(this::remove);
     }
 
     public void setAwareness(boolean aware) {

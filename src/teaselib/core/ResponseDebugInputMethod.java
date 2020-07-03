@@ -89,7 +89,7 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
     }
 
     @Override
-    protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
+    protected void handleDismiss(Prompt prompt) throws InterruptedException {
         synchronized (this) {
             notifyAll();
         }
@@ -97,7 +97,6 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         if (prompt.result().equals(Prompt.Result.UNDEFINED) && dismissed()) {
             prompt.setResultOnce(this, result);
         }
-        return !dismissed();
     }
 
     private boolean dismissed() {

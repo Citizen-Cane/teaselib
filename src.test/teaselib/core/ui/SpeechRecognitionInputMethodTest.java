@@ -52,7 +52,7 @@ public class SpeechRecognitionInputMethodTest {
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             SpeechRecognition sr = recognizers.get(choices.locale);
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
-            SpeechRecognitionTestUtils.awaitResult(inputMethod, prompt, expected, new Prompt.Result(resultIndex));
+            SpeechRecognitionTestUtils.awaitResult(prompt, inputMethod, expected, new Prompt.Result(resultIndex));
         }
     }
 
@@ -104,7 +104,7 @@ public class SpeechRecognitionInputMethodTest {
                 }
             }
 
-            SpeechRecognitionTestUtils.awaitResult(inputMethod, prompt, "Yes Miss", new Prompt.Result(0));
+            SpeechRecognitionTestUtils.awaitResult(prompt, inputMethod, "Yes Miss", new Prompt.Result(0));
         }
     }
 

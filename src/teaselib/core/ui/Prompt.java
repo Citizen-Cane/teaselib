@@ -161,15 +161,13 @@ public class Prompt {
         }
     }
 
-    // TODO Eliminate result parameter -> it's always called with this.result
-    List<Choice> choice(Result result) {
-        List<Choice> choice;
-        if (result.equals(Prompt.Result.DISMISSED) || result.equals(Prompt.Result.UNDEFINED)) {
-            choice = SCRIPTFUNCTION_TIMEOUT;
+    List<Choice> choice() {
+        Prompt.Result r = result();
+        if (r.equals(Prompt.Result.DISMISSED) || r.equals(Prompt.Result.UNDEFINED)) {
+            return SCRIPTFUNCTION_TIMEOUT;
         } else {
-            choice = choices.get(result);
+            return choices.get(r);
         }
-        return choice;
     }
 
     void executeInputMethodHandler(InputMethodEventArgs eventArgs) {
@@ -245,11 +243,11 @@ public class Prompt {
         }
     }
 
-    public void signalResult(InputMethod inputMethod, Result result) {
+    public void signal(InputMethod inputMethod, Result r) {
         throwIfNotLocked();
         throwIfPaused(inputMethod + " tried to signal result");
 
-        setResultOnce(inputMethod, result);
+        setResultOnce(inputMethod, r);
         click.signalAll();
     }
 
@@ -279,17 +277,13 @@ public class Prompt {
         paused.set(false);
     }
 
-    public boolean dismiss() {
+    public void dismiss() {
         throwIfNotLocked();
 
         try {
-            boolean dismissed = false;
             for (InputMethod inputMethod : inputMethods) {
-                if (inputMethod != this.resultInputMethod) {
-                    dismissed &= inputMethod.dismiss(this);
-                }
+                inputMethod.dismiss(this);
             }
-            return dismissed;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
@@ -342,7 +336,7 @@ public class Prompt {
         }
     }
 
-    public void signalHandlerInvocation(InputMethodEventArgs eventArgs) {
+    public void signal(InputMethodEventArgs eventArgs) {
         throwIfNotLocked();
         throwIfPaused(eventArgs + " tried to signal handler invocation");
 
@@ -387,20 +381,19 @@ public class Prompt {
         }
         String scriptTaskDescription = scriptTask != null ? scriptTask.getRelation() + " " : " ";
         String isPaused = paused.get() ? " paused" : "";
-        String resultString = " result=" + toString(result);
+        String resultString = " result=" + toString(result, choice());
         String inputMethodName = resultInputMethod != null
                 ? "(input method =" + resultInputMethod.getClass().getSimpleName() + ")"
                 : "";
         return scriptTaskDescription + choices + " " + lockState + isPaused + resultString + inputMethodName;
     }
 
-    private String toString(Prompt.Result result) {
+    private static String toString(Prompt.Result result, List<Choice> choice) {
         if (result.equals(Prompt.Result.UNDEFINED)) {
             return "UNDEFINED";
         } else if (result.equals(Prompt.Result.DISMISSED)) {
             return "DISMISSED";
         } else {
-            List<Choice> choice = choice(result);
             return choice.stream().map(Choice::getDisplay).collect(Collectors.joining(" "));
         }
     }

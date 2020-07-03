@@ -31,8 +31,8 @@ public class ScriptEventInputMethod extends AbstractInputMethod {
     }
 
     @Override
-    protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
-        return false;
+    protected void handleDismiss(Prompt prompt) throws InterruptedException {
+        // Nothing to do
     }
 
     /**

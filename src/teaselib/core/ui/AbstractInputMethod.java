@@ -1,11 +1,12 @@
 package teaselib.core.ui;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.ExceptionUtil;
@@ -19,36 +20,36 @@ public abstract class AbstractInputMethod implements InputMethod {
     };
 
     protected final ExecutorService executor;
-    protected final ReentrantLock replySection = new ReentrantLock(true);
+    protected final ReentrantLock showLock = new ReentrantLock(true);
+
+    protected final ReentrantLock startLock = new ReentrantLock(true);
+    private final Condition start = startLock.newCondition();
+
     protected final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
 
-    private Callable<Prompt.Result> getResult = new Callable<Prompt.Result>() {
-        @Override
-        public Prompt.Result call() throws Exception {
-            Prompt prompt = activePrompt.get();
+    private Consumer<Prompt> showPrompt = prompt -> {
+        showLock.lock();
+        try {
+            prompt.inputMethodInitializers.setup(AbstractInputMethod.this);
 
-            replySection.lock();
+            startLock.lock();
             try {
-                synchronized (this) {
-                    notifyAll();
-                }
-
-                prompt.inputMethodInitializers.setup(AbstractInputMethod.this);
-                return awaitAndSignalResult(prompt);
-            } catch (InterruptedException | ScriptInterruptedException e) {
-                throw e;
-            } catch (Throwable e) {
-                prompt.setException(e);
-                throw e;
+                start.signalAll();
             } finally {
-                replySection.unlock();
+                startLock.unlock();
             }
+
+            awaitAndSignalResult(prompt);
+        } catch (InterruptedException | ScriptInterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Throwable e) {
+            prompt.setException(e);
+        } finally {
+            showLock.unlock();
         }
     };
 
-    // TODO result is returned but never used since it's signaled to prompt
-    // -> use or remove - either worker result or replySection
-    private Future<Prompt.Result> resultWorker;
+    private Future<?> resultWorker;
 
     public AbstractInputMethod(ExecutorService executor) {
         this.executor = executor;
@@ -56,12 +57,25 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public final void show(Prompt prompt) throws InterruptedException {
-        synchronized (getResult) {
-            activePrompt.set(prompt);
-            resultWorker = executor.submit(getResult);
-            while (!replySection.isLocked() && prompt.result().equals(Prompt.Result.UNDEFINED)) {
-                getResult.wait();
+        activePrompt.updateAndGet(active -> {
+            if (startLock.tryLock()) {
+                try {
+                    resultWorker = executor.submit(() -> showPrompt.accept(prompt));
+                    start.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                } finally {
+                    startLock.unlock();
+                }
+                return prompt;
+            } else {
+                throw new IllegalStateException("ReplySection already locked");
             }
+        });
+
+        if (Thread.interrupted()) {
+            throw new InterruptedException();
         }
     }
 
@@ -82,7 +96,7 @@ public abstract class AbstractInputMethod implements InputMethod {
                 throw new UnsupportedOperationException(
                         "Trying to signal result " + result + " to paused prompt " + prompt);
             } else if (prompt.result().equals(Prompt.Result.UNDEFINED) && !prompt.paused()) {
-                prompt.signalResult(this, result);
+                prompt.signal(this, result);
             }
         } finally {
             prompt.lock.unlock();
@@ -123,7 +137,7 @@ public abstract class AbstractInputMethod implements InputMethod {
 
         prompt.lock.lock();
         try {
-            prompt.signalHandlerInvocation(eventArgs);
+            prompt.signal(eventArgs);
         } finally {
             prompt.lock.unlock();
         }
@@ -132,52 +146,47 @@ public abstract class AbstractInputMethod implements InputMethod {
     }
 
     @Override
-    public final boolean dismiss(Prompt prompt) throws InterruptedException {
-        Prompt active = activePrompt.getAndSet(null);
-        if (active == null) {
-            return false;
-        } else if (active != prompt) {
-            throw new IllegalStateException("Trying to dismiss wrong prompt");
-        }
-
-        if (resultWorker.isCancelled()) {
-            return false;
-        } else if (resultWorker.isDone()) {
-            try {
-                resultWorker.get();
-            } catch (ExecutionException e) {
-                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+    public final void dismiss(Prompt prompt) throws InterruptedException {
+        activePrompt.updateAndGet(active -> {
+            if (active != null && active != prompt) {
+                throw new IllegalStateException("Trying to dismiss wrong prompt");
             }
-            return false;
-        } else {
-            resultWorker.cancel(true);
-        }
 
-        try {
-            boolean dismissChoices = false;
+            if (resultWorker.isDone()) {
+                try {
+                    resultWorker.get();
+                } catch (InterruptedException | ScriptInterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException e) {
+                    throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+                }
+            } else if (!resultWorker.isCancelled()) {
+                resultWorker.cancel(true);
+            }
 
-            boolean tryLock = replySection.tryLock();
-            while (!tryLock) {
-                dismissChoices = handleDismiss(prompt);
-                tryLock = replySection.tryLock();
-                if (tryLock) {
-                    break;
+            try {
+                boolean tryLock = showLock.tryLock();
+                while (!tryLock) {
+                    handleDismiss(prompt);
+                    tryLock = showLock.tryLock();
+                    if (tryLock) {
+                        break;
+                    }
+                }
+            } catch (InterruptedException | ScriptInterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Throwable e) {
+                prompt.setException(e);
+            } finally {
+                if (showLock.isHeldByCurrentThread()) {
+                    showLock.unlock();
                 }
             }
 
-            return dismissChoices;
-        } catch (InterruptedException | ScriptInterruptedException e) {
-            throw e;
-        } catch (Throwable e) {
-            prompt.setException(e);
-            throw e;
-        } finally {
-            if (replySection.isHeldByCurrentThread()) {
-                replySection.unlock();
-            }
-        }
+            return null;
+        });
     }
 
-    protected abstract boolean handleDismiss(Prompt prompt) throws InterruptedException;
+    protected abstract void handleDismiss(Prompt prompt) throws InterruptedException;
 
 }

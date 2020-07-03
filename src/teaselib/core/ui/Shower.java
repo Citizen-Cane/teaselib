@@ -91,27 +91,29 @@ public class Shower {
     private List<Choice> showNew(Prompt prompt) throws InterruptedException {
         stack.push(prompt);
 
-        Prompt.Result result = promptQueue.show(prompt);
-        return result(prompt, result);
+        promptQueue.show(prompt);
+        return result(prompt);
     }
 
-    private List<Choice> result(Prompt prompt, Prompt.Result result) throws InterruptedException {
+    private List<Choice> result(Prompt prompt) throws InterruptedException {
+        Prompt.Result result = prompt.result();
         if (result.equals(Prompt.Result.DISMISSED)) {
-            return cancelScriptTaskAndReturnResult(prompt, result);
+            return cancelScriptTaskAndReturnResult(prompt);
         } else {
             InputMethodEventArgs eventArgs = prompt.inputMethodEventArgs.getAndSet(null);
             if (eventArgs != null) {
                 invokeHandler(prompt, eventArgs);
-                return result(prompt, promptQueue.awaitResult(prompt));
+                promptQueue.awaitResult(prompt);
+                return result(prompt);
             } else {
-                return cancelScriptTaskAndReturnResult(prompt, result);
+                return cancelScriptTaskAndReturnResult(prompt);
             }
         }
     }
 
-    private static List<Choice> cancelScriptTaskAndReturnResult(Prompt prompt, Prompt.Result result) {
+    private static List<Choice> cancelScriptTaskAndReturnResult(Prompt prompt) {
         prompt.cancelScriptTask();
-        return prompt.choice(result);
+        return prompt.choice();
     }
 
     private void invokeHandler(Prompt prompt, InputMethodEventArgs eventArgs) throws InterruptedException {

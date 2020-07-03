@@ -11,7 +11,7 @@ import teaselib.core.util.ExceptionUtil;
 public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
-    public Prompt.Result show(Prompt prompt) throws InterruptedException {
+    public void show(Prompt prompt) throws InterruptedException {
         Prompt activePrompt = active.get();
 
         if (prompt == activePrompt) {
@@ -33,15 +33,14 @@ public class PromptQueue {
             prompt.executeScriptTask();
         }
 
-        return awaitResult(prompt);
+        awaitResult(prompt);
     }
 
-    public Prompt.Result awaitResult(Prompt prompt) throws InterruptedException {
+    public void awaitResult(Prompt prompt) throws InterruptedException {
         if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
             prompt.click.await();
         }
         dismiss(prompt);
-        return prompt.result();
     }
 
     public void resume(Prompt prompt) throws InterruptedException {
@@ -67,17 +66,16 @@ public class PromptQueue {
         active.set(prompt);
     }
 
-    public boolean pause(Prompt prompt) {
+    public void pause(Prompt prompt) {
         prompt.pause();
         if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
-            return dismiss(prompt);
+            dismiss(prompt);
         } else {
-            // return false;
             throw new IllegalStateException("Previous prompt already dismissed: " + prompt);
         }
     }
 
-    private boolean dismiss(Prompt prompt) {
+    private void dismiss(Prompt prompt) {
         Prompt activePrompt = active.get();
 
         if (activePrompt == null) {
@@ -88,7 +86,7 @@ public class PromptQueue {
         }
 
         try {
-            return prompt.dismiss();
+            prompt.dismiss();
         } finally {
             active.set(null);
         }

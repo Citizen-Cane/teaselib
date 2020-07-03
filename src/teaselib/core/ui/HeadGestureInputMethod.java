@@ -77,8 +77,8 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
     }
 
     @Override
-    protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
-        return true;
+    protected void handleDismiss(Prompt prompt) throws InterruptedException {
+        // nothing to do
     }
 
     @Override

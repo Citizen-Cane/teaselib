@@ -81,7 +81,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
                     }
                 };) {
                     Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
-                    return awaitResult(inputMethod, prompt, emulatedRecognitionResult, expected);
+                    return awaitResult(prompt, inputMethod, emulatedRecognitionResult, expected);
                 }
             }
         }

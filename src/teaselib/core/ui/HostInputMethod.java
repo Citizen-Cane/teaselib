@@ -33,8 +33,8 @@ public class HostInputMethod extends AbstractInputMethod {
     }
 
     @Override
-    protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
-        return host.dismissChoices(prompt.choices);
+    protected void handleDismiss(Prompt prompt) throws InterruptedException {
+        host.dismissChoices(prompt.choices);
     }
 
     @Override

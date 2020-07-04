@@ -23,13 +23,13 @@ public class PromptQueue {
         try {
             activate(prompt);
         } catch (Exception e) {
-            if (prompt.scriptTask != null) {
-                prompt.scriptTask.cancel(true);
+            if (prompt.hasScriptTask()) {
+                prompt.cancelScriptTask();
             }
             throw ExceptionUtil.asRuntimeException(e);
         }
 
-        if (prompt.scriptTask != null) {
+        if (prompt.hasScriptTask()) {
             prompt.executeScriptTask();
         }
 

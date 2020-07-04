@@ -33,6 +33,17 @@ public class ScriptFunction {
         Confirmation
     }
 
+    public static class AnswerOverride extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public final Answer answer;
+
+        public AnswerOverride(Answer answer) {
+            this.answer = answer;
+        }
+
+    }
+
     private final CallableScript<Answer> script;
     /**
      * The type of this script function;
@@ -46,7 +57,7 @@ public class ScriptFunction {
     public ScriptFunction(RunnableScript script, Relation relation) {
         this(() -> {
             script.run();
-            return Answer.Timeout;
+            return null;
         }, relation);
     }
 

@@ -42,7 +42,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     @Override
     public Prompt.Result handleShow(Prompt prompt) throws InterruptedException {
         result.set(Prompt.Result.UNDEFINED);
-        if (prompt.hasScriptFunction()) {
+        if (prompt.hasScriptTask()) {
             Prompt.Result choice = firePromptShown(prompt);
             if (choice.valid(prompt.choices)) {
                 result.set(choice);
@@ -75,7 +75,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     private static boolean hasScriptFunction(Prompt prompt) {
-        return prompt != null && prompt.hasScriptFunction();
+        return prompt != null && prompt.hasScriptTask();
     }
 
     private boolean resultNotSet(Prompt prompt) {

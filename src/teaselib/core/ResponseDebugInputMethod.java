@@ -51,6 +51,8 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
                         if (prompt.result() == Prompt.Result.UNDEFINED && !prompt.paused()) {
                             dismissExpectedPromptOrIgnore(prompt);
                             elapsed.addAndGet(e.teaseLib.getTime(TimeUnit.MILLISECONDS));
+                        } else {
+                            logger.warn("Time advance skipped for {}", prompt);
                         }
                     } finally {
                         prompt.lock.unlock();
@@ -58,6 +60,8 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
                 });
                 t.setName(ResponseDebugInputMethod.class.getSimpleName() + " " + getClass().getSimpleName());
                 t.start();
+            } else {
+                logger.warn("Time advance skipped because prompt == null");
             }
         }
     };
@@ -67,9 +71,11 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         if (debugResponse.response == Response.Choose) {
             synchronized (this) {
                 result = new Prompt.Result(debugResponse.index);
+                logger.info("Signalling {} to {}", result, prompt);
                 notifyAll();
             }
         } else if (debugResponse.response == Response.Invoke) {
+            logger.info("Signalling handler invocation {} to {}", debugResponse, prompt);
             invokeHandlerOnce(prompt, debugResponse);
         } else if (debugResponse.response == Response.Ignore) {
             logger.info("Ignoring {}", result);

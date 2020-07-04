@@ -54,14 +54,16 @@ public class ScriptFutureTask extends FutureTask<Answer> {
             super.run();
 
             logger.info("Script task {} is finishing", prompt);
-            prompt.lock.lockInterruptibly();
-            try {
-                if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
-                    prompt.setTimedOut();
-                    prompt.click.signalAll();
+            if (!isCancelled()) {
+                prompt.lock.lockInterruptibly();
+                try {
+                    if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
+                        prompt.setTimedOut();
+                        prompt.click.signalAll();
+                    }
+                } finally {
+                    prompt.lock.unlock();
                 }
-            } finally {
-                prompt.lock.unlock();
             }
         } catch (InterruptedException | ScriptInterruptedException e) {
             Thread.currentThread().interrupt();
@@ -90,6 +92,7 @@ public class ScriptFutureTask extends FutureTask<Answer> {
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         dismissed.set(true);
+        logger.info("Script task {} cancelled", prompt);
         try {
             return super.cancel(mayInterruptIfRunning);
         } finally {

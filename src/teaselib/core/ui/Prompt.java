@@ -147,7 +147,7 @@ public class Prompt {
         this.result = Prompt.Result.UNDEFINED;
     }
 
-    public boolean hasScriptFunction() {
+    public boolean hasScriptTask() {
         return scriptTask != null;
     }
 
@@ -156,17 +156,23 @@ public class Prompt {
     }
 
     void cancelScriptTask() {
+        throwIfNotLocked();
+        throwIfPaused("Cannot cancel script function");
+
         if (scriptTask != null && !scriptTask.isCancelled() && !scriptTask.isDone()) {
             scriptTask.cancel(true);
         }
     }
 
     List<Choice> choice() {
-        Prompt.Result r = result();
-        if (r.equals(Prompt.Result.DISMISSED) || r.equals(Prompt.Result.UNDEFINED)) {
+        return choice(choices, result());
+    }
+
+    private static List<Choice> choice(Choices choices, Prompt.Result result) {
+        if (result.equals(Prompt.Result.DISMISSED) || result.equals(Prompt.Result.UNDEFINED)) {
             return SCRIPTFUNCTION_TIMEOUT;
         } else {
-            return choices.get(r);
+            return choices.get(result);
         }
     }
 
@@ -381,7 +387,7 @@ public class Prompt {
         }
         String scriptTaskDescription = scriptTask != null ? scriptTask.getRelation() + " " : " ";
         String isPaused = paused.get() ? " paused" : "";
-        String resultString = " result=" + toString(result, choice());
+        String resultString = " result=" + toString(result, choice(choices, result));
         String inputMethodName = resultInputMethod != null
                 ? "(input method =" + resultInputMethod.getClass().getSimpleName() + ")"
                 : "";

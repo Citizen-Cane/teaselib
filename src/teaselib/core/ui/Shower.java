@@ -10,6 +10,8 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Answer;
+import teaselib.ScriptFunction.AnswerOverride;
 import teaselib.core.Host;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.util.ExceptionUtil;
@@ -48,14 +50,25 @@ public class Shower {
             ScriptFutureTask scriptTask = prompt.scriptTask;
             if (scriptTask != null) {
                 try {
-                    if (prompt.result().equals(Prompt.Result.UNDEFINED)
+                    Answer answer = scriptTask.get();
+                    if (answer != null) {
+                        return Collections.singletonList(new Choice(answer));
+                    } else if (prompt.result().equals(Prompt.Result.UNDEFINED)
                             || prompt.result().equals(Prompt.Result.DISMISSED)) {
-                        return Collections.singletonList(new Choice(scriptTask.get()));
+                        return Collections.singletonList(new Choice(Answer.Timeout));
                     } else {
                         return choice;
                     }
                 } catch (CancellationException e) {
-                    return choice;
+                    Throwable exception = scriptTask.getException();
+                    if (exception == null) {
+                        return choice;
+                    } else if (exception instanceof AnswerOverride) {
+                        AnswerOverride override = (AnswerOverride) exception;
+                        return Collections.singletonList(new Choice(override.answer));
+                    } else {
+                        throw ExceptionUtil.asRuntimeException(exception);
+                    }
                 } catch (ExecutionException e) {
                     throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
                 }

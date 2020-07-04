@@ -67,9 +67,9 @@ public class CodeCoverage<T extends Script> {
                     // TODO Seems to hang in endless script function (Fotze ficken und abspritzen)
                     // - how to deal with that if it's indeed endless?
                     // TODO handle multiple choices
-                    result = prompt.hasScriptFunction() ? Prompt.Result.DISMISSED.elements.get(0) : 0;
+                    result = prompt.hasScriptTask() ? Prompt.Result.DISMISSED.elements.get(0) : 0;
                     int choices = prompt.choices.size();
-                    int timeoutPaths = prompt.hasScriptFunction() ? 1 : 0;
+                    int timeoutPaths = prompt.hasScriptTask() ? 1 : 0;
                     if (choices + timeoutPaths > 1) {
                         for (int i = 1 - timeoutPaths; i < choices; i++) {
                             DecisionList clone = new DecisionList(decisions, i, prompt);
@@ -86,12 +86,9 @@ public class CodeCoverage<T extends Script> {
                 return new Prompt.Result(result);
             }
 
-            // Now correct since the prompt is dismissed before determining the timeout state
             @Override
             public void promptDismissed(Prompt prompt) {
-                // if (prompt.result().equals(Prompt.Result.UNDEFINED) && !prompt.paused()) {
-                // throw new IllegalStateException("Failed to dismiss prompt " + prompt);
-                // }
+                // All done
             }
 
         };

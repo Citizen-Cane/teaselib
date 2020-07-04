@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Answer.Meaning;
+import teaselib.ScriptFunction.AnswerOverride;
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
@@ -427,7 +428,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             try {
                 sleep(ScriptFunction.Infinite, TimeUnit.SECONDS);
             } catch (ScriptInterruptedException e) {
-                // Consume
+                throw new AnswerOverride(Answer.Timeout);
             }
             return result;
         }, Relation.Confirmation);

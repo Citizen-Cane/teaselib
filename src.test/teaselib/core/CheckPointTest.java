@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -152,7 +152,7 @@ public class CheckPointTest {
         script.teaseLib.removeTimeAdvancedListener(tal);
 
         checkPoints.throwCatchedException();
-        assertEquals("Script function dismissed with '" + answer + "'", 2, checkPoints.actual.get());
+        assertEquals("Passing all checkpoints", 2, checkPoints.actual.get());
     }
 
     private void waitForResponse() throws InterruptedException {

@@ -1,7 +1,8 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
-import static java.util.stream.Collectors.*;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -310,8 +311,11 @@ public class TeaseLib implements Closeable {
     }
 
     public void checkPointReached(CheckPoint checkPoint) {
-        for (CheckPointListener checkPointListener : checkPointListeners) {
-            checkPointListener.checkPointReached(checkPoint);
+        if (!checkPointListeners.isEmpty()) {
+            logger.info("Checkpoint {}", checkPoint);
+            for (CheckPointListener checkPointListener : checkPointListeners) {
+                checkPointListener.checkPointReached(checkPoint);
+            }
         }
     }
 

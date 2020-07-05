@@ -99,6 +99,12 @@ public class Debugger {
 
     public void resumeTime() {
         teaseLib.resumeTime();
+        updateDebugResponseListeners();
+    }
+
+    private void updateDebugResponseListeners() {
+        debugInputMethod.detach(teaseLib);
+        debugInputMethod.attach(teaseLib);
     }
 
     public void advanceTime(long duration, TimeUnit unit) {

@@ -1,8 +1,7 @@
 package teaselib.core;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,9 +9,12 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.Debugger.Response;
 import teaselib.core.Debugger.ResponseAction;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.debug.CheckPoint;
+import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.DebugResponses;
 import teaselib.core.debug.DebugResponses.Result;
 import teaselib.core.debug.TimeAdvanceListener;
+import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.ui.AbstractInputMethod;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
@@ -29,8 +31,6 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         DebugInput
     }
 
-    private final AtomicLong elapsed = new AtomicLong();
-
     private final DebugResponses responses = new DebugResponses();
     private final Runnable debugAction;
 
@@ -41,30 +41,31 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         this.debugAction = debugAction;
     }
 
-    private final TimeAdvanceListener timeAdvanceListener = e -> {
-        if (!dismissed()) {
+    private final TimeAdvanceListener timeAdvanceListener = this::handleRealTime;
+    private final CheckPointListener checkPointListener = this::handleFrozenTime;
+
+    private void handleRealTime(TimeAdvancedEvent e) {
+        synchronized (this) {
             Prompt prompt = activePrompt.get();
             if (prompt != null) {
-                Thread t = new Thread(() -> {
+                Runnable respond = () -> {
                     prompt.lock.lock();
                     try {
                         if (prompt.result() == Prompt.Result.UNDEFINED && !prompt.paused()) {
                             dismissExpectedPromptOrIgnore(prompt);
-                            elapsed.addAndGet(e.teaseLib.getTime(TimeUnit.MILLISECONDS));
                         } else {
                             logger.warn("Time advance skipped for {}", prompt);
                         }
                     } finally {
                         prompt.lock.unlock();
                     }
-                });
+                };
+                Thread t = new Thread(respond);
                 t.setName(ResponseDebugInputMethod.class.getSimpleName() + " " + getClass().getSimpleName());
                 t.start();
-            } else {
-                logger.warn("Time advance skipped because prompt == null");
             }
         }
-    };
+    }
 
     private void dismissExpectedPromptOrIgnore(Prompt prompt) {
         Result debugResponse = responses.getResponse(prompt.choices);
@@ -84,6 +85,36 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         }
     }
 
+    private void handleFrozenTime(CheckPoint checkPoint) {
+        if (checkPoint == CheckPoint.ScriptFunction.Finished) {
+            synchronized (this) {
+                Prompt prompt = activePrompt.get();
+                if (prompt != null) {
+                    Result debugResponse = responses.getResponse(prompt.choices);
+                    if (debugResponse.response == Response.Choose) {
+                        waitUntilScriptFunctionIsCancelled();
+                    } else if (debugResponse.response == Response.Invoke) {
+                        // TODO This might not work with frozen time
+                        logger.info("Signalling handler invocation {} to {}", debugResponse, prompt);
+                        invokeHandlerOnce(prompt, debugResponse);
+                    } else if (debugResponse.response == Response.Ignore) {
+                        logger.info("Ignoring {}", result);
+                    } else {
+                        throw new UnsupportedOperationException(debugResponse.toString());
+                    }
+                }
+            }
+        }
+    }
+
+    private void waitUntilScriptFunctionIsCancelled() {
+        try {
+            wait(Long.MAX_VALUE);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     @Override
     public Setup getSetup(Choices choices) {
         return () -> result = Prompt.Result.UNDEFINED;
@@ -91,7 +122,16 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
 
     @Override
     protected Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
-        return dismissExpectedPromptOrShow(prompt);
+        synchronized (this) {
+            Objects.requireNonNull(activePrompt.get());
+            Objects.requireNonNull(prompt);
+
+            result = dismissExpectedPromptOrShow(prompt);
+            while (result == Prompt.Result.UNDEFINED) {
+                wait();
+            }
+            return result;
+        }
     }
 
     @Override
@@ -109,29 +149,19 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         return !result.equals(Prompt.Result.UNDEFINED) && !result.equals(Prompt.Result.DISMISSED);
     }
 
-    private Prompt.Result dismissExpectedPromptOrShow(Prompt prompt) throws InterruptedException {
-        synchronized (this) {
-
-            Result debugResponse = responses.getResponse(prompt.choices);
-            if (debugResponse.response == Response.Choose) {
-                result = new Prompt.Result(debugResponse.index);
-            } else if (debugResponse.response == Response.Invoke) {
-                invokeHandlerOnce(prompt, debugResponse);
-            } else {
-                elapsed.set(0);
-            }
-
-            while (result == Prompt.Result.UNDEFINED) {
-                wait();
-            }
+    private Prompt.Result dismissExpectedPromptOrShow(Prompt prompt) {
+        Result debugResponse = responses.getResponse(prompt.choices);
+        if (debugResponse.response == Response.Choose) {
+            result = new Prompt.Result(debugResponse.index);
+        } else if (debugResponse.response == Response.Invoke) {
+            invokeHandlerOnce(prompt, debugResponse);
         }
-
         return result;
     }
 
-    private void invokeHandlerOnce(Prompt prompt, Result result) {
+    private void invokeHandlerOnce(Prompt prompt, Result debugResponse) {
         AbstractInputMethod.signal(prompt, debugAction, new ResponseDebugInputMethodEventArgs(Notification.DebugInput));
-        responses.replace(new ResponseAction(result.match, Response.Choose));
+        responses.replace(new ResponseAction(debugResponse.match, Response.Choose));
     }
 
     public DebugResponses getResponses() {
@@ -140,12 +170,17 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
 
     @Override
     public void attach(TeaseLib teaseLib) {
-        teaseLib.addTimeAdvancedListener(timeAdvanceListener);
+        if (teaseLib.isTimeFrozen()) {
+            teaseLib.addCheckPointListener(checkPointListener);
+        } else {
+            teaseLib.addTimeAdvancedListener(timeAdvanceListener);
+        }
     }
 
     @Override
     public void detach(TeaseLib teaseLib) {
         teaseLib.removeTimeAdvancedListener(timeAdvanceListener);
+        teaseLib.removeCheckPointListener(checkPointListener);
     }
 
     public void replyScriptFunction(String match) {

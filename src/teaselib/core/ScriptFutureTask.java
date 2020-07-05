@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Answer;
 import teaselib.ScriptFunction;
+import teaselib.ScriptFunction.AnswerOverride;
 import teaselib.core.debug.CheckPoint;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
@@ -111,7 +112,8 @@ public class ScriptFutureTask extends FutureTask<Answer> {
             logger.info("{}:@{} stored - will be forwarded", t.getClass().getSimpleName(), t.hashCode());
             super.setException(t);
         }
-        if (!(t instanceof ScriptInterruptedException || t instanceof InterruptedException)) {
+        if (!(t instanceof ScriptInterruptedException || t instanceof InterruptedException
+                || t instanceof AnswerOverride)) {
             logger.error(t.getMessage(), t);
         }
     }

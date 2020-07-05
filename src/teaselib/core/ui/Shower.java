@@ -59,7 +59,7 @@ public class Shower {
                     } else {
                         return choice;
                     }
-                } catch (CancellationException e) {
+                } catch (CancellationException | ExecutionException e) {
                     Throwable exception = scriptTask.getException();
                     if (exception == null) {
                         return choice;
@@ -67,10 +67,8 @@ public class Shower {
                         AnswerOverride override = (AnswerOverride) exception;
                         return Collections.singletonList(new Choice(override.answer));
                     } else {
-                        throw ExceptionUtil.asRuntimeException(exception);
+                        throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
                     }
-                } catch (ExecutionException e) {
-                    throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
                 }
             } else {
                 return choice;
@@ -165,10 +163,10 @@ public class Shower {
         return false;
     }
 
-    private void pauseCurrent() {
+    private void pauseCurrent() throws InterruptedException {
         if (!stack.isEmpty()) {
             Prompt prompt = stack.peek();
-            prompt.lock.lock();
+            prompt.lock.lockInterruptibly();
             try {
                 if (!prompt.paused()) {
                     pause(prompt);

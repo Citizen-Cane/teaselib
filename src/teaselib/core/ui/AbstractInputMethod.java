@@ -1,5 +1,7 @@
 package teaselib.core.ui;
 
+import java.util.ConcurrentModificationException;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -49,7 +51,7 @@ public abstract class AbstractInputMethod implements InputMethod {
         }
     };
 
-    private Future<?> resultWorker;
+    protected Future<?> resultWorker;
 
     public AbstractInputMethod(ExecutorService executor) {
         this.executor = executor;
@@ -57,25 +59,29 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public final void show(Prompt prompt) throws InterruptedException {
-        activePrompt.updateAndGet(active -> {
-            if (startLock.tryLock()) {
-                try {
-                    resultWorker = executor.submit(() -> showPrompt.accept(prompt));
-                    start.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return null;
-                } finally {
-                    startLock.unlock();
-                }
-                return prompt;
-            } else {
-                throw new IllegalStateException("ReplySection already locked");
-            }
-        });
+        Objects.requireNonNull(prompt);
+        if (showLock.isLocked()) {
+            throw new ConcurrentModificationException("Show prompt " + this.toString());
+        }
+
+        activePrompt.set(prompt);
+        start(prompt);
 
         if (Thread.interrupted()) {
             throw new InterruptedException();
+        }
+    }
+
+    private void start(Prompt prompt) throws InterruptedException {
+        if (startLock.tryLock()) {
+            try {
+                resultWorker = executor.submit(() -> showPrompt.accept(prompt));
+                start.await();
+            } finally {
+                startLock.unlock();
+            }
+        } else {
+            throw new IllegalStateException("ReplySection already locked");
         }
     }
 
@@ -129,7 +135,6 @@ public abstract class AbstractInputMethod implements InputMethod {
     }
 
     public static <T extends InputMethodEventArgs> boolean signal(Prompt prompt, Runnable action, T eventArgs) {
-
         prompt.when(eventArgs.source).run(e -> {
             prompt.remove(e.source);
             action.run();
@@ -183,6 +188,7 @@ public abstract class AbstractInputMethod implements InputMethod {
                 }
             }
 
+            // TODO should be null but returning "prompt" helps to fix debug response
             return null;
         });
     }

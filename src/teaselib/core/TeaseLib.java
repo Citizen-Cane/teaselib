@@ -253,16 +253,17 @@ public class TeaseLib implements Closeable {
     }
 
     private void sleepWhileTimeIsFrozen(long duration, TimeUnit unit) {
+        if (Thread.interrupted()) {
+            throw new ScriptInterruptedException();
+        }
+
         if (timeAdvanceThread.get() == null || timeAdvanceThread.get() == Thread.currentThread()) {
             advanceTime(duration, unit);
         } else {
             advanceTime(0, unit);
         }
-
-        if (Thread.interrupted()) {
-            throw new ScriptInterruptedException();
-        }
         fireTimeAdvanced();
+
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }

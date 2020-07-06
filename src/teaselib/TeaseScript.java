@@ -370,10 +370,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
         Answer result;
         if (ignoreTimeoutInDubioMitius.get()) {
-            logger.info(/* relation + */ " timeout ignored {}", timeoutBehavior);
+            logger.info(" accepted {}", timeoutBehavior);
             result = null;
         } else {
-            logger.info("Script function confirm timeout");
+            logger.info("Prompt result timeout {} ", timeoutBehavior);
             result = Answer.Timeout;
         }
 

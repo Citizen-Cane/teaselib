@@ -223,12 +223,19 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     @Override
     public void setGaze(Point2D gaze) {
         // Ignore
-        
+
     }
 
     @Override
     public void setPlayerDistance(float distance) {
         // Ignore
-        
+
     }
+
+    @Override
+    public String toString() {
+        return "[current choices = " + currentChoices + " , replaySection = "
+                + (replySection.isLocked() ? "locked" : "free") + " ]";
+    }
+
 }

@@ -86,32 +86,44 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
     }
 
     private void handleFrozenTime(CheckPoint checkPoint) {
-        if (checkPoint == CheckPoint.ScriptFunction.Finished) {
+        // TODO add explicit late reply for script functions to improve code coverage
+        // - differentiate between script confirmation in time or late
+        if (checkPoint == CheckPoint.ScriptFunction.Started || checkPoint == CheckPoint.ScriptFunction.Finished) {
             synchronized (this) {
-                Prompt prompt = activePrompt.get();
-                if (prompt != null) {
-                    Result debugResponse = responses.getResponse(prompt.choices);
-                    if (debugResponse.response == Response.Choose) {
-                        waitUntilScriptFunctionIsCancelled();
-                    } else if (debugResponse.response == Response.Invoke) {
-                        // TODO This might not work with frozen time
-                        logger.info("Signalling handler invocation {} to {}", debugResponse, prompt);
-                        invokeHandlerOnce(prompt, debugResponse);
-                    } else if (debugResponse.response == Response.Ignore) {
-                        logger.info("Ignoring {}", result);
-                    } else {
-                        throw new UnsupportedOperationException(debugResponse.toString());
+                if (!result.equals(Prompt.Result.UNDEFINED)) {
+                    waitUntilScriptFunctionIsCancelled();
+                } else {
+                    Prompt prompt = activePrompt.get();
+                    if (prompt != null) {
+                        Result debugResponse = responses.getResponse(prompt.choices);
+                        if (debugResponse.response == Response.Choose) {
+                            waitUntilScriptFunctionIsCancelled();
+                        } else if (debugResponse.response == Response.Invoke) {
+                            // TODO This might not work with frozen time
+                            logger.info("Signalling handler invocation {} to {}", debugResponse, prompt);
+                            invokeHandlerOnce(prompt, debugResponse);
+                        } else if (debugResponse.response == Response.Ignore) {
+                            logger.info("Ignoring {}", result);
+                        } else {
+                            throw new UnsupportedOperationException(debugResponse.toString());
+                        }
                     }
                 }
             }
+        } else {
+            // Ignore
         }
     }
 
     private void waitUntilScriptFunctionIsCancelled() {
-        try {
-            wait(Long.MAX_VALUE);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        synchronized (this) {
+            try {
+                while (System.currentTimeMillis() < Long.MAX_VALUE) {
+                    wait(Long.MAX_VALUE);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

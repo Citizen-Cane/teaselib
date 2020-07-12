@@ -32,14 +32,11 @@ extern "C"
 	 */
 	JNIEXPORT jobject JNICALL Java_teaselib_core_ai_TeaseLibAI_sceneCaptures
 	(JNIEnv* env, jobject) {
-		// TODO add front camera
-		// TODO get names of opencv devices -> copy from videoInput lib
-		// TODO enum capture devices
 		auto cameras = aifx::VideoCapture::devices();
 		std::vector<NativeObject*> sceneCaptures;
 
 		std::for_each(cameras.begin(), cameras.end(), [&sceneCaptures, env](const aifx::VideoCapture::Devices::value_type& cameraInfo) {
-			sceneCaptures.push_back(new SceneCapture(env, cameraInfo.first, cameraInfo.second.c_str()));
+			sceneCaptures.push_back(new SceneCapture(env, cameraInfo.second));
 		});
 
 		return env->NewGlobalRef(JNIUtilities::asList(env, sceneCaptures));

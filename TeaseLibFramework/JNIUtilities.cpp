@@ -62,3 +62,9 @@ jobject JNIUtilities::asSet(JNIEnv* env, const std::set<NativeObject*>& voices) 
 	return jvoiceList;
 }
 
+jobject JNIUtilities::enumValue(JNIEnv* env, const char* enumClass, const char* name)
+{
+	jclass cls = JNIClass::getClass(env, enumClass);
+	jfieldID enumField = JNIClass::getStaticFieldID(env, cls, name, (std::string("L") + enumClass + ";").c_str());
+	return env->GetStaticObjectField(cls, enumField);
+}

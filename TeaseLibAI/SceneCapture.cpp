@@ -2,6 +2,8 @@
 
 #include <JNIException.h>
 #include <JNIString.h>
+#include <JNIUtilities.h>
+
 #include <NativeException.h>
 #include <NativeObject.h>
 
@@ -95,16 +97,21 @@ extern "C"
 
 }
 
-SceneCapture::SceneCapture(JNIEnv* env, int id, const char* name)
-	: NativeObject(env), device(new aifx::VideoCapture(id))
-{
-	jclass clazz = env->FindClass("teaselib/core/ai/perception/SceneCapture");
-	if (env->ExceptionCheck()) throw JNIException(env);
+const char* enclosureLocationEnumName[] = { "Front", "Rear", "External" };
 
-	const char* signature = "(JLjava/lang/String;)V";
+SceneCapture::SceneCapture(JNIEnv* env, const aifx::VideoCapture::CameraInfo& cameraInfo)
+	: NativeObject(env), device(new aifx::VideoCapture(cameraInfo.id))
+{
+	jclass clazz = JNIClass::getClass(env, "teaselib/core/ai/perception/SceneCapture");
 	jthis = env->NewGlobalRef(env->NewObject(clazz,
-		JNIClass::getMethodID(env, clazz, "<init>", signature),
+		JNIClass::getMethodID(env, clazz,
+			"<init>", 
+			"(JLjava/lang/String;Lteaselib/core/ai/perception/SceneCapture$EnclosureLocation;)V"),
 		reinterpret_cast<jlong>(device.get()),
-		JNIStringUTF8(env, name).operator jstring()));
+		JNIString(env, cameraInfo.friendlyName.c_str()).operator jstring(),
+		JNIUtilities::enumValue(env,
+			"teaselib/core/ai/perception/SceneCapture$EnclosureLocation",
+			enclosureLocationEnumName[(int)cameraInfo.enclosureLocation]))
+	);
 	if (env->ExceptionCheck()) throw JNIException(env);
 }

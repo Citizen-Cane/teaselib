@@ -8,17 +8,25 @@ import java.io.File;
 import java.util.List;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.SceneCapture;
 
 public class TeaseLibAITest {
+    private static final Logger logger = LoggerFactory.getLogger(TeaseLibAITest.class);
 
     @Test
     public void loadNativeLibrary() {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             List<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures();
             assertNotNull(sceneCaptures);
+
+            int n = 0;
+            for (SceneCapture device : sceneCaptures) {
+                logger.info("Device {}: '{}' , enclosure location = {}", n++, device.name, device.location);
+            }
         }
     }
 

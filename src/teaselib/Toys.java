@@ -61,7 +61,7 @@ public enum Toys {
         Clover,
     }
 
-    public enum Masturbators {
+    public enum Masturbators implements Item.Attribute {
         Pussy,
         Bumhole,
         Feet,
@@ -72,8 +72,16 @@ public enum Toys {
     public enum Chastity_Devices implements Item.Attribute {
         Belt,
         Cage,
-        Gates_of_Hell,
         Cone_of_Shame,
+        Crimper,
+        Gates_of_Hell,
+
+        ;
+
+        public enum Features implements Item.Attribute {
+            Dilator,
+            AccessibleGlans
+        }
     }
 
     public enum CollarType implements Item.Attribute {
@@ -99,7 +107,9 @@ public enum Toys {
 
     public enum Anal implements Item.Attribute {
         Beads,
-        Plug
+        Plug,
+        Ball,
+        Hook
     }
 
     public enum Vaginal implements Item.Attribute {

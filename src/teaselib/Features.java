@@ -16,8 +16,14 @@ public enum Features implements Item.Attribute {
 
     ;
 
+    public enum Channels {
+        Single,
+        Dual,
+    }
+
     public enum Electrode {
         Single,
         Dual,
     }
+
 }

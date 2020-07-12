@@ -64,12 +64,21 @@ public final class ReflectionUtils {
             Class<T> enumClass = (Class<T>) Class.forName(className);
             return getEnum(enumClass, qualifiedItem);
         } catch (ClassNotFoundException e) {
+            String nestedClassName1 = nestedClass(className);
             try {
                 @SuppressWarnings("unchecked")
-                Class<T> nestedClass = (Class<T>) Class.forName(nestedClass(className));
+                Class<T> nestedClass = (Class<T>) Class.forName(nestedClassName1);
                 return getEnum(nestedClass, qualifiedItem);
             } catch (ClassNotFoundException e1) {
-                throw new IllegalArgumentException("Not an enum:" + qualifiedItem, e);
+                String nestedClassName2 = nestedClass(nestedClassName1);
+                try {
+                    @SuppressWarnings("unchecked")
+                    Class<T> nestedClass = (Class<T>) Class.forName(nestedClassName2);
+                    return getEnum(nestedClass, qualifiedItem);
+                } catch (ClassNotFoundException e2) {
+                    // TODO make this iterative
+                    throw new IllegalArgumentException("Not an enum: " + qualifiedItem, e);
+                }
             }
         }
     }

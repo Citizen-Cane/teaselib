@@ -224,7 +224,7 @@ public class ItemsTest {
         assertFalse(Items.None.allApplied());
         assertFalse(Items.None.anyApplicable());
         assertFalse(Items.None.allApplicable());
-        assertFalse(Items.None.someAre("foobar"));
+        assertFalse(Items.None.anyAre("foobar"));
         assertFalse(Items.None.allAre("foobar"));
         assertTrue(Items.None.anyExpired());
         assertTrue(Items.None.allExpired());
@@ -925,7 +925,7 @@ public class ItemsTest {
         assertFalse(bells.is(singleChainItem));
         assertFalse(singleChainItem.is(bells));
         assertFalse(bells.is(chains));
-        assertTrue(chains.someAre(bells));
+        assertTrue(chains.anyAre(bells));
         assertFalse(chains.allAre(bells));
 
         singleChainItem.remove();

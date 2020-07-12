@@ -126,7 +126,7 @@ public class Items implements Iterable<Item> {
         return elements.stream().allMatch(Item::applied);
     }
 
-    public boolean someAre(Object... attributes) {
+    public boolean anyAre(Object... attributes) {
         return elements.stream().anyMatch(item -> item.is(attributes));
     }
 

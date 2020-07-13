@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -20,6 +21,7 @@ import teaselib.core.ScriptRenderer;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Aspect;
 import teaselib.core.ai.perception.HumanPoseInteraction.Reaction;
+import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.util.math.Hysteresis;
 
@@ -45,6 +47,7 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
     }
 
     public static class Pose {
+        public static final Pose NONE = new Pose(Aspect.None);
 
         public final Aspect aspect;
 
@@ -98,7 +101,7 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
     }
 
     public Pose getCurrentPose(Aspect aspect) {
-        // TODO set flag to stop if aspects are a subset of desired aspects.
+        // TODO set a flag to stop if aspects are a subset of desired aspects.
         // -> use future.get() to complete active estimation
         // restart the task (it's on the same thread) - it's already initialized
 
@@ -119,7 +122,6 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
 
     static class PoseEstimationTask implements Callable<Pose> {
         private final TeaseLibAI teaseLibAI;
-        private final HumanPose humanPose;
 
         HumanPoseInteraction interactions;
 
@@ -127,51 +129,95 @@ public class HumanPoseInteraction extends ScriptInteractionImplementation<HumanP
 
         PoseEstimationTask(HumanPoseInteraction interactions) {
             this.interactions = interactions;
-            // TODO init all in worker task
             this.teaseLibAI = new TeaseLibAI();
-            List<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures();
-            this.humanPose = new HumanPose(sceneCaptures.get(0));
         }
 
         @Override
-        public Pose call() throws Exception {
-            Pose pose = new Pose(Aspect.None);
-            try {
-                while (!Thread.interrupted()) {
-                    Actor actor = interactions.scriptRenderer.currentActor();
-                    ScriptInteractionImplementation<Aspect, Reaction>.Definitions reactions = interactions.defs(actor);
-                    Set<Aspect> aspects = reactions.stream().map(Map.Entry<Aspect, Reaction>::getValue)
-                            .map(e -> e.aspect).collect(toSet());
+        public Pose call() throws InterruptedException {
+            SceneCapture device = awaitCaptureDevice();
+            try (HumanPose humanPose = new HumanPose(device);) {
+                try {
+                    return estimate(humanPose);
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                    throw e;
+                }
+            }
+        }
 
-                    if (!aspects.isEmpty()) {
-                        humanPose.setDesiredAspects(aspects);
-                        int n = humanPose.estimate();
-                        if (actor == interactions.scriptRenderer.currentActor()) {
-                            if (aspects.contains(Aspect.Awareness)) {
-                                float y = awarenessHysteresis.apply(n >= 1 ? 1.0f : 0.0f);
-                                pose = new Pose(y >= 0.5f ? Aspect.Awareness : Aspect.None);
-                                // TODO define max-reliable distance for each model to avoid dropouts in the distance
-                                Pose current = interactions.current;
-                                if (!pose.equals(current)) {
-                                    reactions.get(Aspect.Awareness).consumer.accept(pose);
-                                    interactions.current = pose;
-                                }
-                            }
+        private SceneCapture awaitCaptureDevice() throws InterruptedException {
+            List<SceneCapture> sceneCaptures;
+            while (true) {
+                sceneCaptures = teaseLibAI.sceneCaptures();
+                if (sceneCaptures.isEmpty()) {
+                    Thread.sleep(5000);
+                } else {
+                    Optional<SceneCapture> device = find(sceneCaptures, EnclosureLocation.External);
+                    if (device.isPresent()) {
+                        return device.get();
+                    } else {
+                        device = find(sceneCaptures, EnclosureLocation.Front);
+                        if (device.isPresent()) {
+                            return device.get();
                         }
                     }
-
-                    synchronized (this) {
-                        wait(2000);
-                    }
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (Throwable e) {
-                logger.error(e.getMessage(), e);
-                throw e;
             }
+        }
 
+        private static Optional<SceneCapture> find(List<SceneCapture> sceneCaptures, EnclosureLocation location) {
+            return sceneCaptures.stream().filter(s -> s.location == location).findFirst();
+        }
+
+        private Pose estimate(HumanPose humanPose) throws InterruptedException {
+            Pose pose = Pose.NONE;
+            while (!Thread.interrupted()) {
+                Actor actor = interactions.scriptRenderer.currentActor();
+                pose = get(actor, humanPose);
+                signal(actor, pose);
+
+                synchronized (this) {
+                    wait(2000);
+                }
+            }
             return pose;
+        }
+
+        private Pose get(Actor actor, HumanPose humanPose) {
+            ScriptInteractionImplementation<Aspect, Reaction>.Definitions reactions = interactions.defs(actor);
+            Set<Aspect> aspects = reactions.stream().map(Map.Entry<Aspect, Reaction>::getValue).map(e -> e.aspect)
+                    .collect(toSet());
+
+            if (aspects.isEmpty()) {
+                return Pose.NONE;
+            } else {
+                humanPose.setDesiredAspects(aspects);
+                int n = humanPose.estimate();
+                if (aspects.contains(Aspect.Awareness)) {
+                    float y = awarenessHysteresis.apply(n >= 1 ? 1.0f : 0.0f);
+                    return new Pose(y >= 0.5f ? Aspect.Awareness : Aspect.None);
+                    // TODO define max-reliable distance for each model to avoid drop-outs in the
+                    // distance
+                    // TODO measure distance by head/shoulder/hip width
+                } else {
+                    return Pose.NONE;
+                }
+            }
+        }
+
+        private void signal(Actor actor, Pose pose) {
+            if (theSameActor(actor)) {
+                Pose current = interactions.current;
+                if (!pose.equals(current)) {
+                    ScriptInteractionImplementation<Aspect, Reaction>.Definitions reactions = interactions.defs(actor);
+                    reactions.get(Aspect.Awareness).consumer.accept(pose);
+                    interactions.current = pose;
+                }
+            }
+        }
+
+        private boolean theSameActor(Actor actor) {
+            return actor == interactions.scriptRenderer.currentActor();
         }
 
     }

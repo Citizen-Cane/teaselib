@@ -143,4 +143,30 @@ public class ScriptTest {
                 .map(part -> part.value).findFirst().orElseThrow();
     }
 
+    public static class NestedScriptCaching {
+
+        public static class FooScript extends Script {
+            final Script baz = script(BazScript.class);
+
+            public FooScript(Script script) {
+                super(script, script.actor);
+            }
+        }
+
+        public static class BazScript extends Script {
+            public BazScript(Script script) {
+                super(script, script.actor);
+            }
+        }
+
+    }
+
+    @Test
+    public void testNestedScriptCaching() {
+        TestScript test = TestScript.getOne();
+        Script script = test.script(NestedScriptCaching.FooScript.class);
+
+        assertNotNull(script);
+    }
+
 }

@@ -1,9 +1,9 @@
 package teaselib;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -60,11 +60,11 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
 
     @SafeVarargs
     public final <T> T random(T... items) {
-        if (items == null)
-            return null;
-        if (items.length == 0)
-            return null;
-        return items[random(0, items.length - 1)];
+        return random(Arrays.asList(items));
+    }
+
+    public final <T> T random(T current, T[] items) {
+        return random(current, Arrays.asList(items));
     }
 
     public <T> T random(List<T> items) {
@@ -76,19 +76,16 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return items.get(random(0, items.size() - 1));
     }
 
-    public <T> T random(Collection<T> items) {
-        if (items == null)
-            throw new NullPointerException();
-        else if (items.isEmpty())
+    public <T> T random(T current, List<T> items) {
+        Objects.requireNonNull(items);
+        if (items.isEmpty())
             throw new IllegalArgumentException("Empty list");
 
-        int s = random(0, items.size() - 1);
-        Iterator<T> iterator = items.iterator();
-        T item = null;
-        for (int i = 0; i < s; i++) {
-            iterator.next();
-        }
-        return item;
+        T another;
+        do {
+            another = items.get(random(0, items.size() - 1));
+        } while (another == current && items.size() > 1);
+        return another;
     }
 
     /**

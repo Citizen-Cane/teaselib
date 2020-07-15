@@ -4,10 +4,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Interface for iterating over a set of images. Frees script writers from
- * having to think what image to use next. Primary use is for displaying images
- * of the dominant, where the exact image doesn't matter. However there may
- * maybe some sort of order on the images, such as undoing clothing
+ * Interface for iterating over a set of images. Frees script writers from having to think what image to use next.
+ * Primary use is for displaying images of the dominant, where the exact image doesn't matter. However there may maybe
+ * some sort of order on the images, such as undoing clothing
  * 
  * Image paths must be absolute paths.
  * 
@@ -23,7 +22,7 @@ public interface Images extends Iterator<String> {
         }
 
         @Override
-        public void hint(String... hint) {
+        public void hint(String... hint) { // None
         }
 
         @Override

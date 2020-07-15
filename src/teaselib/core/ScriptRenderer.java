@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Replay;
+import teaselib.core.ScriptEventArgs.BeforeNewMessage;
 import teaselib.core.debug.CheckPoint;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
@@ -159,6 +160,8 @@ public class ScriptRenderer implements Closeable {
 
     void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
             Decorator[] decorators) {
+        fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.NewSection);
+
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
 
         // TODO run method of media renderer should start rendering
@@ -177,16 +180,33 @@ public class ScriptRenderer implements Closeable {
 
     void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
-        List<RenderedMessage> renderedMessages = convertMessagesToRendered(singletonList(message), decorators);
+        fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.AppendParagraph);
+
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
         MediaRenderer appended = messageRenderer.append(actor, renderedMessages, resources);
         renderMessage(teaseLib, actor, appended);
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
-        List<RenderedMessage> renderedMessages = convertMessagesToRendered(singletonList(message), decorators);
+        fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.ReplaceParagraph);
+
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
         MediaRenderer replaced = messageRenderer.replace(actor, renderedMessages, resources);
         renderMessage(teaseLib, actor, replaced);
+    }
+
+    private void fireNewMessageEvent(TeaseLib teaseLib, Actor actor, BeforeNewMessage.OutlineType outlineType) {
+        teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
+        if (actor != currentActor) {
+            currentActor = actor;
+            events.actorChanged.fire(new ScriptEventArgs.ActorChanged(currentActor));
+        }
+        events.beforeMessage.fire(new ScriptEventArgs.BeforeNewMessage(outlineType));
+    }
+
+    private List<RenderedMessage> convertMessagesToRendered(Message message, Decorator[] decorators) {
+        return convertMessagesToRendered(singletonList(message), decorators);
     }
 
     private List<RenderedMessage> convertMessagesToRendered(List<Message> messages, Decorator[] decorators) {
@@ -219,12 +239,6 @@ public class ScriptRenderer implements Closeable {
                 // Start a new chapter in the transcript
                 teaseLib.transcript.info("");
 
-                teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
-                if (actor != currentActor) {
-                    currentActor = actor;
-                    events.actorChanged.fire(new ScriptEventArgs.ActorChanged(currentActor));
-                }
-                events.beforeMessage.fire(new ScriptEventArgs());
                 renderQueue.start(nextSet);
             }
             startBackgroundRenderers();

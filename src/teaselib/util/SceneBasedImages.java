@@ -3,6 +3,7 @@ package teaselib.util;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,11 +42,15 @@ public class SceneBasedImages implements teaselib.Images {
 
         this.script = script;
         this.resources = resources;
-        this.pictureSets = pictureSets(resources);
-        chooseSet();
+        if (resources.isEmpty()) {
+            this.pictureSets = Collections.emptyMap();
+        } else {
+            this.pictureSets = pictureSets(resources);
+            chooseSet();
 
-        script.scriptRenderer.events.afterChoices.add(this::handleAfterChoices);
-        script.scriptRenderer.events.beforeMessage.add(this::handleBeforeMessage);
+            script.scriptRenderer.events.afterChoices.add(this::handleAfterChoices);
+            script.scriptRenderer.events.beforeMessage.add(this::handleBeforeMessage);
+        }
     }
 
     void handleAfterChoices(EventArgs e) {

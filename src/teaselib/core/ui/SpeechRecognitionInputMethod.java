@@ -657,7 +657,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         usedRecognitionInstances.values().stream().map(recognizer -> recognizer.events).forEach(this::remove);
     }
 
-    public void setAwareness(boolean aware) {
+    public void setFaceToFace(boolean aware) {
         awarenessBonus = aware ? Confidence.High.probability - Confidence.Normal.probability : 0.0f;
     }
 

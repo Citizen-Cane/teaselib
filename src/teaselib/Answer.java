@@ -32,20 +32,36 @@ public class Answer {
     public final List<String> text;
 
     public static Answer yes(String... text) {
+        return yes(Arrays.asList(text));
+    }
+
+    public static Answer yes(List<String> text) {
         return new Answer(Meaning.YES, text);
     }
 
     public static Answer no(String... text) {
+        return no(Arrays.asList(text));
+    }
+
+    public static Answer no(List<String> text) {
         return new Answer(Meaning.NO, text);
     }
 
     public static Answer resume(String... text) {
+        return resume(Arrays.asList(text));
+    }
+
+    public static Answer resume(List<String> text) {
         return new Answer(Meaning.RESUME, text);
     }
 
     public Answer(Meaning meaning, String... text) {
+        this(meaning, Arrays.asList(text));
+    }
+
+    public Answer(Meaning meaning, List<String> text) {
         this.meaning = meaning;
-        this.text = Arrays.asList(text);
+        this.text = text;
     }
 
     @Override

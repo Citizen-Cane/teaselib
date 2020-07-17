@@ -14,25 +14,50 @@ public class HumanPose extends NativeObject {
 
     private static native long init(SceneCapture device);
 
-    public enum Aspect {
-        None(0),
-        Awareness(1),
-        Head(2)
+    public interface PoseAspect {
+        // Tag interface
+    }
+
+    public enum Interests {
+        Status(1),
+        Proximity(2),
 
         ;
 
         final int bit;
 
-        private Aspect(int bit) {
+        private Interests(int bit) {
             this.bit = bit;
         }
     }
 
-    public void setDesiredAspects(Set<Aspect> aspects) {
-        setDesiredAspects(aspects.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b));
+    public enum Status implements PoseAspect {
+        None,
+        Available,
     }
 
-    private native void setDesiredAspects(int aspects);
+    public enum Proximity implements PoseAspect {
+        Away,
+        Far,
+        Near,
+        FaceToFace,
+        Close,
+
+        NotAway,
+        NotFar,
+        NotNear,
+        NotFaceToFace,
+        NotClose
+    }
+
+    public static final Proximity Face3Face[] = { Proximity.NotAway, Proximity.NotFar, Proximity.FaceToFace,
+            Proximity.NotClose };
+
+    public void setInterests(Set<Interests> interests) {
+        setInterests(interests.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b));
+    }
+
+    private native void setInterests(int aspects);
 
     private native int estimatePose();
 
@@ -41,8 +66,7 @@ public class HumanPose extends NativeObject {
             device.start();
         }
 
-        int humans = estimatePose();
-        return humans;
+        return estimatePose();
     }
 
     @Override

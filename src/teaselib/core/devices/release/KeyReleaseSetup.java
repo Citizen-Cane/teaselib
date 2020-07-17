@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 
 import teaselib.core.Script;
 import teaselib.core.ScriptInteraction;
-import teaselib.core.ScriptInteractionImplementations;
+import teaselib.core.DeviceInteractionImplementations;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
@@ -20,7 +20,7 @@ public class KeyReleaseSetup implements ScriptInteraction {
 
     public KeyReleaseSetup(Script script) {
         this.script = script;
-        this.deviceInteraction = script.teaseLib.globals.get(ScriptInteractionImplementations.class)
+        this.deviceInteraction = script.teaseLib.globals.get(DeviceInteractionImplementations.class)
                 .get(KeyReleaseDeviceInteraction.class);
     }
 

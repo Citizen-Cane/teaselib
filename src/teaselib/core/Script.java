@@ -29,10 +29,8 @@ import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.State;
 import teaselib.core.ai.perception.HumanPose;
-import teaselib.core.ai.perception.HumanPose.Aspect;
-import teaselib.core.ai.perception.HumanPoseInteraction;
-import teaselib.core.devices.DeviceEvent;
-import teaselib.core.devices.DeviceListener;
+import teaselib.core.ai.perception.HumanPose.Proximity;
+import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.RenderedMessage.Decorator;
@@ -86,7 +84,7 @@ public abstract class Script {
 
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
-        getOrDefault(teaseLib, ScriptInteractionImplementations.class, this::initScriptInteractions);
+        getOrDefault(teaseLib, DeviceInteractionImplementations.class, this::initScriptInteractions);
         // getOrDefault(teaseLib, TeaseLibAI.class, TeaseLibAI::new);
 
         try {
@@ -120,16 +118,17 @@ public abstract class Script {
         defineKeyReleaseInteractions(actor);
     }
 
-    private void defineHumanPoseInteractions(Actor actor) {
-        HumanPoseInteraction humanPoseInteraction = interactionImplementation(HumanPoseInteraction.class);
-        humanPoseInteraction.definitions(actor).define(HumanPose.Aspect.Awareness,
-                new HumanPoseInteraction.Reaction(HumanPose.Aspect.Awareness, pose -> {
+    protected void defineHumanPoseInteractions(Actor actor) {
+        HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
+        humanPoseInteraction.definitions(actor).define(HumanPose.Interests.Proximity,
+                new HumanPoseDeviceInteraction.Reaction(HumanPose.Interests.Proximity, pose -> {
 
                     SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
                             .get(SpeechRecognitionInputMethod.class);
-                    inputMethod.setAwareness(pose.aspect == Aspect.Awareness);
+                    boolean speechProximity = pose.is(Proximity.FaceToFace);
+                    inputMethod.setFaceToFace(speechProximity);
 
-                    if (pose.aspect == Aspect.Awareness) {
+                    if (speechProximity) {
                         scriptRenderer.makeActive();
                     } else {
                         scriptRenderer.makeInactive();
@@ -139,15 +138,15 @@ public abstract class Script {
     }
 
     private void defineKeyReleaseInteractions(Actor actor) {
-        interactionImplementation(KeyReleaseDeviceInteraction.class).setDefaults(actor);
+        deviceInteraction(KeyReleaseDeviceInteraction.class).setDefaults(actor);
     }
 
-    private ScriptInteractionImplementations initScriptInteractions() {
-        ScriptInteractionImplementations scriptInteractionImplementations = new ScriptInteractionImplementations();
+    private DeviceInteractionImplementations initScriptInteractions() {
+        DeviceInteractionImplementations scriptInteractionImplementations = new DeviceInteractionImplementations();
         scriptInteractionImplementations.add(KeyReleaseDeviceInteraction.class,
                 () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer));
-        scriptInteractionImplementations.add(HumanPoseInteraction.class,
-                () -> new HumanPoseInteraction(scriptRenderer));
+        scriptInteractionImplementations.add(HumanPoseDeviceInteraction.class,
+                () -> new HumanPoseDeviceInteraction(scriptRenderer));
         return scriptInteractionImplementations;
     }
 
@@ -235,21 +234,6 @@ public abstract class Script {
         return teaseLib.globals.getOrDefault(clazz, supplier);
     }
 
-    private void bindMotionDetectorToVideoRenderer() {
-        teaseLib.devices.get(MotionDetector.class).addDeviceListener(new DeviceListener<MotionDetector>() {
-
-            @Override
-            public void deviceConnected(DeviceEvent<MotionDetector> e) {
-                e.getDevice().setVideoRenderer(teaseLib.host.getDisplay(VideoRenderer.Type.CameraFeedback));
-            }
-
-            @Override
-            public void deviceDisconnected(DeviceEvent<MotionDetector> e) {
-                e.getDevice().setVideoRenderer(null);
-            }
-        });
-    }
-
     private void bindNetworkProperties() {
         if (Boolean.parseBoolean(teaseLib.config.get(LocalNetworkDevice.Settings.EnableDeviceDiscovery))) {
             teaseLib.devices.get(LocalNetworkDevice.class).getDevicePaths();
@@ -288,9 +272,8 @@ public abstract class Script {
         return scriptInteractions.get(this, scriptInteractionClass);
     }
 
-    private <T extends ScriptInteractionImplementation<?, ?>> T interactionImplementation(
-            Class<T> scriptInteractionClass) {
-        return teaseLib.globals.get(ScriptInteractionImplementations.class).get(scriptInteractionClass);
+    private <T extends DeviceInteractionImplementation<?, ?>> T deviceInteraction(Class<T> deviceInteraction) {
+        return teaseLib.globals.get(DeviceInteractionImplementations.class).get(deviceInteraction);
     }
 
     public void completeStarts() {

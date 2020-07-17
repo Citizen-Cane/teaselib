@@ -36,10 +36,10 @@ extern "C"
 
 	/*
 	 * Class:     teaselib_core_ai_perception_HumanPose
-	 * Method:    setDesiredAspects
+	 * Method:    setInterests
 	 * Signature: (I)V
 	 */
-	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setDesiredAspects
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setInterests
 	(JNIEnv* env, jobject jthis, jint aspectMask) {
 		// TODO choose inference model according to desired aspects
 	}

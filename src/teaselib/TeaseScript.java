@@ -1,11 +1,19 @@
 package teaselib;
 
+import static teaselib.core.ai.perception.HumanPose.Interests.Proximity;
+import static teaselib.core.ai.perception.HumanPose.Interests.Status;
+import static teaselib.core.ai.perception.HumanPose.Proximity.Close;
+import static teaselib.core.ai.perception.HumanPose.Proximity.FaceToFace;
+import static teaselib.core.ai.perception.HumanPose.Proximity.NotFaceToFace;
+import static teaselib.core.ai.perception.HumanPose.Status.Available;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +25,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
+import teaselib.core.ai.perception.HumanPoseScriptInteraction;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.core.media.MediaRenderer;
@@ -690,4 +699,72 @@ public abstract class TeaseScript extends TeaseScriptMath {
         } while (size == 0 && scriptClass != TeaseScript.class);
         return new ArrayList<>(items);
     }
+
+    public State.Options apply(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+            Answer command2ndConfirmation, Message intermediateInstructions, Message completionQuestion,
+            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
+
+        HumanPoseScriptInteraction poseEstimation = interaction(HumanPoseScriptInteraction.class);
+        completeMandatory();
+
+        if (poseEstimation.getPose(Status).is(Available)) {
+
+            BooleanSupplier faceToFace = () -> poseEstimation.getPose(Proximity).is(FaceToFace, Close);
+            ScriptFunction faceToFaceInfinite = poseEstimation.autoConfirm(Proximity, FaceToFace, Close);
+            ScriptFunction notFaceToFace = poseEstimation.autoConfirm(Proximity, 5, TimeUnit.SECONDS, NotFaceToFace);
+            ScriptFunction notFaceToFaceInfinite = poseEstimation.autoConfirm(Proximity, NotFaceToFace);
+
+            append(firstCommand);
+            while (true) {
+                completeMandatory();
+                if (faceToFace.getAsBoolean() && !chat(notFaceToFace, command1stConfirmation)) {
+                    append(secondCommand);
+                    completeMandatory();
+                    if (faceToFace.getAsBoolean()) {
+                        chat(notFaceToFaceInfinite, command2ndConfirmation);
+                    }
+                }
+
+                // TODO implement instructions as infinite script function, cancel when slave is face2face
+                // use supplier/stream/iterator for random or sequential messages, increase delay between messages
+                show(item);
+                append(Message.Delay5s);
+                append(intermediateInstructions);
+                completeMandatory();
+                faceToFaceInfinite.call();
+
+                say(completionQuestion);
+                if (reply(completionConfirmation, prolongationExcuse).meaning != Meaning.NO) {
+                    break;
+                } else {
+                    say(prolongationComment);
+                    notFaceToFace.call();
+                }
+            }
+        } else {
+            append(firstCommand);
+            chat(timeoutWithAutoConfirmation(5), command1stConfirmation);
+            while (true) {
+                append(Message.Delay10s);
+                if (reply(() -> {
+                    append(intermediateInstructions);
+                    append(Message.Delay10s);
+                }, completionConfirmation) == Answer.Timeout) {
+                    say(completionQuestion);
+                    if (reply(completionConfirmation, prolongationExcuse).meaning != Meaning.NO) {
+                        break;
+                    } else {
+                        say(prolongationComment);
+                        append(Message.Delay5to10s);
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+
+        State.Options options = item.apply();
+        return options;
+    }
+
 }

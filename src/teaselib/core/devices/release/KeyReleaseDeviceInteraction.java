@@ -28,7 +28,7 @@ import teaselib.Toys;
 import teaselib.core.ScriptEventArgs;
 import teaselib.core.ScriptEvents;
 import teaselib.core.ScriptEvents.ItemEventAction;
-import teaselib.core.ScriptInteractionImplementation;
+import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptRenderer;
 import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
@@ -53,7 +53,7 @@ import teaselib.util.Items;
  * @author Citizen-Cane
  *
  */
-public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation<Items, Instructions>
+public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation<Items, Instructions>
         implements DeviceListener<KeyRelease> {
     static class Instructions {
         public final Actor actor;
@@ -424,7 +424,7 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     }
 
     public boolean clearAll(Actor actor) {
-        ScriptInteractionImplementation<Items, Instructions>.Definitions definitions = definitions(actor);
+        DeviceInteractionImplementation<Items, Instructions>.Definitions definitions = definitions(actor);
         if (definitions.isEmpty()) {
             return false;
         } else {
@@ -434,7 +434,7 @@ public class KeyReleaseDeviceInteraction extends ScriptInteractionImplementation
     }
 
     public boolean clear(Actor actor, Items items) {
-        ScriptInteractionImplementation<Items, Instructions>.Definitions definitions = definitions(actor);
+        DeviceInteractionImplementation<Items, Instructions>.Definitions definitions = definitions(actor);
         if (definitions.isEmpty()) {
             return false;
         } else {

@@ -22,7 +22,7 @@ import teaselib.Actor;
  * @author Citizen-Cane
  *
  */
-public abstract class ScriptInteractionImplementation<K, V> {
+public abstract class DeviceInteractionImplementation<K, V> {
 
     protected class Definitions implements Iterable<Map.Entry<K, V>> {
         final Actor actor;
@@ -95,7 +95,7 @@ public abstract class ScriptInteractionImplementation<K, V> {
     private final Map<Actor, Definitions> definitions = new ConcurrentHashMap<>();
     final BiPredicate<K, K> matcher;
 
-    protected ScriptInteractionImplementation(BiPredicate<K, K> matcher) {
+    protected DeviceInteractionImplementation(BiPredicate<K, K> matcher) {
         this.matcher = matcher;
     }
 

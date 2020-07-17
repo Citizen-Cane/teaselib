@@ -161,7 +161,6 @@ public class ScriptRenderer implements Closeable {
     void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
             Decorator[] decorators) {
         fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.NewSection);
-
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
 
         // TODO run method of media renderer should start rendering
@@ -180,17 +179,19 @@ public class ScriptRenderer implements Closeable {
 
     void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
-        fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.AppendParagraph);
-
-        List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
-        MediaRenderer appended = messageRenderer.append(actor, renderedMessages, resources);
-        renderMessage(teaseLib, actor, appended);
+        if (!prependedMessages.isEmpty()) {
+            renderMessage(teaseLib, resources, message, decorators);
+        } else {
+            fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.AppendParagraph);
+            List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
+            MediaRenderer appended = messageRenderer.append(actor, renderedMessages, resources);
+            renderMessage(teaseLib, actor, appended);
+        }
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
         fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.ReplaceParagraph);
-
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
         MediaRenderer replaced = messageRenderer.replace(actor, renderedMessages, resources);
         renderMessage(teaseLib, actor, replaced);

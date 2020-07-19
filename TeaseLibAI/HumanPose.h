@@ -9,7 +9,7 @@
 
 class HumanPose : public NativeObject {
 public:
-    HumanPose(JNIEnv* env, jobject ttsImpl);
+    HumanPose(JNIEnv* env, jobject jdevice, jobject jrotation);
     virtual ~HumanPose();
 
     int estimate();

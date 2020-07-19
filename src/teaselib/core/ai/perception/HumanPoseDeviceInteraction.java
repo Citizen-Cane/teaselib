@@ -2,6 +2,8 @@ package teaselib.core.ai.perception;
 
 import static java.util.stream.Collectors.toSet;
 
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPose.Status;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction.Reaction;
 import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
+import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.util.math.Hysteresis;
 
@@ -204,15 +207,23 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             }
         }
 
+        Rotation deviceRotation;
+
         @Override
         public Pose call() throws InterruptedException {
             try {
                 while (true) {
                     SceneCapture device = awaitCaptureDevice();
-                    try (HumanPose humanPose = new HumanPose(device);) {
-                        estimate(humanPose);
-                    } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
+                    device.start();
+                    try {
+                        while (!Thread.interrupted()) {
+                            deviceRotation = getDeviceRotation(device);
+                            try (HumanPose humanPose = new HumanPose(device, deviceRotation);) {
+                                estimate(humanPose);
+                            } catch (Exception e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
                     } finally {
                         device.stop();
                     }
@@ -221,6 +232,14 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
                 logger.error(e.getMessage(), e);
                 throw e;
             }
+        }
+
+        private Rotation getDeviceRotation(SceneCapture device) {
+            // TODO get device orientation and replace prototype wit production code
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            boolean portrait = screenSize.width < screenSize.height;
+            // THe native code only understsnds rottion != null and rotates clockwise
+            return portrait ? Rotation.Clockwise : null;
         }
 
         private SceneCapture awaitCaptureDevice() throws InterruptedException {
@@ -248,7 +267,7 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
         }
 
         private void estimate(HumanPose humanPose) throws InterruptedException {
-            while (!Thread.interrupted()) {
+            while (!Thread.interrupted() && deviceRotation == getDeviceRotation(humanPose.device)) {
                 Actor actor = interactions.scriptRenderer.currentActor();
                 pose.updateAndGet(previous -> {
                     Pose update = get(actor, humanPose);

@@ -10,6 +10,9 @@
 
 #include "HumanPose.h"
 
+using namespace aifx;
+using namespace cv;
+
 extern "C"
 {
 
@@ -19,10 +22,10 @@ extern "C"
 	 * Signature: (Lteaselib/core/ai/perception/SceneCapture;)J
 	 */
 	JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_HumanPose_init
-	(JNIEnv* env, jclass, jobject jdevice) {
+	(JNIEnv* env, jclass, jobject jdevice, jobject jrotation) {
 		try {
 			Objects::requireNonNull(L"device", jdevice);
-			HumanPose* humanPose = new HumanPose(env, jdevice);
+			HumanPose* humanPose = new HumanPose(env, jdevice, jrotation);
 			return reinterpret_cast<jlong>(humanPose);
 		}
 		catch (NativeException& e) {
@@ -40,7 +43,7 @@ extern "C"
 	 * Signature: (I)V
 	 */
 	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setInterests
-	(JNIEnv* env, jobject jthis, jint aspectMask) {
+	(JNIEnv* env, jobject jthis, jint interestMask) {
 		// TODO choose inference model according to desired aspects
 	}
 
@@ -67,11 +70,16 @@ extern "C"
 }
 
 
-HumanPose::HumanPose(JNIEnv* env, jobject jdevice)
+HumanPose::HumanPose(JNIEnv* env, jobject jdevice, jobject jrotation)
 	: NativeObject(env)
 	, jdevice(env->NewGlobalRef(jdevice))
 	, capture(reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jdevice)))
-	, poseEstimation(aifx::PoseEstimation::Model::MobileNetThin128x96, TfLiteInterpreter::ComputationMode::CPU)
+	, poseEstimation(
+		PoseEstimation::Model::MobileNetThin,
+		PoseEstimation::Resolution::Size128x96,
+		TfLiteInterpreter::ComputationMode::CPU,
+		// TODO update java code to retrieve device orientation and evaluate jrotation
+		jrotation != nullptr ? PoseEstimation::Rotation::Clockwise : PoseEstimation::Rotation::None)
 {}
 
 HumanPose::~HumanPose()

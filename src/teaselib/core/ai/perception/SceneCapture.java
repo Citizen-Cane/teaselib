@@ -14,6 +14,13 @@ public class SceneCapture extends NativeObject {
         External
     }
 
+    public enum Rotation {
+        None,
+        Clockwise,
+        COunterCLockwise,
+        UpsideDown
+    }
+
     SceneCapture(long nativeObject, String name, EnclosureLocation location) {
         super(nativeObject);
         this.name = name;

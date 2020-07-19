@@ -2,17 +2,23 @@ package teaselib.core.ai.perception;
 
 import java.util.Set;
 
+import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.jni.NativeObject;
 
 public class HumanPose extends NativeObject {
     public final SceneCapture device;
 
     public HumanPose(SceneCapture device) {
-        super(init(device));
+        // TODO get device orientation and replace prototype code
+        this(device, null /* SceneCapture.Rotation.None */);
+    }
+
+    public HumanPose(SceneCapture device, Rotation rotation) {
+        super(init(device, rotation));
         this.device = device;
     }
 
-    private static native long init(SceneCapture device);
+    private static native long init(SceneCapture device, Rotation rotation);
 
     public interface PoseAspect {
         // Tag interface

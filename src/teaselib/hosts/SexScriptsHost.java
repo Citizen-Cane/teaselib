@@ -336,7 +336,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         int rows;
         if (fillWidth) {
             columns = (int) (image.getWidth(null) * 1.0f);
-            rows = (int) (image.getWidth(null) * (float) height / (float) width);
+            rows = (int) (image.getWidth(null) * (float) height / width);
             sx1 = 0;
         } else {
             columns = (int) (image.getHeight(null) * ((float) width / (float) height));
@@ -364,7 +364,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 // Zoom in face (upper image part)
                 float pan = 0.25f;
                 float zoom = 1.25f;
-                sx1 = sx1 - (int) (sx1 * pan / 2.0f);
+                sx1 = sx1 + (int) (sx1 * pan / 2.0f);
                 columns = (int) (columns / zoom);
                 rows = (int) (rows / zoom);
                 startRow = 0;
@@ -386,11 +386,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         return bi;
     }
 
-    private BufferedImageOp getBlurOp(int n) {
+    private static BufferedImageOp getBlurOp(int n) {
         return new ConvolveEdgeReflectOp(blurKernel(n));
     }
 
-    private Kernel blurKernel(int n) {
+    private static Kernel blurKernel(int n) {
         int size = n * n;
         float nth = 1.0f / size;
         float[] data = new float[size];
@@ -418,7 +418,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                     .getSubimage(borderWidth, borderHeight, source.getWidth(), source.getHeight());
         }
 
-        private BufferedImage addBorder(BufferedImage image, int borderWidth, int borderHeight) {
+        private static BufferedImage addBorder(BufferedImage image, int borderWidth, int borderHeight) {
             int w = image.getWidth();
             int h = image.getHeight();
 

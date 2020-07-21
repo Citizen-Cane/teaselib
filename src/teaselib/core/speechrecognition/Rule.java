@@ -125,19 +125,39 @@ public class Rule {
     }
 
     public boolean isValid() {
-        return isValid(text);
+        return isValid(this);
     }
 
-    public boolean isValid(String phrase) {
+    class IllegalRuleException extends IllegalStateException {
+        private static final long serialVersionUID = 1L;
+
+        final Rule rule;
+
+        public IllegalRuleException(Rule rule, String message) {
+            super(message + ": " + rule.prettyPrint());
+            this.rule = rule;
+        }
+
+    }
+
+    private boolean isValid(Rule mainRule) {
         if (fromElement == toElement && text == null) { // null rule
             return true;
         } else {
-            List<String> elements = Arrays.asList(PhraseString.words(phrase)).subList(fromElement, toElement);
+            List<String> words = Arrays.asList(PhraseString.words(mainRule.text));
+            if (fromElement > words.size()) {
+                throw new IllegalRuleException(mainRule, "Rule contains less words than fromElement");
+            }
+            if (toElement > words.size()) {
+                throw new IllegalRuleException(mainRule, "Rule contains less words than toElement");
+            }
+
+            List<String> elements = words.subList(fromElement, toElement);
             boolean equalsIgnoreCase = elements.stream().collect(joining(" ")).equalsIgnoreCase(text);
             if (!equalsIgnoreCase) {
-                throw new IllegalStateException("Rule text must match child rules: " + prettyPrint());
+                throw new IllegalRuleException(mainRule, "Rule text must match child rules");
             } else {
-                return children.stream().allMatch(child -> child.isValid(phrase));
+                return children.stream().allMatch(child -> child.isValid(mainRule));
             }
         }
     }

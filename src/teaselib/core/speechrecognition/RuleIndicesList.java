@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,7 +16,7 @@ public class RuleIndicesList extends ArrayList<Set<Integer>> {
     public RuleIndicesList(Rule rule) {
         if (rule.children.isEmpty()) {
             add(rule.indices);
-        } else if (Rule.MAIN_RULE_NAME.equals(rule.name)) {
+        } else if (rule.isMainRule()) {
             gatherChildren(rule);
         } else {
             throw new IllegalArgumentException("Not a main rule: " + rule);

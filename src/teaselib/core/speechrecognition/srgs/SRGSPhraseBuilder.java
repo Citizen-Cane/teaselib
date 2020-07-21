@@ -1,8 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -204,7 +202,8 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
     String choiceName(int n, Set<Integer> indices) {
         guid++;
-        return CHOICE_NODE_PREFIX + n + "_" + indices.stream().map(Object::toString).collect(joining(",")) + "_" + guid;
+        String encodedIndices = indices.stream().map(Object::toString).collect(joining(","));
+        return Rule.CHOICE_NODE_PREFIX + n + "_" + encodedIndices + "_" + guid;
     }
 
     public int map(int index) {

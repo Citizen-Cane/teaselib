@@ -1,11 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static java.lang.Integer.MIN_VALUE;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.Confidence.High;
-import static teaselib.core.speechrecognition.Confidence.Low;
-import static teaselib.core.speechrecognition.Confidence.Normal;
-import static teaselib.core.speechrecognition.srgs.PhrasesSliceTest.choice;
+import static java.lang.Integer.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.Confidence.*;
+import static teaselib.core.speechrecognition.srgs.PhrasesSliceTest.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,6 +58,7 @@ public class RuleTest {
         assertEquals("Legal NULL rule", null, rule.children.get(1).text);
         assertEquals("Repair", "I", rule.children.get(3).text);
         assertEquals("Rule name", "A D I K", rule.text);
+        assertTrue("Indices in repaired rule not updated", !rule.indices.isEmpty());
     }
 
     @Test
@@ -84,6 +83,7 @@ public class RuleTest {
         assertEquals("Legal NULL rule", null, rule.children.get(1).text);
         assertEquals("Repair", "I", rule.children.get(3).text);
         assertEquals("Rule name", "A D I K L B", rule.text);
+        assertTrue("Indices in repaired rule not updated", !rule.indices.isEmpty());
     }
 
     @Test
@@ -98,7 +98,7 @@ public class RuleTest {
         // neither "E F" nor "I" -> I expected
         speechDetected.children.add(new Rule("r_3_5_10", null, 3, indices(5), 2, 2, 1.0f, High));
         speechDetected.children.add(new Rule("r_4_3_14", "K L", 4, indices(3), 2, 4, 0.51f, Normal));
-        speechDetected.children.add(new Rule("r_5_1,2,3,4_17", null, 5, indices(0, 5), 4, 5, 0.63f, Normal));
+        speechDetected.children.add(new Rule("r_5_1,2,3,4_17", null, 5, indices(0, 5), 4, 5, 1.0f, High));
 
         assertEquals(Collections.singleton(3), speechDetected.intersectionWithoutNullRules());
 
@@ -110,5 +110,33 @@ public class RuleTest {
         assertEquals("Repair", "I", rule.children.get(3).text);
         assertEquals("Repair", "B C", rule.children.get(5).text);
         assertEquals("Rule name", "A D I K L B C", rule.text);
+        assertTrue("Indices in repaired rule not updated", !rule.indices.isEmpty());
     }
+
+    @Test
+    public void testTrailingNullRule() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("D E F, A B C", 0), //
+                choice("G, A B C, H", 1));
+
+        SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
+
+        Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, indices(), 0, 6, 0.82414407f, High);
+        speechDetected.children.add(new Rule("r_0_0_1", "G", 0, indices(1), 0, 1, 0.82f, High));
+        speechDetected.children.add(new Rule("r_1_0_2", "A B C", 1, indices(1), 2, 5, 0.51f, Normal));
+        speechDetected.children.add(new Rule("r_2_3", null, 2, indices(0), 5, 6, 1.0f, High));
+
+        assertEquals(Collections.singleton(1), speechDetected.intersectionWithoutNullRules());
+
+        List<Rule> repaired = speechDetected.repair(slicedPhrases);
+        assertEquals(1, repaired.size());
+
+        Rule rule = repaired.get(0);
+        assertEquals("Rule name", "G A B C H", rule.text);
+        assertTrue("Indices in repaired rule not updated", !rule.indices.isEmpty());
+        assertEquals("Rule indices", Collections.singleton(1), rule.indices);
+
+        assertEquals("Rule probability", rule.probability, rule.children.get(2).probability, 0.0001);
+    }
+
 }

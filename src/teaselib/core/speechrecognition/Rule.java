@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.Sequence;
@@ -22,6 +20,9 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 public class Rule {
 
     public static final String MAIN_RULE_NAME = "Main";
+    public static final String REPAIRED_MAIN__RULE_NAME = "Repaired";
+    public static final String CHOICE_NODE_PREFIX = "r_";
+
     public static final Set<Integer> NoIndices = Collections.emptySet();
 
     public final String name;
@@ -60,13 +61,17 @@ public class Rule {
     public void add(Rule rule) {
         children.add(rule);
 
-        if (MAIN_RULE_NAME.equals(name)) {
+        if (isMainRule()) {
             if (indices.isEmpty()) {
                 indices.addAll(rule.indices);
             } else {
                 indices.retainAll(rule.indices);
             }
         }
+    }
+
+    public boolean isMainRule() {
+        return !name.startsWith(CHOICE_NODE_PREFIX);
     }
 
     public Rule withDistinctChoiceProbability(int choiceCount) {
@@ -142,9 +147,8 @@ public class Rule {
     }
 
     public Set<Integer> intersectionWithoutNullRules() {
-        return new RuleIndicesList(
-                children.stream().filter(r -> r.text != null).map(r -> r.indices).collect(Collectors.toList()))
-                        .intersection();
+        return new RuleIndicesList(children.stream().filter(r -> r.text != null).map(r -> r.indices).collect(toList()))
+                .intersection();
     }
 
     public List<Integer> nullRules() {
@@ -195,11 +199,15 @@ public class Rule {
                     r.toElement + elementOffset, r.probability, r.confidence));
         }
 
-        Rule repaired = new Rule(name,
+        Rule repaired = new Rule(REPAIRED_MAIN__RULE_NAME,
                 repairedChildren.stream().map(r -> r.text).filter(Objects::nonNull).collect(joining(" ")), ruleIndex,
-                indices, fromElement, toElement + elementOffset, probability, confidence);
+                indicesIntersection(repairedChildren), fromElement, toElement + elementOffset, probability, confidence);
         repaired.children.addAll(repairedChildren);
         return repaired;
+    }
+
+    private static Set<Integer> indicesIntersection(List<Rule> rules) {
+        return new RuleIndicesList(rules.stream().map(r -> r.indices).collect(toList())).intersection();
     }
 
 }

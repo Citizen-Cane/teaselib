@@ -27,8 +27,6 @@ import teaselib.core.speechrecognition.Rule;
  */
 abstract class AbstractSRGSBuilder {
 
-    static final String CHOICE_NODE_PREFIX = "r_";
-
     private final String languageCode;
     final Document document;
 

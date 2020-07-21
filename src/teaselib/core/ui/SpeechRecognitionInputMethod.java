@@ -198,7 +198,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         // map phrase to choice indices before evaluating best phrase
         // -> better match on large phrase sets, supports hypothesis as well
 
-        // TODO only keep hypothesis that extends
+        // TODO remember multiple hypotheses
+        // TODO remember hypotheses that extend previously remembered
         // + keep all hypothesis results
         // + keep those who continue in the next event
         // + copy over confidence from previous hypothesis
@@ -225,28 +226,29 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         Optional<Rule> result = bestSingleResult(candidates.stream(), toChoices());
         if (result.isPresent()) {
             Rule rule = result.get();
-            double expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
-            // multiple teaselib.core.speechrecognition.SpeechRecognition*Test
-            // TODO Weighted probability too low in tests even when
-            // - hypothesis has optimal probability of 1.0
-            // - text is long but split in only two slices of three
-            // -> extend hypothesis to known choice indices (complicated)
-            float weightedProbability = weightedProbability(rule);
-            if (weightedProbability >= expectedConfidence) {
-                if (hypothesis != null && hypothesis.indices.containsAll(rule.indices)) {
-                    float hypothesisProbability = weightedProbability(hypothesis);
-                    float h = hypothesis.children.size();
-                    float r = rule.children.size();
-                    float average = (hypothesisProbability * h + rule.probability * r) / (h + r);
-                    setHypothesis(rule, Math.max(average, rule.probability));
-                } else {
-                    setHypothesis(rule, weightedProbability);
-                }
-                logger.info("Considering as hypothesis");
-                events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
+            if (rule.indices.equals(Rule.NoIndices)) {
+                logger.info("Ignoring hypothesis {} since it contains results from multiple phrases", rule);
             } else {
-                logger.info("Weighted propability {} < expected probability {} - hypothesis ignored", //
-                        weightedProbability, expectedConfidence);
+                double expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
+                // multiple teaselib.core.speechrecognition.SpeechRecognition*Test
+                // TODO Weighted probability too low in tests even if hypothesis has optimal probability of 1.0
+                float weightedProbability = weightedProbability(rule);
+                if (weightedProbability >= expectedConfidence) {
+                    if (hypothesis == null) {
+                        setHypothesis(rule, weightedProbability);
+                    } else if (hypothesis.indices.containsAll(rule.indices)) {
+                        float hypothesisProbability = weightedProbability(hypothesis);
+                        float h = hypothesis.children.size();
+                        float r = rule.children.size();
+                        float average = (hypothesisProbability * h + rule.probability * r) / (h + r);
+                        setHypothesis(rule, Math.max(average, rule.probability));
+                    }
+                    logger.info("Considering as hypothesis");
+                    events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
+                } else {
+                    logger.info("Weighted propability {} < expected probability {} - hypothesis ignored", //
+                            weightedProbability, expectedConfidence);
+                }
             }
         }
     }
@@ -268,10 +270,10 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
 
         float weight = (float) text.words().size() / (float) complete.size();
-        return rule.probability * lesser(weight);
+        return rule.probability * increased(weight);
     }
 
-    private static float lesser(float weight) {
+    private static float increased(float weight) {
         return 1.0f - (1.0f - weight) * 0.4f;
     }
 

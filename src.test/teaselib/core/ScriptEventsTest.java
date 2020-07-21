@@ -1,8 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -53,6 +51,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
 
     @After
     public void detachDevice() {
+        actuatorMocks.stream().forEach(Actuator::release);
         keyReleaseSetup.deviceInteraction.deviceDisconnected(new DeviceEventMock(keyRelease));
     }
 
@@ -78,8 +77,9 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void testKeyReleaseEventHandlingRemoveAllItems() {
         simulateDeviceConnect();
 
-        Items cuffsReplaceSingleDefaultPreparation = script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints)
-                .matching(Features.Coupled);
+        Items cuffs = script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).matching(Features.Coupled);
+        assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -87,10 +87,11 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(0);
         assertRemoveActions(0);
 
-        assertTrue(keyReleaseSetup.canPrepare(cuffsReplaceSingleDefaultPreparation));
+        assertFalse("Actuator mock not released after previous test", keyReleaseSetup.isPrepared(cuffs));
+        assertTrue(keyReleaseSetup.canPrepare(cuffs));
+
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);
-        keyReleaseSetup.prepare(cuffsReplaceSingleDefaultPreparation, 1, TimeUnit.HOURS,
-                items -> instructionsCalled.set(true));
+        keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, items -> instructionsCalled.set(true));
 
         script.say(FOOBAR);
         assertHoldActions(1);
@@ -102,7 +103,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         // -> resolve by matching detachable (leather) or coupled (handcuffs) items Toys.Ankle_Restraints,
         // Toys.Wrist_Restraints
         // TODO matching breaks generic scripts that just apply
-        cuffsReplaceSingleDefaultPreparation.apply();
+        cuffs.apply();
         script.say(FOOBAR);
 
         // TODO generic items Toys.Ankle_Restraints, Toys.Wrist_Restraints are applied one after another
@@ -112,7 +113,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(1);
         assertRemoveActions(1);
 
-        cuffsReplaceSingleDefaultPreparation.remove();
+        cuffs.remove();
         script.say(FOOBAR);
 
         assertApplyActions(2);
@@ -217,6 +218,33 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     }
 
     @Test
+    public void testKeyReleaseEventHandlingInstructionsAgain() {
+        simulateDeviceConnect();
+
+        Items items = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        Item chainsReplaceOneDefault = script.item(Toys.Chains);
+
+        keyReleaseSetup.prepare(new Items(chainsReplaceOneDefault), 1, TimeUnit.HOURS, script::show, script::show);
+        script.say(FOOBAR);
+        assertApplyActions(2);
+        assertHoldActions(1);
+        assertCountdownActions(0);
+        assertRemoveActions(0);
+
+        chainsReplaceOneDefault.applyTo(items);
+        assertApplyActions(1);
+        assertHoldActions(1);
+        assertCountdownActions(1);
+        assertRemoveActions(1);
+
+        chainsReplaceOneDefault.removeFrom(items.get(Toys.Collar));
+        assertApplyActions(2);
+        assertHoldActions(1);
+        assertCountdownActions(0);
+        assertRemoveActions(0);
+    }
+
+    @Test
     public void testKeyReleaseEventHandlingApplyBeforePrepareRemoveSingleItem() {
         simulateDeviceConnect();
 
@@ -235,7 +263,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         collarAppliedBeforePrepare.apply();
         assertApplyActions(2);
 
-        // TODO Do unlockable items remove the second key items category
+        // TODO Do detachable items release the coupled cuffs?
         keyReleaseSetup.prepare(items, 1, TimeUnit.HOURS, script::show);
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -530,6 +558,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     @Test
     public void testKeyReleaseEventHandlingConnectAfterApplyAssignsActuator() {
         Items cuffs = script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).matching(Features.Coupled);
+        assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         script.say(FOOBAR);
         assertApplyActions(0);
@@ -605,6 +635,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     @Test
     public void testKeyReleaseEventHandlingConnectAfterApplyAssignsActuatorWithPreparation() {
         Items cuffs = script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).matching(Features.Coupled);
+        assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, items -> instructionsCalled.set(true));
@@ -650,6 +682,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         simulateDeviceConnect();
 
         Items cuffs = script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).matching(Features.Coupled);
+        assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);
         AtomicBoolean instructionsCalledAgain = new AtomicBoolean(false);
@@ -686,6 +720,56 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
 
         assertFalse(instructionsCalledAgain.get());
         assertFalse(keyReleaseSetup.isPrepared(cuffs));
+    }
+
+    @Test
+    public void testPrepareChangeInstructions() {
+        simulateDeviceConnect();
+
+        Items cuffs = script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).matching(Features.Coupled);
+
+        AtomicBoolean instructionsCalled = new AtomicBoolean(false);
+        AtomicBoolean instructionsCalledAgain = new AtomicBoolean(false);
+
+        assertTrue(keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, //
+                items -> instructionsCalled.set(true), items -> instructionsCalledAgain.set(true)));
+        assertTrue(keyReleaseSetup.isPrepared(cuffs));
+        assertTrue(instructionsCalled.get());
+        assertFalse(instructionsCalledAgain.get());
+
+        AtomicBoolean instructionsCalled2 = new AtomicBoolean(false);
+        AtomicBoolean instructionsCalledAgain2 = new AtomicBoolean(false);
+        assertFalse(keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, //
+                items -> instructionsCalled2.set(true), items -> instructionsCalledAgain2.set(true)));
+        assertTrue(keyReleaseSetup.isPrepared(cuffs));
+        assertFalse(instructionsCalled2.get());
+        assertFalse(instructionsCalledAgain2.get());
+
+        instructionsCalled.set(false);
+
+        script.say(FOOBAR);
+        assertApplyActions(2);
+        assertHoldActions(1);
+        assertCountdownActions(0);
+        assertRemoveActions(0);
+
+        cuffs.apply();
+        assertApplyActions(1);
+        assertHoldActions(1);
+        assertCountdownActions(1);
+        assertRemoveActions(1);
+
+        cuffs.get(Toys.Ankle_Restraints).remove();
+
+        assertApplyActions(2);
+        assertHoldActions(1); // because of instructionsAgain
+        assertCountdownActions(0);
+        assertRemoveActions(0);
+
+        assertFalse(instructionsCalled.get());
+        assertFalse(instructionsCalledAgain.get());
+        assertFalse(instructionsCalled2.get());
+        assertTrue(instructionsCalledAgain2.get());
     }
 
     // TODO passing keys between actors

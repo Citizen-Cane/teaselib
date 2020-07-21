@@ -1,7 +1,5 @@
 package teaselib.core.devices.release;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
@@ -25,10 +23,10 @@ import teaselib.Gadgets;
 import teaselib.State.Options;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
+import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptEventArgs;
 import teaselib.core.ScriptEvents;
 import teaselib.core.ScriptEvents.ItemEventAction;
-import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptRenderer;
 import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
@@ -358,10 +356,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     public boolean isPrepared(Items items) {
-        List<Actuator> assignedActuators = itemActuators.entrySet().stream()
-                .filter(element -> matchingItems.test(element.getKey(), items)).map(Entry<Items, Actuator>::getValue)
-                .collect(toList());
-        return assignedActuators.stream().filter(Actuator::isRunning).count() == assignedActuators.size();
+        return itemActuators.entrySet().stream().filter(element -> matchingItems.test(element.getKey(), items))
+                .map(Entry::getValue).anyMatch(Actuator::isRunning);
     }
 
     public boolean prepare(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> instructions) {
@@ -397,7 +393,16 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
      */
     public boolean prepare(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> instructions,
             Consumer<Items> instructionsAgain) {
-        if (canPrepare(items)) {
+        if (isPrepared(items)) {
+            Instructions definition = definitions(actor).get(items);
+            // TODO implement partial item matching - just remove the items that aren't in use
+            if (definition != null) {
+                definitions(definition.actor).clear(definition.items);
+            }
+            definitions(actor).define(items,
+                    new Instructions(actor, items, duration, unit, instructions, instructionsAgain));
+            return false;
+        } else if (canPrepare(items)) {
             Instructions definition = assign(actor, items, duration, unit, instructions, instructionsAgain);
             Optional<Actuator> actuator = chooseUnboundActuator(definition);
             if (actuator.isPresent()) {

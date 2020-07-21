@@ -1,7 +1,7 @@
 package teaselib.core.ui;
 
-import static java.util.stream.Collectors.toList;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -123,26 +123,30 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleSpeechDetected(SpeechRecognizedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            try {
-                SpeechRecognition recognizer = getRecognizer(prompt);
-                if (audioSignalProblems.exceedLimits() && recognizer.audioSync.speechRecognitionInProgress()) {
-                    logTooManyAudioSignalProblems();
-                    recognizer.restartRecognition();
-                } else if (recognizer.implementation instanceof TeaseLibSRGS) {
-                    if (prompt.acceptedResult == Result.Accept.Distinct) {
-                        buildDistinctHypothesis(eventArgs, prompt);
-                    } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                        // Ignore
-                    } else {
-                        throw new UnsupportedOperationException(prompt.acceptedResult.toString());
-                    }
-                }
-                return prompt;
-            } catch (Exception e) {
-                prompt.setException(e);
-                clearDetectedSpeech();
-                getRecognizer(prompt.choices.locale).endRecognition();
+            if (prompt == null) {
                 return null;
+            } else {
+                try {
+                    SpeechRecognition recognizer = getRecognizer(prompt);
+                    if (audioSignalProblems.exceedLimits() && recognizer.audioSync.speechRecognitionInProgress()) {
+                        logTooManyAudioSignalProblems();
+                        recognizer.restartRecognition();
+                    } else if (recognizer.implementation instanceof TeaseLibSRGS) {
+                        if (prompt.acceptedResult == Result.Accept.Distinct) {
+                            buildDistinctHypothesis(eventArgs, prompt);
+                        } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                            // Ignore
+                        } else {
+                            throw new UnsupportedOperationException(prompt.acceptedResult.toString());
+                        }
+                    }
+                    return prompt;
+                } catch (Exception e) {
+                    prompt.setException(e);
+                    clearDetectedSpeech();
+                    getRecognizer(prompt.choices.locale).endRecognition();
+                    return null;
+                }
             }
         });
     }
@@ -292,58 +296,66 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleRecognitionRejected(SpeechRecognizedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            try {
-                if (audioSignalProblems.exceedLimits()) {
-                    logTooManyAudioSignalProblems();
-                    events.recognitionRejected.fire(eventArgs);
-                    return prompt;
-                } else {
-                    if (hypothesis != null
-                            && hypothesis.probability >= expectedConfidence(prompt, hypothesis, awarenessBonus)) {
-                        logger.info("Considering hypothesis");
-                        // rejectedResult may contain better result than hypothesis
-                        // TODO Are last speech detection and recognitionRejected result the same?
-                        // TODO accept only if hypothesis and recognitionRejected result have the same indices
-                        return handle(prompt, this::singleResult, hypothesis);
-                    } else {
-                        events.recognitionRejected.fire(eventArgs);
-                        signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
-                        return prompt;
-                    }
-                }
-            } catch (Exception e) {
-                prompt.setException(e);
-                getRecognizer(prompt.choices.locale).endRecognition();
+            if (prompt == null) {
                 return null;
-            } finally {
-                clearDetectedSpeech();
+            } else {
+                try {
+                    if (audioSignalProblems.exceedLimits()) {
+                        logTooManyAudioSignalProblems();
+                        events.recognitionRejected.fire(eventArgs);
+                        return prompt;
+                    } else {
+                        if (hypothesis != null
+                                && hypothesis.probability >= expectedConfidence(prompt, hypothesis, awarenessBonus)) {
+                            logger.info("Considering hypothesis");
+                            // rejectedResult may contain better result than hypothesis
+                            // TODO Are last speech detection and recognitionRejected result the same?
+                            // TODO accept only if hypothesis and recognitionRejected result have the same indices
+                            return handle(prompt, this::singleResult, hypothesis);
+                        } else {
+                            events.recognitionRejected.fire(eventArgs);
+                            signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
+                            return prompt;
+                        }
+                    }
+                } catch (Exception e) {
+                    prompt.setException(e);
+                    getRecognizer(prompt.choices.locale).endRecognition();
+                    return null;
+                } finally {
+                    clearDetectedSpeech();
+                }
             }
         });
     }
 
     private void handleRecogntionCompleted(SpeechRecognizedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            try {
-                if (audioSignalProblems.exceedLimits()) {
-                    logTooManyAudioSignalProblems();
-                    return prompt;
-                } else {
-                    if (prompt.acceptedResult == Result.Accept.Distinct) {
-                        return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestSingleResult,
-                                this::singleResult);
-                    } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                        return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestMultipleChoices,
-                                this::multipleChoiceResults);
-                    } else {
-                        throw new UnsupportedOperationException(prompt.acceptedResult.toString());
-                    }
-                }
-            } catch (Exception e) {
-                prompt.setException(e);
-                getRecognizer(prompt.choices.locale).endRecognition();
+            if (prompt == null) {
                 return null;
-            } finally {
-                clearDetectedSpeech();
+            } else {
+                try {
+                    if (audioSignalProblems.exceedLimits()) {
+                        logTooManyAudioSignalProblems();
+                        return prompt;
+                    } else {
+                        if (prompt.acceptedResult == Result.Accept.Distinct) {
+                            return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestSingleResult,
+                                    this::singleResult);
+                        } else if (prompt.acceptedResult == Result.Accept.Multiple) {
+                            return handle(eventArgs, prompt, SpeechRecognitionInputMethod::bestMultipleChoices,
+                                    this::multipleChoiceResults);
+                        } else {
+                            throw new UnsupportedOperationException(prompt.acceptedResult.toString());
+                        }
+                    }
+                } catch (Exception e) {
+                    prompt.setException(e);
+                    getRecognizer(prompt.choices.locale).endRecognition();
+                    return null;
+                } finally {
+                    clearDetectedSpeech();
+                }
             }
         });
     }
@@ -552,11 +564,16 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             if (previousPrompt != null) {
                 throw new IllegalStateException("Trying to show prompt " + prompt + "when already showing another");
             }
+
+            SpeechRecognition recognizer = getRecognizer(prompt.choices.locale);
+            if (recognizer.isActive()) {
+                throw new IllegalStateException("Speech recognizer already active");
+            }
+
             prompt.inputMethodInitializers.setup(this);
-            startSpeechRecognition(prompt);
+            recognizer.startRecognition();
             return prompt;
         });
-
     }
 
     public Prompt getActivePrompt() {
@@ -565,25 +582,21 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     @Override
     public void dismiss(Prompt prompt) throws InterruptedException {
-        active.getAndUpdate(activePrompt -> {
+        Objects.requireNonNull(prompt);
+
+        active.updateAndGet(activePrompt -> {
             if (activePrompt == null) {
                 return null;
-            } else if (activePrompt != prompt) {
+            } else {
+                getRecognizer(activePrompt.choices.locale).endRecognition();
+            }
+
+            if (activePrompt != prompt) {
                 throw new IllegalStateException("Trying to dismiss wrong prompt: " + prompt);
             } else {
-                getRecognizer(prompt.choices.locale).endRecognition();
                 return null;
             }
         });
-    }
-
-    private void startSpeechRecognition(Prompt prompt) {
-        SpeechRecognition recognizer = getRecognizer(prompt.choices.locale);
-        if (recognizer.isActive()) {
-            throw new IllegalStateException("Speech recognizer already active");
-        }
-
-        recognizer.startRecognition();
     }
 
     public static final class ResumeRecognition implements teaselib.core.Closeable {

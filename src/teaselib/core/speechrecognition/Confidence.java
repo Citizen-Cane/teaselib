@@ -24,8 +24,8 @@ public enum Confidence {
      */
     public final float probability;
 
-    Confidence(float propability) {
-        this.probability = propability;
+    Confidence(float probability) {
+        this.probability = probability;
     }
 
     public Confidence lower() {
@@ -74,14 +74,14 @@ public enum Confidence {
             return confidence;
     }
 
-    public static Confidence valueOf(float propability) {
-        if (propability >= Definite.probability)
+    public static Confidence valueOf(float probability) {
+        if (probability >= Definite.probability)
             return High;
-        else if (propability >= High.probability)
+        else if (probability >= High.probability)
             return High;
-        else if (propability >= Normal.probability)
+        else if (probability >= Normal.probability)
             return Normal;
-        else if (propability >= Low.probability)
+        else if (probability >= Low.probability)
             return Low;
         else
             return Noise;

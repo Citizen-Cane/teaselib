@@ -19,7 +19,9 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
  */
 public class Rule {
 
-    public static final String MAIN_RULE_NAME = "Main";
+    public static final String MAIN_RULE_NAME = "Recognized";
+    private static final String REBUILD = "Rebuild";
+    public static final String HYPOTHESIS = "Hypothesis";
     public static final String REPAIRED_MAIN__RULE_NAME = "Repaired";
     public static final String CHOICE_NODE_PREFIX = "r_";
 
@@ -43,6 +45,10 @@ public class Rule {
     public Rule(Rule rule, float probability, Confidence confidence) {
         this(rule.name, rule.text, rule.ruleIndex, rule.indices, rule.fromElement, rule.toElement, probability,
                 confidence);
+    }
+
+    public Rule(Rule rule, String name, float probability, Confidence confidence) {
+        this(name, rule.text, rule.ruleIndex, rule.indices, rule.fromElement, rule.toElement, probability, confidence);
     }
 
     public Rule(String name, String text, int ruleIndex, Set<Integer> indices, int fromElement, int toElement,
@@ -228,6 +234,15 @@ public class Rule {
 
     private static Set<Integer> indicesIntersection(List<Rule> rules) {
         return new RuleIndicesList(rules.stream().map(r -> r.indices).collect(toList())).intersection();
+    }
+
+    public Rule rebuildIndices() {
+        Set<Integer> rebuild = indicesIntersection(children);
+        if (rebuild.equals(indices)) {
+            return this;
+        } else {
+            return new Rule(Rule.REBUILD, text, ruleIndex, rebuild, fromElement, toElement, probability, confidence);
+        }
     }
 
 }

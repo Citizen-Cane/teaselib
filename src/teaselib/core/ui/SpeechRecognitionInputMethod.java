@@ -198,17 +198,24 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         // map phrase to choice indices before evaluating best phrase
         // -> better match on large phrase sets, supports hypothesis as well
 
+        // DONE: rules and their children may not be consistent as SAPI replaces text in the matched rules
+        // + however the rule index of such child rules is the right one - can be used to rebuild rule indices
+        // -> If the children of the rule aren't distinct, no match
+
+        // TODO: map rule indices back to choice indices when building srgs nodes
+        // - much simpler then processing them here
+        // - allows for optimizing rules, especially optional ones
+
         // TODO remember multiple hypotheses
-        // TODO remember hypotheses that extend previously remembered
         // + keep all hypothesis results
         // + keep those who continue in the next event
         // + copy over confidence from previous hypothesis
 
         List<Rule> candidates = new ArrayList<>(eventArgs.result.length);
         for (Rule rule : eventArgs.result) {
+            rule = rule.rebuildIndices();
             rule.removeTrailingNullRules();
             if (!rule.text.isBlank()) {
-                // TODO attempt to match beginning of existing phrase
                 // TODO matching rule indices during repair must map to choices
                 // -> avoids wrong repair in
                 // teaselib.core.speechrecognition.SpeechRecognitionComplexTest.testSRGSBuilderMultipleChoicesAlternativePhrases()
@@ -246,7 +253,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                     logger.info("Considering as hypothesis");
                     events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
                 } else {
-                    logger.info("Weighted propability {} < expected probability {} - hypothesis ignored", //
+                    logger.info("Weighted confidence {} < expected confidence {} - hypothesis ignored", //
                             weightedProbability, expectedConfidence);
                 }
             }
@@ -278,7 +285,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private void setHypothesis(Rule rule, float probability) {
-        hypothesis = new Rule(rule, probability, rule.confidence);
+        hypothesis = new Rule(rule, Rule.HYPOTHESIS, probability, rule.confidence);
         hypothesis.children.addAll(rule.children);
     }
 
@@ -288,9 +295,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private static float expectedConfidence(Prompt prompt, Rule rule, float awarenessBonus) {
         float weighted = confidence(prompt.choices.intention).weighted(PhraseString.words(rule.text).length);
-        float expectedConfidence = weighted - awarenessBonus;
+        float expectedConfidence = weighted * awarenessBonus;
         if (awarenessBonus > 0.0f) {
-            logger.info("Weighted confidence {} - Awareness bonus {} =  expected confidence {}", weighted,
+            logger.info("Weighted confidence {} * Awareness bonus {} = expected confidence {}", weighted,
                     awarenessBonus, expectedConfidence);
         }
         return expectedConfidence;
@@ -307,15 +314,24 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                         events.recognitionRejected.fire(eventArgs);
                         return prompt;
                     } else {
-                        if (hypothesis != null
-                                && hypothesis.probability >= expectedConfidence(prompt, hypothesis, awarenessBonus)) {
-                            logger.info("Considering hypothesis");
+                        if (hypothesis != null) {
                             // rejectedResult may contain better result than hypothesis
-                            // TODO Are last speech detection and recognitionRejected result the same?
+                            // TODO Are latest speech detection and recognitionRejected result the same?
                             // TODO accept only if hypothesis and recognitionRejected result have the same indices
-                            return handle(prompt, this::singleResult, hypothesis);
+                            float expectedConfidence = expectedConfidence(prompt, hypothesis, awarenessBonus);
+                            if (hypothesis.probability >= expectedConfidence) {
+                                logger.info("Considering hypothesis");
+                                return handle(prompt, this::singleResult, hypothesis, expectedConfidence);
+                            } else {
+                                reject(eventArgs, "Ignoring hypothesis");
+                                // Only if rejected by the speech recognition implementation
+                                // - would result in too may events otherwise
+                                signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
+                                return prompt;
+                            }
                         } else {
-                            events.recognitionRejected.fire(eventArgs);
+                            reject(eventArgs);
+                            // Only if rejected by the speech recognition implementation - it's too may events otherwise
                             signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
                             return prompt;
                         }
@@ -379,23 +395,27 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         validate(Arrays.asList(eventArgs.result));
 
         Optional<Rule> result = matcher.apply(Arrays.stream(eventArgs.result), toChoices());
-        if (result.isPresent() && hypothesis != null && hypothesis.probability > result.get().probability) {
-            return handle(prompt, resultor, hypothesis);
-        } else if (result.isPresent()) {
-            return handle(prompt, resultor, result.get());
+        if (result.isPresent()) {
+            Rule rule = result.get();
+            if (hypothesis != null && hypothesis.probability > rule.probability
+                    && resultor.apply(hypothesis, toChoices()).equals(resultor.apply(rule, toChoices()))) {
+                float expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
+                return handle(prompt, resultor, hypothesis, expectedConfidence);
+            } else {
+                float expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
+                return handle(prompt, resultor, rule, expectedConfidence);
+            }
         } else {
             reject(eventArgs, "No matching choice");
             return prompt;
         }
     }
 
-    private Prompt handle(Prompt prompt, BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule) {
-        float expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
+    private Prompt handle(Prompt prompt, BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule,
+            float expectedConfidence) {
         float audioProblemPenalty = audioSignalProblems.penalty() * AUDIO_PROBLEM_PENALTY_WEIGHT;
-        // TODO Weighted probability should be calculated in bestSingleResult
-        float ruleProbability = prompt.acceptedResult == Result.Accept.Distinct ? weightedProbability(rule)
-                : rule.probability;
-        if (ruleProbability - audioProblemPenalty >= expectedConfidence) {
+
+        if (rule.probability - audioProblemPenalty >= expectedConfidence) {
             Prompt.Result promptResult = resultor.apply(rule, toChoices());
             if (promptResult.elements.isEmpty()) {
                 reject(prompt, rule, "Empty result");
@@ -408,12 +428,12 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 reject(prompt, rule, "Undefined result index");
                 return prompt;
             }
-        } else if (ruleProbability >= expectedConfidence) {
+        } else if (rule.probability >= expectedConfidence) {
             logAudioSignalProblemPenalty(expectedConfidence, audioProblemPenalty);
             reject(rule);
             return prompt;
         } else {
-            logLackOfConfidence(ruleProbability, expectedConfidence);
+            logLackOfConfidence(rule.probability, expectedConfidence);
             reject(rule);
             return prompt;
         }
@@ -426,11 +446,15 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void reject(SpeechRecognizedEventArgs eventArgs, String reason) {
         logger.info("{} in {} - rejecting", reason, eventArgs);
-        events.recognitionRejected.fire(eventArgs);
+        reject(eventArgs);
     }
 
     private void reject(Rule rule) {
-        events.recognitionRejected.fire(new SpeechRecognizedEventArgs(rule));
+        reject(new SpeechRecognizedEventArgs(rule));
+    }
+
+    private void reject(SpeechRecognizedEventArgs eventArgs) {
+        events.recognitionRejected.fire(eventArgs);
     }
 
     private IntUnaryOperator toChoices() {
@@ -482,8 +506,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         return null;
     }
 
-    private static void logLackOfConfidence(float probability, float expectedConfidence) {
-        logger.info("Lack of probability {} < expected {})", probability, expectedConfidence);
+    private static void logLackOfConfidence(float confidence, float expectedConfidence) {
+        logger.info("Lack of confidence {} < expected {})", confidence, expectedConfidence);
     }
 
     private void logTooManyAudioSignalProblems() {
@@ -673,7 +697,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     public void setFaceToFace(boolean aware) {
-        awarenessBonus = aware ? Confidence.High.probability - Confidence.Normal.probability : 0.0f;
+        awarenessBonus = aware ? 0.6666f : 1.0f;
     }
 
 }

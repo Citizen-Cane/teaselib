@@ -21,7 +21,7 @@ public class AudioSignalProblems {
         limits.put(AudioSignalProblem.Noise, 1);
         limits.put(AudioSignalProblem.NoSignal, 1);
         limits.put(AudioSignalProblem.TooLoud, 1);
-        limits.put(AudioSignalProblem.TooQuiet, 1);
+        limits.put(AudioSignalProblem.TooQuiet, 4);
         limits.put(AudioSignalProblem.TooFast, 1);
         limits.put(AudioSignalProblem.TooSlow, 1);
     }
@@ -31,7 +31,7 @@ public class AudioSignalProblems {
         penalties.put(AudioSignalProblem.Noise, 1.0f);
         penalties.put(AudioSignalProblem.NoSignal, 1.0f);
         penalties.put(AudioSignalProblem.TooLoud, 1.0f);
-        penalties.put(AudioSignalProblem.TooQuiet, 1.0f);
+        penalties.put(AudioSignalProblem.TooQuiet, 0.5f);
         penalties.put(AudioSignalProblem.TooFast, 1.0f);
         penalties.put(AudioSignalProblem.TooSlow, 1.0f);
     }
@@ -41,7 +41,7 @@ public class AudioSignalProblems {
     }
 
     public void add(AudioSignalProblem audioSignalProblem) {
-        problems.getOrDefault(audioSignalProblem, new AtomicInteger(0)).incrementAndGet();
+        problems.computeIfAbsent(audioSignalProblem, key -> new AtomicInteger(0)).incrementAndGet();
     }
 
     public boolean exceedLimits() {

@@ -78,7 +78,7 @@ public class SpeechRecognitionTimeoutWatchdog {
 
     private Event<AudioSignalProblemOccuredEventArgs> updateAudioProblemStatus = args -> {
         if (enabled()) {
-            restartRecognitionTimout();
+            // restartRecognitionTimout();
         }
     };
 

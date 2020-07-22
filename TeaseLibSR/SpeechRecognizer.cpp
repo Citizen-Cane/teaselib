@@ -278,14 +278,12 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 						}
                     }
 				} catch (std::exception& e) {
-					cerr << "Uncatched std exception in SpeechRecognizer::EventHandler::eventLoop: "
-						<< endl << e.what() << endl;
+					cerr << "Uncatched std exception in SpeechRecognizer::EventHandler::eventLoop: " << e.what() << endl;
 				} catch (NativeException& e) {
-					cerr << "Uncatched native exception in SpeechRecognizer::EventHandler::eventLoop: "
-						<< endl << e.message.c_str() << "(error code=" << e.errorCode << ")" << endl;
+					wcerr << "Uncatched native exception in SpeechRecognizer::EventHandler::eventLoop: " << e.message.c_str() << "(error code=" << e.errorCode << ")" << endl;
 				} catch (JNIException& e) {
 					JNIStringUTF8 message(env, e.getMessage());
-					cerr << "Uncatched JNI exception in SpeechRecognizer::EventHandler::eventLoop: "<< endl << message.operator LPCSTR() << endl;
+					cerr << "Uncatched JNI exception in SpeechRecognizer::EventHandler::eventLoop: " << message.operator LPCSTR() << endl;
 				}
             }
             break;

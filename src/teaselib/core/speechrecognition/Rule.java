@@ -65,8 +65,13 @@ public class Rule {
     }
 
     public void add(Rule rule) {
+        Objects.requireNonNull(rule);
+        Objects.requireNonNull(rule.indices);
+
         children.add(rule);
 
+        // TODO indices are rebuild for hypothesis only
+        // - rebuild for recognitionCompleted as well and remove this code
         if (isMainRule()) {
             if (indices.isEmpty()) {
                 indices.addAll(rule.indices);

@@ -107,44 +107,63 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 }
 
 jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERULE* rule, const SemanticResults& semanticResults) const {
+	jobject jRule;
 	wchar_t* text;
 	HRESULT hr = pResult->GetText(rule->ulFirstElement, rule->ulCountOfElements, false, &text, nullptr);
-	if (FAILED(hr)) throw COMException(hr);
-
-	const RuleName ruleName(rule, semanticResults);
-	jobject choiceIndices = getChoiceIndices(ruleName);
-
-	jobject jRule = env->NewObject(
-		ruleClass,
-		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/Set;IIFLteaselib/core/speechrecognition/Confidence;)V"),
-		static_cast<jstring>(JNIString(env, ruleName.name.c_str())),
-		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
-		ruleName.rule_index,
-		choiceIndices,
-		rule->ulFirstElement,
-		rule->ulFirstElement + rule->ulCountOfElements,
-		rule->SREngineConfidence,
-		getConfidenceField(env, rule->Confidence));
-	if (text) {
-		CoTaskMemFree(text);
-	}
-	if (env->ExceptionCheck()) throw JNIException(env);
-
-	for (const SPPHRASERULE* childRule = rule->pFirstChild; childRule != nullptr; childRule = childRule->pNextSibling) {
-		env->CallVoidMethod(
-			jRule,
-			env->GetMethodID(ruleClass, "add", "(Lteaselib/core/speechrecognition/Rule;)V"),
-			getRule(pResult, childRule, semanticResults));
+	if (FAILED(hr)) {
+		jRule = getRule(L"Invalid", nullptr, -1, newSet(), 0, 0, 0.0f, getConfidenceField(env, rule->Confidence));
 		if (env->ExceptionCheck()) throw JNIException(env);
+	} else {
+		const RuleName ruleName(rule, semanticResults);
+		jobject choiceIndices = getChoiceIndices(ruleName);
+
+		jRule = getRule(
+			ruleName.name.c_str(),
+			text,
+			ruleName.rule_index, 
+			choiceIndices, 
+			rule->ulFirstElement,
+			rule->ulFirstElement + rule->ulCountOfElements,
+			rule->SREngineConfidence,
+			getConfidenceField(env, rule->Confidence));
+		if (text) {
+			CoTaskMemFree(text);
+		}
+		if (env->ExceptionCheck()) throw JNIException(env);
+
+		for (const SPPHRASERULE* childRule = rule->pFirstChild; childRule != nullptr; childRule = childRule->pNextSibling) {
+			jobject child = getRule(pResult, childRule, semanticResults);
+			if (env->ExceptionCheck()) throw JNIException(env);
+
+			if (child != nullptr) {
+				env->CallVoidMethod(
+					jRule,
+					env->GetMethodID(ruleClass, "add", "(Lteaselib/core/speechrecognition/Rule;)V"),
+					child);
+			}
+		}
 	}
 
 	return jRule;
 }
+jobject SpeechRecognizedEvent::getRule(const wchar_t* name, const wchar_t* text, int rule_index, jobject choiceIndices,  ULONG fromElement, ULONG toElement, float probability, jobject confidence) const {
+	return env->NewObject(
+		ruleClass,
+		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/Set;IIFLteaselib/core/speechrecognition/Confidence;)V"),
+		static_cast<jstring>(JNIString(env, name)),
+		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
+		rule_index,
+		choiceIndices,
+		fromElement,
+		toElement,
+		probability,
+		confidence);
+}
 
 jobject SpeechRecognizedEvent::getChoiceIndices(const RuleName& ruleName) const {
+	jobject choiceIndices = newSet();
+
 	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");
-	jobject choiceIndices = env->NewObject(hashSetClass, JNIClass::getMethodID(env, hashSetClass, "<init>", "()V"));
-	if (env->ExceptionCheck()) throw JNIException(env);
 	jmethodID add = JNIClass::getMethodID(env, hashSetClass, "add", "(Ljava/lang/Object;)Z");
 
 	jclass integerClass = JNIClass::getClass(env, "java/lang/Integer");
@@ -158,6 +177,13 @@ jobject SpeechRecognizedEvent::getChoiceIndices(const RuleName& ruleName) const 
 		});
 
 	return choiceIndices;
+}
+
+jobject SpeechRecognizedEvent::newSet() const {
+	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");
+	jobject hashSet = env->NewObject(hashSetClass, JNIClass::getMethodID(env, hashSetClass, "<init>", "()V"));
+	if (env->ExceptionCheck()) throw JNIException(env);
+	return hashSet;
 }
 
 SemanticResults::SemanticResults(const SPPHRASEPROPERTY * pProperty) 

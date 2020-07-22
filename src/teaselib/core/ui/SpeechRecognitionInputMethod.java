@@ -1,5 +1,6 @@
 package teaselib.core.ui;
 
+import static java.util.Arrays.*;
 import static java.util.stream.Collectors.*;
 import static teaselib.core.util.ExceptionUtil.*;
 
@@ -94,9 +95,20 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleRecognitionStarted(SpeechRecognitionStartedEventArgs eventArgs) {
         active.updateAndGet(prompt -> {
-            clearDetectedSpeech();
-            events.recognitionStarted.fire(eventArgs);
-            return prompt;
+            if (prompt == null) {
+                return null;
+            } else {
+                try {
+                    clearDetectedSpeech();
+                    events.recognitionStarted.fire(eventArgs);
+                    return prompt;
+                } catch (Exception e) {
+                    prompt.setException(e);
+                    clearDetectedSpeech();
+                    getRecognizer(prompt.choices.locale).endRecognition();
+                    return null;
+                }
+            }
         });
     }
 
@@ -107,17 +119,31 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void handleAudioLevelUpdated(AudioLevelUpdatedEventArgs audioLevelUpdatedEventArgs) {
         active.updateAndGet(prompt -> {
-            events.audioLevelUpdated.fire(audioLevelUpdatedEventArgs);
-            return prompt;
+            try {
+                events.audioLevelUpdated.fire(audioLevelUpdatedEventArgs);
+                return prompt;
+            } catch (Exception e) {
+                prompt.setException(e);
+                clearDetectedSpeech();
+                getRecognizer(prompt.choices.locale).endRecognition();
+                return null;
+            }
         });
     }
 
     private void handleAudioSignalProblemDetected(
             AudioSignalProblemOccuredEventArgs audioSignalProblemOccuredEventArgs) {
         active.updateAndGet(prompt -> {
-            audioSignalProblems.add(audioSignalProblemOccuredEventArgs.problem);
-            events.audioSignalProblemOccured.fire(audioSignalProblemOccuredEventArgs);
-            return prompt;
+            try {
+                audioSignalProblems.add(audioSignalProblemOccuredEventArgs.problem);
+                events.audioSignalProblemOccured.fire(audioSignalProblemOccuredEventArgs);
+                return prompt;
+            } catch (Exception e) {
+                prompt.setException(e);
+                clearDetectedSpeech();
+                getRecognizer(prompt.choices.locale).endRecognition();
+                return null;
+            }
         });
     }
 
@@ -277,11 +303,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
 
         float weight = (float) text.words().size() / (float) complete.size();
-        return rule.probability * increased(weight);
-    }
-
-    private static float increased(float weight) {
-        return 1.0f - (1.0f - weight) * 0.4f;
+        return rule.probability * weight;
     }
 
     private void setHypothesis(Rule rule, float probability) {
@@ -311,7 +333,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 try {
                     if (audioSignalProblems.exceedLimits()) {
                         logTooManyAudioSignalProblems();
-                        events.recognitionRejected.fire(eventArgs);
+                        reject(eventArgs);
                         return prompt;
                     } else {
                         if (hypothesis != null) {
@@ -454,7 +476,12 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private void reject(SpeechRecognizedEventArgs eventArgs) {
-        events.recognitionRejected.fire(eventArgs);
+        Optional<Rule> bestSingleResult = bestSingleResult(stream(eventArgs.result), toChoices());
+        if (bestSingleResult.isPresent()) {
+            events.recognitionRejected.fire(new SpeechRecognizedEventArgs(bestSingleResult.get()));
+        } else {
+            events.recognitionRejected.fire(eventArgs);
+        }
     }
 
     private IntUnaryOperator toChoices() {

@@ -1,11 +1,9 @@
 package teaselib.core.ui;
 
-import static java.util.Arrays.*;
 import static java.util.stream.Collectors.*;
 import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -237,11 +235,12 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         // + keep those who continue in the next event
         // + copy over confidence from previous hypothesis
 
-        List<Rule> candidates = new ArrayList<>(eventArgs.result.length);
+        List<Rule> candidates = new ArrayList<>(eventArgs.result.size());
         for (Rule rule : eventArgs.result) {
-            rule = rule.rebuildIndices();
-            rule.removeTrailingNullRules();
             if (!rule.text.isBlank()) {
+                if (rule.hasTrailingNullRule()) {
+                    rule = rule.withoutIgnoreableTrailingNullRules();
+                }
                 // TODO matching rule indices during repair must map to choices
                 // -> avoids wrong repair in
                 // teaselib.core.speechrecognition.SpeechRecognitionComplexTest.testSRGSBuilderMultipleChoicesAlternativePhrases()
@@ -263,8 +262,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 logger.info("Ignoring hypothesis {} since it contains results from multiple phrases", rule);
             } else {
                 double expectedConfidence = expectedConfidence(prompt, rule, awarenessBonus);
-                // multiple teaselib.core.speechrecognition.SpeechRecognition*Test
-                // TODO Weighted probability too low in tests even if hypothesis has optimal probability of 1.0
+                // Weighted probability is too low in tests for short hypotheses even with optimal probability of 1.0
+                // This is intended because probability/confidence values of short short hypotheses cannot be trusted
+                // -> confidence moves towards ground truth when more speech is detected
                 float weightedProbability = weightedProbability(rule);
                 if (weightedProbability >= expectedConfidence) {
                     if (hypothesis == null) {
@@ -308,7 +308,6 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private void setHypothesis(Rule rule, float probability) {
         hypothesis = new Rule(rule, Rule.HYPOTHESIS, probability, rule.confidence);
-        hypothesis.children.addAll(rule.children);
     }
 
     private static void validate(List<Rule> candidates) {
@@ -414,9 +413,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private Prompt handle(SpeechRecognizedEventArgs eventArgs, Prompt prompt,
             BiFunction<Stream<Rule>, IntUnaryOperator, Optional<Rule>> matcher,
             BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor) {
-        validate(Arrays.asList(eventArgs.result));
+        validate(eventArgs.result);
 
-        Optional<Rule> result = matcher.apply(Arrays.stream(eventArgs.result), toChoices());
+        Optional<Rule> result = matcher.apply(eventArgs.result.stream(), toChoices());
         if (result.isPresent()) {
             Rule rule = result.get();
             if (hypothesis != null && hypothesis.probability > rule.probability
@@ -476,7 +475,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private void reject(SpeechRecognizedEventArgs eventArgs) {
-        Optional<Rule> bestSingleResult = bestSingleResult(stream(eventArgs.result), toChoices());
+        Optional<Rule> bestSingleResult = bestSingleResult(eventArgs.result.stream(), toChoices());
         if (bestSingleResult.isPresent()) {
             events.recognitionRejected.fire(new SpeechRecognizedEventArgs(bestSingleResult.get()));
         } else {

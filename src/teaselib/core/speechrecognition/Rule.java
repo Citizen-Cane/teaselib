@@ -20,9 +20,9 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 public class Rule {
 
     public static final String MAIN_RULE_NAME = "Recognized";
-    private static final String REBUILD = "Rebuild";
     public static final String HYPOTHESIS = "Hypothesis";
     public static final String REPAIRED_MAIN__RULE_NAME = "Repaired";
+    public static final String WITHOUT_IGNOREABLE_TRAILING_NULL_RULE = "Trailing Null rule removed";
     public static final String CHOICE_NODE_PREFIX = "r_";
 
     public static final Set<Integer> NoIndices = Collections.emptySet();
@@ -38,64 +38,33 @@ public class Rule {
     public final float probability;
     public final Confidence confidence;
 
-    public Rule(Rule rule, Confidence confidence) {
-        this(rule, confidence.probability, confidence);
-    }
-
-    public Rule(Rule rule, float probability, Confidence confidence) {
-        this(rule.name, rule.text, rule.ruleIndex, rule.indices, rule.fromElement, rule.toElement, probability,
-                confidence);
-    }
-
     public Rule(Rule rule, String name, float probability, Confidence confidence) {
-        this(name, rule.text, rule.ruleIndex, rule.indices, rule.fromElement, rule.toElement, probability, confidence);
+        this(name, rule.text, rule.ruleIndex, rule.indices, rule.children, rule.fromElement, rule.toElement,
+                probability, confidence);
     }
 
     public Rule(String name, String text, int ruleIndex, Set<Integer> indices, int fromElement, int toElement,
             float probability, Confidence confidence) {
+        this(name, text, ruleIndex, indices, new ArrayList<>(), fromElement, toElement, probability, confidence);
+    }
+
+    public Rule(String name, String text, int ruleIndex, List<Rule> children, int fromElement, int toElement,
+            float probability, Confidence confidence) {
+        this(name, text, ruleIndex, indicesIntersection(children), children, fromElement, toElement, probability,
+                confidence);
+    }
+
+    private Rule(String name, String text, int ruleIndex, Set<Integer> indices, List<Rule> children, int fromElement,
+            int toElement, float probability, Confidence confidence) {
         this.name = name;
         this.text = text;
         this.ruleIndex = ruleIndex;
         this.indices = indices;
         this.fromElement = fromElement;
         this.toElement = toElement;
-        this.children = new ArrayList<>();
+        this.children = Collections.unmodifiableList(children);
         this.probability = probability;
         this.confidence = confidence;
-    }
-
-    public void add(Rule rule) {
-        Objects.requireNonNull(rule);
-        Objects.requireNonNull(rule.indices);
-
-        children.add(rule);
-
-        // TODO indices are rebuild for hypothesis only
-        // - rebuild for recognitionCompleted as well and remove this code
-        if (isMainRule()) {
-            if (indices.isEmpty()) {
-                indices.addAll(rule.indices);
-            } else {
-                indices.retainAll(rule.indices);
-            }
-        }
-    }
-
-    public boolean isMainRule() {
-        return !name.startsWith(CHOICE_NODE_PREFIX);
-    }
-
-    public Rule withDistinctChoiceProbability(int choiceCount) {
-        List<Rule> childrenWithChoices = children.stream().filter(child -> child.indices.size() < choiceCount)
-                .collect(toList());
-        float average = (float) childrenWithChoices.stream().mapToDouble(child -> child.probability).average()
-                .orElse(0.0f);
-
-        return new Rule(this, probability, Confidence.valueOf(average));
-    }
-
-    public boolean hasHigherProbabilityThan(Rule rule) {
-        return probability > rule.probability || confidence.probability > rule.confidence.probability;
     }
 
     public static Rule maxProbability(Rule a, Rule b) {
@@ -103,11 +72,11 @@ public class Rule {
     }
 
     public RuleIndicesList indices() {
-        return new RuleIndicesList(this);
-    }
-
-    public boolean hasSingleResult() {
-        return indices().singleResult().isPresent();
+        if (children.isEmpty()) {
+            return RuleIndicesList.singleton(indices);
+        } else {
+            return RuleIndicesList.of(children);
+        }
     }
 
     @Override
@@ -173,8 +142,16 @@ public class Rule {
         }
     }
 
-    public void removeTrailingNullRules() {
-        children.removeIf(child -> child.text == null && fromElement == PhraseString.words(text).length);
+    public boolean hasTrailingNullRule() {
+        Rule child = children.get(children.size() - 1);
+        return child.text == null && child.fromElement > PhraseString.words(text).length;
+    }
+
+    public Rule withoutIgnoreableTrailingNullRules() {
+        List<Rule> childrenWithoutTrailingNullRule = children.stream()
+                .filter(child -> child.fromElement <= PhraseString.words(text).length).collect(toList());
+        return new Rule(WITHOUT_IGNOREABLE_TRAILING_NULL_RULE, text, ruleIndex, childrenWithoutTrailingNullRule,
+                fromElement, toElement, probability, confidence);
     }
 
     public Set<Integer> intersectionWithoutNullRules() {
@@ -182,21 +159,28 @@ public class Rule {
                 .intersection();
     }
 
-    public List<Integer> nullRules() {
-        List<Integer> nullRules = new ArrayList<>();
+    private List<Integer> repairableNullRules(int slices) {
+        List<Integer> repairableNullRules = new ArrayList<>();
         for (int i = 0; i < children.size(); i++) {
-            if (children.get(i).text == null) {
-                nullRules.add(i);
+            Rule child = children.get(i);
+            if (child.text == null) {
+                if (!isSpuriousTrailingNullRule(child, slices)) {
+                    repairableNullRules.add(i);
+                }
             }
         }
-        return nullRules;
+        return repairableNullRules;
+    }
+
+    private static boolean isSpuriousTrailingNullRule(Rule rule, int slices) {
+        return rule.ruleIndex < 0 || rule.ruleIndex >= slices;
     }
 
     public List<Rule> repair(SlicedPhrases<PhraseString> slicedPhrases) {
         Set<Integer> intersection = intersectionWithoutNullRules();
         List<Rule> candidates = new ArrayList<>();
         boolean lastRuleRepaired = false;
-        for (Integer index : nullRules()) {
+        for (Integer index : repairableNullRules(slicedPhrases.size())) {
             for (Sequence<PhraseString> sequence : slicedPhrases.get(index)) {
                 PhraseString replacement = sequence.joined();
                 if (PhraseString.intersect(replacement.indices, intersection)) {
@@ -230,24 +214,16 @@ public class Rule {
                     r.toElement + elementOffset, r.probability, r.confidence));
         }
 
-        Rule repaired = new Rule(REPAIRED_MAIN__RULE_NAME,
-                repairedChildren.stream().map(r -> r.text).filter(Objects::nonNull).collect(joining(" ")), ruleIndex,
-                indicesIntersection(repairedChildren), fromElement, toElement + elementOffset, probability, confidence);
-        repaired.children.addAll(repairedChildren);
-        return repaired;
+        return new Rule(REPAIRED_MAIN__RULE_NAME, text(repairedChildren), ruleIndex, repairedChildren, fromElement,
+                toElement + elementOffset, probability, confidence);
+    }
+
+    private static String text(List<Rule> repairedChildren) {
+        return repairedChildren.stream().map(r -> r.text).filter(Objects::nonNull).collect(joining(" "));
     }
 
     private static Set<Integer> indicesIntersection(List<Rule> rules) {
-        return new RuleIndicesList(rules.stream().map(r -> r.indices).collect(toList())).intersection();
-    }
-
-    public Rule rebuildIndices() {
-        Set<Integer> rebuild = indicesIntersection(children);
-        if (rebuild.equals(indices)) {
-            return this;
-        } else {
-            return new Rule(Rule.REBUILD, text, ruleIndex, rebuild, fromElement, toElement, probability, confidence);
-        }
+        return RuleIndicesList.of(rules).intersection();
     }
 
 }

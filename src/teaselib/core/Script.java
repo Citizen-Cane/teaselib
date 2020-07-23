@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -409,7 +409,7 @@ public abstract class Script {
             @Override
             public void run(InputMethodEventArgs e) {
                 SpeechRecognizedEventArgs eventArgs = ((SpeechRecognitionInputMethodEventArgs) e).eventArgs;
-                if (eventArgs.result != null && eventArgs.result.length == 1) {
+                if (eventArgs.result != null && eventArgs.result.size() == 1) {
                     if (!speechRecognitionRejectedHandlerSignaled && script.canRun()) {
                         // TODO generalize this -> invoke action once for this prompt, once for whole prompt stack
                         speechRecognitionRejectedHandlerSignaled = true;

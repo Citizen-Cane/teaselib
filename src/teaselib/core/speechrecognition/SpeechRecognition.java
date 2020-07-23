@@ -1,9 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.emptySet;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static teaselib.core.speechrecognition.Confidence.High;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.speechrecognition.Confidence.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +29,7 @@ import teaselib.core.util.ExceptionUtil;
 public class SpeechRecognition {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
 
-    static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptySet(), 0, 0, 1.0f, High);
+    static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
 
     /**
      * How to handle speech recognition and timeout in script functions.

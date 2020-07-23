@@ -65,48 +65,49 @@ public class SpeechRecognitionTimeoutWatchdog {
     public void enable(boolean enabled) {
         this.enabled = enabled;
         if (!enabled) {
-            stopRecognitionTimout();
+            stopRecognitionTimeout();
         }
     }
 
     private Event<SpeechRecognitionStartedEventArgs> startWatching = args -> {
         if (enabled()) {
-            stopRecognitionTimout();
-            startRecognitionTimeout("Started");
+            stopRecognitionTimeout();
+            startRecognitionTimeout();
+            logger.info("Started");
         }
     };
 
     private Event<AudioSignalProblemOccuredEventArgs> updateAudioProblemStatus = args -> {
         if (enabled()) {
-            // restartRecognitionTimout();
+            // Don't restart timer to avoid long delay after last speechDetected event
         }
     };
 
     private Event<SpeechRecognizedEventArgs> updateSpeechDetectionStatus = args -> {
         if (enabled()) {
             restartRecognitionTimout();
+            logger.debug("Restarted");
         }
     };
 
     private Event<SpeechRecognizedEventArgs> stopWatching = args -> {
         if (enabled()) {
-            stopRecognitionTimout();
+            stopRecognitionTimeout();
             logger.info("Stopped");
         }
     };
 
-    private void startRecognitionTimeout(String message) {
-        logger.info(message);
+    private void startRecognitionTimeout() {
         timer = new Timer(getClass().getSimpleName());
         timer.schedule(timerTask(timeoutAction), TIMEOUT_MILLIS);
     }
 
     private void restartRecognitionTimout() {
-        stopRecognitionTimout();
-        startRecognitionTimeout("Restarting");
+        stopRecognitionTimeout();
+        startRecognitionTimeout();
     }
 
-    private void stopRecognitionTimout() {
+    private void stopRecognitionTimeout() {
         if (timer != null) {
             timer.cancel();
             timer = null;

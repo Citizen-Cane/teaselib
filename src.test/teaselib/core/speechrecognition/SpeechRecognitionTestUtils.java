@@ -1,14 +1,11 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.speechrecognition.SpeechRecognition.withoutPunctation;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognition.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -119,15 +116,21 @@ public class SpeechRecognitionTestUtils {
         List<Rule> results = new ArrayList<>();
 
         Event<SpeechRecognizedEventArgs> completedHandler = eventArgs -> {
-            results.addAll(asList(eventArgs.result));
-            logger.info("Recognized '{}'", eventArgs.result[0].text);
+            results.addAll(eventArgs.result);
+            logger.info("Recognized '{}'", eventArgs.result.get(0).text);
         };
         inputMethod.events.recognitionCompleted.add(completedHandler);
 
         Event<SpeechRecognizedEventArgs> rejectedHandler = eventArgs -> {
-            results.addAll(asList(eventArgs.result));
-            Rule result = eventArgs.result[0];
-            logger.info("Rejected '{}'", result.text.isBlank() ? result.name : result.text);
+            results.addAll(eventArgs.result);
+            Optional<Rule> result = eventArgs.result.isEmpty() ? Optional.empty()
+                    : Optional.of(eventArgs.result.get(0));
+            if (result.isPresent()) {
+                Rule rule = result.get();
+                logger.info("Rejected '{}'", rule.text.isBlank() ? rule.name : rule.text);
+            } else {
+                logger.info("Rejected without result");
+            }
         };
         inputMethod.events.recognitionRejected.add(rejectedHandler);
 

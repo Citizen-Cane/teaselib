@@ -26,40 +26,58 @@ std::vector<std::wstring> JNIUtilities::stringArray(JNIEnv* env, jobjectArray ja
     return strings;
 }
 
-jobject JNIUtilities::asList(JNIEnv* env, const std::vector<NativeObject*>& voices) {
+jobject JNIUtilities::asList(JNIEnv* env, const std::vector<NativeObject*>& elements) {
 	jclass listClass = JNIClass::getClass(env, "java/util/ArrayList");
-	jobject jvoiceList = env->NewObject(
+	jobject list = env->NewObject(
 		listClass,
 		JNIClass::getMethodID(env, listClass, "<init>", "(I)V"),
-		voices.size());
+		elements.size());
 	if (env->ExceptionCheck()) throw JNIException(env);
 
-	std::for_each(voices.begin(), voices.end(), [&](const NativeObject* nativeObject) {
+	std::for_each(elements.begin(), elements.end(), [&](const NativeObject* nativeObject) {
 		env->CallObjectMethod(
-			jvoiceList,
+			list,
 			env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z"), nativeObject->operator jobject());
 		if (env->ExceptionCheck()) throw JNIException(env);
 		});
 
-	return jvoiceList;
+	return list;
 }
 
-jobject JNIUtilities::asSet(JNIEnv* env, const std::set<NativeObject*>& voices) {
-	jclass listClass = JNIClass::getClass(env, "java/util/HashSet");
-	jobject jvoiceList = env->NewObject(
+jobject JNIUtilities::asList(JNIEnv* env, const std::vector<jobject>& elements) {
+	jclass listClass = JNIClass::getClass(env, "java/util/ArrayList");
+	jobject list = env->NewObject(
 		listClass,
 		JNIClass::getMethodID(env, listClass, "<init>", "(I)V"),
-		voices.size());
+		elements.size());
 	if (env->ExceptionCheck()) throw JNIException(env);
 
-	std::for_each(voices.begin(), voices.end(), [&](const NativeObject* nativeObject) {
+	std::for_each(elements.begin(), elements.end(), [&](const jobject element) {
 		env->CallObjectMethod(
-			jvoiceList,
-			env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z"), nativeObject->operator jobject());
+			list,
+			env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z"), element);
 		if (env->ExceptionCheck()) throw JNIException(env);
 		});
 
-	return jvoiceList;
+	return list;
+}
+
+jobject JNIUtilities::asSet(JNIEnv* env, const std::set<NativeObject*>& elements) {
+	jclass setClass = JNIClass::getClass(env, "java/util/HashSet");
+	jobject set = env->NewObject(
+		setClass,
+		JNIClass::getMethodID(env, setClass, "<init>", "(I)V"),
+		elements.size());
+	if (env->ExceptionCheck()) throw JNIException(env);
+
+	std::for_each(elements.begin(), elements.end(), [&](const NativeObject* nativeObject) {
+		env->CallObjectMethod(
+			set,
+			env->GetMethodID(setClass, "add", "(Ljava/lang/Object;)Z"), nativeObject->operator jobject());
+		if (env->ExceptionCheck()) throw JNIException(env);
+		});
+
+	return set;
 }
 
 jobject JNIUtilities::enumValue(JNIEnv* env, const char* enumClass, const char* name)

@@ -12,6 +12,7 @@
 #include "COMException.h"
 #include "JNIException.h"
 #include "JNIString.h"
+#include "JNIUtilities.h"
 
 #include "SpeechRecognizedEvent.h"
 
@@ -71,10 +72,8 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 		ulAlternatesCount = 0;
 	}
 
-	jobjectArray speechRecognitionResults = nullptr;
+	vector<jobject> speechRecognitionResults;
     if (ulAlternatesCount > 0) {
-		speechRecognitionResults = env->NewObjectArray(ulAlternatesCount, ruleClass, nullptr);
-		if (env->ExceptionCheck()) throw JNIException(env);
         for (int i = 0; i < ulAlternatesCount; i++) {
             SPPHRASE* pAlternatePhrase;
             hr = pPhraseAlt[i]->GetPhrase(&pAlternatePhrase);
@@ -82,7 +81,25 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 
 			const SemanticResults semanticResults(pAlternatePhrase->pProperties);
 			jobject rule = getRule(pResult, &pAlternatePhrase->Rule, semanticResults);
-			env->SetObjectArrayElement(speechRecognitionResults, i, rule);
+
+			// TODO filter out empty (invalid) rules here to reduce log output in some cases, but breaks EndAmbiguity tests
+			// - filtering would work only for distinct choices anyway, so maybe we should just handle this on the java side
+
+			//jobject indices = env->GetObjectField(
+			//	rule, env->GetFieldID(ruleClass, "indices", "Ljava/util/Set;"));
+			//if (env->ExceptionCheck()) throw JNIException(env);
+			//Objects::requireNonNull(L"indices", indices);
+
+			//jclass setClass = JNIClass::getClass(env, "java/util/Set");
+			//jboolean isEmpty = env->CallBooleanMethod(indices, env->GetMethodID(setClass, "isEmpty", "()Z"));
+			//if (env->ExceptionCheck()) throw JNIException(env);
+
+			//if (!isEmpty) {
+			//	speechRecognitionResults.push_back(rule);
+			//}
+
+			speechRecognitionResults.push_back(rule);
+
 			// TODO resolve memory leak on exception
 			CoTaskMemFree(pAlternatePhrase);
             pPhraseAlt[i]->Release();
@@ -90,8 +107,7 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
         }
     } else {
 		const SemanticResults semanticResults(pPhrase->pProperties);
-		speechRecognitionResults = env->NewObjectArray(1, ruleClass, getRule(pResult, &pPhrase->Rule, semanticResults));
-        if (env->ExceptionCheck()) throw JNIException(env);
+		speechRecognitionResults.push_back(getRule(pResult, &pPhrase->Rule, semanticResults));
 	}
 	// TODO resolve memory leak on exception
 	CoTaskMemFree(pPhrase);
@@ -99,8 +115,8 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 	jclass eventClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/events/SpeechRecognizedEventArgs");
     jobject eventArgs = env->NewObject(
                             eventClass,
-                            JNIClass::getMethodID(env, eventClass, "<init>", "([Lteaselib/core/speechrecognition/Rule;)V"),
-                            speechRecognitionResults);
+                            JNIClass::getMethodID(env, eventClass, "<init>", "(Ljava/util/List;)V"),
+							JNIUtilities::asList(env, speechRecognitionResults));
     if (env->ExceptionCheck()) throw JNIException(env);
 
     __super::fire(eventArgs);
@@ -111,42 +127,53 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	wchar_t* text;
 	HRESULT hr = pResult->GetText(rule->ulFirstElement, rule->ulCountOfElements, false, &text, nullptr);
 	if (FAILED(hr)) {
-		jRule = getRule(L"Invalid", nullptr, -1, newSet(), 0, 0, 0.0f, getConfidenceField(env, rule->Confidence));
+		jRule = newRule(L"Invalid", nullptr, -1, newSet(), 0, 0, 0.0f, getConfidenceField(env, rule->Confidence));
 		if (env->ExceptionCheck()) throw JNIException(env);
 	} else {
-		const RuleName ruleName(rule, semanticResults);
-		jobject choiceIndices = getChoiceIndices(ruleName);
+		std::vector<jobject> children;
+		for (const SPPHRASERULE* childRule = rule->pFirstChild; childRule != nullptr; childRule = childRule->pNextSibling) {
+			jobject child = getRule(pResult, childRule, semanticResults);
+			if (env->ExceptionCheck()) throw JNIException(env);
+			
+			children.push_back(child);
+		}
 
-		jRule = getRule(
-			ruleName.name.c_str(),
-			text,
-			ruleName.rule_index, 
-			choiceIndices, 
-			rule->ulFirstElement,
-			rule->ulFirstElement + rule->ulCountOfElements,
-			rule->SREngineConfidence,
-			getConfidenceField(env, rule->Confidence));
+		const RuleName ruleName(rule, semanticResults);
+		if (children.empty()) {
+			jRule = newRule(
+				ruleName.name.c_str(),
+				text,
+				ruleName.rule_index,
+				choiceIndices(ruleName),
+				rule->ulFirstElement,
+				rule->ulFirstElement + rule->ulCountOfElements,
+				rule->SREngineConfidence,
+				getConfidenceField(env, rule->Confidence));
+		} else {
+			jRule = newRule(
+				ruleName.name.c_str(),
+				text,
+				ruleName.rule_index,
+				children,
+				rule->ulFirstElement,
+				rule->ulFirstElement + rule->ulCountOfElements,
+				rule->SREngineConfidence,
+				getConfidenceField(env, rule->Confidence));
+		}
+
 		if (text) {
 			CoTaskMemFree(text);
 		}
 		if (env->ExceptionCheck()) throw JNIException(env);
-
-		for (const SPPHRASERULE* childRule = rule->pFirstChild; childRule != nullptr; childRule = childRule->pNextSibling) {
-			jobject child = getRule(pResult, childRule, semanticResults);
-			if (env->ExceptionCheck()) throw JNIException(env);
-
-			if (child != nullptr) {
-				env->CallVoidMethod(
-					jRule,
-					env->GetMethodID(ruleClass, "add", "(Lteaselib/core/speechrecognition/Rule;)V"),
-					child);
-			}
-		}
 	}
 
 	return jRule;
 }
-jobject SpeechRecognizedEvent::getRule(const wchar_t* name, const wchar_t* text, int rule_index, jobject choiceIndices,  ULONG fromElement, ULONG toElement, float probability, jobject confidence) const {
+jobject SpeechRecognizedEvent::newRule(
+	const wchar_t* name, const wchar_t* text, int rule_index,
+	jobject choiceIndices,  ULONG fromElement, ULONG toElement,
+	float probability, jobject confidence) const
+{
 	return env->NewObject(
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/Set;IIFLteaselib/core/speechrecognition/Confidence;)V"),
@@ -160,7 +187,25 @@ jobject SpeechRecognizedEvent::getRule(const wchar_t* name, const wchar_t* text,
 		confidence);
 }
 
-jobject SpeechRecognizedEvent::getChoiceIndices(const RuleName& ruleName) const {
+jobject SpeechRecognizedEvent::newRule(
+	const wchar_t* name, const wchar_t* text, int rule_index,
+	const std::vector<jobject>& children,
+	ULONG fromElement, ULONG toElement, float probability, jobject confidence) const 
+{
+	return env->NewObject(
+		ruleClass,
+		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/List;IIFLteaselib/core/speechrecognition/Confidence;)V"),
+		static_cast<jstring>(JNIString(env, name)),
+		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
+		rule_index,
+		JNIUtilities::asList(env, children),
+		fromElement,
+		toElement,
+		probability,
+		confidence);
+}
+
+jobject SpeechRecognizedEvent::choiceIndices(const RuleName& ruleName) const {
 	jobject choiceIndices = newSet();
 
 	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");

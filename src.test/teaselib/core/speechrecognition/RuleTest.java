@@ -41,14 +41,14 @@ public class RuleTest {
     public void testSpeechDetectedRuleRepairSample1() {
         SlicedPhrases<PhraseString> slicedPhrases = testSliceMultipleCommon3();
 
-        Rule speechDetected = new Rule("Main", "A D K L B", MIN_VALUE, indices(3, 5), 0, 6, 0.82f, High);
-        speechDetected.children.add(new Rule("r_0_0,3_1", "A", 0, indices(0, 3), 0, 1, 0.82f, High));
-        // no "B C" - correct
-        speechDetected.children.add(new Rule("r_1_1,2,3,4_5", null, 1, indices(1, 2, 3, 4), 1, 1, 1.0f, High));
-        speechDetected.children.add(new Rule("r_2_0,1,2,3,4_7", "D", 2, indices(0, 1, 2, 3, 4), 1, 2, 0.62f, Normal));
-        // neither "E F" nor "I" -> I expected
-        speechDetected.children.add(new Rule("r_3_5_10", null, 3, indices(5), 2, 2, 1.0f, High));
-        speechDetected.children.add(new Rule("r_4_3_14", "K", 4, indices(3), 2, 4, 0.46f, Low));
+        Rule speechDetected = new Rule("Main", "A D K L B", MIN_VALUE, Arrays.asList( //
+                new Rule("r_0_0,3_1", "A", 0, indices(0, 3), 0, 1, 0.82f, High),
+                // no "B C" - correct
+                new Rule("r_1_1,2,3,4_5", null, 1, indices(1, 2, 3, 4), 1, 1, 1.0f, High),
+                new Rule("r_2_0,1,2,3,4_7", "D", 2, indices(0, 1, 2, 3, 4), 1, 2, 0.62f, Normal),
+                // neither "E F" nor "I" -> I expected
+                new Rule("r_3_5_10", null, 3, indices(5), 2, 2, 1.0f, High),
+                new Rule("r_4_3_14", "K", 4, indices(3), 2, 4, 0.46f, Low)), 0, 6, 0.82f, High);
 
         assertEquals(Collections.singleton(3), speechDetected.intersectionWithoutNullRules());
 
@@ -65,16 +65,17 @@ public class RuleTest {
     public void testSpeechDetectedRuleRepairSample2() {
         SlicedPhrases<PhraseString> slicedPhrases = testSliceMultipleCommon3();
 
-        Rule speechDetected = new Rule("Main", "A D K L B", MIN_VALUE, indices(3, 5), 0, 6, 0.82414407f, High);
-        speechDetected.children.add(new Rule("r_0_0,3_1", "A", 0, indices(0, 3), 0, 1, 0.82f, High));
-        // no "B C" - correct
-        speechDetected.children.add(new Rule("r_1_1,2,3,4_5", null, 1, indices(1, 2, 3, 4), 1, 1, 1.0f, High));
-        speechDetected.children.add(new Rule("r_2_0,1,2,3,4_7", "D", 2, indices(0, 1, 2, 3, 4), 1, 2, 0.62f, Normal));
-        // neither "E F" nor "I" -> I expected
-        speechDetected.children.add(new Rule("r_3_5_10", null, 3, indices(5), 2, 2, 1.0f, High));
-        speechDetected.children.add(new Rule("r_4_3_14", "K L", 4, indices(3), 2, 4, 0.51f, Normal));
-        speechDetected.children.add(new Rule("r_5_1,2,3,4_17", "B", 5, indices(1, 2, 3, 4), 4, 5, 0.80f, High));
-
+        Rule speechDetected = new Rule("Main", "A D K L B", MIN_VALUE, // indices(3, 5),
+                Arrays.asList( //
+                        new Rule("r_0_0,3_1", "A", 0, indices(0, 3), 0, 1, 0.82f, High),
+                        // no "B C" - correct
+                        new Rule("r_1_1,2,3,4_5", null, 1, indices(1, 2, 3, 4), 1, 1, 1.0f, High),
+                        new Rule("r_2_0,1,2,3,4_7", "D", 2, indices(0, 1, 2, 3, 4), 1, 2, 0.62f, Normal),
+                        // neither "E F" nor "I" -> I expected
+                        new Rule("r_3_5_10", null, 3, indices(5), 2, 2, 1.0f, High),
+                        new Rule("r_4_3_14", "K L", 4, indices(3), 2, 4, 0.51f, Normal),
+                        new Rule("r_5_1,2,3,4_17", "B", 5, indices(1, 2, 3, 4), 4, 5, 0.80f, High)),
+                0, 6, 0.82414407f, High);
         assertEquals(Collections.singleton(3), speechDetected.intersectionWithoutNullRules());
 
         List<Rule> repaired = speechDetected.repair(slicedPhrases);
@@ -90,15 +91,15 @@ public class RuleTest {
     public void testSpeechDetectedMultipleNullRulesRepair() {
         SlicedPhrases<PhraseString> slicedPhrases = testSliceMultipleCommon3();
 
-        Rule speechDetected = new Rule("Main", "A D K L", MIN_VALUE, indices(3, 5), 0, 6, 0.82414407f, High);
-        speechDetected.children.add(new Rule("r_0_0,3_1", "A", 0, indices(0, 3), 0, 1, 0.82f, High));
-        // no "B C" - correct
-        speechDetected.children.add(new Rule("r_1_1,2,3,4_5", null, 1, indices(1, 2, 3, 4), 1, 1, 1.0f, High));
-        speechDetected.children.add(new Rule("r_2_0,1,2,3,4_7", "D", 2, indices(0, 1, 2, 3, 4), 1, 2, 0.62f, Normal));
-        // neither "E F" nor "I" -> I expected
-        speechDetected.children.add(new Rule("r_3_5_10", null, 3, indices(5), 2, 2, 1.0f, High));
-        speechDetected.children.add(new Rule("r_4_3_14", "K L", 4, indices(3), 2, 4, 0.51f, Normal));
-        speechDetected.children.add(new Rule("r_5_1,2,3,4_17", null, 5, indices(0, 5), 4, 5, 1.0f, High));
+        Rule speechDetected = new Rule("Main", "A D K L", MIN_VALUE, Arrays.asList( //
+                new Rule("r_0_0,3_1", "A", 0, indices(0, 3), 0, 1, 0.82f, High),
+                // no "B C" - correct
+                new Rule("r_1_1,2,3,4_5", null, 1, indices(1, 2, 3, 4), 1, 1, 1.0f, High),
+                new Rule("r_2_0,1,2,3,4_7", "D", 2, indices(0, 1, 2, 3, 4), 1, 2, 0.62f, Normal),
+                // neither "E F" nor "I" -> I expected
+                new Rule("r_3_5_10", null, 3, indices(5), 2, 2, 1.0f, High),
+                new Rule("r_4_3_14", "K L", 4, indices(3), 2, 4, 0.51f, Normal),
+                new Rule("r_5_1,2,3,4_17", null, 5, indices(0, 5), 4, 5, 1.0f, High)), 0, 6, 0.82414407f, High);
 
         assertEquals(Collections.singleton(3), speechDetected.intersectionWithoutNullRules());
 
@@ -121,14 +122,45 @@ public class RuleTest {
 
         SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
 
-        Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, indices(), 0, 6, 0.82414407f, High);
-        speechDetected.children.add(new Rule("r_0_0_1", "G", 0, indices(1), 0, 1, 0.82f, High));
-        speechDetected.children.add(new Rule("r_1_0_2", "A B C", 1, indices(1), 2, 5, 0.51f, Normal));
-        speechDetected.children.add(new Rule("r_2_3", null, 2, indices(0), 5, 6, 1.0f, High));
+        Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, Arrays.asList( //
+                new Rule("r_0_0_1", "G", 0, indices(1), 0, 1, 0.82f, High),
+                new Rule("r_1_0_2", "A B C", 1, indices(1), 1, 4, 0.51f, Normal),
+                new Rule("r_2_3", null, 2, indices(0), 4, 5, 1.0f, High)), 0, 6, 0.82414407f, High);
 
         assertEquals(Collections.singleton(1), speechDetected.intersectionWithoutNullRules());
 
         List<Rule> repaired = speechDetected.repair(slicedPhrases);
+        assertEquals(1, repaired.size());
+
+        Rule rule = repaired.get(0);
+        assertEquals("Rule name", "G A B C H", rule.text);
+        assertTrue("Indices in repaired rule not updated", !rule.indices.isEmpty());
+        assertEquals("Rule indices", Collections.singleton(1), rule.indices);
+
+        assertEquals("Rule probability", rule.probability, rule.children.get(2).probability, 0.0001);
+    }
+
+    @Test
+    public void testTrailingNullRuleFollowedBySpuriousExtraRule() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("D E F, A B C", 0), //
+                choice("G, A B C, H", 1));
+
+        SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
+
+        Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, Arrays.asList( //
+                new Rule("r_0_0_1", "G", 0, indices(1), 0, 1, 0.82f, High),
+                new Rule("r_1_0_2", "A B C", 1, indices(1), 1, 4, 0.51f, Normal),
+                new Rule("r_2_3", null, 2, indices(0), 4, 5, 1.0f, High),
+                new Rule("", null, MIN_VALUE, indices(), 5, 5, 1.0f, High)), 0, 6, 0.82414407f, High);
+
+        assertEquals(Collections.singleton(1), speechDetected.intersectionWithoutNullRules());
+
+        assertTrue(speechDetected.hasTrailingNullRule());
+        Rule speechDetectedwithoutTrailingNullRules = speechDetected.withoutIgnoreableTrailingNullRules();
+        assertFalse(speechDetectedwithoutTrailingNullRules.hasTrailingNullRule());
+
+        List<Rule> repaired = speechDetectedwithoutTrailingNullRules.repair(slicedPhrases);
         assertEquals(1, repaired.size());
 
         Rule rule = repaired.get(0);

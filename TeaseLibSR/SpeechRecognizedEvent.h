@@ -43,7 +43,14 @@ private:
 	jobject  getConfidenceField(JNIEnv *env, signed char confidence) const;
 	const jclass ruleClass;
 	jobject getRule(ISpRecoResult* pResult, const SPPHRASERULE* rule, const SemanticResults& semanticResults) const;
-	jobject getRule(const wchar_t* name, const wchar_t* text, int rule_index, jobject choiceIndices, ULONG fromElement, ULONG toElement, float probability, jobject confidence) const;
-	jobject getChoiceIndices(const RuleName& ruleName) const;
+	jobject newRule(
+		const wchar_t* name, const wchar_t* text, int rule_index,
+		jobject choiceIndices, ULONG fromElement, ULONG toElement,
+		float probability, jobject confidence) const;
+	jobject newRule(
+		const wchar_t* name, const wchar_t* text, int rule_index,
+		const std::vector<jobject>& children,
+		ULONG fromElement, ULONG toElement, float probability, jobject confidence) const;
+	jobject choiceIndices(const RuleName& ruleName) const;
 	jobject newSet() const;
 };

@@ -1,12 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.as;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
-import static teaselib.core.ui.SpeechRecognitionInputMethod.bestSingleResult;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
+import static teaselib.core.ui.SpeechRecognitionInputMethod.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,7 +97,7 @@ public class SpeechRecognitionTest {
 
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foo", new Prompt.Result(0));
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
-            
+
             assertRejected(inputMethod, choices, "My name is");
         }
     }
@@ -150,7 +146,7 @@ public class SpeechRecognitionTest {
 
         List<Rule> rejected = new ArrayList<>();
         rejected.addAll(assertRejected(choices, "Yes I haven't"));
-        assertEquals(1, rejected.size());
+        assertEquals("Filtered by speech recognition implementation", 1, rejected.size());
 
         Rule distinct = bestSingleResult(expected.stream(), index -> index).orElseThrow();
         assertEquals(expected.get(0), distinct);
@@ -168,7 +164,7 @@ public class SpeechRecognitionTest {
 
         List<Rule> rejected = new ArrayList<>();
         rejected.addAll(assertRejected(choices, "Yes I haven't"));
-        assertEquals(1, rejected.size());
+        assertEquals("Filtered by speech recognition implementation", 1, rejected.size());
 
         List<Rule> expected = new ArrayList<>();
         expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));

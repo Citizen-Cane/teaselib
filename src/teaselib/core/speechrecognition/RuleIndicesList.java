@@ -13,22 +13,20 @@ import java.util.Set;
 public class RuleIndicesList extends ArrayList<Set<Integer>> {
     private static final long serialVersionUID = 1L;
 
-    public RuleIndicesList(Rule rule) {
-        if (rule.children.isEmpty()) {
-            add(rule.indices);
-        } else if (rule.isMainRule()) {
-            gatherChildren(rule);
-        } else {
-            throw new IllegalArgumentException("Not a main rule: " + rule);
-        }
+    public static RuleIndicesList singleton(Set<Integer> indices) {
+        return new RuleIndicesList(Collections.singletonList(indices));
     }
 
-    public RuleIndicesList(List<Set<Integer>> values) {
-        super(values);
+    public static RuleIndicesList of(Rule rule) {
+        return RuleIndicesList.of(rule.children);
     }
 
-    private void gatherChildren(Rule rule) {
-        rule.children.stream().forEach(child -> add(child.indices));
+    public static RuleIndicesList of(List<Rule> rules) {
+        return new RuleIndicesList(rules.stream().map(r -> r.indices).collect(toList()));
+    }
+
+    public RuleIndicesList(List<Set<Integer>> indices) {
+        super(indices);
     }
 
     public Optional<Integer> singleResult() {

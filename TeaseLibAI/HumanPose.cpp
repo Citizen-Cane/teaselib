@@ -8,10 +8,13 @@
 #include <teaselib_core_ai_perception_SceneCapture.h>
 #include <teaselib_core_ai_perception_HumanPose.h>
 
+#include <Pose.h>
+
 #include "HumanPose.h"
 
 using namespace aifx;
 using namespace cv;
+using namespace std;
 
 extern "C"
 {
@@ -95,7 +98,10 @@ int HumanPose::estimate()
 			return teaselib_core_ai_perception_SceneCapture_NoImage;
 		}
 		else {
-			return poseEstimation(frame);
+			poseEstimation.setInputTensor(frame);
+			poseEstimation.invoke();
+			const vector<aifx::Pose> poses = poseEstimation.results();
+			return poses.size();
 		}
 	} else {
 		return teaselib_core_ai_perception_SceneCapture_NoImage;

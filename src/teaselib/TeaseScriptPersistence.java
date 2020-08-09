@@ -17,6 +17,7 @@ import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
+import teaselib.util.ItemsQuery;
 
 /**
  * @author Citizen-Cane
@@ -184,6 +185,17 @@ public abstract class TeaseScriptPersistence extends Script {
     public Items items(String[]... values) {
         return defaultDomain.items(values);
     }
+
+    public ItemsQuery.Result queryItems(Enum<?>... values) {
+        return () -> defaultDomain.items(values);
+    }
+
+    // TODO queryStates - requires class impl similar to Items class
+    // - states do not have inventory - no need to reduce lists
+    // + list states and reduce with applied() & expired()
+    // public Query.Result queryStates(Enum<?>... values) {
+    // return () -> defaultDomain.state(values);
+    // }
 
     public TeaseLib.PersistentBoolean persistentBoolean(String name) {
         return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, namespace, name);

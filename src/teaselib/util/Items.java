@@ -56,6 +56,10 @@ import teaselib.util.math.Varieties;
 public class Items implements Iterable<Item> {
     public static final Items None = new Items(Collections.emptyList());
 
+    public interface Query extends Supplier<Items> {
+        // tag interface
+    }
+
     private final List<Item> elements;
     private final List<Item> inventory;
 
@@ -124,6 +128,10 @@ public class Items implements Iterable<Item> {
             return false;
         }
         return elements.stream().allMatch(Item::applied);
+    }
+
+    public boolean anyRemoved() {
+        return !allApplied();
     }
 
     public boolean anyAre(Object... attributes) {

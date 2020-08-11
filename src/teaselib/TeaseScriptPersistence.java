@@ -3,7 +3,10 @@
  */
 package teaselib;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import teaselib.core.ResourceLoader;
@@ -17,7 +20,7 @@ import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
-import teaselib.util.ItemsQuery;
+import teaselib.util.States;
 
 /**
  * @author Citizen-Cane
@@ -186,16 +189,13 @@ public abstract class TeaseScriptPersistence extends Script {
         return defaultDomain.items(values);
     }
 
-    public ItemsQuery.Result queryItems(Enum<?>... values) {
+    public Items.Query query(Enum<?>... values) {
         return () -> defaultDomain.items(values);
     }
 
-    // TODO queryStates - requires class impl similar to Items class
-    // - states do not have inventory - no need to reduce lists
-    // + list states and reduce with applied() & expired()
-    // public Query.Result queryStates(Enum<?>... values) {
-    // return () -> defaultDomain.state(values);
-    // }
+    public States.Query states(Enum<?>... values) {
+        return () -> new States(Arrays.stream(values).map(this::state).collect(toList()));
+    }
 
     public TeaseLib.PersistentBoolean persistentBoolean(String name) {
         return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, namespace, name);

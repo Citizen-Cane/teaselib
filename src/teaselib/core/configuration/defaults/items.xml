@@ -109,28 +109,35 @@
 
 
 		<Item item="Ball_Stretcher" guid="ball_stretcher" displayName="Ball stretcher">
+			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 
 		<Item item="Chastity_Device" guid="chastity_cage" displayName="Chastity cage">
 			<Attribute> Toys.Chastity_Devices.Cage </Attribute>
+			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 		<Item item="Chastity_Device" guid="chastity_belt" displayName="Chastity belt">
 			<Attribute> Toys.Chastity_Devices.Belt </Attribute>
 		</Item>
 		<Item item="Chastity_Device" guid="gates_of_hell" displayName="Gates Of Hell">
 			<Attribute> Toys.Chastity_Devices.Gates_of_Hell </Attribute>
+			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 		<Item item="Chastity_Device" guid="cone_of_shame" displayName="Cone Of Shame">
 			<Attribute> Toys.Chastity_Devices.Cone_of_Shame </Attribute>
+			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 
 		<Item item="Cock_Ring" guid="cockring" displayName="Cock ring">
+			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 
 		<Item item="Glans_Ring" guid="glans_ring" displayName="Glans ring">
+			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 
 		<Item item="Humbler" guid="humbler" displayName="Humbler">
+			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 
 		<Item item="Masturbator" guid="masturbator" displayName="Masturbator">
@@ -150,11 +157,13 @@
 			<Attribute> Body.Orifice.Vaginal </Attribute>
 			<Attribute> Features.Vibrating </Attribute>
 			<Attribute> Toys.Vaginal.Vibrating_Egg </Attribute>
+			<Attribute> Sexuality.Sex.Female </Attribute>
 		</Item>
 
 		<Item item="VaginalInsert" guid="ben_wa_balls" displayName="Ben Wa Balls">
 			<Attribute> Body.Orifice.Vaginal </Attribute>
 			<Attribute> Toys.Vaginal.Ben_Wa_Balls </Attribute>
+			<Attribute> Sexuality.Sex.Female </Attribute>
 		</Item>
 
 		<Item item="Vibrator" guid="vibrator" displayName="Vibrator">
@@ -280,75 +289,118 @@
 	
 	<Clothes>
 		<Item item="Babydoll" guid="babydoll" displayName="Babydoll">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Body" guid="body" displayName="Body">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Bra" guid="bra" displayName="Bra">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Catsuit" guid="catsuit" displayName="Catsuit">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Garter_Belt" guid="garter_belt" displayName="Garter belt">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Leotard" guid="leotard" displayName="Leotard">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Nightie" guid="nightie" displayName="Nightie">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Underpants" guid="boxers" displayName="Boxers">
 			<Attribute> Clothes.UnderpantsType.Boxers </Attribute>
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Clothes.Category.Underwear </Attribute>
+			<Attribute> Sexuality.Gender.Masculine </Attribute>
 		</Item>
 		<Item item="Underpants" guid="briefs" displayName="Briefs">
 			<Attribute> Clothes.UnderpantsType.Briefs </Attribute>
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Clothes.Category.Underwear </Attribute>
+			<Attribute> Sexuality.Gender.Masculine </Attribute>
 		</Item>
 		<Item item="Underpants" guid="g_string" displayName="G-String">
 			<Attribute> Clothes.UnderpantsType.G_String </Attribute>
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		<Item item="Underpants" guid="panties" displayName="Panties">
 			<Attribute> Clothes.UnderpantsType.Panties </Attribute>
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		<Item item="Underpants" guid="thong" displayName="Thong">
 			<Attribute> Clothes.UnderpantsType.Thong </Attribute>
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Pantyhose" guid="pantyhose" displayName="Pantyhose">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		
 		<Item item="Pajamas" guid="pajamas" displayName="Pajamas">
+			<Attribute> Clothes.Category.Sleepwear </Attribute>
+			<Attribute> Clothes.Category.Lingerie </Attribute>
 		</Item>
 		
-		<Item item="Socks" guid="socks" displayName="Socks">e
+		<Item item="Socks" guid="socks" displayName="Socks">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Clothes.Category.Underwear </Attribute>
 		</Item>
 		
 		<Item item="Stockings" guid="stockings" displayName="Stockings">
+			<Attribute> Clothes.Category.Lingerie </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		
 		
 		<Item item="Bra" guid="bikini" displayName="Bikini Top">
+			<Attribute> Clothes.Category.Swimwear </Attribute>
 			<Attribute> Clothes.SwimwearType.Bikini </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		<Item item="Underpants" guid="bikini" displayName="Bikini Bottom">
+			<Attribute> Clothes.Category.Swimwear </Attribute>
 			<Attribute> Clothes.SwimwearType.Bikini </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		
 		<Item item="Leotard" guid="monokini" displayName="Monokini">
+			<Attribute> Clothes.Category.Swimwear </Attribute>
 			<Attribute> Clothes.SwimwearType.Monokini </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		
 		<Item item="Leotard" guid="swimsuit" displayName="Swimsuit">
+			<Attribute> Clothes.Category.Swimwear </Attribute>
 			<Attribute> Clothes.SwimwearType.Swimsuit </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 
 		<Item item="Blouse" guid="blouse" displayName="Blouse">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		
 		<Item item="Dress" guid="dress" displayName="Dress">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		
 		<Item item="Jacket" guid="jacket" displayName="Jacket">
@@ -357,10 +409,12 @@
 		<Item item="Skirt" guid="skirt" displayName="Skirt">
 			<Attribute> Clothes.SkirtType.Skirt </Attribute>
 			<Attribute> Length.Medium </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		<Item item="Skirt" guid="miniskirt" displayName="Miniskirt">
 			<Attribute> Clothes.SkirtType.Miniskirt </Attribute>
 			<Attribute> Length.Short </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Shirt" guid="shirt" displayName="Shirt">
@@ -371,9 +425,11 @@
 		</Item>
 		<Item item="Shoes" guid="high_heels" displayName="High heels">
 			<Attribute> Clothes.Footwear.High_Heels </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		<Item item="Shoes" guid="pumps" displayName="Pumps">
 			<Attribute> Clothes.Footwear.Pumps </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		<Item item="Shoes" guid="sandals" displayName="Sandals">
 			<Attribute> Clothes.Footwear.Sandals </Attribute>
@@ -383,12 +439,14 @@
 		</Item>
 		
 		<Item item="Suit" guid="suit" displayName="Suit">
+			<Attribute> Sexuality.Gender.Masculine </Attribute>
 		</Item>
 
 		<Item item="Sweater" guid="sweater" displayName="Sweater">
 		</Item>
 		
 		<Item item="Tanktop" guid="tanktop" displayName="Tanktop">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Trousers" guid="jeans" displayName="Jeans">
@@ -415,6 +473,7 @@
 
 	<Accessoires>
 		<Item item="Apron" guid="apron" displayName="Apron">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Bells" guid="bells" displayName="Bells">
@@ -425,6 +484,7 @@
 		</Item>
 
 		<Item item="Bonnet" guid="bonnet" displayName="Bonnet">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Gloves" guid="gloves" displayName="Gloves">
@@ -434,29 +494,38 @@
 		</Item>
 
 		<Item item="Jewelry" guid="bracelet" displayName="Bracelet">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		<Item item="Jewelry" guid="necklace" displayName="Necklace">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Princess_Tiara" guid="princess_tiara" displayName="Princess tiara">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Makeup" guid="makeup" displayName="Makeup">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Scarf" guid="scarf" displayName="Scarf">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Tie" guid="tie" displayName="Tie">
+			<Attribute> Sexuality.Gender.Masculine </Attribute>
 		</Item>
 
 		<Item item="Breast_Forms" guid="breast_forms" displayName="Breast forms">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Wig" guid="wig" displayName="Wig">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		
 		<Item item="Corset" guid="corset" displayName="Corset">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 		<Item item="Harness" guid="harness" displayName="Harness">

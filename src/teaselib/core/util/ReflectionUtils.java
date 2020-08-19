@@ -86,7 +86,7 @@ public final class ReflectionUtils {
     private static String nestedClass(String className) {
         int index = className.lastIndexOf('.');
         if (index < 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(className);
         } else {
             return className.substring(0, index) + "$" + className.substring(index + 1);
         }

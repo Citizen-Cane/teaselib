@@ -7,6 +7,7 @@
 		<Item item="Humbler" guid="my_humbler" displayName="My Humbler">
 			<Attribute>Material.Metal</Attribute>
 			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 	</Toys>
 </Items>

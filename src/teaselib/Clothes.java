@@ -1,5 +1,10 @@
 package teaselib;
 
+import static teaselib.util.Select.items;
+
+import teaselib.util.Items;
+import teaselib.util.Select;
+
 /**
  * Clothes are generalized, which means their names have been chosen not be too specific.
  * 
@@ -104,11 +109,12 @@ public enum Clothes {
      * <p>
      * TODO also classify by {@link teaselib.Sexuality#Gender}
      */
-    enum Category {
+    public enum Category {
         Lingerie,
+        Underwear,
         Sleepwear,
         Swimwear,
-        OuterGarments
+        OuterGarment,
     }
 
     // Namespaces of wearers of the diverse clothing items
@@ -116,23 +122,55 @@ public enum Clothes {
     public static final String Doll = "Doll";
     public static final String Partner = "Partner";
 
-    // Categories
+    public static final Select.Statement all = items(Clothes.values());
 
-    public static final Clothes[] Underwear = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Nightie, Underpants,
-            Pantyhose, Socks, Stockings };
+    /**
+     * Feminine underwear
+     */
+    public static final Select.Statement lingerie = items(Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose,
+            Socks, Stockings, Underpants).where(Items::matching, Category.Lingerie).and(Items::without,
+                    Sexuality.Gender.Masculine);
 
+    /**
+     * Masculine underwear
+     */
+    public static final Select.Statement underwear = items(Underpants, Socks).where(Items::matching, Category.Underwear)
+            .and(Items::without, Sexuality.Gender.Masculine).and(Items::without, Category.Swimwear);
+
+    public static final Select.Statement swimwear = items(Clothes.values()).where(Items::matching, Category.Swimwear);
+
+    public static final Select.Statement sleepwear = items(Clothes.values()).where(Items::matching, Category.Sleepwear);
+
+    public static final Select.Statement female = items(Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
+            Vest, Shoes).where(Items::without, Sexuality.Gender.Masculine);
+
+    public static final Select.Statement male = items(Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
+            Vest, Shoes).where(Items::without, Sexuality.Gender.Feminine);
+
+    @Deprecated // TODO Remove since it's all lingerie
+    public static final Clothes[] Underwear = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks,
+            Stockings, Underpants };
+
+    @Deprecated // TODO Remove since it's all male clothing
     public static final Clothes[] Clothing = { Shirt, Socks, Suit, Sweater, Trousers, TShirt };
 
-    public static final Clothes[] MaleUnderwear = { Underpants, Socks, Pajamas };
+    @Deprecated // TODO Remove
+    public static final Clothes[] MaleUnderwear = { Underpants, Socks };
+    @Deprecated // TODO Remove
     public static final Clothes[] MaleClothing = { Socks, Shirt, TShirt, Sweater, Trousers, Jacket, Suit, Vest, Shoes };
 
-    public static final Clothes[] Lingerie = { Underpants, Garter_Belt, Stockings, Pantyhose, Socks, Body, Bra,
-            Babydoll, Leotard, Catsuit };
-    public static final Clothes[] Sleepwear = { Nightie, Pajamas };
+    @Deprecated // TODO Remove
+    public static final Clothes[] Lingerie = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks,
+            Stockings, Underpants };
+    @Deprecated // TODO Remove
     public static final Clothes[] FemaleClothing = { Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
             Vest, Shoes };
 
-    public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, Lingerie, Sleepwear, FemaleClothing };
+    @Deprecated // TODO Remove
+    public static final Clothes[] Sleepwear = { Nightie, Pajamas };
+
+    @Deprecated // TODO Remove
+    public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, Lingerie, FemaleClothing, Sleepwear };
 
     @Override
     public String toString() {

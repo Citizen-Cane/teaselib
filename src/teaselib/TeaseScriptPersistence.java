@@ -20,6 +20,7 @@ import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
+import teaselib.util.Select;
 import teaselib.util.States;
 
 /**
@@ -191,6 +192,10 @@ public abstract class TeaseScriptPersistence extends Script {
 
     public Items.Query query(Enum<?>... values) {
         return () -> defaultDomain.items(values);
+    }
+
+    public Items.Query select(Select.Statement query) {
+        return query.get(query(query.values));
     }
 
     public States.Query states(Enum<?>... values) {

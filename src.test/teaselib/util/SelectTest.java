@@ -2,9 +2,13 @@ package teaselib.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static teaselib.util.Select.items;
+import static teaselib.util.Select.select;
 
 import org.junit.Test;
 
+import teaselib.Clothes;
+import teaselib.Sexuality;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
@@ -19,7 +23,7 @@ public class SelectTest {
         assertEquals(0, items.get().getAvailable().size());
         assertFalse(items.get().anyAvailable());
 
-        Items.Query itemsQuery = Select.select(items, Items::getAvailable);
+        Items.Query itemsQuery = select(items, Items::getAvailable);
         assertEquals(0, itemsQuery.get().size());
         assertFalse(itemsQuery.get().anyAvailable());
     }
@@ -34,6 +38,23 @@ public class SelectTest {
 
         test.state(Toys.Humbler).apply();
         assertEquals(1, applied.get().size());
+    }
+
+    @Test
+    public void testWhereQuery() {
+        test.addTestUserItems();
+        assertEquals(2, test.items(Clothes.Underpants).matching(Sexuality.Gender.Masculine).size());
+        assertEquals(3, test.items(Clothes.Underpants).matching(Sexuality.Gender.Feminine)
+                .without(Clothes.Category.Swimwear).size());
+
+        Items.Query maleUnderpants = test.select(items(Clothes.Underpants)
+                .where(Items::matching, Sexuality.Gender.Masculine).and(Items::without, Clothes.Category.Swimwear));
+        assertEquals(2, maleUnderpants.get().size());
+
+        Items.Query femaleUnderpants = test.select(items(Clothes.Underpants)
+                .where(Items::matching, Sexuality.Gender.Feminine).and(Items::without, Clothes.Category.Swimwear));
+        assertEquals(3, femaleUnderpants.get().size());
+
     }
 
 }

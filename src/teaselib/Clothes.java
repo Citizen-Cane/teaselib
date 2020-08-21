@@ -36,14 +36,13 @@ public enum Clothes {
     Blouse,
     Dress,
     Jacket,
-    Skirt,
     Shirt,
+    Skirt,
     Shoes,
     Suit,
     Sweater,
     Tanktop,
     Trousers,
-    TShirt,
     Vest,;
 
     public enum UnderpantsType {
@@ -142,22 +141,30 @@ public enum Clothes {
     public static final Select.Statement sleepwear = items(Clothes.values()).where(Items::matching, Category.Sleepwear);
 
     public static final Select.Statement female = items(Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
-            Vest, Shoes).where(Items::without, Sexuality.Gender.Masculine);
+            Vest).where(Items::without, Sexuality.Gender.Masculine);
 
-    public static final Select.Statement male = items(Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
-            Vest, Shoes).where(Items::without, Sexuality.Gender.Feminine);
+    public static final Select.Statement male = items(Shirt, Suit, Sweater, Trousers, Vest).where(Items::without,
+            Sexuality.Gender.Feminine);
+
+    // TODO Move shoes to its own class - they're accessoires as gloves, but also an unique aspect of attire
+
+    public static final Select.Statement shoes(Sexuality.Gender gender) {
+        return items(Shoes).where(Items::matching, gender);
+    }
+
+    // Old style categories - all deprecated
 
     @Deprecated // TODO Remove since it's all lingerie
     public static final Clothes[] Underwear = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks,
             Stockings, Underpants };
 
     @Deprecated // TODO Remove since it's all male clothing
-    public static final Clothes[] Clothing = { Shirt, Socks, Suit, Sweater, Trousers, TShirt };
+    public static final Clothes[] Clothing = { Shirt, Socks, Suit, Sweater, Trousers };
 
     @Deprecated // TODO Remove
     public static final Clothes[] MaleUnderwear = { Underpants, Socks };
     @Deprecated // TODO Remove
-    public static final Clothes[] MaleClothing = { Socks, Shirt, TShirt, Sweater, Trousers, Jacket, Suit, Vest, Shoes };
+    public static final Clothes[] MaleClothing = { Socks, Shirt, Sweater, Trousers, Jacket, Suit, Vest, Shoes };
 
     @Deprecated // TODO Remove
     public static final Clothes[] Lingerie = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks,

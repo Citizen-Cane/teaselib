@@ -458,11 +458,8 @@
 		<Item item="Trousers" guid="sweatpants" displayName="Sweatpants">
 			<Attribute> Clothes.TrouwsersType.Sweatpants </Attribute>
 		</Item>
-		<Item item="Trousers" guid="trouwsers" displayName="Trouwsers">
+		<Item item="Trousers" guid="trousers" displayName="Trousers">
 			<Attribute> Clothes.TrouwsersType.Trousers </Attribute>
-		</Item>
-
-		<Item item="TShirt" guid="tshirt" displayName="T-Shirt">
 		</Item>
 
 		<Item item="Vest" guid="vest" displayName="Vest">

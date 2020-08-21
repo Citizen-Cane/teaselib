@@ -61,7 +61,7 @@ public class Select {
         public final Enum<?>[] values;
         final List<Clause<Items>> clauses;
 
-        private Statement(Enum<?>[] values, List<Clause<Items>> clauses) {
+        Statement(Enum<?>[] values, List<Clause<Items>> clauses) {
             super();
             this.values = values;
             this.clauses = clauses;
@@ -75,7 +75,7 @@ public class Select {
 
         public static class First extends Statement {
 
-            private First(Enum<?>[] values, List<Clause<Items>> clauses) {
+            First(Enum<?>[] values, List<Clause<Items>> clauses) {
                 super(values, clauses);
             }
 
@@ -86,13 +86,7 @@ public class Select {
             }
 
             public Additional where(BiFunction<Items, Enum<?>[], Items> selector, Enum<?>... attributes) {
-                Clause<Items> statement = new Clause<Items>() {
-                    @Override
-                    public Items apply(Items items) {
-                        return selector.apply(items, attributes);
-                    }
-                };
-
+                Clause<Items> statement = items -> selector.apply(items, attributes);
                 List<Clause<Items>> clause = new ArrayList<>(clauses);
                 clause.add(statement);
                 return new Additional(values, clause);
@@ -102,7 +96,7 @@ public class Select {
 
         public static class Additional extends Statement {
 
-            private Additional(Enum<?>[] values, List<Clause<Items>> clauses) {
+            Additional(Enum<?>[] values, List<Clause<Items>> clauses) {
                 super(values, clauses);
             }
 
@@ -113,13 +107,7 @@ public class Select {
             }
 
             public Additional and(BiFunction<Items, Enum<?>[], Items> selector, Enum<?>... attributes) {
-                Clause<Items> statement = new Clause<Items>() {
-                    @Override
-                    public Items apply(Items items) {
-                        return selector.apply(items, attributes);
-                    }
-                };
-
+                Clause<Items> statement = items -> selector.apply(items, attributes);
                 List<Clause<Items>> clause = new ArrayList<>(clauses);
                 clause.add(statement);
                 return new Additional(values, clause);

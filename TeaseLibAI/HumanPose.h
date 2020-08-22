@@ -1,6 +1,7 @@
 #pragma once
 
 #include<memory>
+#include<vector>
 
 #include <NativeObject.h>
 
@@ -12,7 +13,9 @@ public:
     HumanPose(JNIEnv* env, jobject jdevice, jobject jrotation);
     virtual ~HumanPose();
 
-    int estimate();
+    bool acquire();
+    void estimate();
+    const std::vector<aifx::Pose>& results();
 
 private:
     jobject jdevice;
@@ -20,4 +23,5 @@ private:
     aifx::PoseEstimation poseEstimation;
 
     cv::UMat frame;
+    std::vector<aifx::Pose> poses;
 };

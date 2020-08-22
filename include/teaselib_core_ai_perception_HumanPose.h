@@ -25,10 +25,26 @@ JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setInterests
 
 /*
  * Class:     teaselib_core_ai_perception_HumanPose
- * Method:    estimatePose
- * Signature: ()I
+ * Method:    acquire
+ * Signature: ()Z
  */
-JNIEXPORT jint JNICALL Java_teaselib_core_ai_perception_HumanPose_estimatePose
+JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_HumanPose_acquire
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_perception_HumanPose
+ * Method:    estimate
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_estimate
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_perception_HumanPose
+ * Method:    results
+ * Signature: ()Ljava/util/List;
+ */
+JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus

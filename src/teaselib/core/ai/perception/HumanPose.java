@@ -1,5 +1,6 @@
 package teaselib.core.ai.perception;
 
+import java.util.List;
 import java.util.Set;
 
 import teaselib.core.ai.perception.SceneCapture.Rotation;
@@ -56,6 +57,31 @@ public class HumanPose extends NativeObject {
         NotClose
     }
 
+    public static class EstimationResult {
+
+        public final float distance;
+
+        public static class Gaze {
+            final float nod;
+            final float shake;
+            final float tilt;
+
+            public Gaze(float nod, float shake, float tilt) {
+                this.nod = nod;
+                this.shake = shake;
+                this.tilt = tilt;
+            }
+        }
+
+        public final Gaze gaze;
+
+        public EstimationResult(float distance, float x, float y, float z) {
+            this.distance = distance;
+            this.gaze = new Gaze(x, y, z);
+        }
+
+    }
+
     public static final Proximity Face3Face[] = { Proximity.NotAway, Proximity.NotFar, Proximity.FaceToFace,
             Proximity.NotClose };
 
@@ -65,14 +91,19 @@ public class HumanPose extends NativeObject {
 
     private native void setInterests(int aspects);
 
-    private native int estimatePose();
+    private native boolean acquire();
 
-    public int estimate() {
-        if (!device.isStarted()) {
-            device.start();
+    private native void estimate();
+
+    private native List<HumanPose.EstimationResult> results();
+
+    public List<HumanPose.EstimationResult> poses() {
+        if (acquire()) {
+            estimate();
+            return results();
+        } else {
+            throw new SceneCapture.DeviceLost("Camera not started or closed");
         }
-
-        return estimatePose();
     }
 
     @Override

@@ -17,8 +17,18 @@ public class SceneCapture extends NativeObject {
     public enum Rotation {
         None,
         Clockwise,
-        COunterCLockwise,
+        CounterClockwise,
         UpsideDown
+    }
+
+    public static class DeviceLost extends RuntimeException {
+
+        private static final long serialVersionUID = 1L;
+
+        public DeviceLost(String message) {
+            super(message);
+        }
+
     }
 
     SceneCapture(long nativeObject, String name, EnclosureLocation location) {
@@ -35,9 +45,9 @@ public class SceneCapture extends NativeObject {
 
     private static native long init(String openCVImagePattern);
 
-    native void start();
+    public native void start();
 
-    native boolean isStarted();
+    public native boolean isStarted();
 
-    native void stop();
+    public native void stop();
 }

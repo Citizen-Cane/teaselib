@@ -12,7 +12,7 @@ import teaselib.core.DeviceInteractionImplementations;
 import teaselib.core.Script;
 import teaselib.core.ScriptInteraction;
 import teaselib.core.ai.perception.HumanPose.Interests;
-import teaselib.core.ai.perception.HumanPoseDeviceInteraction.Pose;
+import teaselib.core.ai.perception.HumanPoseDeviceInteraction.PoseAspects;
 
 public class HumanPoseScriptInteraction implements ScriptInteraction {
 
@@ -23,7 +23,7 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
                 .get(HumanPoseDeviceInteraction.class);
     }
 
-    public Pose getPose(Interests interests) {
+    public PoseAspects getPose(Interests interests) {
         return deviceInteraction.getPose(interests);
     }
 

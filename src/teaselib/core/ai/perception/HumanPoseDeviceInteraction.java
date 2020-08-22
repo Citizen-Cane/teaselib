@@ -44,26 +44,26 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
 
     private final NamedExecutorService poseEstimation;
     private final PoseEstimationTask task;
-    private Future<Pose> future = null;
+    private Future<PoseAspects> future = null;
     final ScriptRenderer scriptRenderer;
 
     public static class Reaction {
         final Interests aspect;
-        final Consumer<Pose> consumer;
+        final Consumer<PoseAspects> consumer;
 
-        public Reaction(Interests aspect, Consumer<Pose> consumer) {
+        public Reaction(Interests aspect, Consumer<PoseAspects> consumer) {
             this.aspect = aspect;
             this.consumer = consumer;
         }
     }
 
-    public static class Pose {
-        public static final Pose Unavailable = new Pose(Collections.emptySet(), Status.None);
+    public static class PoseAspects {
+        public static final PoseAspects Unavailable = new PoseAspects(Collections.emptySet(), Status.None);
 
         private final Set<Interests> interests;
         private final Set<PoseAspect> aspects;
 
-        Pose(Set<Interests> interests, PoseAspect... aspects) {
+        PoseAspects(Set<Interests> interests, PoseAspect... aspects) {
             this.interests = interests;
             this.aspects = Set.of(aspects);
         }
@@ -102,7 +102,7 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
                 return false;
             if (getClass() != obj.getClass())
                 return false;
-            Pose other = (Pose) obj;
+            PoseAspects other = (PoseAspects) obj;
             if (aspects == null) {
                 if (other.aspects != null)
                     return false;
@@ -133,7 +133,7 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
         poseEstimation.shutdown();
     }
 
-    public Pose getPose(Interests interests) {
+    public PoseAspects getPose(Interests interests) {
         return task.getPose(interests);
     }
 
@@ -145,14 +145,14 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
         return super.definitions(actor);
     }
 
-    static class PoseEstimationTask implements Callable<Pose> {
+    static class PoseEstimationTask implements Callable<PoseAspects> {
         private final TeaseLibAI teaseLibAI;
 
         HumanPoseDeviceInteraction interactions;
 
         Lock awaitPose = new ReentrantLock();
         Condition poseChanged = awaitPose.newCondition();
-        AtomicReference<Pose> pose = new AtomicReference<>(Pose.Unavailable);
+        AtomicReference<PoseAspects> poseAspects = new AtomicReference<>(PoseAspects.Unavailable);
 
         private final UnaryOperator<Float> awarenessHysteresis = Hysteresis.function(0.0f, 1.0f, 0.25f);
 
@@ -161,7 +161,7 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             this.teaseLibAI = new TeaseLibAI();
         }
 
-        public Pose getPose(Interests interests) {
+        public PoseAspects getPose(Interests interests) {
             // TODO set a flag to stop if aspects are a subset of desired aspects.
             // -> use future.get() to complete active estimation
             // restart the task (it's on the same thread) - it's already initialized
@@ -174,12 +174,12 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             // throw ExceptionUtil.asRuntimeException(e);
             // }
 
-            return pose.get();
+            return poseAspects.get();
         }
 
         // TODO replace the apsects with a condition a lä Requires.all(...), Requires.any(...)
         public boolean awaitPose(Interests interests, long duration, TimeUnit unit, PoseAspect... aspects) {
-            Pose result = pose.get();
+            PoseAspects result = poseAspects.get();
 
             if (result.containsAll(interests) && result.is(aspects)) {
                 return true;
@@ -192,7 +192,7 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
                 awaitPose.lockInterruptibly();
                 try {
                     while (poseChanged.await(duration, unit)) {
-                        result = pose.get();
+                        result = poseAspects.get();
                         if (result.is(aspects)) {
                             return true;
                         }
@@ -210,7 +210,7 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
         Rotation deviceRotation;
 
         @Override
-        public Pose call() throws InterruptedException {
+        public PoseAspects call() throws InterruptedException {
             try {
                 while (true) {
                     SceneCapture device = awaitCaptureDevice();
@@ -269,8 +269,8 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
         private void estimate(HumanPose humanPose) throws InterruptedException {
             while (!Thread.interrupted() && deviceRotation == getDeviceRotation(humanPose.device)) {
                 Actor actor = interactions.scriptRenderer.currentActor();
-                pose.updateAndGet(previous -> {
-                    Pose update = get(actor, humanPose);
+                poseAspects.updateAndGet(previous -> {
+                    PoseAspects update = getPoseAspects(actor, humanPose);
                     signal(actor, update, previous);
                     return update;
                 });
@@ -280,34 +280,34 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             }
         }
 
-        private Pose get(Actor actor, HumanPose humanPose) {
+        private PoseAspects getPoseAspects(Actor actor, HumanPose humanPose) {
             // TODO Each interest can have only one handler - cannot just disable listeners (must unregister instead)
             DeviceInteractionImplementation<Interests, Reaction>.Definitions reactions = interactions.defs(actor);
             Set<Interests> interests = reactions.stream().map(Map.Entry<Interests, Reaction>::getValue)
                     .map(e -> e.aspect).collect(toSet());
 
             if (interests.isEmpty()) {
-                return Pose.Unavailable;
+                return PoseAspects.Unavailable;
             } else {
                 humanPose.setInterests(interests);
-                int n = humanPose.estimate();
+                List<HumanPose.EstimationResult> poses = humanPose.poses();
                 if (interests.contains(Interests.Proximity)) {
-                    float y = awarenessHysteresis.apply(n >= 1 ? 1.0f : 0.0f);
+                    float y = awarenessHysteresis.apply(poses.isEmpty() ? 0.0f : 1.0f);
                     PoseAspect[] face2face = { Status.Available, Proximity.FaceToFace, Proximity.Close,
                             Proximity.NotAway, Proximity.NotFar, Proximity.NotNear };
                     PoseAspect[] far = { Status.Available, Proximity.NotFaceToFace, Proximity.NotClose, Proximity.Away,
                             Proximity.Far, Proximity.Near };
-                    return new Pose(interests, y >= 0.5f ? face2face : far);
+                    return new PoseAspects(interests, y >= 0.5f ? face2face : far);
                     // TODO define max-reliable distance for each model to avoid drop-outs in the
                     // distance
                     // TODO measure distance by head/shoulder/hip width
                 } else {
-                    return Pose.Unavailable;
+                    return PoseAspects.Unavailable;
                 }
             }
         }
 
-        private void signal(Actor actor, Pose update, Pose previous) {
+        private void signal(Actor actor, PoseAspects update, PoseAspects previous) {
             if (theSameActor(actor)) {
                 if (!update.equals(previous)) {
                     // TODO When set differs, signal only the changed interests, not all

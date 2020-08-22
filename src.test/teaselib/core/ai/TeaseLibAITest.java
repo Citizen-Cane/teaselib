@@ -2,6 +2,7 @@ package teaselib.core.ai;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 
 import java.io.File;
@@ -38,7 +39,8 @@ public class TeaseLibAITest {
             assumeFalse("No Scene Capture devices found", sceneCaptures.isEmpty());
 
             try (HumanPose humanPose = new HumanPose(sceneCaptures.get(0))) {
-                humanPose.estimate();
+                humanPose.device.start();
+                humanPose.poses();
             }
         }
     }
@@ -53,8 +55,9 @@ public class TeaseLibAITest {
 
         try (SceneCapture scene = new SceneCapture(getOpenCVImageSequence(name, pattern));
                 HumanPose humanPose = new HumanPose(scene)) {
-            int n = humanPose.estimate();
-            assertEquals(2, n);
+            humanPose.device.start();
+            List<HumanPose.EstimationResult> poses = humanPose.poses();
+            assertEquals(2, poses.size());
         }
     }
 
@@ -63,18 +66,28 @@ public class TeaseLibAITest {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             assertNotNull(teaseLibAI.sceneCaptures());
         }
-        String name = "images/hand1_01.jpg";
-        String pattern = "hand1_%02d.jpg";
+        String name = "images/hand1.jpg";
+        String pattern = "hand%01d.jpg";
 
         try (SceneCapture scene = new SceneCapture(getOpenCVImageSequence(name, pattern));
                 HumanPose humanPose1 = new HumanPose(scene);
                 HumanPose humanPose2 = new HumanPose(scene)) {
-            int n1 = humanPose1.estimate();
-            assertEquals(1, n1);
-            int n2 = humanPose2.estimate();
-            assertEquals(1, n2);
-            int n3 = humanPose2.estimate();
-            assertEquals("Expected end of capture stream", SceneCapture.NoImage, n3);
+
+            humanPose1.device.start();
+            List<HumanPose.EstimationResult> poses1 = humanPose1.poses();
+            assertEquals(1, poses1.size());
+            assertEquals("Assertion based on 128x96 model", 0.78f, poses1.get(0).distance, 0.01f);
+
+            List<HumanPose.EstimationResult> poses2 = humanPose2.poses();
+            assertEquals(1, poses2.size());
+            assertEquals("Assertion based on 128x96 model", 0.96, poses2.get(0).distance, 0.1);
+
+            try {
+                humanPose2.poses();
+            } catch (SceneCapture.DeviceLost exception) {
+                return;
+            }
+            fail("Expected device lost since image sequence doesn't contain any more images");
         }
     }
 

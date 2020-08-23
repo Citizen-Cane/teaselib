@@ -44,17 +44,25 @@ public class HumanPose extends NativeObject {
     }
 
     public enum Proximity implements PoseAspect {
-        Away,
-        Far,
-        Near,
-        FaceToFace,
-        Close,
+        AWAY,
+        FAR,
+        NEAR,
+        FACE2FACE,
+        CLOSE,
 
-        NotAway,
-        NotFar,
-        NotNear,
-        NotFaceToFace,
-        NotClose
+        NOTAWAY,
+        NOTFAR,
+        NOTNEAR,
+        NOTFACE2FACE,
+        NOTCLOSE,
+
+        ;
+
+        public static final Proximity[] Away = { AWAY, NOTFAR, NOTNEAR, NOTFACE2FACE, NOTCLOSE };
+        public static final Proximity[] Far = { NOTAWAY, FAR, NOTNEAR, NOTFACE2FACE, NOTCLOSE };
+        public static final Proximity[] Near = { NOTAWAY, NOTFAR, NEAR, NOTFACE2FACE, NOTCLOSE };
+        public static final Proximity[] Face2Face = { NOTAWAY, NOTFAR, NOTNEAR, FACE2FACE, NOTCLOSE };
+        public static final Proximity[] Close = { NOTAWAY, NOTFAR, NOTNEAR, NOTFACE2FACE, CLOSE };
     }
 
     public static class EstimationResult {
@@ -71,6 +79,7 @@ public class HumanPose extends NativeObject {
                 this.shake = shake;
                 this.tilt = tilt;
             }
+
         }
 
         public final Gaze gaze;
@@ -80,10 +89,38 @@ public class HumanPose extends NativeObject {
             this.gaze = new Gaze(x, y, z);
         }
 
-    }
+        public Proximity proximity() {
+            Proximity proximity;
+            if (distance < 0.4f) {
+                proximity = Proximity.CLOSE;
+            } else if (distance < 0.9f) {
+                if (isFace2Face()) {
+                    proximity = Proximity.FACE2FACE;
+                } else {
+                    proximity = Proximity.NEAR;
+                }
+            } else if (distance < 2.0f) {
+                proximity = Proximity.NEAR;
+            } else {
+                proximity = Proximity.FAR;
+            }
+            return proximity;
+        }
 
-    public static final Proximity Face3Face[] = { Proximity.NotAway, Proximity.NotFar, Proximity.FaceToFace,
-            Proximity.NotClose };
+        static final class Limits {
+
+            private Limits() { //
+            }
+
+            static final float NOD = teaselib.util.math.Unit.rad(60.0f);
+            static final float SHAKE = teaselib.util.math.Unit.rad(25.0f);
+        }
+
+        private boolean isFace2Face() {
+            return Math.abs(gaze.nod) < Limits.NOD && Math.abs(gaze.shake) < Limits.SHAKE;
+        }
+
+    }
 
     public void setInterests(Set<Interests> interests) {
         setInterests(interests.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b));

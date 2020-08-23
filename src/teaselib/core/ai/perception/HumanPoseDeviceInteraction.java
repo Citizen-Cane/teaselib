@@ -17,7 +17,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +27,7 @@ import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ScriptRenderer;
 import teaselib.core.ai.TeaseLibAI;
+import teaselib.core.ai.perception.HumanPose.EstimationResult;
 import teaselib.core.ai.perception.HumanPose.Interests;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
 import teaselib.core.ai.perception.HumanPose.Proximity;
@@ -36,7 +36,6 @@ import teaselib.core.ai.perception.HumanPoseDeviceInteraction.Reaction;
 import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
 import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.util.math.Hysteresis;
 
 public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<HumanPose.Interests, Reaction>
         implements Closeable {
@@ -153,8 +152,6 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
         Lock awaitPose = new ReentrantLock();
         Condition poseChanged = awaitPose.newCondition();
         AtomicReference<PoseAspects> poseAspects = new AtomicReference<>(PoseAspects.Unavailable);
-
-        private final UnaryOperator<Float> awarenessHysteresis = Hysteresis.function(0.0f, 1.0f, 0.25f);
 
         PoseEstimationTask(HumanPoseDeviceInteraction interactions) {
             this.interactions = interactions;
@@ -291,16 +288,15 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             } else {
                 humanPose.setInterests(interests);
                 List<HumanPose.EstimationResult> poses = humanPose.poses();
-                if (interests.contains(Interests.Proximity)) {
-                    float y = awarenessHysteresis.apply(poses.isEmpty() ? 0.0f : 1.0f);
-                    PoseAspect[] face2face = { Status.Available, Proximity.FaceToFace, Proximity.Close,
-                            Proximity.NotAway, Proximity.NotFar, Proximity.NotNear };
-                    PoseAspect[] far = { Status.Available, Proximity.NotFaceToFace, Proximity.NotClose, Proximity.Away,
-                            Proximity.Far, Proximity.Near };
-                    return new PoseAspects(interests, y >= 0.5f ? face2face : far);
-                    // TODO define max-reliable distance for each model to avoid drop-outs in the
-                    // distance
-                    // TODO measure distance by head/shoulder/hip width
+                if (poses.isEmpty()) {
+                    return PoseAspects.Unavailable;
+                } else if (interests.contains(Interests.Proximity)) {
+                    EstimationResult pose = poses.get(0);
+                    Proximity proximity = pose.proximity();
+                    PoseAspect[] aspects = { Status.Available, proximity };
+                    return new PoseAspects(interests, aspects);
+
+                    // TODO max-reliable distance for each model to avoid drop-outs in the distance
                 } else {
                     return PoseAspects.Unavailable;
                 }

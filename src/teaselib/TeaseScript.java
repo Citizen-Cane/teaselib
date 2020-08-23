@@ -2,9 +2,6 @@ package teaselib;
 
 import static teaselib.core.ai.perception.HumanPose.Interests.Proximity;
 import static teaselib.core.ai.perception.HumanPose.Interests.Status;
-import static teaselib.core.ai.perception.HumanPose.Proximity.Close;
-import static teaselib.core.ai.perception.HumanPose.Proximity.FaceToFace;
-import static teaselib.core.ai.perception.HumanPose.Proximity.NotFaceToFace;
 import static teaselib.core.ai.perception.HumanPose.Status.Available;
 
 import java.io.IOException;
@@ -25,6 +22,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
+import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
@@ -708,11 +706,12 @@ public abstract class TeaseScript extends TeaseScriptMath {
         completeMandatory();
 
         if (poseEstimation.getPose(Status).is(Available)) {
-
-            BooleanSupplier faceToFace = () -> poseEstimation.getPose(Proximity).is(FaceToFace, Close);
-            ScriptFunction faceToFaceInfinite = poseEstimation.autoConfirm(Proximity, FaceToFace, Close);
-            ScriptFunction notFaceToFace = poseEstimation.autoConfirm(Proximity, 5, TimeUnit.SECONDS, NotFaceToFace);
-            ScriptFunction notFaceToFaceInfinite = poseEstimation.autoConfirm(Proximity, NotFaceToFace);
+            BooleanSupplier faceToFace = () -> poseEstimation.getPose(Proximity).is(HumanPose.Proximity.FACE2FACE);
+            ScriptFunction faceToFaceInfinite = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.FACE2FACE);
+            ScriptFunction notFaceToFace = poseEstimation.autoConfirm(Proximity, 5, TimeUnit.SECONDS,
+                    HumanPose.Proximity.NOTFACE2FACE);
+            ScriptFunction notFaceToFaceInfinite = poseEstimation.autoConfirm(Proximity,
+                    HumanPose.Proximity.NOTFACE2FACE);
 
             append(firstCommand);
             while (true) {

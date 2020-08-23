@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.SceneCapture;
 
 public class TeaseLibAITest {
@@ -77,10 +78,12 @@ public class TeaseLibAITest {
             List<HumanPose.EstimationResult> poses1 = humanPose1.poses();
             assertEquals(1, poses1.size());
             assertEquals("Assertion based on 128x96 model", 0.78f, poses1.get(0).distance, 0.01f);
+            assertEquals(Proximity.FACE2FACE, poses1.get(0).proximity());
 
             List<HumanPose.EstimationResult> poses2 = humanPose2.poses();
             assertEquals(1, poses2.size());
             assertEquals("Assertion based on 128x96 model", 0.96, poses2.get(0).distance, 0.1);
+            assertEquals(Proximity.NEAR, poses2.get(0).proximity());
 
             try {
                 humanPose2.poses();

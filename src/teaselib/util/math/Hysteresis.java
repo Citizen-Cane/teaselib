@@ -1,8 +1,25 @@
 package teaselib.util.math;
 
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public class Hysteresis {
+
+    private Hysteresis() { //
+    }
+
+    public static Function<Boolean, Float> bool(UnaryOperator<Float> hysteresis, float max, float min) {
+        return new Function<Boolean, Float>() {
+
+            UnaryOperator<Float> function = hysteresis;
+
+            @Override
+            public Float apply(Boolean value) {
+                return function.apply(value.booleanValue() ? max : min);
+            }
+
+        };
+    }
 
     public static UnaryOperator<Float> function(float start, float up, float down) {
         return new UnaryOperator<Float>() {

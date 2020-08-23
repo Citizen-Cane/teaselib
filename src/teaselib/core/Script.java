@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -31,6 +33,7 @@ import teaselib.State;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
+import teaselib.core.ai.perception.HumanPoseDeviceInteraction.PoseAspects;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.RenderedMessage.Decorator;
@@ -56,6 +59,7 @@ import teaselib.motiondetection.MotionDetector;
 import teaselib.util.ItemGuid;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
+import teaselib.util.math.Hysteresis;
 
 public abstract class Script {
     private static final Logger logger = LoggerFactory.getLogger(Script.class);
@@ -121,19 +125,25 @@ public abstract class Script {
     protected void defineHumanPoseInteractions(Actor actor) {
         HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
         humanPoseInteraction.definitions(actor).define(HumanPose.Interests.Proximity,
-                new HumanPoseDeviceInteraction.Reaction(HumanPose.Interests.Proximity, pose -> {
+                new HumanPoseDeviceInteraction.Reaction(HumanPose.Interests.Proximity, new Consumer<PoseAspects>() {
 
-                    SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
-                            .get(SpeechRecognitionInputMethod.class);
-                    boolean speechProximity = pose.is(Proximity.FaceToFace);
-                    inputMethod.setFaceToFace(speechProximity);
+                    private final Function<Boolean, Float> awareness = Hysteresis
+                            .bool(Hysteresis.function(0.0f, 1.0f, 0.25f), 1.0f, 0.0f);
 
-                    if (speechProximity) {
-                        scriptRenderer.makeActive();
-                    } else {
-                        scriptRenderer.makeInactive();
+                    @Override
+                    public void accept(PoseAspects pose) {
+
+                        SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
+                                .get(SpeechRecognitionInputMethod.class);
+                        boolean speechProximity = awareness.apply(pose.is(Proximity.FACE2FACE)) > 0.5f;
+                        inputMethod.setFaceToFace(speechProximity);
+                        if (speechProximity) {
+                            scriptRenderer.makeActive();
+                        } else {
+                            scriptRenderer.makeInactive();
+                        }
+
                     }
-
                 }));
     }
 

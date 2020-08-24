@@ -6,6 +6,8 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import org.junit.Test;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.SceneCapture;
+import teaselib.core.ai.perception.SceneCapture.Rotation;
 
 public class TeaseLibAITest {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibAITest.class);
@@ -39,27 +42,39 @@ public class TeaseLibAITest {
             assertNotNull(sceneCaptures);
             assumeFalse("No Scene Capture devices found", sceneCaptures.isEmpty());
 
-            try (HumanPose humanPose = new HumanPose(sceneCaptures.get(0))) {
-                humanPose.device.start();
-                humanPose.poses();
+            try (SceneCapture sceneCapture = sceneCaptures.get(0); HumanPose humanPose = new HumanPose()) {
+                sceneCapture.start();
+                humanPose.poses(sceneCapture, Rotation.None);
             }
         }
     }
 
     @Test
-    public void testAwareness() {
+    public void testCapture() {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             assertNotNull(teaseLibAI.sceneCaptures());
         }
         String name = "images/p2_320x240_01.jpg";
         String pattern = "p2_320x240_%02d.jpg";
 
-        try (SceneCapture scene = new SceneCapture(getOpenCVImageSequence(name, pattern));
-                HumanPose humanPose = new HumanPose(scene)) {
-            humanPose.device.start();
-            List<HumanPose.EstimationResult> poses = humanPose.poses();
+        try (SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern));
+                HumanPose humanPose = new HumanPose()) {
+            sceneCapture.start();
+            List<HumanPose.EstimationResult> poses = humanPose.poses(sceneCapture, Rotation.None);
             assertEquals(2, poses.size());
         }
+    }
+
+    @Test
+    public void testImage() throws IOException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose h = new HumanPose()) {
+            assertEquals(2, h.poses(resource("images/p2_320x240_01.jpg")).size());
+            assertEquals(1, h.poses(resource("images/hand1.jpg")).size());
+        }
+    }
+
+    private InputStream resource(String path) {
+        return getClass().getResourceAsStream(path);
     }
 
     @Test
@@ -70,23 +85,23 @@ public class TeaseLibAITest {
         String name = "images/hand1.jpg";
         String pattern = "hand%01d.jpg";
 
-        try (SceneCapture scene = new SceneCapture(getOpenCVImageSequence(name, pattern));
-                HumanPose humanPose1 = new HumanPose(scene);
-                HumanPose humanPose2 = new HumanPose(scene)) {
+        try (SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern));
+                HumanPose humanPose1 = new HumanPose();
+                HumanPose humanPose2 = new HumanPose()) {
 
-            humanPose1.device.start();
-            List<HumanPose.EstimationResult> poses1 = humanPose1.poses();
+            sceneCapture.start();
+            List<HumanPose.EstimationResult> poses1 = humanPose1.poses(sceneCapture, Rotation.None);
             assertEquals(1, poses1.size());
             assertEquals("Assertion based on 128x96 model", 0.78f, poses1.get(0).distance, 0.01f);
             assertEquals(Proximity.FACE2FACE, poses1.get(0).proximity());
 
-            List<HumanPose.EstimationResult> poses2 = humanPose2.poses();
+            List<HumanPose.EstimationResult> poses2 = humanPose2.poses(sceneCapture, Rotation.None);
             assertEquals(1, poses2.size());
             assertEquals("Assertion based on 128x96 model", 0.96, poses2.get(0).distance, 0.1);
             assertEquals(Proximity.NEAR, poses2.get(0).proximity());
 
             try {
-                humanPose2.poses();
+                humanPose2.poses(sceneCapture, Rotation.None);
             } catch (SceneCapture.DeviceLost exception) {
                 return;
             }

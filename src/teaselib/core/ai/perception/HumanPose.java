@@ -1,5 +1,7 @@
 package teaselib.core.ai.perception;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 
@@ -7,19 +9,12 @@ import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.jni.NativeObject;
 
 public class HumanPose extends NativeObject {
-    public final SceneCapture device;
 
-    public HumanPose(SceneCapture device) {
-        // TODO get device orientation and replace prototype code
-        this(device, null /* SceneCapture.Rotation.None */);
+    public HumanPose() {
+        super(init());
     }
 
-    public HumanPose(SceneCapture device, Rotation rotation) {
-        super(init(device, rotation));
-        this.device = device;
-    }
-
-    private static native long init(SceneCapture device, Rotation rotation);
+    private static native long init();
 
     public interface PoseAspect {
         // Tag interface
@@ -128,14 +123,21 @@ public class HumanPose extends NativeObject {
 
     private native void setInterests(int aspects);
 
-    private native boolean acquire();
+    private native boolean acquire(SceneCapture device, Rotation rotation);
+
+    private native boolean acquireImage(byte[] bytes);
 
     private native void estimate();
 
     private native List<HumanPose.EstimationResult> results();
 
-    public List<HumanPose.EstimationResult> poses() {
-        if (acquire()) {
+    public List<HumanPose.EstimationResult> poses(SceneCapture device) {
+        return poses(device, device.rotation());
+    }
+
+    public List<HumanPose.EstimationResult> poses(SceneCapture device, Rotation rotation) {
+        // TODO test Rotation.None in C++ code instead of setting it to null here
+        if (acquire(device, rotation == Rotation.None ? null : rotation)) {
             estimate();
             return results();
         } else {
@@ -143,12 +145,14 @@ public class HumanPose extends NativeObject {
         }
     }
 
-    @Override
-    public void close() {
-        if (device.isStarted()) {
-            device.stop();
+    public List<HumanPose.EstimationResult> poses(InputStream image) throws IOException {
+        byte[] bytes = image.readAllBytes();
+        if (acquireImage(bytes)) {
+            estimate();
+            return results();
+        } else {
+            throw new SceneCapture.DeviceLost("Camera not started or closed");
         }
-        super.close();
     }
 
 }

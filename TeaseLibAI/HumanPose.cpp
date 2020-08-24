@@ -1,14 +1,19 @@
 #include "pch.h"
 
+#include<algorithm>
 #include<vector>
 
 #include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
 
 #include <JNIObject.h>
 #include <JNIUtilities.h>
 
 #include <teaselib_core_ai_perception_SceneCapture.h>
 #include <teaselib_core_ai_perception_HumanPose.h>
+
+#include <AIfxPoseEstimation.h>
+#include <AIfxVideoCapture.h>
 
 #include <Pose.h>
 
@@ -24,13 +29,12 @@ extern "C"
 	/*
 	 * Class:     teaselib_core_ai_perception_HumanPose
 	 * Method:    init
-	 * Signature: (Lteaselib/core/ai/perception/SceneCapture;)J
+	 * Signature: ()J
 	 */
 	JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_HumanPose_init
-	(JNIEnv* env, jclass, jobject jdevice, jobject jrotation) {
+	(JNIEnv* env, jclass) {
 		try {
-			Objects::requireNonNull(L"device", jdevice);
-			HumanPose* humanPose = new HumanPose(env, jdevice, jrotation);
+			HumanPose* humanPose = new HumanPose(env);
 			return reinterpret_cast<jlong>(humanPose);
 		}
 		catch (NativeException& e) {
@@ -53,22 +57,50 @@ extern "C"
 	}
 
 	/*
- * Class:     teaselib_core_ai_perception_HumanPose
- * Method:    acquire
- * Signature: ()Z
- */
+	 * Class:     teaselib_core_ai_perception_HumanPose
+	 * Method:    acquire
+	 * Signature: (Lteaselib/core/ai/perception/SceneCapture;Lteaselib/core/ai/perception/SceneCapture/Rotation;)Z
+	 */
 	JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_HumanPose_acquire
-	(JNIEnv* env, jobject jthis)
+	(JNIEnv* env, jobject jthis, jobject jdevice, jobject jrotation)
 	{
 		try {
+			Objects::requireNonNull(L"device", jdevice);
+			//Objects::requireNonNull(L"device", jrotation);
+
 			HumanPose* humanPose = static_cast<HumanPose*>(NativeObject::get(env, jthis));
-			return humanPose->acquire();
+			return humanPose->acquire(jdevice, jrotation);
 		}
 		catch (NativeException& e) {
 			JNIException::throwNew(env, e);
+			return false;
 		}
 		catch (JNIException& e) {
 			e.rethrow();
+			return false;
+		}
+	}
+
+	/*
+	 * Class:     teaselib_core_ai_perception_HumanPose
+	 * Method:    acquire
+	 * Signature: ([B)Z
+	 */
+	JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_HumanPose_acquireImage
+	(JNIEnv* env, jobject jthis, jbyteArray jimage) {
+		try {
+			Objects::requireNonNull(L"device", jimage);
+
+			HumanPose* humanPose = static_cast<HumanPose*>(NativeObject::get(env, jthis));
+			return humanPose->acquire(jimage);
+		}
+		catch (NativeException& e) {
+			JNIException::throwNew(env, e);
+			return false;
+		}
+		catch (JNIException& e) {
+			e.rethrow();
+			return false;
 		}
 	}
 
@@ -107,7 +139,6 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 		HumanPose* humanPose = static_cast<HumanPose*>(NativeObject::get(env, jthis));
 		vector<Pose> poses = humanPose->results();
 
-		// TODO build list of HumanPose.Result
 		vector<jobject> results;
 		for_each(poses.begin(), poses.end(), [&env, &results] (const aifx::Pose& pose) {
 			const Point3f gaze = pose.gaze();
@@ -139,25 +170,25 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 }
 
 
-HumanPose::HumanPose(JNIEnv* env, jobject jdevice, jobject jrotation)
+HumanPose::HumanPose(JNIEnv* env)
 	: NativeObject(env)
-	, jdevice(env->NewGlobalRef(jdevice))
-	, capture(reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jdevice)))
-	, poseEstimation(
-		PoseEstimation::Model::MobileNetThin,
-		PoseEstimation::Resolution::Size128x96,
-		TfLiteInterpreter::ComputationMode::GPU_CPU,
-		// TODO update java code to retrieve device orientation from device and evaluate jrotation
-		jrotation != nullptr ? PoseEstimation::Rotation::Clockwise : PoseEstimation::Rotation::None)
-{}
+	, model(PoseEstimation::Model::MobileNetThin)
+	, resolution(PoseEstimation::Resolution::Size128x96)
+	, rotation(PoseEstimation::Rotation::None)
+	{}
 
 HumanPose::~HumanPose()
 {
-	env->DeleteGlobalRef(jdevice);
+	for_each(interpreterMap.begin(), interpreterMap.end(), [](const InterpreterMap::value_type& interpreter) {
+		delete interpreter.second;
+	});
 }
 
-bool HumanPose::acquire()
+bool HumanPose::acquire(jobject jdevice, jobject jrotation)
 {
+	rotation = jrotation != nullptr ? PoseEstimation::Rotation::Clockwise : PoseEstimation::Rotation::None;
+
+	aifx::VideoCapture* capture = reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jdevice));
 	if (capture->started()) {
 		*capture >> frame;
 		return !frame.empty();
@@ -166,14 +197,39 @@ bool HumanPose::acquire()
 	}
 }
 
+bool HumanPose::acquire(jbyteArray jimage)
+{
+	jbyte* image = (jbyte*)env->GetByteArrayElements(jimage, NULL);
+	jsize size = env->GetArrayLength(jimage);
+	Mat data(1, size, CV_8UC1, (void*)image);
+	imdecode(data, IMREAD_COLOR).copyTo(frame);
+	env->ReleaseByteArrayElements(jimage, image, 0);
+	return true;
+}
+
 void HumanPose::estimate()
 {
-	poseEstimation.setInputTensor(frame);
-	poseEstimation.invoke();
+	PoseEstimation* poseEstimation = interpreter();
+	poseEstimation->setInputTensor(frame);
+	poseEstimation->invoke();
 }
 
 const vector<Pose>& HumanPose::results()
 {
-	poses = poseEstimation.results();
+	PoseEstimation* poseEstimation = interpreter();
+	poses = poseEstimation->results();
 	return poses;
+}
+
+aifx::PoseEstimation* HumanPose::interpreter()
+{
+	PoseEstimation* interpreter = interpreterMap[rotation];
+	if (interpreter == nullptr) {
+		interpreterMap[rotation] = interpreter =new PoseEstimation(
+			model,
+			resolution,
+			TfLiteInterpreter::ComputationMode::CPU,
+			rotation);
+	}
+	return interpreter;
 }

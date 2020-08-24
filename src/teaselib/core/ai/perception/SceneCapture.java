@@ -1,5 +1,8 @@
 package teaselib.core.ai.perception;
 
+import java.awt.Dimension;
+import java.awt.Toolkit;
+
 import teaselib.core.jni.NativeObject;
 
 public class SceneCapture extends NativeObject {
@@ -50,4 +53,13 @@ public class SceneCapture extends NativeObject {
     public native boolean isStarted();
 
     public native void stop();
+
+    public Rotation rotation() {
+        // TODO get device orientation and replace prototype with production code
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        boolean portrait = screenSize.width < screenSize.height;
+        // The native code only understands rotation != null and rotates clockwise
+        return portrait ? Rotation.Clockwise : null;
+    }
+
 }

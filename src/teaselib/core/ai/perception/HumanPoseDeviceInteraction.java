@@ -2,8 +2,6 @@ package teaselib.core.ai.perception;
 
 import static java.util.stream.Collectors.toSet;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +32,6 @@ import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPose.Status;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction.Reaction;
 import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
-import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.concurrency.NamedExecutorService;
 
 public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<HumanPose.Interests, Reaction>
@@ -204,8 +201,6 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             }
         }
 
-        Rotation deviceRotation;
-
         @Override
         public PoseAspects call() throws InterruptedException {
             try {
@@ -213,13 +208,12 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
                     SceneCapture device = awaitCaptureDevice();
                     device.start();
                     try {
-                        while (!Thread.interrupted()) {
-                            deviceRotation = getDeviceRotation(device);
-                            try (HumanPose humanPose = new HumanPose(device, deviceRotation);) {
-                                estimate(humanPose);
-                            } catch (Exception e) {
-                                logger.error(e.getMessage(), e);
+                        try (HumanPose humanPose = new HumanPose();) {
+                            while (!Thread.interrupted()) {
+                                estimate(humanPose, device);
                             }
+                        } catch (Exception e) {
+                            logger.error(e.getMessage(), e);
                         }
                     } finally {
                         device.stop();
@@ -229,14 +223,6 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
                 logger.error(e.getMessage(), e);
                 throw e;
             }
-        }
-
-        private Rotation getDeviceRotation(SceneCapture device) {
-            // TODO get device orientation and replace prototype wit production code
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            boolean portrait = screenSize.width < screenSize.height;
-            // THe native code only understsnds rottion != null and rotates clockwise
-            return portrait ? Rotation.Clockwise : null;
         }
 
         private SceneCapture awaitCaptureDevice() throws InterruptedException {
@@ -263,21 +249,19 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             return sceneCaptures.stream().filter(s -> s.location == location).findFirst();
         }
 
-        private void estimate(HumanPose humanPose) throws InterruptedException {
-            while (!Thread.interrupted() && deviceRotation == getDeviceRotation(humanPose.device)) {
-                Actor actor = interactions.scriptRenderer.currentActor();
-                poseAspects.updateAndGet(previous -> {
-                    PoseAspects update = getPoseAspects(actor, humanPose);
-                    signal(actor, update, previous);
-                    return update;
-                });
-                synchronized (this) {
-                    wait(1000);
-                }
+        private void estimate(HumanPose humanPose, SceneCapture device) throws InterruptedException {
+            Actor actor = interactions.scriptRenderer.currentActor();
+            poseAspects.updateAndGet(previous -> {
+                PoseAspects update = getPoseAspects(actor, humanPose, device);
+                signal(actor, update, previous);
+                return update;
+            });
+            synchronized (this) {
+                wait(1000);
             }
         }
 
-        private PoseAspects getPoseAspects(Actor actor, HumanPose humanPose) {
+        private PoseAspects getPoseAspects(Actor actor, HumanPose humanPose, SceneCapture device) {
             // TODO Each interest can have only one handler - cannot just disable listeners (must unregister instead)
             DeviceInteractionImplementation<Interests, Reaction>.Definitions reactions = interactions.defs(actor);
             Set<Interests> interests = reactions.stream().map(Map.Entry<Interests, Reaction>::getValue)
@@ -287,7 +271,7 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
                 return PoseAspects.Unavailable;
             } else {
                 humanPose.setInterests(interests);
-                List<HumanPose.EstimationResult> poses = humanPose.poses();
+                List<HumanPose.EstimationResult> poses = humanPose.poses(device);
                 if (poses.isEmpty()) {
                     return PoseAspects.Unavailable;
                 } else if (interests.contains(Interests.Proximity)) {

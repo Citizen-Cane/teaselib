@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.ai.perception.HumanPose.EstimationResult;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.SceneCapture;
 import teaselib.core.ai.perception.SceneCapture.Rotation;
@@ -68,8 +69,28 @@ public class TeaseLibAITest {
     @Test
     public void testImage() throws IOException {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose h = new HumanPose()) {
-            assertEquals(2, h.poses(resource("images/p2_320x240_01.jpg")).size());
-            assertEquals(1, h.poses(resource("images/hand1.jpg")).size());
+            {
+                List<EstimationResult> poses = h.poses(resource("images/p2_320x240_01.jpg"));
+                assertEquals(2, poses.size());
+                assertEquals(0.25, poses.get(1).head.getX(), 0.01);
+                assertEquals(0.08, poses.get(1).head.getY(), 0.01);
+                assertEquals(0.7, poses.get(0).head.getX(), 0.01);
+                assertEquals(0.08, poses.get(0).head.getY(), 0.01);
+            }
+
+            {
+                List<EstimationResult> poses = h.poses(resource("images/hand1.jpg"));
+                assertEquals(1, poses.size());
+                assertEquals(0.5, poses.get(0).head.getX(), 0.01);
+                assertEquals(0.4, poses.get(0).head.getY(), 0.01);
+            }
+
+            {
+                List<EstimationResult> poses = h.poses(resource("images/hand2.jpg"));
+                assertEquals(1, poses.size());
+                assertEquals(0.57, poses.get(0).head.getX(), 0.01);
+                assertEquals(0.37, poses.get(0).head.getY(), 0.01);
+            }
         }
     }
 

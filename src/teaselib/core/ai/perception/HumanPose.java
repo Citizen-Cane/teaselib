@@ -1,5 +1,6 @@
 package teaselib.core.ai.perception;
 
+import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -62,8 +63,6 @@ public class HumanPose extends NativeObject {
 
     public static class EstimationResult {
 
-        public final float distance;
-
         public static class Gaze {
             final float nod;
             final float shake;
@@ -77,11 +76,14 @@ public class HumanPose extends NativeObject {
 
         }
 
+        public final float distance;
+        public final Point2D head;
         public final Gaze gaze;
 
-        public EstimationResult(float distance, float x, float y, float z) {
+        public EstimationResult(float distance, float x, float y, float s, float t, float u) {
             this.distance = distance;
-            this.gaze = new Gaze(x, y, z);
+            this.head = new Point2D.Float(x, y);
+            this.gaze = new Gaze(s, t, u);
         }
 
         public Proximity proximity() {

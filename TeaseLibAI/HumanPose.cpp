@@ -141,13 +141,16 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 
 		vector<jobject> results;
 		for_each(poses.begin(), poses.end(), [&env, &results] (const aifx::Pose& pose) {
+			const Point2f head = pose.head();
 			const Point3f gaze = pose.gaze();
 			jclass resultClass = JNIClass::getClass(env, "teaselib/core/ai/perception/HumanPose$EstimationResult");
 			if (env->ExceptionCheck()) throw JNIException(env);
 			jobject jpose = env->NewObject(
 				resultClass,
-				JNIClass::getMethodID(env, resultClass, "<init>", "(FFFF)V"),
+				JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
 				pose.distance,
+				head.x,
+				head.y,
 				gaze.x,
 				gaze.y,
 				gaze.z

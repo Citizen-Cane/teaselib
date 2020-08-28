@@ -145,16 +145,40 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 			const Point3f gaze = pose.gaze();
 			jclass resultClass = JNIClass::getClass(env, "teaselib/core/ai/perception/HumanPose$EstimationResult");
 			if (env->ExceptionCheck()) throw JNIException(env);
-			jobject jpose = env->NewObject(
-				resultClass,
-				JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
-				pose.distance,
-				head.x,
-				head.y,
-				gaze.x,
-				gaze.y,
-				gaze.z
-			);
+			jobject jpose;
+			if (isnan(pose.distance)) {
+				jpose = env->NewObject(
+					resultClass,
+					JNIClass::getMethodID(env, resultClass, "<init>", "()V")
+				);
+			} else
+			if (isnan(head.x) || isnan(head.y)) {
+				jpose = env->NewObject(
+					resultClass,
+					JNIClass::getMethodID(env, resultClass, "<init>", "(F)V"),
+					pose.distance
+				);
+			} else
+			if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
+				jpose = env->NewObject(
+					resultClass,
+					JNIClass::getMethodID(env, resultClass, "<init>", "(FFF)V"),
+					pose.distance,
+					head.x,
+					head.y
+				);
+			} else {
+				jpose = env->NewObject(
+					resultClass,
+					JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
+					pose.distance,
+					head.x,
+					head.y,
+					gaze.x,
+					gaze.y,
+					gaze.z
+				);
+			}
 			if (env->ExceptionCheck()) throw JNIException(env);
 
 			results.push_back(jpose);

@@ -4,6 +4,7 @@ import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import teaselib.core.ai.perception.SceneCapture.Rotation;
@@ -64,11 +65,12 @@ public class HumanPose extends NativeObject {
     public static class EstimationResult {
 
         public static class Gaze {
-            final float nod;
-            final float shake;
-            final float tilt;
 
-            public Gaze(float nod, float shake, float tilt) {
+            public final float nod;
+            public final float shake;
+            public final float tilt;
+
+            public Gaze(float x, float y, float nod, float shake, float tilt) {
                 this.nod = nod;
                 this.shake = shake;
                 this.tilt = tilt;
@@ -76,32 +78,60 @@ public class HumanPose extends NativeObject {
 
         }
 
-        public final float distance;
-        public final Point2D head;
-        public final Gaze gaze;
+        public final Optional<Float> distance;
+        public final Optional<Point2D> head;
+        public final Optional<Gaze> gaze;
+
+        public EstimationResult() {
+            this.distance = Optional.empty();
+            this.head = Optional.empty();
+            this.gaze = Optional.empty();
+        }
+
+        public EstimationResult(float distance) {
+            this.distance = Optional.of(distance);
+            this.head = Optional.empty();
+            this.gaze = Optional.empty();
+        }
+
+        public EstimationResult(float distance, float x, float y) {
+            this.distance = Optional.of(distance);
+            this.head = Optional.of(new Point2D.Float(x, y));
+            this.gaze = Optional.empty();
+        }
 
         public EstimationResult(float distance, float x, float y, float s, float t, float u) {
-            this.distance = distance;
-            this.head = new Point2D.Float(x, y);
-            this.gaze = new Gaze(s, t, u);
+            this.distance = Optional.of(distance);
+            this.head = Optional.of(new Point2D.Float(x, y));
+            this.gaze = Optional.of(new Gaze(x, y, s, t, u));
         }
 
         public Proximity proximity() {
-            Proximity proximity;
-            if (distance < 0.4f) {
-                proximity = Proximity.CLOSE;
-            } else if (distance < 0.9f) {
-                if (isFace2Face()) {
-                    proximity = Proximity.FACE2FACE;
-                } else {
+            if (distance.isPresent()) {
+                float z = distance.get();
+                Proximity proximity;
+                if (z < 0.4f) {
+                    proximity = Proximity.CLOSE;
+                } else if (z < 0.9f) {
+                    if (isFace2Face()) {
+                        proximity = Proximity.FACE2FACE;
+                    } else {
+                        proximity = Proximity.NEAR;
+                    }
+                } else if (z < 2.0f) {
                     proximity = Proximity.NEAR;
+                } else {
+                    proximity = Proximity.FAR;
                 }
-            } else if (distance < 2.0f) {
-                proximity = Proximity.NEAR;
+                return proximity;
             } else {
-                proximity = Proximity.FAR;
+                // might be far or near, but always only partial posture
+                // TODO estimate missing distance from previous value and direction,
+                // and return the corresponding proximity value
+                return Proximity.FAR;
+                // Never returns Proximity.Away,
+                // since in this case there wouldn't be any estimation result at all
             }
-            return proximity;
         }
 
         static final class Limits {
@@ -114,7 +144,11 @@ public class HumanPose extends NativeObject {
         }
 
         private boolean isFace2Face() {
-            return Math.abs(gaze.nod) < Limits.NOD && Math.abs(gaze.shake) < Limits.SHAKE;
+            if (gaze.isPresent()) {
+                return Math.abs(gaze.get().nod) < Limits.NOD && Math.abs(gaze.get().shake) < Limits.SHAKE;
+            } else {
+                return false;
+            }
         }
 
     }

@@ -133,7 +133,7 @@ public enum Clothes {
     /**
      * Masculine underwear
      */
-    public static final Select.Statement underwear = items(Underpants, Socks).where(Items::matching, Category.Underwear)
+    public static final Select.Statement underwear = items(Socks, Underpants).where(Items::matching, Category.Underwear)
             .and(Items::without, Sexuality.Gender.Masculine).and(Items::without, Category.Swimwear);
 
     public static final Select.Statement swimwear = items(Clothes.values()).where(Items::matching, Category.Swimwear);

@@ -54,7 +54,26 @@ public class SelectTest {
         Items.Query femaleUnderpants = test.select(items(Clothes.Underpants)
                 .where(Items::matching, Sexuality.Gender.Feminine).and(Items::without, Clothes.Category.Swimwear));
         assertEquals(3, femaleUnderpants.get().size());
+    }
 
+    @Test
+    public void testMultipleQueries() {
+        test.addTestUserItems();
+
+        Select.Statement query1 = items(Clothes.Underpants).where(Items::matching, Sexuality.Gender.Masculine)
+                .and(Items::without, Clothes.Category.Swimwear);
+        assertEquals(2, test.items(query1).size());
+        Items.Query maleUnderpants = test.select(query1);
+        assertEquals(2, maleUnderpants.get().size());
+
+        Select.Statement query2 = items(Clothes.Underpants).where(Items::matching, Sexuality.Gender.Feminine)
+                .and(Items::without, Clothes.Category.Swimwear);
+        assertEquals(3, test.items(query2).size());
+        Items.Query femaleUnderpants = test.select(query2);
+        assertEquals(3, femaleUnderpants.get().size());
+
+        Items.Query pants = test.select(query1, query2);
+        assertEquals(5, pants.get().size());
     }
 
 }

@@ -8,6 +8,8 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
@@ -190,12 +192,28 @@ public abstract class TeaseScriptPersistence extends Script {
         return defaultDomain.items(values);
     }
 
+    public Items items(Select.Statement query) {
+        return select(query).get();
+    }
+
+    public Items items(Select.Statement... queries) {
+        return select(queries).get();
+    }
+
     public Items.Query query(Enum<?>... values) {
         return () -> defaultDomain.items(values);
     }
 
     public Items.Query select(Select.Statement query) {
         return query.get(query(query.values));
+    }
+
+    public Items.Query select(Select.Statement... queries) {
+        return () -> {
+            Function<? super Select.Statement, Items.Query> mapper = query -> query.get(query(query.values));
+            return new Items(Arrays.stream(queries).map(mapper).map(Items.Query::get).flatMap(Items::stream)
+                    .collect(Collectors.toList()));
+        };
     }
 
     public States.Query states(Enum<?>... values) {

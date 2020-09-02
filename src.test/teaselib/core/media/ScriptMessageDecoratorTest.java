@@ -10,7 +10,7 @@ import teaselib.MessagePart;
 public class ScriptMessageDecoratorTest {
 
     @Test
-    public void testScriptMessageDecorator() throws Exception {
+    public void testScriptMessageDecorator() {
         assertEquals(new MessagePart(Type.Delay, "30.0"), ScriptMessageDecorator
                 .accumulateDelay(new MessagePart(Type.Delay, "10"), new MessagePart(Type.Delay, "20.0")));
 

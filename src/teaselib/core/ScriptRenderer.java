@@ -23,7 +23,7 @@ import teaselib.core.debug.CheckPoint;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRendererQueue;
-import teaselib.core.media.MessageRendererQueue;
+import teaselib.core.media.SectionRenderer;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderedMessage;
 import teaselib.core.media.RenderedMessage.Decorator;
@@ -46,7 +46,7 @@ public class ScriptRenderer implements Closeable {
     private final List<Message> prependedMessages = new ArrayList<>();
     private Actor currentActor = null;
 
-    final MessageRendererQueue messageRenderer;
+    final SectionRenderer sectionRenderer;
 
     public final ScriptEvents events;
     final ScriptEventInputMethod scriptEventInputMethod;
@@ -54,10 +54,10 @@ public class ScriptRenderer implements Closeable {
     public final AudioSync audioSync;
 
     ScriptRenderer(TeaseLib teaseLib) {
-        this.messageRenderer = new MessageRendererQueue(teaseLib, new MediaRendererQueue(renderQueue));
+        this.sectionRenderer = new SectionRenderer(teaseLib, new MediaRendererQueue(renderQueue));
         scriptEventInputMethod = new ScriptEventInputMethod(inputMethodExecutor);
         this.events = new ScriptEvents(scriptEventInputMethod);
-        this.audioSync = messageRenderer.textToSpeechPlayer.audioSync;
+        this.audioSync = sectionRenderer.textToSpeechPlayer.audioSync;
     }
 
     public Actor currentActor() {
@@ -69,7 +69,7 @@ public class ScriptRenderer implements Closeable {
         scriptFunctionExecutor.shutdown();
         inputMethodExecutor.shutdown();
         renderQueue.getExecutorService().shutdown();
-        messageRenderer.close();
+        sectionRenderer.close();
     }
 
     void completeStarts() {
@@ -173,7 +173,7 @@ public class ScriptRenderer implements Closeable {
         // TODO render section delay in queue, so it's not part of the paragraph anymore
 
         // Workaround: keep it for now, renderer is started and queued, waited for and ended
-        MediaRenderer say = messageRenderer.say(actor, renderedMessages, resources);
+        MediaRenderer say = sectionRenderer.say(actor, renderedMessages, resources);
         renderMessage(teaseLib, actor, say);
     }
 
@@ -184,7 +184,7 @@ public class ScriptRenderer implements Closeable {
         } else {
             fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.AppendParagraph);
             List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
-            MediaRenderer appended = messageRenderer.append(actor, renderedMessages, resources);
+            MediaRenderer appended = sectionRenderer.append(actor, renderedMessages, resources);
             renderMessage(teaseLib, actor, appended);
         }
     }
@@ -193,7 +193,7 @@ public class ScriptRenderer implements Closeable {
             Decorator[] decorators) {
         fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.ReplaceParagraph);
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
-        MediaRenderer replaced = messageRenderer.replace(actor, renderedMessages, resources);
+        MediaRenderer replaced = sectionRenderer.replace(actor, renderedMessages, resources);
         renderMessage(teaseLib, actor, replaced);
     }
 
@@ -297,13 +297,13 @@ public class ScriptRenderer implements Closeable {
     }
 
     public void makeActive() {
-        Host host = messageRenderer.teaseLib.host;
+        Host host = sectionRenderer.teaseLib.host;
         host.setPlayerDistance(1.0f);
         host.show();
     }
 
     public void makeInactive() {
-        Host host = messageRenderer.teaseLib.host;
+        Host host = sectionRenderer.teaseLib.host;
         host.setPlayerDistance(Float.NaN);
         host.show();
     }

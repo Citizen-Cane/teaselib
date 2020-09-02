@@ -112,7 +112,7 @@ public class HumanPose extends NativeObject {
                 Proximity proximity;
                 if (z < 0.4f) {
                     proximity = Proximity.CLOSE;
-                } else if (z < 1.0f) {
+                } else if (z < 0.9f) {
                     if (isFace2Face()) {
                         proximity = Proximity.FACE2FACE;
                     } else {

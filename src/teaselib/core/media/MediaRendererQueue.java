@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.Replay;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.media.MessageRendererQueue.Batch;
 import teaselib.core.util.ExceptionUtil;
 
 public class MediaRendererQueue {
@@ -221,9 +220,9 @@ public class MediaRendererQueue {
             Future<?> future;
             // TODO Batch renderer facade and ThreadedMediaRenderer have duplicated code -> merge
             // TODO encapsulate this instanceof branches into the referenced classes
-            if (mediaRenderer instanceof Batch.RendererFacade) {
+            if (mediaRenderer instanceof MessageRenderer.RendererFacade) {
                 mediaRenderer.run();
-                future = ((Batch.RendererFacade) mediaRenderer).getTask();
+                future = ((MessageRenderer.RendererFacade) mediaRenderer).getTask();
             } else if (mediaRenderer instanceof MediaRendererThread) {
                 future = new MediaFutureTask<MediaRendererThread>((MediaRendererThread) mediaRenderer,
                         (Future<Void>) executor.submit(mediaRenderer)) {

@@ -254,8 +254,8 @@ public class ScriptMessageDecorator {
         } else if (isGeneratedDelay(currentDelay)) {
             currentDelay = additionalDelay;
         } else {
-            double[] currentDelayValues = RenderMessage.getDelayInterval(currentDelay.value);
-            double[] additionalDelayValues = RenderMessage.getDelayInterval(additionalDelay.value);
+            double[] currentDelayValues = getDelayInterval(currentDelay.value);
+            double[] additionalDelayValues = getDelayInterval(additionalDelay.value);
 
             String newInterval;
             if (currentDelayValues.length == additionalDelayValues.length) {
@@ -284,4 +284,15 @@ public class ScriptMessageDecorator {
     private static boolean isGeneratedDelay(MessagePart delay) {
         return generatedDelays.contains(delay);
     }
+
+    // TODO Utilities -> Interval
+    public static double[] getDelayInterval(String delayInterval) {
+        String[] argv = delayInterval.split(" ");
+        if (argv.length == 1) {
+            return new double[] { Double.parseDouble(delayInterval) };
+        } else {
+            return new double[] { Double.parseDouble(argv[0]), Double.parseDouble(argv[1]) };
+        }
+    }
+
 }

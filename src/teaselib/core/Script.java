@@ -268,7 +268,10 @@ public abstract class Script {
         this.scriptRenderer = scriptRenderer;
         this.namespace = namespace.replace(" ", "_");
 
-        scriptRenderer.messageRenderer.textToSpeechPlayer.acquireVoice(actor, resources);
+        Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech();
+        if (textToSpeech.isPresent()) {
+            textToSpeech.get().acquireVoice(actor, resources);
+        }
     }
 
     public <T extends Script> T script(Class<T> scriptClass) {
@@ -334,8 +337,12 @@ public abstract class Script {
         }
     }
 
+    private Optional<TextToSpeechPlayer> getTextToSpeech() {
+        return Optional.ofNullable(scriptRenderer.sectionRenderer.textToSpeechPlayer);
+    }
+
     private Optional<TextToSpeechPlayer> getTextToSpeech(boolean useTTS) {
-        return useTTS ? Optional.of(scriptRenderer.messageRenderer.textToSpeechPlayer) : Optional.empty();
+        return useTTS ? getTextToSpeech() : Optional.empty();
     }
 
     Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {
@@ -344,13 +351,11 @@ public abstract class Script {
     }
 
     protected void appendMessage(Message message) {
-        scriptRenderer.appendMessage(teaseLib, resources, actor, message,
-                decorators(Optional.of(scriptRenderer.messageRenderer.textToSpeechPlayer)));
+        scriptRenderer.appendMessage(teaseLib, resources, actor, message, decorators(getTextToSpeech()));
     }
 
     protected void replaceMessage(Message message) {
-        scriptRenderer.replaceMessage(teaseLib, resources, actor, message,
-                decorators(Optional.of(scriptRenderer.messageRenderer.textToSpeechPlayer)));
+        scriptRenderer.replaceMessage(teaseLib, resources, actor, message, decorators(getTextToSpeech()));
     }
 
     protected final Answer showChoices(List<Answer> answers) {

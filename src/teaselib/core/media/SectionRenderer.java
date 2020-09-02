@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -23,10 +22,8 @@ import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
 import teaselib.Mood;
-import teaselib.Replay;
 import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
-import teaselib.core.AbstractMessage;
 import teaselib.core.Closeable;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
@@ -38,8 +35,8 @@ import teaselib.core.util.PrefetchImage;
 import teaselib.core.util.Prefetcher;
 import teaselib.util.AnnotatedImage;
 
-public class MessageRendererQueue implements Closeable {
-    static final Logger logger = LoggerFactory.getLogger(MessageRendererQueue.class);
+public class SectionRenderer implements Closeable {
+    static final Logger logger = LoggerFactory.getLogger(SectionRenderer.class);
 
     private static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(Arrays.asList(Message.Type.Text,
             Message.Type.Image, Message.Type.Mood, Message.Type.Speech, Message.Type.Delay));
@@ -60,7 +57,7 @@ public class MessageRendererQueue implements Closeable {
     private MediaRenderer.Threaded currentRenderer = null;
     private RenderSound backgroundSoundRenderer = null;
 
-    public MessageRendererQueue(TeaseLib teaseLib, MediaRendererQueue renderQueue) {
+    public SectionRenderer(TeaseLib teaseLib, MediaRendererQueue renderQueue) {
         this.teaseLib = teaseLib;
         this.renderQueue = renderQueue;
         this.imageFetcher = new Prefetcher<>(renderQueue.getExecutorService());
@@ -85,11 +82,11 @@ public class MessageRendererQueue implements Closeable {
         return createBatch(actor, messages, replace, resources);
     }
 
-    Batch current = null;
+    MessageRenderer current = null;
 
     public MediaRenderer.Threaded createBatch(Actor actor, List<RenderedMessage> messages,
-            BinaryOperator<Batch> operator, ResourceLoader resources) {
-        Batch next = new Batch(actor, messages, operator, resources) {
+            BinaryOperator<MessageRenderer> operator, ResourceLoader resources) {
+        MessageRenderer next = new MessageRenderer(actor, messages, operator, resources) {
             @Override
             public void run() {
                 current = applyOperator();
@@ -97,7 +94,7 @@ public class MessageRendererQueue implements Closeable {
                 submitTask();
             }
 
-            private Batch applyOperator() {
+            private MessageRenderer applyOperator() {
                 return current == null ? this : this.operator.apply(current, this);
             }
 
@@ -119,7 +116,7 @@ public class MessageRendererQueue implements Closeable {
             private void submitTask() {
                 Future<Void> future = executor.submit(() -> {
                     try {
-                        MessageRendererQueue.this.run(current);
+                        SectionRenderer.this.run(current);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw new ScriptInterruptedException(e);
@@ -146,8 +143,8 @@ public class MessageRendererQueue implements Closeable {
         return next.renderer;
     }
 
-    private void prefetchImages(Batch batch) {
-        prefetchImages(batch.messages, batch.resources);
+    private void prefetchImages(MessageRenderer messageRenderer) {
+        prefetchImages(messageRenderer.messages, messageRenderer.resources);
     }
 
     private void prefetchImages(List<RenderedMessage> messages, ResourceLoader resources) {
@@ -168,11 +165,11 @@ public class MessageRendererQueue implements Closeable {
         imageFetcher.fetch();
     }
 
-    static BinaryOperator<Batch> say = (batch, next) -> {
+    static BinaryOperator<MessageRenderer> say = (batch, next) -> {
         return next;
     };
 
-    static BinaryOperator<Batch> append = (batch, next) -> {
+    static BinaryOperator<MessageRenderer> append = (batch, next) -> {
         List<RenderedMessage> current = batch.messages;
 
         next.accumulatedText = new MessageTextAccumulator();
@@ -185,7 +182,7 @@ public class MessageRendererQueue implements Closeable {
         return next;
     };
 
-    static BinaryOperator<Batch> replace = (batch, next) -> {
+    static BinaryOperator<MessageRenderer> replace = (batch, next) -> {
         // return batch.removeLastMessageAndRebuildAccumulatedText().addAndUpdateLastSection(next.messages);
 
         List<RenderedMessage> current = new ArrayList<>(batch.messages);
@@ -201,165 +198,20 @@ public class MessageRendererQueue implements Closeable {
         return next;
     };
 
-    public abstract static class Batch implements Runnable {
-        final Actor actor;
-        final List<RenderedMessage> messages;
-        final ResourceLoader resources;
-        final BinaryOperator<Batch> operator;
-
-        Future<Void> thisTask = null;
-        RendererFacade renderer = new RendererFacade();
-        Replay.Position position = Replay.Position.FromCurrentPosition;
-        MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
-
-        int currentMessage = 0;
-        String displayImage = null;
-        AbstractMessage lastSection;
-
-        public Batch(Actor actor, List<RenderedMessage> messages, BinaryOperator<Batch> operator,
-                ResourceLoader resources) {
-            this.actor = actor;
-            this.resources = resources;
-            this.messages = messages;
-            this.operator = operator;
-
-            this.lastSection = RenderedMessage.getLastSection(getLastMessage());
-        }
-
-        private RenderedMessage getLastMessage() {
-            return getLastMessage(this.messages);
-        }
-
-        private static RenderedMessage getLastMessage(List<RenderedMessage> messages) {
-            return messages.get(messages.size() - 1);
-        }
-
-        RenderedMessage getMandatory() {
-            return RenderedMessage.getLastSection(getLastMessage());
-        }
-
-        RenderedMessage getEnd() {
-            return stripAudio(RenderedMessage.getLastSection(getLastMessage()));
-        }
-
-        private static RenderedMessage stripAudio(AbstractMessage message) {
-            return message.stream().filter(part -> !SoundTypes.contains(part.type))
-                    .collect(RenderedMessage.collector());
-        }
-
-        // TODO Contains duplicated code from ThreadedMediaRenderer
-        class RendererFacade implements MediaRenderer.Threaded {
-            final CountDownLatch completedStart = new CountDownLatch(1);
-            final CountDownLatch completedMandatory = new CountDownLatch(1);;
-            final CountDownLatch completedAll = new CountDownLatch(1);;
-
-            private long startMillis = 0;
-
-            @Override
-            public void run() {
-                startMillis = System.currentTimeMillis();
-                Batch.this.run();
-            }
-
-            @Override
-            public void completeStart() {
-                try {
-                    // TODO Blocks in PCM tests because the message renderer task is cancelled,
-                    // before startCompleted is reached - executor is idle
-                    completedStart.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new ScriptInterruptedException(e);
-                }
-            }
-
-            @Override
-            public void completeMandatory() {
-                try {
-                    completedMandatory.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new ScriptInterruptedException(e);
-                }
-            }
-
-            @Override
-            public void completeAll() {
-                try {
-                    completedAll.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new ScriptInterruptedException(e);
-                }
-            }
-
-            protected final void startCompleted() {
-                completedStart.countDown();
-                if (logger.isDebugEnabled()) {
-                    logger.debug(getClass().getSimpleName() + " completed start after "
-                            + String.format("%.2f seconds", getElapsedSeconds()));
-                }
-            }
-
-            protected final void mandatoryCompleted() {
-                completedMandatory.countDown();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("{} completed mandatory after {}", getClass().getSimpleName(),
-                            String.format("%.2f seconds", getElapsedSeconds()));
-                }
-            }
-
-            protected final void allCompleted() {
-                completedAll.countDown();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("{} completed all after {}", getClass().getSimpleName(), getElapsedSecondsFormatted());
-                }
-            }
-
-            @Override
-            public boolean hasCompletedStart() {
-                return completedStart.getCount() == 0;
-            }
-
-            @Override
-            public boolean hasCompletedMandatory() {
-                return completedMandatory.getCount() == 0;
-            }
-
-            @Override
-            public boolean hasCompletedAll() {
-                return completedAll.getCount() == 0;
-            }
-
-            public String getElapsedSecondsFormatted() {
-                return String.format("%.2f", getElapsedSeconds());
-            }
-
-            private double getElapsedSeconds() {
-                return (System.currentTimeMillis() - startMillis) / 1000.0;
-            }
-
-            public Future<Void> getTask() {
-                return Batch.this.thisTask;
-            }
-        }
-
-    }
-
-    public void run(Batch batch) throws InterruptedException, IOException {
+    public void run(MessageRenderer messageRenderer) throws InterruptedException, IOException {
         try {
             // TOOO Avoid locks caused by interrupting before start
-            batch.renderer.startCompleted();
+            messageRenderer.renderer.startCompleted();
 
-            boolean emptyMessage = batch.messages.get(0).isEmpty();
+            boolean emptyMessage = messageRenderer.messages.get(0).isEmpty();
             if (emptyMessage) {
-                show(batch.actor, null, Mood.Neutral, batch.displayImage);
-                batch.renderer.startCompleted();
+                show(messageRenderer.actor, null, Mood.Neutral, messageRenderer.displayImage);
+                messageRenderer.renderer.startCompleted();
             } else {
-                play(batch);
+                play(messageRenderer);
             }
-            finalizeRendering(batch);
-            batch.renderer.allCompleted();
+            finalizeRendering(messageRenderer);
+            messageRenderer.renderer.allCompleted();
         } catch (InterruptedException | ScriptInterruptedException e) {
             if (currentRenderer != null) {
                 renderQueue.interrupt(currentRenderer);
@@ -371,65 +223,65 @@ public class MessageRendererQueue implements Closeable {
             }
             throw e;
         } finally {
-            batch.renderer.startCompleted();
-            batch.renderer.mandatoryCompleted();
-            batch.renderer.allCompleted();
+            messageRenderer.renderer.startCompleted();
+            messageRenderer.renderer.mandatoryCompleted();
+            messageRenderer.renderer.allCompleted();
         }
     }
 
-    private void play(Batch batch) throws IOException, InterruptedException {
+    private void play(MessageRenderer messageRenderer) throws IOException, InterruptedException {
         // TODO Move to batch and return the runnable to render
 
-        if (batch.position == Position.FromStart) {
-            batch.accumulatedText = new MessageTextAccumulator();
-            batch.currentMessage = 0;
-            renderMessages(batch);
-        } else if (batch.position == Position.FromCurrentPosition) {
+        if (messageRenderer.position == Position.FromStart) {
+            messageRenderer.accumulatedText = new MessageTextAccumulator();
+            messageRenderer.currentMessage = 0;
+            renderMessages(messageRenderer);
+        } else if (messageRenderer.position == Position.FromCurrentPosition) {
             Replayable replay;
-            if (batch.currentMessage < batch.messages.size()) {
-                replay = () -> renderMessages(batch);
+            if (messageRenderer.currentMessage < messageRenderer.messages.size()) {
+                replay = () -> renderMessages(messageRenderer);
             } else {
-                replay = () -> renderMessage(batch, batch.getEnd());
+                replay = () -> renderMessage(messageRenderer, messageRenderer.getEnd());
             }
             replay.run();
-        } else if (batch.position == Position.FromMandatory) {
+        } else if (messageRenderer.position == Position.FromMandatory) {
             // TODO remember accumulated text so that all but the last section
             // is displayed, rendered, but the text not added again
             // TODO Remove all but last speech and delay parts
-            renderMessage(batch, batch.getMandatory());
-        } else if (batch.position == Position.End) {
-            renderMessage(batch, batch.getEnd());
+            renderMessage(messageRenderer, messageRenderer.getMandatory());
+        } else if (messageRenderer.position == Position.End) {
+            renderMessage(messageRenderer, messageRenderer.getEnd());
         } else {
-            throw new IllegalStateException(batch.position.toString());
+            throw new IllegalStateException(messageRenderer.position.toString());
         }
     }
 
-    private void renderMessages(Batch batch) throws IOException, InterruptedException {
-        while (haveMoreMessages(batch)) {
-            RenderedMessage message = batch.messages.get(batch.currentMessage);
-            renderMessage(batch, message);
-            batch.currentMessage++;
+    private void renderMessages(MessageRenderer messageRenderer) throws IOException, InterruptedException {
+        while (haveMoreMessages(messageRenderer)) {
+            RenderedMessage message = messageRenderer.messages.get(messageRenderer.currentMessage);
+            renderMessage(messageRenderer, message);
+            messageRenderer.currentMessage++;
 
-            boolean last = batch.currentMessage == batch.messages.size();
+            boolean last = messageRenderer.currentMessage == messageRenderer.messages.size();
             if (!last && textToSpeechPlayer != null && !lastSectionHasDelay(message)) {
                 renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
             }
         }
     }
 
-    private boolean haveMoreMessages(Batch batch) {
-        return batch.currentMessage < batch.messages.size();
+    private boolean haveMoreMessages(MessageRenderer messageRenderer) {
+        return messageRenderer.currentMessage < messageRenderer.messages.size();
     }
 
     private static boolean lastSectionHasDelay(RenderedMessage message) {
         return message.getLastSection().contains(Type.Delay);
     }
 
-    protected void finalizeRendering(Batch batch) {
-        batch.renderer.mandatoryCompleted();
+    protected void finalizeRendering(MessageRenderer messageRenderer) {
+        messageRenderer.renderer.mandatoryCompleted();
         completeSectionAll();
 
-        if (executor.getQueue().isEmpty() && getTextToSpeech().isPresent() && !batch.lastSection.contains(Type.Delay)) {
+        if (executor.getQueue().isEmpty() && getTextToSpeech().isPresent() && !messageRenderer.lastSection.contains(Type.Delay)) {
             renderTimeSpannedPart(delay(DELAY_AT_END_OF_MESSAGE));
             completeSectionMandatory();
             completeSectionAll();
@@ -442,7 +294,7 @@ public class MessageRendererQueue implements Closeable {
      * @throws IOException
      * @throws InterruptedException
      */
-    private void renderMessage(Batch batch, RenderedMessage message) throws IOException, InterruptedException {
+    private void renderMessage(MessageRenderer messageRenderer, RenderedMessage message) throws IOException, InterruptedException {
         String mood = Mood.Neutral;
         for (Iterator<MessagePart> it = message.iterator(); it.hasNext();) {
             MessagePart part = it.next();
@@ -455,16 +307,16 @@ public class MessageRendererQueue implements Closeable {
             if (part.type == Message.Type.Mood) {
                 mood = part.value;
             } else {
-                renderPart(part, batch, mood);
+                renderPart(part, messageRenderer, mood);
             }
 
             completeSectionAll();
             if (part.type == Message.Type.Text) {
-                show(batch.actor, part.value, batch.accumulatedText, mood, batch.displayImage);
-                batch.renderer.startCompleted();
+                show(messageRenderer.actor, part.value, messageRenderer.accumulatedText, mood, messageRenderer.displayImage);
+                messageRenderer.renderer.startCompleted();
             } else if (lastPart && definesPageLayout(part)) {
-                show(batch.actor, batch.accumulatedText.toString(), batch.displayImage);
-                batch.renderer.startCompleted();
+                show(messageRenderer.actor, messageRenderer.accumulatedText.toString(), messageRenderer.displayImage);
+                messageRenderer.renderer.startCompleted();
             }
 
             if (Thread.currentThread().isInterrupted()) {
@@ -477,33 +329,33 @@ public class MessageRendererQueue implements Closeable {
         return part.type == Type.Image || part.type == Type.Text;
     }
 
-    private void renderPart(MessagePart part, Batch batch, String mood) throws IOException, InterruptedException {
+    private void renderPart(MessagePart part, MessageRenderer messageRenderer, String mood) throws IOException, InterruptedException {
         if (part.type == Message.Type.Image) {
-            batch.displayImage = part.value;
+            messageRenderer.displayImage = part.value;
         } else if (part.type == Message.Type.BackgroundSound) {
-            playSoundAsynchronous(part, batch.resources);
+            playSoundAsynchronous(part, messageRenderer.resources);
             // use awaitSoundCompletion keyword to wait for background sound completion
         } else if (part.type == Message.Type.Sound) {
-            playSound(part, batch.resources);
+            playSound(part, messageRenderer.resources);
         } else if (part.type == Message.Type.Speech) {
-            playSpeech(batch.actor, part, mood, batch.resources);
+            playSpeech(messageRenderer.actor, part, mood, messageRenderer.resources);
         } else if (part.type == Message.Type.DesktopItem) {
             if (isInstructionalImageOutputEnabled()) {
                 try {
-                    showDesktopItem(part, batch.resources);
+                    showDesktopItem(part, messageRenderer.resources);
                 } catch (IOException e) {
-                    showDesktopItemError(batch, batch.accumulatedText, mood, e);
+                    showDesktopItemError(messageRenderer, messageRenderer.accumulatedText, mood, e);
                     throw e;
                 }
             }
         } else if (part.type == Message.Type.Keyword) {
-            doKeyword(batch, part);
+            doKeyword(messageRenderer, part);
         } else if (part.type == Message.Type.Delay) {
             doDelay(part);
         } else if (part.type == Message.Type.Item) {
-            batch.accumulatedText.add(part);
+            messageRenderer.accumulatedText.add(part);
         } else if (part.type == Message.Type.Text) {
-            batch.accumulatedText.add(part);
+            messageRenderer.accumulatedText.add(part);
         } else {
             throw new UnsupportedOperationException(part.type + "=" + part.value);
         }
@@ -523,12 +375,12 @@ public class MessageRendererQueue implements Closeable {
         renderQueue.submit(renderDesktopItem);
     }
 
-    private void showDesktopItemError(Batch batch, MessageTextAccumulator accumulatedText, String mood, IOException e)
+    private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText, String mood, IOException e)
             throws IOException, InterruptedException {
         accumulatedText.add(new MessagePart(Message.Type.Text, e.getMessage()));
         completeSectionAll();
-        show(batch.actor, accumulatedText.toString(), mood, batch.displayImage);
-        batch.renderer.startCompleted();
+        show(messageRenderer.actor, accumulatedText.toString(), mood, messageRenderer.displayImage);
+        messageRenderer.renderer.startCompleted();
     }
 
     private void playSpeech(Actor actor, MessagePart part, String mood, ResourceLoader resources) throws IOException {
@@ -634,7 +486,7 @@ public class MessageRendererQueue implements Closeable {
         ExceptionUtil.handleIOException(e, teaseLib.config, logger);
     }
 
-    private void doKeyword(Batch batch, MessagePart part) {
+    private void doKeyword(MessageRenderer messageRenderer, MessagePart part) {
         String keyword = part.value;
         if (keyword == Message.ActorImage) {
             throw new IllegalStateException(keyword + " must be resolved in pre-parse");
@@ -642,7 +494,7 @@ public class MessageRendererQueue implements Closeable {
             throw new IllegalStateException(keyword + " must be resolved in pre-parse");
         } else if (keyword == Message.ShowChoices) {
             completeSectionMandatory();
-            batch.renderer.mandatoryCompleted();
+            messageRenderer.renderer.mandatoryCompleted();
         } else if (keyword == Message.AwaitSoundCompletion) {
             if (backgroundSoundRenderer != null) {
                 backgroundSoundRenderer.completeAll();

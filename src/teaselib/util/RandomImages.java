@@ -62,4 +62,10 @@ public class RandomImages implements Images {
     @Override
     public void hint(String... hint) { // None
     }
+
+    @Override
+    public AnnotatedImage annotated(String resource, byte[] image) {
+        return new AnnotatedImage(resource, image);
+    }
+
 }

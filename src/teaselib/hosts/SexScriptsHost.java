@@ -65,6 +65,7 @@ import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.PropertyNameMappingPersistence;
+import teaselib.util.AnnotatedImage;
 import teaselib.util.Interval;
 
 /**
@@ -517,10 +518,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     BufferedImage currentBackgroundImage = null;
 
     @Override
-    public void show(byte[] imageBytes, String text) {
-        if (imageBytes != null) {
+    public void show(AnnotatedImage actorImage, String text) {
+        if (actorImage != null) {
             try {
-                currentImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
+                currentImage = ImageIO.read(new ByteArrayInputStream(actorImage.bytes));
             } catch (IOException e) {
                 currentImage = null;
                 logger.error(e.getMessage(), e);

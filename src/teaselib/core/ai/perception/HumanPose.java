@@ -62,7 +62,7 @@ public class HumanPose extends NativeObject {
         public static final Proximity[] Close = { NOTAWAY, NOTFAR, NOTNEAR, NOTFACE2FACE, CLOSE };
     }
 
-    public static class EstimationResult {
+    public static class Estimation {
 
         public static class Gaze {
 
@@ -82,25 +82,25 @@ public class HumanPose extends NativeObject {
         public final Optional<Point2D> head;
         public final Optional<Gaze> gaze;
 
-        public EstimationResult() {
+        public Estimation() {
             this.distance = Optional.empty();
             this.head = Optional.empty();
             this.gaze = Optional.empty();
         }
 
-        public EstimationResult(float distance) {
+        public Estimation(float distance) {
             this.distance = Optional.of(distance);
             this.head = Optional.empty();
             this.gaze = Optional.empty();
         }
 
-        public EstimationResult(float distance, float x, float y) {
+        public Estimation(float distance, float x, float y) {
             this.distance = Optional.of(distance);
             this.head = Optional.of(new Point2D.Float(x, y));
             this.gaze = Optional.empty();
         }
 
-        public EstimationResult(float distance, float x, float y, float s, float t, float u) {
+        public Estimation(float distance, float x, float y, float s, float t, float u) {
             this.distance = Optional.of(distance);
             this.head = Optional.of(new Point2D.Float(x, y));
             this.gaze = Optional.of(new Gaze(x, y, s, t, u));
@@ -112,7 +112,7 @@ public class HumanPose extends NativeObject {
                 Proximity proximity;
                 if (z < 0.4f) {
                     proximity = Proximity.CLOSE;
-                } else if (z < 0.9f) {
+                } else if (z < 1.0f) {
                     if (isFace2Face()) {
                         proximity = Proximity.FACE2FACE;
                     } else {
@@ -165,13 +165,13 @@ public class HumanPose extends NativeObject {
 
     private native void estimate();
 
-    private native List<HumanPose.EstimationResult> results();
+    private native List<HumanPose.Estimation> results();
 
-    public List<HumanPose.EstimationResult> poses(SceneCapture device) {
+    public List<HumanPose.Estimation> poses(SceneCapture device) {
         return poses(device, device.rotation());
     }
 
-    public List<HumanPose.EstimationResult> poses(SceneCapture device, Rotation rotation) {
+    public List<HumanPose.Estimation> poses(SceneCapture device, Rotation rotation) {
         // TODO test Rotation.None in C++ code instead of setting it to null here
         if (acquire(device, rotation == Rotation.None ? null : rotation)) {
             estimate();
@@ -181,7 +181,7 @@ public class HumanPose extends NativeObject {
         }
     }
 
-    public List<HumanPose.EstimationResult> poses(InputStream image) throws IOException {
+    public List<HumanPose.Estimation> poses(InputStream image) throws IOException {
         byte[] bytes = image.readAllBytes();
         if (acquireImage(bytes)) {
             estimate();

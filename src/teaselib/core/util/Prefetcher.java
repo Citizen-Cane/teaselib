@@ -29,7 +29,9 @@ public class Prefetcher<T> {
     }
 
     public boolean isEmpty() {
-        return resources.isEmpty();
+        synchronized (this) {
+            return resources.isEmpty();
+        }
     }
 
     public void fetch() {

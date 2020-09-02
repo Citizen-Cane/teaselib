@@ -42,6 +42,7 @@ public class SceneBasedImages implements teaselib.Images {
 
         this.script = script;
         this.resources = resources;
+
         if (resources.isEmpty()) {
             this.pictureSets = Collections.emptyMap();
         } else {
@@ -214,6 +215,11 @@ public class SceneBasedImages implements teaselib.Images {
             return images.stream().map(s -> s.substring(key.length() + 1)).collect(toList()).toString();
         }
 
+    }
+
+    @Override
+    public AnnotatedImage annotated(String resource, byte[] image) {
+        return new AnnotatedImage(resource, image, null);
     }
 
 }

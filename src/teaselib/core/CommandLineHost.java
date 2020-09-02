@@ -14,6 +14,7 @@ import teaselib.core.VideoRenderer.Type;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.FileUtilities;
+import teaselib.util.AnnotatedImage;
 
 public class CommandLineHost implements Host {
     static final Point javacvDebugWindow = new Point(80, 80);
@@ -39,7 +40,7 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public void show(byte[] imageBytes, String text) {
+    public void show(AnnotatedImage actorImage, String text) {
         // Ignore
     }
 

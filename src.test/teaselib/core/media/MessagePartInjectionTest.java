@@ -20,10 +20,10 @@ import teaselib.core.configuration.Setup;
 import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugStorage;
 import teaselib.test.TestScript;
+import teaselib.util.AnnotatedImage;
 import teaselib.util.RandomImages;
 
 public class MessagePartInjectionTest {
-    // DebugStorage storage = new DebugStorage();
 
     private final class DecoratingTestScript extends TestScript {
 
@@ -75,6 +75,12 @@ public class MessagePartInjectionTest {
         public boolean contains(String resource) {
             return resourcePath.equals(resource);
         }
+
+        @Override
+        public AnnotatedImage annotated(String resource, byte[] image) {
+            throw new UnsupportedOperationException();
+        }
+
     }
 
     static final Actor DummyActor = null;

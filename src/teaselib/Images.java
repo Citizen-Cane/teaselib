@@ -3,6 +3,8 @@ package teaselib;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import teaselib.util.AnnotatedImage;
+
 /**
  * Interface for iterating over a set of images. Frees script writers from having to think what image to use next.
  * Primary use is for displaying images of the dominant, where the exact image doesn't matter. However there may maybe
@@ -36,6 +38,11 @@ public interface Images extends Iterator<String> {
         }
 
         @Override
+        public AnnotatedImage annotated(String resource, byte[] image) {
+            return AnnotatedImage.NoImage;
+        }
+
+        @Override
         public String toString() {
             return "[]";
         }
@@ -51,4 +58,7 @@ public interface Images extends Iterator<String> {
      * @param hint
      */
     void hint(String... hint);
+
+    AnnotatedImage annotated(String resource, byte[] image);
+
 }

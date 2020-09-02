@@ -36,6 +36,7 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.PrefetchImage;
 import teaselib.core.util.Prefetcher;
+import teaselib.util.AnnotatedImage;
 
 public class MessageRendererQueue implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(MessageRendererQueue.class);
@@ -159,7 +160,7 @@ public class MessageRendererQueue implements Closeable {
         for (MessagePart part : message) {
             if (part.type == Message.Type.Image) {
                 final String resourcePath = part.value;
-                if (part.value != Message.NoImage) {
+                if (!Message.NoImage.equals(part.value)) {
                     imageFetcher.add(resourcePath, new PrefetchImage(resourcePath, resources, teaseLib.config));
                 }
             }
@@ -462,7 +463,7 @@ public class MessageRendererQueue implements Closeable {
                 show(batch.actor, part.value, batch.accumulatedText, mood, batch.displayImage);
                 batch.renderer.startCompleted();
             } else if (lastPart && definesPageLayout(part)) {
-                show(batch.accumulatedText.toString(), batch.displayImage);
+                show(batch.actor, batch.accumulatedText.toString(), batch.displayImage);
                 batch.renderer.startCompleted();
             }
 
@@ -560,7 +561,6 @@ public class MessageRendererQueue implements Closeable {
         }
     }
 
-    // CORRECT
     private void show(Actor actor, String text, MessageTextAccumulator accumulatedText, String mood,
             String displayImage) throws IOException, InterruptedException {
         teaseLib.transcript.info(text);
@@ -580,12 +580,11 @@ public class MessageRendererQueue implements Closeable {
         }
     }
 
-    // COMPLETE
     private void show(Actor actor, String text, String mood, String displayImage)
             throws IOException, InterruptedException {
         logMoodToTranscript(actor, mood, displayImage);
         logImageToTranscript(actor, displayImage);
-        show(text, displayImage);
+        show(actor, text, displayImage);
     }
 
     private void logMoodToTranscript(Actor actor, String mood, String displayImage) {
@@ -608,29 +607,27 @@ public class MessageRendererQueue implements Closeable {
         }
     }
 
-    // COMPLETE
-    private void show(String text, String displayImage) throws IOException, InterruptedException {
+    private void show(Actor actor, String text, String displayImage) throws IOException, InterruptedException {
         if (!Thread.currentThread().isInterrupted()) {
-            teaseLib.host.show(getImageBytes(displayImage), text);
+            teaseLib.host.show(annotatedImage(actor, displayImage), text);
         }
     }
 
-    // TODO Rename parameter
-    private byte[] getImageBytes(String displayImage) throws IOException, InterruptedException {
-        if (displayImage != null && displayImage != Message.NoImage) {
+    private AnnotatedImage annotatedImage(Actor actor, String displayImage) throws IOException, InterruptedException {
+        if (displayImage != null && !Message.NoImage.equals(displayImage)) {
             try {
-                return imageFetcher.get(displayImage);
+                return actor.images.annotated(displayImage, imageFetcher.get(displayImage));
             } catch (IOException e) {
                 handleIOException(e);
+                return AnnotatedImage.NoImage;
             } finally {
                 synchronized (imageFetcher) {
-                    if (!imageFetcher.isEmpty()) {
-                        imageFetcher.fetch();
-                    }
+                    imageFetcher.fetch();
                 }
             }
+        } else {
+            return AnnotatedImage.NoImage;
         }
-        return new byte[] {};
     }
 
     protected void handleIOException(IOException e) throws IOException {

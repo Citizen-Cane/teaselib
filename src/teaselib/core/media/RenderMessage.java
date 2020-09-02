@@ -32,6 +32,7 @@ import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.PrefetchImage;
 import teaselib.core.util.Prefetcher;
+import teaselib.util.AnnotatedImage;
 import teaselib.util.Interval;
 
 /**
@@ -491,7 +492,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private void logImageToTranscript() {
-        if (displayImage == Message.NoImage) {
+        if (Message.NoImage.equals(displayImage)) {
             if (!Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnAssetNotFound))) {
                 teaseLib.transcript.info(Message.NoImage);
             }
@@ -506,39 +507,38 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private void show(String text) throws IOException, InterruptedException {
         if (!Thread.currentThread().isInterrupted()) {
-            teaseLib.host.show(getImageBytes(), text);
-            // First message shown - start completed
+            teaseLib.host.show(annotatedImage(), text);
             startCompleted();
         }
     }
 
-    private byte[] getImageBytes() throws IOException, InterruptedException {
-        if (displayImage != null && displayImage != Message.NoImage) {
+    private AnnotatedImage annotatedImage() throws IOException, InterruptedException {
+        if (displayImage != null && !Message.NoImage.equals(displayImage)) {
             try {
-                return imageFetcher.get(displayImage);
+                return actor.images.annotated(displayImage, imageFetcher.get(displayImage));
             } catch (IOException e) {
                 handleIOException(e);
+                return AnnotatedImage.NoImage;
             } finally {
                 synchronized (imageFetcher) {
-                    if (!imageFetcher.isEmpty()) {
-                        imageFetcher.fetch();
-                    }
+                    imageFetcher.fetch();
                 }
             }
+        } else {
+            return AnnotatedImage.NoImage;
         }
-        return new byte[] {};
     }
 
     private void doKeyword(MessagePart part) {
         String keyword = part.value;
-        if (keyword == Message.ActorImage) {
+        if (Message.ActorImage.equals(keyword)) {
             throw new IllegalStateException(keyword + " must be resolved in pre-parse");
-        } else if (keyword == Message.NoImage) {
+        } else if (Message.NoImage.equals(keyword)) {
             throw new IllegalStateException(keyword + " must be resolved in pre-parse");
-        } else if (keyword == Message.ShowChoices) {
+        } else if (Message.ShowChoices.equals(keyword)) {
             completeSectionMandatory();
             mandatoryCompleted();
-        } else if (keyword == Message.AwaitSoundCompletion) {
+        } else if (Message.AwaitSoundCompletion.equals(keyword)) {
             if (backgroundSoundRenderer != null) {
                 backgroundSoundRenderer.completeAll();
                 backgroundSoundRenderer = null;

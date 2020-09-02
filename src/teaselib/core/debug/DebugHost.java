@@ -29,6 +29,7 @@ import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.util.AnnotatedImage;
 
 public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     private static final Logger logger = LoggerFactory.getLogger(DebugHost.class);
@@ -76,7 +77,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void show(byte[] imageBytes, String text) {
+    public void show(AnnotatedImage actorImage, String text) {
         // Ignore
     }
 

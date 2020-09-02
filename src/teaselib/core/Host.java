@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.List;
 
 import teaselib.core.ui.InputMethod;
+import teaselib.util.AnnotatedImage;
 
 /**
  * Render target decouples the lib from the actual implementaiton of the host. The interface is closely modeled to the
@@ -22,7 +23,7 @@ public interface Host {
      * @param image
      * @param text
      */
-    void show(byte[] imageBytes, String text);
+    void show(AnnotatedImage actorImage, String text);
 
     void setFocusLevel(float focusLevel);
 

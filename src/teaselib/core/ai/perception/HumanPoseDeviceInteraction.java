@@ -25,7 +25,7 @@ import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ScriptRenderer;
 import teaselib.core.ai.TeaseLibAI;
-import teaselib.core.ai.perception.HumanPose.EstimationResult;
+import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interests;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
 import teaselib.core.ai.perception.HumanPose.Proximity;
@@ -271,11 +271,11 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
                 return PoseAspects.Unavailable;
             } else {
                 humanPose.setInterests(interests);
-                List<HumanPose.EstimationResult> poses = humanPose.poses(device);
+                List<HumanPose.Estimation> poses = humanPose.poses(device);
                 if (poses.isEmpty()) {
                     return PoseAspects.Unavailable;
                 } else if (interests.contains(Interests.Proximity)) {
-                    EstimationResult pose = poses.get(0);
+                    Estimation pose = poses.get(0);
                     Proximity proximity = pose.proximity();
                     PoseAspect[] aspects = { Status.Available, proximity };
                     return new PoseAspects(interests, aspects);

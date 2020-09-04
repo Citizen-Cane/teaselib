@@ -281,7 +281,8 @@ public class SectionRenderer implements Closeable {
         messageRenderer.renderer.mandatoryCompleted();
         completeSectionAll();
 
-        if (executor.getQueue().isEmpty() && getTextToSpeech().isPresent() && !messageRenderer.lastSection.contains(Type.Delay)) {
+        if (executor.getQueue().isEmpty() && getTextToSpeech().isPresent()
+                && !messageRenderer.lastSection.contains(Type.Delay)) {
             renderTimeSpannedPart(delay(DELAY_AT_END_OF_MESSAGE));
             completeSectionMandatory();
             completeSectionAll();
@@ -294,7 +295,8 @@ public class SectionRenderer implements Closeable {
      * @throws IOException
      * @throws InterruptedException
      */
-    private void renderMessage(MessageRenderer messageRenderer, RenderedMessage message) throws IOException, InterruptedException {
+    private void renderMessage(MessageRenderer messageRenderer, RenderedMessage message)
+            throws IOException, InterruptedException {
         String mood = Mood.Neutral;
         for (Iterator<MessagePart> it = message.iterator(); it.hasNext();) {
             MessagePart part = it.next();
@@ -312,7 +314,8 @@ public class SectionRenderer implements Closeable {
 
             completeSectionAll();
             if (part.type == Message.Type.Text) {
-                show(messageRenderer.actor, part.value, messageRenderer.accumulatedText, mood, messageRenderer.displayImage);
+                show(messageRenderer.actor, part.value, messageRenderer.accumulatedText, mood,
+                        messageRenderer.displayImage);
                 messageRenderer.renderer.startCompleted();
             } else if (lastPart && definesPageLayout(part)) {
                 show(messageRenderer.actor, messageRenderer.accumulatedText.toString(), messageRenderer.displayImage);
@@ -329,7 +332,8 @@ public class SectionRenderer implements Closeable {
         return part.type == Type.Image || part.type == Type.Text;
     }
 
-    private void renderPart(MessagePart part, MessageRenderer messageRenderer, String mood) throws IOException, InterruptedException {
+    private void renderPart(MessagePart part, MessageRenderer messageRenderer, String mood)
+            throws IOException, InterruptedException {
         if (part.type == Message.Type.Image) {
             messageRenderer.displayImage = part.value;
         } else if (part.type == Message.Type.BackgroundSound) {
@@ -375,8 +379,8 @@ public class SectionRenderer implements Closeable {
         renderQueue.submit(renderDesktopItem);
     }
 
-    private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText, String mood, IOException e)
-            throws IOException, InterruptedException {
+    private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText,
+            String mood, IOException e) throws IOException, InterruptedException {
         accumulatedText.add(new MessagePart(Message.Type.Text, e.getMessage()));
         completeSectionAll();
         show(messageRenderer.actor, accumulatedText.toString(), mood, messageRenderer.displayImage);
@@ -528,7 +532,7 @@ public class SectionRenderer implements Closeable {
         if (argv.length == 1) {
             return argv[0];
         } else {
-            return teaseLib.random(argv[0], argv[1]);
+            return teaseLib.random.value(argv[0], argv[1]);
         }
     }
 

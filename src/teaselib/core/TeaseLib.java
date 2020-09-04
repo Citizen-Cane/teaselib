@@ -64,6 +64,7 @@ import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 import teaselib.util.TeaseLibLogger;
 import teaselib.util.TextVariables;
+import teaselib.util.math.Random;
 
 public class TeaseLib implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLib.class);
@@ -82,6 +83,7 @@ public class TeaseLib implements Closeable {
     public final ObjectMap globals = new ObjectMap();
     final StateMaps stateMaps;
     public final Devices devices;
+    public final Random random;
 
     private final AtomicReference<Thread> timeAdvanceThread = new AtomicReference<>(null);
     private final AtomicLong frozenTime = new AtomicLong(Long.MIN_VALUE);
@@ -111,6 +113,8 @@ public class TeaseLib implements Closeable {
 
         this.stateMaps = new StateMaps(this);
         this.devices = new Devices(config);
+
+        this.random = new Random();
     }
 
     private static void logDateTime() {
@@ -369,27 +373,6 @@ public class TeaseLib implements Closeable {
 
     private static LocalTime localTime(long time, TimeUnit unit) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(unit.toMillis(time)), ZoneId.systemDefault()).toLocalTime();
-    }
-
-    /**
-     * Return a random number
-     * 
-     * @param min
-     *            minimum value
-     * @param max
-     *            maximum value
-     * @return A value in the interval [min, max]
-     */
-    @SuppressWarnings("static-method")
-    public int random(int min, int max) {
-        // TODO reproducible random values with debugger
-        return teaselib.util.math.Random.random(min, max);
-    }
-
-    @SuppressWarnings("static-method")
-    public double random(double min, double max) {
-        // TODO reproducible random values with debugger
-        return teaselib.util.math.Random.random(min, max);
     }
 
     static final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;

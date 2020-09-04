@@ -28,8 +28,10 @@ import teaselib.Gadgets;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
+import teaselib.Resources;
 import teaselib.ScriptFunction;
 import teaselib.State;
+import teaselib.TeaseScript;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
@@ -55,11 +57,13 @@ import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.ui.SpeechRecognitionInputMethodEventArgs;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.core.util.WildcardPattern;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.ItemGuid;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 import teaselib.util.math.Hysteresis;
+import teaselib.util.math.Random;
 
 public abstract class Script {
     private static final Logger logger = LoggerFactory.getLogger(Script.class);
@@ -69,6 +73,7 @@ public abstract class Script {
 
     public final Actor actor;
     public final String namespace;
+    public final Random random;
 
     public final ScriptRenderer scriptRenderer;
 
@@ -99,7 +104,7 @@ public abstract class Script {
 
         boolean startOnce = teaseLib.globals.get(ScriptCache.class) == null;
         if (startOnce) {
-            syncAudioAndSpeechRecognition(teaseLib);
+            syncAudioAndSpeechRecognition();
             handleAutoRemove();
             // bindMotionDetectorToVideoRenderer();
             bindNetworkProperties();
@@ -114,7 +119,7 @@ public abstract class Script {
                 // -> massive change to test scripts
                 // Configuration persistent properties fails to lookup values in default properties file
                 if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
-                    defineHumanPoseInteractions(actor);
+                    defineHumanPoseInteractions();
                 }
             }
         });
@@ -122,7 +127,7 @@ public abstract class Script {
         defineKeyReleaseInteractions(actor);
     }
 
-    protected void defineHumanPoseInteractions(Actor actor) {
+    protected void defineHumanPoseInteractions() {
         HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
         humanPoseInteraction.definitions(actor).define(HumanPose.Interests.Proximity,
                 new HumanPoseDeviceInteraction.Reaction(HumanPose.Interests.Proximity, new Consumer<PoseAspects>() {
@@ -160,7 +165,7 @@ public abstract class Script {
         return scriptInteractionImplementations;
     }
 
-    private void syncAudioAndSpeechRecognition(TeaseLib teaseLib) {
+    private void syncAudioAndSpeechRecognition() {
         InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
         AudioSync audioSync = scriptRenderer.audioSync;
         inputMethods.add(new SpeechRecognitionInputMethod(new SpeechRecognizer(teaseLib.config, audioSync)));
@@ -267,6 +272,7 @@ public abstract class Script {
         this.actor = actor;
         this.scriptRenderer = scriptRenderer;
         this.namespace = namespace.replace(" ", "_");
+        this.random = teaseLib.random;
 
         Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech();
         if (textToSpeech.isPresent()) {
@@ -445,7 +451,7 @@ public abstract class Script {
 
     private String selectPhrase(Answer answer) {
         // TODO Use a random function that is not used for control flow
-        return answer.text.get(teaseLib.random(0, answer.text.size() - 1));
+        return answer.text.get(random.value(0, answer.text.size() - 1));
     }
 
     private List<Choice> showPrompt(Prompt prompt) {
@@ -548,4 +554,32 @@ public abstract class Script {
     ExecutorService getScriptFuntionExecutorService() {
         return scriptRenderer.getScriptFunctionExecutorService();
     }
+
+    /**
+     * Build a list of resource strings from a {@link WildcardPattern}. Resources are searched relative to the script
+     * class. If no resources are found, the class inheritance is traversed upwards up to the first TeaseLib class. As a
+     * result, all user-defined super classes can provide images as well and inherit them to sub-classes. Sub.classes
+     * can "override" images provided by the base class.
+     * 
+     * @param wildcardPattern
+     *            The wildcard pattern ("?" replaces a single, "*" multiple characters).
+     * @return A list of resources that match the wildcard pattern.
+     */
+    public Resources resources(String wildcardPattern) {
+        List<String> items;
+        int size = 0;
+        Class<?> scriptClass = getClass();
+        do {
+            items = resources.resources(wildcardPattern, scriptClass);
+            size = items.size();
+            if (size > 0) {
+                logger.info("{}: '{}' yields {} resources", scriptClass.getSimpleName(), wildcardPattern, size);
+            } else {
+                logger.info("{}: '{}' doesn't yield any resources", scriptClass.getSimpleName(), wildcardPattern);
+                scriptClass = scriptClass.getSuperclass();
+            }
+        } while (size == 0 && scriptClass != TeaseScript.class);
+        return new Resources(this, items);
+    }
+
 }

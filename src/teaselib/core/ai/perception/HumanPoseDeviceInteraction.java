@@ -107,6 +107,12 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             return true;
         }
 
+        public <T extends HumanPose.PoseAspect> Optional<T> aspect(Class<T> clazz) {
+            @SuppressWarnings("unchecked")
+            Optional<T> element = (Optional<T>) aspects.stream().filter(a -> a.getClass() == clazz).findFirst();
+            return element;
+        }
+
         @Override
         public String toString() {
             return aspects.toString();
@@ -142,7 +148,7 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
     }
 
     static class PoseEstimationTask implements Callable<PoseAspects> {
-        private final TeaseLibAI teaseLibAI;
+        final TeaseLibAI teaseLibAI;
 
         HumanPoseDeviceInteraction interactions;
 
@@ -309,6 +315,10 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
             return actor == interactions.scriptRenderer.currentActor();
         }
 
+    }
+
+    public HumanPose newHumanPose() {
+        return task.teaseLibAI.newHumanPose();
     }
 
 }

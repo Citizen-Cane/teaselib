@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.bytedeco.javacpp.opencv_core.Point;
 
 import teaselib.core.VideoRenderer.Type;
+import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.FileUtilities;
@@ -112,12 +113,11 @@ public class CommandLineHost implements Host {
     @Override
     public void setGaze(Point2D gaze) {
         // Ignore
-        
+
     }
 
     @Override
-    public void setPlayerDistance(float distance) {
+    public void setUserProximity(HumanPose.Proximity proximity) {
         // Ignore
-        
     }
 }

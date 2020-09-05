@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +15,7 @@ import teaselib.Images;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.Mood;
+import teaselib.Resources;
 import teaselib.core.AbstractMessage;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
@@ -77,7 +79,7 @@ public class MessagePartInjectionTest {
         }
 
         @Override
-        public AnnotatedImage annotated(String resource, byte[] image) {
+        public AnnotatedImage annotated(String resource) {
             throw new UnsupportedOperationException();
         }
 
@@ -215,7 +217,7 @@ public class MessagePartInjectionTest {
     @Test
     public void testThatNoImageTagApplyOverMultipleTextParagraphs() throws IOException {
         DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
-        script.actor.images = new RandomImages(Arrays.asList("actor.jpg"));
+        script.actor.images = new RandomImages(new Resources(script, Collections.singletonList("actor.jpg")));
         script.setMood(Mood.Friendly);
 
         Message message = new Message(script.actor);

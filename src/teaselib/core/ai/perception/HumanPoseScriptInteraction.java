@@ -39,4 +39,8 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
         }, Relation.Confirmation);
     }
 
+    public HumanPose newHumanPose() {
+        return deviceInteraction.newHumanPose();
+    }
+
 }

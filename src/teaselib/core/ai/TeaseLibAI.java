@@ -3,6 +3,7 @@ package teaselib.core.ai;
 import java.util.List;
 
 import teaselib.core.Closeable;
+import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.SceneCapture;
 
 public class TeaseLibAI implements Closeable {
@@ -20,6 +21,10 @@ public class TeaseLibAI implements Closeable {
     @Override
     public void close() {
         //
+    }
+
+    public HumanPose newHumanPose() {
+        return new HumanPose();
     }
 
 }

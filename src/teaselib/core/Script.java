@@ -134,20 +134,28 @@ public abstract class Script {
 
                     private final Function<Boolean, Float> awareness = Hysteresis
                             .bool(Hysteresis.function(0.0f, 1.0f, 0.25f), 1.0f, 0.0f);
+                    private Proximity previous = Proximity.FACE2FACE;
 
                     @Override
                     public void accept(PoseAspects pose) {
-
                         SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
                                 .get(SpeechRecognitionInputMethod.class);
-                        boolean speechProximity = awareness.apply(pose.is(Proximity.FACE2FACE)) > 0.5f;
-                        inputMethod.setFaceToFace(speechProximity);
-                        if (speechProximity) {
-                            scriptRenderer.makeActive();
+                        Optional<Proximity> aspect = pose.aspect(Proximity.class);
+                        if (aspect.isPresent()) {
+                            Proximity proximity = aspect.get();
+                            boolean speechProximity = awareness.apply(proximity == Proximity.FACE2FACE) > 0.5f;
+                            inputMethod.setFaceToFace(speechProximity);
+                            teaseLib.host.setUserProximity(proximity);
+                            previous = proximity;
                         } else {
-                            scriptRenderer.makeInactive();
+                            boolean speechProximity = awareness.apply(false) > 0.5f;
+                            inputMethod.setFaceToFace(speechProximity);
+                            if (previous == Proximity.CLOSE || previous == Proximity.FACE2FACE) {
+                                teaseLib.host.setUserProximity(Proximity.NEAR);
+                            } else {
+                                teaseLib.host.setUserProximity(previous);
+                            }
                         }
-
                     }
                 }));
     }

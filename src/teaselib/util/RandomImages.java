@@ -3,14 +3,15 @@ package teaselib.util;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import teaselib.Images;
+import teaselib.Resources;
+import teaselib.core.AbstractImages;
 
 /**
  * Handles image iteration over a set of resources
  * 
  * @author someone
  */
-public class RandomImages implements Images {
+public class RandomImages extends AbstractImages {
 
     protected final List<String> images;
 
@@ -24,8 +25,9 @@ public class RandomImages implements Images {
      * 
      *            todo "path.jpg" won't be listed.
      */
-    public RandomImages(List<String> resourcePaths) {
-        images = resourcePaths;
+    public RandomImages(Resources resources) {
+        super(resources);
+        images = resources;
     }
 
     @Override
@@ -61,11 +63,6 @@ public class RandomImages implements Images {
 
     @Override
     public void hint(String... hint) { // None
-    }
-
-    @Override
-    public AnnotatedImage annotated(String resource, byte[] image) {
-        return new AnnotatedImage(resource, image);
     }
 
 }

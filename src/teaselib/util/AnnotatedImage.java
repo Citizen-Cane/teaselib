@@ -7,10 +7,10 @@ import teaselib.core.ai.perception.HumanPose.Estimation;
 public class AnnotatedImage {
 
     public static final AnnotatedImage NoImage = new AnnotatedImage(Message.NoImage, new byte[] {});
-    
+
     final String resource;
-    final public byte[] bytes;
-    final public HumanPose.Estimation pose;
+    public final byte[] bytes;
+    public final HumanPose.Estimation pose;
 
     public AnnotatedImage(String resource, byte[] image) {
         this(resource, image, null);

@@ -61,7 +61,7 @@ public class Random {
     public <T> T item(T current, List<T> items) {
         Objects.requireNonNull(items);
         if (items.isEmpty())
-            throw new IllegalArgumentException("Empty list");
+            return current;
 
         T another;
         do {

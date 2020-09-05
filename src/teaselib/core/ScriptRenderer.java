@@ -4,6 +4,7 @@ import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.stream.Collectors.toList;
 import static teaselib.core.concurrency.NamedExecutorService.newUnlimitedThreadPool;
+import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,10 +24,10 @@ import teaselib.core.debug.CheckPoint;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRendererQueue;
-import teaselib.core.media.SectionRenderer;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderedMessage;
 import teaselib.core.media.RenderedMessage.Decorator;
+import teaselib.core.media.SectionRenderer;
 
 /**
  * @author Citizen-Cane
@@ -38,6 +39,7 @@ public class ScriptRenderer implements Closeable {
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final ExecutorService scriptFunctionExecutor = newUnlimitedThreadPool("Script task", 1, HOURS);
     private final ExecutorService inputMethodExecutor = newUnlimitedThreadPool("Input method", 1, HOURS);
+    private final ExecutorService prefetchExecutor = singleThreadedQueue("Image prefetch", 1, HOURS);
 
     final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
@@ -296,16 +298,8 @@ public class ScriptRenderer implements Closeable {
         return inputMethodExecutor;
     }
 
-    public void makeActive() {
-        Host host = sectionRenderer.teaseLib.host;
-        host.setPlayerDistance(1.0f);
-        host.show();
-    }
-
-    public void makeInactive() {
-        Host host = sectionRenderer.teaseLib.host;
-        host.setPlayerDistance(Float.NaN);
-        host.show();
+    ExecutorService getPrefetchExecutorService() {
+        return prefetchExecutor;
     }
 
 }

@@ -1,5 +1,7 @@
 package teaselib.core.media;
 
+import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,12 +20,14 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Config;
+import teaselib.Images;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
 import teaselib.Mood;
 import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
+import teaselib.core.AbstractImages;
 import teaselib.core.Closeable;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
@@ -31,8 +35,6 @@ import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
-import teaselib.core.util.PrefetchImage;
-import teaselib.core.util.Prefetcher;
 import teaselib.util.AnnotatedImage;
 
 public class SectionRenderer implements Closeable {
@@ -49,9 +51,7 @@ public class SectionRenderer implements Closeable {
     // TODO Handle message decorator processing here in order to make textToSpeechPlayer private
     public final TextToSpeechPlayer textToSpeechPlayer;
 
-    final NamedExecutorService executor = NamedExecutorService.singleThreadedQueue("Message renderer queue", 1,
-            TimeUnit.HOURS);
-    private final Prefetcher<byte[]> imageFetcher;
+    final NamedExecutorService executor = singleThreadedQueue("Message renderer queue", 1, TimeUnit.HOURS);
     Future<?> running = null;
 
     private MediaRenderer.Threaded currentRenderer = null;
@@ -60,7 +60,6 @@ public class SectionRenderer implements Closeable {
     public SectionRenderer(TeaseLib teaseLib, MediaRendererQueue renderQueue) {
         this.teaseLib = teaseLib;
         this.renderQueue = renderQueue;
-        this.imageFetcher = new Prefetcher<>(renderQueue.getExecutorService());
         this.textToSpeechPlayer = new TextToSpeechPlayer(teaseLib.config);
     }
 
@@ -144,25 +143,27 @@ public class SectionRenderer implements Closeable {
     }
 
     private void prefetchImages(MessageRenderer messageRenderer) {
-        prefetchImages(messageRenderer.messages, messageRenderer.resources);
+        prefetchImages(messageRenderer.actor, messageRenderer.messages);
     }
 
-    private void prefetchImages(List<RenderedMessage> messages, ResourceLoader resources) {
-        for (RenderedMessage message : messages) {
-            prefetchImages(message, resources);
+    private void prefetchImages(Actor actor, List<RenderedMessage> messages) {
+        if (actor.images != Images.None) {
+            for (RenderedMessage message : messages) {
+                prefetchImages(actor, message);
+            }
+            ((AbstractImages) actor.images).prefetcher().fetch();
         }
     }
 
-    private void prefetchImages(RenderedMessage message, ResourceLoader resources) {
+    private void prefetchImages(Actor actor, RenderedMessage message) {
         for (MessagePart part : message) {
             if (part.type == Message.Type.Image) {
-                final String resourcePath = part.value;
+                String resource = part.value;
                 if (!Message.NoImage.equals(part.value)) {
-                    imageFetcher.add(resourcePath, new PrefetchImage(resourcePath, resources, teaseLib.config));
+                    ((AbstractImages) actor.images).prefetcher().add(resource);
                 }
             }
         }
-        imageFetcher.fetch();
     }
 
     static BinaryOperator<MessageRenderer> say = (batch, next) -> {
@@ -472,14 +473,12 @@ public class SectionRenderer implements Closeable {
     private AnnotatedImage annotatedImage(Actor actor, String displayImage) throws IOException, InterruptedException {
         if (displayImage != null && !Message.NoImage.equals(displayImage)) {
             try {
-                return actor.images.annotated(displayImage, imageFetcher.get(displayImage));
+                return actor.images.annotated(displayImage);
             } catch (IOException e) {
                 handleIOException(e);
                 return AnnotatedImage.NoImage;
             } finally {
-                synchronized (imageFetcher) {
-                    imageFetcher.fetch();
-                }
+                ((AbstractImages) actor.images).prefetcher().fetch();
             }
         } else {
             return AnnotatedImage.NoImage;

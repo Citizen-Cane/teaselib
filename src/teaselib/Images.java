@@ -1,5 +1,6 @@
 package teaselib;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -38,7 +39,7 @@ public interface Images extends Iterator<String> {
         }
 
         @Override
-        public AnnotatedImage annotated(String resource, byte[] image) {
+        public AnnotatedImage annotated(String resource) {
             return AnnotatedImage.NoImage;
         }
 
@@ -59,6 +60,6 @@ public interface Images extends Iterator<String> {
      */
     void hint(String... hint);
 
-    AnnotatedImage annotated(String resource, byte[] image);
+    AnnotatedImage annotated(String resource) throws IOException, InterruptedException;
 
 }

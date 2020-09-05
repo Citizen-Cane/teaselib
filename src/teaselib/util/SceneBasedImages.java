@@ -2,30 +2,30 @@ package teaselib.util;
 
 import static java.util.stream.Collectors.toList;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
-import teaselib.Images;
-import teaselib.TeaseScript;
+import teaselib.Resources;
+import teaselib.core.AbstractImages;
 import teaselib.core.events.EventArgs;
+import teaselib.core.util.Prefetcher;
 
-public class SceneBasedImages implements teaselib.Images {
+public class SceneBasedImages extends AbstractImages {
 
-    private final TeaseScript script;
-    private final List<String> resources;
     private final Map<String, PictureSet> pictureSets;
 
     // TODO chapters
     // TODO sections are defined as afterChoices, but should be before saying s.o.
-    private final static int numberOfChoicesToKeepPose = 0;
-    private final static int numberOfPosesToKeepScene = 0;
-    private final static int numberOfScenesToKeepSet = 0;
+
+    private static final int numberOfChoicesToKeepPose = 0;
+    private static final int numberOfPosesToKeepScene = 0;
+    private static final int numberOfScenesToKeepSet = 0;
 
     private int remainingSetScenes = numberOfScenesToKeepSet;
     private int remainingScenePoses = numberOfPosesToKeepScene;
@@ -35,22 +35,24 @@ public class SceneBasedImages implements teaselib.Images {
     private Scene currentScene;
     private Pose currentPose;
 
-    private Iterator<String> images = Images.None;
-
-    public SceneBasedImages(TeaseScript script, List<String> resources) {
-        Objects.requireNonNull(script);
-
-        this.script = script;
-        this.resources = resources;
+    public SceneBasedImages(Resources resources) {
+        super(resources);
 
         if (resources.isEmpty()) {
-            this.pictureSets = Collections.emptyMap();
+            String any = "";
+            currentPose = new Pose(any, resources);
+            currentScene = new Scene(any);
+            currentScene.add(currentPose);
+            currentSet = new PictureSet(any);
+            currentSet.add(currentScene);
+            pictureSets = new HashMap<>();
+            pictureSets.put(any, currentSet);
         } else {
-            this.pictureSets = pictureSets(resources);
+            pictureSets = pictureSets(resources);
             chooseSet();
 
-            script.scriptRenderer.events.afterChoices.add(this::handleAfterChoices);
-            script.scriptRenderer.events.beforeMessage.add(this::handleBeforeMessage);
+            resources.script.scriptRenderer.events.afterChoices.add(this::handleAfterChoices);
+            resources.script.scriptRenderer.events.beforeMessage.add(this::handleBeforeMessage);
         }
     }
 
@@ -80,7 +82,7 @@ public class SceneBasedImages implements teaselib.Images {
     private void chooseSet() {
         // TODO random / linear
         // TODO persistence (choose set once per session)
-        currentSet = script.random(currentSet, new ArrayList<>(pictureSets.values()));
+        currentSet = resources.script.random.item(currentSet, new ArrayList<>(pictureSets.values()));
         // TODO play each scene -> shuffle list
         remainingSetScenes = currentSet.scenes.size();
         chooseScene();
@@ -89,7 +91,7 @@ public class SceneBasedImages implements teaselib.Images {
     private void chooseScene() {
         // TODO random / linear
         // TODO intro outro
-        currentScene = script.random(currentScene, currentSet.scenes);
+        currentScene = resources.script.random.item(currentScene, currentSet.scenes);
         // TODO play each scene -> shuffle list
         remainingScenePoses = currentScene.poses.size();
         choosePose();
@@ -97,17 +99,16 @@ public class SceneBasedImages implements teaselib.Images {
 
     void choosePose() {
         // TODO random / linear
-        currentPose = script.random(currentPose, currentScene.poses);
+        currentPose = resources.script.random.item(currentPose, currentScene.poses);
         // TODO play each pose -> shuffle list
-        remainingPoseViews = currentPose.images.size();
-        images = new MoodImages(currentPose.images);
+        remainingPoseViews = currentPose.resources.size();
     }
 
-    private static Map<String, PictureSet> pictureSets(List<String> images) {
+    private static Map<String, PictureSet> pictureSets(Resources resources) {
         Map<String, Pose> poses = new LinkedHashMap<>();
 
-        for (String resource : images) {
-            poses.computeIfAbsent(parent(resource), Pose::new).add(resource);
+        for (String resource : resources) {
+            poses.computeIfAbsent(parent(resource), key -> new Pose(key, resources)).add(resource);
         }
 
         Map<String, Scene> scenes = new LinkedHashMap<>();
@@ -134,12 +135,12 @@ public class SceneBasedImages implements teaselib.Images {
 
     @Override
     public boolean hasNext() {
-        return images.hasNext();
+        return currentPose.images.hasNext();
     }
 
     @Override
     public String next() {
-        return images.next();
+        return currentPose.images.next();
     }
 
     @Override
@@ -149,9 +150,19 @@ public class SceneBasedImages implements teaselib.Images {
 
     @Override
     public void hint(String... hint) {
-        // TODO mood
         // TODO toys
         // TODO body state (slave standing or kneeling)
+        currentPose.images.hint(hint);
+    }
+
+    @Override
+    public Prefetcher<AnnotatedImage> prefetcher() {
+        return currentPose.images.prefetcher();
+    }
+
+    @Override
+    public AnnotatedImage annotated(String resource) throws IOException, InterruptedException {
+        return currentPose.images.annotated(resource);
     }
 
     @Override
@@ -199,27 +210,24 @@ public class SceneBasedImages implements teaselib.Images {
 
     private static class Pose {
         final String key;
-        final List<String> images;
+        final Resources resources;
+        final MoodImages images;
 
-        public Pose(String key) {
+        public Pose(String key, Resources resources) {
             this.key = key;
-            this.images = new ArrayList<>();
+            this.resources = new Resources(resources.script, Collections.emptyList());
+            this.images = new MoodImages(resources);
         }
 
         public void add(String resource) {
-            images.add(resource);
+            resources.add(resource);
         }
 
         @Override
         public String toString() {
-            return images.stream().map(s -> s.substring(key.length() + 1)).collect(toList()).toString();
+            return resources.stream().map(s -> s.substring(key.length() + 1)).collect(toList()).toString();
         }
 
-    }
-
-    @Override
-    public AnnotatedImage annotated(String resource, byte[] image) {
-        return new AnnotatedImage(resource, image, null);
     }
 
 }

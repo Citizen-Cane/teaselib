@@ -4,6 +4,7 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.List;
 
+import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ui.InputMethod;
 import teaselib.util.AnnotatedImage;
 
@@ -82,5 +83,5 @@ public interface Host {
 
     void setGaze(Point2D gaze);
 
-    void setPlayerDistance(float distance);
+    void setUserProximity(HumanPose.Proximity proximity);
 }

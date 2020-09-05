@@ -55,6 +55,8 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
+import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.Choice;
@@ -231,44 +233,22 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         if (image != null) {
             setBackgroundImage(image);
         } else {
-            setImageInternal(null);
             setBackgroundImage(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
         }
+    }
+
+    private void setBackgroundImage(Image image) {
+        Rectangle bounds = getContentBounds(mainFrame);
+        // keep text at the right
+        BufferedImage spacer = new BufferedImage(bounds.width, 16, BufferedImage.TYPE_INT_ARGB);
+        setImageInternal(spacer);
     }
 
     private void setImageInternal(Image image) {
         if (image != null) {
             ((ss.desktop.Script) ss).setImage(image, false);
-
         } else {
             ss.setImage((byte[]) null, 0);
-        }
-    }
-
-    private void setBackgroundImage(Image image) {
-        try {
-            ss.desktop.MainFrame mainFrame = getMainFrame();
-            Rectangle bounds = getContentBounds(mainFrame);
-            // keep text at the right
-            BufferedImage spacer = new BufferedImage(bounds.width, 16, BufferedImage.TYPE_INT_ARGB);
-            setImageInternal(spacer);
-            // actual image
-            if (image != null) {
-                currentBackgroundImage = renderBackgroundImage(image, bounds);
-
-                // TODO use this to simulate lighting condition as detected by perception AI
-                // int alpha = (int) ((1.0 - focusLevel) * 127.0f);
-                // if (alpha > 0) {
-                // Color fill = new Color(0, 0, 0, alpha);
-                // g2d.setColor(fill);
-                // g2d.fillRect(0, 0, bounds.width, bounds.height);
-                // }
-
-            } else {
-                currentBackgroundImage = null;
-            }
-        } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException e) {
-            logger.error(e.getMessage(), e);
         }
     }
 
@@ -277,19 +257,19 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             if (focusLevel < 1.0) {
                 float b = 0.20f;
                 float m = 0.80f;
-                int width = (int) (currentBackgroundImage.getWidth() * (b + focusLevel * m));
-                int height = (int) (currentBackgroundImage.getHeight() * (b + focusLevel * m));
+                int width = (int) (image.getWidth() * (b + focusLevel * m));
+                int height = (int) (image.getHeight() * (b + focusLevel * m));
                 BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D resizedg2d = (Graphics2D) resized.getGraphics();
                 BufferedImageOp blurOp = getBlurOp(7);
-                resizedg2d.drawImage(currentBackgroundImage, 0, 0, width, height, null);
+                resizedg2d.drawImage(image, 0, 0, width, height, null);
 
                 BufferedImage blurred = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D blurredg2d = (Graphics2D) blurred.getGraphics();
                 blurredg2d.drawImage(resized, blurOp, 0, 0);
                 backgroundImageIcon.setImage(blurred);
             } else {
-                backgroundImageIcon.setImage(currentBackgroundImage);
+                backgroundImageIcon.setImage(image);
             }
         } else {
             backgroundImageIcon.setImage(backgroundImage);
@@ -298,19 +278,23 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     private BufferedImage renderBackgroundImage(Image image, Rectangle bounds) {
-        if (playerDistance < 0.8f) {
-            return render(image, ActorPart.Boots, bounds);
-        } else if (playerDistance > 1.25f || playerDistance != playerDistance /* Float.NaN */) {
-            return render(image, ActorPart.Torso, bounds);
-        } else {
+        if (proximity == Proximity.CLOSE) {
+            // TODO render tits or boots, depending whether the slave can stand or is kneeling
+            boolean isKneeling = false;
+            return render(image, isKneeling ? ActorPart.Boots : ActorPart.Torso, bounds);
+        } else if (proximity == Proximity.FACE2FACE) {
+            // TODO If kneeling, render face at the top of the image
             return render(image, ActorPart.Face, bounds);
+        } else {
+            return render(image, ActorPart.All, bounds);
         }
     }
 
     enum ActorPart {
         Face,
         Torso,
-        Boots
+        Boots,
+        All
     }
 
     private BufferedImage render(Image image, ActorPart part, Rectangle bounds) {
@@ -352,11 +336,17 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 int face = 0;
                 startRow = face;
             } else if (part == ActorPart.Boots) {
+                // Pan to bottom
                 int boots = image.getHeight(null) - rows;
                 startRow = boots;
             } else if (part == ActorPart.Torso) {
                 int torso = (image.getHeight(null) - rows) / 2;
                 startRow = torso;
+            } else if (part == ActorPart.All) {
+                // TODO show whole image
+                // Pan to bottom
+                int boots = image.getHeight(null) - rows;
+                startRow = boots;
             } else {
                 throw new UnsupportedOperationException(part.name());
             }
@@ -374,6 +364,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 startRow = 0;
             } else if (part == ActorPart.Torso) {
                 startRow = 0;
+            } else if (part == ActorPart.All) {
+                // TODO show whole image
+                // Zoom to bottom
+                startRow = 0;
             } else {
                 throw new UnsupportedOperationException(part.name());
             }
@@ -384,6 +378,20 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         int sy2 = sy1 + rows;
 
         g2d.drawImage(image, left, top, width, height, sx1, sy1, sx2, sy2, null);
+
+        // TODO Transform pose.head from s to d -> rewrite rendering with affine transforms
+        // if (currentPose != null) {
+        // if (currentPose.head.isPresent()) {
+        // Point2D head = currentPose.head.get();
+        // g2d.setColor(Color.BLUE);
+        // int x = (int) (head.getX() * (width - left));
+        // int y = (int) (head.getY() * (height - top));
+        // int w = width / 8;
+        // int h = height / 8;
+        // g2d.drawArc(left + x - w, top + y - h, x + w, y + h, 0, 360);
+        // }
+        // }
+
         return bi;
     }
 
@@ -515,6 +523,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     String currentText;
     Image currentImage = null;
+    HumanPose.Estimation currentPose = null;
     BufferedImage currentBackgroundImage = null;
 
     @Override
@@ -522,8 +531,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         if (actorImage != null) {
             try {
                 currentImage = ImageIO.read(new ByteArrayInputStream(actorImage.bytes));
+                currentPose = actorImage.pose;
             } catch (IOException e) {
                 currentImage = null;
+                currentPose = null;
                 logger.error(e.getMessage(), e);
             }
         }
@@ -548,11 +559,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         this.gaze = gaze;
     }
 
-    float playerDistance = 1.0f;
+    HumanPose.Proximity proximity = Proximity.FACE2FACE;
 
     @Override
-    public void setPlayerDistance(float distance) {
-        this.playerDistance = distance;
+    public void setUserProximity(HumanPose.Proximity proximity) {
+        if (this.proximity != proximity) {
+            this.proximity = proximity;
+            show();
+        }
     }
 
     @Override

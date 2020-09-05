@@ -5,39 +5,44 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 public class Prefetcher<T> {
+
     private final ExecutorService executorService;
+    private final Function<T> fetcher;
 
-    private final Queue<String> resources = new ArrayDeque<>();
-    private final Map<String, Callable<T>> toFetch = new HashMap<>();
-    private final Map<String, Future<T>> fetched = new HashMap<>();
+    private final Queue<String> queued = new ArrayDeque<>();
+    private final Map<String, Future<T>> scheduled = new HashMap<>();
+    private final Map<String, T> fetched = new HashMap<>();
 
-    public Prefetcher(ExecutorService executorService) {
-        this.executorService = executorService;
+    public interface Function<T> {
+        T apply(String key) throws IOException;
     }
 
-    public void add(String key, Callable<T> prefetcher) {
+    public Prefetcher(ExecutorService executorService, Function<T> fetcher) {
+        this.executorService = executorService;
+        this.fetcher = fetcher;
+    }
+
+    public void add(String key) {
         synchronized (this) {
-            resources.add(key);
-            toFetch.put(key, prefetcher);
+            queued.add(key);
         }
     }
 
     public boolean isEmpty() {
         synchronized (this) {
-            return resources.isEmpty();
+            return queued.isEmpty();
         }
     }
 
     public void fetch() {
         synchronized (this) {
-            String key = resources.poll();
-            if (!isEmpty() && !fetched.containsKey(key)) {
+            if (!queued.isEmpty()) {
+                String key = queued.poll();
                 fetch(key);
             }
         }
@@ -45,23 +50,22 @@ public class Prefetcher<T> {
 
     public void fetch(String key) {
         synchronized (this) {
-            Callable<T> callable = toFetch.remove(key);
-            fetched.put(key, executorService.submit(callable));
+            if (!fetched.containsKey(key) && !scheduled.containsKey(key)) {
+                scheduled.put(key, executorService.submit(() -> fetcher.apply(key)));
+            }
         }
     }
 
     public T get(String key) throws IOException, InterruptedException {
         synchronized (this) {
             if (fetched.containsKey(key)) {
-                try {
-                    return fetched.get(key).get();
-                } catch (ExecutionException e) {
-                    if (e.getCause() instanceof IOException) {
-                        throw (IOException) e.getCause();
-                    } else {
-                        throw new IOException(e.getMessage(), e);
-                    }
-                }
+                return fetched.get(key);
+            } else if (scheduled.containsKey(key)) {
+                Future<T> future = scheduled.get(key);
+                scheduled.remove(key);
+                T t = get(future);
+                fetched.put(key, t);
+                return t;
             } else {
                 fetch(key);
                 return get(key);
@@ -69,10 +73,22 @@ public class Prefetcher<T> {
         }
     }
 
-    public void remove(String key) {
-        synchronized (this) {
-            toFetch.remove(key);
-            fetched.remove(key);
+    private T get(Future<T> future) throws InterruptedException, IOException {
+        try {
+            return future.get();
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            } else {
+                throw new IOException(e.getMessage(), e);
+            }
         }
     }
+
+    public void remove(String key) {
+        synchronized (this) {
+            scheduled.remove(key);
+        }
+    }
+
 }

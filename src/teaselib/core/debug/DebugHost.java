@@ -21,6 +21,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
+import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.Choice;
@@ -228,7 +229,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void setPlayerDistance(float distance) {
+    public void setUserProximity(HumanPose.Proximity proximity) {
         // Ignore
 
     }

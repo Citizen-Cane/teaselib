@@ -106,11 +106,19 @@ public class HumanPose extends NativeObject {
             this.gaze = Optional.of(new Gaze(x, y, s, t, u));
         }
 
+        // TDOO implement latency-free proximity hysteresis (based on previous distance value)
+        // -> frees Reaction listeners from implementing a sub-optimal solution
+        //
+        // TODO only change to a neighboring proximity value - not from Close to Away or so
+        // - keep value or move in the direction - much like hysteresis
+        //
+        // TODO Observe image corners to determine whether the slave torso is close to the camera
+        // - only if a near-ground-truth-solution is possible
         public Proximity proximity() {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.4f) {
+                if (z < 0.5f) {
                     proximity = Proximity.CLOSE;
                 } else if (z < 0.9f) {
                     if (isFace2Face()) {
@@ -182,7 +190,14 @@ public class HumanPose extends NativeObject {
     }
 
     public List<HumanPose.Estimation> poses(InputStream image) throws IOException {
-        byte[] bytes = image.readAllBytes();
+        try {
+            return poses(image.readAllBytes());
+        } finally {
+            image.close();
+        }
+    }
+
+    public List<HumanPose.Estimation> poses(byte[] bytes) {
         if (acquireImage(bytes)) {
             estimate();
             return results();

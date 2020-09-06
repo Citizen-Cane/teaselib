@@ -578,10 +578,16 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
 
     private ItemEventAction startCountdownAction(Actuator actuator, Items items) {
         return installedCountDownActions.computeIfAbsent(actuatorKey(actuator), key //
-        -> events.when(items).duration().thenOnce(() -> {
-            removeEvent(actuatorKey(actuator), events.afterChoices, installedRenewHoldEvents);
-            startCountDown(actuator, items);
+        -> events.when(items).remember().thenOnce(() -> {
+            if (items.anyAre(Until.Expired) && !duration(items).expired()) {
+                removeEvent(actuatorKey(actuator), events.afterChoices, installedRenewHoldEvents);
+                startCountDown(actuator, items);
+            }
         }));
+    }
+
+    private Duration duration(Items items) {
+        return items.stream().map(Item::duration).max(Duration::compare).orElse(Duration.Expired);
     }
 
     private Event<ScriptEventArgs> singleRenewHoldEvent(Actuator actuator) {
@@ -628,7 +634,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     private void removeEvents(Actuator actuator) {
-        removeEvent(actuatorKey(actuator), events.itemDuration, installedCountDownActions);
+        removeEvent(actuatorKey(actuator), events.itemRemember, installedCountDownActions);
         removeEvent(actuatorKey(actuator), events.afterChoices, installedRenewHoldEvents);
     }
 

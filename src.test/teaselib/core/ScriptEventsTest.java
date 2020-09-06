@@ -1,6 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +16,7 @@ import org.junit.Test;
 import teaselib.Features;
 import teaselib.State;
 import teaselib.State.Options;
+import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.Actuator;
@@ -350,7 +353,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(1);
         assertRemoveActions(1);
 
-        options.over(1, TimeUnit.HOURS);
+        options.over(1, TimeUnit.HOURS).remember(Until.Expired);
         assertApplyActions(1);
         assertHoldActions(0);
         assertCountdownActions(0);
@@ -390,7 +393,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(2);
         assertRemoveActions(2);
 
-        applied.over(1, TimeUnit.HOURS);
+        applied.over(1, TimeUnit.HOURS).remember(Until.Expired);
         assertApplyActions(0);
         assertHoldActions(1);
         assertCountdownActions(1);
@@ -788,7 +791,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     }
 
     private void assertCountdownActions(int count) {
-        assertEquals(count, script.events().itemDuration.size());
+        assertEquals(count, script.events().itemRemember.size());
     }
 
     private void assertRemoveActions(int count) {

@@ -58,6 +58,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
         @Override
         public void remember(Until forget) {
             options.remember(forget);
+            events.itemRemember.fire(new ItemChangedEventArgs(item));
         }
 
         @Override

@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import teaselib.Features;
 import teaselib.Message;
+import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.ScriptEvents;
 import teaselib.core.configuration.DebugSetup;
@@ -87,7 +88,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
-        cuffs.apply().over(scheduledDurationSeconds, SECONDS);
+        cuffs.apply().over(scheduledDurationSeconds, SECONDS).remember(Until.Expired);
         assertEquals("Hold renew event not removed after setting duration", 0, events.afterChoices.size());
         assertApplied(cuffs, scheduledDurationSeconds);
 
@@ -127,7 +128,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertArmedAndHolding(cuffs);
 
         script.say("Starting release timer", Message.Delay10s);
-        cuffs.apply().over(scheduledDurationSeconds, SECONDS);
+        cuffs.apply().over(scheduledDurationSeconds, SECONDS).remember(Until.Expired);
         assertEquals("Hold renew event not removed after setting duration", 0, events.afterChoices.size());
         assertApplied(cuffs, scheduledDurationSeconds);
 
@@ -140,7 +141,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     private void assertArmedAndHolding(Items items) {
         assertEquals(1, events.afterChoices.size());
         assertEquals(keyReleaseDevice.actuators().size(), events.itemApplied.size());
-        assertEquals(0, events.itemDuration.size());
+        assertEquals(0, events.itemRemember.size());
         assertEquals(0, events.itemRemoved.size());
         script.reply("Keys placed, #title");
 
@@ -182,7 +183,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         assertEquals("Hold renew event not removed", 0, events.afterChoices.size());
         assertEquals(keyReleaseDevice.actuators().size(), events.itemApplied.size());
-        assertEquals(0, events.itemDuration.size());
+        assertEquals(0, events.itemRemember.size());
         assertEquals(0, events.itemRemoved.size());
 
     }
@@ -201,7 +202,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
         assertEquals(1, events.afterChoices.size());
         assertEquals(3, events.itemApplied.size());
-        assertEquals(2, events.itemDuration.size());
+        assertEquals(2, events.itemRemember.size());
         assertEquals(3, events.itemRemoved.size());
         script.reply("Keys placed, #title");
 

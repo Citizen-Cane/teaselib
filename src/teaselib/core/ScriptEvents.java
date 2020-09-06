@@ -20,6 +20,7 @@ public class ScriptEvents {
     public final EventSource<StateChangedEventArgs> stateRemoved = new EventSource<>("State removed");
     public final EventSource<ItemChangedEventArgs> itemApplied = new EventSource<>("Item applied");
     public final EventSource<ItemChangedEventArgs> itemDuration = new EventSource<>("Item duration");
+    public final EventSource<ItemChangedEventArgs> itemRemember = new EventSource<>("Item remember");
     public final EventSource<ItemChangedEventArgs> itemRemoved = new EventSource<>("Item removed");
 
     public final ScriptEventInputMethod scriptEventInputMethod;
@@ -51,8 +52,8 @@ public class ScriptEvents {
      */
     public void interjectScriptFragment(Runnable action) {
         ScriptEventAction<BeforeNewMessage> scriptEventAction = when().beforeMessage().thenOnce(action);
-        scriptEventInputMethod.signalEvent(
-                () -> scriptEventAction.run(new ScriptEventArgs.BeforeNewMessage(BeforeNewMessage.OutlineType.NewSection)));
+        scriptEventInputMethod.signalEvent(() -> scriptEventAction
+                .run(new ScriptEventArgs.BeforeNewMessage(BeforeNewMessage.OutlineType.NewSection)));
     }
 
     public class ScriptEventSource {
@@ -146,6 +147,10 @@ public class ScriptEvents {
 
         public ItemEventTarget duration() {
             return new ItemEventTarget(this, itemDuration);
+        }
+
+        public ItemEventTarget remember() {
+            return new ItemEventTarget(this, itemRemember);
         }
 
         public ItemEventTarget removed() {

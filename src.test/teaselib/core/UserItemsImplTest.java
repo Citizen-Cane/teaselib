@@ -13,12 +13,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.Household;
 import teaselib.Material;
+import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedEnum;
@@ -68,7 +68,7 @@ public class UserItemsImplTest {
     private static void testItem(UserItems items, Enum<?> item) {
         List<Item> predefined = items.get(TeaseLib.DefaultDomain, new QualifiedEnum(item));
         assertNotNull(predefined);
-        assertTrue(predefined.size() > 0);
+        assertFalse(predefined.isEmpty());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class UserItemsImplTest {
         for (Toys item : Toys.values()) {
             List<Item> predefined = items.get(TeaseLib.DefaultDomain, new QualifiedEnum(item));
             assertNotNull(predefined);
-            assertTrue(predefined.size() > 0);
+            assertFalse(predefined.isEmpty());
             assertNotEquals("Expected defined item for " + item.name(), Item.NotFound, predefined.get(0));
         }
     }
@@ -208,54 +208,59 @@ public class UserItemsImplTest {
         {
             script.addTestUserItems2();
             Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-            assertEquals("Humbler", humblers.next().displayName());
-            Item myHhumbler = humblers.next();
-            assertEquals("My Humbler", myHhumbler.displayName());
+            Item notMyHumbler = humblers.next();
+            assertEquals("Humbler", notMyHumbler.displayName());
+
+            Item myHumbler = humblers.next();
+            assertEquals("My Humbler", myHumbler.displayName());
             assertFalse(humblers.hasNext());
 
-            myHhumbler.apply().over(1, TimeUnit.HOURS).remember(until);
+            myHumbler.apply().over(1, TimeUnit.HOURS).remember(until);
+            assertTrue(script.state(Toys.Humbler).is(until));
+            assertTrue(myHumbler.is(until));
+            assertFalse(notMyHumbler.is(until));
         }
 
         script.debugger.clearStateMaps();
         {
             Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-            Item notMyHumber = humblers.next();
-            assertFalse(notMyHumber.applied());
-            Item persistedHumbler = humblers.next();
-            assertTrue(persistedHumbler.applied());
-            assertEquals("My Humbler", persistedHumbler.displayName());
+            Item notMyHumbler = humblers.next();
+            assertFalse(notMyHumbler.applied());
+
+            Item myHumbler = humblers.next();
+            assertEquals("My Humbler", myHumbler.displayName());
+            assertTrue(myHumbler.applied());
+            assertTrue(script.state(Toys.Humbler).is(until));
+            assertTrue(myHumbler.is(until));
             assertFalse(humblers.hasNext());
+
+            assertTrue(script.state(Toys.Humbler).is(until));
+            assertFalse(notMyHumbler.is(until));
         }
 
-        // Does not work at runtime as the item disappears, but peers are still applied
-        // TODO -> removing toys at runtime may break scripts -> stop if removed item is applied
         script.debugger.resetUserItems();
         script.debugger.clearStateMaps();
         script.addTestUserItems();
         {
-            // The following test code shows the wrong state - handled by auto-removing those items
             Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-            Item notMyHumber = humblers.next();
+            Item notMyHumbler = humblers.next();
             assertFalse("User items not reset", humblers.hasNext());
-            assertTrue(script.state(Toys.Humbler).applied());
-            try {
-                assertFalse(notMyHumber.applied());
-                fail("Removed item shouldn't be accessible anymore");
-            } catch (IllegalArgumentException e) {
-                // Expected
-            }
 
-            try {
-                script.item(Toys.Humbler).remove();
-                fail("Removed item shouldn't be accessible anymore");
-            } catch (IllegalArgumentException e) {
-                // Expected
-            }
+            // With the persisted item removed the state is still applied
+            State state = script.state(Toys.Humbler);
+            assertTrue(state.applied());
+            assertTrue(state.is(until));
+            assertFalse(notMyHumbler.applied());
+            assertFalse(notMyHumbler.is(until));
 
+            // remove state with reference to unavailable guid
             script.handleAutoRemove();
-            assertFalse(script.state(Toys.Humbler).applied());
-            assertFalse(script.state(Body.OnBalls).applied());
-            assertFalse(notMyHumber.applied());
+            assertFalse(state.is(until));
+            assertFalse(state.applied());
+
+            Item item = script.item(Toys.Humbler);
+            assertFalse(item.applied());
+            assertFalse(item.is(until));
         }
     }
 

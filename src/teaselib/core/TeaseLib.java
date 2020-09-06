@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -932,7 +933,7 @@ public class TeaseLib implements Closeable {
     }
 
     public Items relatedItems(String domain, Items items) {
-        return new Items(items.stream().map(AbstractProxy::itemImpl).map(itemImpl -> getItemByGuid(domain, itemImpl))
+        return new Items(items.stream().map(AbstractProxy::itemImpl).map(itemImpl -> getItem(domain, itemImpl))
                 .collect(toList()));
     }
 
@@ -949,7 +950,7 @@ public class TeaseLib implements Closeable {
                     if (!ItemGuid.isGuid(state.item.toString())
                             && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
                         temporaryItems.addAll(state.peers().stream().filter(guid -> guid instanceof ItemGuid)
-                                .map(guid -> (ItemGuid) guid).map(guid -> getByGuid(domain, state.item, guid.name()))
+                                .map(guid -> (ItemGuid) guid).map(guid -> getItem(domain, state.item, guid.name()))
                                 .collect(Collectors.toList()));
                     }
                 }
@@ -975,18 +976,27 @@ public class TeaseLib implements Closeable {
         }
     }
 
-    public Item getItemByGuid(String domain, ItemImpl item) {
-        return getByGuid(domain, item.value, item.guid.name());
+    public Item getItem(String domain, ItemImpl item) {
+        return getItem(domain, item.value, item.guid.name());
     }
 
-    public Item getByGuid(String domain, Object item, String guid) {
-        Items items = items(domain, item);
-        for (Item i : items) {
-            if (((ItemImpl) i).guid.name().equals(guid)) {
-                return i;
-            }
+    public Item getItem(String domain, Object item, String guid) {
+        Item match = findItem(domain, item, guid);
+        if (match == Item.NotFound) {
+            throw new NoSuchElementException(
+                    "Item " + QualifiedName.of(domain, QualifiedName.NONE, item.toString()) + ":" + guid);
+        } else {
+            return match;
         }
-        throw new IllegalArgumentException("Item " + domain + "." + QualifiedItem.of(item) + ":" + guid + " not found");
+    }
+
+    public Item findItem(String domain, Object item, ItemGuid guid) {
+        return findItem(domain, item, guid.name());
+    }
+
+    public Item findItem(String domain, Object item, String guid) {
+        return items(domain, item).stream().filter(i -> ((ItemImpl) i).guid.name().equals(guid)).findFirst()
+                .orElse(Item.NotFound);
     }
 
     public Actor getDominant(Gender gender, Locale locale) {

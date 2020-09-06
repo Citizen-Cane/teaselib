@@ -290,7 +290,7 @@ public class ItemIdentityTest {
         Items gags = script.items(Toys.Gag);
 
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-        Item sameRingGag = script.teaseLib.getByGuid(TeaseLib.DefaultDomain, Toys.Gag, "ring_gag");
+        Item sameRingGag = script.teaseLib.getItem(TeaseLib.DefaultDomain, Toys.Gag, "ring_gag");
         assertEquals(ringGag, sameRingGag);
         assertEquals(sameRingGag, ringGag);
         assertNotSame(ringGag, sameRingGag);

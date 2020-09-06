@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +36,7 @@ import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 public class StateImpl implements State, State.Options, StateMaps.Attributes {
-    private static final Logger logger = LoggerFactory.getLogger(State.class);
+    private static final Logger logger = LoggerFactory.getLogger(StateImpl.class);
 
     private static final String TEMPORARY_KEYWORD = "TEMPORARY";
     private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
@@ -229,20 +230,23 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    private void restorePersistedPeer(String persistedPeer) {
+    private void restorePersistedPeer(String persisted) {
+        Object peer;
         try {
-            addPeerThatHasBeenPersistedWithMe(getPersistedPeer(persistedPeer));
+            peer = getPersistedPeer(persisted);
+            addPeerThatHasBeenPersistedWithMe(peer);
+        } catch (NoSuchElementException e) {
+            logger.warn("Item {} does not exist anymore: {}", persisted, e.getMessage());
         } catch (ReflectiveOperationException e) {
-            logger.warn("Peer {} not restored: {}", persistedPeer, e.getMessage());
+            logger.warn("Peer {} not restored: {}", persisted, e.getMessage());
         }
     }
 
-    private Object getPersistedPeer(String persistedPeer) throws ReflectiveOperationException {
-        if (PersistedObject.className(persistedPeer).equals(ItemImpl.class.getName())) {
-            Storage storage = Storage.from(persistedPeer);
-            return ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, storage);
+    private Object getPersistedPeer(String peer) throws ReflectiveOperationException {
+        if (PersistedObject.className(peer).equals(ItemImpl.class.getName())) {
+            return ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, Storage.from(peer));
         } else {
-            return Persist.from(persistedPeer);
+            return Persist.from(peer);
         }
     }
 

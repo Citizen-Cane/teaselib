@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -16,6 +17,7 @@ import teaselib.Material;
 import teaselib.Posture;
 import teaselib.Size;
 import teaselib.State;
+import teaselib.State.Persistence.Until;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedItem;
@@ -480,6 +482,34 @@ public class ItemImplTest {
         Item woodenSpoon = script.item(Household.Wooden_Spoon);
         assertTrue(woodenSpoon.is(Material.Wood));
         assertTrue(woodenSpoon.is(Material.class));
+    }
+
+    @Test
+    public void testUntilAppliedToStateAndItem() {
+        TestScript script = TestScript.getOne();
+
+        Item woodenSpoon = script.item(Household.Wooden_Spoon);
+        woodenSpoon.apply().remember(Until.Expired);
+        assertTrue(script.state(Household.Wooden_Spoon).is(Until.Expired));
+        assertTrue(woodenSpoon.is(Until.Expired));
+    }
+
+    @Test
+    public void testRemoveUserItem() {
+        TestScript script = TestScript.getOne();
+
+        script.addTestUserItems2();
+        Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+        Item item1 = humblers.next();
+        assertEquals("Humbler", item1.displayName());
+        Item item2 = humblers.next();
+        assertEquals("My Humbler", item2.displayName());
+        assertFalse(humblers.hasNext());
+
+        item2.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+        assertTrue(script.state(Toys.Humbler).is(Until.Removed));
+        assertTrue(item2.is(Until.Removed));
+        assertFalse(item1.is(Until.Removed));
     }
 
 }

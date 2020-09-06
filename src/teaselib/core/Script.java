@@ -1,7 +1,5 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.toList;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +41,7 @@ import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -59,6 +58,7 @@ import teaselib.core.ui.SpeechRecognitionInputMethodEventArgs;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.WildcardPattern;
 import teaselib.motiondetection.MotionDetector;
+import teaselib.util.Item;
 import teaselib.util.ItemGuid;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
@@ -193,64 +193,50 @@ public abstract class Script {
     }
 
     private State handleUntilRemoved(String domain, long startupTimeSeconds) {
-        State untilRemoved = teaseLib.state(domain, State.Persistence.Until.Removed);
-        Set<Object> persistedUntilRemoved = ((StateImpl) untilRemoved).peers();
-
-        for (Object item : new ArrayList<>(persistedUntilRemoved)) {
-            State state = teaseLib.state(domain, item);
-            try {
-                // Very implicit way of testing for unavailable items
-                Duration duration = state.duration();
-                if (state.applied() && duration.expired()) {
-                    long limit = duration.limit(TimeUnit.SECONDS);
-                    if (limit > State.TEMPORARY) {
-                        long autoRemovalTime = duration.end(TimeUnit.SECONDS) + limit / 2;
-                        if (autoRemovalTime <= startupTimeSeconds) {
-                            state.remove();
-                        }
+        Consumer<State> autoRemove = state -> {
+            // Very implicit way of testing for unavailable items
+            Duration duration = state.duration();
+            if (state.applied() && duration.expired()) {
+                long limit = duration.limit(TimeUnit.SECONDS);
+                if (limit > State.TEMPORARY) {
+                    long autoRemovalTime = duration.end(TimeUnit.SECONDS) + limit / 2;
+                    if (autoRemovalTime <= startupTimeSeconds) {
+                        state.remove();
                     }
                 }
-            } catch (IllegalArgumentException e) {
-                removeUnavailableItem((StateImpl) state);
             }
-        }
-
-        return untilRemoved;
+        };
+        return handle(domain, autoRemove, State.Persistence.Until.Removed);
     }
 
     private State handleUntilExpired(String domain) {
-        State untilExpired = teaseLib.state(domain, State.Persistence.Until.Expired);
-        Set<Object> peers = ((StateImpl) untilExpired).peers();
-
-        for (Object object : new ArrayList<>(peers)) {
-            State state = teaseLib.state(domain, object);
-            try {
-                // Very implicit way of testing for unavailable items
-                Duration duration = state.duration();
-                if (state.applied() && duration.expired()) {
-                    state.remove();
-                }
-            } catch (IllegalArgumentException e) {
-                removeUnavailableItem((StateImpl) state);
+        Consumer<State> autoRemove = state -> {
+            // Very implicit way of testing for unavailable items
+            Duration duration = state.duration();
+            if (state.applied() && duration.expired()) {
+                state.remove();
             }
-        }
-
-        return untilExpired;
+        };
+        return handle(domain, autoRemove, State.Persistence.Until.Expired);
     }
 
-    private void removeUnavailableItem(StateImpl state) {
-        // User items configuration changed - item not available anymore
-        // Only items are looked up in user configuration - states are programmatically definable
-        List<ItemGuid> guids = state.peers().stream().filter(peer -> peer instanceof ItemGuid)
-                .map(peer -> (ItemGuid) peer).collect(toList());
+    private State handle(String domain, Consumer<State> autoRemove, State.Persistence.Until until) {
+        State untilState = teaseLib.state(domain, until);
+        Set<Object> peers = ((StateImpl) untilState).peers();
+        for (Object peer : new ArrayList<>(peers)) {
+            State state = teaseLib.state(domain, peer);
+            cleanupRemovedUserItemReferences(state);
+            autoRemove.accept(state);
+        }
+        return untilState;
+    }
 
-        String name = guids.stream().map(ItemGuid::name).findFirst().orElse("???");
-        logger.warn("User items configuration changed: Item {} \"{}\" not available anymore", state.item, name);
-
-        guids.stream().forEach(guid -> {
-            state.peers().stream().forEach(peer -> StateImpl.StateStorage.delete(teaseLib, state.domain, peer));
-        });
-        state.remove();
+    private void cleanupRemovedUserItemReferences(State state) {
+        StateImpl stateImpl = AbstractProxy.stateImpl(state);
+        if (stateImpl.peers().stream().filter(ItemGuid::isGuid).anyMatch(
+                guid -> teaseLib.findItem(stateImpl.domain, stateImpl.item, (ItemGuid) guid) == Item.NotFound)) {
+            state.remove();
+        }
     }
 
     private static <T> T getOrDefault(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {

@@ -44,7 +44,9 @@ public class QualifiedName implements Comparable<QualifiedName> {
     @Override
     public String toString() {
         // TODO general solution from PropertyNameMapping
-        if (domain.equals(NONE)) {
+        if (domain.equals(NONE) && namespace.equals(NONE)) {
+            return name;
+        } else if (domain.equals(NONE)) {
             return namespace + SEPARATOR + name;
         } else if (namespace.equals(NONE)) {
             return domain + SEPARATOR + name;

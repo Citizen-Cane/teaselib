@@ -17,7 +17,11 @@ public class ItemGuid implements Persistable {
     private final String name;
 
     public static ItemGuid fromGuid(Object guid) {
-        return fromGuid(guid.toString());
+        if (guid instanceof ItemGuid) {
+            return (ItemGuid) guid;
+        } else {
+            return fromGuid(guid.toString());
+        }
     }
 
     public static ItemGuid fromGuid(String guid) {

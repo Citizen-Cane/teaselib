@@ -1,5 +1,6 @@
 package teaselib.util;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -114,6 +115,23 @@ public class ItemPersistencyTest {
 
         script.debugger.advanceTime(Long.MAX_VALUE - 3, TimeUnit.HOURS);
         assertTrue("Auto Removal didn't account session startup time", script.item(Toys.Chastity_Device).applied());
+    }
+
+    @Test
+    public void testThatRememberUntilIsPersisted() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item item = script.item(Toys.Chastity_Device);
+        item.apply().remember(Until.Removed);
+        item.is(Until.Removed);
+        String dispayName = item.displayName();
+
+        script.debugger.clearStateMaps();
+
+        Item restored = script.item(Toys.Chastity_Device);
+        assertEquals(dispayName, restored.displayName());
+        assertTrue(restored.is(Until.Removed));
     }
 
 }

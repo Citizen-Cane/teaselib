@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import teaselib.Duration;
@@ -24,7 +25,7 @@ import teaselib.core.util.Storage;
  * @author Citizen-Cane
  *
  */
-public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
+public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Persistable {
     final TeaseLib teaseLib;
 
     public final String domain;
@@ -59,7 +60,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             throws ReflectiveOperationException {
         String item = storage.next();
         ItemGuid guid = storage.next();
-        return (ItemImpl) teaseLib.getByGuid(domain, item, guid.name());
+        return (ItemImpl) teaseLib.getItem(domain, item, guid.name());
     }
 
     @Override
@@ -188,7 +189,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
         state.applyTo(this.guid);
         applyMyAttributesTo(state);
-        return state;
+
+        return this;
     }
 
     @Override
@@ -207,7 +209,9 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         StateImpl state = state(value);
         applyMyAttributesTo(state);
         state.applyTo(this.guid);
-        return state.applyTo(flattenedPeers);
+        state.applyTo(flattenedPeers);
+
+        return this;
     }
 
     private void applyMyAttributesTo(StateImpl state) {
@@ -219,6 +223,27 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         for (Object peer : items) {
             state(peer).applyTo(this);
         }
+    }
+
+    @Override
+    public Persistence over(long duration, TimeUnit unit) {
+        StateImpl state = state(value);
+        state.over(duration, unit);
+        return this;
+    }
+
+    @Override
+    public Persistence over(Duration duration) {
+        StateImpl state = state(value);
+        state.over(duration);
+        return this;
+    }
+
+    @Override
+    public void remember(Until forget) {
+        StateImpl state = state(value);
+        state.remember(forget);
+        state(forget).applyTo(this).remember(forget);
     }
 
     public Collection<Object> attributesAndPeers() {

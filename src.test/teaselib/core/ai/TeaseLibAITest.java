@@ -75,6 +75,30 @@ public class TeaseLibAITest {
         }
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testImageStabilityNullByteArray() {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
+            byte[] nullptr = null;
+            humnaPose.poses(nullptr);
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testImageStabilityEmptyByteArray() {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
+            byte[] empty = new byte[0];
+            humnaPose.poses(empty);
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testImageStabilityNotAnImage() {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
+            byte[] garbage = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            humnaPose.poses(garbage);
+        }
+    }
+
     private void pose1(HumanPose humnaPose) throws IOException {
         List<Estimation> poses = humnaPose.poses(resource("images/p2_320x240_01.jpg"));
         assertEquals(2, poses.size());

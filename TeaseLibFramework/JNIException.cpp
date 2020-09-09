@@ -1,20 +1,49 @@
 #include "StdAfx.h"
 
+#include <exception>
+#include <stdexcept>
+
 #include <assert.h>
 
 #include "JNIException.h"
 #include "JNIString.h"
 #include "NativeException.h"
 
-void JNIException::throwNew(JNIEnv* env, NativeException& e) {
+void JNIException::rethrow(JNIEnv* env, std::invalid_argument& e)
+{
+	rethrow(env, e, "java/lang/IllegalArgumentException");
+}
+
+void JNIException::rethrow(JNIEnv* env, std::exception& e)
+{
+	rethrow(env, e, "java/lang/RuntimeException");
+}
+
+void JNIException::rethrow(JNIEnv* env, std::exception& e, const char* runtimeClass)
+{
 	assert(!env->ExceptionCheck());
-	jclass runtimeClass = env->FindClass(e.runtimeClass);
+	jclass jruntimeClass = env->FindClass(runtimeClass);
+	JNIStringUTF8 message(env, e.what());
+
+	jmethodID methodId = env->GetMethodID(jruntimeClass, "<init>", "(Ljava/lang/String;)V");
+	assert(methodId);
+	jthrowable throwable = static_cast<jthrowable>(env->NewObject(
+		jruntimeClass,
+		methodId,
+		message.detach()));
+	assert(throwable);
+	env->Throw(throwable);
+}
+
+void JNIException::rethrow(JNIEnv* env, NativeException& e) {
+	assert(!env->ExceptionCheck());
+	jclass jruntimeClass = env->FindClass(e.runtimeClass);
 	JNIString message(env, e.message.c_str());
 
-	jmethodID methodId = env->GetMethodID(runtimeClass, "<init>", "(ILjava/lang/String;)V");
+	jmethodID methodId = env->GetMethodID(jruntimeClass, "<init>", "(ILjava/lang/String;)V");
 	if (methodId != nullptr) {
 		jthrowable throwable = static_cast<jthrowable>(env->NewObject(
-			runtimeClass,
+			jruntimeClass,
 			methodId,
 			e.errorCode,
 			message.detach()));
@@ -22,10 +51,10 @@ void JNIException::throwNew(JNIEnv* env, NativeException& e) {
 		env->Throw(throwable);
 	}
 	else {
-		jmethodID methodId = env->GetMethodID(runtimeClass, "<init>", "(Ljava/lang/String;)V");
+		jmethodID methodId = env->GetMethodID(jruntimeClass, "<init>", "(Ljava/lang/String;)V");
 		assert(methodId);
 		jthrowable throwable = static_cast<jthrowable>(env->NewObject(
-			runtimeClass,
+			jruntimeClass,
 			methodId,
 			message.detach()));
 		assert(throwable);

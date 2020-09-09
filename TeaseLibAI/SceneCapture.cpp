@@ -29,7 +29,7 @@ extern "C"
 			return reinterpret_cast<jlong>(capture);
 		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		}
 		catch (JNIException& e) {
 			e.rethrow();
@@ -49,7 +49,7 @@ extern "C"
 			capture->start();
 		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		}
 		catch (JNIException& e) {
 			e.rethrow();
@@ -68,7 +68,7 @@ extern "C"
 			return capture->started();
 		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		}
 		catch (JNIException& e) {
 			e.rethrow();
@@ -88,7 +88,7 @@ extern "C"
 			capture->stop();
 		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		}
 		catch (JNIException& e) {
 			e.rethrow();

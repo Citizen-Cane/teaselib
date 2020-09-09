@@ -26,7 +26,7 @@ extern "C"
             // delete nativeObject;
         }
         catch (NativeException& e) {
-            JNIException::throwNew(env, e);
+            JNIException::rethrow(env, e);
         }
         catch (JNIException& /*e*/) {
             // Forwarded automatically

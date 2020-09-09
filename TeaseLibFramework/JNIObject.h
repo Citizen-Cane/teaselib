@@ -9,6 +9,7 @@
 class Objects {
 public:
 	static void requireNonNull(const wchar_t* name, jobject jobj);
+	static void requireNonNull(const wchar_t* name, void* jobj);
 };
 
 template<class T> class JNIObject

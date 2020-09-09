@@ -175,6 +175,7 @@
     <ClInclude Include="COMException.h" />
     <ClInclude Include="COMUser.h" />
     <ClInclude Include="Event.h" />
+    <ClInclude Include="JNIArray.h" />
     <ClInclude Include="JNIClass.h" />
     <ClInclude Include="JNIException.h" />
     <ClInclude Include="JNIObject.h" />
@@ -193,6 +194,7 @@
     <ClCompile Include="COMException.cpp" />
     <ClCompile Include="COMUser.cpp" />
     <ClCompile Include="Event.cpp" />
+    <ClCompile Include="JNIArray.cpp" />
     <ClCompile Include="JNIClass.cpp" />
     <ClCompile Include="JNIException.cpp" />
     <ClCompile Include="JNIObject.cpp" />

@@ -1,11 +1,14 @@
 #include "pch.h"
 
 #include<algorithm>
+#include<exception>
+#include<stdexcept>
 #include<vector>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+#include <JNIArray.h>
 #include <JNIObject.h>
 #include <JNIUtilities.h>
 
@@ -37,8 +40,16 @@ extern "C"
 			HumanPose* humanPose = new HumanPose(env);
 			return reinterpret_cast<jlong>(humanPose);
 		}
+		catch (std::invalid_argument& e) {
+			JNIException::rethrow(env, e);
+			return 0;
+		}
+		catch (std::exception& e) {
+			JNIException::rethrow(env, e);
+			return 0;
+		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		}
 		catch (JNIException& e) {
 			e.rethrow();
@@ -71,8 +82,16 @@ extern "C"
 			HumanPose* humanPose = static_cast<HumanPose*>(NativeObject::get(env, jthis));
 			return humanPose->acquire(jdevice, jrotation);
 		}
+		catch (std::invalid_argument& e) {
+			JNIException::rethrow(env, e);
+			return false;
+		}
+		catch (std::exception& e) {
+			JNIException::rethrow(env, e);
+			return false;
+		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 			return false;
 		}
 		catch (JNIException& e) {
@@ -89,13 +108,21 @@ extern "C"
 	JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_HumanPose_acquireImage
 	(JNIEnv* env, jobject jthis, jbyteArray jimage) {
 		try {
-			Objects::requireNonNull(L"device", jimage);
+			Objects::requireNonNull(L"image", jimage);
 
 			HumanPose* humanPose = static_cast<HumanPose*>(NativeObject::get(env, jthis));
 			return humanPose->acquire(jimage);
 		}
+		catch (std::invalid_argument& e) {
+			JNIException::rethrow(env, e);
+			return false;
+		}
+		catch (std::exception& e) {
+			JNIException::rethrow(env, e);
+			return false;
+		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 			return false;
 		}
 		catch (JNIException& e) {
@@ -118,8 +145,14 @@ extern "C"
 
 			humanPose->estimate();
 		}
+		catch (std::invalid_argument& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (std::exception& e) {
+			JNIException::rethrow(env, e);
+		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		}
 		catch (JNIException& e) {
 			e.rethrow();
@@ -186,8 +219,16 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 
 		return JNIUtilities::asList(env, results);
 	}
+	catch (std::invalid_argument& e) {
+		JNIException::rethrow(env, e);
+		return nullptr;
+	}
+	catch (std::exception& e) {
+		JNIException::rethrow(env, e);
+		return nullptr;
+	}
 	catch (NativeException& e) {
-		JNIException::throwNew(env, e);
+		JNIException::rethrow(env, e);
 		return nullptr;
 	}
 	catch (JNIException& e) {
@@ -226,12 +267,17 @@ bool HumanPose::acquire(jobject jdevice, jobject jrotation)
 
 bool HumanPose::acquire(jbyteArray jimage)
 {
-	jbyte* image = (jbyte*)env->GetByteArrayElements(jimage, NULL);
-	jsize size = env->GetArrayLength(jimage);
-	Mat data(1, size, CV_8UC1, (void*)image);
-	imdecode(data, IMREAD_COLOR).copyTo(frame);
-	env->ReleaseByteArrayElements(jimage, image, 0);
-	return true;
+	JNIByteArray image(env, jimage);
+	if (image.size == 0) {
+		throw invalid_argument("no bytes");
+	} else {
+		Mat data(1, image.size, CV_8UC1, (void*)image.bytes);
+		imdecode(data, IMREAD_COLOR).copyTo(frame);
+		if (frame.empty()) {
+			throw invalid_argument("not an image");
+		}
+		return true;
+	}
 }
 
 void HumanPose::estimate()

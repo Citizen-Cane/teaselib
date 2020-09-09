@@ -40,7 +40,7 @@ extern "C"
             SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, jthis, locale);
             NativeObject::checkInitializedOrThrow(speechRecognizer);
         } catch (NativeException& e) {
-            JNIException::throwNew(env, e);
+            JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -64,7 +64,7 @@ extern "C"
 			};
 			speechRecognizer->startEventHandler(env,  jevents, signalInitialized);
         } catch (NativeException& e) {
-            JNIException::throwNew(env, e);
+            JNIException::rethrow(env, e);
         } catch (JNIException& e) {
 			e.rethrow();
         }
@@ -99,7 +99,7 @@ extern "C"
             }
             speechRecognizer->setChoices(choices);
         } catch (NativeException& e) {
-            JNIException::throwNew(env, e);
+            JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -130,7 +130,7 @@ extern "C"
 			speechRecognizer->setChoices(stream);
 		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		}
 		catch (JNIException& e) {
 			e.rethrow();
@@ -150,7 +150,7 @@ extern "C"
             NativeObject::checkInitializedOrThrow(speechRecognizer);
             speechRecognizer->setMaxAlternates(maxAlternates);
         } catch (NativeException& e) {
-            JNIException::throwNew(env, e);
+            JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -168,7 +168,7 @@ extern "C"
             NativeObject::checkInitializedOrThrow(speechRecognizer);
             speechRecognizer->startRecognition();
         } catch (NativeException& e) {
-            JNIException::throwNew(env, e);
+            JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -190,7 +190,7 @@ extern "C"
 			speechRecognizer->emulateRecognition(JNIString(env,emulatedRecognitionResult));
 		}
 		catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -208,7 +208,7 @@ extern "C"
             NativeObject::checkInitializedOrThrow(speechRecognizer);
             speechRecognizer->stopRecognition();
         } catch (NativeException& e) {
-            JNIException::throwNew(env, e);
+            JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}

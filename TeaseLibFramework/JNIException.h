@@ -1,5 +1,8 @@
 #pragma once
 
+#include <exception>
+#include <stdexcept>
+
 #include <jni.h>
 
 #include "JNIObject.h"
@@ -10,7 +13,10 @@ class NativeException;
 class JNIException : public JNIObject<jthrowable>
 {
 public:
-	static void throwNew(JNIEnv* env, NativeException &e);
+	static void rethrow(JNIEnv* env, std::invalid_argument& e);
+	static void rethrow(JNIEnv* env, std::exception& e);
+	static void rethrow(JNIEnv* env, std::exception& e, const char* runtimeClass);
+	static void rethrow(JNIEnv* env, NativeException& e);
 
 	JNIException(JNIEnv *env);
 	JNIException(JNIEnv *env, jthrowable throwable);

@@ -46,7 +46,7 @@ extern "C"
 				}
 				speechSynthesizer->addLexiconEntry(JNIString(env, locale), JNIString(env, word), static_cast<SPPARTOFSPEECH>(partOfSpeech), JNIString(env, pronunciation));
 			} catch (NativeException& e) {
-				JNIException::throwNew(env, e);
+				JNIException::rethrow(env, e);
 			} catch (JNIException& e) {
 				e.rethrow();
 			}
@@ -66,7 +66,7 @@ extern "C"
 			}
 			return speechSynthesizer->voiceList();
 		} catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -90,7 +90,7 @@ extern "C"
             // A null voice is a valid value, it denotes the system default voice
 			speechSynthesizer->setVoice(voice);
 		} catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -122,7 +122,7 @@ extern "C"
             speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
             speechSynthesizer->speak(JNIString(env, prompt));
 		} catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -146,7 +146,7 @@ extern "C"
             const std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
             actualPath = JNIString(env, soundFile.c_str()).detach();
 		} catch (NativeException& e) {
-			JNIException::throwNew(env, e);
+			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
@@ -166,7 +166,7 @@ extern "C"
         NativeObject::checkInitializedOrThrow(speechSynthesizer);
         speechSynthesizer->stop();
 	} catch (NativeException& e) {
-		JNIException::throwNew(env, e);
+		JNIException::rethrow(env, e);
 	} catch (JNIException& e) {
 		e.rethrow();
 	}

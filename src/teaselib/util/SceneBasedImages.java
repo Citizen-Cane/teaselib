@@ -106,7 +106,6 @@ public class SceneBasedImages extends AbstractImages {
 
     private static Map<String, PictureSet> pictureSets(Resources resources) {
         Map<String, Pose> poses = new LinkedHashMap<>();
-
         for (String resource : resources) {
             poses.computeIfAbsent(parent(resource), key -> new Pose(key, resources)).add(resource);
         }
@@ -216,7 +215,7 @@ public class SceneBasedImages extends AbstractImages {
         public Pose(String key, Resources resources) {
             this.key = key;
             this.resources = new Resources(resources.script, Collections.emptyList());
-            this.images = new MoodImages(resources);
+            this.images = new MoodImages(this.resources);
         }
 
         public void add(String resource) {

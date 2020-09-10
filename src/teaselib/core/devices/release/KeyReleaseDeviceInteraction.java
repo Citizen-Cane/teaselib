@@ -23,6 +23,7 @@ import teaselib.Gadgets;
 import teaselib.State.Options;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
+import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptEventArgs;
 import teaselib.core.ScriptEvents;
@@ -223,7 +224,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
 
     private void processPendingPreparations() {
         Actor actor = currentActor();
-        Definitions definitions = definitions(actor);
+        DeviceInteractionDefinitions<Items, Instructions> definitions = definitions(actor);
         Deque<Items> pendingPreparations = definitions.pending;
 
         List<Items> unassigned = new ArrayList<>();
@@ -245,7 +246,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
 
     private void processLateApply() {
         Actor actor = currentActor();
-        Definitions definitions = definitions(actor);
+        DeviceInteractionDefinitions<Items, Instructions> definitions = definitions(actor);
 
         Predicate<Entry<Items, Instructions>> unbound = e -> getActuator(e.getKey()).isEmpty();
         BinaryOperator<Entry<Items, Instructions>> maxApplied = (a,
@@ -277,7 +278,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     private void passKeys(Actor actor, Actuator actuator, Items removed) {
-        Definitions definitions = definitions(actor);
+        DeviceInteractionDefinitions<Items, Instructions> definitions = definitions(actor);
         Deque<Items> pendingPreparations = definitions.pending;
 
         for (Items items : pendingPreparations) {
@@ -429,7 +430,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     public boolean clearAll(Actor actor) {
-        DeviceInteractionImplementation<Items, Instructions>.Definitions definitions = definitions(actor);
+        DeviceInteractionDefinitions<Items, Instructions> definitions = definitions(actor);
         if (definitions.isEmpty()) {
             return false;
         } else {
@@ -439,7 +440,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     public boolean clear(Actor actor, Items items) {
-        DeviceInteractionImplementation<Items, Instructions>.Definitions definitions = definitions(actor);
+        DeviceInteractionDefinitions<Items, Instructions> definitions = definitions(actor);
         if (definitions.isEmpty()) {
             return false;
         } else {

@@ -1,7 +1,7 @@
 package teaselib;
 
-import static teaselib.core.ai.perception.HumanPose.Interests.Proximity;
-import static teaselib.core.ai.perception.HumanPose.Interests.Status;
+import static teaselib.core.ai.perception.HumanPose.Interest.Proximity;
+import static teaselib.core.ai.perception.HumanPose.Interest.Status;
 import static teaselib.core.ai.perception.HumanPose.Status.Available;
 
 import java.io.IOException;

@@ -2,9 +2,9 @@ package teaselib.core;
 
 import java.util.function.Consumer;
 
-import teaselib.Actor;
 import teaselib.State;
 import teaselib.core.ScriptEventArgs.BeforeNewMessage;
+import teaselib.core.ScriptEvents.ScriptEventAction.Run;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.util.Item;
@@ -58,63 +58,70 @@ public class ScriptEvents {
 
     public class ScriptEventSource {
         public ScriptEventTarget<ScriptEventArgs.BeforeNewMessage> beforeMessage() {
-            return new ScriptEventTarget<>(this, beforeMessage);
+            return new ScriptEventTarget<>(beforeMessage);
         }
 
-        public ScriptEventTarget<ScriptEventArgs.ActorChanged> actorChanged(Actor actor) {
-            return new ScriptEventTarget<>(this, actorChanged, actor);
+        public ScriptEventTarget<ScriptEventArgs.ActorChanged> actorChanged() {
+            return new ScriptEventTarget<>(actorChanged);
         }
     }
 
     public static class ScriptEventTarget<E extends ScriptEventArgs> {
-        private final ScriptEventSource source;
         final EventSource<E> eventSource;
 
-        public ScriptEventTarget(ScriptEventSource source, EventSource<E> eventSource) {
-            this.source = source;
-            this.eventSource = eventSource;
-        }
-
-        public ScriptEventTarget(ScriptEventSource source, EventSource<E> eventSource, Actor actor) {
-            this.source = source;
+        public ScriptEventTarget(EventSource<E> eventSource) {
             this.eventSource = eventSource;
         }
 
         public ScriptEventAction<E> thenOnce(Runnable action) {
-            return new ScriptEventAction<>(source, this, action);
+            return new ScriptEventAction<>(this, action, Run.ONCE);
         }
 
         public ScriptEventAction<E> thenOnce(Consumer<E> action) {
-            return new ScriptEventAction<>(source, this, action);
+            return new ScriptEventAction<>(this, action, Run.ONCE);
+        }
+
+        public ScriptEventAction<E> then(Runnable action) {
+            return new ScriptEventAction<>(this, action, Run.FOREVER);
+        }
+
+        public ScriptEventAction<E> then(Consumer<E> action) {
+            return new ScriptEventAction<>(this, action, Run.FOREVER);
         }
     }
 
     public static class ScriptEventAction<E extends ScriptEventArgs> implements Event<E> {
-        private final ScriptEventSource source;
         private final ScriptEventTarget<E> target;
         private final Consumer<E> action;
+        private final Run until;
+
         private boolean inProgress = false;
 
-        public ScriptEventAction(ScriptEventSource source, ScriptEventTarget<E> target, Runnable action) {
-            this.source = source;
-            this.target = target;
-            this.action = e -> action.run();
-            target.eventSource.add(this);
+        enum Run {
+            ONCE,
+            FOREVER
         }
 
-        public ScriptEventAction(ScriptEventSource source, ScriptEventTarget<E> target, Consumer<E> action) {
-            this.source = source;
+        public ScriptEventAction(ScriptEventTarget<E> target, Runnable action, Run until) {
+            this(target, e -> action.run(), until);
+        }
+
+        public ScriptEventAction(ScriptEventTarget<E> target, Consumer<E> action, Run until) {
             this.target = target;
             this.action = action;
+            this.until = until;
             target.eventSource.add(this);
         }
 
         @Override
         public void run(E eventArgs) {
             if (!inProgress) {
-                target.eventSource.remove(this);
                 // Avoid being called again when actions themselves remove items
                 inProgress = true;
+
+                if (until == Run.ONCE) {
+                    target.eventSource.remove(this);
+                }
                 try {
                     action.accept(eventArgs);
                 } finally {

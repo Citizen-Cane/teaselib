@@ -19,10 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Answer;
-import teaselib.Body;
 import teaselib.Config;
 import teaselib.Duration;
-import teaselib.Gadgets;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
@@ -30,10 +28,13 @@ import teaselib.Resources;
 import teaselib.ScriptFunction;
 import teaselib.State;
 import teaselib.TeaseScript;
+import teaselib.core.ai.perception.HeadGesturesV2InputMethod;
 import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
-import teaselib.core.ai.perception.HumanPoseDeviceInteraction.PoseAspects;
+import teaselib.core.ai.perception.HumanPoseDeviceInteraction.Reaction;
+import teaselib.core.ai.perception.PoseAspects;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.RenderedMessage.Decorator;
@@ -45,7 +46,6 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
-import teaselib.core.ui.HeadGestureInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.InputMethodEventArgs;
 import teaselib.core.ui.InputMethods;
@@ -57,7 +57,6 @@ import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.ui.SpeechRecognitionInputMethodEventArgs;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.WildcardPattern;
-import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
 import teaselib.util.ItemGuid;
 import teaselib.util.SpeechRecognitionRejectedScript;
@@ -108,29 +107,37 @@ public abstract class Script {
             handleAutoRemove();
             // bindMotionDetectorToVideoRenderer();
             bindNetworkProperties();
+
+            if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
+                InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
+                inputMethods.add(new HeadGesturesV2InputMethod(scriptRenderer.getInputMethodExecutorService()));
+            }
+
+            scriptRenderer.events.when().actorChanged().then(e -> {
+                HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
+                DeviceInteractionDefinitions<Interest, Reaction> definitions = humanPoseInteraction
+                        .definitions((e.actor));
+                if (definitions.isEmpty()) {
+                    defineHumanPoseInteractions(definitions);
+                }
+            });
+
         }
 
-        // TODO for multiple actors within the same namespace,
-        // this needs to be moved to the Script(Script ...) constructors
-        scriptRenderer.events.when().actorChanged(actor).thenOnce(e -> {
-            if (e.actor == actor) {
-                // TODO DebugSetup.applyTo(config) must set only defined aspects
-                // - currently it's always enabled
-                // -> massive change to test scripts
-                // Configuration persistent properties fails to lookup values in default properties file
-                if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
-                    defineHumanPoseInteractions();
-                }
-            }
-        });
         // TODO initializing in actorChanged-event breaks device handling
         defineKeyReleaseInteractions(actor);
     }
 
-    protected void defineHumanPoseInteractions() {
-        HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-        humanPoseInteraction.definitions(actor).define(HumanPose.Interests.Proximity,
-                new HumanPoseDeviceInteraction.Reaction(HumanPose.Interests.Proximity, new Consumer<PoseAspects>() {
+    protected void defineHumanPoseInteractions(DeviceInteractionDefinitions<Interest, Reaction> definitions) {
+        // TODO each aspect can be registered only once -> change key to owner object (input method, script, actor)
+        // -> use value object as key to degenerate map to set
+        definitions.define(HumanPose.Interest.Proximity,
+                new HumanPoseDeviceInteraction.Reaction(HumanPose.Interest.Proximity, new Consumer<PoseAspects>() {
+
+                    SpeechRecognitionInputMethod speechRecognitionInputMethod = teaseLib.globals.get(InputMethods.class)
+                            .get(SpeechRecognitionInputMethod.class);
+                    HeadGesturesV2InputMethod headGesturesInputMethod = teaseLib.globals.get(InputMethods.class)
+                            .get(HeadGesturesV2InputMethod.class);
 
                     private final Function<Boolean, Float> awareness = Hysteresis
                             .bool(Hysteresis.function(0.0f, 1.0f, 0.25f), 1.0f, 0.0f);
@@ -138,23 +145,27 @@ public abstract class Script {
 
                     @Override
                     public void accept(PoseAspects pose) {
-                        SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
-                                .get(SpeechRecognitionInputMethod.class);
                         Optional<Proximity> aspect = pose.aspect(Proximity.class);
+                        boolean speechProximity;
                         if (aspect.isPresent()) {
                             Proximity proximity = aspect.get();
-                            boolean speechProximity = awareness.apply(proximity == Proximity.FACE2FACE) > 0.5f;
-                            inputMethod.setFaceToFace(speechProximity);
                             teaseLib.host.setUserProximity(proximity);
+                            speechProximity = awareness.apply(proximity == Proximity.FACE2FACE) > 0.5f;
                             previous = proximity;
                         } else {
-                            boolean speechProximity = awareness.apply(false) > 0.5f;
-                            inputMethod.setFaceToFace(speechProximity);
+                            speechProximity = awareness.apply(false) > 0.5f;
                             if (previous == Proximity.CLOSE || previous == Proximity.FACE2FACE) {
                                 teaseLib.host.setUserProximity(Proximity.NEAR);
                             } else {
                                 teaseLib.host.setUserProximity(previous);
                             }
+                        }
+
+                        speechRecognitionInputMethod.setFaceToFace(speechProximity);
+                        if (speechProximity && !definitions.contains(HumanPose.Interest.HeadGestures)) {
+                            definitions.define(HumanPose.Interest.HeadGestures, headGesturesInputMethod.trackGaze);
+                        } else if (!speechProximity && definitions.contains(HumanPose.Interest.HeadGestures)) {
+                            definitions.remove(HumanPose.Interest.HeadGestures);
                         }
                     }
                 }));
@@ -474,12 +485,12 @@ public abstract class Script {
         inputMethods.add(teaseLib.host.inputMethod());
 
         // TODO Move this into head gestures method
-        if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
-                && teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied()
-                && HeadGestureInputMethod.distinctGestures(answers)) {
-            inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getInputMethodExecutorService(),
-                    teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
-        }
+        // if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
+        // && teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied()
+        // && HeadGestureInputMethod.distinctGestures(answers)) {
+        // inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getInputMethodExecutorService(),
+        // teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
+        // }
 
         inputMethods.add(scriptRenderer.scriptEventInputMethod);
 

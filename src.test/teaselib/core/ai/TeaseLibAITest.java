@@ -1,6 +1,7 @@
 package teaselib.core.ai;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
@@ -45,13 +46,14 @@ public class TeaseLibAITest {
 
             try (SceneCapture sceneCapture = sceneCaptures.get(0); HumanPose humanPose = new HumanPose()) {
                 sceneCapture.start();
-                humanPose.poses(sceneCapture, Rotation.None);
+                List<Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
+                assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
             }
         }
     }
 
     @Test
-    public void testCapture() {
+    public void testImageCapture() {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             assertNotNull(teaseLibAI.sceneCaptures());
         }
@@ -63,6 +65,7 @@ public class TeaseLibAITest {
             sceneCapture.start();
             List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
             assertEquals(2, poses.size());
+            assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
         }
     }
 

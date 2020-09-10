@@ -11,6 +11,12 @@ public class ScriptEventArgs extends EventArgs {
         public ActorChanged(Actor actor) {
             this.actor = actor;
         }
+
+        @Override
+        public String toString() {
+            return actor.toString();
+        }
+
     }
 
     public static class BeforeNewMessage extends ScriptEventArgs {
@@ -24,6 +30,11 @@ public class ScriptEventArgs extends EventArgs {
 
         public BeforeNewMessage(OutlineType type) {
             this.type = type;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + super.toString() + ", " + type.name() + "]";
         }
     }
 

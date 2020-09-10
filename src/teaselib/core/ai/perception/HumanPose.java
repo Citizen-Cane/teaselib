@@ -12,6 +12,8 @@ import teaselib.core.jni.NativeObject;
 
 public class HumanPose extends NativeObject {
 
+    private long timestamp = 0;
+
     public HumanPose() {
         super(init());
     }
@@ -22,15 +24,16 @@ public class HumanPose extends NativeObject {
         // Tag interface
     }
 
-    public enum Interests {
+    public enum Interest {
         Status(1),
         Proximity(2),
+        HeadGestures(4),
 
         ;
 
         final int bit;
 
-        private Interests(int bit) {
+        private Interest(int bit) {
             this.bit = bit;
         }
     }
@@ -38,6 +41,7 @@ public class HumanPose extends NativeObject {
     public enum Status implements PoseAspect {
         None,
         Available,
+        Stream,
     }
 
     public enum Proximity implements PoseAspect {
@@ -62,6 +66,11 @@ public class HumanPose extends NativeObject {
         public static final Proximity[] Close = { NOTAWAY, NOTFAR, NOTNEAR, NOTFACE2FACE, CLOSE };
     }
 
+    public enum HeadGestures implements PoseAspect {
+        Gaze,
+        None,
+    }
+
     public static class Estimation {
 
         public static class Gaze {
@@ -77,6 +86,8 @@ public class HumanPose extends NativeObject {
             }
 
         }
+
+        public static final Estimation NONE = new HumanPose.Estimation();
 
         public final Optional<Float> distance;
         public final Optional<Point2D> head;
@@ -161,7 +172,7 @@ public class HumanPose extends NativeObject {
 
     }
 
-    public void setInterests(Set<Interests> interests) {
+    public void setInterests(Set<Interest> interests) {
         setInterests(interests.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b));
     }
 
@@ -180,6 +191,7 @@ public class HumanPose extends NativeObject {
     }
 
     public List<HumanPose.Estimation> poses(SceneCapture device, Rotation rotation) {
+        timestamp = System.currentTimeMillis();
         // TODO test Rotation.None in C++ code instead of setting it to null here
         if (acquire(device, rotation == Rotation.None ? null : rotation)) {
             estimate();
@@ -198,12 +210,17 @@ public class HumanPose extends NativeObject {
     }
 
     public List<HumanPose.Estimation> poses(byte[] bytes) {
+        timestamp = System.currentTimeMillis();
         if (acquireImage(bytes)) {
             estimate();
             return results();
         } else {
             throw new SceneCapture.DeviceLost("Camera not started or closed");
         }
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
 }

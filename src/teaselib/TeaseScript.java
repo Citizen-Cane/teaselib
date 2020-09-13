@@ -674,6 +674,25 @@ public abstract class TeaseScript extends TeaseScriptMath {
             Answer command2ndConfirmation, Message intermediateInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
 
+        perform(item, firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
+                intermediateInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
+                prolongationComment);
+
+        return item.apply();
+    }
+
+    public void remove(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+            Answer command2ndConfirmation, Message intermediateInstructions, Message completionQuestion,
+            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
+
+        perform(item, firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
+                intermediateInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
+                prolongationComment);
+    }
+
+    private void perform(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+            Answer command2ndConfirmation, Message intermediateInstructions, Message completionQuestion,
+            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
         HumanPoseScriptInteraction poseEstimation = interaction(HumanPoseScriptInteraction.class);
         completeMandatory();
 
@@ -733,9 +752,6 @@ public abstract class TeaseScript extends TeaseScriptMath {
                 }
             }
         }
-
-        State.Options options = item.apply();
-        return options;
     }
 
 }

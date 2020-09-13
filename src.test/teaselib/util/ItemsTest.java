@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -781,6 +782,27 @@ public class ItemsTest {
 
         restraints.remove();
         assertEquals(1, restraints.getApplied().size());
+    }
+
+    @Test
+    public void testThatRemovingPartiallyAppliedItemsRequiresGetApplied() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        assertEquals(4, restraints.size());
+
+        restraints.item(Toys.Wrist_Restraints).apply();
+        assertEquals(1, restraints.getApplied().size());
+
+        try {
+            restraints.remove();
+            fail("Only applied items can be removed");
+        } catch (IllegalStateException e) { // expected
+        }
+
+        restraints.getApplied().remove();
+        assertEquals(0, restraints.getApplied().size());
     }
 
     @Test

@@ -670,28 +670,71 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return false;
     }
 
+    /**
+     * Fetch items, but don't apply them (yet)
+     */
+    public void fetch(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
+            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
+        perform(new Items(item), firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
+                progressInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
+                prolongationComment);
+    }
+
+    public void fetch(Items items, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
+            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
+        perform(items, firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
+                progressInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
+                prolongationComment);
+    }
+
+    /**
+     * Apply items at the end of the call
+     */
     public State.Options apply(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
-            Answer command2ndConfirmation, Message intermediateInstructions, Message completionQuestion,
+            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
 
-        perform(item, firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
-                intermediateInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
+        return apply(new Items(item), firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
+                progressInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
                 prolongationComment);
-
-        return item.apply();
     }
 
+    public State.Options apply(Items items, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
+            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
+
+        perform(items, firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
+                progressInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
+                prolongationComment);
+
+        return items.apply();
+    }
+
+    /**
+     * Remove the items at the start of the call
+     */
     public void remove(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
-            Answer command2ndConfirmation, Message intermediateInstructions, Message completionQuestion,
+            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
-
-        perform(item, firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
-                intermediateInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
+        remove(new Items(item), firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
+                progressInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
                 prolongationComment);
     }
 
-    private void perform(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
-            Answer command2ndConfirmation, Message intermediateInstructions, Message completionQuestion,
+    public void remove(Items items, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
+            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
+
+        items.remove();
+        perform(items, firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
+                progressInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
+                prolongationComment);
+    }
+
+    protected void perform(Items items, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
         HumanPoseScriptInteraction poseEstimation = interaction(HumanPoseScriptInteraction.class);
         completeMandatory();
@@ -715,15 +758,20 @@ public abstract class TeaseScript extends TeaseScriptMath {
                     }
                 }
 
-                // TODO implement instructions as infinite script function, cancel when slave is face2face
+                // TODO implement instructions as infinite script function
+                // + start when slave is near
+                // + cancel when slave is face2face
                 // use supplier/stream/iterator for random or sequential messages, increase delay between messages
-                show(item);
+                show(items);
                 append(Message.Delay5s);
-                append(intermediateInstructions);
+                // TODO implement progressing instructions message - don't start over but continue where paused
+                append(progressInstructions);
                 completeMandatory();
                 faceToFaceInfinite.call();
 
                 say(completionQuestion);
+                show(items);
+                // TODO if the slave leaves FACE2FACE for a couple of seconds, resume instructions
                 if (reply(completionConfirmation, prolongationExcuse).meaning != Meaning.NO) {
                     break;
                 } else {
@@ -737,7 +785,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             while (true) {
                 append(Message.Delay10s);
                 if (reply(() -> {
-                    append(intermediateInstructions);
+                    append(progressInstructions);
                     append(Message.Delay10s);
                 }, completionConfirmation) == Answer.Timeout) {
                     say(completionQuestion);

@@ -422,6 +422,9 @@ public class ItemsTest {
         Item wristRestraints2 = script.items(Toys.Wrist_Restraints).items(Toys.Wrist_Restraints).get();
         assertNotEquals(Item.NotFound, wristRestraints2);
         assertTrue(wristRestraints2.is(Toys.Wrist_Restraints));
+
+        Item notFound = script.items(Toys.Wrist_Restraints).items(Toys.Humbler).get();
+        assertEquals(Item.NotFound, notFound);
     }
 
     @Test

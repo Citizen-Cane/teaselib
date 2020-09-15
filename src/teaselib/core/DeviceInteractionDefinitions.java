@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayDeque;
@@ -8,6 +9,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -80,6 +82,10 @@ public class DeviceInteractionDefinitions<K, V> implements Iterable<Map.Entry<K,
 
     public Stream<Entry<K, V>> stream() {
         return elements.entrySet().stream();
+    }
+
+    public List<V> values() {
+        return elements.entrySet().stream().map(Map.Entry::getValue).collect(toList());
     }
 
     public void clear() {

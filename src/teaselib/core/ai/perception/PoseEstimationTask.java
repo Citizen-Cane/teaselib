@@ -1,5 +1,6 @@
 package teaselib.core.ai.perception;
 
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.Collections;
@@ -187,11 +188,11 @@ class PoseEstimationTask implements Callable<PoseAspects> {
 
     private Set<Interest> interests(Actor actor) {
         DeviceInteractionDefinitions<Interest, Reaction> reactions = interactions.defs(actor);
-        return interests(reactions);
+        return interests(reactions.values());
     }
 
-    private Set<Interest> interests(DeviceInteractionDefinitions<Interest, Reaction> reactions) {
-        return reactions.stream().map(Map.Entry::getValue).map(reaction -> reaction.aspect).collect(toSet());
+    private Set<Interest> interests(List<Reaction> reactions) {
+        return reactions.stream().map(reaction -> reaction.aspect).collect(toSet());
     }
 
     private Set<Interest> signal(Actor actor, PoseAspects update, PoseAspects previous) {
@@ -199,11 +200,11 @@ class PoseEstimationTask implements Callable<PoseAspects> {
 
         if (theSameActor(actor)) {
             if (update.is(HumanPose.Status.Stream) || !update.equals(previous)) {
-                // TODO signal only the reactions with changed interest state, not all
-                DeviceInteractionDefinitions<Interest, Reaction> reactions = interactions.defs(actor);
-                Set<Interest> interests = interests(reactions);
-                reactions.stream().map(Map.Entry::getValue).filter(e -> update.is(e.aspect))
-                        .forEach(e -> e.consumer.accept(update));
+                // TODO signal only the reactions with changed interest state instead of all
+                DeviceInteractionDefinitions<Interest, Reaction> definitions = interactions.defs(actor);
+                Set<Interest> interests = interests(definitions.values());
+                List<Reaction> reactions = definitions.stream().map(Map.Entry::getValue).collect(toList());
+                reactions.stream().filter(e -> update.is(e.aspect)).forEach(e -> e.consumer.accept(update));
 
                 awaitPose.lock();
                 try {
@@ -212,7 +213,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                     awaitPose.unlock();
                 }
 
-                updated = interests(reactions);
+                updated = interests(interactions.defs(actor).values());
                 updated.removeAll(interests);
             }
         }

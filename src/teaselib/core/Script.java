@@ -30,11 +30,9 @@ import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.core.ai.perception.HeadGesturesV2InputMethod;
 import teaselib.core.ai.perception.HumanPose;
-import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
-import teaselib.core.ai.perception.HumanPoseDeviceInteraction.Reaction;
-import teaselib.core.ai.perception.PoseAspects;
+import teaselib.core.ai.perception.PoseEstimationEventArgs;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.RenderedMessage.Decorator;
@@ -105,20 +103,19 @@ public abstract class Script {
         if (startOnce) {
             syncAudioAndSpeechRecognition();
             handleAutoRemove();
-            // bindMotionDetectorToVideoRenderer();
             bindNetworkProperties();
 
             if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
                 InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
-                inputMethods.add(new HeadGesturesV2InputMethod(scriptRenderer.getInputMethodExecutorService()));
+                inputMethods.add(new HeadGesturesV2InputMethod( //
+                        deviceInteraction(HumanPoseDeviceInteraction.class),
+                        scriptRenderer.getInputMethodExecutorService()));
             }
 
             scriptRenderer.events.when().actorChanged().then(e -> {
                 HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-                DeviceInteractionDefinitions<Interest, Reaction> definitions = humanPoseInteraction
-                        .definitions((e.actor));
-                if (definitions.isEmpty()) {
-                    defineHumanPoseInteractions(definitions);
+                if (!humanPoseInteraction.contains(e.actor)) {
+                    defineHumanPoseInteractions(e.actor, humanPoseInteraction);
                 }
             });
 
@@ -128,24 +125,20 @@ public abstract class Script {
         defineKeyReleaseInteractions(actor);
     }
 
-    protected void defineHumanPoseInteractions(DeviceInteractionDefinitions<Interest, Reaction> definitions) {
-        // TODO each aspect can be registered only once -> change key to owner object (input method, script, actor)
-        // -> use value object as key to degenerate map to set
-        definitions.define(HumanPose.Interest.Proximity,
-                new HumanPoseDeviceInteraction.Reaction(HumanPose.Interest.Proximity, new Consumer<PoseAspects>() {
+    protected void defineHumanPoseInteractions(Actor actor, HumanPoseDeviceInteraction humanPoseInteraction) {
+        humanPoseInteraction.addEventListener(actor,
+                new HumanPoseDeviceInteraction.EventListener(HumanPose.Interest.Proximity) {
 
-                    SpeechRecognitionInputMethod speechRecognitionInputMethod = teaseLib.globals.get(InputMethods.class)
-                            .get(SpeechRecognitionInputMethod.class);
-                    HeadGesturesV2InputMethod headGesturesInputMethod = teaseLib.globals.get(InputMethods.class)
-                            .get(HeadGesturesV2InputMethod.class);
+                    private final SpeechRecognitionInputMethod speechRecognitionInputMethod = teaseLib.globals
+                            .get(InputMethods.class).get(SpeechRecognitionInputMethod.class);
 
                     private final Function<Boolean, Float> awareness = Hysteresis
                             .bool(Hysteresis.function(0.0f, 1.0f, 0.25f), 1.0f, 0.0f);
                     private Proximity previous = Proximity.FACE2FACE;
 
                     @Override
-                    public void accept(PoseAspects pose) {
-                        Optional<Proximity> aspect = pose.aspect(Proximity.class);
+                    public void run(PoseEstimationEventArgs eventArgs) throws Exception {
+                        Optional<Proximity> aspect = eventArgs.pose.aspect(Proximity.class);
                         boolean speechProximity;
                         if (aspect.isPresent()) {
                             Proximity proximity = aspect.get();
@@ -160,15 +153,9 @@ public abstract class Script {
                                 teaseLib.host.setUserProximity(previous);
                             }
                         }
-
                         speechRecognitionInputMethod.setFaceToFace(speechProximity);
-                        if (speechProximity && !definitions.contains(HumanPose.Interest.HeadGestures)) {
-                            definitions.define(HumanPose.Interest.HeadGestures, headGesturesInputMethod.trackGaze);
-                        } else if (!speechProximity && definitions.contains(HumanPose.Interest.HeadGestures)) {
-                            definitions.remove(HumanPose.Interest.HeadGestures);
-                        }
                     }
-                }));
+                });
     }
 
     private void defineKeyReleaseInteractions(Actor actor) {

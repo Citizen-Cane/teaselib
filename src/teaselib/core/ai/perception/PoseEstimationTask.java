@@ -1,7 +1,6 @@
 package teaselib.core.ai.perception;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,8 +22,8 @@ import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.HeadGestures;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
-import teaselib.core.ai.perception.HumanPoseDeviceInteraction.Reaction;
 import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
+import teaselib.core.events.EventSource;
 
 class PoseEstimationTask implements Callable<PoseAspects> {
     final TeaseLibAI teaseLibAI;
@@ -171,8 +170,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     }
 
     private PoseAspects getPoseAspects(Actor actor, HumanPose humanPose, SceneCapture device) {
-        // TODO Each interest can have only one handler - cannot just disable listeners (must unregister instead)
-        Set<Interest> interests = interests(actor);
+        Set<Interest> interests = interactions.definitions(actor).keySet();
         if (interests.isEmpty()) {
             return PoseAspects.Unavailable;
         } else {
@@ -186,25 +184,20 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         }
     }
 
-    private Set<Interest> interests(Actor actor) {
-        DeviceInteractionDefinitions<Interest, Reaction> reactions = interactions.defs(actor);
-        return interests(reactions.values());
-    }
-
-    private Set<Interest> interests(List<Reaction> reactions) {
-        return reactions.stream().map(reaction -> reaction.aspect).collect(toSet());
-    }
-
     private Set<Interest> signal(Actor actor, PoseAspects update, PoseAspects previous) {
         Set<Interest> updated = Collections.emptySet();
 
         if (theSameActor(actor)) {
             if (update.is(HumanPose.Status.Stream) || !update.equals(previous)) {
-                // TODO signal only the reactions with changed interest state instead of all
-                DeviceInteractionDefinitions<Interest, Reaction> definitions = interactions.defs(actor);
-                Set<Interest> interests = interests(definitions.values());
-                List<Reaction> reactions = definitions.stream().map(Map.Entry::getValue).collect(toList());
-                reactions.stream().filter(e -> update.is(e.aspect)).forEach(e -> e.consumer.accept(update));
+                DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = interactions
+                        .definitions(actor);
+                Set<Interest> interests = definitions.keySet();
+                List<Map.Entry<Interest, EventSource<PoseEstimationEventArgs>>> reactions = definitions.stream()
+                        .collect(toList());
+
+                PoseEstimationEventArgs eventArgs = new PoseEstimationEventArgs(actor, update);
+                reactions.stream().filter(e -> update.is(e.getKey())).map(Map.Entry::getValue)
+                        .forEach(e -> e.fire(eventArgs));
 
                 awaitPose.lock();
                 try {
@@ -213,7 +206,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                     awaitPose.unlock();
                 }
 
-                updated = interests(interactions.defs(actor).values());
+                updated = interactions.definitions(actor).keySet();
                 updated.removeAll(interests);
             }
         }

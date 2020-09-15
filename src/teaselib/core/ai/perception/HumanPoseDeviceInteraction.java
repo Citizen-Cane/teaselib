@@ -2,7 +2,6 @@ package teaselib.core.ai.perception;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,11 +13,12 @@ import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptRenderer;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
-import teaselib.core.ai.perception.HumanPoseDeviceInteraction.Reaction;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.events.Event;
+import teaselib.core.events.EventSource;
 
-public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<HumanPose.Interest, Reaction>
-        implements Closeable {
+public class HumanPoseDeviceInteraction extends
+        DeviceInteractionImplementation<HumanPose.Interest, EventSource<PoseEstimationEventArgs>> implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(HumanPoseDeviceInteraction.class);
 
     private final NamedExecutorService poseEstimation;
@@ -26,13 +26,11 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
     private Future<PoseAspects> future = null;
     final ScriptRenderer scriptRenderer;
 
-    public static class Reaction {
-        final Interest aspect;
-        final Consumer<PoseAspects> consumer;
+    public abstract static class EventListener implements Event<PoseEstimationEventArgs> {
+        final Interest interest;
 
-        public Reaction(Interest aspect, Consumer<PoseAspects> consumer) {
-            this.aspect = aspect;
-            this.consumer = consumer;
+        public EventListener(Interest interest) {
+            this.interest = interest;
         }
     }
 
@@ -59,8 +57,28 @@ public class HumanPoseDeviceInteraction extends DeviceInteractionImplementation<
         return task.awaitPose(interests, duration, unit, aspects);
     }
 
-    DeviceInteractionDefinitions<Interest, Reaction> defs(Actor actor) {
+    @Override
+    public DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions(Actor actor) {
         return super.definitions(actor);
+    }
+
+    public void addEventListener(Actor actor, EventListener listener) {
+        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = definitions(actor);
+        EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest,
+                k -> new EventSource<>(k.toString()));
+        eventSource.add(listener);
+    }
+
+    public boolean containsEventListener(Actor actor, EventListener listener) {
+        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = definitions(actor);
+        EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
+        return eventSource != null && eventSource.contains(listener);
+    }
+
+    public void removeEventListener(Actor actor, EventListener listener) {
+        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = definitions(actor);
+        EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
+        eventSource.remove(listener);
     }
 
     public HumanPose newHumanPose() {

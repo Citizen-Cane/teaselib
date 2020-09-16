@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -59,7 +58,6 @@ import teaselib.util.Item;
 import teaselib.util.ItemGuid;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
-import teaselib.util.math.Hysteresis;
 import teaselib.util.math.Random;
 
 public abstract class Script {
@@ -125,6 +123,8 @@ public abstract class Script {
         defineKeyReleaseInteractions(actor);
     }
 
+    // TODO move speech recognition-related part to sr input method, find out how to deal with absent camera
+
     protected void defineHumanPoseInteractions(Actor actor, HumanPoseDeviceInteraction humanPoseInteraction) {
         humanPoseInteraction.addEventListener(actor,
                 new HumanPoseDeviceInteraction.EventListener(HumanPose.Interest.Proximity) {
@@ -132,8 +132,6 @@ public abstract class Script {
                     private final SpeechRecognitionInputMethod speechRecognitionInputMethod = teaseLib.globals
                             .get(InputMethods.class).get(SpeechRecognitionInputMethod.class);
 
-                    private final Function<Boolean, Float> awareness = Hysteresis
-                            .bool(Hysteresis.function(0.0f, 1.0f, 0.25f), 1.0f, 0.0f);
                     private Proximity previous = Proximity.FACE2FACE;
 
                     @Override
@@ -143,10 +141,10 @@ public abstract class Script {
                         if (aspect.isPresent()) {
                             Proximity proximity = aspect.get();
                             teaseLib.host.setUserProximity(proximity);
-                            speechProximity = awareness.apply(proximity == Proximity.FACE2FACE) > 0.5f;
+                            speechProximity = proximity == Proximity.FACE2FACE;
                             previous = proximity;
                         } else {
-                            speechProximity = awareness.apply(false) > 0.5f;
+                            speechProximity = false;
                             if (previous == Proximity.CLOSE || previous == Proximity.FACE2FACE) {
                                 teaseLib.host.setUserProximity(Proximity.NEAR);
                             } else {

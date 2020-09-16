@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import teaselib.Actor;
@@ -27,6 +28,16 @@ public class DeviceInteractionDefinitions<K, V> implements Iterable<Map.Entry<K,
     public DeviceInteractionDefinitions(Actor actor, BiPredicate<K, K> matcher) {
         this.actor = actor;
         this.matcher = matcher;
+    }
+
+    public DeviceInteractionDefinitions(DeviceInteractionDefinitions<K, V> all, Predicate<Map.Entry<K, V>> filter) {
+        this.actor = all.actor;
+        this.matcher = all.matcher;
+        all.stream().filter(filter).forEach(this::put);
+    }
+
+    private void put(Map.Entry<K, V> entry) {
+        elements.put(entry.getKey(), entry.getValue());
     }
 
     public V define(K key, V value) {
@@ -101,6 +112,11 @@ public class DeviceInteractionDefinitions<K, V> implements Iterable<Map.Entry<K,
         keys.stream().forEach(elements::remove);
         pending.removeIf(keys::contains);
         return !keys.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return "[pending=" + elements + ", pending=" + pending + "]";
     }
 
 }

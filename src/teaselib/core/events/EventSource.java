@@ -45,6 +45,10 @@ public class EventSource<T extends EventArgs> {
         return delegates.contains(delegate);
     }
 
+    public synchronized boolean isEmpty() {
+        return delegates.isEmpty();
+    }
+
     public synchronized int size() {
         return delegates.size();
     }

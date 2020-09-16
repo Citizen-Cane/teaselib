@@ -1,7 +1,5 @@
 package teaselib.core.ai.perception;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +17,6 @@ import teaselib.Actor;
 import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.TeaseLibAI;
-import teaselib.core.ai.perception.HumanPose.HeadGestures;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
 import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
@@ -138,7 +135,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         if (actor != null) {
             AtomicBoolean updated = new AtomicBoolean(false);
             poseAspects.updateAndGet(previous -> {
-                PoseAspects update = getPoseAspects(actor, humanPose, device);
+                PoseAspects update = getPoseAspects(actor, humanPose, device, previous);
                 updated.set(!signal(actor, update, previous).isEmpty());
                 return update;
             });
@@ -146,10 +143,13 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             synchronized (this) {
                 if (updated.get()) {
                     ensureFrametimeMillis(humanPose, 200);
-                } else if (poseAspects.get().is(HeadGestures.Gaze)) {
-                    ensureFrametimeMillis(humanPose, 200);
                 } else {
-                    ensureFrametimeMillis(humanPose, 1000);
+                    PoseAspects pose = poseAspects.get();
+                    if (pose.is(Interest.HeadGestures)) {
+                        ensureFrametimeMillis(humanPose, 200);
+                    } else {
+                        ensureFrametimeMillis(humanPose, 1000);
+                    }
                 }
             }
         } else {
@@ -169,7 +169,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         }
     }
 
-    private PoseAspects getPoseAspects(Actor actor, HumanPose humanPose, SceneCapture device) {
+    private PoseAspects getPoseAspects(Actor actor, HumanPose humanPose, SceneCapture device, PoseAspects previous) {
         Set<Interest> interests = interactions.definitions(actor).keySet();
         if (interests.isEmpty()) {
             return PoseAspects.Unavailable;
@@ -179,7 +179,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
             } else {
-                return new PoseAspects(poses.get(0), interests);
+                return new PoseAspects(poses.get(0), interests, previous);
             }
         }
     }
@@ -191,12 +191,10 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             if (update.is(HumanPose.Status.Stream) || !update.equals(previous)) {
                 DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = interactions
                         .definitions(actor);
-                Set<Interest> interests = definitions.keySet();
-                List<Map.Entry<Interest, EventSource<PoseEstimationEventArgs>>> reactions = definitions.stream()
-                        .collect(toList());
+                Set<Interest> previousInterests = definitions.keySet();
 
                 PoseEstimationEventArgs eventArgs = new PoseEstimationEventArgs(actor, update);
-                reactions.stream().filter(e -> update.is(e.getKey())).map(Map.Entry::getValue)
+                definitions.stream().filter(e -> update.is(e.getKey())).map(Map.Entry::getValue)
                         .forEach(e -> e.fire(eventArgs));
 
                 awaitPose.lock();
@@ -207,7 +205,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                 }
 
                 updated = interactions.definitions(actor).keySet();
-                updated.removeAll(interests);
+                updated.removeAll(previousInterests);
             }
         }
 

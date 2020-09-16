@@ -59,24 +59,28 @@ public class HumanPoseDeviceInteraction extends
 
     @Override
     public DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions(Actor actor) {
-        return super.definitions(actor);
+        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> all = super.definitions(actor);
+        return new DeviceInteractionDefinitions<>(all, entry -> !entry.getValue().isEmpty());
     }
 
     public void addEventListener(Actor actor, EventListener listener) {
-        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = definitions(actor);
+        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
+                actor);
         EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest,
                 k -> new EventSource<>(k.toString()));
         eventSource.add(listener);
     }
 
     public boolean containsEventListener(Actor actor, EventListener listener) {
-        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = definitions(actor);
+        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
+                actor);
         EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
         return eventSource != null && eventSource.contains(listener);
     }
 
     public void removeEventListener(Actor actor, EventListener listener) {
-        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = definitions(actor);
+        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
+                actor);
         EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
         eventSource.remove(listener);
     }

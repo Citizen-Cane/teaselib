@@ -25,15 +25,21 @@ public class PoseAspects {
         this.aspects = Collections.singleton(Status.None);
     }
 
-    PoseAspects(HumanPose.Estimation pose, Set<Interest> interests) {
+    PoseAspects(HumanPose.Estimation pose, Set<Interest> interests, PoseAspects previous) {
         this.pose = pose;
         this.interests = interests;
         this.aspects = new HashSet<>();
         aspects.add(Status.Available);
 
         if (interests.contains(Interest.Proximity)) {
+            Optional<Proximity> previousProximity = previous.aspect(Proximity.class);
             Proximity proximity = pose.proximity();
-            aspects.add(proximity);
+            if (previousProximity.isPresent() && previousProximity.get().isCloserThan(proximity)) {
+                aspects.add(pose.proximityWithFactor(1.2f));
+            } else {
+                aspects.add(proximity);
+            }
+
             // TODO max-reliable distance for inference model to avoid drop-outs in the distance
             if (interests.contains(Interest.HeadGestures)) {
                 if (proximity == Proximity.FACE2FACE) {

@@ -45,25 +45,35 @@ public class HumanPose extends NativeObject {
     }
 
     public enum Proximity implements PoseAspect {
-        AWAY,
-        FAR,
-        NEAR,
-        FACE2FACE,
-        CLOSE,
+        AWAY(Integer.MAX_VALUE),
+        FAR(3),
+        NEAR(2),
+        FACE2FACE(1),
+        CLOSE(0),
 
-        NOTAWAY,
-        NOTFAR,
-        NOTNEAR,
-        NOTFACE2FACE,
-        NOTCLOSE,
+        NOTAWAY(5),
+        NOTFAR(4),
+        NOTNEAR(3),
+        NOTFACE2FACE(2),
+        NOTCLOSE(1),
 
         ;
+
+        private final int distance;
+
+        private Proximity(int distance) {
+            this.distance = distance;
+        }
 
         public static final Proximity[] Away = { AWAY, NOTFAR, NOTNEAR, NOTFACE2FACE, NOTCLOSE };
         public static final Proximity[] Far = { NOTAWAY, FAR, NOTNEAR, NOTFACE2FACE, NOTCLOSE };
         public static final Proximity[] Near = { NOTAWAY, NOTFAR, NEAR, NOTFACE2FACE, NOTCLOSE };
         public static final Proximity[] Face2Face = { NOTAWAY, NOTFAR, NOTNEAR, FACE2FACE, NOTCLOSE };
         public static final Proximity[] Close = { NOTAWAY, NOTFAR, NOTNEAR, NOTFACE2FACE, CLOSE };
+
+        boolean isCloserThan(Proximity proximity) {
+            return distance < proximity.distance;
+        }
     }
 
     public enum HeadGestures implements PoseAspect {
@@ -117,27 +127,23 @@ public class HumanPose extends NativeObject {
             this.gaze = Optional.of(new Gaze(x, y, s, t, u));
         }
 
-        // TDOO implement latency-free proximity hysteresis (based on previous distance value)
-        // -> frees Reaction listeners from implementing a sub-optimal solution
-        //
-        // TODO only change to a neighboring proximity value - not from Close to Away or so
-        // - keep value or move in the direction - much like hysteresis
-        //
-        // TODO Observe image corners to determine whether the slave torso is close to the camera
-        // - only if a near-ground-truth-solution is possible
         public Proximity proximity() {
+            return proximityWithFactor(1.0f);
+        }
+
+        public Proximity proximityWithFactor(float factor) {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.5f) {
+                if (z < 0.4f * factor) {
                     proximity = Proximity.CLOSE;
-                } else if (z < 0.9f) {
+                } else if (z < 0.9f * factor) {
                     if (isFace2Face()) {
                         proximity = Proximity.FACE2FACE;
                     } else {
                         proximity = Proximity.NEAR;
                     }
-                } else if (z < 2.0f) {
+                } else if (z < 2.0f * factor) {
                     proximity = Proximity.NEAR;
                 } else {
                     proximity = Proximity.FAR;

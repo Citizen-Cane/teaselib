@@ -26,6 +26,10 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
         return deviceInteraction.getPose(interests);
     }
 
+    public PoseAspects getPose(Interest interests, byte[] image) {
+        return deviceInteraction.getPose(interests, image);
+    }
+
     public ScriptFunction autoConfirm(Interest interest, HumanPose.PoseAspect... aspects) {
         return autoConfirm(interest, Long.MAX_VALUE, TimeUnit.SECONDS, aspects);
     }
@@ -36,10 +40,6 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
                     ? Answer.yes(Arrays.stream(aspects).map(Objects::toString).collect(Collectors.toList()))
                     : Answer.Timeout;
         }, Relation.Confirmation);
-    }
-
-    public HumanPose newHumanPose() {
-        return deviceInteraction.newHumanPose();
     }
 
 }

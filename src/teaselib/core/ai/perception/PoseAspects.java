@@ -25,6 +25,10 @@ public class PoseAspects {
         this.aspects = Collections.singleton(Status.None);
     }
 
+    PoseAspects(HumanPose.Estimation pose, Set<Interest> interests) {
+        this(pose, interests, Unavailable);
+    }
+
     PoseAspects(HumanPose.Estimation pose, Set<Interest> interests, PoseAspects previous) {
         this.pose = pose;
         this.interests = interests;

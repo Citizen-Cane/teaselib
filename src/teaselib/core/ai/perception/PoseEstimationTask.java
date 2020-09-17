@@ -3,7 +3,6 @@ package teaselib.core.ai.perception;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BooleanSupplier;
 
 import teaselib.Actor;
 import teaselib.core.DeviceInteractionDefinitions;
@@ -19,49 +19,39 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
-import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
 import teaselib.core.events.EventSource;
 
 class PoseEstimationTask implements Callable<PoseAspects> {
     final TeaseLibAI teaseLibAI;
+    final HumanPoseDeviceInteraction interaction;
+    private final BooleanSupplier processFrame;
 
-    HumanPoseDeviceInteraction interactions;
+    private Lock awaitPose = new ReentrantLock();
+    private Condition poseChanged = awaitPose.newCondition();
+    private AtomicReference<PoseAspects> poseAspects = new AtomicReference<>(PoseAspects.Unavailable);
+    private SceneCapture device = null;
+    private HumanPose humanPose = null;
 
-    Lock awaitPose = new ReentrantLock();
-    Condition poseChanged = awaitPose.newCondition();
-    AtomicReference<PoseAspects> poseAspects = new AtomicReference<>(PoseAspects.Unavailable);
-
-    PoseEstimationTask(HumanPoseDeviceInteraction interactions) {
-        this.interactions = interactions;
+    PoseEstimationTask(HumanPoseDeviceInteraction interaction, BooleanSupplier processFrame) {
+        this.interaction = interaction;
         this.teaseLibAI = new TeaseLibAI();
+        this.processFrame = processFrame;
     }
 
-    public PoseAspects getPose(Interest interests) {
-        // TODO set a flag to stop if aspects are a subset of desired aspects.
-        // -> use future.get() to complete active estimation
-        // restart the task (it's on the same thread) - it's already initialized
-
-        // try {
-        // return future.get();
-        // } catch (InterruptedException e) {
-        // Thread.currentThread().interrupt();
-        // } catch (ExecutionException e) {
-        // throw ExceptionUtil.asRuntimeException(e);
-        // }
-
+    public PoseAspects getPose(Interest interest) {
+        if (interest != Interest.Status) {
+            throw new UnsupportedOperationException("TODO Match interests with pose estiamtion model");
+        }
         return poseAspects.get();
     }
 
-    // TODO replace the apsects with a condition a lä Requires.all(...), Requires.any(...)
+    // TODO replace the aspects with a condition a l Requires.all(...), Requires.any(...)
     public boolean awaitPose(Interest interests, long duration, TimeUnit unit, PoseAspect... aspects) {
         PoseAspects result = poseAspects.get();
 
         if (result.containsAll(interests) && result.is(aspects)) {
             return true;
         }
-
-        // TODO set interests, use current is match, or schedule pose estimation that matches temporary interests
-        // - works for now as long as we just detect human presence as a single interest
 
         try {
             awaitPose.lockInterruptibly();
@@ -85,53 +75,40 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     @Override
     public PoseAspects call() throws InterruptedException {
         try {
-            while (true) {
-                SceneCapture device = awaitCaptureDevice();
-                device.start();
+            while (processFrame.getAsBoolean() && !Thread.interrupted()) {
+                if (device == null) {
+                    device = teaseLibAI.awaitCaptureDevice();
+                    device.start();
+                    humanPose = teaseLibAI.getModel(Interest.Status);
+                }
+
                 try {
-                    try (HumanPose humanPose = new HumanPose();) {
-                        while (!Thread.interrupted()) {
-                            estimate(humanPose, device);
-                        }
-                    } catch (Exception e) {
-                        HumanPoseDeviceInteraction.logger.error(e.getMessage(), e);
-                    }
+                    estimatePoses(device);
                 } finally {
-                    device.stop();
+                    if (Thread.currentThread().isInterrupted()) {
+                        close();
+                    }
                 }
             }
+            return poseAspects.get();
         } catch (Throwable e) {
             HumanPoseDeviceInteraction.logger.error(e.getMessage(), e);
             throw e;
         }
     }
 
-    private SceneCapture awaitCaptureDevice() throws InterruptedException {
-        List<SceneCapture> sceneCaptures;
-        while (true) {
-            sceneCaptures = teaseLibAI.sceneCaptures();
-            if (sceneCaptures.isEmpty()) {
-                Thread.sleep(5000);
-            } else {
-                Optional<SceneCapture> device = find(sceneCaptures, EnclosureLocation.External);
-                if (device.isPresent()) {
-                    return device.get();
-                } else {
-                    device = find(sceneCaptures, EnclosureLocation.Front);
-                    if (device.isPresent()) {
-                        return device.get();
-                    }
-                }
+    private void estimatePoses(SceneCapture device) {
+        try {
+            while (processFrame.getAsBoolean() && !Thread.interrupted()) {
+                estimate(humanPose, device);
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
-    private static Optional<SceneCapture> find(List<SceneCapture> sceneCaptures, EnclosureLocation location) {
-        return sceneCaptures.stream().filter(s -> s.location == location).findFirst();
-    }
-
     private void estimate(HumanPose humanPose, SceneCapture device) throws InterruptedException {
-        Actor actor = interactions.scriptRenderer.currentActor();
+        Actor actor = interaction.scriptRenderer.currentActor();
         if (actor != null) {
             AtomicBoolean updated = new AtomicBoolean(false);
             poseAspects.updateAndGet(previous -> {
@@ -170,7 +147,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     }
 
     private PoseAspects getPoseAspects(Actor actor, HumanPose humanPose, SceneCapture device, PoseAspects previous) {
-        Set<Interest> interests = interactions.definitions(actor).keySet();
+        Set<Interest> interests = interaction.definitions(actor).keySet();
         if (interests.isEmpty()) {
             return PoseAspects.Unavailable;
         } else {
@@ -189,7 +166,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
 
         if (theSameActor(actor)) {
             if (update.is(HumanPose.Status.Stream) || !update.equals(previous)) {
-                DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = interactions
+                DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = interaction
                         .definitions(actor);
                 Set<Interest> previousInterests = definitions.keySet();
 
@@ -204,7 +181,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                     awaitPose.unlock();
                 }
 
-                updated = interactions.definitions(actor).keySet();
+                updated = interaction.definitions(actor).keySet();
                 updated.removeAll(previousInterests);
             }
         }
@@ -213,7 +190,18 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     }
 
     private boolean theSameActor(Actor actor) {
-        return actor == interactions.scriptRenderer.currentActor();
+        return actor == interaction.scriptRenderer.currentActor();
+    }
+
+    public void close() {
+        if (humanPose != null) {
+            humanPose.close();
+            humanPose = null;
+        }
+        if (device != null) {
+            device.stop();
+            device = null;
+        }
     }
 
 }

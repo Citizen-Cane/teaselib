@@ -1,14 +1,14 @@
 package teaselib.core;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
 
 import teaselib.Images;
 import teaselib.Resources;
-import teaselib.core.ai.perception.HumanPose;
-import teaselib.core.ai.perception.HumanPose.Estimation;
+import teaselib.core.ai.perception.HumanPose.Interest;
+import teaselib.core.ai.perception.HumanPose.Status;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
+import teaselib.core.ai.perception.PoseAspects;
 import teaselib.core.util.Prefetcher;
 import teaselib.util.AnnotatedImage;
 
@@ -16,16 +16,15 @@ public abstract class AbstractImages implements Images {
 
     protected final Resources resources;
     private final Prefetcher<AnnotatedImage> imageFetcher;
-    private final HumanPose humanPose;
+    private final HumanPoseScriptInteraction interaction;
 
     protected AbstractImages(Resources resources) {
         Objects.requireNonNull(resources);
 
         this.resources = resources;
-        imageFetcher = new Prefetcher<>(resources.script.scriptRenderer.getPrefetchExecutorService(),
+        this.imageFetcher = new Prefetcher<>(resources.script.scriptRenderer.getPrefetchExecutorService(),
                 this::annotatedImage);
-        HumanPoseScriptInteraction interaction = resources.script.interaction(HumanPoseScriptInteraction.class);
-        humanPose = interaction.newHumanPose();
+        this.interaction = resources.script.interaction(HumanPoseScriptInteraction.class);
     }
 
     public Prefetcher<AnnotatedImage> prefetcher() {
@@ -40,12 +39,11 @@ public abstract class AbstractImages implements Images {
     private AnnotatedImage annotatedImage(String resource) throws IOException {
         byte[] image = resources.getBytes(resource);
         AnnotatedImage annotatedImage;
-        List<Estimation> results = humanPose.poses(image);
-        if (results.isEmpty()) {
-            annotatedImage = new AnnotatedImage(resource, image);
+        PoseAspects result = interaction.getPose(Interest.Proximity, image);
+        if (result.is(Status.Available)) {
+            annotatedImage = new AnnotatedImage(resource, image, result.pose);
         } else {
-            Estimation pose = results.get(0);
-            annotatedImage = new AnnotatedImage(resource, image, pose);
+            annotatedImage = new AnnotatedImage(resource, image);
         }
         return annotatedImage;
     }

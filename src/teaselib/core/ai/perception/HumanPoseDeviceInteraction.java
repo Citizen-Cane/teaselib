@@ -1,5 +1,12 @@
 package teaselib.core.ai.perception;
 
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.reduce;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -10,7 +17,9 @@ import teaselib.Actor;
 import teaselib.core.Closeable;
 import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.DeviceInteractionImplementation;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ScriptRenderer;
+import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -21,10 +30,11 @@ public class HumanPoseDeviceInteraction extends
         DeviceInteractionImplementation<HumanPose.Interest, EventSource<PoseEstimationEventArgs>> implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(HumanPoseDeviceInteraction.class);
 
-    private final NamedExecutorService poseEstimation;
-    private final PoseEstimationTask task;
+    private final NamedExecutorService executor;
+    private final PoseEstimationTask sceneCaptureTask;
     private Future<PoseAspects> future = null;
     final ScriptRenderer scriptRenderer;
+    final HumanPose estimateImage;
 
     public abstract static class EventListener implements Event<PoseEstimationEventArgs> {
         final Interest interest;
@@ -38,23 +48,72 @@ public class HumanPoseDeviceInteraction extends
         super(Object::equals);
         this.scriptRenderer = scriptRenderer;
 
-        poseEstimation = NamedExecutorService.sameThread("Pose Estimation");
-        task = new PoseEstimationTask(this);
-        future = poseEstimation.submit(task);
+        executor = NamedExecutorService.sameThread("Pose Estimation");
+        sceneCaptureTask = new PoseEstimationTask(this, () -> executor.getQueue().isEmpty());
+        estimateImage = submitAndGet(() -> getModel(HumanPose.Interest.Status));
+
+        future = executor.submit(sceneCaptureTask);
+    }
+
+    public HumanPose getModel(Interest interest) {
+        return sceneCaptureTask.teaseLibAI.getModel(interest);
     }
 
     @Override
     public void close() {
-        future.cancel(true);
-        poseEstimation.shutdown();
+        if (future != null && !future.isDone() && !future.isCancelled()) {
+            future.cancel(true);
+        } else {
+            submitAndGet(this::close);
+        }
+        executor.shutdown();
     }
 
     public PoseAspects getPose(Interest interests) {
-        return task.getPose(interests);
+        return sceneCaptureTask.getPose(interests);
+    }
+
+    public PoseAspects getPose(Interest interest, byte[] image) {
+        Callable<PoseAspects> poseAspects = () -> {
+            List<Estimation> poses = estimateImage.poses(image);
+            if (poses.isEmpty()) {
+                return PoseAspects.Unavailable;
+            } else {
+                return new PoseAspects(poses.get(0), Collections.singleton(interest));
+            }
+        };
+
+        try {
+            return submitAndGet(poseAspects);
+        } finally {
+            future = executor.submit(sceneCaptureTask);
+        }
+    }
+
+    private void submitAndGet(Runnable task) {
+        try {
+            executor.submit(task).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        } catch (ExecutionException e) {
+            throw asRuntimeException(reduce(e));
+        }
+    }
+
+    private <T> T submitAndGet(Callable<T> task) {
+        try {
+            return executor.submit(task).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        } catch (ExecutionException e) {
+            throw asRuntimeException(reduce(e));
+        }
     }
 
     public boolean awaitPose(Interest interests, long duration, TimeUnit unit, PoseAspect... aspects) {
-        return task.awaitPose(interests, duration, unit, aspects);
+        return sceneCaptureTask.awaitPose(interests, duration, unit, aspects);
     }
 
     @Override
@@ -69,6 +128,9 @@ public class HumanPoseDeviceInteraction extends
         EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest,
                 k -> new EventSource<>(k.toString()));
         eventSource.add(listener);
+
+        // TODO call new event handler once with either the current or new estimation result in the pose estimation
+        // thread
     }
 
     public boolean containsEventListener(Actor actor, EventListener listener) {
@@ -83,10 +145,6 @@ public class HumanPoseDeviceInteraction extends
                 actor);
         EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
         eventSource.remove(listener);
-    }
-
-    public HumanPose newHumanPose() {
-        return task.teaseLibAI.newHumanPose();
     }
 
 }

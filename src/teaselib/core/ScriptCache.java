@@ -47,27 +47,40 @@ class ScriptCache {
 
     @SuppressWarnings("unchecked")
     static <T extends Script> T newInstance(Script parentScript, Class<T> subScript)
-            throws InstantiationException, IllegalAccessException, InvocationTargetException {
+            throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Class<? extends Script> callerClass = parentScript.getClass();
-        Class<?> type = callerClass;
 
-        do {
-            for (Constructor<T> constructor : (Constructor<T>[]) subScript.getDeclaredConstructors()) {
-                Class<?>[] parameterTypes = constructor.getParameterTypes();
-                if (parameterTypes.length > 0 && parameterTypes[0].isAssignableFrom(callerClass)) {
-                    if (parameterTypes.length == 1) {
+        Constructor<T>[] declaredConstructors = (Constructor<T>[]) subScript.getDeclaredConstructors();
+        for (Constructor<T> constructor : declaredConstructors) {
+            Class<?>[] parameterTypes = constructor.getParameterTypes();
+            if (parameterTypes.length > 0 && parameterTypes[0].isAssignableFrom(callerClass)) {
+                if (parameterTypes.length == 1) {
+                    if (constructor.canAccess(null)) {
                         return constructor.newInstance(parentScript);
-                    } else if (parameterTypes.length == 2 && parameterTypes[1].isAssignableFrom(callerClass)) {
+                    } else {
+                        throw new IllegalAccessException("Constructor " + subScript.getName() + "("
+                                + callerClass.getName() + ") inaccessible - script classes must be public");
+                    }
+                } else if (parameterTypes.length == 2 && parameterTypes[1].isAssignableFrom(callerClass)) {
+                    if (constructor.canAccess(null)) {
                         return constructor.newInstance(parentScript, parentScript);
+                    } else {
+                        throw new IllegalAccessException(
+                                "Constructor " + subScript.getName() + "(" + callerClass.getName()
+                                        + ") inaccessible - nested script classes must be public & static ");
                     }
                 }
             }
-            type = type.getSuperclass();
-        } while (type != null);
+        }
 
-        throw new NoSuchMethodError("Constructor or super constructor for " + subScript.getName() + "("
-                + callerClass.getName()
-                + ") missing - nested script classes require the static keyword, or the script has to be a top-level class");
+        if (declaredConstructors.length == 1) {
+            Constructor<T> constructor = declaredConstructors[0];
+            throw new NoSuchMethodException(
+                    "Constructor " + constructor + " not suitable for argument " + callerClass.getName());
+        } else {
+            throw new NoSuchMethodException("Constructor " + subScript.getName() + "(" + callerClass.getName()
+                    + ") missing or inaccessible - nested script classes require the static keyword, or the script has to be a top-level class");
+        }
     }
 
 }

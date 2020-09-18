@@ -108,12 +108,16 @@ public class ScriptTest {
         }
     }
 
-    @Test(expected = NoSuchMethodError.class)
-    public void testScriptClassNestedInNonScriptClasFails() throws NoSuchMethodError {
+    @Test(expected = NoSuchMethodException.class)
+    public void testScriptClassNestedInNonScriptClassFails() throws Throwable {
         Script one = TestScript.getOne();
 
-        NotAStaticClassScript foo = one.script(NotAStaticClassScript.class);
-        assertNotNull(foo);
+        NotAStaticClassScript foo;
+        try {
+            foo = one.script(NotAStaticClassScript.class);
+        } catch (RuntimeException e) {
+            throw e.getCause();
+        }
     }
 
     static class StaticTestScript extends Script {
@@ -144,6 +148,9 @@ public class ScriptTest {
     }
 
     public static class NestedScriptCaching {
+
+        private NestedScriptCaching() { //
+        }
 
         public static class FooScript extends Script {
             final Script baz = script(BazScript.class);

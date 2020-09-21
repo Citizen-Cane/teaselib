@@ -247,18 +247,14 @@ public class Items implements Iterable<Item> {
      * @return Items that match all of the attributes.
      */
     public final Items matching(Enum<?>... attributes) {
-        return matchingImpl((Object[]) attributes);
+        return matching((Object[]) attributes);
     }
 
     public final Items matching(String... attributes) {
-        return matchingImpl((Object[]) attributes);
+        return matching((Object[]) attributes);
     }
 
-    public final Items matchingImpl(Object... attributes) {
-        return queryInventoryImpl(attributes);
-    }
-
-    private Items queryInventoryImpl(Object... attributes) {
+    private Items matching(Object[] attributes) {
         Items matchingItems;
         if (attributes.length == 0) {
             matchingItems = new Items(this);

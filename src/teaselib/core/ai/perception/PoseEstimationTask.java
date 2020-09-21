@@ -73,37 +73,35 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     }
 
     @Override
-    public PoseAspects call() throws InterruptedException {
+    public PoseAspects call() {
         try {
             while (processFrame.getAsBoolean() && !Thread.interrupted()) {
-                if (device == null) {
-                    device = teaseLibAI.awaitCaptureDevice();
-                    device.start();
-                    humanPose = teaseLibAI.getModel(Interest.Status);
-                }
-
-                try {
-                    estimatePoses(device);
-                } finally {
-                    if (Thread.currentThread().isInterrupted()) {
-                        close();
-                    }
-                }
+                estimatePoses(device);
             }
             return poseAspects.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Throwable e) {
             HumanPoseDeviceInteraction.logger.error(e.getMessage(), e);
             throw e;
+        } finally {
+            if (Thread.currentThread().isInterrupted()) {
+                close();
+            }
         }
+
+        return PoseAspects.Unavailable;
     }
 
-    private void estimatePoses(SceneCapture device) {
-        try {
-            while (processFrame.getAsBoolean() && !Thread.interrupted()) {
-                estimate(humanPose, device);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    private void estimatePoses(SceneCapture device) throws InterruptedException {
+        if (device == null) {
+            device = teaseLibAI.awaitCaptureDevice();
+            device.start();
+            humanPose = teaseLibAI.getModel(Interest.Status);
+        }
+
+        while (processFrame.getAsBoolean() && !Thread.interrupted()) {
+            estimate(humanPose, device);
         }
     }
 

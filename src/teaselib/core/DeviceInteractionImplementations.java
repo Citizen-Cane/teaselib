@@ -4,7 +4,7 @@ import java.util.function.Supplier;
 
 import teaselib.core.util.TypedObjectMap;
 
-public class DeviceInteractionImplementations {
+public class DeviceInteractionImplementations implements Closeable {
     private TypedObjectMap objects = new TypedObjectMap();
 
     public void add(Class<? extends DeviceInteractionImplementation<?, ?>> clazz,
@@ -14,6 +14,11 @@ public class DeviceInteractionImplementations {
 
     public <T extends DeviceInteractionImplementation<?, ?>> T get(Class<? extends T> clazz) {
         return objects.get(clazz);
+    }
+
+    @Override
+    public void close() {
+        objects.close();
     }
 
 }

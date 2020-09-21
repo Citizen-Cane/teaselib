@@ -103,20 +103,21 @@ public abstract class Script {
             handleAutoRemove();
             bindNetworkProperties();
 
+            // TODO Generalize - HeadGestures -> Perception
             if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
                 InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
                 inputMethods.add(new HeadGesturesV2InputMethod( //
                         deviceInteraction(HumanPoseDeviceInteraction.class),
                         scriptRenderer.getInputMethodExecutorService()));
+
+                scriptRenderer.events.when().actorChanged().then(e -> {
+                    HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(
+                            HumanPoseDeviceInteraction.class);
+                    if (!humanPoseInteraction.contains(e.actor)) {
+                        defineHumanPoseInteractions(e.actor, humanPoseInteraction);
+                    }
+                });
             }
-
-            scriptRenderer.events.when().actorChanged().then(e -> {
-                HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-                if (!humanPoseInteraction.contains(e.actor)) {
-                    defineHumanPoseInteractions(e.actor, humanPoseInteraction);
-                }
-            });
-
         }
 
         // TODO initializing in actorChanged-event breaks device handling

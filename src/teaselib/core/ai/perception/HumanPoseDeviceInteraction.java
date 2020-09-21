@@ -64,7 +64,7 @@ public class HumanPoseDeviceInteraction extends
         if (future != null && !future.isDone() && !future.isCancelled()) {
             future.cancel(true);
         } else {
-            submitAndGet(this::close);
+            submitAndGet(sceneCaptureTask::close);
         }
         executor.shutdown();
     }

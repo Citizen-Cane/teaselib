@@ -62,4 +62,12 @@ public class SceneCapture extends NativeObject {
         return portrait ? Rotation.Clockwise : null;
     }
 
+    @Override
+    public void close() {
+        if (isStarted()) {
+            stop();
+        }
+        super.close();
+    }
+
 }

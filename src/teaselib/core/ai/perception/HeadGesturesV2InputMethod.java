@@ -37,8 +37,8 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
                     } else if (!face2face && humanPoseInteraction.containsEventListener(eventArgs.actor, trackGaze)) {
                         humanPoseInteraction.removeEventListener(eventArgs.actor, trackGaze);
                     }
-                } else if (humanPoseInteraction.containsEventListener(prompt.script.actor, trackGaze)) {
-                    humanPoseInteraction.removeEventListener(prompt.script.actor, trackGaze);
+                } else if (humanPoseInteraction.containsEventListener(eventArgs.actor, trackGaze)) {
+                    humanPoseInteraction.removeEventListener(eventArgs.actor, trackGaze);
                 }
                 return prompt;
             });

@@ -35,4 +35,19 @@ public class RandomizedItemsTest {
         assertEquals(15, script.random.items(introduction, 5, comments, 10).size());
     }
 
+    @Test
+    public void testRandomizedDegenerated() {
+        TestScript script = TestScript.getOne();
+
+        Integer[] introduction = { 1 };
+        Integer[] comments = { 2 };
+        assertEquals(1, script.random.items(introduction, 1, comments, 0).size());
+        assertEquals(1, script.random.items(introduction, 0, comments, 1).size());
+        assertEquals(2, script.random.items(introduction, comments, 2).size());
+        assertEquals(3, script.random.items(introduction, comments, 3).size());
+
+        assertEquals(10, script.random.items(introduction, comments, 10).size());
+        assertEquals(15, script.random.items(introduction, 5, comments, 10).size());
+    }
+
 }

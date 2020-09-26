@@ -145,7 +145,7 @@ public class Random {
         T last = !list.isEmpty() ? list.get(list.size() - 1) : null;
         for (int i = 0; i < n; i++) {
             T t = null;
-            while (last == (t = elements[value(0, elements.length - 1)])) {
+            while (last == (t = elements[value(0, elements.length - 1)]) && elements.length > 1) {
                 // Don't add the same entry twice in a row
             }
             list.add(t);

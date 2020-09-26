@@ -262,11 +262,14 @@ public class SectionRenderer implements Closeable {
             RenderedMessage message = messageRenderer.messages.get(messageRenderer.currentMessage);
             renderMessage(messageRenderer, message);
             messageRenderer.currentMessage++;
+            addDefaultDelayBetweenMultipleMessages(messageRenderer, message);
+        }
+    }
 
-            boolean last = messageRenderer.currentMessage == messageRenderer.messages.size();
-            if (!last && textToSpeechPlayer != null && !lastSectionHasDelay(message)) {
-                renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
-            }
+    private void addDefaultDelayBetweenMultipleMessages(MessageRenderer messageRenderer, RenderedMessage message) {
+        boolean last = messageRenderer.currentMessage == messageRenderer.messages.size();
+        if (!last && textToSpeechPlayer != null && !lastSectionHasDelay(message)) {
+            renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_SECTIONS_SECONDS));
         }
     }
 
@@ -284,8 +287,8 @@ public class SectionRenderer implements Closeable {
 
         if (executor.getQueue().isEmpty() && getTextToSpeech().isPresent()
                 && !messageRenderer.lastSection.contains(Type.Delay)) {
-            renderTimeSpannedPart(delay(DELAY_AT_END_OF_MESSAGE));
             completeSectionMandatory();
+            renderTimeSpannedPart(delay(DELAY_AT_END_OF_MESSAGE));
             completeSectionAll();
         }
     }
@@ -523,7 +526,8 @@ public class SectionRenderer implements Closeable {
     }
 
     private RenderDelay delay(double seconds) {
-        return new RenderDelay(seconds, seconds > ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS, teaseLib);
+        boolean logToTranscript = seconds > ScriptMessageDecorator.DELAY_BETWEEN_SECTIONS_SECONDS;
+        return new RenderDelay(seconds, logToTranscript, teaseLib);
     }
 
     private double geteDelaySeconds(String args) {

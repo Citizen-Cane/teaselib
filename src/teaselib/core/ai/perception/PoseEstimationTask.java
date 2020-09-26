@@ -39,7 +39,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     }
 
     public PoseAspects getPose(Interest interest) {
-        if (interest != Interest.Status) {
+        if (interest != Interest.Status && interest != Interest.Proximity) {
             throw new UnsupportedOperationException("TODO Match interests with pose estiamtion model");
         }
         return poseAspects.get();
@@ -94,14 +94,26 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     }
 
     private void estimatePoses(SceneCapture device) throws InterruptedException {
-        if (device == null) {
-            device = teaseLibAI.awaitCaptureDevice();
-            device.start();
-            humanPose = teaseLibAI.getModel(Interest.Status);
-        }
-
         while (processFrame.getAsBoolean() && !Thread.interrupted()) {
-            estimate(humanPose, device);
+            if (device == null) {
+                device = teaseLibAI.awaitCaptureDevice();
+                device.start();
+                humanPose = teaseLibAI.getModel(Interest.Status);
+            }
+            try {
+                while (processFrame.getAsBoolean() && !Thread.interrupted()) {
+                    estimate(humanPose, device);
+                }
+            } catch (SceneCapture.DeviceLost e) {
+                HumanPoseDeviceInteraction.logger.warn(e.getMessage());
+                try {
+                    synchronized (this) {
+                        wait(10000);
+                    }
+                } catch (InterruptedException e1) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
     }
 

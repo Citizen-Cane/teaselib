@@ -178,10 +178,10 @@ public abstract class Script {
 
     protected void handleAutoRemove() {
         long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
-        State persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.PERSISTED_DOMAINS);
+        State persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.Internal.PERSISTED_DOMAINS_STATE);
         Collection<Object> domains = new ArrayList<>(((StateImpl) persistedDomains).peers());
         for (Object domain : domains) {
-            domain = domain.equals(StateImpl.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain : domain;
+            domain = domain.equals(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain : domain;
             if (!handleUntilRemoved((String) domain, startupTimeSeconds).applied()
                     && !handleUntilExpired((String) domain).applied()) {
                 persistedDomains.removeFrom(domain);

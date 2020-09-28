@@ -3,64 +3,23 @@ package teaselib.core;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.Duration;
 import teaselib.util.DurationFormat;
 
-public class DurationImpl implements Duration {
+public class DurationImpl extends AbstractDuration {
     private final TeaseLib teaseLib;
-    private final long start;
-    private final long limit;
 
     public DurationImpl(TeaseLib teaseLib) {
         this(teaseLib, 0, TeaseLib.DURATION_TIME_UNIT);
     }
 
     public DurationImpl(TeaseLib teaseLib, long limit, TimeUnit unit) {
-        if (limit < 0) {
-            throw new IllegalArgumentException("Duration limit must be 0 or positive: " + Long.toString(limit));
-        }
-
+        super(teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT), convertToDuration(limit, unit));
         this.teaseLib = teaseLib;
-        this.start = this.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT);
-        this.limit = convertToMillis(limit, unit);
     }
 
     public DurationImpl(TeaseLib teaseLib, long start, long limit, TimeUnit unit) {
-        if (limit < 0) {
-            throw new IllegalArgumentException("Duration limit must be 0 or positive: " + Long.toString(limit));
-        }
-
+        super(convertToDuration(start, unit), convertToDuration(limit, unit));
         this.teaseLib = teaseLib;
-        this.start = convertToMillis(start, unit);
-        this.limit = convertToMillis(limit, unit);
-    }
-
-    private static long convertToMillis(long value, TimeUnit unit) {
-        if (value == Long.MIN_VALUE)
-            return Long.MIN_VALUE;
-        if (value == Long.MAX_VALUE)
-            return Long.MAX_VALUE;
-        else
-            return TeaseLib.DURATION_TIME_UNIT.convert(value, unit);
-    }
-
-    public long convertToUnit(long value, TimeUnit unit) {
-        if (value == Long.MIN_VALUE)
-            return Long.MIN_VALUE;
-        if (value == Long.MAX_VALUE)
-            return Long.MAX_VALUE;
-        else
-            return unit.convert(value, TeaseLib.DURATION_TIME_UNIT);
-    }
-
-    @Override
-    public long start(TimeUnit unit) {
-        return convertToUnit(start, unit);
-    }
-
-    @Override
-    public long limit(TimeUnit unit) {
-        return convertToUnit(limit, unit);
     }
 
     @Override
@@ -72,20 +31,6 @@ public class DurationImpl implements Duration {
     @Override
     public long remaining(TimeUnit unit) {
         return convertToUnit(limit - elapsed(TeaseLib.DURATION_TIME_UNIT), unit);
-    }
-
-    @Override
-    public long end(TimeUnit unit) {
-        if (limit >= Long.MAX_VALUE - start) {
-            return Long.MAX_VALUE;
-        } else {
-            return convertToUnit(start + limit, unit);
-        }
-    }
-
-    @Override
-    public boolean expired() {
-        return this.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT) - start >= limit;
     }
 
     @Override

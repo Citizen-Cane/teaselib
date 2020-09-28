@@ -13,7 +13,6 @@ import teaselib.Posture;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
-import teaselib.core.debug.DebugStorage;
 import teaselib.test.TestScript;
 
 public class StateMapsTestRemember extends StateMaps {
@@ -23,7 +22,7 @@ public class StateMapsTestRemember extends StateMaps {
         Chastity_Device_Lock
     }
 
-    private final DebugStorage storage;
+    private final TestScript script;
 
     public StateMapsTestRemember() {
         this(TestScript.getOne());
@@ -31,7 +30,7 @@ public class StateMapsTestRemember extends StateMaps {
 
     private StateMapsTestRemember(TestScript script) {
         super(script.teaseLib);
-        storage = script.storage;
+        this.script = script;
         teaseLib.freezeTime();
     }
 
@@ -79,11 +78,11 @@ public class StateMapsTestRemember extends StateMaps {
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS)
                 .remember(Until.Removed);
 
-        assertEquals(18, storage.size());
+        assertEquals(15, script.storageSize());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
 
-        assertEquals(6, storage.size());
+        assertEquals(3, script.storageSize());
 
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
@@ -112,11 +111,11 @@ public class StateMapsTestRemember extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
-        assertEquals(18, storage.size());
+        assertEquals(15, script.storageSize());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
 
-        assertEquals(6, storage.size());
+        assertEquals(3, script.storageSize());
 
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());

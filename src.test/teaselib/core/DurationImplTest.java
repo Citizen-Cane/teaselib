@@ -91,7 +91,7 @@ public class DurationImplTest {
     }
 
     @Test
-    public void testExpired() throws Exception {
+    public void testExpired() {
         assertFalse(script.duration(24, TimeUnit.HOURS).expired());
         assertTrue(script.duration(0, TimeUnit.HOURS).expired());
 

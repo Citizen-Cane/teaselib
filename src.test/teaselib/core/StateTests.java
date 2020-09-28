@@ -54,7 +54,7 @@ public class StateTests {
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
 
-        assertEquals(0, script.storage.size());
+        assertEquals(0, script.storageSize());
     }
 
     @Test
@@ -71,7 +71,7 @@ public class StateTests {
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
 
-        assertEquals(0, script.storage.size());
+        assertEquals(0, script.storageSize());
         somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember(Until.Removed);
 
         // Assert that when a state is applied then
@@ -103,7 +103,7 @@ public class StateTests {
         assertEquals(0, ((StateProxy) script.state(script.namespace)).peers().size());
 
         somethingOnNipples.remove();
-        assertEquals(6, script.storage.size());
+        assertEquals(3, script.storageSize());
 
         assertFalse(somethingOnNipples.is(script.namespace));
         assertFalse(somethingOnNipples.is(Toys.Nipple_Clamps));

@@ -1,7 +1,9 @@
 package teaselib.test;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
@@ -20,6 +22,7 @@ import teaselib.core.debug.DebugStorage;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.PropertyNameMappingPersistence;
+import teaselib.core.util.QualifiedName;
 
 public class TestScript extends TeaseScript {
     public final DebugHost host;
@@ -182,6 +185,16 @@ public class TestScript extends TeaseScript {
 
     public void triggerAutoRemove() {
         handleAutoRemove();
+    }
+
+    public int storageSize() {
+        List<QualifiedName> keys = storage.keySet().stream() //
+                .filter(key -> !key.domain.startsWith("LastUsed")) //
+                .filter(key -> !key.name.startsWith("LastUsed")) //
+                // PersistedDomain values are present since they reference Domain.LastUsed
+                .filter(key -> !key.name.startsWith("PersistedDomains")) //
+                .collect(Collectors.toList());
+        return keys.size();
     }
 
     @Override

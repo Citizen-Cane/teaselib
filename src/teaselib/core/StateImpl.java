@@ -41,8 +41,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private static final String TEMPORARY_KEYWORD = "TEMPORARY";
     private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
 
-    static final String PERSISTED_DOMAINS = ReflectionUtils.qualified("teaselib", "PersistedDomains");
-    static final String DEFAULT_DOMAIN_NAME = ReflectionUtils.qualified("teaselib", "DefaultDomain");
+    static class Internal {
+        static final String PERSISTED_DOMAINS_STATE = ReflectionUtils.qualified("teaselib", "PersistedDomains");
+        static final String DEFAULT_DOMAIN_NAME = ReflectionUtils.qualified("teaselib", "DefaultDomain");
+    }
+
+    private static class Domain {
+        static final String LastUsed = ReflectionUtils.qualified("teaselib", "LastUsed");
+    }
 
     private final StateMaps stateMaps;
     public final String domain;
@@ -163,6 +169,23 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
+    protected StateImpl state(String domain, Object item) {
+        if (item instanceof AbstractProxy<?>) {
+            return state(domain, ((AbstractProxy<?>) item).state);
+        } else if (item instanceof ItemImpl) {
+            return state(domain, ((ItemImpl) item).value);
+        } else if (item instanceof StateImpl) {
+            StateImpl state = (StateImpl) item;
+            if (state.domain.equals(domain)) {
+                return state;
+            } else {
+                throw new IllegalArgumentException("StateImpl domain mismatch");
+            }
+        } else {
+            return (StateImpl) this.stateMaps.state(domain, item);
+        }
+    }
+
     StateImpl(StateMaps stateMaps, String domain, Object item) {
         this.stateMaps = stateMaps;
 
@@ -198,7 +221,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             String[] argv = storage.durationStorage.value().split(" ");
             long start = Long.parseLong(argv[0]);
             long limit = string2limit(argv[1]);
-            this.duration = new DurationImpl(this.stateMaps.teaseLib, start, limit, TimeUnit.SECONDS);
+            if (argv.length == 2) {
+                this.duration = new DurationImpl(this.stateMaps.teaseLib, start, limit, TimeUnit.SECONDS);
+            } else if (argv.length == 3) {
+                long elapsed = Long.parseLong(argv[2]);
+                this.duration = new FrozenDuration(start, limit, elapsed, TimeUnit.SECONDS);
+            } else {
+                throw new IllegalStateException(storage.durationStorage.value());
+            }
         } else {
             this.duration = new DurationImpl(this.stateMaps.teaseLib, 0, 0, TimeUnit.SECONDS);
         }
@@ -288,8 +318,13 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         String startValue = Long.toString(duration.start(TimeUnit.SECONDS));
         long limit = duration.limit(TimeUnit.SECONDS);
         String limitValue = limit2String(limit);
-        storage.durationStorage.set(startValue + " " + limitValue);
 
+        if (duration instanceof FrozenDuration) {
+            String elapsedValue = Long.toString(duration.elapsed(TimeUnit.SECONDS));
+            storage.durationStorage.set(startValue + " " + limitValue + " " + elapsedValue);
+        } else {
+            storage.durationStorage.set(startValue + " " + limitValue);
+        }
     }
 
     private String limit2String(long limit) {
@@ -333,7 +368,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return this;
     }
 
-    protected State applyInternal(Object... attributes) {
+    private State applyInternal(Object... attributes) {
         if (!applied()) {
             setTemporary();
         }
@@ -349,6 +384,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
 
         setApplied();
+
+        updateLastUsed();
+
         return this;
     }
 
@@ -433,27 +471,33 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     @Override
     public Persistence over(Duration duration) {
         this.duration = duration;
+        updateLastUsed(this.duration);
+
         return this;
     }
 
     @Override
     public Duration duration() {
-        Stream<Duration> durations = peerStates().map(state -> state.duration);
-        Optional<Duration> maximum = Stream.concat(Stream.of(this.duration), durations)
-                .max((a, b) -> Long.compare(a.remaining(TimeUnit.SECONDS), b.remaining(TimeUnit.SECONDS)));
-        if (maximum.isPresent()) {
-            return maximum.get();
+        if (applied || Domain.LastUsed.equals(domain)) {
+            Stream<Duration> durations = peerStates().map(state -> state.duration);
+            Optional<Duration> maximum = Stream.concat(Stream.of(this.duration), durations)
+                    .max((a, b) -> Long.compare(a.remaining(TimeUnit.SECONDS), b.remaining(TimeUnit.SECONDS)));
+            if (maximum.isPresent()) {
+                return maximum.get();
+            } else {
+                return duration;
+            }
         } else {
-            return duration;
+            return state(Domain.LastUsed, item).duration();
         }
     }
 
     @Override
     public void remember(Until forget) {
-        if (item != PERSISTED_DOMAINS) {
+        if (item != Internal.PERSISTED_DOMAINS_STATE) {
             applyTo(forget);
-            stateMaps.teaseLib.state(TeaseLib.DefaultDomain, PERSISTED_DOMAINS)
-                    .applyTo(domain.equals(TeaseLib.DefaultDomain) ? DEFAULT_DOMAIN_NAME : domain)
+            stateMaps.teaseLib.state(TeaseLib.DefaultDomain, Internal.PERSISTED_DOMAINS_STATE)
+                    .applyTo(domain.equals(TeaseLib.DefaultDomain) ? Internal.DEFAULT_DOMAIN_NAME : domain)
                     .remember(Until.Removed);
         }
 
@@ -511,6 +555,26 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (isPersisted()) {
             storage.deletePersistence();
         }
+
+        updateLastUsed(this.duration);
+
+    }
+
+    private void updateLastUsed(Duration duration) {
+        if (!Domain.LastUsed.equals(domain)) {
+            updateLastUsed(new FrozenDuration(duration));
+        }
+    }
+
+    private void updateLastUsed() {
+        if (!Domain.LastUsed.equals(domain)) {
+            long now = stateMaps.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT);
+            updateLastUsed(new FrozenDuration(now, 0L, 0L, TeaseLib.DURATION_TIME_UNIT));
+        }
+    }
+
+    private void updateLastUsed(FrozenDuration frozenDuration) {
+        state(Domain.LastUsed, item).apply().over(frozenDuration).remember(Until.Removed);
     }
 
     @Override

@@ -44,15 +44,45 @@ public interface Duration {
         return Long.compare(a.remaining(TimeUnit.SECONDS), b.remaining(TimeUnit.SECONDS));
     }
 
+    /**
+     * The start time of the duration.
+     * 
+     * @param unit
+     * @return
+     */
     long start(TimeUnit unit);
 
+    /**
+     * The length of the duration.
+     * 
+     * @param unit
+     * @return
+     */
     long limit(TimeUnit unit);
 
+    /**
+     * The elapsed time since the start.
+     * 
+     * @param unit
+     * @return
+     */
     long elapsed(TimeUnit unit);
 
+    /**
+     * The remaining time units until this duration expires.
+     * 
+     * @param unit
+     * @return
+     */
     long remaining(TimeUnit unit);
 
     boolean expired();
 
+    /**
+     * The time at which this duration will expire.
+     * 
+     * @param unit
+     * @return
+     */
     long end(TimeUnit unit);
 }

@@ -276,6 +276,10 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public void removeFrom(Object... peers) {
+        removeInternal(StateMaps.flatten(peers));
+    }
+
+    private void removeInternal(Object... peers) {
         StateImpl state = state(value);
         if (containsMyGuid(state)) {
             for (Object peer : peers) {

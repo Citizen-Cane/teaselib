@@ -1,6 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -9,6 +11,7 @@ import org.junit.Test;
 import teaselib.Body;
 import teaselib.Duration;
 import teaselib.Posture;
+import teaselib.State;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
@@ -80,16 +83,25 @@ public class StateMapsDurationTest extends StateMaps {
 
     @Test
     public void testElapedAlsoImplementsFreeSince() {
-        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo();
-        assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
+        State state = state(TEST_DOMAIN, Toys.Chastity_Device);
+        state.apply();
+        assertTrue(state.applied());
+        assertTrue(state.expired());
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).remove();
-        assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
+        Duration sinceApplied = teaseLib.duration();
+        teaseLib.advanceTime(1, TimeUnit.HOURS);
+        assertEquals(1, state.duration().elapsed(TimeUnit.HOURS));
+        assertEquals(1, sinceApplied.elapsed(TimeUnit.HOURS));
 
-        teaseLib.advanceTime(24, TimeUnit.HOURS);
-        assertEquals(24, state(TEST_DOMAIN, Toys.Chastity_Device).duration().elapsed(TimeUnit.HOURS));
+        state.remove();
+        assertFalse(state.applied());
+        assertTrue(state.expired());
+        assertEquals(1, sinceApplied.elapsed(TimeUnit.HOURS));
+        assertEquals(1, state.duration().elapsed(TimeUnit.HOURS));
+
+        teaseLib.advanceTime(23, TimeUnit.HOURS);
+        assertEquals(1, state.duration().elapsed(TimeUnit.HOURS));
+        assertEquals(24, sinceApplied.elapsed(TimeUnit.HOURS));
     }
 
     @Test

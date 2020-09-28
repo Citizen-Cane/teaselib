@@ -134,4 +134,26 @@ public class ItemPersistencyTest {
         assertTrue(restored.is(Until.Removed));
     }
 
+    @Test
+    public void testThatLastUsedIsPersisted() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item item = script.item(Toys.Buttplug);
+        item.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+        assertEquals(0, item.duration().elapsed(TimeUnit.HOURS));
+
+        script.debugger.advanceTime(1, TimeUnit.HOURS);
+        assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
+
+        script.debugger.clearStateMaps();
+        assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
+
+        item.remove();
+        assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
+
+        script.debugger.clearStateMaps();
+        assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
+    }
+
 }

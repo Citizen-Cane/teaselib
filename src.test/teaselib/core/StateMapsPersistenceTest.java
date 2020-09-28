@@ -2,6 +2,7 @@ package teaselib.core;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -29,7 +30,6 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
-import teaselib.core.debug.DebugStorage;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 
@@ -326,10 +326,10 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
 
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.storage;
-            assertEquals(18, storage.size());
+            assertEquals(15, script.storageSize());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
+            Map<QualifiedName, String> storage = script.storage;
             assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Toys", "Chastity_Device.state.duration")));
             assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Toys", "Chastity_Device.state.peers")));
             assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body", "SomethingOnPenis.state.duration")));
@@ -350,10 +350,10 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
 
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.storage;
-            assertEquals(6, storage.size());
+            assertEquals(3, script.storageSize());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
+            Map<QualifiedName, String> storage = script.storage;
             assertFalse(
                     storage.containsKey(QualifiedName.of(TEST_DOMAIN, Toys_Chastity_Device + ".state", "duration")));
             assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Toys_Chastity_Device + ".state", "peers")));
@@ -377,77 +377,68 @@ public class StateMapsPersistenceTest extends StateMaps {
         clearStatesMapsOrNot();
 
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.storage;
-            assertEquals(12, storage.size());
+            assertEquals(9, script.storageSize());
         }
 
         assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
 
         // TODO did remember after remove(), should remember removal automatically
+        script.debugger.advanceTime(1, TimeUnit.MINUTES);
         state(TEST_DOMAIN, Toys.Enema_Kit).remove();
 
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.storage;
-            assertEquals("State not cleared on remove (excluding auto-removal book-keeping)", 6, storage.size());
+            assertEquals("State not cleared on remove (excluding auto-removal book-keeping)", 3, script.storageSize());
         }
 
         assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
 
         // False because we removed the item early
-        // TODO make it true, since expiration is meaningless after remove
         assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).expired());
         script.debugger.advanceTime(1, HOURS);
         assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).expired());
 
         clearStatesMapsOrNot();
 
-        teaseLib.advanceTime(23, TimeUnit.HOURS);
         Duration duration = state(TEST_DOMAIN, Toys.Enema_Kit).duration();
-        if (isRemembered()) {
-            assertEquals(0, duration.start(DAYS));
-        } else {
-            assertEquals(86400, duration.elapsed(TimeUnit.SECONDS));
-            assertEquals(24, duration.elapsed(TimeUnit.HOURS));
-            assertEquals(1, duration.elapsed(TimeUnit.DAYS));
-        }
+        assertEquals(60, duration.limit(MINUTES));
+        assertEquals(1, duration.elapsed(MINUTES));
+        teaseLib.advanceTime(23, HOURS);
+        assertEquals(1, duration.elapsed(MINUTES));
     }
 
     @Test
     public void testPersistenceOfElapsedDurationOfRemovedStateWithPeers() {
-        rememberOrNot(state(TEST_DOMAIN, Toys.Ball_Stretcher).applyTo(Body.OnBalls).over(1, TimeUnit.HOURS));
+        rememberOrNot(state(TEST_DOMAIN, Toys.Ball_Stretcher).applyTo(Body.OnBalls).over(2, TimeUnit.HOURS));
 
         clearStatesMapsOrNot();
 
-        DebugStorage storage = script.storage;
         if (isRemembered()) {
-            assertEquals(15, storage.size());
+            assertEquals(12, script.storageSize());
         }
 
         assertTrue(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
 
+        teaseLib.advanceTime(1, TimeUnit.HOURS);
         state(TEST_DOMAIN, Toys.Ball_Stretcher).removeFrom(Body.OnBalls);
-
-        assertEquals("State not completely cleared (excluding auto-removal book-keeping)", isRemembered() ? 6 : 0,
-                storage.size());
-
+        assertEquals("State not completely cleared (excluding auto-removal book-keeping)", isRemembered() ? 3 : 0,
+                script.storageSize());
         assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
+
         // False because we removed the item early
         assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).expired());
-        script.debugger.advanceTime(1, HOURS);
+        assertEquals(1, state(TEST_DOMAIN, Toys.Ball_Stretcher).duration().elapsed(HOURS));
+
+        teaseLib.advanceTime(1, TimeUnit.HOURS);
         assertTrue(state(TEST_DOMAIN, Toys.Ball_Stretcher).expired());
+        assertEquals(1, state(TEST_DOMAIN, Toys.Ball_Stretcher).duration().elapsed(HOURS));
 
         clearStatesMapsOrNot();
-        teaseLib.advanceTime(23, TimeUnit.HOURS);
+        teaseLib.advanceTime(22, TimeUnit.HOURS);
 
         Duration duration = state(TEST_DOMAIN, Toys.Ball_Stretcher).duration();
-        // TODO Should always be the same last used duration
-        if (isRemembered()) {
-            assertEquals(0, duration.start(DAYS));
-        } else {
-            assertEquals(86400, duration.elapsed(TimeUnit.SECONDS));
-            assertEquals(24, duration.elapsed(TimeUnit.HOURS));
-            assertEquals(1, duration.elapsed(TimeUnit.DAYS));
-        }
+        assertEquals(3600, duration.elapsed(TimeUnit.SECONDS));
+        assertEquals(1, duration.elapsed(TimeUnit.HOURS));
+        assertEquals(0, duration.elapsed(DAYS));
     }
 
 }

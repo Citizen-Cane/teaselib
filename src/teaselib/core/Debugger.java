@@ -150,8 +150,8 @@ public class Debugger {
         Date adjusted = new Date(now.getYear(), now.getMonth(), now.getDate(), 0, 0, 0);
         teaseLib.advanceTime(adjusted.getTime() - now.getTime(), TimeUnit.MILLISECONDS);
 
-        long hours = TimeOfDayImpl.hours(dayTime).average();
-        teaseLib.advanceTime(hours, TimeUnit.HOURS);
+        float hours = TimeOfDayImpl.hours(dayTime).average();
+        teaseLib.advanceTime((long) (hours * 60.0f), TimeUnit.MINUTES);
     }
 
 }

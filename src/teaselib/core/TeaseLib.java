@@ -1,6 +1,5 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 
@@ -391,17 +390,19 @@ public class TeaseLib implements Closeable {
     }
 
     public Duration duration(Daytime dayTime, long daysInTheFuture) {
-        TimeOfDay start = timeOfDay();
-        TimeOfDay end = new TimeOfDayImpl(localTime(TimeOfDayImpl.hours(dayTime).average(), TimeUnit.HOURS));
+        LocalTime start = TimeOfDayImpl.getTime(timeOfDay());
+        LocalTime end = localTime((long) TimeOfDayImpl.hours(dayTime).average() * 60L, TimeUnit.MINUTES);
 
-        int duration = TimeOfDayImpl.getTime(end).getHour() - TimeOfDayImpl.getTime(start).getHour();
-        if (duration < 0) {
-            duration += 24 * Math.max(1, daysInTheFuture);
+        long durationMinutes = end.getHour() * 60 + end.getMinute() //
+                - start.getHour() * 60 - start.getMinute();
+
+        if (durationMinutes < 0) {
+            durationMinutes += 24 * 60 * Math.max(1, daysInTheFuture);
         } else {
-            duration += 24 * daysInTheFuture;
+            durationMinutes += 24 * 60 * daysInTheFuture;
         }
 
-        return duration(duration, HOURS);
+        return duration(durationMinutes, TimeUnit.MINUTES);
     }
 
     protected abstract class PersistentValue<T> {

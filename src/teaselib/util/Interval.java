@@ -13,8 +13,8 @@ public class Interval implements Iterable<Integer> {
         this.end = end;
     }
 
-    public int average() {
-        return (start + end) / 2;
+    public float average() {
+        return start / 2.0f + end / 2.0f;
     }
 
     @Override
@@ -46,6 +46,10 @@ public class Interval implements Iterable<Integer> {
 
     public boolean contains(int n) {
         return start <= n && n <= end;
+    }
+
+    public boolean contains(float f) {
+        return start <= f && f <= end;
     }
 
     public boolean contains(Integer n) {

@@ -19,12 +19,13 @@ public class TimeOfDayImpl implements TimeOfDay {
         EnumMap<Daytime, Interval> timeOfDay = new EnumMap<>(Daytime.class);
 
         // hour intervals last til the last minute of that hour
-        timeOfDay.put(Daytime.Morning, new Interval(6, 9));
+        timeOfDay.put(Daytime.Morning, new Interval(5, 9));
         timeOfDay.put(Daytime.Forenoon, new Interval(8, 11));
         timeOfDay.put(Daytime.Noon, new Interval(12, 13));
-        timeOfDay.put(Daytime.Afternoon, new Interval(13, 18));
+        timeOfDay.put(Daytime.Afternoon, new Interval(14, 18));
         timeOfDay.put(Daytime.Evening, new Interval(18, 23));
-        timeOfDay.put(Daytime.Night, new Interval(-2, 5));
+        timeOfDay.put(Daytime.Night, new Interval(22, 30));
+        // TODO interval values are integers -> interval.average() is not exact for odd span (half hours)
 
         return timeOfDay;
     }
@@ -37,7 +38,8 @@ public class TimeOfDayImpl implements TimeOfDay {
 
     static boolean is(LocalTime localTime, Daytime dayTimes, Map<Daytime, Interval> defaultTimeOfDayTable) {
         Interval interval = defaultTimeOfDayTable.get(dayTimes);
-        return interval.contains(localTime.getHour()) || interval.contains(localTime.getHour() - 24);
+        float hour = localTime.getHour() + localTime.getMinute() / 60.0f;
+        return interval.contains(hour) || interval.contains(hour + 24.0f);
     }
 
     static Interval hours(Daytime dayTime) {

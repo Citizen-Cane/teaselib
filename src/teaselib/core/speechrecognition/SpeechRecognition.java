@@ -1,8 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.speechrecognition.Confidence.*;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.speechrecognition.Confidence.High;
 
 import java.util.Arrays;
 import java.util.List;
@@ -224,7 +225,9 @@ public class SpeechRecognition {
         if (implementation != null) {
             delegateThread.run(() -> {
                 if (isActiveCalledFromDelegateThread()) {
-                    logger.warn("Speech recognition already running on restart attempt");
+                    logger.warn("Speech recognition already running on resume attempt");
+                } else if (parameters == null) {
+                    logger.warn("Speech recognition already stopped - not resumed");
                 } else {
                     enableSR();
                     logger.info("Speech recognition resumed");

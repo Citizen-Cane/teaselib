@@ -82,18 +82,16 @@ public class SpeechRecognizer implements Closeable {
      */
     public Runnable pauseRecognition() {
         synchronized (speechRecognitionInstances) {
-            final Collection<SpeechRecognition> stoppedInstances = new HashSet<>();
+            final Collection<SpeechRecognition> pausedInstances = new HashSet<>();
             for (SpeechRecognition sR : speechRecognitionInstances.values()) {
                 if (sR.isActive()) {
                     sR.pauseRecognition();
-                    stoppedInstances.add(sR);
+                    pausedInstances.add(sR);
                 }
             }
             return () -> {
-                for (SpeechRecognition sR : stoppedInstances) {
-                    if (sR.isActive()) {
-                        sR.resumeRecognition();
-                    }
+                for (SpeechRecognition sR : pausedInstances) {
+                    sR.resumeRecognition();
                 }
             };
         }

@@ -39,7 +39,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     }
 
     public PoseAspects getPose(Interest interest) {
-        if (interest != Interest.Status && interest != Interest.Proximity) {
+        if (interest != Interest.Status && interest != Interest.Proximity && interest != Interest.HeadGestures) {
             throw new UnsupportedOperationException("TODO Match interests with pose estiamtion model");
         }
         return poseAspects.get();
@@ -175,6 +175,8 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         Set<Interest> updated = Collections.emptySet();
 
         if (theSameActor(actor)) {
+            // TODO fire only stream-relevant interests (Gaze), but not proximity
+            // - stream relevant aspects are fired always, change relevant only when they've changed
             if (update.is(HumanPose.Status.Stream) || !update.equals(previous)) {
                 DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = interaction
                         .definitions(actor);

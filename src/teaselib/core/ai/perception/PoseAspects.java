@@ -12,15 +12,17 @@ import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPose.Status;
 
 public class PoseAspects {
+    private static final float DISTANCE_RETREAT_FACTOR = 1.25f;
+
     public static final PoseAspects Unavailable = new PoseAspects();
 
-    public final HumanPose.Estimation pose;
+    public final HumanPose.Estimation estimation;
 
     private final Set<Interest> interests;
     private final Set<PoseAspect> aspects;
 
     PoseAspects() {
-        this.pose = HumanPose.Estimation.NONE;
+        this.estimation = HumanPose.Estimation.NONE;
         this.interests = Collections.emptySet();
         this.aspects = Collections.singleton(Status.None);
     }
@@ -30,7 +32,7 @@ public class PoseAspects {
     }
 
     PoseAspects(HumanPose.Estimation pose, Set<Interest> interests, PoseAspects previous) {
-        this.pose = pose;
+        this.estimation = pose;
         this.interests = interests;
         this.aspects = new HashSet<>();
         aspects.add(Status.Available);
@@ -39,7 +41,7 @@ public class PoseAspects {
             Optional<Proximity> previousProximity = previous.aspect(Proximity.class);
             Proximity proximity = pose.proximity();
             if (previousProximity.isPresent() && previousProximity.get().isCloserThan(proximity)) {
-                aspects.add(pose.proximityWithFactor(1.2f));
+                aspects.add(pose.proximity(DISTANCE_RETREAT_FACTOR));
             } else {
                 aspects.add(proximity);
             }

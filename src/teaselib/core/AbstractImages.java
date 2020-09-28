@@ -39,9 +39,9 @@ public abstract class AbstractImages implements Images {
     private AnnotatedImage annotatedImage(String resource) throws IOException {
         byte[] image = resources.getBytes(resource);
         AnnotatedImage annotatedImage;
-        PoseAspects result = interaction.getPose(Interest.Proximity, image);
-        if (result.is(Status.Available)) {
-            annotatedImage = new AnnotatedImage(resource, image, result.pose);
+        PoseAspects pose = interaction.getPose(Interest.Proximity, image);
+        if (pose.is(Status.Available)) {
+            annotatedImage = new AnnotatedImage(resource, image, pose.estimation);
         } else {
             annotatedImage = new AnnotatedImage(resource, image);
         }

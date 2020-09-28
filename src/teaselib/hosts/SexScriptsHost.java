@@ -521,7 +521,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         ss.show(message);
     }
 
-    String currentText;
+    String currentText = "";
     Image currentImage = null;
     HumanPose.Estimation currentPose = null;
     BufferedImage currentBackgroundImage = null;

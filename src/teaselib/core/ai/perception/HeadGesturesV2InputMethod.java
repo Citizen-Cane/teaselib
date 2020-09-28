@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 
 import teaselib.Answer;
 import teaselib.Answer.Meaning;
+import teaselib.core.ai.perception.HumanPose.Estimation.Gaze;
 import teaselib.core.ai.perception.HumanPose.HeadGestures;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ui.AbstractInputMethod;
@@ -23,11 +24,19 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
         public void run(PoseEstimationEventArgs eventArgs) throws Exception {
             activePrompt.updateAndGet(prompt -> {
                 if (prompt != null) {
-                    Optional<Proximity> aspect = eventArgs.pose.aspect(Proximity.class);
+                    Optional<Proximity> proximity = eventArgs.pose.aspect(Proximity.class);
                     boolean face2face;
-                    if (aspect.isPresent()) {
-                        Proximity proximity = aspect.get();
-                        face2face = proximity == Proximity.FACE2FACE;
+                    if (proximity.isPresent()) {
+                        if (proximity.get() == Proximity.FACE2FACE) {
+                            Optional<Gaze> gaze = eventArgs.pose.estimation.gaze;
+                            if (gaze.isPresent() && gaze.get().isFace2Face()) {
+                                face2face = true;
+                            } else {
+                                face2face = false;
+                            }
+                        } else {
+                            face2face = false;
+                        }
                     } else {
                         face2face = false;
                     }

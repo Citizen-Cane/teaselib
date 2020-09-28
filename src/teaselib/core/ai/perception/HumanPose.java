@@ -95,6 +95,19 @@ public class HumanPose extends NativeObject {
                 this.tilt = tilt;
             }
 
+            static final class Limits {
+
+                private Limits() { //
+                }
+
+                static final float NOD = teaselib.util.math.Unit.rad(45.0f);
+                static final float SHAKE = teaselib.util.math.Unit.rad(25.0f);
+            }
+
+            public boolean isFace2Face() {
+                return Math.abs(nod) < Limits.NOD && Math.abs(shake) < Limits.SHAKE;
+            }
+
         }
 
         public static final Estimation NONE = new HumanPose.Estimation();
@@ -128,22 +141,18 @@ public class HumanPose extends NativeObject {
         }
 
         public Proximity proximity() {
-            return proximityWithFactor(1.0f);
+            return proximity(1.0f);
         }
 
-        public Proximity proximityWithFactor(float factor) {
+        public Proximity proximity(float distanceFactor) {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.4f * factor) {
+                if (z < 0.4f * distanceFactor) {
                     proximity = Proximity.CLOSE;
-                } else if (z < 0.9f * factor) {
-                    if (isFace2Face()) {
-                        proximity = Proximity.FACE2FACE;
-                    } else {
-                        proximity = Proximity.NEAR;
-                    }
-                } else if (z < 2.0f * factor) {
+                } else if (z < 1.2f * distanceFactor) {
+                    proximity = Proximity.FACE2FACE;
+                } else if (z < 2.0f * distanceFactor) {
                     proximity = Proximity.NEAR;
                 } else {
                     proximity = Proximity.FAR;
@@ -158,24 +167,6 @@ public class HumanPose extends NativeObject {
                 // since in this case there wouldn't be any estimation result at all
             }
         }
-
-        static final class Limits {
-
-            private Limits() { //
-            }
-
-            static final float NOD = teaselib.util.math.Unit.rad(60.0f);
-            static final float SHAKE = teaselib.util.math.Unit.rad(25.0f);
-        }
-
-        private boolean isFace2Face() {
-            if (gaze.isPresent()) {
-                return Math.abs(gaze.get().nod) < Limits.NOD && Math.abs(gaze.get().shake) < Limits.SHAKE;
-            } else {
-                return false;
-            }
-        }
-
     }
 
     public void setInterests(Set<Interest> interests) {

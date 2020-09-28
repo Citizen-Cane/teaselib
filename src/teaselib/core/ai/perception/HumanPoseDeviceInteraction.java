@@ -129,8 +129,11 @@ public class HumanPoseDeviceInteraction extends
                 k -> new EventSource<>(k.toString()));
         eventSource.add(listener);
 
-        // TODO call new event handler once with either the current or new estimation result in the pose estimation
-        // thread
+        try {
+            listener.run(new PoseEstimationEventArgs(actor, sceneCaptureTask.getPose(listener.interest)));
+        } catch (Exception e) {
+            throw asRuntimeException(e);
+        }
     }
 
     public boolean containsEventListener(Actor actor, EventListener listener) {

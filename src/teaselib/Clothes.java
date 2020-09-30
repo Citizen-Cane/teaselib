@@ -126,30 +126,34 @@ public enum Clothes {
     /**
      * Feminine underwear
      */
-    public static final Select.Statement lingerie = items(Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose,
-            Socks, Stockings, Underpants).where(Items::matching, Category.Lingerie).and(Items::without,
-                    Sexuality.Gender.Masculine);
+    public static final Select.Statement lingerie = new Select.Statement(
+            items(Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks, Stockings, Underpants)
+                    .where(Items::matching, Category.Lingerie).and(Items::without, Sexuality.Gender.Masculine));
 
     /**
      * Masculine underwear
      */
-    public static final Select.Statement underwear = items(Socks, Underpants).where(Items::matching, Category.Underwear)
-            .and(Items::without, Sexuality.Gender.Masculine).and(Items::without, Category.Swimwear);
+    public static final Select.Statement underwear = new Select.Statement(
+            items(Socks, Underpants).where(Items::matching, Category.Underwear)
+                    .and(Items::without, Sexuality.Gender.Masculine).and(Items::without, Category.Swimwear));
 
-    public static final Select.Statement swimwear = items(Clothes.values()).where(Items::matching, Category.Swimwear);
+    public static final Select.Statement swimwear = new Select.Statement(
+            items(Clothes.values()).where(Items::matching, Category.Swimwear));
 
-    public static final Select.Statement sleepwear = items(Clothes.values()).where(Items::matching, Category.Sleepwear);
+    public static final Select.Statement sleepwear = new Select.Statement(
+            items(Clothes.values()).where(Items::matching, Category.Sleepwear));
 
-    public static final Select.Statement female = items(Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
-            Vest).where(Items::without, Sexuality.Gender.Masculine);
+    public static final Select.Statement female = new Select.Statement(
+            items(Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers, Vest).where(Items::without,
+                    Sexuality.Gender.Masculine));
 
-    public static final Select.Statement male = items(Shirt, Suit, Sweater, Trousers, Vest).where(Items::without,
-            Sexuality.Gender.Feminine);
+    public static final Select.Statement male = new Select.Statement(
+            items(Shirt, Suit, Sweater, Trousers, Vest).where(Items::without, Sexuality.Gender.Feminine));
 
     // TODO Move shoes to its own class - they're accessoires as gloves, but also an unique aspect of attire
 
     public static final Select.Statement shoes(Sexuality.Gender gender) {
-        return items(Shoes).where(Items::matching, gender);
+        return new Select.Statement(items(Shoes).where(Items::matching, gender));
     }
 
     // Old style categories - all deprecated

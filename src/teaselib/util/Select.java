@@ -44,24 +44,16 @@ public class Select {
         };
     }
 
-    public final Enum<?>[] values;
-    final List<Clause<Items>> clauses;
-
-    private Select(Enum<?>[] values, List<Clause<Items>> statements) {
-        this.values = values;
-        this.clauses = statements;
+    public static Statement items(Enum<?>... values) {
+        return new Statement(values, Collections.emptyList());
     }
 
-    public static Statement.First items(Enum<?>... values) {
-        return new Statement.First(values, Collections.emptyList());
-    }
-
-    public static class Statement {
+    public abstract static class AbstractStatement {
 
         public final Enum<?>[] values;
         final List<Clause<Items>> clauses;
 
-        Statement(Enum<?>[] values, List<Clause<Items>> clauses) {
+        AbstractStatement(Enum<?>[] values, List<Clause<Items>> clauses) {
             super();
             this.values = values;
             this.clauses = clauses;
@@ -73,28 +65,44 @@ public class Select {
             return select(items, clauses.toArray(array));
         }
 
-        public static class First extends Statement {
-
-            First(Enum<?>[] values, List<Clause<Items>> clauses) {
-                super(values, clauses);
-            }
-
-            @SafeVarargs
-            public final Statement where(Clause<Items>... statements) {
-                List<Clause<Items>> where = new ArrayList<>(Arrays.asList(statements));
-                return new Statement(values, where);
-            }
-
-            public Additional where(BiFunction<Items, Enum<?>[], Items> selector, Enum<?>... attributes) {
-                Clause<Items> statement = items -> selector.apply(items, attributes);
-                List<Clause<Items>> clause = new ArrayList<>(clauses);
-                clause.add(statement);
-                return new Additional(values, clause);
-            }
-
+        List<Clause<Items>> gather(Enum<?>... items) {
+            BiFunction<Items, Enum<?>[], Items> selector = (i, v) -> i.items(items);
+            Clause<Items> statement = i -> selector.apply(i, values);
+            List<Clause<Items>> clause = new ArrayList<>(clauses);
+            clause.add(statement);
+            return clause;
         }
 
-        public static class Additional extends Statement {
+    }
+
+    public static class Statement extends AbstractStatement {
+
+        Statement(Enum<?>[] values, List<Clause<Items>> clauses) {
+            super(values, clauses);
+        }
+
+        public Statement(AbstractStatement statement) {
+            super(statement.values, statement.clauses);
+        }
+
+        @SafeVarargs
+        public final Statement where(Clause<Items>... statements) {
+            List<Clause<Items>> where = new ArrayList<>(Arrays.asList(statements));
+            return new Statement(values, where);
+        }
+
+        public Additional where(BiFunction<Items, Enum<?>[], Items> selector, Enum<?>... attributes) {
+            Clause<Items> statement = items -> selector.apply(items, attributes);
+            List<Clause<Items>> clause = new ArrayList<>(clauses);
+            clause.add(statement);
+            return new Additional(values, clause);
+        }
+
+        public Statement items(Enum<?>... items) {
+            return new Statement(values, gather(items));
+        }
+
+        public static class Additional extends AbstractStatement {
 
             Additional(Enum<?>[] values, List<Clause<Items>> clauses) {
                 super(values, clauses);
@@ -114,11 +122,7 @@ public class Select {
             }
 
             public Additional items(Enum<?>... items) {
-                BiFunction<Items, Enum<?>[], Items> selector = (i, v) -> i.items(items);
-                Clause<Items> statement = i -> selector.apply(i, values);
-                List<Clause<Items>> clause = new ArrayList<>(clauses);
-                clause.add(statement);
-                return new Additional(values, clause);
+                return new Additional(values, gather(items));
             }
 
         }

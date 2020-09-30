@@ -11,7 +11,6 @@ import teaselib.Clothes;
 import teaselib.Sexuality;
 import teaselib.Toys;
 import teaselib.test.TestScript;
-import teaselib.util.Select.Statement;
 
 public class SelectTest {
     TestScript test = TestScript.getOne();
@@ -61,14 +60,14 @@ public class SelectTest {
     public void testMultipleQueries() {
         test.addTestUserItems();
 
-        Select.Statement query1 = items(Clothes.Underpants).where(Items::matching, Sexuality.Gender.Masculine)
-                .and(Items::without, Clothes.Category.Swimwear);
+        Select.Statement query1 = new Select.Statement(items(Clothes.Underpants)
+                .where(Items::matching, Sexuality.Gender.Masculine).and(Items::without, Clothes.Category.Swimwear));
         assertEquals(2, test.items(query1).size());
         Items.Query maleUnderpants = test.select(query1);
         assertEquals(2, maleUnderpants.get().size());
 
-        Select.Statement query2 = items(Clothes.Underpants).where(Items::matching, Sexuality.Gender.Feminine)
-                .and(Items::without, Clothes.Category.Swimwear);
+        Select.Statement query2 = new Select.Statement(items(Clothes.Underpants)
+                .where(Items::matching, Sexuality.Gender.Feminine).and(Items::without, Clothes.Category.Swimwear));
         assertEquals(3, test.items(query2).size());
         Items.Query femaleUnderpants = test.select(query2);
         assertEquals(3, femaleUnderpants.get().size());
@@ -79,9 +78,19 @@ public class SelectTest {
 
     @Test
     public void testValueSelection() {
-        Select.Statement query = ((Statement.Additional) Clothes.male).items(Clothes.Shirt, Clothes.Trousers);
+        Select.Statement query = Clothes.male.items(Clothes.Shirt, Clothes.Trousers);
         Items attire = test.items(query);
         assertEquals(2, attire.valueSet().size());
+    }
+
+    @Test
+    public void testStatementPlusStatement() {
+        Select.Statement[] query = { //
+                Clothes.male.items(Clothes.Shirt, Clothes.Trousers), //
+                Select.items(Toys.Collar) //
+        };
+        Items attire = test.items(query);
+        assertEquals(3, attire.valueSet().size());
     }
 
 }

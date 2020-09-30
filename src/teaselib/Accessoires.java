@@ -1,5 +1,9 @@
 package teaselib;
 
+import static teaselib.util.Select.items;
+
+import teaselib.util.Select;
+
 public enum Accessoires {
     Apron,
     Belt,
@@ -38,6 +42,8 @@ public enum Accessoires {
         Household,
         Elbow,
     }
+
+    public static final Select.Statement all = items(Accessoires.values());
 
     public static final Accessoires[] Male = { Tie, Gloves };
     public static final Accessoires[] Female = { Belt, Gloves, Handbag, Jewelry, Makeup, Princess_Tiara, Scarf };

@@ -11,6 +11,7 @@ import teaselib.Clothes;
 import teaselib.Sexuality;
 import teaselib.Toys;
 import teaselib.test.TestScript;
+import teaselib.util.Select.Statement;
 
 public class SelectTest {
     TestScript test = TestScript.getOne();
@@ -74,6 +75,13 @@ public class SelectTest {
 
         Items.Query pants = test.select(query1, query2);
         assertEquals(5, pants.get().size());
+    }
+
+    @Test
+    public void testValueSelection() {
+        Select.Statement query = ((Statement.Additional) Clothes.male).items(Clothes.Shirt, Clothes.Trousers);
+        Items attire = test.items(query);
+        assertEquals(2, attire.valueSet().size());
     }
 
 }

@@ -113,6 +113,14 @@ public class Select {
                 return new Additional(values, clause);
             }
 
+            public Additional items(Enum<?>... items) {
+                BiFunction<Items, Enum<?>[], Items> selector = (i, v) -> i.items(items);
+                Clause<Items> statement = i -> selector.apply(i, values);
+                List<Clause<Items>> clause = new ArrayList<>(clauses);
+                clause.add(statement);
+                return new Additional(values, clause);
+            }
+
         }
     }
 

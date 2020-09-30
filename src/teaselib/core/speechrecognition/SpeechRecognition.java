@@ -257,9 +257,9 @@ public class SpeechRecognition {
     public void endRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
+                parameters = null;
                 if (isActiveCalledFromDelegateThread()) {
                     disableSR();
-                    parameters = null;
                     logger.info("Speech recognition stopped");
                 } else {
                     logger.warn("Speech recognition already stopped");

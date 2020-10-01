@@ -147,4 +147,17 @@ public class TimeOfDayImplTest {
         assertTrue(timeOfDay.isLaterThan(dayTime));
     }
 
+    @Test
+    public void testDaytimeFromNow() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        // Around 8 o'clock
+        script.debugger.setTime(Daytime.Evening);
+        assertEquals(0, script.duration(Daytime.Evening).remaining(TimeUnit.HOURS));
+
+        // around 8pm + 6h -> 2 o'clock in the morning
+        assertEquals(6, script.duration(Daytime.Night).remaining(TimeUnit.HOURS));
+    }
+
 }

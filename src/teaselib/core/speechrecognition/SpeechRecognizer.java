@@ -20,7 +20,7 @@ import teaselib.core.speechrecognition.implementation.Unsupported;
  */
 public class SpeechRecognizer implements Closeable {
     private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
-    private final AudioSync audioSync;
+    public final AudioSync audioSync;
 
     enum Config {
         SpeechRecognitionImplementation;

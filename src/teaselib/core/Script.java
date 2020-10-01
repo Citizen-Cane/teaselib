@@ -27,6 +27,7 @@ import teaselib.Resources;
 import teaselib.ScriptFunction;
 import teaselib.State;
 import teaselib.TeaseScript;
+import teaselib.core.ScriptEventArgs.ActorChanged;
 import teaselib.core.ai.perception.HeadGesturesV2InputMethod;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
@@ -114,7 +115,7 @@ public abstract class Script {
                     HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(
                             HumanPoseDeviceInteraction.class);
                     if (!humanPoseInteraction.contains(e.actor)) {
-                        defineHumanPoseInteractions(e.actor, humanPoseInteraction);
+                        define(humanPoseInteraction, e);
                     }
                 });
             }
@@ -126,12 +127,12 @@ public abstract class Script {
 
     // TODO move speech recognition-related part to sr input method, find out how to deal with absent camera
 
-    protected void defineHumanPoseInteractions(Actor actor, HumanPoseDeviceInteraction humanPoseInteraction) {
-        humanPoseInteraction.addEventListener(actor,
-                new HumanPoseDeviceInteraction.EventListener(HumanPose.Interest.Proximity) {
+    protected void define(HumanPoseDeviceInteraction humanPoseInteraction, ActorChanged e) {
+        SpeechRecognitionInputMethod speechRecognitionInputMethod = teaseLib.globals.get(InputMethods.class)
+                .get(SpeechRecognitionInputMethod.class);
 
-                    private final SpeechRecognitionInputMethod speechRecognitionInputMethod = teaseLib.globals
-                            .get(InputMethods.class).get(SpeechRecognitionInputMethod.class);
+        humanPoseInteraction.addEventListener(e.actor,
+                new HumanPoseDeviceInteraction.EventListener(HumanPose.Interest.Proximity) {
 
                     private Proximity previous = Proximity.FACE2FACE;
 
@@ -155,6 +156,11 @@ public abstract class Script {
                         speechRecognitionInputMethod.setFaceToFace(speechProximity);
                     }
                 });
+        speechRecognitionInputMethod.events.recognitionStarted.add(ev -> {
+            humanPoseInteraction.run(() -> {
+                speechRecognitionInputMethod.completeSpeechRecognition();
+            });
+        });
     }
 
     private void defineKeyReleaseInteractions(Actor actor) {

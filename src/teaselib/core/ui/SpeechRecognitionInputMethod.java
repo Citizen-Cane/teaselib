@@ -1,7 +1,7 @@
 package teaselib.core.ui;
 
-import static java.util.stream.Collectors.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +25,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.AudioSync;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.AudioSignalProblems;
 import teaselib.core.speechrecognition.Confidence;
@@ -65,6 +66,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private final Map<Locale, SpeechRecognition> usedRecognitionInstances = new HashMap<>();
     private final AudioSignalProblems audioSignalProblems;
     public final SpeechRecognitionEvents events;
+    private final AudioSync audioSync;
 
     private final Event<SpeechRecognitionStartedEventArgs> speechRecognitionStartedEventHandler;
     private final Event<AudioLevelUpdatedEventArgs> audioLevelUpdatedEventHandler;
@@ -82,6 +84,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         this.speechRecognizer = speechRecognizer;
         this.audioSignalProblems = new AudioSignalProblems();
         this.events = new SpeechRecognitionEvents();
+        this.audioSync = speechRecognizer.audioSync;
 
         this.speechRecognitionStartedEventHandler = this::handleRecognitionStarted;
         this.audioLevelUpdatedEventHandler = this::handleAudioLevelUpdated;
@@ -724,6 +727,10 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     public void setFaceToFace(boolean aware) {
         awarenessBonus = aware ? 0.6666f : 1.0f;
+    }
+
+    public void completeSpeechRecognition() {
+        audioSync.completeSpeechRecognition();
     }
 
 }

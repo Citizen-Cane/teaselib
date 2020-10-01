@@ -90,6 +90,17 @@ public class HumanPoseDeviceInteraction extends
         }
     }
 
+    public void run(Runnable task) {
+        executor.submit(() -> {
+            logger.info("Pausing pose estimation");
+        });
+        executor.submit(task);
+        executor.submit(() -> {
+            logger.info("Resuming pose estimation");
+        });
+        executor.submit(sceneCaptureTask);
+    }
+
     private void submitAndGet(Runnable task) {
         try {
             executor.submit(task).get();

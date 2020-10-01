@@ -75,8 +75,8 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     @Override
     public PoseAspects call() {
         try {
-            while (processFrame.getAsBoolean() && !Thread.interrupted()) {
-                estimatePoses(device);
+            while (canProcessNextFrame()) {
+                estimatePoses();
             }
             return poseAspects.get();
         } catch (InterruptedException e) {
@@ -93,16 +93,16 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         return PoseAspects.Unavailable;
     }
 
-    private void estimatePoses(SceneCapture device) throws InterruptedException {
-        while (processFrame.getAsBoolean() && !Thread.interrupted()) {
+    private void estimatePoses() throws InterruptedException {
+        while (canProcessNextFrame()) {
             if (device == null) {
                 device = teaseLibAI.awaitCaptureDevice();
                 device.start();
                 humanPose = teaseLibAI.getModel(Interest.Status);
             }
             try {
-                while (processFrame.getAsBoolean() && !Thread.interrupted()) {
-                    estimate(humanPose, device);
+                while (canProcessNextFrame()) {
+                    estimate();
                 }
             } catch (SceneCapture.DeviceLost e) {
                 HumanPoseDeviceInteraction.logger.warn(e.getMessage());
@@ -117,46 +117,56 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         }
     }
 
-    private void estimate(HumanPose humanPose, SceneCapture device) throws InterruptedException {
+    private void estimate() throws InterruptedException {
         Actor actor = interaction.scriptRenderer.currentActor();
         if (actor != null) {
             AtomicBoolean updated = new AtomicBoolean(false);
             poseAspects.updateAndGet(previous -> {
-                PoseAspects update = getPoseAspects(actor, humanPose, device, previous);
+                PoseAspects update = getPoseAspects(actor, previous);
                 updated.set(!signal(actor, update, previous).isEmpty());
                 return update;
             });
 
             synchronized (this) {
                 if (updated.get()) {
-                    ensureFrametimeMillis(humanPose, 200);
+                    ensureFrametimeMillis(200);
                 } else {
                     PoseAspects pose = poseAspects.get();
                     if (pose.is(Interest.HeadGestures)) {
-                        ensureFrametimeMillis(humanPose, 200);
+                        ensureFrametimeMillis(200);
                     } else {
-                        ensureFrametimeMillis(humanPose, 1000);
+                        ensureFrametimeMillis(1000);
                     }
                 }
             }
         } else {
             synchronized (this) {
-                wait(1000);
+                sleep(1000);
             }
         }
     }
 
-    private void ensureFrametimeMillis(HumanPose humanPose, long frameTimeMillis) throws InterruptedException {
+    private void ensureFrametimeMillis(long frameTimeMillis) throws InterruptedException {
         long now = System.currentTimeMillis();
         long timestamp = humanPose.getTimestamp();
         long estimationMillis = now - timestamp;
         long durationMillis = Math.max(0, frameTimeMillis - estimationMillis);
         if (durationMillis > 0) {
+            sleep(durationMillis);
+        }
+    }
+
+    private void sleep(long durationMillis) throws InterruptedException {
+        if (canProcessNextFrame()) {
             wait(durationMillis);
         }
     }
 
-    private PoseAspects getPoseAspects(Actor actor, HumanPose humanPose, SceneCapture device, PoseAspects previous) {
+    private boolean canProcessNextFrame() {
+        return processFrame.getAsBoolean() && !Thread.interrupted();
+    }
+
+    private PoseAspects getPoseAspects(Actor actor, PoseAspects previous) {
         Set<Interest> interests = interaction.definitions(actor).keySet();
         if (interests.isEmpty()) {
             return PoseAspects.Unavailable;

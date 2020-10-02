@@ -6,20 +6,17 @@ import java.util.concurrent.TimeUnit;
 import teaselib.util.DurationFormat;
 
 public class DurationImpl extends AbstractDuration {
-    private final TeaseLib teaseLib;
 
     public DurationImpl(TeaseLib teaseLib) {
         this(teaseLib, 0, TeaseLib.DURATION_TIME_UNIT);
     }
 
     public DurationImpl(TeaseLib teaseLib, long limit, TimeUnit unit) {
-        super(teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT), convertToDuration(limit, unit));
-        this.teaseLib = teaseLib;
+        super(teaseLib, teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT), convertToDuration(limit, unit));
     }
 
     public DurationImpl(TeaseLib teaseLib, long start, long limit, TimeUnit unit) {
-        super(convertToDuration(start, unit), convertToDuration(limit, unit));
-        this.teaseLib = teaseLib;
+        super(teaseLib, convertToDuration(start, unit), convertToDuration(limit, unit));
     }
 
     @Override
@@ -29,8 +26,8 @@ public class DurationImpl extends AbstractDuration {
     }
 
     @Override
-    public long remaining(TimeUnit unit) {
-        return convertToUnit(limit - elapsed(TeaseLib.DURATION_TIME_UNIT), unit);
+    public long since(TimeUnit unit) {
+        return 0;
     }
 
     @Override
@@ -63,4 +60,5 @@ public class DurationImpl extends AbstractDuration {
             return false;
         return true;
     }
+
 }

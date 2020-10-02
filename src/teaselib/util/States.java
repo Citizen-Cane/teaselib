@@ -57,8 +57,16 @@ public class States extends ArrayList<State> {
         return stream().noneMatch(State::applied);
     }
 
+    public boolean allRemoved() {
+        return stream().allMatch(State::removed);
+    }
+
     public boolean anyRemoved() {
-        return !allApplied();
+        return stream().anyMatch(State::removed);
+    }
+
+    public boolean noneRemoved() {
+        return stream().noneMatch(State::removed);
     }
 
     public boolean allExpired() {

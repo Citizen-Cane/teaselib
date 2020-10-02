@@ -4,6 +4,7 @@
 package teaselib.core.state;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.Duration;
 import teaselib.State;
@@ -78,6 +79,16 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     public void removeFrom(Object... peers) {
         events.stateRemoved.fire(new ScriptEvents.StateChangedEventArgs(state));
         state.removeFrom(peers);
+    }
+
+    @Override
+    public boolean removed() {
+        return state.removed();
+    }
+
+    @Override
+    public boolean removed(long duration, TimeUnit unit) {
+        return state.removed(duration, unit);
     }
 
     @Override

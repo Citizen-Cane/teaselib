@@ -6,10 +6,14 @@ import teaselib.Duration;
 
 public abstract class AbstractDuration implements Duration {
 
+    final TeaseLib teaseLib;
+
     final long start;
     final long limit;
 
-    AbstractDuration(long start, long limit) {
+    AbstractDuration(TeaseLib teaseLib, long start, long limit) {
+        this.teaseLib = teaseLib;
+
         if (start < 0) {
             throw new IllegalArgumentException("Duration limit must be 0 or positive: " + Long.toString(limit));
         }
@@ -45,16 +49,23 @@ public abstract class AbstractDuration implements Duration {
     }
 
     @Override
+    public long remaining(TimeUnit unit) {
+        return limit(unit) - elapsed(unit);
+    }
+
+    @Override
     public long limit(TimeUnit unit) {
         return convertToUnit(limit, unit);
     }
 
     @Override
     public long end(TimeUnit unit) {
-        if (limit >= Long.MAX_VALUE - start) {
+        long s = start(unit);
+        long e = elapsed(unit);
+        if (s >= Long.MAX_VALUE - e) {
             return Long.MAX_VALUE;
         } else {
-            return convertToUnit(start + limit, unit);
+            return s + e;
         }
     }
 

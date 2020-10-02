@@ -51,9 +51,9 @@ public class DurationFormat {
      */
     private static long toSeconds(String duration) {
         if ("INF".equalsIgnoreCase(duration)) {
-            return teaselib.State.INDEFINITELY;
+            return teaselib.Duration.INFINITE;
         } else if ("-INF".equalsIgnoreCase(duration)) {
-            return -teaselib.State.INDEFINITELY;
+            return -teaselib.Duration.INFINITE;
         } else {
             long sign = 1;
             if (duration.startsWith("-")) {

@@ -150,8 +150,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 return false;
             return true;
         }
-
-    };
+    }
 
     private final StateStorage storage;
 
@@ -225,7 +224,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 this.duration = new DurationImpl(this.stateMaps.teaseLib, start, limit, TimeUnit.SECONDS);
             } else if (argv.length == 3) {
                 long elapsed = Long.parseLong(argv[2]);
-                this.duration = new FrozenDuration(start, limit, elapsed, TimeUnit.SECONDS);
+                this.duration = new FrozenDuration(stateMaps.teaseLib, start, limit, elapsed, TimeUnit.SECONDS);
             } else {
                 throw new IllegalStateException(storage.durationStorage.value());
             }
@@ -239,7 +238,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (limitString.equals(TEMPORARY_KEYWORD)) {
             limit = TEMPORARY;
         } else if (limitString.equals(INDEFINITELY_KEYWORD)) {
-            limit = INDEFINITELY;
+            limit = Duration.INFINITE;
         } else {
             limit = Long.parseLong(limitString);
         }
@@ -333,7 +332,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             limitString = Long.toString(duration.limit(TimeUnit.SECONDS));
         } else if (limit == TEMPORARY) {
             limitString = TEMPORARY_KEYWORD;
-        } else if (limit == INDEFINITELY) {
+        } else if (limit == Duration.INFINITE) {
             limitString = INDEFINITELY_KEYWORD;
         } else {
             limitString = Long.toString(duration.limit(TimeUnit.SECONDS));
@@ -562,14 +561,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void updateLastUsed(Duration duration) {
         if (!Domain.LastUsed.equals(domain)) {
-            updateLastUsed(new FrozenDuration(duration));
+            updateLastUsed(new FrozenDuration(stateMaps.teaseLib, duration));
         }
     }
 
     private void updateLastUsed() {
         if (!Domain.LastUsed.equals(domain)) {
             long now = stateMaps.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT);
-            updateLastUsed(new FrozenDuration(now, 0L, 0L, TeaseLib.DURATION_TIME_UNIT));
+            updateLastUsed(new FrozenDuration(stateMaps.teaseLib, now, 0L, 0L, TeaseLib.DURATION_TIME_UNIT));
         }
     }
 
@@ -667,6 +666,16 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void setRemoved() {
         applied = false;
+    }
+
+    @Override
+    public boolean removed() {
+        return !applied();
+    }
+
+    @Override
+    public boolean removed(long duration, TimeUnit unit) {
+        return removed() && duration().since(unit) >= duration;
     }
 
     @Override

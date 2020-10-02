@@ -10,13 +10,13 @@ public class FrozenDuration extends AbstractDuration {
 
     private final long elapsed;
 
-    public FrozenDuration(long start, long limit, long elapsed, TimeUnit unit) {
-        super(convertToDuration(start, unit), convertToDuration(limit, unit));
+    public FrozenDuration(TeaseLib teaseLib, long start, long limit, long elapsed, TimeUnit unit) {
+        super(teaseLib, convertToDuration(start, unit), convertToDuration(limit, unit));
         this.elapsed = convertToDuration(elapsed, unit);
     }
 
-    public FrozenDuration(Duration duration) {
-        super(duration.start(TeaseLib.DURATION_TIME_UNIT), duration.limit(TeaseLib.DURATION_TIME_UNIT));
+    public FrozenDuration(TeaseLib teaseLib, Duration duration) {
+        super(teaseLib, duration.start(TeaseLib.DURATION_TIME_UNIT), duration.limit(TeaseLib.DURATION_TIME_UNIT));
         this.elapsed = duration.elapsed(TeaseLib.DURATION_TIME_UNIT);
     }
 
@@ -26,8 +26,8 @@ public class FrozenDuration extends AbstractDuration {
     }
 
     @Override
-    public long remaining(TimeUnit unit) {
-        return convertToUnit(start - elapsed + limit, unit);
+    public long since(TimeUnit unit) {
+        return teaseLib.getTime(unit) - convertToUnit(start + elapsed, unit);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package teaselib.util;
 
+import java.util.concurrent.TimeUnit;
+
 import teaselib.Duration;
 import teaselib.State;
 
@@ -59,6 +61,16 @@ public interface Item extends State {
         @Override
         public void removeFrom(Object... peers) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removed() {
+            return true;
+        }
+
+        @Override
+        public boolean removed(long duration, TimeUnit unit) {
+            return true;
         }
 
         @Override

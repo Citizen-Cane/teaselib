@@ -216,7 +216,7 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
 
         rememberOrNot(state(TEST_DOMAIN, Chastity_Device).applyTo(SomethingOnPenis, CannotJerkOff)
-                .over(State.INDEFINITELY, TimeUnit.HOURS));
+                .over(Duration.INFINITE, TimeUnit.HOURS));
 
         rememberOrNot(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Chastity_Device).over(24, TimeUnit.HOURS));
 

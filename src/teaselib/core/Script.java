@@ -202,7 +202,7 @@ public abstract class Script {
             if (state.applied() && duration.expired()) {
                 long limit = duration.limit(TimeUnit.SECONDS);
                 if (limit > State.TEMPORARY) {
-                    long autoRemovalTime = duration.end(TimeUnit.SECONDS) + limit / 2;
+                    long autoRemovalTime = duration.start(TimeUnit.SECONDS) + limit + limit / 2;
                     if (autoRemovalTime <= startupTimeSeconds) {
                         state.remove();
                     }

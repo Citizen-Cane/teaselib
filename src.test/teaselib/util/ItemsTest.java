@@ -310,6 +310,22 @@ public class ItemsTest {
     }
 
     @Test
+    public void testRemainingDurationAfterRemoved() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item collar = script.item(Toys.Collar);
+        collar.apply().over(1, TimeUnit.HOURS);
+        assertEquals(1, collar.duration().remaining(TimeUnit.HOURS));
+
+        script.debugger.advanceTime(20, TimeUnit.MINUTES);
+        assertEquals(40, collar.duration().remaining(TimeUnit.MINUTES));
+
+        collar.remove();
+        assertEquals(40, collar.duration().remaining(TimeUnit.MINUTES));
+    }
+
+    @Test
     public void showThatNamespaceAttributeIsSymetric() {
         TestScript script = TestScript.getOne();
 

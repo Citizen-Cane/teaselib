@@ -5,8 +5,6 @@ import java.util.concurrent.TimeUnit;
 public interface State {
     public static final long TEMPORARY = 0;
 
-    public static final long INDEFINITELY = Long.MAX_VALUE;
-
     Options apply();
 
     Options applyTo(Object... peers);
@@ -22,6 +20,10 @@ public interface State {
     void remove();
 
     void removeFrom(Object... peers);
+
+    boolean removed();
+
+    boolean removed(long duration, TimeUnit unit);
 
     interface Options extends State.Persistence {
         Persistence over(long duration, TimeUnit unit);

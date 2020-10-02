@@ -348,6 +348,16 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     @Override
+    public boolean removed() {
+        return !applied();
+    }
+
+    @Override
+    public boolean removed(long duration, TimeUnit unit) {
+        return removed() && duration().since(unit) >= duration;
+    }
+
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;

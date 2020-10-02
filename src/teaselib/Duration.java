@@ -38,6 +38,11 @@ public interface Duration {
             return 0;
         }
 
+        @Override
+        public long since(TimeUnit unit) {
+            return Long.MAX_VALUE;
+        }
+
     };
 
     public static int compare(Duration a, Duration b) {
@@ -53,7 +58,7 @@ public interface Duration {
     long start(TimeUnit unit);
 
     /**
-     * The length of the duration.
+     * The supposed time span of the duration.
      * 
      * @param unit
      * @return
@@ -76,13 +81,33 @@ public interface Duration {
      */
     long remaining(TimeUnit unit);
 
+    /**
+     * Whether the duration has passed its limit.
+     * 
+     * @return
+     */
     boolean expired();
 
     /**
-     * The time at which this duration will expire.
+     * 
+     * The time at which this duration ends.
      * 
      * @param unit
-     * @return
+     * @return For elapsing durations, returns the current time.
+     *         <p>
+     *         For elapsed duration, returns the time the duration has ended.
      */
     long end(TimeUnit unit);
+
+    /**
+     * The time passed since the end of the duration.
+     * 
+     * @param unit
+     * @return For elapsing durations, returns 0 because the duration hasn't ended yet.
+     *         <p>
+     *         However if the duration has elapsed, e.g. the process it describes has come to an end, since() returns
+     *         the passed time.
+     * 
+     */
+    long since(TimeUnit unit);
 }

@@ -142,7 +142,18 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     }
 
     @Override
+    public boolean removed() {
+        return item.removed();
+    }
+
+    @Override
+    public boolean removed(long duration, TimeUnit unit) {
+        return item.removed(duration, unit);
+    }
+
+    @Override
     public void applyAttributes(Object... attributes) {
         ((StateMaps.Attributes) item).applyAttributes(attributes);
     }
+
 }

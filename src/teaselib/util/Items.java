@@ -130,8 +130,34 @@ public class Items implements Iterable<Item> {
         return elements.stream().allMatch(Item::applied);
     }
 
+    public boolean noneRemoved() {
+        return elements.stream().noneMatch(Item::removed);
+    }
+
     public boolean anyRemoved() {
-        return !allApplied();
+        return elements.stream().anyMatch(Item::removed);
+    }
+
+    public boolean allRemoved() {
+        if (elements.isEmpty()) {
+            return false;
+        }
+        return elements.stream().allMatch(Item::removed);
+    }
+
+    public boolean noneRemoved(long duration, TimeUnit unit) {
+        return elements.stream().noneMatch(item -> item.removed(duration, unit));
+    }
+
+    public boolean anyRemoved(long duration, TimeUnit unit) {
+        return elements.stream().anyMatch(item -> item.removed(duration, unit));
+    }
+
+    public boolean allRemoved(long duration, TimeUnit unit) {
+        if (elements.isEmpty()) {
+            return false;
+        }
+        return elements.stream().allMatch(item -> item.removed(duration, unit));
     }
 
     public boolean anyAre(Object... attributes) {

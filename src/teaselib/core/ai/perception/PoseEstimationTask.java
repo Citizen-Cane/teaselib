@@ -133,9 +133,9 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                 } else {
                     PoseAspects pose = poseAspects.get();
                     if (pose.is(Interest.HeadGestures)) {
-                        ensureFrametimeMillis(200);
+                        ensureFrametimeMillis(125);
                     } else {
-                        ensureFrametimeMillis(1000);
+                        ensureFrametimeMillis(500);
                     }
                 }
             }

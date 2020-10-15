@@ -17,6 +17,7 @@
 
 #include <AIfxPoseEstimation.h>
 #include <AIfxVideoCapture.h>
+#include <TfLiteDelegateV2.h>
 
 #include <Pose.h>
 
@@ -240,8 +241,8 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 
 HumanPose::HumanPose(JNIEnv* env)
 	: NativeObject(env)
-	, model(PoseEstimation::Model::MobileNetThin)
-	, resolution(PoseEstimation::Resolution::Size128x96)
+	, model(PoseEstimation::Model::MobileNetThin_Gpu_Resize)
+	, resolution(PoseEstimation::Resolution::Size144x108)
 	, rotation(PoseEstimation::Rotation::None)
 	{}
 
@@ -301,7 +302,7 @@ aifx::PoseEstimation* HumanPose::interpreter()
 		interpreterMap[rotation] = interpreter =new PoseEstimation(
 			model,
 			resolution,
-			TfLiteInterpreter::ComputationMode::CPU,
+			new TfLiteDelegateV2,
 			rotation);
 	}
 	return interpreter;

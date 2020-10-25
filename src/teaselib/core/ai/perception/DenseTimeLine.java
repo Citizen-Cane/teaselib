@@ -137,8 +137,12 @@ public class DenseTimeLine<T> {
         return tail;
     }
 
-    long duration(TimeUnit unit) {
+    public long duration(TimeUnit unit) {
         return unit.convert(elements.getLast().timeMillis - elements.getFirst().timeMillis, MILLISECONDS);
+    }
+
+    public long maxDuration(TimeUnit unit) {
+        return unit.convert(maxDurationMillis, MILLISECONDS);
     }
 
     public Stream<TimeStamp<T>> stream() {

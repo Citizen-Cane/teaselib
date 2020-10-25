@@ -1,21 +1,21 @@
 package teaselib.core.ai.perception;
 
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static teaselib.core.ai.perception.HeadGesturesV2InputMethod.Nod.Down;
+import static teaselib.core.ai.perception.HeadGesturesV2InputMethod.Nod.Up;
+import static teaselib.core.ai.perception.HeadGesturesV2InputMethod.Shake.Left;
+import static teaselib.core.ai.perception.HeadGesturesV2InputMethod.Shake.Right;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import teaselib.Answer;
 import teaselib.Answer.Meaning;
@@ -29,23 +29,48 @@ import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
 
 public class HeadGesturesV2InputMethod extends AbstractInputMethod {
-    private static final Logger logger = LoggerFactory.getLogger(HeadGesturesV2InputMethod.class);
-
     private final HumanPoseDeviceInteraction humanPoseInteraction;
+
+    private static final float rad2deg = (float) (180.0d / Math.PI);
+
+    enum Gesture {
+        Nod,
+        Shake,
+        None
+    }
+
+    enum Nod implements FunctionPattern.Direction {
+        Up,
+        Down,
+    }
+
+    enum Shake implements FunctionPattern.Direction {
+        Left,
+        Right
+    }
+
+    private final List<FunctionPattern.Direction> nodDown = asList(Down, Up, Down, Up, Down, Up);
+    private final List<FunctionPattern.Direction> nodUp = asList(Up, Down, Up, Down, Up, Down);
+    private final FunctionPattern nodding = new FunctionPattern(12, 3, SECONDS, Up, Down, nodDown, nodUp);
+
+    private final List<FunctionPattern.Direction> shakeRight = asList(Right, Left, Right, Left, Right, Left);
+    private final List<FunctionPattern.Direction> shakeLeft = asList(Left, Right, Left, Right, Left, Right);
+    private final FunctionPattern shaking = new FunctionPattern(12, 3, SECONDS, Right, Left, shakeRight, shakeLeft);
+
+    private final Lock gestureDetectionLock = new ReentrantLock();
+    private final Condition gestureDetected = gestureDetectionLock.newCondition();
+    private final AtomicReference<Gesture> detectedGesture = new AtomicReference<>(Gesture.None);
 
     public HeadGesturesV2InputMethod(HumanPoseDeviceInteraction humanPoseInteraction, ExecutorService executor) {
         super(executor);
         this.humanPoseInteraction = humanPoseInteraction;
     }
 
-    @Override
-    public Setup getSetup(Choices choices) {
-        return () -> { //
-        };
-    }
-
     public final HumanPoseDeviceInteraction.EventListener trackProximity = new HumanPoseDeviceInteraction.EventListener(
             HumanPose.Interest.Proximity) {
+
+        long face2faceLast = 0;
+
         @Override
         public void run(PoseEstimationEventArgs eventArgs) throws Exception {
             activePrompt.updateAndGet(prompt -> {
@@ -55,12 +80,18 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
                     if (proximity.isPresent()) {
                         if (proximity.get() == Proximity.FACE2FACE) {
                             Optional<Gaze> gaze = eventArgs.pose.estimation.gaze;
-                            if (gaze.isPresent() && gaze.get().isFace2Face()) {
-                                if (!humanPoseInteraction.containsEventListener(eventArgs.actor, trackGaze)) {
-                                    clearTimeline(gaze.get());
-                                    humanPoseInteraction.addEventListener(eventArgs.actor, trackGaze);
+                            if (gaze.isPresent()) {
+                                if (gaze.get().isFace2Face()) {
+                                    if (!humanPoseInteraction.containsEventListener(eventArgs.actor, trackGaze)) {
+                                        clearTimeline(gaze.get());
+                                        humanPoseInteraction.addEventListener(eventArgs.actor, trackGaze);
+                                    }
+                                    face2face = true;
+                                    face2faceLast = eventArgs.timestamp;
+                                } else {
+                                    long duration = eventArgs.timestamp - face2faceLast;
+                                    face2face = duration <= shaking.maxDuration(MILLISECONDS);
                                 }
-                                face2face = true;
                             } else {
                                 face2face = false;
                             }
@@ -83,156 +114,47 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
 
         private void clearTimeline(Gaze gaze) {
             detectedGesture.set(Gesture.None);
-            movement.clear();
-            movement.add(new DirectionValue(Direction.None, gaze.nod, 0.0f), System.currentTimeMillis(), MILLISECONDS);
+            long timestamp = System.currentTimeMillis();
+            nodding.clear(gaze.nod * rad2deg, timestamp, MILLISECONDS);
+            shaking.clear(gaze.shake * rad2deg, timestamp, MILLISECONDS);
         }
     };
 
-    enum Gesture {
-        Nod,
-        Shake,
-        None
-    }
-
-    interface Direction {
-        Direction None = new Direction() {
-
-            @Override
-            public String toString() {
-                return "None";
-            }
-        };
-
-        enum Nod implements Direction {
-            Up,
-            Down,
-        }
-
-        enum Shake implements Direction {
-            Left,
-            Right
-        }
-
-        enum Rejected implements Direction {
-            TooLong,
-            TooSmall
-        }
-
-    }
-
-    private static Meaning meaning(Gesture gesture) {
-        if (gesture == Gesture.Nod) {
-            return Meaning.YES;
-        } else if (gesture == Gesture.Shake) {
-            return Meaning.NO;
-        } else {
-            return null;
-        }
-    }
-
-    private class DirectionValue {
-        final Direction direction;
-        final float x;
-        final float dx;
-
-        private DirectionValue(Direction direction, float x, float dx) {
-            this.direction = direction;
-            this.x = x;
-            this.dx = dx;
-        }
-
-        @Override
-        public String toString() {
-            return direction + "=" + x + "(" + dx + ")";
-        }
-
-    }
-
-    private final Lock gestureDetectionLock = new ReentrantLock();
-    private final Condition gestureDetected = gestureDetectionLock.newCondition();
-    private final AtomicReference<Gesture> detectedGesture = new AtomicReference<>(Gesture.None);
-    private final DenseTimeLine<DirectionValue> movement = new DenseTimeLine<>(12, 3, TimeUnit.SECONDS);
-
     public final HumanPoseDeviceInteraction.EventListener trackGaze = new HumanPoseDeviceInteraction.EventListener(
             HumanPose.Interest.HeadGestures) {
-
-        private final List<Direction> nodDown = Arrays.asList(Direction.Nod.Down, Direction.Nod.Up, Direction.Nod.Down,
-                Direction.Nod.Up, Direction.Nod.Down, Direction.Nod.Up);
-        private final List<Direction> nodUp = Arrays.asList(Direction.Nod.Up, Direction.Nod.Down, Direction.Nod.Up,
-                Direction.Nod.Down, Direction.Nod.Up, Direction.Nod.Down);
-        private final List<Direction> shakeRight = Arrays.asList(Direction.Shake.Right, Direction.Shake.Left,
-                Direction.Shake.Right, Direction.Shake.Left, Direction.Shake.Right, Direction.Shake.Left);
-        private final List<Direction> shakeLeft = Arrays.asList(Direction.Shake.Left, Direction.Shake.Right,
-                Direction.Shake.Left, Direction.Shake.Right, Direction.Shake.Left, Direction.Shake.Right);
-
-        private float lastNod = 0.0f;
 
         @Override
         public void run(PoseEstimationEventArgs eventArgs) throws Exception {
             if (eventArgs.pose.is(HeadGestures.Gaze)) {
                 Gaze gaze = eventArgs.pose.estimation.gaze.orElseThrow();
-                estimateGesture(eventArgs, gaze);
-            }
-        }
-
-        private void estimateGesture(PoseEstimationEventArgs eventArgs, Gaze gaze) {
-            float x = (float) (gaze.nod * 180.0f / Math.PI);
-            if (!Float.isNaN(x)) {
-                float dx = x - lastNod;
-                if (dx != 0) {
-                    Direction direction;
-                    if (dx > 0)
-                        direction = Direction.Nod.Up;
-                    else /* if (dxNod < 0) */
-                        direction = Direction.Nod.Down;
-
-                    DirectionValue lastDirection = movement.last();
-                    if (direction == lastDirection.direction) {
-                        movement.removeLast();
-                        movement.add(new DirectionValue(direction, x, lastDirection.dx + dx), eventArgs.timestamp,
-                                MILLISECONDS);
-                    } else {
-                        movement.add(new DirectionValue(direction, x, dx), eventArgs.timestamp, MILLISECONDS);
-                    }
-                    lastNod = x;
-
-                    // TODO filter insignificant values and join adjacent entries
-                    DenseTimeLine<DirectionValue> tail = movement.last(nodDown.size());
-                    logger.info("movement = {}", tail);
-                    List<Direction> gesture = tail.last(3, TimeUnit.SECONDS).stream().map(this::direction)
-                            .collect(toList());
-                    logger.info("Gesture pattern = {}", gesture);
-                    if (gesture.equals(nodDown) || gesture.equals(nodUp)) {
-                        signal(Gesture.Nod);
-                    } else if (gesture.equals(shakeRight) || gesture.equals(shakeLeft)) {
-                        signal(Gesture.Shake);
-                    }
+                boolean nod = nodding.update(eventArgs.timestamp, gaze.nod * rad2deg);
+                boolean shake = shaking.update(eventArgs.timestamp, gaze.shake * rad2deg);
+                if (nod && !shake) {
+                    signal(eventArgs, Gesture.Nod);
+                } else if (shake && !nod) {
+                    signal(eventArgs, Gesture.Shake);
                 }
             }
         }
 
-        private Direction direction(DenseTimeLine.TimeStamp<DirectionValue> element) {
-            DirectionValue directionValue = element.element;
-            if (Math.abs(directionValue.dx) < 15.0) {
-                return Direction.Rejected.TooSmall;
-            } else if (element.durationMillis > 750) {
-                return Direction.Rejected.TooLong;
-            } else {
-                return directionValue.direction;
-            }
-        }
-
-        private void signal(Gesture gesture) {
+        private void signal(PoseEstimationEventArgs eventArgs, Gesture gesture) {
             gestureDetectionLock.lock();
             try {
                 detectedGesture.set(gesture);
                 gestureDetected.signalAll();
+                humanPoseInteraction.removeEventListener(eventArgs.actor, this);
             } finally {
                 gestureDetectionLock.unlock();
             }
         }
 
     };
+
+    @Override
+    public Setup getSetup(Choices choices) {
+        return () -> { //
+        };
+    }
 
     @Override
     protected Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
@@ -251,6 +173,16 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
             }
         }
         return Result.UNDEFINED;
+    }
+
+    private static Meaning meaning(Gesture gesture) {
+        if (gesture == Gesture.Nod) {
+            return Meaning.YES;
+        } else if (gesture == Gesture.Shake) {
+            return Meaning.NO;
+        } else {
+            return null;
+        }
     }
 
     @Override

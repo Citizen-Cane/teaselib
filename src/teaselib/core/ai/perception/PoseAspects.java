@@ -48,7 +48,7 @@ public class PoseAspects {
 
             // TODO max-reliable distance for inference model to avoid drop-outs in the distance
             if (interests.contains(Interest.HeadGestures)) {
-                if (proximity == Proximity.FACE2FACE) {
+                if (proximity == Proximity.FACE2FACE && pose.head.isPresent()) {
                     aspects.add(HeadGestures.Gaze);
                     aspects.add(Status.Stream);
                 } else {

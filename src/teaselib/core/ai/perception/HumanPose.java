@@ -105,7 +105,14 @@ public class HumanPose extends NativeObject {
             }
 
             public boolean isFace2Face() {
+                // TODO require both ears to be present in the estimation data
+                // - currently this is ensured by the maximum shake angle of 25° implicitly
                 return Math.abs(nod) < Limits.NOD && Math.abs(shake) < Limits.SHAKE;
+            }
+
+            @Override
+            public String toString() {
+                return "[nod=" + nod + ", shake=" + shake + ", tilt=" + tilt + "]";
             }
 
         }

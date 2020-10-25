@@ -192,7 +192,8 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                         .definitions(actor);
                 Set<Interest> previousInterests = definitions.keySet();
 
-                PoseEstimationEventArgs eventArgs = new PoseEstimationEventArgs(actor, update);
+                PoseEstimationEventArgs eventArgs = new PoseEstimationEventArgs(actor, update,
+                        humanPose.getTimestamp());
                 definitions.stream().filter(e -> update.is(e.getKey())).map(Map.Entry::getValue)
                         .forEach(e -> e.fire(eventArgs));
 

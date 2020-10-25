@@ -242,7 +242,7 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 HumanPose::HumanPose(JNIEnv* env)
 	: NativeObject(env)
 	, model(PoseEstimation::Model::MobileNetThin_Gpu_Resize)
-	, resolution(PoseEstimation::Resolution::Size144x108)
+	, resolution(PoseEstimation::Resolution::Size320x240)
 	, rotation(PoseEstimation::Rotation::None)
 	{}
 

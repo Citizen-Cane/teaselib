@@ -154,14 +154,22 @@ public class TeaseLibAITest {
                     poses2.get(0).distance.orElseThrow(), 0.1);
             assertEquals(Proximity.FACE2FACE, poses2.get(0).proximity());
 
-            // TODO add test assertions for CLOSE, NEAR & FAR
-
             try {
                 humanPose2.poses(sceneCapture, Rotation.None);
+                fail("Expected device lost since image sequence doesn't contain any more images");
             } catch (SceneCapture.DeviceLost exception) {
                 return;
             }
-            fail("Expected device lost since image sequence doesn't contain any more images");
+        }
+    }
+
+    @Test
+    public void testDistanceNear() throws IOException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
+            List<Estimation> poses = humnaPose.poses(resource("images/p2_320x240_01.jpg"));
+            assertEquals(2, poses.size());
+            assertEquals(Proximity.NEAR, poses.get(0).proximity());
+            assertEquals(Proximity.NEAR, poses.get(1).proximity());
         }
     }
 

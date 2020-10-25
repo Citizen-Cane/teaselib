@@ -51,7 +51,7 @@ public abstract class AbstractInputMethod implements InputMethod {
         }
     };
 
-    protected Future<?> resultWorker;
+    private Future<?> resultWorker;
 
     public AbstractInputMethod(ExecutorService executor) {
         this.executor = executor;

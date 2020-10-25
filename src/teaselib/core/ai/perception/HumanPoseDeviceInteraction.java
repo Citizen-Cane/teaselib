@@ -141,7 +141,8 @@ public class HumanPoseDeviceInteraction extends
         eventSource.add(listener);
 
         try {
-            listener.run(new PoseEstimationEventArgs(actor, sceneCaptureTask.getPose(listener.interest)));
+            listener.run(new PoseEstimationEventArgs(actor, sceneCaptureTask.getPose(listener.interest),
+                    System.currentTimeMillis()));
         } catch (Exception e) {
             throw asRuntimeException(e);
         }

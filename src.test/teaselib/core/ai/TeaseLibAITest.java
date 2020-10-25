@@ -106,7 +106,7 @@ public class TeaseLibAITest {
         List<Estimation> poses = humnaPose.poses(resource("images/p2_320x240_01.jpg"));
         assertEquals(2, poses.size());
         assertEquals(0.25, poses.get(1).head.orElseThrow().getX(), 0.02);
-        assertEquals(0.10, poses.get(1).head.orElseThrow().getY(), 0.02);
+        assertEquals(0.09, poses.get(1).head.orElseThrow().getY(), 0.02);
         assertEquals(0.7, poses.get(0).head.orElseThrow().getX(), 0.01);
         assertEquals(0.10, poses.get(0).head.orElseThrow().getY(), 0.02);
     }
@@ -144,13 +144,13 @@ public class TeaseLibAITest {
             sceneCapture.start();
             List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture, Rotation.None);
             assertEquals(1, poses1.size());
-            assertEquals("Assertion based on PoseEstimation::Resolution::Size144x108", 0.71f,
+            assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.71f,
                     poses1.get(0).distance.orElseThrow(), 0.01f);
             assertEquals(Proximity.FACE2FACE, poses1.get(0).proximity());
 
             List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture, Rotation.None);
             assertEquals(1, poses2.size());
-            assertEquals("Assertion based on PoseEstimation::Resolution::Size144x108", 0.81,
+            assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.92,
                     poses2.get(0).distance.orElseThrow(), 0.1);
             assertEquals(Proximity.FACE2FACE, poses2.get(0).proximity());
 

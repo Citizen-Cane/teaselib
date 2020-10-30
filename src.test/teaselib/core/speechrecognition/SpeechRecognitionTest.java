@@ -1,8 +1,12 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.*;
-import static teaselib.core.ui.SpeechRecognitionInputMethod.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.as;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.ui.SpeechRecognitionInputMethod.bestSingleResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -148,7 +152,7 @@ public class SpeechRecognitionTest {
         rejected.addAll(assertRejected(choices, "Yes I haven't"));
         assertEquals("Filtered by speech recognition implementation", 1, rejected.size());
 
-        Rule distinct = bestSingleResult(expected.stream(), index -> index).orElseThrow();
+        Rule distinct = bestSingleResult(expected.stream(), PreparedChoices.IdentityMapping).orElseThrow();
         assertEquals(expected.get(0), distinct);
         assertNotEquals(expected.get(0), rejected.get(0));
 
@@ -170,7 +174,7 @@ public class SpeechRecognitionTest {
         expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
         assertEquals(1, expected.size());
 
-        Rule distinct = bestSingleResult(expected.stream(), index -> index).orElseThrow();
+        Rule distinct = bestSingleResult(expected.stream(), PreparedChoices.IdentityMapping).orElseThrow();
         assertEquals(expected.get(0), distinct);
         assertNotEquals(expected.get(0), rejected.get(0));
     }

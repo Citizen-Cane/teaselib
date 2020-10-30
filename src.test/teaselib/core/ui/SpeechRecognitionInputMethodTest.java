@@ -1,6 +1,8 @@
 package teaselib.core.ui;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -50,7 +52,6 @@ public class SpeechRecognitionInputMethodTest {
     private static void test(Choices choices, String expected, int resultIndex) throws InterruptedException {
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer();
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
-            SpeechRecognition sr = recognizers.get(choices.locale);
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
             SpeechRecognitionTestUtils.awaitResult(prompt, inputMethod, expected, new Prompt.Result(resultIndex));
         }
@@ -111,39 +112,47 @@ public class SpeechRecognitionInputMethodTest {
     @Test
     public void testSpeechRecognitionInputMethodStacked() throws InterruptedException {
         try (SpeechRecognizer recognizer = SpeechRecognitionTestUtils.getRecognizer();
-                SpeechRecognitionInputMethod inputMethod1 = new SpeechRecognitionInputMethod(recognizer);) {
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer);) {
             Choices choices1 = new Choices(Locale.ENGLISH, Intention.Confirm, choice("Foo"));
             SpeechRecognition sr = recognizer.get(choices1.locale);
 
-            Prompt prompt1 = new Prompt(choices1, new InputMethods(inputMethod1));
+            Prompt prompt1 = new Prompt(choices1, new InputMethods(inputMethod));
             prompt1.lock.lockInterruptibly();
             try {
-                inputMethod1.show(prompt1);
+                inputMethod.show(prompt1);
                 assertTrue(sr.isActive());
                 sr.emulateRecogntion("Bar");
-                assertFalse(prompt1.click.await(1, TimeUnit.SECONDS));
-                inputMethod1.dismiss(prompt1);
+                assertFalse("Bar unexpected", prompt1.click.await(1, TimeUnit.SECONDS));
+                inputMethod.dismiss(prompt1);
                 assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
                 assertFalse(sr.isActive());
 
                 Choices choices2 = new Choices(Locale.ENGLISH, Intention.Confirm, choice("Bar"));
-                Prompt prompt2 = new Prompt(choices2, new InputMethods(inputMethod1));
+                Prompt prompt2 = new Prompt(choices2, new InputMethods(inputMethod));
                 prompt2.lock.lockInterruptibly();
                 try {
-                    inputMethod1.show(prompt2);
+                    inputMethod.show(prompt2);
                     assertTrue(sr.isActive());
                     sr.emulateRecogntion("Bar");
-                    assertTrue(prompt2.click.await(1, TimeUnit.SECONDS));
+                    assertTrue("Bar expected", prompt2.click.await(1, TimeUnit.SECONDS));
                     assertEquals(new Prompt.Result(0), prompt2.result());
                     assertFalse(sr.isActive());
                 } finally {
                     prompt2.lock.unlock();
                 }
 
-                inputMethod1.show(prompt1);
+                inputMethod.show(prompt1);
+                assertTrue(sr.isActive());
+                sr.emulateRecogntion("Bar");
+                assertFalse("Bar unexpected", prompt1.click.await(1, TimeUnit.SECONDS));
+                inputMethod.dismiss(prompt1);
+                assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
+                assertFalse(sr.isActive());
+
+                inputMethod.show(prompt1);
                 assertTrue(sr.isActive());
                 sr.emulateRecogntion("Foo");
-                assertTrue(prompt1.click.await(1, TimeUnit.SECONDS));
+                assertTrue("Foo expected", prompt1.click.await(1, TimeUnit.SECONDS));
                 assertEquals(new Prompt.Result(0), prompt1.result());
                 assertFalse(sr.isActive());
             } finally {

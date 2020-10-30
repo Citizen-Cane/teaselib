@@ -8,7 +8,9 @@ import static teaselib.core.speechrecognition.Confidence.High;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntUnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +77,7 @@ public class SpeechRecognition {
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
     public final SpeechRecognitionImplementation implementation;
 
-    private SpeechRecognitionParameters parameters;
+    private PreparedChoices preparedChoices;
 
     /**
      * Speech recognition has been started or resumed and is listening for voice input
@@ -177,7 +179,7 @@ public class SpeechRecognition {
 
         implementation.close();
 
-        unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
+        unlockSpeechRecognitionInProgressSyncObject();
         delegateThread.shutdown();
     }
 
@@ -187,8 +189,20 @@ public class SpeechRecognition {
         }
     }
 
-    public void setChoices(SpeechRecognitionParameters parameters) {
-        this.parameters = parameters;
+    public PreparedChoices prepare(Choices choices) {
+        return implementation.prepare(choices);
+    }
+
+    public void apply(PreparedChoices preparedChoices) {
+        this.preparedChoices = preparedChoices;
+    }
+
+    public Optional<Rule> hypothesis(List<Rule> rules, Rule currentHypothesis) {
+        return preparedChoices.hypothesis(rules, currentHypothesis);
+    }
+
+    public IntUnaryOperator phraseToChoiceMapping() {
+        return preparedChoices.mapper();
     }
 
     public void startRecognition() {
@@ -226,7 +240,7 @@ public class SpeechRecognition {
             delegateThread.run(() -> {
                 if (isActiveCalledFromDelegateThread()) {
                     logger.warn("Speech recognition already running on resume attempt");
-                } else if (parameters == null) {
+                } else if (preparedChoices == null) {
                     logger.warn("Speech recognition already stopped - not resumed");
                 } else {
                     enableSR();
@@ -257,7 +271,7 @@ public class SpeechRecognition {
     public void endRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
-                parameters = null;
+                preparedChoices = null;
                 if (isActiveCalledFromDelegateThread()) {
                     disableSR();
                     logger.info("Speech recognition stopped");
@@ -271,18 +285,8 @@ public class SpeechRecognition {
     }
 
     private void enableSR() {
-        if (implementation instanceof SpeechRecognitionSRGS) {
-            ((SpeechRecognitionSRGS) implementation).setChoices(parameters.srgs);
-        } else if (implementation instanceof SpeechRecognitionChoices) {
-            ((SpeechRecognitionChoices) implementation).setChoices(firstPhraseOfEach(parameters.choices));
-        } else if (implementation instanceof Unsupported) {
-            return;
-        } else {
-            throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
-        }
-
+        preparedChoices.accept(implementation);
         audioSync.whenSpeechCompleted(implementation::startRecognition);
-
         timeoutWatchdog.enable(true);
         speechRecognitionActive.set(true);
     }

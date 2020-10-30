@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.IntUnaryOperator;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -76,7 +77,17 @@ public class SpeechRecognitionHandcraftedXmlTest {
                             setup.apply();
                             String xmlToString = new String(xml);
                             logger.info("Injecting handcrafted xml\n{}", xmlToString);
-                            sr.setChoices(new SpeechRecognitionParameters(choices, null, xml, index -> index));
+                            sr.apply(new PreparedChoices() {
+                                @Override
+                                public void accept(SpeechRecognitionImplementation sri) {
+                                    ((TeaseLibSRGS) sri).setChoices(xml);
+                                }
+
+                                @Override
+                                public IntUnaryOperator mapper() {
+                                    return IdentityMapping;
+                                }
+                            });
                         };
                     }
                 };) {

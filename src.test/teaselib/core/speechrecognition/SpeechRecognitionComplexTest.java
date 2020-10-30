@@ -42,7 +42,7 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("Of course, Miss"), new Prompt.Result(0));
 
         Choices hypothized = as(choices, Intention.Confirm);
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
 
         assertRejected(choices, "Of course");
         assertRejected(choices, withoutPunctation("Miss"));
@@ -71,8 +71,8 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("of course not"), new Prompt.Result(1, 1));
 
         Choices hypothized = as(choices, Intention.Confirm);
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
 
         assertRejected(choices, "No Miss of course");
         assertRejected(choices, "Of not");
@@ -121,8 +121,8 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1));
 
         Choices hypothized = as(choices, Intention.Confirm);
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
 
         assertRejected(choices, "No Miss of course");
         assertRejected(choices, "Of not");
@@ -158,8 +158,8 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("I don't have it"), new Prompt.Result(1));
 
         Choices hypothized = as(choices, Intention.Confirm);
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
 
         assertRejected(choices, "No Miss of course");
         assertRejected(choices, "Of not");
@@ -189,8 +189,8 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("I don't have it"), new Prompt.Result(1));
 
         Choices hypothized = as(choices, Intention.Confirm);
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
 
         assertRejected(choices, "No Miss of course");
         assertRejected(choices, "Of not");

@@ -7,11 +7,11 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.speechrecognition.SpeechRecognitionChoices;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.util.ExceptionUtil;
 
-public class TeaseLibSR extends SpeechRecognitionImplementation implements SpeechRecognitionChoices {
+abstract class TeaseLibSR extends SpeechRecognitionImplementation {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSR.class);
 
     private long nativeObject;
@@ -24,8 +24,8 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
     }
 
     @Override
-    public void init(SpeechRecognitionEvents events, Locale locale) throws Throwable {
-        languageCode = languageCode(locale);
+    public void init(SpeechRecognitionEvents events, Locale locale) {
+        languageCode = getLanguageCode(locale);
         try {
             initSR(getLanguageCode());
         } catch (UnsupportedLanguageException e) {
@@ -56,9 +56,14 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
         eventThread = new Thread(speechRecognitionService);
         eventThread.setName("Speech Recognition event thread");
         eventThread.start();
-        awaitInitialized.await();
+        try {
+            awaitInitialized.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         if (eventThreadException != null) {
-            throw eventThreadException;
+            throw ExceptionUtil.asRuntimeException(eventThreadException);
         }
     }
 
@@ -76,14 +81,11 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
      */
     private native void initSREventThread(SpeechRecognitionEvents events, CountDownLatch signalInitialized);
 
-    @Override
     public native void setChoices(List<String> phrases);
 
-    /* @Override */
     public native void setChoices(byte[] srgs);
 
-    @Override
-    public native void setMaxAlternates(int n);
+    native void setMaxAlternates(int n);
 
     @Override
     public native void startRecognition();
@@ -106,4 +108,5 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
             Thread.currentThread().interrupt();
         }
     }
+
 }

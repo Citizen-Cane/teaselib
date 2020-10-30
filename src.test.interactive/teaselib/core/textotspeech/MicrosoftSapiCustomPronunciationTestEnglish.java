@@ -20,7 +20,6 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionParameters;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeech;
@@ -140,7 +139,7 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
             Event<SpeechRecognizedEventArgs> event = speechRecognition.events.recognitionCompleted
                     .add(events -> completed.countDown());
             try {
-                speechRecognition.setChoices(new SpeechRecognitionParameters(choices));
+                speechRecognition.apply(speechRecognition.prepare(choices));
                 speechRecognition.startRecognition();
                 completed.await();
             } finally {

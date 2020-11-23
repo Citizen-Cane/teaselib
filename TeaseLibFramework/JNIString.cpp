@@ -14,7 +14,7 @@ template<> JNIStringT<wchar_t>::JNIStringT(JNIEnv *env, const wchar_t * const st
 	this->string = reinterpret_cast<const wchar_t*>(env->GetStringChars(jthis, &isCopy));
 }
 
-template<> JNIStringT<wchar_t>::~JNIString() {
+template<> JNIStringT<wchar_t>::~JNIStringT() {
 	env->ReleaseStringChars(jthis, reinterpret_cast<const jchar*>(string));
 }
 

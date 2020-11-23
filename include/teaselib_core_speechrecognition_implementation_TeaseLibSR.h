@@ -12,7 +12,7 @@ extern "C" {
  * Method:    initSR
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSR
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_initSR
   (JNIEnv *, jobject, jstring);
 
 /*
@@ -20,7 +20,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    initSREventThread
  * Signature: (Lteaselib/core/speechrecognition/SpeechRecognitionEvents;Ljava/util/concurrent/CountDownLatch;)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSREventThread
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_initSREventThread
   (JNIEnv *, jobject, jobject, jobject);
 
 /*
@@ -28,7 +28,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    setChoices
  * Signature: (Ljava/util/List;)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_util_List_2
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setChoices__Ljava_util_List_2
   (JNIEnv *, jobject, jobject);
 
 /*
@@ -36,7 +36,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    setChoices
  * Signature: ([B)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices___3B
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setChoices___3B
   (JNIEnv *, jobject, jbyteArray);
 
 /*
@@ -44,7 +44,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    setMaxAlternates
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setMaxAlternates
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setMaxAlternates
   (JNIEnv *, jobject, jint);
 
 /*
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    startRecognition
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_startRecognition
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_startRecognition
   (JNIEnv *, jobject);
 
 /*
@@ -60,7 +60,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    emulateRecognition
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_emulateRecognition
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_emulateRecognition
   (JNIEnv *, jobject, jstring);
 
 /*
@@ -68,7 +68,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    stopRecognition
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_stopRecognition
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_stopRecognition
   (JNIEnv *, jobject);
 
 /*
@@ -76,7 +76,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    dispose
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_dispose
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_dispose
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus

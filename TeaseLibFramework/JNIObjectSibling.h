@@ -7,7 +7,7 @@
 
 #include "JNIObject.h"
 
-template<class T> class JNIObjectSibling : public JNIObject<jobject>
+template<typename T> class JNIObjectSibling : public JNIObject<jobject>
 {
 public:
 	JNIObjectSibling(JNIEnv *env, jobject jthis)
@@ -28,7 +28,7 @@ public:
 
 	static void disposeAll()
 	{
-		std::for_each(objects.begin(), objects.end(), [](ObjectMap::value_type& object)
+		std::for_each(objects.begin(), objects.end(), [](typename ObjectMap::value_type& object)
 		{
 			delete object->second;
 		});
@@ -46,7 +46,7 @@ protected:
 
 	bool dispose(jobject object)
 	{
-		ObjectMap::const_iterator o = objects.find(object);
+		auto o = objects.find(object);
 		const bool newObject = o == objects.end();
 		if (!newObject)
 		{

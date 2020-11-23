@@ -4,7 +4,7 @@
 
 class Language {
 public:
-	static const wchar_t* Language::Unknown;
+	static const wchar_t* Unknown;
 
 	Language(ISpObjectToken * pVoiceToken);
 	Language(LANGID langId);
@@ -12,7 +12,7 @@ public:
 
 	static LANGID getLangID(ISpObjectToken * pVoiceToken);
 	static LANGID getLangID(const wchar_t* locale);
-	static std::wstring Language::getLangIDStringWithoutLeadingZeros(const wchar_t* locale);
+	static std::wstring getLangIDStringWithoutLeadingZeros(const wchar_t* locale);
 	static void getName(LANGID langID, wchar_t* sname, int size);
 	static void getDisplayName(LANGID langID, wchar_t* displayName, int size);
 

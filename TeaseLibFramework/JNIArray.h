@@ -1,11 +1,16 @@
 #pragma once
 
+#include <jni.h>
+
 #include "JNIObject.h"
 
-template <typename ARRAYTYPE,typename OBJECTTYPE> class JNIArray : public JNIObject<OBJECTTYPE>
+template <typename E,typename A> class JNIArray : public JNIObject<A>
 {
 public:
-	JNIArray(JNIEnv* env, OBJECTTYPE jarray) : JNIObject(env, jarray), size(getSize()), bytes(size ? getElements() : nullptr)
+	JNIArray(JNIEnv* env, A jarray) 
+		: JNIObject<A>(env, jarray)
+		, size(getSize())
+		, bytes(size ? getElements() : nullptr)
 	{}
 		
 	~JNIArray()
@@ -14,10 +19,10 @@ public:
 	}
 
 	const jsize size;
-	ARRAYTYPE* const bytes;
+	E* const bytes;
 
-	operator ARRAYTYPE* () { return bytes; };
-	operator ARRAYTYPE* () const { return bytes; };
+	operator E* () { return bytes; };
+	operator E* () const { return bytes; };
 
 	void commit()
 	{
@@ -27,7 +32,7 @@ public:
 
 protected:
 	jsize getSize();
-	ARRAYTYPE* getElements();
+	E* getElements();
 	void releaseElements(int mode);
 };
 

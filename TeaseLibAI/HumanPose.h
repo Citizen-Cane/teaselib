@@ -14,7 +14,7 @@ public:
 
     bool acquire(jobject jdevice, jobject jrotation);
     bool acquire(jbyteArray jimage);
-    void HumanPose::estimate();
+    void estimate();
     const std::vector<aifx::Pose>& results();
 
 private:

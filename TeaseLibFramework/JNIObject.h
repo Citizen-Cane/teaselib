@@ -12,7 +12,7 @@ public:
 	static void requireNonNull(const wchar_t* name, void* jobj);
 };
 
-template<class T> class JNIObject
+template<typename T> class JNIObject
 {
 public:
 	JNIObject(JNIEnv *env, T jthis)

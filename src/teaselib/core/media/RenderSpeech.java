@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.ScriptRenderer;
 import teaselib.core.TeaseLib;
+import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.ui.InputMethods;
-import teaselib.core.ui.SpeechRecognitionInputMethod;
 
 public abstract class RenderSpeech extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderSpeech.class);

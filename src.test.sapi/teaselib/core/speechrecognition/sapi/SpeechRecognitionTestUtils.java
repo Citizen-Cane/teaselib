@@ -1,9 +1,13 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.sapi;
 
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognition.*;
+import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -16,15 +20,19 @@ import teaselib.core.AudioSync;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.Confidence;
+import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
-import teaselib.core.ui.SpeechRecognitionInputMethod;
 
 /**
  * @author Citizen-Cane
@@ -188,6 +196,10 @@ public class SpeechRecognitionTestUtils {
         Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
         awaitResult(prompt, inputMethod, withoutPunctation(phrase),
                 new Prompt.Result(choices.toText().indexOf(phrase)));
+    }
+
+    static String withoutPunctation(String text) {
+        return Arrays.stream(PhraseString.words(text)).collect(joining(" "));
     }
 
 }

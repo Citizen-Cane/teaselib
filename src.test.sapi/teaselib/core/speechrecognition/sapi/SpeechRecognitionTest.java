@@ -1,12 +1,12 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.sapi;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.as;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
-import static teaselib.core.ui.SpeechRecognitionInputMethod.bestSingleResult;
+import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.bestSingleResult;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,12 +14,14 @@ import java.util.Locale;
 
 import org.junit.Test;
 
-import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.PreparedChoices;
+import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
-import teaselib.core.ui.SpeechRecognitionInputMethod;
 
 /**
  * @author Citizen-Cane

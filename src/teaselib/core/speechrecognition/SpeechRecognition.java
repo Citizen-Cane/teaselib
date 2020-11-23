@@ -1,11 +1,8 @@
 package teaselib.core.speechrecognition;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static teaselib.core.speechrecognition.Confidence.High;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -20,11 +17,6 @@ import teaselib.core.events.DelegateExecutor;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
-import teaselib.core.speechrecognition.implementation.Unsupported;
-import teaselib.core.speechrecognition.implementation.UnsupportedLanguageException;
-import teaselib.core.speechrecognition.srgs.PhraseString;
-import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.util.Environment;
 import teaselib.core.util.ExceptionUtil;
@@ -33,42 +25,6 @@ public class SpeechRecognition {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
 
     static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
-
-    /**
-     * How to handle speech recognition and timeout in script functions.
-     *
-     */
-    public enum TimeoutBehavior {
-        /**
-         * Cut the slave short: Ignore speech recognition and just finish.
-         */
-        InDubioContraReum("In Dubio Contra Reum"),
-
-        /**
-         * Be indulgent and let the user finish speaking before deciding about timeout. A recognized prompt will cancel
-         * the timeout, even if time is up, and return the recognized choice instead of a timeout.
-         */
-        InDubioProDuriore("In Dubio Pro Duriore"),
-
-        /**
-         * Give the benefit of the doubt and stop the timeout on the first attempt to answer via speech recognition,
-         * even if that recognition result will be rejected.
-         * 
-         * The prompt has of course still to be answered.
-         */
-        InDubioMitius("In Dubio Mitius");
-
-        private final String displayName;
-
-        TimeoutBehavior(String displayName) {
-            this.displayName = displayName;
-        }
-
-        @Override
-        public String toString() {
-            return displayName;
-        }
-    }
 
     public final SpeechRecognitionEvents events;
     public final Locale locale;
@@ -122,20 +78,15 @@ public class SpeechRecognition {
         }
     }
 
-    SpeechRecognition() {
-        this(null, null);
-    }
-
-    SpeechRecognition(Locale locale, AudioSync audioSync) {
-        this(locale, TeaseLibSRGS.class, audioSync);
-    }
-
-    SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass, AudioSync audioSync) {
+    public SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass,
+            AudioSync audioSync) {
         this.events = new SpeechRecognitionEvents(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
         this.locale = locale;
         this.audioSync = audioSync;
 
         if (locale == null) {
+            implementation = Unsupported.Instance;
+        } else if (srClass == Unsupported.class) {
             implementation = Unsupported.Instance;
         } else {
             implementation = delegateThread.call(() -> {
@@ -171,7 +122,7 @@ public class SpeechRecognition {
         this.events.speechDetected.add(handleMissingRecognitionStartedEvent);
     }
 
-    void close() {
+    public void close() {
         this.events.speechDetected.remove(handleMissingRecognitionStartedEvent);
 
         timeoutWatchdog.enable(false);
@@ -289,19 +240,6 @@ public class SpeechRecognition {
         audioSync.whenSpeechCompleted(implementation::startRecognition);
         timeoutWatchdog.enable(true);
         speechRecognitionActive.set(true);
-    }
-
-    public List<String> firstPhraseOfEach(Choices choices) {
-        return choices.stream().map(SpeechRecognition::firstPhrase).map(SpeechRecognition::withoutPunctation)
-                .collect(toList());
-    }
-
-    private static String firstPhrase(Choice choice) {
-        return choice.phrases.get(0);
-    }
-
-    static String withoutPunctation(String text) {
-        return Arrays.stream(PhraseString.words(text)).collect(joining(" "));
     }
 
     private void disableSR() {

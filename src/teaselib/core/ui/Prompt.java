@@ -108,7 +108,7 @@ public class Prompt {
     public final Result.Accept acceptedResult;
 
     final InputMethods inputMethods;
-    final InputMethods.Initializers inputMethodInitializers;
+    public final InputMethods.Initializers inputMethodInitializers;
 
     final ScriptFutureTask scriptTask;
 

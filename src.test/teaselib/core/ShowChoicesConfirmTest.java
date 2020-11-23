@@ -2,7 +2,7 @@ package teaselib.core;
 
 import static org.junit.Assert.*;
 import static teaselib.ScriptFunction.*;
-import static teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior.*;
+import static teaselib.core.speechrecognition.TimeoutBehavior.*;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;

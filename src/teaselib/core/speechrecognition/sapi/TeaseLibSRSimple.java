@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition.implementation;
+package teaselib.core.speechrecognition.sapi;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -13,14 +13,14 @@ import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 
-public class TeaseLibSRSimpleSAPI extends TeaseLibSR {
+public class TeaseLibSRSimple extends TeaseLibSR {
 
     @Override
     public PreparedChoices prepare(Choices choices) {
         return new PreparedChoices() {
             @Override
             public void accept(SpeechRecognitionImplementation sri) {
-                if (sri != TeaseLibSRSimpleSAPI.this)
+                if (sri != TeaseLibSRSimple.this)
                     throw new IllegalArgumentException();
                 setChoices(firstPhraseOfEach(choices));
             }
@@ -34,7 +34,7 @@ public class TeaseLibSRSimpleSAPI extends TeaseLibSR {
     }
 
     public static List<String> firstPhraseOfEach(Choices choices) {
-        return choices.stream().map(TeaseLibSRSimpleSAPI::firstPhrase).map(TeaseLibSRSimpleSAPI::withoutPunctation)
+        return choices.stream().map(TeaseLibSRSimple::firstPhrase).map(TeaseLibSRSimple::withoutPunctation)
                 .collect(toList());
     }
 

@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition.implementation;
+package teaselib.core.speechrecognition;
 
 import teaselib.core.jni.NativeException;
 

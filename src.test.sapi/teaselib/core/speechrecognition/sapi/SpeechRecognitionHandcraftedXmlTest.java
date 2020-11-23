@@ -1,8 +1,8 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.sapi;
 
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.awaitResult;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,14 +18,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.ResourceLoader;
-import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.PreparedChoices;
+import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
-import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.Stream;
 
 public class SpeechRecognitionHandcraftedXmlTest {

@@ -4,6 +4,7 @@
 	<classpathentry kind="src" output="bin.test" path="src.test"/>
 	<classpathentry kind="src" output="bin.test.interactive" path="src.test.interactive"/>
 	<classpathentry kind="src" path="src.test.devices.unattended"/>
+	<classpathentry kind="src" path="src.test.sapi"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="module" value="true"/>

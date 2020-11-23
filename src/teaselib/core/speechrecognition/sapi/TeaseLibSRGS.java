@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition.implementation;
+package teaselib.core.speechrecognition.sapi;
 
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
@@ -16,11 +16,11 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
-import teaselib.core.ui.SpeechRecognitionInputMethod;
 
 public class TeaseLibSRGS extends TeaseLibSR {
     private final class PreparedChoicesImplementation implements PreparedChoices {

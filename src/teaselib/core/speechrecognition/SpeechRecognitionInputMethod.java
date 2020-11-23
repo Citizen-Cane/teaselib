@@ -1,4 +1,4 @@
-package teaselib.core.ui;
+package teaselib.core.speechrecognition;
 
 import static java.util.stream.Collectors.toList;
 
@@ -21,20 +21,16 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.AudioSync;
 import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.AudioSignalProblems;
-import teaselib.core.speechrecognition.Confidence;
-import teaselib.core.speechrecognition.PreparedChoices;
-import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.RuleIndicesList;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionEvents;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.AudioLevelUpdatedEventArgs;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.sapi.TeaseLibSRGS;
 import teaselib.core.speechrecognition.srgs.PhraseString;
+import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethod;
+import teaselib.core.ui.Intention;
+import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
 
 /**

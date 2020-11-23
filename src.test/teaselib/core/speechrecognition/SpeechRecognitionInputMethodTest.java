@@ -1,25 +1,23 @@
-package teaselib.core.ui;
+package teaselib.core.speechrecognition;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Locale;
-import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.junit.Test;
 
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
-import teaselib.core.speechrecognition.RuleIndicesList;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionTestUtils;
-import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethods;
+import teaselib.core.ui.Intention;
+import teaselib.core.ui.Prompt;
 import teaselib.test.TestScript;
 
 public class SpeechRecognitionInputMethodTest {
@@ -178,24 +176,6 @@ public class SpeechRecognitionInputMethodTest {
             speechRecognition.emulateRecogntion("Foo");
             script.sleep(1, TimeUnit.SECONDS);
         }, "Foo"));
-    }
-
-    @Test
-    public void testDistinctValue() {
-        Integer[][] values = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 },
-                { 2, 5 }, };
-        RuleIndicesList indices = new RuleIndicesList(
-                Arrays.stream(values).map(Arrays::asList).map(HashSet::new).collect(Collectors.toList()));
-        assertEquals(2, indices.singleResult().orElseThrow().intValue());
-    }
-
-    @Test(expected = NoSuchElementException.class)
-    public void testSingleResultNotPresent() {
-        Integer[][] values = { { 0, 1, 2, 3, 4 }, { 1, 2, 4 }, { 2, 4 }, { 2 }, { 0, 2, 3, 4, 5 }, { 2, 5 }, { 2, 5 },
-                { 0, 5 } };
-        RuleIndicesList indices = new RuleIndicesList(
-                Arrays.stream(values).map(Arrays::asList).map(HashSet::new).collect(Collectors.toList()));
-        assertEquals(2, indices.singleResult().orElseThrow().intValue());
     }
 
 }

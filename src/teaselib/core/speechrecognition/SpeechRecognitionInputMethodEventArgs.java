@@ -1,6 +1,8 @@
-package teaselib.core.ui;
+package teaselib.core.speechrecognition;
 
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.ui.InputMethod;
+import teaselib.core.ui.InputMethodEventArgs;
 
 public class SpeechRecognitionInputMethodEventArgs extends InputMethodEventArgs {
     public final SpeechRecognizedEventArgs eventArgs;

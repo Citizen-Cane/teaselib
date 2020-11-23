@@ -58,7 +58,4 @@ public abstract class SpeechRecognitionImplementation implements Closeable {
      */
     public abstract void stopRecognition();
 
-    @Override
-    public abstract void close();
-
 }

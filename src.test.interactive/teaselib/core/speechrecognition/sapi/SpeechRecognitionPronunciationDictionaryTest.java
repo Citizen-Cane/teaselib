@@ -1,4 +1,4 @@
-package teaselib.core.textotspeech;
+package teaselib.core.speechrecognition.sapi;
 
 import java.io.File;
 import java.io.IOException;

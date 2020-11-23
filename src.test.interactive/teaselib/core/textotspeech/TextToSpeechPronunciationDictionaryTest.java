@@ -89,8 +89,7 @@ public class TextToSpeechPronunciationDictionaryTest {
     private static TextToSpeechPlayer getTTSPlayer(String path) {
         Configuration config = DebugSetup.getConfiguration();
         config.set(TextToSpeechPlayer.Settings.Pronunciation, path);
-        TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
-        return tts;
+        return new TextToSpeechPlayer(config);
     }
 
     private void speak(Actor actor, String prompt, TextToSpeechPlayer tts) throws InterruptedException {

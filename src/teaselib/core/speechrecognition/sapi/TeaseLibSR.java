@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition.implementation;
+package teaselib.core.speechrecognition.sapi;
 
 import java.util.List;
 import java.util.Locale;
@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.UnsupportedLanguageException;
 import teaselib.core.util.ExceptionUtil;
 
 abstract class TeaseLibSR extends SpeechRecognitionImplementation {

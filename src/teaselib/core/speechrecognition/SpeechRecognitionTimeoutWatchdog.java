@@ -16,7 +16,7 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  * @author Citizen-Cane
  *
  */
-public class SpeechRecognitionTimeoutWatchdog {
+class SpeechRecognitionTimeoutWatchdog {
     static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTimeoutWatchdog.class);
 
     static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(2);

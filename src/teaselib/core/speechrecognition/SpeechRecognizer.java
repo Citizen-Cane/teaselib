@@ -11,8 +11,7 @@ import java.util.NoSuchElementException;
 import teaselib.core.AudioSync;
 import teaselib.core.Closeable;
 import teaselib.core.configuration.Configuration;
-import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
-import teaselib.core.speechrecognition.implementation.Unsupported;
+import teaselib.core.speechrecognition.sapi.TeaseLibSRGS;
 
 /**
  * @author Citizen-Cane
@@ -22,7 +21,7 @@ public class SpeechRecognizer implements Closeable {
     private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
     public final AudioSync audioSync;
 
-    enum Config {
+    public enum Config {
         SpeechRecognitionImplementation;
     }
 

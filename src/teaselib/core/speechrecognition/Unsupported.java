@@ -1,18 +1,16 @@
-package teaselib.core.speechrecognition.implementation;
+package teaselib.core.speechrecognition;
 
 import java.util.Locale;
 import java.util.function.IntUnaryOperator;
 
-import teaselib.core.speechrecognition.PreparedChoices;
-import teaselib.core.speechrecognition.SpeechRecognitionEvents;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.ui.Choices;
 
 /**
  * @author Citizen-Cane
  *
  */
-public class Unsupported extends SpeechRecognitionImplementation {
+class Unsupported extends SpeechRecognitionImplementation {
+
     public static final Unsupported Instance = new Unsupported();
 
     @Override

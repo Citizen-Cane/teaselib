@@ -30,12 +30,11 @@ import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.RenderDelay;
 import teaselib.core.media.RenderDesktopItem;
 import teaselib.core.media.RenderSound;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
+import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Intention;
-import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.functional.CallableScript;
 import teaselib.functional.RunnableScript;
@@ -340,7 +339,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     @SuppressWarnings("resource")
-    protected Answer awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+    protected Answer awaitTimeout(long seconds, TimeoutBehavior timeoutBehavior) {
         SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
                 .get(SpeechRecognitionInputMethod.class);
         AtomicBoolean ignoreTimeoutInDubioMitius = new AtomicBoolean(false);
@@ -405,7 +404,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return timeout(seconds, TimeoutBehavior.InDubioProDuriore);
     }
 
-    public ScriptFunction timeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+    public ScriptFunction timeout(long seconds, TimeoutBehavior timeoutBehavior) {
         return new ScriptFunction(() -> awaitTimeout(seconds, timeoutBehavior), Relation.Autonomous);
     }
 
@@ -428,7 +427,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return timeoutWithConfirmation(seconds, TimeoutBehavior.InDubioProDuriore);
     }
 
-    public ScriptFunction timeoutWithConfirmation(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+    public ScriptFunction timeoutWithConfirmation(long seconds, TimeoutBehavior timeoutBehavior) {
         return new ScriptFunction(() -> {
             Answer result = awaitTimeout(seconds, timeoutBehavior);
             try {
@@ -457,7 +456,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return timeoutWithAutoConfirmation(seconds, TimeoutBehavior.InDubioProDuriore);
     }
 
-    public ScriptFunction timeoutWithAutoConfirmation(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+    public ScriptFunction timeoutWithAutoConfirmation(long seconds, TimeoutBehavior timeoutBehavior) {
         return new ScriptFunction(() -> awaitTimeout(seconds, timeoutBehavior), Relation.Confirmation);
     }
 

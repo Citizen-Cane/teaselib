@@ -100,10 +100,10 @@ public class LoquendoSapiCustomPronunciation {
 
         Map<String, Voice> voices = textToSpeech.getVoices();
         assertTrue(voices.size() > 1);
-        logger.info(voices.keySet().toString());
+        logger.info("{}", voices.keySet());
 
         Voice voice = voices.get(voiceGuid);
-        logger.info(voice + " -> " + prompt);
+        logger.info("{} ->  {}", voice, prompt);
 
         textToSpeech.speak(voice, prompt);
     }

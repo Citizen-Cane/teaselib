@@ -2,10 +2,7 @@ package teaselib.core.textotspeech;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -16,17 +13,8 @@ import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.configuration.Configuration;
-import teaselib.core.configuration.DebugSetup;
-import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.Voice;
-import teaselib.core.ui.Choice;
-import teaselib.core.ui.Choices;
-import teaselib.core.ui.Intention;
 import teaselib.core.util.Environment;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -125,27 +113,6 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
         // http://lingorado.com/ipa/
         textToSpeech.speak(voice,
                 "<speak version=\"1.0\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"hɛˈləʊ wɜːld\"> replaced. </phoneme> </speak>");
-    }
-
-    @Test
-    public void testPronunciationSAPIPronTagSpeechRecognitionHelloWorld() throws InterruptedException, IOException {
-        try (SpeechRecognizer speechRecognizer = new SpeechRecognizer(
-                new Configuration(new DebugSetup().withInput()))) {
-            SpeechRecognition speechRecognition = speechRecognizer.get(Locale.US);
-            CountDownLatch completed = new CountDownLatch(1);
-            // "P DISP=\"replace\" PRON=\"H EH 1 L OW W ER 1 L D\"> replace </P>"
-            Choices choices = new Choices(Locale.ENGLISH, Intention.Decide,
-                    new Choice("<P>/Display/Word/H EH 1 L OW;</P>"));
-            Event<SpeechRecognizedEventArgs> event = speechRecognition.events.recognitionCompleted
-                    .add(events -> completed.countDown());
-            try {
-                speechRecognition.apply(speechRecognition.prepare(choices));
-                speechRecognition.startRecognition();
-                completed.await();
-            } finally {
-                speechRecognition.events.recognitionCompleted.remove(event);
-            }
-        }
     }
 
 }

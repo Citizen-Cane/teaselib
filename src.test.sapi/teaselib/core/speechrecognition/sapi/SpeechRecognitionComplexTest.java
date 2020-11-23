@@ -1,10 +1,10 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.speechrecognition.SpeechRecognition.withoutPunctation;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.as;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
-import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.withoutPunctation;
 
 import java.util.Locale;
 
@@ -308,10 +308,10 @@ public class SpeechRecognitionComplexTest {
     public void testSRGSBuilderDistinctChociesWithPairwiseCommonParts() throws InterruptedException {
         Choices choices = distinctChociesWithPairwiseCommonParts();
 
-        assertRecognized(choices, withoutPunctation("A at M attached"), new Prompt.Result(0));
-        assertRecognized(choices, withoutPunctation("A at N attached"), new Prompt.Result(1));
-        assertRecognized(choices, withoutPunctation("B at N attached"), new Prompt.Result(2));
-        assertRecognized(choices, withoutPunctation("B at M attached"), new Prompt.Result(3));
+        assertRecognized(choices, "A at M attached", new Prompt.Result(0));
+        assertRecognized(choices, "A at N attached", new Prompt.Result(1));
+        assertRecognized(choices, "B at N attached", new Prompt.Result(2));
+        assertRecognized(choices, "B at M attached", new Prompt.Result(3));
     }
 
     private static Choices distinctChociesWithPairwiseCommonPartsShort() {
@@ -323,10 +323,10 @@ public class SpeechRecognitionComplexTest {
     public void testSRGSBuilderDistinctChociesWithPairwiseCommonPartsShort() throws InterruptedException {
         Choices choices = distinctChociesWithPairwiseCommonPartsShort();
 
-        assertRecognized(choices, withoutPunctation("A M"), new Prompt.Result(0));
-        assertRecognized(choices, withoutPunctation("A N"), new Prompt.Result(1));
-        assertRecognized(choices, withoutPunctation("B N"), new Prompt.Result(2));
-        assertRecognized(choices, withoutPunctation("B M"), new Prompt.Result(3));
+        assertRecognized(choices, "A M", new Prompt.Result(0));
+        assertRecognized(choices, "A N", new Prompt.Result(1));
+        assertRecognized(choices, "B N", new Prompt.Result(2));
+        assertRecognized(choices, "B M", new Prompt.Result(3));
     }
 
     @Test
@@ -336,9 +336,9 @@ public class SpeechRecognitionComplexTest {
                 new Choice("A B1 C0 D"), //
                 new Choice("A B2 C2 D"));
 
-        assertRecognized(choices, withoutPunctation("A B0 C0 D"), new Prompt.Result(0));
-        assertRecognized(choices, withoutPunctation("A B1 C0 D"), new Prompt.Result(1));
-        assertRecognized(choices, withoutPunctation("A B2 C2 D"), new Prompt.Result(2));
+        assertRecognized(choices, "A B0 C0 D", new Prompt.Result(0));
+        assertRecognized(choices, "A B1 C0 D", new Prompt.Result(1));
+        assertRecognized(choices, "A B2 C2 D", new Prompt.Result(2));
     }
 
     @Test
@@ -349,10 +349,10 @@ public class SpeechRecognitionComplexTest {
                 new Choice("A B2 C2 D"), //
                 new Choice("A B3 C2 D"));
 
-        assertRecognized(choices, withoutPunctation("A B0 C0 D"), new Prompt.Result(0));
-        assertRecognized(choices, withoutPunctation("A B1 C0 D"), new Prompt.Result(1));
-        assertRecognized(choices, withoutPunctation("A B2 C2 D"), new Prompt.Result(2));
-        assertRecognized(choices, withoutPunctation("A B3 C2 D"), new Prompt.Result(3));
+        assertRecognized(choices, "A B0 C0 D", new Prompt.Result(0));
+        assertRecognized(choices, "A B1 C0 D", new Prompt.Result(1));
+        assertRecognized(choices, "A B2 C2 D", new Prompt.Result(2));
+        assertRecognized(choices, "A B3 C2 D", new Prompt.Result(3));
     }
 
 }

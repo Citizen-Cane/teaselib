@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import teaselib.ScriptFunction;
-import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
+import teaselib.core.speechrecognition.TimeoutBehavior;
 import teaselib.test.TestScript;
 
 /**

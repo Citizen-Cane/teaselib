@@ -14,20 +14,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/bridj-0.6.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="/SexScripts/sexscripts.jar"/>
 	<classpathentry exported="true" kind="lib" path="/SexScripts/lib/slf4j-api-1.7.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javacpp.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javacv.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv-android-arm.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv-android-x86.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv-linux-armhf.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv-linux-x86_64.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv-linux-x86.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv-macosx-x86_64.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv-windows-x86_64.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv-windows-x86.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/opencv.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/videoinput-windows-x86_64.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/videoinput-windows-x86.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/videoinput.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

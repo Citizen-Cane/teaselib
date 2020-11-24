@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.devices;
 
 import static org.junit.Assert.assertNotNull;
@@ -15,12 +12,10 @@ import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.xinput.XInputDevice;
-import teaselib.motiondetection.MotionDetector;
 import teaselib.stimulation.StimulationDevice;
-import teaselib.video.VideoCaptureDevice;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class DeviceFactoryTests {
@@ -34,8 +29,6 @@ public class DeviceFactoryTests {
         logger.info("Available devices:");
         listDevices(devices.get(XInputDevice.class).getDevicePaths());
         listDevices(devices.get(StimulationDevice.class).getDevicePaths());
-        listDevices(devices.get(VideoCaptureDevice.class).getDevicePaths());
-        listDevices(devices.get(MotionDetector.class).getDevicePaths());
         listDevices(devices.get(RemoteDevice.class).getDevicePaths());
         listDevices(devices.get(KeyRelease.class).getDevicePaths());
     }

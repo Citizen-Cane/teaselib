@@ -8,17 +8,12 @@ import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.bytedeco.javacpp.opencv_core.Point;
-
-import teaselib.core.VideoRenderer.Type;
 import teaselib.core.ai.perception.HumanPose;
-import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.FileUtilities;
 import teaselib.util.AnnotatedImage;
 
 public class CommandLineHost implements Host {
-    static final Point javacvDebugWindow = new Point(80, 80);
 
     @Override
     public Audio audio(ResourceLoader resources, String path) {
@@ -84,16 +79,6 @@ public class CommandLineHost implements Host {
     @Override
     public void setQuitHandler(Runnable onQuit) {
         // Ignore
-    }
-
-    @Override
-    public VideoRenderer getDisplay(Type displayType) {
-        return new VideoRendererJavaCV(displayType) {
-            @Override
-            protected Point getPosition(Type type, int width, int height) {
-                return javacvDebugWindow;
-            }
-        };
     }
 
     @Override

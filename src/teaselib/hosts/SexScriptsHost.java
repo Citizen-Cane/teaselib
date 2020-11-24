@@ -11,8 +11,6 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -42,7 +40,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.WindowConstants;
 
-import org.bytedeco.javacpp.opencv_core.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,12 +50,9 @@ import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.VideoRenderer;
-import teaselib.core.VideoRenderer.Type;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
@@ -853,32 +847,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     @Override
     public void setQuitHandler(Runnable onQuitHandler) {
         this.onQuitHandler = onQuitHandler;
-    }
-
-    @Override
-    public VideoRenderer getDisplay(Type displayType) {
-        return new VideoRendererJavaCV(displayType) {
-            @Override
-            protected Point getPosition(Type type, int width, int height) {
-                if (type == VideoRenderer.Type.CameraFeedback) {
-                    AffineTransform defaultTransform = mainFrame.getGraphicsConfiguration().getDefaultTransform();
-                    try {
-                        Point2D size = defaultTransform.inverseTransform( //
-                                new Point2D.Double(width, height), new Point2D.Double());
-                        int x = mainFrame.getX() + (int) (mainFrame.getWidth() - size.getX()) / 2;
-                        int y = mainFrame.getY();
-                        Point2D transform = defaultTransform.transform( //
-                                new Point2D.Double(x, y), new Point2D.Double());
-                        return new Point((int) transform.getX(), (int) transform.getY());
-                    } catch (NoninvertibleTransformException e) {
-                        logger.error(e.getMessage(), e);
-                        return new Point(0, 0);
-                    }
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-            }
-        };
     }
 
     @Override

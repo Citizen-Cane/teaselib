@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.bytedeco.javacpp.opencv_core.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,11 +18,8 @@ import teaselib.core.Closeable;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.VideoRenderer;
-import teaselib.core.VideoRenderer.Type;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
@@ -32,10 +28,12 @@ import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.AnnotatedImage;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     private static final Logger logger = LoggerFactory.getLogger(DebugHost.class);
-
-    static final Point javacvDebugWindow = new Point(80, 80);
 
     private final NamedExecutorService executorService;
     private final InputMethod inputMethod;
@@ -196,16 +194,6 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     @Override
     public void setQuitHandler(Runnable onQuit) {
         // Ignore
-    }
-
-    @Override
-    public VideoRenderer getDisplay(Type displayType) {
-        return new VideoRendererJavaCV(displayType) {
-            @Override
-            protected Point getPosition(Type type, int width, int height) {
-                return javacvDebugWindow;
-            }
-        };
     }
 
     @Override

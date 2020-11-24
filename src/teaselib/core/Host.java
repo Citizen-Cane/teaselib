@@ -12,7 +12,7 @@ import teaselib.util.AnnotatedImage;
  * Render target decouples the lib from the actual implementaiton of the host. The interface is closely modeled to the
  * SexSCripts ISCript interface See http://ss.deviatenow.com/viewtopic.php?f=4&t=2
  * 
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public interface Host {
@@ -69,8 +69,6 @@ public interface Host {
      *            The script to execute when the slave quits the application.
      */
     void setQuitHandler(Runnable onQuitHandler);
-
-    VideoRenderer getDisplay(VideoRenderer.Type displayType);
 
     enum Location {
         TeaseLib,

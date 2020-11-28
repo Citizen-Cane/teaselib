@@ -235,3 +235,5 @@ bin.test.interactive/
 # Particle workbench
 devices/particle/**/target/
 *.bin
+/bin.test.devices.unattended/
+/bin.test.sapi/

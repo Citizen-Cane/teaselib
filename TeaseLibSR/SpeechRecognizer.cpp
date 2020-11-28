@@ -27,8 +27,8 @@
 
 using namespace std;
 
-SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, const wchar_t* locale)
-    : NativeObject(env, jthis)
+SpeechRecognizer::SpeechRecognizer(JNIEnv *env, const wchar_t* locale)
+    : NativeObject(env)
     , locale(locale)
 	, langID(0x0000)
 	, eventHandler(nullptr)

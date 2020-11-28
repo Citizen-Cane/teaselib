@@ -25,7 +25,7 @@ public class SpeechRecognizer implements Closeable {
         SpeechRecognitionImplementation;
     }
 
-    private Class<? extends SpeechRecognitionImplementation> srClass;
+    private Class<? extends SpeechRecognitionNativeImplementation> srClass;
 
     public SpeechRecognizer(Configuration config) {
         this(config, new AudioSync());
@@ -38,7 +38,7 @@ public class SpeechRecognizer implements Closeable {
             if (config.has(Config.SpeechRecognitionImplementation)) {
                 String className = config.get(Config.SpeechRecognitionImplementation);
                 try {
-                    this.srClass = (Class<? extends SpeechRecognitionImplementation>) Class.forName(className);
+                    this.srClass = (Class<? extends SpeechRecognitionNativeImplementation>) Class.forName(className);
                 } catch (ClassNotFoundException e) {
                     throw new NoSuchElementException(Config.SpeechRecognitionImplementation + ": " + className);
                 }

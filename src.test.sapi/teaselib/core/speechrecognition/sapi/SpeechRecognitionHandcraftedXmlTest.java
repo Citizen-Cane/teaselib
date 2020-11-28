@@ -21,8 +21,8 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.SpeechRecognitionProvider;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
@@ -83,7 +83,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
                             logger.info("Injecting handcrafted xml\n{}", xmlToString);
                             sr.apply(new PreparedChoices() {
                                 @Override
-                                public void accept(SpeechRecognitionImplementation sri) {
+                                public void accept(SpeechRecognitionProvider sri) {
                                     ((TeaseLibSRGS) sri).setChoices(xml);
                                 }
 

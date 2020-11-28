@@ -6,7 +6,8 @@ template<typename T> class JNIStringT : public JNIObject<jstring>
 {
 public:
 	JNIStringT(JNIEnv *env, jstring string);
-	JNIStringT(JNIEnv *env, const T * const string);
+	JNIStringT(JNIEnv* env, const T* const string);
+	JNIStringT(JNIEnv* env, const std::basic_string<T>& string);
 	virtual ~JNIStringT();
 
 	operator const T*() const {

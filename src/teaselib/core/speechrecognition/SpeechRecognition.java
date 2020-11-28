@@ -31,7 +31,7 @@ public class SpeechRecognition {
 
     private final SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
-    public final SpeechRecognitionImplementation implementation;
+    public final SpeechRecognitionNativeImplementation implementation;
 
     private PreparedChoices preparedChoices;
 
@@ -78,7 +78,7 @@ public class SpeechRecognition {
         }
     }
 
-    public SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass,
+    public SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionNativeImplementation> srClass,
             AudioSync audioSync) {
         this.events = new SpeechRecognitionEvents(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
         this.locale = locale;
@@ -92,8 +92,10 @@ public class SpeechRecognition {
             implementation = delegateThread.call(() -> {
                 try {
                     if (Environment.SYSTEM == Environment.Windows) {
-                        SpeechRecognitionImplementation instance = srClass.getConstructor().newInstance();
-                        instance.init(events, locale);
+                        SpeechRecognitionNativeImplementation instance = srClass
+                                .getConstructor(Locale.class, SpeechRecognitionEvents.class)
+                                .newInstance(locale, events);
+                        instance.process(events);
                         return instance;
                     } else {
                         return Unsupported.Instance;

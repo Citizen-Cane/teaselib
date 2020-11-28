@@ -18,9 +18,8 @@
 #include <NativeException.h>
 #include <NativeObject.h>
 
+#include <teaselib_core_speechrecognition_sapi_TeaseLibSR.h>
 #include "SpeechRecognizer.h"
-
-#include <teaselib_core_speechrecognition_implementation_TeaseLibSR.h>
 
 using namespace std;
 
@@ -31,18 +30,20 @@ extern "C"
 	 * Method:    initSR
 	 * Signature: (Ljava/lang/String;)V
 	 */
-    JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_initSR
-    (JNIEnv *env, jobject jthis, jstring jlocale) {
+    JNIEXPORT jlong JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_init
+    (JNIEnv *env, jclass, jstring jlocale) {
         try {
             Objects::requireNonNull(L"locale", jlocale);
 
             JNIString locale(env, jlocale);
-            SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, jthis, locale);
+            SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, locale);
             NativeObject::checkInitializedOrThrow(speechRecognizer);
+            return reinterpret_cast<jlong>(speechRecognizer);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
+            return 0;
 		}
     }
 
@@ -52,7 +53,7 @@ extern "C"
 	 * Method:    initSREventThread
 	 * Signature: (Lteaselib/core/speechrecognition/SpeechRecognitionEvents;Ljava/util/concurrent/CountDownLatch;)V
 	 */
-	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_initSREventThread
+	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_process
     (JNIEnv *env, jobject jthis, jobject jevents, jobject jSignalInitialized) {
         try {
             Objects::requireNonNull(L"signalInitialized", jSignalInitialized);
@@ -68,6 +69,27 @@ extern "C"
         } catch (JNIException& e) {
 			e.rethrow();
         }
+    }
+
+    /*
+     * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR
+     * Method:    languageCode
+     * Signature: ()Ljava/lang/String;
+     */
+    JNIEXPORT jstring JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_languageCode
+    (JNIEnv *env, jobject jthis) {
+        try {
+            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
+            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            return JNIString(env, speechRecognizer->locale);
+        }
+        catch (NativeException& e) {
+            JNIException::rethrow(env, e);
+        }
+        catch (JNIException& e) {
+            e.rethrow();
+        }
+
     }
 
     /*

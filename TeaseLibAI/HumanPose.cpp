@@ -12,8 +12,6 @@
 #include <JNIObject.h>
 #include <JNIUtilities.h>
 
-#include <teaselib_core_ai_perception_SceneCapture.h>
-#include <teaselib_core_ai_perception_HumanPose.h>
 
 #include <AIfxPoseEstimation.h>
 #include <AIfxVideoCapture.h>
@@ -21,6 +19,7 @@
 
 #include <Pose.h>
 
+#include <teaselib_core_ai_perception_HumanPose.h>
 #include "HumanPose.h"
 
 using namespace aifx;

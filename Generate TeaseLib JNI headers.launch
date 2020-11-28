@@ -7,6 +7,6 @@
         <listEntry value="org.eclipse.ui.externaltools.launchGroup"/>
     </listAttribute>
     <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="C:\Program Files\Java\jdk-13\bin\javac.exe"/>
-    <stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-h include --class-path ${project_classpath:TeaseLib} -d &quot;${env_var:TEMP}&quot; src/teaselib/core/jni/NativeObject.java src/teaselib/core/texttospeech/implementation/TeaseLibTTS.java  src/teaselib/core/speechrecognition/implementation/TeaseLibSR.java src/teaselib/core/devices/xinput/XInputDevice.java src/teaselib/core/ai/TeaseLibAI.java src/teaselib/core/ai/perception/HumanPose.java src/teaselib/core/ai/perception/SceneCapture.java"/>
+    <stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-h include --class-path ${project_classpath:TeaseLib} -d &quot;${env_var:TEMP}&quot; src/teaselib/core/jni/NativeObject.java src/teaselib/core/texttospeech/implementation/TeaseLibTTS.java  src/teaselib/core/speechrecognition/sapi/TeaseLibSR.java src/teaselib/core/devices/xinput/XInputDevice.java src/teaselib/core/ai/TeaseLibAI.java src/teaselib/core/ai/perception/HumanPose.java src/teaselib/core/ai/perception/SceneCapture.java src/teaselib/core/ai/perception/DeepSpeechRecognizer.java"/>
     <stringAttribute key="org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY" value="${workspace_loc:/TeaseLib}"/>
 </launchConfiguration>

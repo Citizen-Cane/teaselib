@@ -110,12 +110,14 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DeepSpeechRecognizer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="SceneCapture.h" />
     <ClInclude Include="HumanPose.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DeepSpeechRecognizer.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="HumanPose.cpp" />
     <ClCompile Include="pch.cpp">

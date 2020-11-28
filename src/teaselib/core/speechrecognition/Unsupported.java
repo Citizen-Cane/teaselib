@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition;
 
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.IntUnaryOperator;
 
 import teaselib.core.ui.Choices;
@@ -9,13 +10,25 @@ import teaselib.core.ui.Choices;
  * @author Citizen-Cane
  *
  */
-class Unsupported extends SpeechRecognitionImplementation {
+class Unsupported extends SpeechRecognitionNativeImplementation {
 
-    public static final Unsupported Instance = new Unsupported();
+    public static final Unsupported Instance = new Unsupported(Locale.getDefault(), new SpeechRecognitionEvents());
+
+    private final Locale locale;
+
+    public Unsupported(Locale locale, SpeechRecognitionEvents events) {
+        super(0, events);
+        this.locale = locale;
+    }
 
     @Override
-    public void init(SpeechRecognitionEvents events, Locale locale) {
-        // Ignore
+    public String languageCode() {
+        return languageCode(locale);
+    }
+
+    @Override
+    protected void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized) {
+        // noop
     }
 
     @Override
@@ -23,7 +36,7 @@ class Unsupported extends SpeechRecognitionImplementation {
         return new PreparedChoices() {
 
             @Override
-            public void accept(SpeechRecognitionImplementation sri) {
+            public void accept(SpeechRecognitionProvider sri) {
                 // Ignore
             }
 

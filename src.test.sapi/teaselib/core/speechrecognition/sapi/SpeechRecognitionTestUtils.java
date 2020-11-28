@@ -22,7 +22,7 @@ import teaselib.core.configuration.DebugSetup;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -48,7 +48,7 @@ public class SpeechRecognitionTestUtils {
         return getRecognizer(TeaseLibSRGS.class);
     }
 
-    public static SpeechRecognizer getRecognizer(Class<? extends SpeechRecognitionImplementation> srClass) {
+    public static SpeechRecognizer getRecognizer(Class<? extends SpeechRecognitionNativeImplementation> srClass) {
         DebugSetup setup = new DebugSetup().withInput();
         Configuration config = new Configuration();
         setup.applyTo(config);

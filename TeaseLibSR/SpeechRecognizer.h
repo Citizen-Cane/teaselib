@@ -21,10 +21,11 @@ class SpeechRecognizer : public NativeObject, private COMUser
 public:
 	typedef std::vector<std::wstring> Choices;
 
-	SpeechRecognizer(JNIEnv *env, jobject jthis, const wchar_t* recognizerAttributes);
+	SpeechRecognizer(JNIEnv *env, const wchar_t* recognizerAttributes);
 	virtual ~SpeechRecognizer();
 	void startEventHandler(JNIEnv* eventHandlerEnv, jobject jevents, const std::function<void(void)>& signalInitialized);
 
+	const std::wstring& languageCode() const;
 	void setChoices(const Choices& choices);
 	void setChoices(CComPtr<IStream>& srgs);
 
@@ -33,6 +34,7 @@ public:
 	void stopRecognition();
 	void emulateRecognition(const wchar_t * emulatedRecognitionResult);
 
+	const std::wstring locale;
 private:
 
 	void initContext();
@@ -46,7 +48,6 @@ private:
 	CComPtr<ISpAudio> cpAudioIn;
 	CComPtr<ISpRecoGrammar> cpGrammar;
 
-	const std::wstring locale;
 	LANGID langID;
 
 	class EventHandler : public JObject, private COMUser {

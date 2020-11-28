@@ -8,79 +8,56 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.UnsupportedLanguageException;
-import teaselib.core.util.ExceptionUtil;
 
-abstract class TeaseLibSR extends SpeechRecognitionImplementation {
+abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSR.class);
 
-    private long nativeObject;
-
-    private Thread eventThread = null;
-    private Throwable eventThreadException = null;
-
-    public TeaseLibSR() throws UnsatisfiedLinkError {
-        teaselib.core.jni.LibraryLoader.load("TeaseLibSR");
+    public TeaseLibSR(Locale locale, SpeechRecognitionEvents events) {
+        super(init(locale), events);
     }
 
-    @Override
-    public void init(SpeechRecognitionEvents events, Locale locale) {
-        languageCode = getLanguageCode(locale);
+    private static long init(Locale locale) {
+        teaselib.core.jni.LibraryLoader.load("TeaseLibSR");
+
+        String languageCode = languageCode(locale);
         try {
-            initSR(getLanguageCode());
+            return init(languageCode);
         } catch (UnsupportedLanguageException e) {
             logger.warn(e.getMessage());
-            int index = getLanguageCode().indexOf("-");
+            int index = languageCode.indexOf("-");
             if (index < 0) {
                 throw e;
             } else {
-                languageCode = getLanguageCode().substring(0, index);
-                logger.info("-> trying language {}", getLanguageCode());
-                initSR(getLanguageCode());
+                languageCode = languageCode.substring(0, index);
+                logger.info("-> trying language {}", languageCode);
+                return init(languageCode);
             }
-        }
-
-        CountDownLatch awaitInitialized = new CountDownLatch(1);
-        Runnable speechRecognitionService = () -> {
-            try {
-                initSREventThread(events, awaitInitialized);
-            } catch (Exception e) {
-                eventThreadException = e;
-            } catch (Throwable t) {
-                eventThreadException = t;
-            } finally {
-                awaitInitialized.countDown();
-            }
-        };
-
-        eventThread = new Thread(speechRecognitionService);
-        eventThread.setName("Speech Recognition event thread");
-        eventThread.start();
-        try {
-            awaitInitialized.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        if (eventThreadException != null) {
-            throw ExceptionUtil.asRuntimeException(eventThreadException);
         }
     }
 
     /**
-     * // Init the recognizer
+     * Create a native recognizer instance for the requested language.
      * 
      * @param languageCode
+     *            A language code in the form XX[X]-YY[Y], like en-us, en-uk, ger, etc.
+     * @return Native object or 0 if the creation failed due to mising language support.
+     * @throws UnsupportedLanguageException
+     *             When the requested language is not supported.
      */
-    public native void initSR(String languageCode);
+    protected static native long init(String langugeCode);
 
     /**
      * Init the speech recognizer event handling thread. Creating the thread in native code and then attaching the VM
      * would cause the thread to get a default class loader, without the class path to teaselib, resulting in not being
      * able to create event objects
      */
-    private native void initSREventThread(SpeechRecognitionEvents events, CountDownLatch signalInitialized);
+    @Override
+    protected native void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized);
+
+    @Override
+    public native String languageCode();
 
     public native void setChoices(List<String> phrases);
 
@@ -99,15 +76,5 @@ abstract class TeaseLibSR extends SpeechRecognitionImplementation {
 
     @Override
     public native void dispose();
-
-    @Override
-    public void close() {
-        dispose();
-        try {
-            eventThread.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
 
 }

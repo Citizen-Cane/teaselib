@@ -4,6 +4,7 @@ import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.IntUnaryOperator;
 
@@ -15,14 +16,16 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.SpeechRecognitionProvider;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
 
 public class TeaseLibSRGS extends TeaseLibSR {
+
     private final class PreparedChoicesImplementation implements PreparedChoices {
         final Choices choices;
         final SlicedPhrases<PhraseString> slicedPhrases;
@@ -38,7 +41,7 @@ public class TeaseLibSRGS extends TeaseLibSR {
         }
 
         @Override
-        public void accept(SpeechRecognitionImplementation sri) {
+        public void accept(SpeechRecognitionProvider sri) {
             if (sri != TeaseLibSRGS.this)
                 throw new IllegalArgumentException();
 
@@ -58,10 +61,14 @@ public class TeaseLibSRGS extends TeaseLibSR {
 
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSRGS.class);
 
+    public TeaseLibSRGS(Locale locale, SpeechRecognitionEvents events) {
+        super(locale, events);
+    }
+
     @Override
     public PreparedChoices prepare(Choices choices) {
         try {
-            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, getLanguageCode());
+            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, languageCode());
             if (logger.isInfoEnabled()) {
                 logger.info("{}", builder.slices);
                 logger.info("{}", builder.toXML());

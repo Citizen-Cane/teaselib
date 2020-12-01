@@ -31,17 +31,18 @@ extern "C"
 	 * Signature: (Ljava/lang/String;)V
 	 */
     JNIEXPORT jlong JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_init
-    (JNIEnv *env, jclass, jstring jlocale) {
+    (JNIEnv *env, jclass, jstring jlanguageCode) {
         try {
-            Objects::requireNonNull(L"locale", jlocale);
+            Objects::requireNonNull(L"locale", jlanguageCode);
 
-            JNIString locale(env, jlocale);
-            SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, locale);
+            JNIString languageCode(env, jlanguageCode);
+            SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, languageCode);
             NativeObject::checkInitializedOrThrow(speechRecognizer);
             return reinterpret_cast<jlong>(speechRecognizer);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
-		} catch (JNIException& e) {
+            return 0;
+        } catch (JNIException& e) {
 			e.rethrow();
             return 0;
 		}
@@ -85,11 +86,12 @@ extern "C"
         }
         catch (NativeException& e) {
             JNIException::rethrow(env, e);
+            return nullptr;
         }
         catch (JNIException& e) {
             e.rethrow();
+            return nullptr;
         }
-
     }
 
     /*

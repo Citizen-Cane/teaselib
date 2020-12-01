@@ -39,13 +39,15 @@ extern "C"
 }
 
 
-JObject::JObject(JNIEnv* env) : env(env), jthis(nullptr) {
-}
+JObject::JObject(JNIEnv* env) : env(env), jthis(nullptr)
+{}
 
-JObject::JObject(JNIEnv* env, jobject jthis) : env(env), jthis(env->NewGlobalRef(jthis)) {
-}
+JObject::JObject(JNIEnv* env, jobject jthis)
+    : env(env), jthis(env->NewGlobalRef(jthis))
+{}
 
-JObject::~JObject() {
+JObject::~JObject()
+{
     if (jthis) {
         env->DeleteGlobalRef(jthis);
     }
@@ -64,10 +66,13 @@ JObject& JObject::operator=(jobject rvalue)
     return *this;
 }
 
- NativeObject::NativeObject(JNIEnv* env) : JObject(env, nullptr) {
-}
+ NativeObject::NativeObject(JNIEnv* env)
+    : JObject(env, nullptr)
+{}
 
- NativeObject::NativeObject(JNIEnv* env, jobject jthis) : JObject(env, jthis) {
+ NativeObject::NativeObject(JNIEnv* env, jobject jthis)
+    : JObject(env, jthis)
+ {
     jclass nativeObjectClass = env->GetObjectClass(jthis);
     if (env->ExceptionCheck()) throw JNIException(env);
 
@@ -76,10 +81,11 @@ JObject& JObject::operator=(jobject rvalue)
     if (env->ExceptionCheck()) throw JNIException(env);
 }
 
- NativeObject::~NativeObject() {
-}
+NativeObject::~NativeObject()
+{}
 
- NativeObject* NativeObject::get(JNIEnv* env, jobject jthis) {
+ NativeObject* NativeObject::get(JNIEnv* env, jobject jthis)
+ {
     if (jthis == NULL) return NULL;
 
     // Won't get the private field from the base class, but from the derived class
@@ -91,9 +97,22 @@ JObject& JObject::operator=(jobject rvalue)
     return reinterpret_cast<NativeObject*>(nativeObject);
 }
 
-void NativeObject::checkInitializedOrThrow(const NativeObject* nativeObject) {
+void NativeObject::checkInitializedOrThrow(const NativeObject* nativeObject)
+{
     if (nativeObject == NULL) {
         assert(false);
         throw NativeException(E_POINTER, L"Unitialized native object");
     }
 }
+
+void NativeObject::clear(JNIEnv* env, jobject jthis)
+{
+    Objects::requireNonNull(L"jenv", env);
+    Objects::requireNonNull(L"jthis", jthis);
+
+    jclass nativeObjectClass = env->GetObjectClass(jthis);
+    if (env->ExceptionCheck()) throw JNIException(env);
+    env->SetLongField(jthis, env->GetFieldID(nativeObjectClass, "nativeObject", "J"), 0);
+    if (env->ExceptionCheck()) throw JNIException(env);
+}
+

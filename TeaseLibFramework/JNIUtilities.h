@@ -12,6 +12,10 @@ class JNIUtilities
 {
 public:
 	static std::vector<std::wstring> stringArray(JNIEnv* env, jobjectArray jarray);
+
+	static jobject newList(JNIEnv* env, jint capacity);
+
+	static jobject asList(JNIEnv* env, const std::vector<std::string>& elements);
 	static jobject asList(JNIEnv* env, const std::vector<NativeObject*>& elements);
 	static jobject asList(JNIEnv* env, const std::vector<jobject>& elements);
 	static jobject asSet(JNIEnv* env, const std::set<NativeObject*>& elements);

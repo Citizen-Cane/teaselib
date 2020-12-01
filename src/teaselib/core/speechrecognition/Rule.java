@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,6 +53,20 @@ public class Rule {
             float probability, Confidence confidence) {
         this(name, text, ruleIndex, indicesIntersection(children), children, fromElement, toElement, probability,
                 confidence);
+    }
+
+    public Rule(String name, List<String> children, int choice, float probability) {
+        this(name, children.toString(), 0, Collections.singleton(choice), childRules(children, 0, probability), 0,
+                children.size() - 1, probability, Confidence.valueOf(probability));
+    }
+
+    private static List<Rule> childRules(List<String> children, int choice, float probability) {
+        List<Rule> rules = new ArrayList<>(children.size());
+        for (int i = 0; i < children.size(); ++i) {
+            rules.add(new Rule(Rule.CHOICE_NODE_PREFIX + i + "_" + choice, children.get(i), i, Collections.emptyList(),
+                    i, i, probability, Confidence.valueOf(probability)));
+        }
+        return rules;
     }
 
     private Rule(String name, String text, int ruleIndex, Set<Integer> indices, List<Rule> children, int fromElement,

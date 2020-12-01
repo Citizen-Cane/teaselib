@@ -17,18 +17,26 @@ JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_DeepSpeechRecognizer_in
 
 /*
  * Class:     teaselib_core_ai_perception_DeepSpeechRecognizer
- * Method:    process
- * Signature: (Lteaselib/core/speechrecognition/SpeechRecognitionEvents;Ljava/util/concurrent/CountDownLatch;)V
- */
-JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_DeepSpeechRecognizer_process
-  (JNIEnv *, jobject, jobject, jobject);
-
-/*
- * Class:     teaselib_core_ai_perception_DeepSpeechRecognizer
  * Method:    languageCode
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_teaselib_core_ai_perception_DeepSpeechRecognizer_languageCode
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_perception_DeepSpeechRecognizer
+ * Method:    decode
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_teaselib_core_ai_perception_DeepSpeechRecognizer_decode
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_perception_DeepSpeechRecognizer
+ * Method:    results
+ * Signature: ()Lteaselib/core/ai/perception/DeepSpeechRecognizer/Results;
+ */
+JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_DeepSpeechRecognizer_results
   (JNIEnv *, jobject);
 
 /*

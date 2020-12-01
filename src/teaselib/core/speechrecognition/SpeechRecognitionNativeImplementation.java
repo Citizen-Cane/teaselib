@@ -3,16 +3,12 @@ package teaselib.core.speechrecognition;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import teaselib.core.Closeable;
 import teaselib.core.jni.NativeObject;
 import teaselib.core.util.ExceptionUtil;
 
 public abstract class SpeechRecognitionNativeImplementation extends NativeObject
         implements Closeable, SpeechRecognitionProvider {
-    private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionNativeImplementation.class);
 
     private Thread eventThread = null;
     private Throwable eventThreadException = null;

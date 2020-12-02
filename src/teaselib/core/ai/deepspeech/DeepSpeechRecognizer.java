@@ -2,6 +2,7 @@ package teaselib.core.ai.deepspeech;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -15,11 +16,11 @@ import teaselib.core.ui.Choices;
 
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
 
-    public DeepSpeechRecognizer(Locale locale, SpeechRecognitionEvents events) {
-        super(init(languageCode(locale)), events);
+    public DeepSpeechRecognizer(Path model, Locale locale, SpeechRecognitionEvents events) {
+        super(init(model.toString(), languageCode(locale)), events);
     }
 
-    protected static native long init(String langugeCode);
+    protected static native long init(String model, String langugeCode);
 
     @Override
     public native String languageCode();
@@ -52,12 +53,9 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     @Override
     protected void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized) {
         signalInitialized.countDown();
-
         while (!Thread.interrupted()) {
             Status status = Status.of(decode());
-            if (status == Status.Idle) {
-                // Ignore
-            } else if (status == Status.Started) {
+            if (status == Status.Started) {
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
             } else if (status == Status.Running) {
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
@@ -65,7 +63,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
                 Thread.currentThread().interrupt();
             } else if (status == Status.Done) {
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
-            } else {
+            } else if (status != Status.Idle) {
                 throw new UnsupportedOperationException(status.name());
             }
         }

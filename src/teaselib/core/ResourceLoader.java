@@ -20,6 +20,8 @@ import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.WildcardPattern;
 import teaselib.core.util.resource.ResourceCache;
 
+// TODO replace with Path-based implementation
+
 public class ResourceLoader {
     private static final Logger logger = LoggerFactory.getLogger(ResourceLoader.class);
 
@@ -101,10 +103,9 @@ public class ResourceLoader {
         }
     }
 
-    // TODO Move to reflection utils
-    public static File getProjectPath(Class<?> mainScript) {
-        String classFile = getClassFilePath(mainScript);
-        URL url = mainScript.getClassLoader().getResource(classLoaderCompatibleResourcePath(classFile));
+    public static File getProjectPath(Class<?> clazz) {
+        String classFile = getClassFilePath(clazz);
+        URL url = clazz.getClassLoader().getResource(classLoaderCompatibleResourcePath(classFile));
         String protocol = url.getProtocol().toLowerCase();
         if (classLoaderCompatibleResourcePath(protocol).equals("file")) {
             return projectPathFromFile(url, classLoaderCompatibleResourcePath(classFile));

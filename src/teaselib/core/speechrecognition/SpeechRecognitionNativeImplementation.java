@@ -67,6 +67,7 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
     @Override
     public void close() {
         super.close();
+        eventThread.interrupt();
         try {
             eventThread.join();
         } catch (InterruptedException e) {

@@ -22,21 +22,20 @@ extern "C"
 {
 
 	/*
-	* Class:     teaselib_core_ai_perception_DeepSpeechRecognizer
-	* Method:    init
-	* Signature: (Ljava/lang/String;)J
-	*/
+	 * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
+	 * Method:    init
+	 * Signature: (Ljava/lang/String;Ljava/lang/String;)J
+	 */
 	JNIEXPORT jlong JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_init
-	(JNIEnv* env, jclass, jstring jlanguageCode)
+	(JNIEnv* env, jclass, jstring jmodel, jstring jlanguageCode)
 	{
 		try {
+			Objects::requireNonNull(L"model", jmodel);
 			Objects::requireNonNull(L"locale", jlanguageCode);
 
+			JNIStringUTF8 model(env, jmodel);
 			JNIStringUTF8 languageCode(env, jlanguageCode);
-			char path[MAX_PATH];
-			GetModuleFileNameA(nullptr, path, MAX_PATH);
-			PathRemoveFileSpecA(path);
-			DeepSpeechRecognizer* speechRecognizer = new DeepSpeechRecognizer(path, languageCode);
+			DeepSpeechRecognizer* speechRecognizer = new DeepSpeechRecognizer(model, languageCode);
 			return reinterpret_cast<jlong>(speechRecognizer);
 		} catch(std::exception& e) {
 			JNIException::rethrow(env, e);
@@ -252,6 +251,7 @@ DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languag
 
 DeepSpeechRecognizer::~DeepSpeechRecognizer()
 {
+	stop();
 	recognizer.cancel();
 }
 
@@ -272,12 +272,12 @@ void DeepSpeechRecognizer::stop()
 
 void DeepSpeechRecognizer::emulate(const char* speech)
 {
-	audio.stop();
+	stop();
 }
 
 void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 {
-	audio.stop();
+	stop();
 	recognizer.clear();
 	std::thread audio_in([this, &speech, &samples]() {
 		try {

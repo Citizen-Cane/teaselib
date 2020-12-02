@@ -1,5 +1,8 @@
 package teaselib.core.util;
 
+import java.net.URL;
+import java.nio.file.Path;
+
 public final class ReflectionUtils {
 
     private ReflectionUtils() {
@@ -108,4 +111,52 @@ public final class ReflectionUtils {
     public static String qualifiedName(Enum<?> value) {
         return ReflectionUtils.normalizedClassName(value.getClass()) + '.' + value.name();
     }
+
+    // Project path - blunt copy from ResourceLoader but with paths
+
+    public static Path projectPath(Class<?> clazz) {
+        String classFile = getClassFilePath(clazz);
+        URL url = clazz.getClassLoader().getResource(classFile);
+        String protocol = classLoaderCompatibleResourcePath(url.getProtocol().toLowerCase());
+        if (protocol.equals("file")) {
+            return projectPathFromFile(url, classFile);
+        } else if (protocol.equals("jar")) {
+            return projectParentPathFromJar(url);
+        } else {
+            throw new IllegalArgumentException("Unsupported protocol: " + url.toString());
+        }
+    }
+
+    private static String getClassFilePath(Class<?> mainScript) {
+        String classFile = "/" + mainScript.getName().replace(".", "/") + ".class";
+        return classLoaderCompatibleResourcePath(classFile);
+    }
+
+    private static Path projectPathFromFile(URL url, String classFile) {
+        String path = getUndecoratedPath(url);
+        int classOffset = classFile.length();
+        return Path.of(path.substring(0, path.length() - classOffset));
+    }
+
+    private static Path projectParentPathFromJar(URL url) {
+        String path = getUndecoratedPath(url);
+        return Path.of(path.substring("File:/".length(), path.indexOf(".jar!"))).getParent();
+    }
+
+    /**
+     * {@link java.net.URL} paths have white space is escaped ({@code %20}), so to work with resources, these
+     * decorations must be removed.
+     * 
+     * @param url
+     *            The url to retrieve the undecorated path from.
+     * @return A string containing the undecorated path part of the URL.
+     */
+    private static String getUndecoratedPath(URL url) {
+        return classLoaderCompatibleResourcePath(url.getPath()).replace("%20", " ");
+    }
+
+    private static String classLoaderCompatibleResourcePath(String path) {
+        return path.startsWith("/") ? path.substring(1) : path;
+    }
+
 }

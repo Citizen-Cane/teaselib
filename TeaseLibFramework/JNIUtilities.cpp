@@ -28,10 +28,12 @@ std::vector<std::wstring> JNIUtilities::stringArray(JNIEnv* env, jobjectArray ja
     return strings;
 }
 
-jobject JNIUtilities::newList(JNIEnv* env, jint capacity)
+jobject JNIUtilities::newList(JNIEnv* env, size_t capacity)
 {
 	jclass listClass = JNIClass::getClass(env, "java/util/ArrayList");
-	jobject list = env->NewObject(listClass, JNIClass::getMethodID(env, listClass, "<init>", "(I)V"), capacity);
+	jobject list = env->NewObject(
+		listClass,
+		JNIClass::getMethodID(env, listClass, "<init>", "(I)V"), static_cast<jint>(capacity));
 	if (env->ExceptionCheck()) throw JNIException(env);
 	return list;
 }

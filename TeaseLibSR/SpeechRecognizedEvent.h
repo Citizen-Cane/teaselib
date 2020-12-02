@@ -29,8 +29,8 @@ public:
 private:
 	static const std::vector<std::wstring> split(const std::wstring& string, wchar_t delimiter);
 	static const wchar_t* ruleName(const SPPHRASERULE * rule, const SemanticResults& semanticResults);
-	int ruleIndex(const SPPHRASERULE * rule) const;
-	std::vector<int> choiceIndex(const SPPHRASERULE * rule) const;
+	int ruleIndex() const;
+	std::vector<int> choiceIndex() const;
 };
 
 class SpeechRecognizedEvent : public Event {

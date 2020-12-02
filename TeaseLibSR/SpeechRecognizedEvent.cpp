@@ -74,7 +74,7 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 
 	vector<jobject> speechRecognitionResults;
     if (ulAlternatesCount > 0) {
-        for (int i = 0; i < ulAlternatesCount; i++) {
+        for (unsigned int i = 0; i < ulAlternatesCount; i++) {
             SPPHRASE* pAlternatePhrase;
             hr = pPhraseAlt[i]->GetPhrase(&pAlternatePhrase);
             if (FAILED(hr)) throw COMException(hr);
@@ -253,8 +253,8 @@ SemanticResults::Names SemanticResults::semanticResults(const SPPHRASEPROPERTY *
 RuleName::RuleName(const SPPHRASERULE * rule, const SemanticResults& semanticResults)
 : name(ruleName(rule, semanticResults))
 , args(split(name, L'_'))
-, rule_index(ruleIndex(rule))
-, choice_indices(choiceIndex(rule)) {
+, rule_index(ruleIndex())
+, choice_indices(choiceIndex()) {
 }
 
 std::wstring RuleName::withoutChoiceIndex(const wchar_t * pszName) {
@@ -285,19 +285,19 @@ const wchar_t * RuleName::ruleName(const SPPHRASERULE * rule, const SemanticResu
 	}
 }
 
-int RuleName::ruleIndex(const SPPHRASERULE * rule) const {
+int RuleName::ruleIndex() const {
 	if (args.size() < 2) {
 		return INT_MIN;
 	} else {
 		try {
 			return stoi(args[1]);
-		} catch (const std::exception& e) {
+		} catch (const std::exception& /*e*/) {
 			return INT_MIN;
 		}
 	}
 }
 
-std::vector<int> RuleName::choiceIndex(const SPPHRASERULE* rule) const {
+std::vector<int> RuleName::choiceIndex() const {
 	if (args.size() < 3) {
 		return std::vector<int>();
 	} else {
@@ -312,7 +312,7 @@ std::vector<int> RuleName::choiceIndex(const SPPHRASERULE* rule) const {
 			}
 
 			return choiceIndices;
-		} catch (const std::exception& e) {
+		} catch (const std::exception& /*e*/) {
 			return std::vector<int>();
 		}
 	}

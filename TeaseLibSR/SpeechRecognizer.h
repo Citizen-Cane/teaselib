@@ -34,6 +34,8 @@ public:
 	void stopRecognition();
 	void emulateRecognition(const wchar_t * emulatedRecognitionResult);
 
+	void stopEventLoop();
+
 	const std::wstring locale;
 private:
 
@@ -55,6 +57,7 @@ private:
 		EventHandler(JNIEnv* env, jobject jevents, ISpRecoContext * cpContext);
 		~EventHandler();
 		void processEvents(const std::function<void(void)>& signalInitialized);
+		void stopEventLoop();
 		HRESULT recognizerStatus;
 	private:
 		ISpRecoContext* cpContext;

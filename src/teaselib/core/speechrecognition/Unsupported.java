@@ -63,8 +63,13 @@ class Unsupported extends SpeechRecognitionNativeImplementation {
     }
 
     @Override
+    protected void stopEventLoop() {
+        // noop
+    }
+
+    @Override
     protected void dispose() {
-        // Ignore
+        // noop
     }
 
     @Override

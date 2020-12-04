@@ -49,10 +49,10 @@ JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_sta
 
 /*
  * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
- * Method:    emulateRecognition
+ * Method:    emulate
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_emulateRecognition
+JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_emulate
   (JNIEnv *, jobject, jstring);
 
 /*
@@ -61,6 +61,14 @@ JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_emu
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_stopRecognition
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
+ * Method:    stopEventLoop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_stopEventLoop
   (JNIEnv *, jobject);
 
 /*

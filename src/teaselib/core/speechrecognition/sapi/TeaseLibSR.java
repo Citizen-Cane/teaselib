@@ -75,6 +75,9 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     public native void stopRecognition();
 
     @Override
+    protected native void stopEventLoop();
+
+    @Override
     public native void dispose();
 
 }

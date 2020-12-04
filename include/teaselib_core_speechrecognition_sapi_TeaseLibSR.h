@@ -81,6 +81,14 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_stop
 
 /*
  * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR
+ * Method:    stopEventLoop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_stopEventLoop
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR
  * Method:    dispose
  * Signature: ()V
  */

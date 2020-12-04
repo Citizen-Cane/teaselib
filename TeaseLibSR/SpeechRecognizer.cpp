@@ -137,6 +137,19 @@ void SpeechRecognizer::startEventHandler(JNIEnv* eventHandlerEnv, jobject jevent
 	eventHandler->processEvents(signalInitialized);
 }
 
+void SpeechRecognizer::EventHandler::stopEventLoop()
+{
+	if (hExitEvent != NULL) {
+		unique_lock<mutex> lock(thread, std::defer_lock);
+		if (!lock.try_lock()) {
+			SetEvent(hExitEvent);
+			lock.lock();
+		}
+		lock.unlock();
+		CloseHandle(hExitEvent);
+	}
+}
+
 SpeechRecognizer::EventHandler::EventHandler(JNIEnv* env, jobject jevents, ISpRecoContext * cpContext)
 	: JObject(env, jevents)
 	, cpContext(cpContext)
@@ -150,16 +163,6 @@ SpeechRecognizer::EventHandler::EventHandler(JNIEnv* env, jobject jevents, ISpRe
 }
 
 SpeechRecognizer::EventHandler::~EventHandler() {
-	if (hExitEvent != NULL) {
-		unique_lock<mutex> lock(thread, std::defer_lock);
-		if (!lock.try_lock()) {
-			SetEvent(hExitEvent);
-			lock.lock();
-		}
-		lock.unlock();
-		CloseHandle(hExitEvent);
-	}
-
 	 assert(jthis == nullptr);
 }
 
@@ -456,6 +459,11 @@ void SpeechRecognizer::emulateRecognition(const wchar_t * emulatedRecognitionRes
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw COMException(hr);
 
+}
+
+void SpeechRecognizer::stopEventLoop()
+{
+	eventHandler->stopEventLoop();
 }
 
 HRESULT SpeechRecognizer::resetGrammar() {

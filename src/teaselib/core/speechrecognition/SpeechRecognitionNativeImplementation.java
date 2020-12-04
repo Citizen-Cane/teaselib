@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition;
 
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
 import teaselib.core.Closeable;
@@ -36,7 +37,15 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
             }
         };
 
-        eventThread = new Thread(speechRecognitionService);
+        eventThread = new Thread(speechRecognitionService) {
+
+            @Override
+            public void interrupt() {
+                super.interrupt();
+                stopEventLoop();
+            }
+
+        };
         eventThread.setName("Speech Recognition event thread");
         eventThread.start();
         try {
@@ -58,21 +67,34 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
      */
     protected abstract void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized);
 
+    public Optional<Throwable> getException() {
+        try {
+            return Optional.ofNullable(eventThreadException);
+        } finally {
+            eventThreadException = null;
+        }
+    }
+
     /**
      * Stop the event thread and clean up.
+     */
+    protected abstract void stopEventLoop();
+
+    /**
+     * Delete native objects
      */
     @Override
     protected abstract void dispose();
 
     @Override
     public void close() {
-        super.close();
         eventThread.interrupt();
         try {
             eventThread.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+        super.close();
     }
 
 }

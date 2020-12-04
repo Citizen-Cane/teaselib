@@ -239,6 +239,27 @@ extern "C"
     }
 
     /*
+ * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR
+ * Method:    interruptNativeEventHandler
+ * Signature: ()V
+ */
+    JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_stopEventLoop
+    (JNIEnv* env, jobject jthis)
+    {
+        try {
+            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
+            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            speechRecognizer->stopEventLoop();
+        }
+        catch (NativeException& e) {
+            JNIException::rethrow(env, e);
+        }
+        catch (JNIException& e) {
+            e.rethrow();
+        }
+    }
+
+    /*
     * Class:     teaselib_speechrecognition_implementation_TeaseLibSR
     * Method:    dispose
     * Signature: ()V

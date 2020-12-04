@@ -9,6 +9,7 @@
 #include <AIfxDeepSpeech.h>
 #include <AIfxDeepSpeechAudioStream.h>
 
+
 class DeepSpeechRecognizer {
 	aifx::DeepSpeechAudioStream recognizer;
 	aifx::AudioCapture audio;
@@ -23,6 +24,11 @@ public:
 	void emulate(const char* speech);
 	void emulate(const short* speech, unsigned int samples);
 
+	void stopEventLoop();
+
 	aifx::DeepSpeechAudioStream::Status decode();
 	const std::vector<aifx::DeepSpeech::Recognition> results() const;
+
+	static const jobject jresults(JNIEnv* env, const std::vector<aifx::DeepSpeech::Recognition>& results);
 };
+

@@ -11,6 +11,7 @@ import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
+import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.ui.Choices;
 
@@ -39,12 +40,11 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         }
     }
 
-    class Result {
+    static class Result {
         final float confidence;
         final List<String> words;
 
         public Result(float confidence, List<String> words) {
-            super();
             this.confidence = confidence;
             this.words = words;
         }
@@ -56,13 +56,14 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         while (!Thread.interrupted()) {
             Status status = Status.of(decode());
             if (status == Status.Started) {
+                events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
             } else if (status == Status.Running) {
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
             } else if (status == Status.Cancelled) {
                 Thread.currentThread().interrupt();
             } else if (status == Status.Done) {
-                events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
+                events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rules(results())));
             } else if (status != Status.Idle) {
                 throw new UnsupportedOperationException(status.name());
             }
@@ -87,10 +88,19 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     public native void startRecognition();
 
     @Override
-    public native void emulateRecognition(String emulatedRecognitionResult);
+    public void emulateRecognition(String speech) {
+        Thread thread = new Thread(() -> emulate(speech), "DeepSpeech input emulation");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    public native void emulate(String speech);
 
     @Override
     public native void stopRecognition();
+
+    @Override
+    protected native void stopEventLoop();
 
     @Override
     public native void dispose();

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.Sequence;
@@ -56,8 +57,9 @@ public class Rule {
     }
 
     public Rule(String name, List<String> children, int choice, float probability) {
-        this(name, children.toString(), 0, Collections.singleton(choice), childRules(children, 0, probability), 0,
-                children.size() - 1, probability, Confidence.valueOf(probability));
+        this(name, children.stream().collect(Collectors.joining(" ")), 0, Collections.singleton(choice),
+                childRules(children, 0, probability), 0, children.size() - 1, probability,
+                Confidence.valueOf(probability));
     }
 
     private static List<Rule> childRules(List<String> children, int choice, float probability) {

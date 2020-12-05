@@ -81,23 +81,6 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 
 			const SemanticResults semanticResults(pAlternatePhrase->pProperties);
 			jobject rule = getRule(pResult, &pAlternatePhrase->Rule, semanticResults);
-
-			// TODO filter out empty (invalid) rules here to reduce log output in some cases, but breaks EndAmbiguity tests
-			// - filtering would work only for distinct choices anyway, so maybe we should just handle this on the java side
-
-			//jobject indices = env->GetObjectField(
-			//	rule, env->GetFieldID(ruleClass, "indices", "Ljava/util/Set;"));
-			//if (env->ExceptionCheck()) throw JNIException(env);
-			//Objects::requireNonNull(L"indices", indices);
-
-			//jclass setClass = JNIClass::getClass(env, "java/util/Set");
-			//jboolean isEmpty = env->CallBooleanMethod(indices, env->GetMethodID(setClass, "isEmpty", "()Z"));
-			//if (env->ExceptionCheck()) throw JNIException(env);
-
-			//if (!isEmpty) {
-			//	speechRecognitionResults.push_back(rule);
-			//}
-
 			speechRecognitionResults.push_back(rule);
 
 			// TODO resolve memory leak on exception

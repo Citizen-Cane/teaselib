@@ -14,6 +14,7 @@ import javax.xml.transform.TransformerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.speechrecognition.Hypothesis;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
@@ -25,6 +26,7 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
 
 public class TeaseLibSRGS extends TeaseLibSR {
+    private static final Logger logger = LoggerFactory.getLogger(TeaseLibSRGS.class);
 
     private final class PreparedChoicesImplementation implements PreparedChoices {
         final Choices choices;
@@ -49,8 +51,8 @@ public class TeaseLibSRGS extends TeaseLibSR {
         }
 
         @Override
-        public Optional<Rule> hypothesis(List<Rule> rules, Rule currentHypothesis) {
-            return distinctHypothesis(rules, choices, this, currentHypothesis);
+        public Hypothesis improve(Hypothesis current, List<Rule> rules) {
+            return distinctHypothesis(rules, choices, slicedPhrases, mapper, current);
         }
 
         @Override
@@ -58,8 +60,6 @@ public class TeaseLibSRGS extends TeaseLibSR {
             return mapper;
         }
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(TeaseLibSRGS.class);
 
     public TeaseLibSRGS(Locale locale, SpeechRecognitionEvents events) {
         super(locale, events);
@@ -84,9 +84,8 @@ public class TeaseLibSRGS extends TeaseLibSR {
         }
     }
 
-    private Optional<Rule> distinctHypothesis(List<Rule> rules, Choices choices, PreparedChoices preparedChoices,
-            Rule currentHypothesis) {
-        SlicedPhrases<PhraseString> slicedPhrases = ((PreparedChoicesImplementation) preparedChoices).slicedPhrases;
+    private Hypothesis distinctHypothesis(List<Rule> rules, Choices choices,
+            SlicedPhrases<PhraseString> slicedPhrases, IntUnaryOperator mapper, Hypothesis currentHypothesis) {
         // Caveats:
 
         // DONE
@@ -121,11 +120,10 @@ public class TeaseLibSRGS extends TeaseLibSR {
         // -> number of distinct rules, words, or vowels -> words or vowels
 
         // RESOLVED by confidence function
-        // - confidence decreases at the end of the hypothesis (distinct [1] = 0.79, common [0,1] = 0.76,
-        // distinct
-        // NULL [0]= 0.58;
-        // -> cut off hypothesis when probability falls below accepted threshold, or when average falls below
-        // threshold
+        // - confidence decreases at the end of the hypothesis
+        // (distinct [1] = 0.79, common [0,1] = 0.76, distinct NUL_RULE [0]= 0.58;
+        // -> cut off hypothesis when probability falls below accepted threshold,
+        // or when average falls below threshold
         //
         // unrealized NULL rules seem to have confidence == 1.0 -> all NULL rules have C=1.0
 
@@ -166,13 +164,12 @@ public class TeaseLibSRGS extends TeaseLibSR {
 
         validate(candidates);
 
-        Optional<Rule> result = SpeechRecognitionInputMethod.bestSingleResult(candidates.stream(),
-                preparedChoices.mapper());
+        Optional<Rule> result = SpeechRecognitionInputMethod.bestSingleResult(candidates.stream(), mapper);
         if (result.isPresent()) {
             Rule rule = result.get();
             if (rule.indices.equals(Rule.NoIndices)) {
                 logger.info("Ignoring hypothesis {} since it contains results from multiple phrases", rule);
-                return Optional.empty();
+                return new Hypothesis(rule);
             } else {
                 double expectedConfidence = SpeechRecognitionInputMethod.expectedHypothesisConfidence(choices, rule);
                 // Weighted probability is too low in tests for short hypotheses even with optimal probability of 1.0
@@ -182,25 +179,26 @@ public class TeaseLibSRGS extends TeaseLibSR {
                 if (weightedProbability >= expectedConfidence) {
                     if (currentHypothesis == null) {
                         logger.info("Considering as new hypothesis");
-                        return Optional.of(newHypothesis(rule, weightedProbability));
+                        return new Hypothesis(rule, weightedProbability);
                     } else if (currentHypothesis.indices.containsAll(rule.indices)) {
                         float hypothesisProbability = weightedProbability(choices, currentHypothesis, slicedPhrases);
                         float h = currentHypothesis.children.size();
                         float r = rule.children.size();
                         float average = (hypothesisProbability * h + rule.probability * r) / (h + r);
                         logger.info("Considering as hypothesis");
-                        return Optional.of(newHypothesis(rule, Math.max(average, rule.probability)));
+                        return new Hypothesis(rule, Math.max(average, rule.probability));
                     } else {
-                        return Optional.empty();
+                        logger.info("Choice indices changed - reconsidering hypothesis");
+                        return new Hypothesis(rule);
                     }
                 } else {
                     logger.info("Weighted confidence {} < expected hypothesis confidence {} - hypothesis ignored", //
                             weightedProbability, expectedConfidence);
-                    return Optional.empty();
+                    return new Hypothesis(rule);
                 }
             }
         } else {
-            return Optional.empty();
+            return Hypothesis.None;
         }
     }
 
@@ -221,10 +219,6 @@ public class TeaseLibSRGS extends TeaseLibSR {
 
         float weight = (float) text.words().size() / (float) complete.size();
         return rule.probability * weight;
-    }
-
-    private Rule newHypothesis(Rule rule, float probability) {
-        return new Rule(rule, Rule.HYPOTHESIS, probability, rule.confidence);
     }
 
     private static void validate(List<Rule> candidates) {

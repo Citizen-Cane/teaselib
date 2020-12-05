@@ -3,11 +3,8 @@ package teaselib.core.speechrecognition;
 import static java.util.Collections.emptyList;
 import static teaselib.core.speechrecognition.Confidence.High;
 
-import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.IntUnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,12 +147,8 @@ public class SpeechRecognition {
         this.preparedChoices = preparedChoices;
     }
 
-    public Optional<Rule> hypothesis(List<Rule> rules, Rule currentHypothesis) {
-        return preparedChoices.hypothesis(rules, currentHypothesis);
-    }
-
-    public IntUnaryOperator phraseToChoiceMapping() {
-        return preparedChoices.mapper();
+    public PreparedChoices preparedChoices() {
+        return preparedChoices;
     }
 
     public void startRecognition() {

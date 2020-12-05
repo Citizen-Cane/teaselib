@@ -62,7 +62,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
-    private Rule hypothesis = null;
+    private Hypothesis hypothesis = null;
     private float awarenessBonus = 0.0f;
 
     public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizer) {
@@ -145,12 +145,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                         recognizer.restartRecognition();
                     } else if (recognizer.implementation instanceof TeaseLibSRGS) {
                         if (prompt.acceptedResult == Result.Accept.Distinct) {
-                            Optional<Rule> newHypothesis = getRecognizer(prompt).hypothesis(eventArgs.result,
-                                    hypothesis);
-                            if (newHypothesis.isPresent()) {
-                                hypothesis = newHypothesis.get();
-                                events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
-                            }
+                            PreparedChoices preparedChoices = recognizer.preparedChoices();
+                            hypothesis = preparedChoices.improve(hypothesis, eventArgs.result);
+                            events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
                         } else if (prompt.acceptedResult == Result.Accept.Multiple) {
                             // Ignore
                         } else {
@@ -197,7 +194,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                         reject(prompt, eventArgs);
                         return prompt;
                     } else {
-                        if (hypothesis != null) {
+                        if (hypothesis != null && !hypothesis.indices.isEmpty()) {
                             // rejectedResult may contain better result than hypothesis
                             // TODO Are latest speech detection and recognitionRejected result the same?
                             // TODO accept only if hypothesis and recognitionRejected result have the same indices
@@ -344,7 +341,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private IntUnaryOperator phraseToChoice(Prompt prompt) {
-        return getRecognizer(prompt).phraseToChoiceMapping();
+        return getRecognizer(prompt).preparedChoices().mapper();
     }
 
     private Prompt.Result multipleChoiceResults(Rule rule, @SuppressWarnings("unused") IntUnaryOperator toChoices) {

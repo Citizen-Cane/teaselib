@@ -22,7 +22,6 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 public class Rule {
 
     public static final String MAIN_RULE_NAME = "Recognized";
-    public static final String HYPOTHESIS = "Hypothesis";
     public static final String REPAIRED_MAIN__RULE_NAME = "Repaired";
     public static final String WITHOUT_IGNOREABLE_TRAILING_NULL_RULE = "Trailing Null rule removed";
     public static final String CHOICE_NODE_PREFIX = "r_";

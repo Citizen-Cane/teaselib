@@ -16,14 +16,14 @@
 #include <COMUser.h>
 
 
-class SpeechRecognizer : public NativeObject, private COMUser
+class SpeechRecognizer : private COMUser
 {
 public:
 	typedef std::vector<std::wstring> Choices;
 
 	SpeechRecognizer(JNIEnv *env, const wchar_t* recognizerAttributes);
 	virtual ~SpeechRecognizer();
-	void startEventHandler(JNIEnv* eventHandlerEnv, jobject jevents, const std::function<void(void)>& signalInitialized);
+	void startEventHandler(JNIEnv* env, jobject jthis, jobject jevents, const std::function<void(void)>& signalInitialized);
 
 	const std::wstring& languageCode() const;
 	void setChoices(const Choices& choices);
@@ -54,7 +54,7 @@ private:
 
 	class EventHandler : public JObject, private COMUser {
 	public:
-		EventHandler(JNIEnv* env, jobject jevents, ISpRecoContext * cpContext);
+		EventHandler(JNIEnv* env, jobject jevents, ISpRecoContext * cpContext, jobject jteaselibsr);
 		~EventHandler();
 		void processEvents(const std::function<void(void)>& signalInitialized);
 		void stopEventLoop();
@@ -65,6 +65,7 @@ private:
 		void eventLoop(HANDLE hSpeechNotifyEvent);
 		std::mutex thread;
 		const HANDLE hExitEvent;
+		jobject const jteaselibsr;
 	};
 	EventHandler* eventHandler;
 };

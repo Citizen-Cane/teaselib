@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.sapi;
 
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
 
 import java.util.Locale;
@@ -14,6 +15,7 @@ import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
+import teaselib.core.ui.Prompt;
 
 /**
  * @author Citizen-Cane
@@ -63,7 +65,7 @@ public class SpeechRecognitionSimpleTest {
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
             assertRecognized(inputMethod, choices);
-            assertRejected(inputMethod, choices, "My name is Foobar");
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
             assertRejected(inputMethod, choices, "Mam");
         }
     }
@@ -78,7 +80,7 @@ public class SpeechRecognitionSimpleTest {
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
             assertRecognized(inputMethod, choices);
-            assertRejected(inputMethod, choices, "My name is foobar");
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(1));
             assertRejected(inputMethod, choices, "Mam");
         }
     }
@@ -93,7 +95,7 @@ public class SpeechRecognitionSimpleTest {
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
             assertRecognized(inputMethod, choices);
-            assertRejected(inputMethod, choices, "My name is Foobar");
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(1));
             assertRejected(inputMethod, choices, "Miss");
         }
     }
@@ -109,7 +111,7 @@ public class SpeechRecognitionSimpleTest {
 
             assertRejected(inputMethod, choices, "My name is");
             assertRejected(inputMethod, choices, "My name is Foo");
-            assertRejected(inputMethod, choices, "My name is Foobar");
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
         }
     }
 
@@ -128,8 +130,8 @@ public class SpeechRecognitionSimpleTest {
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
             assertRecognized(inputMethod, choices);
-            assertRejected(inputMethod, choices, "Yes Miss");
-            assertRejected(inputMethod, choices, "It's ready");
+            assertRecognizedAsHypothesis(inputMethod, choices, "Yes Miss", new Prompt.Result(1));
+            assertRecognizedAsHypothesis(inputMethod, choices, "It's ready", new Prompt.Result(4));
             assertRejected(inputMethod, choices, "I'm Sorry", "Ready, Miss", "Ready");
         }
     }

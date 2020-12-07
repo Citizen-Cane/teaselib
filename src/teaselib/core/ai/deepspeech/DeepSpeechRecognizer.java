@@ -6,16 +6,25 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.IntUnaryOperator;
+import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionProvider;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.srgs.IndexMap;
+import teaselib.core.speechrecognition.srgs.PhraseString;
+import teaselib.core.speechrecognition.srgs.PhraseStringSequences;
+import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
 
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
+
+    private PreparedChoicesImplementation current = null;
 
     public DeepSpeechRecognizer(Path model, Locale locale, SpeechRecognitionEvents events) {
         super(init(model.toString(), languageCode(locale)), events);
@@ -75,9 +84,51 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
                 .collect(toUnmodifiableList());
     }
 
+    private final class PreparedChoicesImplementation implements PreparedChoices {
+
+        final Choices choices;
+
+        final SlicedPhrases<PhraseString> slices;
+        final IntUnaryOperator mapper;
+
+        public PreparedChoicesImplementation(Choices choices) {
+            this.choices = choices;
+
+            IndexMap<Integer> index2choices = new IndexMap<>();
+            List<PhraseString> phrases = choices.stream()
+                    .flatMap(choice -> choice.phrases.stream()
+                            .map(phrase -> new PhraseString(phrase, index2choices.add(choices.indexOf(choice)))))
+                    .collect(Collectors.toList());
+
+            this.slices = SlicedPhrases.of( //
+                    PhraseStringSequences.of(phrases), PhraseStringSequences::prettyPrint);
+            this.mapper = index2choices::get;
+        }
+
+        @Override
+        public void accept(SpeechRecognitionProvider sri) {
+            if (sri == DeepSpeechRecognizer.this) {
+                ((DeepSpeechRecognizer) sri).current = this;
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public float weightedProbability(Rule rule) {
+            return rule.probability;
+        }
+
+        @Override
+        public IntUnaryOperator mapper() {
+            return mapper;
+        }
+
+    }
+
     @Override
     public PreparedChoices prepare(Choices choices) {
-        throw new UnsupportedOperationException();
+        return new PreparedChoicesImplementation(choices);
     }
 
     private native int decode();

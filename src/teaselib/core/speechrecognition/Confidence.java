@@ -16,7 +16,7 @@ public enum Confidence {
     High(0.75f),
     Definite(1.0f);
 
-    public static Confidence Default = Normal;
+    public static final Confidence Default = Normal;
 
     /**
      * The default probability of the recognition confidence. The actual implementation may return a probability value

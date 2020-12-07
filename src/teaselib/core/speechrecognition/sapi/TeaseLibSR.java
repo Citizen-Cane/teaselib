@@ -7,6 +7,7 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.UnsupportedLanguageException;
@@ -55,6 +56,8 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
      */
     @Override
     protected native void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized);
+
+    protected abstract List<Rule> repair(List<Rule> result);
 
     @Override
     public native String languageCode();

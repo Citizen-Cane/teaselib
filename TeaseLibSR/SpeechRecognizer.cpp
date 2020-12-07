@@ -28,8 +28,8 @@
 using namespace std;
 
 SpeechRecognizer::SpeechRecognizer(JNIEnv *env, const wchar_t* locale)
-    : NativeObject(env)
-    , locale(locale)
+    //: NativeObject(env)
+    : locale(locale)
 	, langID(0x0000)
 	, eventHandler(nullptr)
 {
@@ -132,8 +132,8 @@ HRESULT SpeechRecognizer::speechRecognitionInitAudio() {
 	return hr;
 }
 
-void SpeechRecognizer::startEventHandler(JNIEnv* eventHandlerEnv, jobject jevents, const std::function<void(void)>& signalInitialized) {
-	this->eventHandler = new SpeechRecognizer::EventHandler(eventHandlerEnv, jevents, cpContext);
+void SpeechRecognizer::startEventHandler(JNIEnv* env, jobject jthis, jobject jevents, const std::function<void(void)>& signalInitialized) {
+	eventHandler = new SpeechRecognizer::EventHandler(env, jevents, cpContext, jthis);
 	eventHandler->processEvents(signalInitialized);
 }
 
@@ -150,11 +150,12 @@ void SpeechRecognizer::EventHandler::stopEventLoop()
 	}
 }
 
-SpeechRecognizer::EventHandler::EventHandler(JNIEnv* env, jobject jevents, ISpRecoContext * cpContext)
+SpeechRecognizer::EventHandler::EventHandler(JNIEnv* env, jobject jevents, ISpRecoContext * cpContext, jobject jteaselibsr)
 	: JObject(env, jevents)
 	, cpContext(cpContext)
 	, hExitEvent(CreateEvent(NULL, FALSE, FALSE, NULL))
 	, recognizerStatus(S_OK)
+	, jteaselibsr(jteaselibsr)
 {
 	assert(hExitEvent);
 	if (hExitEvent == NULL) {
@@ -238,7 +239,7 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 							LPWSTR pszCoMemResultText = NULL;
 							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
 							if (SUCCEEDED(recognizerStatus)) {
-								SpeechRecognizedEvent(env, jthis, "speechDetected").fire(pResult);
+								SpeechRecognizedEvent(env, jthis, "speechDetected", jteaselibsr).fire(pResult);
 							}
 							if (NULL != pszCoMemResultText) {
 								CoTaskMemFree(pszCoMemResultText);
@@ -251,7 +252,7 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 							LPWSTR pszCoMemResultText = NULL;
 							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
 							if (SUCCEEDED(recognizerStatus)) {
-								SpeechRecognizedEvent(env, jthis, "recognitionRejected").fire(pResult);
+								SpeechRecognizedEvent(env, jthis, "recognitionRejected", jteaselibsr).fire(pResult);
 							}
 							if (NULL != pszCoMemResultText) {
 								CoTaskMemFree(pszCoMemResultText);
@@ -261,7 +262,7 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 						case SPEI_RECOGNITION: {
 							// Successful recognition
 							ISpRecoResult* pResult = spevent.RecoResult();
-							SpeechRecognizedEvent(env, jthis, "recognitionCompleted").fire(pResult);
+							SpeechRecognizedEvent(env, jthis, "recognitionCompleted", jteaselibsr).fire(pResult);
 							break;
 						}
 						case SPEI_TTS_AUDIO_LEVEL: {
@@ -281,12 +282,13 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 						}
                     }
 				} catch (std::exception& e) {
-					cerr << "Uncatched std exception in SpeechRecognizer::EventHandler::eventLoop: " << e.what() << endl;
+					cerr << "Uncatched std::exception in SpeechRecognizer::EventHandler::eventLoop: " << e.what() << endl;
 				} catch (NativeException& e) {
 					wcerr << "Uncatched native exception in SpeechRecognizer::EventHandler::eventLoop: " << e.message.c_str() << "(error code=" << e.errorCode << ")" << endl;
 				} catch (JNIException& e) {
 					JNIStringUTF8 message(env, e.getMessage());
-					cerr << "Uncatched JNI exception in SpeechRecognizer::EventHandler::eventLoop: " << message.operator LPCSTR() << endl;
+					cerr << "Uncatched Java exception in SpeechRecognizer::EventHandler::eventLoop: " << message.operator LPCSTR() << endl;
+					e.printStacktrace();
 				}
             }
             break;

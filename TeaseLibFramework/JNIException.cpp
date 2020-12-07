@@ -82,3 +82,14 @@ JNIString JNIException::getMessage() const {
 	assert(message);
 	return JNIString(env, message);
 }
+
+void JNIException::printStacktrace() const
+{
+	jclass cls = env->GetObjectClass(jthis);
+	if (cls != NULL) {
+		jmethodID printStackTrace = env->GetMethodID(cls, "printStackTrace", "()V");
+		if (printStackTrace != NULL) {
+			env->CallObjectMethod(jthis, printStackTrace);
+		}
+	}
+}

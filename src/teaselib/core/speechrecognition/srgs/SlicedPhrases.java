@@ -294,7 +294,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         return elements.stream()
                 .map(sequences -> sequences.stream()
                         .filter(sequence -> sequences.traits.intersectionPredicate.test(sequence.get(0), text))
-                        .reduce(Sequence::maxLength).orElse(new Sequence<T>(sequences.traits)))
+                        .reduce(Sequence::maxLength).orElse(new Sequence<>(sequences.traits)))
                 .flatMap(Sequence::stream).collect(Collectors.toList());
     }
 

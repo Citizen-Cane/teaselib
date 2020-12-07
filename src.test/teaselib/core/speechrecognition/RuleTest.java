@@ -1,9 +1,13 @@
 package teaselib.core.speechrecognition;
 
-import static java.lang.Integer.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.Confidence.*;
-import static teaselib.core.speechrecognition.srgs.PhrasesSliceTest.*;
+import static java.lang.Integer.MIN_VALUE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.speechrecognition.Confidence.High;
+import static teaselib.core.speechrecognition.Confidence.Low;
+import static teaselib.core.speechrecognition.Confidence.Normal;
+import static teaselib.core.speechrecognition.srgs.PhrasesSliceTest.choice;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -120,15 +124,13 @@ public class RuleTest {
                 choice("D E F, A B C", 0), //
                 choice("G, A B C, H", 1));
 
-        SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
-
         Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, Arrays.asList( //
                 new Rule("r_0_0_1", "G", 0, indices(1), 0, 1, 0.82f, High),
                 new Rule("r_1_0_2", "A B C", 1, indices(1), 1, 4, 0.51f, Normal),
                 new Rule("r_2_3", null, 2, indices(0), 4, 5, 1.0f, High)), 0, 6, 0.82414407f, High);
-
         assertEquals(Collections.singleton(1), speechDetected.intersectionWithoutNullRules());
 
+        SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
         List<Rule> repaired = speechDetected.repair(slicedPhrases);
         assertEquals(1, repaired.size());
 
@@ -146,20 +148,18 @@ public class RuleTest {
                 choice("D E F, A B C", 0), //
                 choice("G, A B C, H", 1));
 
-        SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
-
         Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, Arrays.asList( //
                 new Rule("r_0_0_1", "G", 0, indices(1), 0, 1, 0.82f, High),
                 new Rule("r_1_0_2", "A B C", 1, indices(1), 1, 4, 0.51f, Normal),
                 new Rule("r_2_3", null, 2, indices(0), 4, 5, 1.0f, High),
                 new Rule("", null, MIN_VALUE, indices(), 5, 5, 1.0f, High)), 0, 6, 0.82414407f, High);
-
         assertEquals(Collections.singleton(1), speechDetected.intersectionWithoutNullRules());
 
         assertTrue(speechDetected.hasTrailingNullRule());
         Rule speechDetectedwithoutTrailingNullRules = speechDetected.withoutIgnoreableTrailingNullRules();
         assertFalse(speechDetectedwithoutTrailingNullRules.hasTrailingNullRule());
 
+        SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
         List<Rule> repaired = speechDetectedwithoutTrailingNullRules.repair(slicedPhrases);
         assertEquals(1, repaired.size());
 
@@ -169,6 +169,29 @@ public class RuleTest {
         assertEquals("Rule indices", Collections.singleton(1), rule.indices);
 
         assertEquals("Rule probability", rule.probability, rule.children.get(2).probability, 0.0001);
+    }
+
+    @Test
+    public void testirregularPhrases() {
+        String sorry = "No Miss, I'm sorry";
+        String ready = "Yes Miss, I'm ready";
+        String haveIt = "I have it, Miss";
+        String ready2 = "Yes,it's ready, Miss";
+        String ready3 = "It's ready, Miss";
+
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice(sorry), choice(ready), choice(haveIt), choice(ready2), choice(ready3));
+
+        Rule speechDetected = new Rule("Main", "it's ready", MIN_VALUE, Arrays.asList( //
+                new Rule("r_0_4", null, 0, indices(4), 0, 1, 1.0f, High),
+                new Rule("r_1_3_4", "it's", 1, indices(3, 4), 1, 2, 0.51f, Normal),
+                new Rule("r_2_1_3_4", "ready", 2, indices(1, 3, 4), 2, 3, 0.51f, Normal)), 0, 3, 0.82414407f, High);
+        assertEquals(Collections.singleton(4), speechDetected.indices);
+        assertEquals(new HashSet<>(Arrays.asList(3, 4)), speechDetected.intersectionWithoutNullRules());
+
+        SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
+        List<Rule> repaired = speechDetected.repair(slicedPhrases);
+        assertEquals(0, repaired.size());
     }
 
 }

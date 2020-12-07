@@ -41,6 +41,11 @@ class Unsupported extends SpeechRecognitionNativeImplementation {
             }
 
             @Override
+            public float weightedProbability(Rule rule) {
+                return rule.probability;
+            }
+
+            @Override
             public IntUnaryOperator mapper() {
                 return IdentityMapping;
             }

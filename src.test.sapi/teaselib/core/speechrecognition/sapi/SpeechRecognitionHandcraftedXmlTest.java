@@ -3,6 +3,7 @@ package teaselib.core.speechrecognition.sapi;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.awaitResult;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,19 +13,24 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.IntUnaryOperator;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.ResourceLoader;
-import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
-import teaselib.core.speechrecognition.SpeechRecognitionProvider;
+import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.sapi.TeaseLibSRGS.PreparedChoicesImplementation;
 import teaselib.core.speechrecognition.srgs.PhraseString;
+import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;
@@ -63,15 +69,29 @@ public class SpeechRecognitionHandcraftedXmlTest {
         return emulateSpeechRecognition(resource, emulatedRecognitionResult, expected, Prompt.Result.Accept.Multiple);
     }
 
+    public static class TestableTeaseLibSRGS extends TeaseLibSRGS {
+
+        public TestableTeaseLibSRGS(Locale locale, SpeechRecognitionEvents events) {
+            super(locale, events);
+        }
+
+        @Override
+        public List<Rule> repair(List<Rule> result) {
+            return result;
+        }
+
+    }
+
     private static List<Rule> emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
             Prompt.Result expected, Prompt.Result.Accept mode) throws IOException, InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
                 Arrays.stream(PhraseString.words(emulatedRecognitionResult)).collect(joining(" ")),
                 emulatedRecognitionResult);
+
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
         try (InputStream inputStream = resources.get(resource);) {
             byte[] xml = Stream.toByteArray(inputStream);
-            try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.class);) {
+            try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizer(TestableTeaseLibSRGS.class);) {
                 SpeechRecognition sr = sR.get(Foobar.locale);
                 try (SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR) {
                     @Override
@@ -81,17 +101,18 @@ public class SpeechRecognitionHandcraftedXmlTest {
                             setup.apply();
                             String xmlToString = new String(xml);
                             logger.info("Injecting handcrafted xml\n{}", xmlToString);
-                            sr.apply(new PreparedChoices() {
-                                @Override
-                                public void accept(SpeechRecognitionProvider sri) {
-                                    ((TeaseLibSRGS) sri).setChoices(xml);
-                                }
+                            PreparedChoicesImplementation preparedChoices;
+                            try {
+                                SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices,
+                                        SpeechRecognitionNativeImplementation.languageCode(Foobar.locale));
+                                IntUnaryOperator mapper = builder::map;
+                                preparedChoices = ((TestableTeaseLibSRGS) sr.implementation).new PreparedChoicesImplementation(
+                                        choices, builder.slices, xml, mapper);
+                                sr.apply(preparedChoices);
+                            } catch (ParserConfigurationException | TransformerException e) {
+                                throw asRuntimeException(e);
+                            }
 
-                                @Override
-                                public IntUnaryOperator mapper() {
-                                    return IdentityMapping;
-                                }
-                            });
                         };
                     }
                 };) {

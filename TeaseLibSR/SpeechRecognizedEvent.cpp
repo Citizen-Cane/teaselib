@@ -18,10 +18,11 @@
 
 using namespace std;
 
-SpeechRecognizedEvent::SpeechRecognizedEvent(JNIEnv *env,  jobject jevent, const char* name)
+SpeechRecognizedEvent::SpeechRecognizedEvent(JNIEnv *env,  jobject jevent, const char* name, jobject jteaselibsr)
     : Event(env, jevent, name)
 	, ruleClass(JNIClass::getClass(env, "teaselib/core/speechrecognition/Rule"))
 	, confidenceClass(JNIClass::getClass(env, "teaselib/core/speechrecognition/Confidence"))
+	, jteaselibsr(jteaselibsr)
 {}
 
 const char* getConfidenceFieldName(signed char confidence) {
@@ -67,8 +68,7 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 			pPhraseAlt,
 			&ulAlternatesCount);
 		if (FAILED(hr)) throw COMException(hr);
-	}
-	else {
+	} else {
 		ulAlternatesCount = 0;
 	}
 
@@ -96,10 +96,11 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 	CoTaskMemFree(pPhrase);
 
 	jclass eventClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/events/SpeechRecognizedEventArgs");
+	jobject jresult = repair(JNIUtilities::asList(env, speechRecognitionResults));
     jobject eventArgs = env->NewObject(
                             eventClass,
                             JNIClass::getMethodID(env, eventClass, "<init>", "(Ljava/util/List;)V"),
-							JNIUtilities::asList(env, speechRecognitionResults));
+							jresult);
     if (env->ExceptionCheck()) throw JNIException(env);
 
     __super::fire(eventArgs);
@@ -110,7 +111,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	wchar_t* text;
 	HRESULT hr = pResult->GetText(rule->ulFirstElement, rule->ulCountOfElements, false, &text, nullptr);
 	if (FAILED(hr)) {
-		jRule = newRule(L"Invalid", nullptr, -1, newSet(), 0, 0, 0.0f, getConfidenceField(env, rule->Confidence));
+		jRule = newRule(L"Invalid", nullptr, -1, JNIUtilities::newSet(env), 0, 0, 0.0f, getConfidenceField(env, rule->Confidence));
 		if (env->ExceptionCheck()) throw JNIException(env);
 	} else {
 		std::vector<jobject> children;
@@ -157,7 +158,7 @@ jobject SpeechRecognizedEvent::newRule(
 	jobject choiceIndices,  ULONG fromElement, ULONG toElement,
 	float probability, jobject confidence) const
 {
-	return env->NewObject(
+	jobject jrule = env->NewObject(
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/Set;IIFLteaselib/core/speechrecognition/Confidence;)V"),
 		static_cast<jstring>(JNIString(env, name)),
@@ -168,6 +169,8 @@ jobject SpeechRecognizedEvent::newRule(
 		toElement,
 		probability,
 		confidence);
+	if (env->ExceptionCheck()) throw JNIException(env);
+	return jrule;
 }
 
 jobject SpeechRecognizedEvent::newRule(
@@ -175,7 +178,7 @@ jobject SpeechRecognizedEvent::newRule(
 	const std::vector<jobject>& children,
 	ULONG fromElement, ULONG toElement, float probability, jobject confidence) const 
 {
-	return env->NewObject(
+	jobject jrule = env->NewObject(
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/List;IIFLteaselib/core/speechrecognition/Confidence;)V"),
 		static_cast<jstring>(JNIString(env, name)),
@@ -186,10 +189,12 @@ jobject SpeechRecognizedEvent::newRule(
 		toElement,
 		probability,
 		confidence);
+	if (env->ExceptionCheck()) throw JNIException(env);
+	return jrule;
 }
 
 jobject SpeechRecognizedEvent::choiceIndices(const RuleName& ruleName) const {
-	jobject choiceIndices = newSet();
+	jobject choiceIndices = JNIUtilities::newSet(env);
 
 	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");
 	jmethodID add = JNIClass::getMethodID(env, hashSetClass, "add", "(Ljava/lang/Object;)Z");
@@ -202,17 +207,20 @@ jobject SpeechRecognizedEvent::choiceIndices(const RuleName& ruleName) const {
 		if (env->ExceptionCheck()) throw JNIException(env);
 		env->CallBooleanMethod(choiceIndices, add, jchoiceIndex);
 		if (env->ExceptionCheck()) throw JNIException(env);
-		});
+	});
 
 	return choiceIndices;
 }
 
-jobject SpeechRecognizedEvent::newSet() const {
-	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");
-	jobject hashSet = env->NewObject(hashSetClass, JNIClass::getMethodID(env, hashSetClass, "<init>", "()V"));
+jobject SpeechRecognizedEvent::repair(jobject jresult)
+{
+	jclass thisClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/sapi/TeaseLibSR");
+	jmethodID repair = JNIClass::getMethodID(env, thisClass, "repair", "(Ljava/util/List;)Ljava/util/List;");
+	jobject jrepaired = env->CallObjectMethod(jteaselibsr, repair, jresult);
 	if (env->ExceptionCheck()) throw JNIException(env);
-	return hashSet;
+	return  jrepaired;
 }
+
 
 SemanticResults::SemanticResults(const SPPHRASEPROPERTY * pProperty) 
 : names(semanticResults(pProperty)) {}

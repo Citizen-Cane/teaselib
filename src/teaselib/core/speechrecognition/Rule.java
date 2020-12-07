@@ -175,17 +175,19 @@ public class Rule {
                 .intersection();
     }
 
-    private List<Integer> repairableNullRules(int slices) {
+    private List<Integer> repairableNullRules(SlicedPhrases<PhraseString> slicedPhrases) {
+        int slices = slicedPhrases.size();
         List<Integer> repairableNullRules = new ArrayList<>();
-        for (int i = 0; i < children.size(); i++) {
-            Rule child = children.get(i);
-            if (child.text == null) {
-                if (!isSpuriousTrailingNullRule(child, slices)) {
-                    repairableNullRules.add(i);
-                }
+        int i = 0;
+        for (Rule child : children) {
+            if (child.text == null && //
+                    !isSpuriousTrailingNullRule(child, slices)) {
+                repairableNullRules.add(i);
             }
+            i++;
         }
         return repairableNullRules;
+
     }
 
     private static boolean isSpuriousTrailingNullRule(Rule rule, int slices) {
@@ -195,10 +197,14 @@ public class Rule {
     public List<Rule> repair(SlicedPhrases<PhraseString> slicedPhrases) {
         Set<Integer> intersection = intersectionWithoutNullRules();
         List<Rule> candidates = new ArrayList<>();
+        if (intersection.size() != 1)
+            return candidates;
+
         boolean lastRuleRepaired = false;
-        for (Integer index : repairableNullRules(slicedPhrases.size())) {
+        for (Integer index : repairableNullRules(slicedPhrases)) {
             for (Sequence<PhraseString> sequence : slicedPhrases.get(index)) {
                 PhraseString replacement = sequence.joined();
+
                 if (PhraseString.intersect(replacement.indices, intersection)) {
                     Rule repaired = repair(index, replacement);
                     List<Rule> repairedSuccessors = repaired.repair(slicedPhrases);

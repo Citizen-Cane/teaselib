@@ -8,16 +8,16 @@ import java.util.stream.Collectors;
 public class IndexMap<T> {
     private final List<T> values;
 
-    IndexMap() {
+    public IndexMap() {
         values = new ArrayList<>();
     }
 
-    int add(T value) {
+    public int add(T value) {
         values.add(value);
         return values.size() - 1;
     }
 
-    T get(int index) {
+    public T get(int index) {
         return values.get(index);
     }
 

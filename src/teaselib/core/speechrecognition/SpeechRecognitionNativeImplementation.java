@@ -19,7 +19,7 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
         process(events);
     }
 
-    protected static String languageCode(Locale locale) {
+    public static String languageCode(Locale locale) {
         return locale.toString().replace("_", "-");
     }
 

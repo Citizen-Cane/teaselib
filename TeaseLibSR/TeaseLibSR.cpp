@@ -37,7 +37,7 @@ extern "C"
 
             JNIString languageCode(env, jlanguageCode);
             SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, languageCode);
-            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            if (speechRecognizer == nullptr) throw COMException(E_OUTOFMEMORY);
             return reinterpret_cast<jlong>(speechRecognizer);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
@@ -58,13 +58,11 @@ extern "C"
     (JNIEnv *env, jobject jthis, jobject jevents, jobject jSignalInitialized) {
         try {
             Objects::requireNonNull(L"signalInitialized", jSignalInitialized);
-
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
 			const std::function<void(void)> signalInitialized = [env, jSignalInitialized]() {
 				env->CallVoidMethod(jSignalInitialized, env->GetMethodID(env->GetObjectClass(jSignalInitialized), "countDown", "()V"));
 			};
-			speechRecognizer->startEventHandler(env,  jevents, signalInitialized);
+			speechRecognizer->startEventHandler(env,  jthis, jevents, signalInitialized);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
         } catch (JNIException& e) {
@@ -80,8 +78,7 @@ extern "C"
     JNIEXPORT jstring JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_languageCode
     (JNIEnv *env, jobject jthis) {
         try {
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
             return JNIString(env, speechRecognizer->locale);
         }
         catch (NativeException& e) {
@@ -103,9 +100,7 @@ extern "C"
     (JNIEnv *env, jobject jthis, jobject jchoices) {
 		try {
             Objects::requireNonNull(L"choices", jchoices);
-
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
             jclass listClass = JNIClass::getClass(env, "Ljava/util/List;");
             jobject iterator = env->CallObjectMethod(jchoices, env->GetMethodID(listClass, "iterator", "()Ljava/util/Iterator;"));
             jclass iteratorClass = env->FindClass("Ljava/util/Iterator;");
@@ -138,14 +133,7 @@ extern "C"
 	(JNIEnv* env , jobject jthis , jbyteArray jsrgs) {
 	try {
             Objects::requireNonNull(L"srgs", jsrgs);
-
-            if (jsrgs == nullptr) {
-                throw NativeException(E_POINTER, L"srgs");
-            }
-
-			SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-			NativeObject::checkInitializedOrThrow(speechRecognizer);
-
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
 			jboolean isCopy;
 			const BYTE* srgs = reinterpret_cast<const BYTE*>(env->GetByteArrayElements(jsrgs, &isCopy));
 			CComPtr<IStream> stream = SHCreateMemStream(reinterpret_cast<const BYTE*>(srgs), env->GetArrayLength(jsrgs));
@@ -170,8 +158,7 @@ extern "C"
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setMaxAlternates
     (JNIEnv *env, jobject jthis, jint maxAlternates) {
         try {
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->setMaxAlternates(maxAlternates);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
@@ -188,8 +175,7 @@ extern "C"
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_startRecognition
     (JNIEnv *env, jobject jthis) {
         try {
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->startRecognition();
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
@@ -207,11 +193,8 @@ extern "C"
     (JNIEnv *env, jobject jthis, jstring emulatedRecognitionResult) {
 		try {
             Objects::requireNonNull(L"emulatedRecognitionResult", emulatedRecognitionResult);
-            
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-			NativeObject::checkInitializedOrThrow(speechRecognizer);
-
-			speechRecognizer->emulateRecognition(JNIString(env,emulatedRecognitionResult));
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
+            speechRecognizer->emulateRecognition(JNIString(env,emulatedRecognitionResult));
 		}
 		catch (NativeException& e) {
 			JNIException::rethrow(env, e);
@@ -228,8 +211,7 @@ extern "C"
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_stopRecognition
     (JNIEnv *env, jobject jthis) {
         try {
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->stopRecognition();
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
@@ -247,8 +229,7 @@ extern "C"
     (JNIEnv* env, jobject jthis)
     {
         try {
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-            NativeObject::checkInitializedOrThrow(speechRecognizer);
+            SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->stopEventLoop();
         }
         catch (NativeException& e) {
@@ -266,8 +247,7 @@ extern "C"
     */
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_dispose
     (JNIEnv *env, jobject jthis) {
-        SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-        NativeObject::checkInitializedOrThrow(speechRecognizer);
+        SpeechRecognizer* speechRecognizer = NativeObject::get<SpeechRecognizer>(env, jthis);
         delete speechRecognizer;
     }
 }

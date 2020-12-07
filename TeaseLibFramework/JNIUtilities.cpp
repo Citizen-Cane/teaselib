@@ -71,6 +71,14 @@ jobject JNIUtilities::asList(JNIEnv* env, const std::vector<jobject>& elements)
 	return list;
 }
 
+
+jobject JNIUtilities::newSet(JNIEnv* env) {
+	jclass hashSetClass = JNIClass::getClass(env, "java/util/HashSet");
+	jobject hashSet = env->NewObject(hashSetClass, JNIClass::getMethodID(env, hashSetClass, "<init>", "()V"));
+	if (env->ExceptionCheck()) throw JNIException(env);
+	return hashSet;
+}
+
 jobject JNIUtilities::asSet(JNIEnv* env, const std::set<NativeObject*>& elements)
 {
 	jclass setClass = JNIClass::getClass(env, "java/util/HashSet");

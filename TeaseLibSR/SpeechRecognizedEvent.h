@@ -35,7 +35,7 @@ private:
 
 class SpeechRecognizedEvent : public Event {
 public:
-	SpeechRecognizedEvent(JNIEnv *env,  jobject jevent, const char* name);
+	SpeechRecognizedEvent(JNIEnv *env,  jobject jevent, const char* name, jobject jteaselib_sr);
 	
 	void fire(ISpRecoResult* pResult);
 private:
@@ -52,5 +52,7 @@ private:
 		const std::vector<jobject>& children,
 		ULONG fromElement, ULONG toElement, float probability, jobject confidence) const;
 	jobject choiceIndices(const RuleName& ruleName) const;
-	jobject newSet() const;
+
+	jobject repair(jobject jrules);
+	jobject const jteaselibsr;
 };

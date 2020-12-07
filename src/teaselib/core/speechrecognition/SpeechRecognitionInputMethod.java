@@ -25,7 +25,6 @@ import teaselib.core.speechrecognition.events.AudioLevelUpdatedEventArgs;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.sapi.TeaseLibSRGS;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
@@ -134,22 +133,67 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private void handleSpeechDetected(SpeechRecognizedEventArgs eventArgs) {
+        // DONE
+        // For single rules or long rules, confidence decreases with length
+        // -> forward earlier accepted hypothesis - this is already handled by the existing code
+        // + for single confirmations, confidence is normal anyway
+        // - longer rules within multiple choices may cause recognition problems
+        // -> remember earlier hypothesis
+
+        // DONE
+        // in the logs aborting recognition on audio problems looks suspicious in the log - multiple recognitions?
+        // -> only check for audio problems when rejecting speech - should be okay if recognized
+        // + make it as optional as possible
+
+        // RESOLVED by confidence function
+        // first child rule may have very low confidence value, second very high, how to measure minimal length
+        // -> number of distinct rules, words, or vowels -> words or vowels
+
+        // RESOLVED by confidence function
+        // - confidence decreases at the end of the hypothesis
+        // (distinct [1] = 0.79, common [0,1] = 0.76, distinct NUL_RULE [0]= 0.58;
+        // -> cut off hypothesis when probability falls below accepted threshold,
+        // or when average falls below threshold
+        //
+        // unrealized NULL rules seem to have confidence == 1.0 -> all NULL rules have C=1.0
+
+        // DONE
+        // map phrase to choice indices before evaluating best phrase
+        // -> better match on large phrase sets, supports hypothesis as well
+
+        // TODO: map rule indices back to choice indices when building srgs nodes
+        // - much simpler then processing them here
+        // - allows for optimizing rules, especially optional ones
+
+        // TODO remember multiple hypotheses
+        // + keep all hypothesis results
+        // + keep those who continue in the next event
+        // + copy over confidence from previous hypothesis
+
         active.updateAndGet(prompt -> {
             if (prompt == null) {
                 return null;
             } else {
+                SpeechRecognition recognizer = getRecognizer(prompt);
                 try {
-                    SpeechRecognition recognizer = getRecognizer(prompt);
                     if (audioSignalProblems.exceedLimits() && recognizer.audioSync.speechRecognitionInProgress()) {
                         logTooManyAudioSignalProblems();
                         recognizer.restartRecognition();
-                    } else if (recognizer.implementation instanceof TeaseLibSRGS) {
+                    } else {
                         if (prompt.acceptedResult == Result.Accept.Distinct) {
                             PreparedChoices preparedChoices = recognizer.preparedChoices();
-                            hypothesis = preparedChoices.improve(hypothesis, eventArgs.result);
-                            events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
+                            // TODO accept indistinct results reject them in recognition completed/rejected
+                            // -> better feedback for hypothesis building
+                            Optional<Hypothesis> best = bestSingleResult(eventArgs.result, prompt.choices,
+                                    preparedChoices, hypothesis);
+                            if (best.isPresent()) {
+                                hypothesis = best.get();
+                                events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
+                            } else {
+                                hypothesis = null;
+                            }
                         } else if (prompt.acceptedResult == Result.Accept.Multiple) {
-                            // Ignore
+                            hypothesis = null;
                         } else {
                             throw new UnsupportedOperationException(prompt.acceptedResult.toString());
                         }
@@ -158,15 +202,51 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 } catch (Exception e) {
                     prompt.setException(e);
                     clearDetectedSpeech();
-                    getRecognizer(prompt.choices.locale).endRecognition();
+                    recognizer.endRecognition();
                     return null;
                 }
             }
         });
     }
 
-    private static void validate(List<Rule> candidates) {
-        candidates.stream().forEach(Rule::isValid);
+    private Optional<Hypothesis> bestSingleResult(List<Rule> rules, Choices choices, PreparedChoices preparedChoices,
+            Hypothesis currentHypothesis) {
+        Optional<Rule> result = SpeechRecognitionInputMethod.bestSingleResult(rules.stream(), preparedChoices.mapper());
+        if (result.isPresent()) {
+            Rule rule = result.get();
+            if (rule.indices.equals(Rule.NoIndices)) {
+                logger.info("Ignoring hypothesis {} since it contains results from multiple phrases", rule);
+                return Optional.empty();
+            } else {
+                double expectedConfidence = SpeechRecognitionInputMethod.expectedHypothesisConfidence(choices, rule);
+                // Weighted probability is too low in tests for short hypotheses even with optimal probability of 1.0
+                // This is intended because probability/confidence values of short short hypotheses cannot be trusted
+                // -> confidence moves towards ground truth when more speech is detected
+                float weightedProbability = preparedChoices.weightedProbability(rule);
+                if (weightedProbability >= expectedConfidence) {
+                    if (currentHypothesis == null) {
+                        logger.info("Considering as new hypothesis");
+                        return Optional.of(new Hypothesis(rule, weightedProbability));
+                    } else if (currentHypothesis.indices.containsAll(rule.indices)) {
+                        float hypothesisProbability = preparedChoices.weightedProbability(currentHypothesis);
+                        float h = currentHypothesis.children.size();
+                        float r = rule.children.size();
+                        float average = (hypothesisProbability * h + rule.probability * r) / (h + r);
+                        logger.info("Considering as hypothesis");
+                        return Optional.of(new Hypothesis(rule, Math.max(average, rule.probability)));
+                    } else {
+                        logger.info("Choice indices changed - reconsidering hypothesis");
+                        return Optional.of(new Hypothesis(rule));
+                    }
+                } else {
+                    logger.info("Weighted confidence {} < expected hypothesis confidence {}", //
+                            weightedProbability, expectedConfidence);
+                    return Optional.of(new Hypothesis(rule));
+                }
+            }
+        } else {
+            return Optional.empty();
+        }
     }
 
     public static float expectedHypothesisConfidence(Choices choices, Rule rule) {
@@ -194,10 +274,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                         reject(prompt, eventArgs);
                         return prompt;
                     } else {
-                        if (hypothesis != null && !hypothesis.indices.isEmpty()) {
+                        if (hypothesis != null) {
                             // rejectedResult may contain better result than hypothesis
-                            // TODO Are latest speech detection and recognitionRejected result the same?
-                            // TODO accept only if hypothesis and recognitionRejected result have the same indices
+                            // TODO accept if hypothesis and recognitionRejected result have the same indices
                             float expectedConfidence = expectedConfidence(prompt.choices, hypothesis, awarenessBonus);
                             if (hypothesis.probability >= expectedConfidence) {
                                 logger.info("Considering hypothesis");
@@ -287,6 +366,10 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             reject(prompt, eventArgs, "No matching choice");
             return prompt;
         }
+    }
+
+    private static void validate(List<Rule> candidates) {
+        candidates.stream().forEach(Rule::isValid);
     }
 
     private Prompt handle(Prompt prompt, BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor, Rule rule,

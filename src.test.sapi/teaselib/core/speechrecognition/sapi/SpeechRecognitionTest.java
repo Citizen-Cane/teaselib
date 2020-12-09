@@ -7,6 +7,7 @@ import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.withoutPunctation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,11 +120,11 @@ public class SpeechRecognitionTest {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice(sorry), new Choice(ready), new Choice(haveIt), new Choice(ready2), new Choice(ready3));
 
-        assertRecognized(choices, sorry, new Prompt.Result(0));
-        assertRecognized(choices, ready, new Prompt.Result(1));
-        assertRecognized(choices, haveIt, new Prompt.Result(2));
-        assertRecognized(choices, ready2, new Prompt.Result(3));
-        assertRecognized(choices, ready3, new Prompt.Result(4));
+        assertRecognized(choices, withoutPunctation(sorry), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation(ready), new Prompt.Result(1));
+        assertRecognized(choices, withoutPunctation(haveIt), new Prompt.Result(2));
+        assertRecognized(choices, withoutPunctation(ready2), new Prompt.Result(3));
+        assertRecognized(choices, withoutPunctation(ready3), new Prompt.Result(4));
     }
 
     @Test

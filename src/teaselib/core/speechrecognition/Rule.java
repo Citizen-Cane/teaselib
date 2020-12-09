@@ -57,7 +57,7 @@ public class Rule {
 
     public Rule(String name, List<String> children, int choice, float probability) {
         this(name, children.stream().collect(Collectors.joining(" ")), 0, Collections.singleton(choice),
-                childRules(children, 0, probability), 0, children.size() - 1, probability,
+                childRules(children, choice, probability), 0, children.size(), probability,
                 Confidence.valueOf(probability));
     }
 
@@ -65,7 +65,7 @@ public class Rule {
         List<Rule> rules = new ArrayList<>(children.size());
         for (int i = 0; i < children.size(); ++i) {
             rules.add(new Rule(Rule.CHOICE_NODE_PREFIX + i + "_" + choice, children.get(i), i, Collections.emptyList(),
-                    i, i, probability, Confidence.valueOf(probability)));
+                    i, i + 1, probability, Confidence.valueOf(probability)));
         }
         return rules;
     }

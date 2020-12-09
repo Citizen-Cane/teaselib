@@ -21,12 +21,17 @@ import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.PhraseStringSequences;
 import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
+import teaselib.core.util.ReflectionUtils;
 
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
 
+    private static final Path project = ReflectionUtils.projectPath(DeepSpeechRecognizer.class);
+    static final Path model = project.resolve(Path.of( //
+            "..", "..", "TeaseLibAIfx", "TeaseLibAIml", "models", "tflite", "deepspeech")).normalize();
+
     private PreparedChoicesImplementation current = null;
 
-    public DeepSpeechRecognizer(Path model, Locale locale, SpeechRecognitionEvents events) {
+    public DeepSpeechRecognizer(Locale locale, SpeechRecognitionEvents events) {
         super(init(model.toString(), languageCode(locale)), events);
     }
 
@@ -70,9 +75,11 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             } else if (status == Status.Running) {
                 events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
             } else if (status == Status.Cancelled) {
-                Thread.currentThread().interrupt();
+                return;
             } else if (status == Status.Done) {
-                events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rules(results())));
+                List<Result> results = results();
+                List<Rule> rules = rules(results);
+                events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rules));
             } else if (status != Status.Idle) {
                 throw new UnsupportedOperationException(status.name());
             }
@@ -87,7 +94,6 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     private final class PreparedChoicesImplementation implements PreparedChoices {
 
         final Choices choices;
-
         final SlicedPhrases<PhraseString> slices;
         final IntUnaryOperator mapper;
 

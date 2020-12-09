@@ -331,7 +331,7 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 	try {
 		while (samples >= DeepSpeechAudioStream::vad_frame_size) {
 			unsigned int consumed;
-			while (0 == (consumed = recognizer.feed(speech, DeepSpeechAudioStream::vad_frame_size))) {
+			while (0 == (consumed = recognizer.feed(speech, std::min<unsigned int>(samples, DeepSpeechAudioStream::vad_frame_size)))) {
 				if (recognizer == DeepSpeechAudioStream::Status::Done) return;
 				this_thread::sleep_for(100ms);
 			}
@@ -341,7 +341,6 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 		return;
 	} catch (std::exception& e) {
 		recognizer.cancel();
-		cerr << e.what();
 		throw e;
 	}
 }

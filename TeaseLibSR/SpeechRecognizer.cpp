@@ -34,7 +34,6 @@ SpeechRecognizer::SpeechRecognizer(JNIEnv *env, const wchar_t* locale)
 	, eventHandler(nullptr)
 {
     assert(env);
-    assert(jthis);
     assert(locale);
     if (locale == NULL) throw NativeException(E_POINTER, L"Locale");
 

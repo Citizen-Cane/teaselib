@@ -6,6 +6,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,8 +24,8 @@ import teaselib.core.configuration.DebugSetup;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.PhraseString;
@@ -64,6 +66,11 @@ public class SpeechRecognitionTestUtils {
         return emulateSpeechRecognition(choices, phrase, expected);
     }
 
+    public static List<Rule> assertRecognized(SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase,
+            Prompt.Result expected) throws InterruptedException {
+        return emulateSpeechRecognition(inputMethod, choices, phrase, expected);
+    }
+
     public static List<Rule> assertRecognizedAsHypothesis(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
         try (SpeechRecognizer recognizer = getRecognizer();
@@ -96,7 +103,7 @@ public class SpeechRecognitionTestUtils {
     private static List<Rule> emulateSpeechRecognition(SpeechRecognitionInputMethod inputMethod, Choices choices,
             String phrase, Prompt.Result expected) throws InterruptedException {
         Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
-        return awaitResult(prompt, inputMethod, withoutPunctation(phrase), expected);
+        return awaitResult(prompt, inputMethod, phrase, expected);
     }
 
     public static void assertRecognized(SpeechRecognitionInputMethod inputMethod, Choices choices)
@@ -119,7 +126,9 @@ public class SpeechRecognitionTestUtils {
 
     public static List<Rule> awaitResult(Prompt prompt, SpeechRecognitionInputMethod inputMethod, String phrase,
             Prompt.Result expectedRules) throws InterruptedException {
-        assertEquals("Phrase may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
+        if (!Files.exists(Path.of(phrase))) {
+            assertEquals("Phrase may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
+        }
 
         List<Rule> results = new ArrayList<>();
 

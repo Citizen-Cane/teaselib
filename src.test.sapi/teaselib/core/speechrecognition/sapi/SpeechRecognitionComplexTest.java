@@ -220,7 +220,7 @@ public class SpeechRecognitionComplexTest {
         assertRejected(choices, "May I cum");
         assertRejected(choices, "May I wank");
 
-        assertRejected(choices, "Mistress, may I");
+        assertRejected(choices, withoutPunctation("Mistress, may I"));
     }
 
     private static Choices phrasesWithMultipleCommonEndGroups() {
@@ -269,10 +269,10 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1));
 
-        assertRejected(choices, "Yes Miss, of course, Miss");
-        assertRejected(choices, "Yes Miss, of course not, Miss");
+        assertRejected(choices, withoutPunctation("Yes Miss, of course, Miss"));
+        assertRejected(choices, withoutPunctation("Yes Miss, of course not, Miss"));
         // Rejected since the phrase occurs multiple times
-        assertRejected(choices, "Yes Miss, of course");
+        assertRejected(choices, withoutPunctation("Yes Miss, of course"));
     }
 
     private static Choices oneOfCommonAndChoicesMixed() {

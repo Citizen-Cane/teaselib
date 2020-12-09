@@ -1,10 +1,7 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -126,7 +123,8 @@ public class SpeechRecognitionTestUtils {
 
     public static List<Rule> awaitResult(Prompt prompt, SpeechRecognitionInputMethod inputMethod, String phrase,
             Prompt.Result expectedRules) throws InterruptedException {
-        if (!Files.exists(Path.of(phrase))) {
+        boolean isAudioFile = Files.exists(Path.of(phrase));
+        if (!isAudioFile) {
             assertEquals("Phrase may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
         }
 
@@ -175,7 +173,12 @@ public class SpeechRecognitionTestUtils {
             }
 
             if (expectedRules != null) {
-                assertTrue("Expected recognition:: \"" + phrase + "\"", dismissed);
+                if (isAudioFile) {
+                    String expected = prompt.choices.get(expectedRules.elements.get(0)).phrases.get(0);
+                    assertTrue("Expected recognition:: \"" + expected + "\"", dismissed);
+                } else {
+                    assertTrue("Expected recognition:: \"" + phrase + "\"", dismissed);
+                }
 
                 if (prompt.acceptedResult == Prompt.Result.Accept.Multiple) {
                     assertEquals(expectedRules, result);

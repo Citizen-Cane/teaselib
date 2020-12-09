@@ -1,8 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
-import static teaselib.core.ai.deepspeech.DeepSpeechTestData.AUDIO_2830_3980_0043_RAW;
-import static teaselib.core.ai.deepspeech.DeepSpeechTestData.AUDIO_4507_16021_0012_RAW;
-import static teaselib.core.ai.deepspeech.DeepSpeechTestData.AUDIO_8455_210777_0068_RAW;
+import static teaselib.core.ai.deepspeech.DeepSpeechTestData.*;
 
 import java.nio.file.Path;
 import java.util.Locale;
@@ -70,17 +68,17 @@ public class DeepSpeechInputMethodTest {
     }
 
     public void testExpected(DeepSpeechTestData testData) throws InterruptedException {
-        test(testData.audio, testData.actual, testData.actual);
+        test(testData.audio, testData.expected, testData.actual);
     }
 
     public void testGroundTruth(DeepSpeechTestData testData) throws InterruptedException {
-        test(testData.audio, testData.expected, testData.actual);
+        test(testData.audio, testData.expected, testData.expected);
     }
 
     public void test(Path audio, String expected, String actual) throws InterruptedException {
         SpeechRecognitionTestUtils.assertRecognized( //
                 inputMethod, //
-                new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(actual, expected)), //
+                new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(expected, actual)), //
                 audio.toString(), //
                 new Prompt.Result(0));
     }

@@ -1,14 +1,16 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.*;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
@@ -30,9 +32,11 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             "..", "..", "TeaseLibAIfx", "TeaseLibAIml", "models", "tflite", "deepspeech")).normalize();
 
     private PreparedChoicesImplementation current = null;
+    private final NamedExecutorService spechEmulation = NamedExecutorService
+            .singleThreadedQueue("DeepSpeech Emulation");
 
-    public DeepSpeechRecognizer(Locale locale, SpeechRecognitionEvents events) {
-        super(init(model.toString(), languageCode(locale)), events);
+    public DeepSpeechRecognizer(Locale locale) {
+        super(init(model.toString(), languageCode(locale)));
     }
 
     protected static native long init(String model, String langugeCode);
@@ -86,7 +90,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         }
     }
 
-    private List<Rule> rules(List<Result> results) {
+    private static List<Rule> rules(List<Result> results) {
         return results.stream().map(r -> new Rule(Rule.MAIN_RULE_NAME, r.words, 0, r.confidence))
                 .collect(toUnmodifiableList());
     }
@@ -146,9 +150,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public void emulateRecognition(String speech) {
-        Thread thread = new Thread(() -> emulate(speech), "DeepSpeech input emulation");
-        thread.setDaemon(true);
-        thread.start();
+        spechEmulation.execute(() -> emulate(speech));
     }
 
     public native void emulate(String speech);
@@ -161,5 +163,18 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public native void dispose();
+
+    @Override
+    public void close() {
+        spechEmulation.shutdown();
+        while (!spechEmulation.isTerminated()) {
+            try {
+                spechEmulation.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        super.close();
+    }
 
 }

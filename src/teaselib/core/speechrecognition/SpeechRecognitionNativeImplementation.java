@@ -8,54 +8,62 @@ import teaselib.core.Closeable;
 import teaselib.core.jni.NativeObject;
 import teaselib.core.util.ExceptionUtil;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public abstract class SpeechRecognitionNativeImplementation extends NativeObject
         implements Closeable, SpeechRecognitionProvider {
 
-    private Thread eventThread = null;
-    private Throwable eventThreadException = null;
+    private final class EventLoopThread extends Thread {
 
-    public SpeechRecognitionNativeImplementation(long nativeObject, SpeechRecognitionEvents events) {
+        private EventLoopThread(Runnable target) {
+            super(target);
+        }
+
+        @Override
+        public void interrupt() {
+            stopEventLoop();
+        }
+
+    }
+
+    private EventLoopThread eventLoopThread = null;
+    private Throwable eventLoopException = null;
+
+    public SpeechRecognitionNativeImplementation(long nativeObject) {
         super(nativeObject);
-        process(events);
     }
 
     public static String languageCode(Locale locale) {
         return locale.toString().replace("_", "-");
     }
 
-    public final void process(SpeechRecognitionEvents events) {
+    public final void startEventLoop(SpeechRecognitionEvents events) {
         CountDownLatch awaitInitialized = new CountDownLatch(1);
         Runnable speechRecognitionService = () -> {
             try {
                 process(events, awaitInitialized);
             } catch (Exception e) {
-                eventThreadException = e;
+                eventLoopException = e;
             } catch (Throwable t) {
-                eventThreadException = t;
+                eventLoopException = t;
             } finally {
                 awaitInitialized.countDown();
             }
         };
 
-        eventThread = new Thread(speechRecognitionService) {
-
-            @Override
-            public void interrupt() {
-                super.interrupt();
-                stopEventLoop();
-            }
-
-        };
-        eventThread.setName("Speech Recognition event thread");
-        eventThread.start();
+        eventLoopThread = new EventLoopThread(speechRecognitionService);
+        eventLoopThread.setName("Speech Recognition event thread");
+        eventLoopThread.start();
         try {
             awaitInitialized.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
-        if (eventThreadException != null) {
-            throw ExceptionUtil.asRuntimeException(eventThreadException);
+        if (eventLoopException != null) {
+            throw ExceptionUtil.asRuntimeException(eventLoopException);
         }
     }
 
@@ -69,9 +77,9 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
 
     public Optional<Throwable> getException() {
         try {
-            return Optional.ofNullable(eventThreadException);
+            return Optional.ofNullable(eventLoopException);
         } finally {
-            eventThreadException = null;
+            eventLoopException = null;
         }
     }
 
@@ -88,9 +96,10 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
 
     @Override
     public void close() {
-        eventThread.interrupt();
+        eventLoopThread.interrupt();
         try {
-            eventThread.join();
+            eventLoopThread.join();
+            eventLoopThread = null;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

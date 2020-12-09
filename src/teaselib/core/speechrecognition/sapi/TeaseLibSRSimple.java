@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,7 +11,6 @@ import java.util.function.IntUnaryOperator;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionProvider;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
@@ -22,8 +20,8 @@ public class TeaseLibSRSimple extends TeaseLibSR {
 
     List<String> phrases = null;
 
-    public TeaseLibSRSimple(Locale locale, SpeechRecognitionEvents events) {
-        super(locale, events);
+    public TeaseLibSRSimple(Locale locale) {
+        super(locale);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.emptyList;
-import static teaselib.core.speechrecognition.Confidence.High;
+import static java.util.Collections.*;
+import static teaselib.core.speechrecognition.Confidence.*;
 
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -89,10 +89,9 @@ public class SpeechRecognition {
             implementation = delegateThread.call(() -> {
                 try {
                     if (Environment.SYSTEM == Environment.Windows) {
-                        SpeechRecognitionNativeImplementation instance = srClass
-                                .getConstructor(Locale.class, SpeechRecognitionEvents.class)
-                                .newInstance(locale, events);
-                        instance.process(events);
+                        SpeechRecognitionNativeImplementation instance = srClass.getConstructor(Locale.class)
+                                .newInstance(locale);
+                        instance.startEventLoop(events);
                         return instance;
                     } else {
                         return Unsupported.Instance;

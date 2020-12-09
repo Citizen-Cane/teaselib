@@ -1,9 +1,9 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.awaitResult;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.ResourceLoader;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognizer;
@@ -71,8 +70,8 @@ public class SpeechRecognitionHandcraftedXmlTest {
 
     public static class TestableTeaseLibSRGS extends TeaseLibSRGS {
 
-        public TestableTeaseLibSRGS(Locale locale, SpeechRecognitionEvents events) {
-            super(locale, events);
+        public TestableTeaseLibSRGS(Locale locale) {
+            super(locale);
         }
 
         @Override

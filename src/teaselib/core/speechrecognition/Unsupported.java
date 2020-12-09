@@ -12,12 +12,12 @@ import teaselib.core.ui.Choices;
  */
 class Unsupported extends SpeechRecognitionNativeImplementation {
 
-    public static final Unsupported Instance = new Unsupported(Locale.getDefault(), new SpeechRecognitionEvents());
+    public static final Unsupported Instance = new Unsupported(Locale.getDefault());
 
     private final Locale locale;
 
-    public Unsupported(Locale locale, SpeechRecognitionEvents events) {
-        super(0, events);
+    public Unsupported(Locale locale) {
+        super(0);
         this.locale = locale;
     }
 

@@ -15,8 +15,8 @@ import teaselib.core.speechrecognition.UnsupportedLanguageException;
 abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSR.class);
 
-    public TeaseLibSR(Locale locale, SpeechRecognitionEvents events) {
-        super(init(locale), events);
+    public TeaseLibSR(Locale locale) {
+        super(init(locale));
     }
 
     private static long init(Locale locale) {

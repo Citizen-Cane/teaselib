@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionProvider;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
@@ -70,8 +69,8 @@ public class TeaseLibSRGS extends TeaseLibSR {
         }
     }
 
-    public TeaseLibSRGS(Locale locale, SpeechRecognitionEvents events) {
-        super(locale, events);
+    public TeaseLibSRGS(Locale locale) {
+        super(locale);
     }
 
     @Override

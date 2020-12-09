@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,8 +63,8 @@ public class Rule {
     private static List<Rule> childRules(List<String> children, int choice, float probability) {
         List<Rule> rules = new ArrayList<>(children.size());
         for (int i = 0; i < children.size(); ++i) {
-            rules.add(new Rule(Rule.CHOICE_NODE_PREFIX + i + "_" + choice, children.get(i), i, Collections.emptyList(),
-                    i, i + 1, probability, Confidence.valueOf(probability)));
+            rules.add(new Rule(Rule.CHOICE_NODE_PREFIX + i + "_" + choice, children.get(i), i,
+                    Collections.singleton(choice), i, i + 1, probability, Confidence.valueOf(probability)));
         }
         return rules;
     }

@@ -40,7 +40,7 @@ public:
 	void fire(ISpRecoResult* pResult);
 private:
 	const jclass confidenceClass;
-	jobject  getConfidenceField(JNIEnv *env, signed char confidence) const;
+	jobject getConfidenceField(JNIEnv *env, signed char confidence) const;
 	const jclass ruleClass;
 	jobject getRule(ISpRecoResult* pResult, const SPPHRASERULE* rule, const SemanticResults& semanticResults) const;
 	jobject newRule(

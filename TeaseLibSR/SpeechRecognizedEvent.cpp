@@ -26,15 +26,25 @@ SpeechRecognizedEvent::SpeechRecognizedEvent(JNIEnv *env,  jobject jevent, const
 {}
 
 const char* getConfidenceFieldName(signed char confidence) {
-	if (confidence == SP_LOW_CONFIDENCE) {
-		return "Low";
-	} else if (confidence == SP_NORMAL_CONFIDENCE) {
-		return "Normal";
-	} else if (confidence == SP_HIGH_CONFIDENCE) {
-		return "High";
+	switch (confidence) {
+		case SP_HIGH_CONFIDENCE: return "High";
+		case SP_NORMAL_CONFIDENCE: return "Normal";
+		case SP_LOW_CONFIDENCE:	return "Low";
+		default: return "Low";
+	}
+}
+
+float getProbability(const SPPHRASERULE* rule)
+{
+	if (rule->SREngineConfidence < 0.0f || rule->SREngineConfidence > 1.0f) {
+		switch (rule->Confidence) {
+			case SP_HIGH_CONFIDENCE: return 0.75f;
+			case SP_NORMAL_CONFIDENCE: return 0.50f;
+			case SP_LOW_CONFIDENCE:	return 0.25f;
+			default: return  0.0f;
+		}
 	} else {
-		assert(false);
-		return  "Low";
+		return rule->SREngineConfidence;
 	}
 }
 
@@ -131,7 +141,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 				choiceIndices(ruleName),
 				rule->ulFirstElement,
 				rule->ulFirstElement + rule->ulCountOfElements,
-				rule->SREngineConfidence,
+				getProbability(rule),
 				getConfidenceField(env, rule->Confidence));
 		} else {
 			jRule = newRule(
@@ -141,7 +151,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 				children,
 				rule->ulFirstElement,
 				rule->ulFirstElement + rule->ulCountOfElements,
-				rule->SREngineConfidence,
+				getProbability(rule),
 				getConfidenceField(env, rule->Confidence));
 		}
 

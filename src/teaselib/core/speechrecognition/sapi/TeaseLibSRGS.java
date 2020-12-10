@@ -99,7 +99,7 @@ public class TeaseLibSRGS extends TeaseLibSR {
         return repair(result, preparedChoices.slicedPhrases);
     }
 
-    private List<Rule> repair(List<Rule> result, SlicedPhrases<PhraseString> slicedPhrases) {
+    private static List<Rule> repair(List<Rule> result, SlicedPhrases<PhraseString> slicedPhrases) {
 
         // Caveats:
 
@@ -124,7 +124,8 @@ public class TeaseLibSRGS extends TeaseLibSR {
 
         List<Rule> rules = new ArrayList<>(result.size());
         for (Rule rule : result) {
-            if (!rule.text.isBlank()) {
+            String text = rule.text;
+            if (text != null && !text.isBlank()) {
                 if (rule.hasTrailingNullRule()) {
                     rule = rule.withoutIgnoreableTrailingNullRules();
                 }

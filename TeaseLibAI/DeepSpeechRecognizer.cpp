@@ -237,10 +237,11 @@ DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languag
 	: recognizer(path, languageCode)
 	, audio(aifx::AudioCapture::DeviceInfo::defaultDevice(), recognizer.sample_rate(), aifx::DeepSpeechAudioStream::feed_audio_samples / 2)
 	, input([this](const short* audio, unsigned int samples) {
-		const unsigned int consumed = recognizer.feed(audio, samples);
+		DeepSpeechAudioStream::FeedState feed_stste;
+		const unsigned int consumed = recognizer.feed(audio, samples, feed_stste);
 		if (consumed < samples) {
-			if (recognizer == DeepSpeechAudioStream::FeedState::FinishDecodeStream) {
-				// ok
+			if (feed_stste == DeepSpeechAudioStream::FeedState::FinishDecodeStream) {
+				// ok - waiting to finish decode
 			} else {
 				cerr << endl << "DeepSpeechAudioStream: buffer size insufficient - " << samples - consumed << " samples dropped";
 			}
@@ -277,12 +278,10 @@ static auto const isSpace = [](char c){ return c == ' '; };
 template <typename OutputIterator> void split(string const& s, OutputIterator out)
 {
     auto index = begin(s);
-    while (index != end(s))
-    {
+    while (index != end(s)) {
         auto const start_pos = find_if_not(index, end(s), isSpace);
         auto const end_pos = find_if(start_pos, end(s), isSpace);
-        if (start_pos != end_pos)
-        {
+        if (start_pos != end_pos) {
             *out = string_view(&*start_pos, distance(start_pos, end_pos));
             ++out;
         }
@@ -330,10 +329,14 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 	stop();
 	try {
 		while (samples >= DeepSpeechAudioStream::vad_frame_size) {
+			DeepSpeechAudioStream::FeedState feed_stste;
 			unsigned int consumed;
-			while (0 == (consumed = recognizer.feed(speech, std::min<unsigned int>(samples, DeepSpeechAudioStream::vad_frame_size)))) {
-				if (recognizer == DeepSpeechAudioStream::Status::Done) return;
-				this_thread::sleep_for(100ms);
+			while (0 == (consumed = recognizer.feed(speech, std::min<unsigned int>(samples, DeepSpeechAudioStream::vad_frame_size), feed_stste))) {
+				if (feed_stste == DeepSpeechAudioStream::FeedState::FinishDecodeStream) {
+					return;
+				} else {
+					this_thread::sleep_for(100ms);
+				}
 			}
 			samples -= consumed;
 			speech += consumed;

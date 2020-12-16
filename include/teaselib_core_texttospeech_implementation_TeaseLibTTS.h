@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS
+ * Method:    newNativeInstance
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_newNativeInstance
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS
  * Method:    addLexiconEntry
  * Signature: (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V
  */

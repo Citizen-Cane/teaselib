@@ -11,16 +11,18 @@ import java.io.Closeable;
  */
 public abstract class NativeObject implements Closeable {
 
+    @SuppressWarnings("unused") // used by the native code to store data, e.g. a native object instance
     private final long nativeObject;
 
     protected NativeObject(long nativeObject) {
         this.nativeObject = nativeObject;
     }
 
-    protected native void dispose();
+    protected abstract void dispose();
 
     @Override
     public void close() {
         dispose();
     }
+
 }

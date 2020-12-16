@@ -16,15 +16,15 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSR.class);
 
     public TeaseLibSR(Locale locale) {
-        super(init(locale));
+        super(newNativeInstance(locale));
     }
 
-    private static long init(Locale locale) {
+    private static long newNativeInstance(Locale locale) {
         teaselib.core.jni.LibraryLoader.load("TeaseLibSR");
 
         String languageCode = languageCode(locale);
         try {
-            return init(languageCode);
+            return newNativeInstance(languageCode);
         } catch (UnsupportedLanguageException e) {
             logger.warn(e.getMessage());
             int index = languageCode.indexOf("-");
@@ -33,7 +33,7 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
             } else {
                 languageCode = languageCode.substring(0, index);
                 logger.info("-> trying language {}", languageCode);
-                return init(languageCode);
+                return newNativeInstance(languageCode);
             }
         }
     }
@@ -47,7 +47,7 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
      * @throws UnsupportedLanguageException
      *             When the requested language is not supported.
      */
-    protected static native long init(String langugeCode);
+    protected static native long newNativeInstance(String langugeCode);
 
     /**
      * Init the speech recognizer event handling thread. Creating the thread in native code and then attaching the VM

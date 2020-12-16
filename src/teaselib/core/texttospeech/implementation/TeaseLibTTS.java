@@ -10,16 +10,20 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
 
     public static synchronized TeaseLibTTS getInstance() {
         if (instance == null) {
-            instance = new TeaseLibTTS();
+            teaselib.core.jni.LibraryLoader.load("TeaseLibTTS");
+            instance = new TeaseLibTTS(newNativeInstance());
         }
         return instance;
     }
 
+    // TODO refactor TextToSpeechImplementation to interface in order to derive from NativeObject
     private long nativeObject;
 
-    private TeaseLibTTS() throws UnsatisfiedLinkError {
-        teaselib.core.jni.LibraryLoader.load("TeaseLibTTS");
+    private TeaseLibTTS(long nativeObject) {
+        this.nativeObject = nativeObject;
     }
+
+    private static native long newNativeInstance();
 
     @Override
     public String sdkName() {

@@ -27,7 +27,7 @@ extern "C"
 	 * Method:    init
 	 * Signature: (Ljava/lang/String;Ljava/lang/String;)J
 	 */
-	JNIEXPORT jlong JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_init
+	JNIEXPORT jlong JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_newNativeInstance
 	(JNIEnv* env, jclass, jstring jmodel, jstring jlanguageCode)
 	{
 		try {
@@ -59,7 +59,7 @@ extern "C"
 	(JNIEnv* env, jobject jthis)
 	{
 		try {
-			const DeepSpeechRecognizer* speechRecognizer = NativeObject::get<DeepSpeechRecognizer>(env, jthis);
+			const DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			return JNIStringUTF8(env, speechRecognizer->languageCode());
 		} catch (std::exception& e) {
 			JNIException::rethrow(env, e);
@@ -83,7 +83,7 @@ extern "C"
 	(JNIEnv* env, jobject jthis)
 	{
 		try {
-			DeepSpeechRecognizer* speechRecognizer = NativeObject::get<DeepSpeechRecognizer>(env, jthis);
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			const DeepSpeechAudioStream::Status status = speechRecognizer->decode();
 			return static_cast<int>(status);
 		} catch (std::exception& e) {
@@ -107,7 +107,7 @@ extern "C"
 	(JNIEnv* env, jobject jthis)
 	{
 		try {
-			DeepSpeechRecognizer* speechRecognizer = NativeObject::get<DeepSpeechRecognizer>(env, jthis);
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			return DeepSpeechRecognizer::jresults(env, speechRecognizer->results());
 		} catch (std::exception& e) {
 			JNIException::rethrow(env, e);
@@ -130,7 +130,7 @@ extern "C"
 	(JNIEnv* env, jobject jthis)
 	{
 		try {
-			DeepSpeechRecognizer* speechRecognizer = NativeObject::get<DeepSpeechRecognizer>(env, jthis);
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			speechRecognizer->start();
 		} catch (std::exception& e) {
 			JNIException::rethrow(env, e);
@@ -151,7 +151,7 @@ extern "C"
 	{
 		try {
 			Objects::requireNonNull(L"speech", jspeech);
-			DeepSpeechRecognizer* speechRecognizer = NativeObject::get<DeepSpeechRecognizer>(env, jthis);
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			JNIStringUTF8 speech(env, jspeech);
 			if (PathFileExistsA(speech)) {
 				aifx::Blob<short> data(speech);
@@ -177,7 +177,7 @@ extern "C"
 	(JNIEnv* env, jobject jthis)
 	{
 		try {
-			DeepSpeechRecognizer* speechRecognizer = NativeObject::get<DeepSpeechRecognizer>(env, jthis);
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			speechRecognizer->stop();
 		} catch (std::exception& e) {
 			JNIException::rethrow(env, e);
@@ -197,7 +197,7 @@ extern "C"
 	(JNIEnv* env, jobject jthis)
 	{
 		try {
-			DeepSpeechRecognizer* speechRecognizer = NativeObject::get<DeepSpeechRecognizer>(env, jthis);
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			speechRecognizer->stopEventLoop();
 		}
 		catch (std::exception& e) {
@@ -220,8 +220,8 @@ extern "C"
 	(JNIEnv* env, jobject jthis)
 	{
 		try {
-			DeepSpeechRecognizer* speechRecognizer = NativeObject::get<DeepSpeechRecognizer>(env, jthis);
-			NativeObject::dispose(env, jthis, speechRecognizer);
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
+			NativeInstance::dispose(env, jthis, speechRecognizer);
 		} catch (std::exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
@@ -389,5 +389,6 @@ const jobject DeepSpeechRecognizer::jresults(JNIEnv* env, const std::vector<aifx
 		env->CallObjectMethod(jresults, add, jresult);
 		if (env->ExceptionCheck()) throw JNIException(env);
 	});
+
 	return jresults;
 }

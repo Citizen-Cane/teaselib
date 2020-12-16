@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR
- * Method:    init
+ * Method:    newNativeInstance
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_init
+JNIEXPORT jlong JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_newNativeInstance
   (JNIEnv *, jclass, jstring);
 
 /*

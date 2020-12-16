@@ -11,10 +11,10 @@ extern "C" {
 #define teaselib_core_ai_perception_SceneCapture_NoImage -1L
 /*
  * Class:     teaselib_core_ai_perception_SceneCapture
- * Method:    init
+ * Method:    newNativeInstance
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_SceneCapture_init
+JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_SceneCapture_newNativeInstance
   (JNIEnv *, jclass, jstring);
 
 /*
@@ -39,6 +39,14 @@ JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_SceneCapture_isStart
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_stop
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_perception_SceneCapture
+ * Method:    dispose
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_dispose
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus

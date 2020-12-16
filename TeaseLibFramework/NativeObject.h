@@ -28,6 +28,11 @@ public:
 	NativeObject(JNIEnv* env, jobject jthis);
 	virtual ~NativeObject();
 
+
+};
+
+class NativeInstance {
+public:
 	template<class T> static T* get(JNIEnv* env, jobject jthis)
 	{
 		Objects::requireNonNull(L"jenv", env);
@@ -57,8 +62,4 @@ public:
 			throw std::logic_error("native object already disposed");
 		}
 	}
-
-	static NativeObject* get(JNIEnv* env, jobject jthis);
-	static void checkInitializedOrThrow(const NativeObject* nativeObject);
-private:
 };

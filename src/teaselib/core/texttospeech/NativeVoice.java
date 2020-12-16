@@ -9,7 +9,8 @@ import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebug
  * 
  */
 public class NativeVoice extends NativeObject implements Voice {
-    final TextToSpeechImplementation ttsImpl;
+
+    private final TextToSpeechImplementation ttsImpl;
     /**
      * A unique identifier for the voice. Only alphanumeric characters and dots are allowed. Avoid file system
      * characters like '/', '\', ':'.
@@ -56,6 +57,9 @@ public class NativeVoice extends NativeObject implements Voice {
     public VoiceInfo info() {
         return voiceInfo;
     }
+
+    @Override
+    protected native void dispose();
 
     @Override
     public String toString() {

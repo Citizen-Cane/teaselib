@@ -21,7 +21,7 @@ extern "C"
 	 * Method:    init
 	 * Signature: (Ljava/lang/String;)J
 	 */
-	JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_SceneCapture_init
+	JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_SceneCapture_newNativeInstance
 	(JNIEnv* env, jclass, jstring jpath) {
 		try {
 			Objects::requireNonNull(L"path", jpath);
@@ -45,7 +45,7 @@ extern "C"
 	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_start
 	(JNIEnv* env, jobject jthis) {
 		try {
-			aifx::VideoCapture* capture = reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jthis));
+			aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jthis);
 			capture->start();
 		}
 		catch (NativeException& e) {
@@ -64,7 +64,7 @@ extern "C"
 	JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_SceneCapture_isStarted
 	(JNIEnv* env, jobject jthis) {
 		try {
-			aifx::VideoCapture* capture = reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jthis));
+			aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jthis);
 			return capture->started();
 		}
 		catch (NativeException& e) {
@@ -84,8 +84,34 @@ extern "C"
 	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_stop
 	(JNIEnv* env, jobject jthis) {
 		try {
-			aifx::VideoCapture* capture = reinterpret_cast<aifx::VideoCapture*>(NativeObject::get(env, jthis));
+			aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jthis);
 			capture->stop();
+		}
+		catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (JNIException& e) {
+			e.rethrow();
+		}
+	}
+
+	/*
+ * Class:     teaselib_core_ai_perception_SceneCapture
+ * Method:    dispose
+ * Signature: ()V
+ */
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_dispose
+	(JNIEnv* env, jobject jthis)
+	{
+		try {
+			aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jthis);
+			delete capture;
+		}
+		catch (std::invalid_argument& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (std::exception& e) {
+			JNIException::rethrow(env, e);
 		}
 		catch (NativeException& e) {
 			JNIException::rethrow(env, e);

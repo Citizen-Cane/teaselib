@@ -41,12 +41,12 @@ public class SceneCapture extends NativeObject {
     }
 
     public SceneCapture(String openCVImagePattern) {
-        super(init(openCVImagePattern));
+        super(newNativeInstance(openCVImagePattern));
         this.name = openCVImagePattern;
         this.location = EnclosureLocation.External;
     }
 
-    private static native long init(String openCVImagePattern);
+    private static native long newNativeInstance(String openCVImagePattern);
 
     public native void start();
 
@@ -61,6 +61,9 @@ public class SceneCapture extends NativeObject {
         // The native code only understands rotation != null and rotates clockwise
         return portrait ? Rotation.Clockwise : null;
     }
+
+    @Override
+    protected native void dispose();
 
     @Override
     public void close() {

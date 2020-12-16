@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <jni.h>
+
 #include <NativeObject.h>
 #include <COMUser.h>
 #include <Lexicon.h>
@@ -10,13 +12,13 @@ struct ISpVoice;
 
 class Voice;
 
-class SpeechSynthesizer : public NativeObject, private COMUser {
+class SpeechSynthesizer : private COMUser {
 public:
-    SpeechSynthesizer(JNIEnv *env, jobject ttsImpl);
+    SpeechSynthesizer();
     virtual ~SpeechSynthesizer();
 
-	jobject voiceList();
-	HRESULT addVoices(const wchar_t* pszCatName, std::vector<NativeObject*>& voices);
+	jobject voices(JNIEnv* env, jobject jthis);
+	HRESULT addVoices(JNIEnv* env, jobject jthis, const wchar_t* pszCatName, std::vector<NativeObject*>& voices);
 
 	void addLexiconEntry(const wchar_t * const  locale, const wchar_t * const  word, const SPPARTOFSPEECH partOfSpeech, const wchar_t * const  pronunciation);
 	void setVoice(const Voice *voice);

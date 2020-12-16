@@ -56,8 +56,8 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
 	jobject jgender = getGenderField(env, gender);
 	if (env->ExceptionCheck()) throw JNIException(env);
 
-
-	jobject jvoiceInfo; {
+	jobject jvoiceInfo;
+    {
 		// Full name (Vendor, version, Name)
 		LPWSTR vendor;
 		hr = SpGetAttribute(pVoiceToken, L"Vendor", &vendor);

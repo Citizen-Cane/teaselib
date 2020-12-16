@@ -1,6 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -28,7 +28,7 @@ import teaselib.core.util.ReflectionUtils;
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
 
     private static final Path project = ReflectionUtils.projectPath(DeepSpeechRecognizer.class);
-    static final Path model = project.resolve(Path.of( //
+    static final Path modelPath = project.resolve(Path.of( //
             "..", "..", "TeaseLibAIfx", "TeaseLibAIml", "models", "tflite", "deepspeech")).normalize();
 
     private PreparedChoicesImplementation current = null;
@@ -36,10 +36,10 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             .singleThreadedQueue("DeepSpeech Emulation");
 
     public DeepSpeechRecognizer(Locale locale) {
-        super(init(model.toString(), languageCode(locale)));
+        super(newNativeInstance(modelPath.toString(), languageCode(locale)));
     }
 
-    protected static native long init(String model, String langugeCode);
+    protected static native long newNativeInstance(String model, String langugeCode);
 
     @Override
     public native String languageCode();

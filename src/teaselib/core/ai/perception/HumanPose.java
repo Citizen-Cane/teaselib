@@ -15,10 +15,10 @@ public class HumanPose extends NativeObject {
     private long timestamp = 0;
 
     public HumanPose() {
-        super(init());
+        super(newNativeInstance());
     }
 
-    private static native long init();
+    private static native long newNativeInstance();
 
     public interface PoseAspect {
         // Tag interface
@@ -226,5 +226,8 @@ public class HumanPose extends NativeObject {
     public long getTimestamp() {
         return timestamp;
     }
+
+    @Override
+    protected native void dispose();
 
 }

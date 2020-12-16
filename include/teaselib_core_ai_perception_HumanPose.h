@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     teaselib_core_ai_perception_HumanPose
- * Method:    init
+ * Method:    newNativeInstance
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_HumanPose_init
+JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_HumanPose_newNativeInstance
   (JNIEnv *, jclass);
 
 /*
@@ -53,6 +53,14 @@ JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_estimate
  * Signature: ()Ljava/util/List;
  */
 JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_perception_HumanPose
+ * Method:    dispose
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_dispose
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus

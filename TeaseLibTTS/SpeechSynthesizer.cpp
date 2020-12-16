@@ -37,8 +37,8 @@ const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_S
 	int rateReading = -2;
 #endif
 
-SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject ttsImpl)
-    : NativeObject(env, ttsImpl), pVoice(nullptr), cancelSpeech(false), jvoices(nullptr) {
+SpeechSynthesizer::SpeechSynthesizer()
+    : pVoice(nullptr), cancelSpeech(false), jvoices(nullptr) {
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
@@ -52,11 +52,11 @@ SpeechSynthesizer::~SpeechSynthesizer() {
     pVoice = nullptr;
 }
 
-jobject SpeechSynthesizer::voiceList() {
+jobject SpeechSynthesizer::voices(JNIEnv* env, jobject jthis) {
 	if (!jvoices) {
-		std::vector<NativeObject*> voices;
+		vector<NativeObject*> voices;
 		for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
-			HRESULT hr = addVoices(voiceCategories[i], voices);
+			HRESULT hr = addVoices(env, jthis, voiceCategories[i], voices );
 			if (FAILED(hr)) throw COMException(hr);
 		}
 		jvoices = env->NewGlobalRef(JNIUtilities::asList(env, voices));
@@ -65,7 +65,7 @@ jobject SpeechSynthesizer::voiceList() {
 	return jvoices;
 }
 
-HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<NativeObject*>& voices) {
+HRESULT SpeechSynthesizer::addVoices(JNIEnv* env, jobject jthis, const wchar_t* pszCatName, vector<NativeObject*>& voices) {
 	CComPtr<IEnumSpObjectTokens> cpEnum;
 	HRESULT hr = SpEnumTokens(pszCatName, NULL, NULL, &cpEnum);
 	const bool succeeded = SUCCEEDED(hr);
@@ -191,14 +191,14 @@ void SpeechSynthesizer::speak(const wchar_t *prompt) {
     }
 }
 
-bool hasSuffix(const std::wstring &str, const std::wstring &suffix) {
+bool hasSuffix(const wstring &str, const wstring &suffix) {
 	return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-std::wstring SpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path) {
+wstring SpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path) {
     HRESULT hr = S_OK;
     HRESULT hr2 = S_OK;
-    const std::wstring soundFile = std::wstring(path) + (hasSuffix(path, L".wav") ? L"" :  L".wav");
+    const wstring soundFile = wstring(path) + (hasSuffix(path, L".wav") ? L"" :  L".wav");
     //Set the audio format
     CSpStreamFormat cAudioFmt;
     hr = cAudioFmt.AssignFormat(SPSF_32kHz16BitMono);

@@ -7,13 +7,13 @@
 
 #include <AIfxPoseEstimation.h>
 
-class HumanPose : public NativeObject {
+class HumanPose {
 public:
-    HumanPose(JNIEnv* env);
+    HumanPose();
     virtual ~HumanPose();
 
-    bool acquire(jobject jdevice, jobject jrotation);
-    bool acquire(jbyteArray jimage);
+    bool acquire(JNIEnv* env, jobject jdevice, jobject jrotation);
+    bool acquire(JNIEnv* env, jbyteArray jimage);
     void estimate();
     const std::vector<aifx::Pose>& results();
 

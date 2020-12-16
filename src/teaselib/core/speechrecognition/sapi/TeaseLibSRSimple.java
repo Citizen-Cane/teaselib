@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,7 +59,6 @@ public class TeaseLibSRSimple extends TeaseLibSR {
 
     @Override
     protected List<Rule> repair(List<Rule> result) {
-
         List<Rule> repaired = new ArrayList<>(result.size());
         for (Rule rule : result) {
             HashSet<Integer> indices = new HashSet<>();

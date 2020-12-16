@@ -328,19 +328,21 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 {
 	stop();
 	try {
-		while (samples >= DeepSpeechAudioStream::vad_frame_size) {
-			DeepSpeechAudioStream::FeedState feed_stste;
+		while (samples) {
+			DeepSpeechAudioStream::FeedState feed_state;
 			unsigned int consumed;
-			while (0 == (consumed = recognizer.feed(speech, std::min<unsigned int>(samples, DeepSpeechAudioStream::vad_frame_size), feed_stste))) {
-				if (feed_stste == DeepSpeechAudioStream::FeedState::FinishDecodeStream) {
-					return;
-				} else {
-					this_thread::sleep_for(100ms);
-				}
+			while (0 == (consumed = recognizer.feed(speech, std::min<unsigned int>(samples, DeepSpeechAudioStream::vad_frame_size), feed_state)))
+			{
+				if (feed_state == DeepSpeechAudioStream::FeedState::FinishDecodeStream) return; else this_thread::sleep_for(100ms);
 			}
 			samples -= consumed;
 			speech += consumed;
 		}
+
+		if (recognizer != DeepSpeechAudioStream::Status::Done) {
+			recognizer.finish();
+		}
+
 		return;
 	} catch (std::exception& e) {
 		recognizer.cancel();

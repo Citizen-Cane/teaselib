@@ -32,7 +32,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             "..", "..", "TeaseLibAIfx", "TeaseLibAIml", "models", "tflite", "deepspeech")).normalize();
 
     private PreparedChoicesImplementation current = null;
-    private final NamedExecutorService spechEmulation = NamedExecutorService
+    private final NamedExecutorService speechEmulation = NamedExecutorService
             .singleThreadedQueue("DeepSpeech Emulation");
 
     public DeepSpeechRecognizer(Locale locale) {
@@ -150,7 +150,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public void emulateRecognition(String speech) {
-        spechEmulation.execute(() -> emulate(speech));
+        speechEmulation.execute(() -> emulate(speech));
     }
 
     public native void emulate(String speech);
@@ -166,10 +166,10 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public void close() {
-        spechEmulation.shutdown();
-        while (!spechEmulation.isTerminated()) {
+        speechEmulation.shutdown();
+        while (!speechEmulation.isTerminated()) {
             try {
-                spechEmulation.awaitTermination(10, TimeUnit.SECONDS);
+                speechEmulation.awaitTermination(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

@@ -522,7 +522,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 throw new IllegalStateException("Trying to show prompt " + prompt + "when already showing another");
             }
 
-            SpeechRecognition recognizer = getRecognizer(prompt.choices.locale);
+            SpeechRecognition recognizer = getRecognizer(prompt);
             if (recognizer.isActive()) {
                 throw new IllegalStateException("Speech recognizer already active");
             }
@@ -541,19 +541,24 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     public void dismiss(Prompt prompt) throws InterruptedException {
         Objects.requireNonNull(prompt);
 
-        active.updateAndGet(activePrompt -> {
-            if (activePrompt == null) {
-                return null;
-            } else {
-                getRecognizer(activePrompt.choices.locale).endRecognition();
-            }
+        try {
+            active.updateAndGet(activePrompt -> {
+                if (activePrompt == null) {
+                    return null;
+                } else {
+                    getRecognizer(activePrompt).endRecognition();
+                }
 
-            if (activePrompt != prompt) {
-                throw new IllegalStateException("Trying to dismiss wrong prompt: " + prompt);
-            } else {
-                return null;
-            }
-        });
+                if (activePrompt != prompt) {
+                    throw new IllegalStateException("Trying to dismiss wrong prompt: " + prompt);
+                } else {
+                    return null;
+                }
+            });
+        } catch (Throwable t) {
+            active.set(null);
+            throw t;
+        }
     }
 
     public static final class ResumeRecognition implements teaselib.core.Closeable {

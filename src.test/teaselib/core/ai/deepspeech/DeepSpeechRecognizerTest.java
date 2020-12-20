@@ -1,38 +1,41 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static teaselib.core.ai.deepspeech.DeepSpeechTestData.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
+import teaselib.core.ui.Intention;
 
 public class DeepSpeechRecognizerTest {
 
-    @Test
-    public void testExperienceProovesThis() throws InterruptedException {
-        testAudio(AUDIO_2830_3980_0043_RAW);
+    static Stream<DeepSpeechTestData> tests() {
+        return DeepSpeechTestData.tests.stream();
     }
 
-    @Test
-    public void testWhyShouldOneHaltOnTheWay() throws InterruptedException {
-        testAudio(AUDIO_4507_16021_0012_RAW);
-    }
-
-    @Test
-    public void testYourPowerIsSufficientIsaid() throws InterruptedException {
-        testAudio(AUDIO_8455_210777_0068_RAW);
+    @ParameterizedTest
+    @MethodSource("tests")
+    public void testExpectedAudio(DeepSpeechTestData testData) throws InterruptedException {
+        testAudio(testData);
     }
 
     public static void testAudio(DeepSpeechTestData testData) throws InterruptedException {
@@ -47,8 +50,10 @@ public class DeepSpeechRecognizerTest {
             });
             try (DeepSpeechRecognizer deepSpeechRecognizer = new DeepSpeechRecognizer(Locale.ENGLISH)) {
                 deepSpeechRecognizer.startEventLoop(events);
+                Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(testData.groundTruth));
+                deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
                 deepSpeechRecognizer.emulateRecognition(testData.audio.toString());
-                await(deepSpeechRecognizer, speechRecognized, signal, testData.actual);
+                await(deepSpeechRecognizer, speechRecognized, signal, testData.groundTruth);
             }
         }
     }
@@ -66,10 +71,12 @@ public class DeepSpeechRecognizerTest {
             });
             try (DeepSpeechRecognizer deepSpeechRecognizer = new DeepSpeechRecognizer(Locale.ENGLISH)) {
                 deepSpeechRecognizer.startEventLoop(events);
+                Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice("experience prooves this"));
+                deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
                 deepSpeechRecognizer.emulateRecognition(
                         "experience prooves this\nexperience prooves that\nthe experience proofs it");
                 await(deepSpeechRecognizer, speechRecognized, signal, "experience prooves this");
-                assertNotNull(speechRecognized);
+                assertNotNull(speechRecognized.get());
             }
         }
     }
@@ -80,7 +87,6 @@ public class DeepSpeechRecognizerTest {
         if (signal.await(10, SECONDS)) {
             List<Rule> result = event.get().result;
             assertFalse(result.isEmpty());
-            // TODO re-construct expected from hypotheses and assert confidence
             assertEquals(speech, result.get(0).text);
         } else {
             Optional<Throwable> failure = deepSpeechRecognizer.getException();

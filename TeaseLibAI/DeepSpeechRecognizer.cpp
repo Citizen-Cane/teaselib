@@ -369,6 +369,9 @@ const vector<DeepSpeech::Recognition> DeepSpeechRecognizer::results() const
 
 const jobject DeepSpeechRecognizer::jresults(JNIEnv* env, const std::vector<aifx::DeepSpeech::Recognition>& results)
 {
+	if (results.empty()) return nullptr;
+	if (results.at(0).text.empty()) return nullptr;
+
 	jobject jresults = JNIUtilities::newList(env, results.size());
 	const float normalization = results.at(0).confidence;
 

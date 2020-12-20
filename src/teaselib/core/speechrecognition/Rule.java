@@ -1,14 +1,17 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.averagingDouble;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.Sequence;
@@ -25,7 +28,7 @@ public class Rule {
     public static final String WITHOUT_IGNOREABLE_TRAILING_NULL_RULE = "Trailing Null rule removed";
     public static final String CHOICE_NODE_PREFIX = "r_";
 
-    public static final Set<Integer> NoIndices = Collections.emptySet();
+    public static final Set<Integer> NoIndices = emptySet();
 
     public final String name;
     public final String text;
@@ -55,7 +58,7 @@ public class Rule {
     }
 
     public Rule(String name, List<String> children, int choice, float probability) {
-        this(name, children.stream().collect(Collectors.joining(" ")), 0, Collections.singleton(choice),
+        this(name, children.stream().collect(joining(" ")), -1, singleton(choice),
                 childRules(children, choice, probability), 0, children.size(), probability,
                 Confidence.valueOf(probability));
     }
@@ -63,8 +66,8 @@ public class Rule {
     private static List<Rule> childRules(List<String> children, int choice, float probability) {
         List<Rule> rules = new ArrayList<>(children.size());
         for (int i = 0; i < children.size(); ++i) {
-            rules.add(new Rule(Rule.CHOICE_NODE_PREFIX + i + "_" + choice, children.get(i), i,
-                    Collections.singleton(choice), i, i + 1, probability, Confidence.valueOf(probability)));
+            rules.add(new Rule(Rule.CHOICE_NODE_PREFIX + i + "_" + choice, children.get(i), i, singleton(choice), i,
+                    i + 1, probability, Confidence.valueOf(probability)));
         }
         return rules;
     }
@@ -77,7 +80,7 @@ public class Rule {
         this.indices = indices;
         this.fromElement = fromElement;
         this.toElement = toElement;
-        this.children = Collections.unmodifiableList(children);
+        this.children = unmodifiableList(children);
         this.probability = probability;
         this.confidence = confidence;
     }
@@ -237,6 +240,10 @@ public class Rule {
 
         return new Rule(REPAIRED_MAIN__RULE_NAME, text(repairedChildren), ruleIndex, repairedChildren, fromElement,
                 toElement + elementOffset, probability, confidence);
+    }
+
+    public static float probability(List<Rule> children) {
+        return children.stream().collect(averagingDouble(rule -> rule.probability)).floatValue();
     }
 
     private static String text(List<Rule> repairedChildren) {

@@ -1,16 +1,21 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toList;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.events.EventSource;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
@@ -26,6 +31,7 @@ import teaselib.core.ui.Choices;
 import teaselib.core.util.ReflectionUtils;
 
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
+    private static final Logger logger = LoggerFactory.getLogger(DeepSpeechRecognizer.class);
 
     private static final Path project = ReflectionUtils.projectPath(DeepSpeechRecognizer.class);
     static final Path modelPath = project.resolve(Path.of( //
@@ -66,6 +72,12 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             this.confidence = confidence;
             this.words = words;
         }
+
+        @Override
+        public String toString() {
+            return "[" + words + " confidence=" + confidence + "]";
+        }
+
     }
 
     @Override
@@ -75,29 +87,35 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             Status status = Status.of(decode());
             if (status == Status.Started) {
                 events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
-                events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
+                fire(events.speechDetected);
             } else if (status == Status.Running) {
-                events.speechDetected.fire(new SpeechRecognizedEventArgs(rules(results())));
+                fire(events.speechDetected);
             } else if (status == Status.Cancelled) {
                 return;
             } else if (status == Status.Done) {
-                List<Result> results = results();
-                List<Rule> rules = rules(results);
-                events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rules));
+                fire(events.recognitionCompleted);
             } else if (status != Status.Idle) {
                 throw new UnsupportedOperationException(status.name());
             }
         }
     }
 
-    private static List<Rule> rules(List<Result> results) {
-        return results.stream().map(r -> new Rule(Rule.MAIN_RULE_NAME, r.words, 0, r.confidence))
-                .collect(toUnmodifiableList());
+    private void fire(EventSource<SpeechRecognizedEventArgs> event) {
+        List<Result> results = results();
+        if (results != null && !results.isEmpty()) {
+            if (logger.isInfoEnabled()) {
+                logger.info("DeepSpeech results = \n{}",
+                        results.stream().map(Objects::toString).collect(Collectors.joining("\n")));
+            }
+            List<Rule> rules = RuleBuilder.rules(current.phrases, results);
+            event.fire(new SpeechRecognizedEventArgs(rules));
+        }
     }
 
     private final class PreparedChoicesImplementation implements PreparedChoices {
 
         final Choices choices;
+        final List<PhraseString> phrases;
         final SlicedPhrases<PhraseString> slices;
         final IntUnaryOperator mapper;
 
@@ -105,10 +123,10 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             this.choices = choices;
 
             IndexMap<Integer> index2choices = new IndexMap<>();
-            List<PhraseString> phrases = choices.stream()
+            phrases = choices.stream()
                     .flatMap(choice -> choice.phrases.stream()
                             .map(phrase -> new PhraseString(phrase, index2choices.add(choices.indexOf(choice)))))
-                    .collect(Collectors.toList());
+                    .collect(toList());
 
             this.slices = SlicedPhrases.of( //
                     PhraseStringSequences.of(phrases), PhraseStringSequences::prettyPrint);

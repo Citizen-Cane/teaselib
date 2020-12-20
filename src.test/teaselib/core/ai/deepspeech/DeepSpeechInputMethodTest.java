@@ -1,13 +1,16 @@
 package teaselib.core.ai.deepspeech;
 
-import static teaselib.core.ai.deepspeech.DeepSpeechTestData.*;
-
-import java.nio.file.Path;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
@@ -18,69 +21,58 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class DeepSpeechInputMethodTest {
+
+    static Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm) {
+        private static final long serialVersionUID = 1L;
+
+        {
+            tests().forEach(test -> add(new Choice(test.groundTruth, test.groundTruth)));
+        }
+    };
+
     private TeaseLibAI teaseLibAI;
     private SpeechRecognizer recognizer;
     private SpeechRecognitionInputMethod inputMethod;
 
+    @BeforeAll
     @Before
     public void init() {
         teaseLibAI = new TeaseLibAI();
         recognizer = SpeechRecognitionTestUtils.getRecognizer(DeepSpeechRecognizer.class);
         inputMethod = new SpeechRecognitionInputMethod(recognizer);
-        ;
     }
 
+    @AfterAll
     @After
     public void cleanup() {
         recognizer.close();
         teaseLibAI.close();
     }
 
-    @Test
-    public void testExperienceProovesThis() throws InterruptedException {
-        testExpected(AUDIO_2830_3980_0043_RAW);
+    static Stream<DeepSpeechTestData> tests() {
+        return DeepSpeechTestData.tests.stream();
     }
 
-    @Test
-    public void testWhyShouldOneHaltOnTheWay() throws InterruptedException {
-        testExpected(AUDIO_4507_16021_0012_RAW);
+    @ParameterizedTest
+    @MethodSource("tests")
+    public void testExpectedAudio(DeepSpeechTestData testData) throws InterruptedException {
+        test(testData.audio.toString(), DeepSpeechTestData.tests.indexOf(testData));
     }
 
-    @Test
-    public void testYourPowerIsSufficientIsaid() throws InterruptedException {
-        testExpected(AUDIO_8455_210777_0068_RAW);
+    @ParameterizedTest
+    @MethodSource("tests")
+    public void testExpectedText(DeepSpeechTestData testData) throws InterruptedException {
+        test(testData.groundTruth, DeepSpeechTestData.tests.indexOf(testData));
     }
 
-    @Test
-    public void testExperienceProovesThisGroundTruth() throws InterruptedException {
-        testGroundTruth(AUDIO_2830_3980_0043_RAW);
-    }
-
-    @Test
-    public void testWhyShouldOneHaltOnTheWayGroundTruth() throws InterruptedException {
-        testGroundTruth(AUDIO_4507_16021_0012_RAW);
-    }
-
-    @Test
-    public void testYourPowerIsSufficientIsaidGroundTruth() throws InterruptedException {
-        testGroundTruth(AUDIO_8455_210777_0068_RAW);
-    }
-
-    public void testExpected(DeepSpeechTestData testData) throws InterruptedException {
-        test(testData.audio, testData.expected, testData.actual);
-    }
-
-    public void testGroundTruth(DeepSpeechTestData testData) throws InterruptedException {
-        test(testData.audio, testData.expected, testData.expected);
-    }
-
-    public void test(Path audio, String expected, String actual) throws InterruptedException {
+    private void test(String speech, int choice) throws InterruptedException {
         SpeechRecognitionTestUtils.assertRecognized( //
                 inputMethod, //
-                new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(expected, actual)), //
-                audio.toString(), //
-                new Prompt.Result(0));
+                choices, //
+                speech, //
+                new Prompt.Result(choice));
     }
 
 }

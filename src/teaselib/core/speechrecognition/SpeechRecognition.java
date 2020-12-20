@@ -1,9 +1,10 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.*;
-import static teaselib.core.speechrecognition.Confidence.*;
+import static java.util.Collections.emptyList;
+import static teaselib.core.speechrecognition.Confidence.High;
 
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -230,6 +231,10 @@ public class SpeechRecognition {
     }
 
     private void enableSR() {
+        Optional<Throwable> exception = implementation.getException();
+        if (exception.isPresent())
+            throw ExceptionUtil.asRuntimeException(exception.get());
+
         preparedChoices.accept(implementation);
         audioSync.whenSpeechCompleted(implementation::startRecognition);
         timeoutWatchdog.enable(true);
@@ -241,6 +246,10 @@ public class SpeechRecognition {
         speechRecognitionActive.set(false);
         timeoutWatchdog.enable(false);
         unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
+
+        Optional<Throwable> exception = implementation.getException();
+        if (exception.isPresent())
+            throw ExceptionUtil.asRuntimeException(exception.get());
     }
 
     private static void recognizerNotInitialized() {

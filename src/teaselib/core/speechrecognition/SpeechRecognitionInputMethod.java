@@ -62,7 +62,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
     private Hypothesis hypothesis = null;
-    private float awarenessBonus = 0.0f;
+    private float awarenessBonus;
 
     public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizer) {
         this.speechRecognizer = speechRecognizer;
@@ -76,6 +76,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         this.speechDetectedEventHandler = this::handleSpeechDetected;
         this.recognitionRejected = this::handleRecognitionRejected;
         this.recognitionCompleted = this::handleRecogntionCompleted;
+
+        setFaceToFace(false);
     }
 
     private void handleRecognitionStarted(SpeechRecognitionStartedEventArgs eventArgs) {
@@ -190,6 +192,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                                 hypothesis = best.get();
                                 events.speechDetected.fire(new SpeechRecognizedEventArgs(hypothesis));
                             } else {
+                                logger.info("Ignoring detected speech without distinct alternates");
                                 hypothesis = null;
                             }
                         } else if (prompt.acceptedResult == Result.Accept.Multiple) {
@@ -218,7 +221,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 logger.info("Ignoring hypothesis {} since it contains results from multiple phrases", rule);
                 return Optional.empty();
             } else {
-                double expectedConfidence = SpeechRecognitionInputMethod.expectedHypothesisConfidence(choices, rule);
+                double expectedConfidence = expectedConfidence(choices, rule, awarenessBonus);
                 // Weighted probability is too low in tests for short hypotheses even with optimal probability of 1.0
                 // This is intended because probability/confidence values of short short hypotheses cannot be trusted
                 // -> confidence moves towards ground truth when more speech is detected
@@ -239,7 +242,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                         return Optional.of(new Hypothesis(rule));
                     }
                 } else {
-                    logger.info("Weighted confidence {} < expected hypothesis confidence {}", //
+                    logger.info("Weighted hypothesis confidence {} < expected hypothesis confidence {}", //
                             weightedProbability, expectedConfidence);
                     return Optional.of(new Hypothesis(rule));
                 }
@@ -256,10 +259,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private static float expectedConfidence(Choices choices, Rule rule, float awarenessBonus) {
         float weighted = confidence(choices.intention).weighted(PhraseString.words(rule.text).length);
         float expectedConfidence = weighted * awarenessBonus;
-        if (awarenessBonus > 0.0f) {
-            logger.info("Weighted confidence {} * Awareness bonus {} = expected confidence {}", weighted,
-                    awarenessBonus, expectedConfidence);
-        }
+        logger.info("Expected weighted confidence {} * Awareness bonus {} = {}", weighted, awarenessBonus,
+                expectedConfidence);
         return expectedConfidence;
     }
 
@@ -467,7 +468,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private Prompt accept(Prompt prompt, Prompt.Result promptResult) {
-        getRecognizer(prompt.choices.locale).endRecognition();
+        getRecognizer(prompt).endRecognition();
         signal(prompt, promptResult);
         return null;
     }

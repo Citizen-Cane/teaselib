@@ -19,7 +19,7 @@ public class AudioSignalProblems {
     private void setLimits() {
         limits.put(AudioSignalProblem.None, Integer.MAX_VALUE);
         limits.put(AudioSignalProblem.Noise, 1);
-        limits.put(AudioSignalProblem.NoSignal, 1);
+        limits.put(AudioSignalProblem.NoSignal, 3);
         limits.put(AudioSignalProblem.TooLoud, 1);
         limits.put(AudioSignalProblem.TooQuiet, 4);
         limits.put(AudioSignalProblem.TooFast, 1);

@@ -125,9 +125,9 @@ public class RuleTest {
                 choice("G, A B C, H", 1));
 
         Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, Arrays.asList( //
-                new Rule("r_0_0_1", "G", 0, indices(1), 0, 1, 0.82f, High),
-                new Rule("r_1_0_2", "A B C", 1, indices(1), 1, 4, 0.51f, Normal),
-                new Rule("r_2_3", null, 2, indices(0), 4, 5, 1.0f, High)), 0, 6, 0.82414407f, High);
+                new Rule("r_0_1_1", "G", 0, indices(1), 0, 1, 0.82f, High),
+                new Rule("r_1_1_2", "A B C", 1, indices(1), 1, 4, 0.51f, Normal),
+                new Rule("r_2_0_3", null, 2, indices(0), 4, 5, 1.0f, High)), 0, 6, 0.82414407f, High);
         assertEquals(Collections.singleton(1), speechDetected.intersectionWithoutNullRules());
 
         SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);

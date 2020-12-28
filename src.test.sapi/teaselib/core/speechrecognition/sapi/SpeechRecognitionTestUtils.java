@@ -189,7 +189,7 @@ public class SpeechRecognitionTestUtils {
                     assertAllTheSameChoices(expectedRules, result);
                 }
             } else {
-                assertFalse("Expected rejected: \"" + phrase + "\"", dismissed);
+                assertFalse("Expected rejected: \"" + phrase + "\" but got " + result, dismissed);
                 assertEquals("Undefined result", Result.UNDEFINED, result);
             }
         } finally {

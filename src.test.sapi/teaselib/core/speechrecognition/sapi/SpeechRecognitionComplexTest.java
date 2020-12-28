@@ -22,9 +22,45 @@ import teaselib.core.ui.Prompt;
 public class SpeechRecognitionComplexTest {
 
     @Test
+    public void testOptionalStart() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Of course"), new Choice("Yes Of course"));
+
+        assertRecognized(choices, "Of course", new Prompt.Result(0));
+        assertRecognized(choices, "Yes Of course", new Prompt.Result(1));
+        // Recognized because of leading null rule with choice index == 0
+        assertRecognized(choices, "Of", new Prompt.Result(0));
+        assertRecognized(choices, "Yes", new Prompt.Result(1));
+    }
+
+    @Test
+    public void testOptionalEnd() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Of course"), new Choice("Of course not"));
+
+        assertRecognized(choices, "Of course", new Prompt.Result(0));
+        assertRecognized(choices, "Of course not", new Prompt.Result(1));
+
+        assertRejected(choices, "Of");
+        assertRejected(choices, "Not");
+    }
+
+    @Test
+    public void testOptionalMiddle() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Of course Miss"), new Choice("Of course not Miss"));
+
+        assertRecognized(choices, "Of course Miss", new Prompt.Result(0));
+        assertRecognized(choices, "Of course not Miss", new Prompt.Result(1));
+
+        assertRejected(choices, "Of");
+        assertRejected(choices, "Not");
+    }
+
+    @Test
     public void testRejected() throws InterruptedException {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
-                new Choice("Foo", "Foo", "Foo"));
+                new Choice("Foo"));
         assertRejected(choices, "Bar");
     }
 
@@ -40,6 +76,7 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("Of course, Miss"), new Prompt.Result(0));
 
+        // Accepted as Intention.Confirm because SAPI emulation provides wrong confidence values == 1.0
         Choices hypothized = as(choices, Intention.Confirm);
         assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
 

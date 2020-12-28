@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,4 +63,9 @@ public class RuleIndicesList extends ArrayList<Set<Integer>> {
             return intersection;
         }
     }
+
+    public Set<Integer> union() {
+        return stream().flatMap(Set::stream).collect(toSet());
+    }
+
 }

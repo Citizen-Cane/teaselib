@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition.sapi;
+package teaselib.core.speechrecognition;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -13,6 +13,7 @@ import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;

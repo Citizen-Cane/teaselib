@@ -1,60 +1,88 @@
 package teaselib.core.ai.deepspeech;
 
+import static java.util.Collections.singleton;
+import static teaselib.core.speechrecognition.Confidence.valueOf;
+
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import teaselib.core.ai.deepspeech.DeepSpeechRecognizer.Result;
-import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 
 public class RuleBuilder {
 
-    // recognition results - for each element:
-    // - different word "expert" in "experience prooves this"
-    // +> DONE iterate all results where size() == words(ground truth) to find correct match
-    // +> DONE iterate all results but just look for the index
-    // - for results with larger word size try to match variations with n-words less
-    // +> rate first/last letters "exper" confidence = 5/10
-    //
-    // - missing word: " prooves" in "experience prooves this" / (no) of course (not)
-    // -> NULL rule with confidence = 0.0f, empty index - the word should be there
-    //
-    // - extra word before "the experience" in "experience prooves this"
-    // -> ignore
-
-    // TODO works good on disjunct test data, but cannot construct multiple indices
-    // -> integrate slices
-
     public static List<Rule> rules(List<PhraseString> phrases, List<Result> results) {
-        List<Rule> rules = new ArrayList<>(phrases.size());
-        for (PhraseString phrase : phrases) {
-            int index = 0;
-            List<PhraseString> words = phrase.words();
-            List<Rule> children = new ArrayList<>(words.size());
-            for (PhraseString word : words) {
-                float probability = find(word, results, index);
-                children.add(new Rule("TODO Childname", word.toString(), -2, word.indices, index, index + 1,
-                        probability, Confidence.valueOf(probability)));
-                index++;
-            }
-            float probability = Rule.probability(children);
-            if (probability > 0) {
-                Rule candidate = new Rule(Rule.MAIN_RULE_NAME, phrase.toString(), -1, children, 0, children.size(),
-                        probability, Confidence.valueOf(probability));
-                rules.add(candidate);
+        Map<String, Rule> rules = new LinkedHashMap<>();
+        // try each alternate, without match search less probable alternates
+        for (int i = 0; i < results.size(); i++) {
+            Result result = results.get(i);
+            for (int phrase_index = 0; phrase_index < phrases.size(); phrase_index++) {
+                PhraseString phrase = phrases.get(phrase_index);
+                List<String> words = phrase.split();
+                int word_index = 0;
+                int result_index = 0;
+                int child_index = 0;
+                List<Rule> children = new ArrayList<>(result.words.size());
+                while (word_index < words.size()) {
+                    int j = result_index - 1;
+                    int result_words = result.words.size();
+                    int null_rules = 0;
+                    while (++j < result_words) {
+                        String word = words.get(word_index);
+                        float probability = match(word, result_index, results);
+                        if (probability > 0.0f) {
+                            children.add(childRule(word, child_index, child_index + 1, phrase_index, probability));
+                            result_index = j + 1;
+                            child_index++;
+                            break;
+                        } else {
+                            null_rules++;
+                        }
+                    }
+
+                    if (j == result_words) {
+                        children.add(nullRule(null, child_index, phrase_index, 0.0f));
+                    } else if (null_rules > 0) {
+                        for (int k = 0; k < null_rules; k++) {
+                            children.add(nullRule(null, child_index, phrase_index, 0.0f));
+                        }
+                    }
+
+                    word_index++;
+                }
+
+                // TODO reduce object creation: defer rule building until all probabilities are complete
+
+                Rule rule = Rule.mainRule(children);
+                if (rule.probability > 0.0f && rules.computeIfPresent(rule.text, (t, r) -> {
+                    return r.probability > rule.probability ? r : rule;
+                }) == null) {
+                    rules.put(rule.text, rule);
+                }
             }
         }
-        return rules;
+        return new ArrayList<>(rules.values());
+
     }
 
-    private static float find(PhraseString word, List<Result> results, int index) {
-        for (Result result : results) {
-            if (result.words.size() > index && result.words.get(index).equals(word.toString())) {
-                return result.confidence;
-            }
-        }
-        return 0.0f;
+    private static float match(String word, int index, List<Result> results) {
+        Result result = results.get(0);
+        // TODO find exact match with less confidence
+        // TODO find partial match with matching start/end letters
+        return word.equals(result.words.get(index)) ? result.confidence : 0.0f;
+    }
+
+    private static Rule childRule(String text, int from, int to, int choice, float probability) {
+        int index = from;
+        return new Rule("r_" + index, text, index, singleton(choice), from, to, probability, valueOf(probability));
+    }
+
+    private static Rule nullRule(String word, int from, int choice, float probability) {
+        int index = from;
+        return new Rule("r_" + index, word, index, singleton(choice), index, index, probability, valueOf(probability));
     }
 
 }

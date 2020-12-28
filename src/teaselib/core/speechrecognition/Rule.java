@@ -41,6 +41,18 @@ public class Rule {
     public final float probability;
     public final Confidence confidence;
 
+    public static Rule mainRule(List<Rule> children) {
+        return mainRule(children, probability(children));
+    }
+
+    public static Rule mainRule(List<Rule> children, float probability) {
+        String text = Rule.text(children);
+        int fromElement = children.get(0).fromElement;
+        int toElement = children.get(children.size() - 1).toElement;
+        Confidence confidence = Confidence.valueOf(probability);
+        return new Rule(Rule.MAIN_RULE_NAME, text, -1, children, fromElement, toElement, probability, confidence);
+    }
+
     public Rule(Rule rule, String name, float probability, Confidence confidence) {
         this(name, rule.text, rule.ruleIndex, rule.indices, rule.children, rule.fromElement, rule.toElement,
                 probability, confidence);
@@ -246,8 +258,8 @@ public class Rule {
         return children.stream().collect(averagingDouble(rule -> rule.probability)).floatValue();
     }
 
-    private static String text(List<Rule> repairedChildren) {
-        return repairedChildren.stream().map(r -> r.text).filter(Objects::nonNull).collect(joining(" "));
+    public static String text(List<Rule> children) {
+        return children.stream().map(r -> r.text).filter(Objects::nonNull).collect(joining(" "));
     }
 
     private static Set<Integer> indicesIntersection(List<Rule> rules) {

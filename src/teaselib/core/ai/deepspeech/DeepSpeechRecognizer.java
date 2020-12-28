@@ -25,8 +25,6 @@ import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.IndexMap;
 import teaselib.core.speechrecognition.srgs.PhraseString;
-import teaselib.core.speechrecognition.srgs.PhraseStringSequences;
-import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
 import teaselib.core.util.ReflectionUtils;
 
@@ -113,23 +111,14 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     }
 
     private final class PreparedChoicesImplementation implements PreparedChoices {
-
-        final Choices choices;
         final List<PhraseString> phrases;
-        final SlicedPhrases<PhraseString> slices;
         final IntUnaryOperator mapper;
 
         public PreparedChoicesImplementation(Choices choices) {
-            this.choices = choices;
-
             IndexMap<Integer> index2choices = new IndexMap<>();
-            phrases = choices.stream()
-                    .flatMap(choice -> choice.phrases.stream()
-                            .map(phrase -> new PhraseString(phrase, index2choices.add(choices.indexOf(choice)))))
+            phrases = choices.stream().flatMap(choice -> choice.phrases.stream()
+                    .map(phrase -> new PhraseString(phrase.toLowerCase(), index2choices.add(choices.indexOf(choice)))))
                     .collect(toList());
-
-            this.slices = SlicedPhrases.of( //
-                    PhraseStringSequences.of(phrases), PhraseStringSequences::prettyPrint);
             this.mapper = index2choices::get;
         }
 
@@ -168,7 +157,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public void emulateRecognition(String speech) {
-        speechEmulation.execute(() -> emulate(speech));
+        speechEmulation.execute(() -> emulate(speech.toLowerCase()));
     }
 
     public native void emulate(String speech);

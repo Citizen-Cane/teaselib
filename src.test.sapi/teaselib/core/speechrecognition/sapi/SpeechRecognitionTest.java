@@ -36,9 +36,8 @@ public class SpeechRecognitionTest {
                 new Choice("Foo bar"));
 
         assertRecognized(choices, "Foo bar", new Prompt.Result(0));
-
         Choices hypothized = as(choices, Intention.Confirm);
-        SpeechRecognitionTestUtils.assertRecognizedAsHypothesis(hypothized, "Foo", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(hypothized, "Foo", new Prompt.Result(0));
         assertRejected(choices, "Bar");
     }
 
@@ -74,7 +73,6 @@ public class SpeechRecognitionTest {
 
         assertRecognized(choices, "Yes Miss I've spurted off", new Prompt.Result(0, 0));
         assertRecognized(choices, "No Miss I didn't spurt off", new Prompt.Result(1, 1));
-
         assertRejected(choices, "Yes Miss I didn't spurt off");
         assertRejected(choices, "No Miss I've spurted off");
         assertRejected(choices, "Miss I've spurted off");
@@ -102,9 +100,9 @@ public class SpeechRecognitionTest {
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Bar", new Prompt.Result(1));
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foo", new Prompt.Result(0));
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
-
             assertRejected(inputMethod, choices, "My name is");
         }
     }

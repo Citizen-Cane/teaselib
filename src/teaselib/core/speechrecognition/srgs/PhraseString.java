@@ -18,9 +18,15 @@ import java.util.stream.Collectors;
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
 public class PhraseString {
-    static final Sequence.Traits<PhraseString> Traits = new Traits<>(PhraseString::compareTo, PhraseString::words,
-            PhraseString::commonness, PhraseString::joinCommon, PhraseString::joinSequence,
-            PhraseString::joinableSequences, PhraseString::joinablePhrases, PhraseString::intersectionPredicate);
+    public static final Sequence.Traits<PhraseString> Traits = new Traits<>(//
+            PhraseString::compareTo, //
+            PhraseString::words, //
+            PhraseString::commonness, //
+            PhraseString::joinCommon, //
+            PhraseString::joinSequence, //
+            PhraseString::joinableSequences, //
+            PhraseString::joinablePhrases, //
+            PhraseString::intersectionPredicate);
 
     public final String phrase;
     public final Set<Integer> indices;
@@ -56,6 +62,10 @@ public class PhraseString {
             String[] words = words(phrase);
             return stream(words).map(word -> new PhraseString(word, indices)).collect(toList());
         }
+    }
+
+    public List<String> split() {
+        return Arrays.asList(words(phrase));
     }
 
     public static String[] words(String phrase) {

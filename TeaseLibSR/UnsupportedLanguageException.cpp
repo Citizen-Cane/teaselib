@@ -5,7 +5,7 @@
 #include "UnsupportedLanguageException.h"
 
 
-const char* UnsupportedLanguageException::RuntimeClass = "teaselib/core/speechrecognition/implementation/UnsupportedLanguageException";
+const char* UnsupportedLanguageException::RuntimeClass = "teaselib/core/speechrecognition/UnsupportedLanguageException";
 
 UnsupportedLanguageException::UnsupportedLanguageException(HRESULT hr)
 	: NativeException(hr, COMException::Description(hr).c_str(), UnsupportedLanguageException::RuntimeClass)

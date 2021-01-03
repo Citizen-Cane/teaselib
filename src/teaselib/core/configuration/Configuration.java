@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedItem;
@@ -36,9 +35,9 @@ public class Configuration {
     private final Map<String, ConfigurationFile> userPropertiesNamespaceMapping = new HashMap<>();
     final PersistentConfigurationFiles persistentConfigurationFiles = new PersistentConfigurationFiles();
 
-    private final List<Properties> defaultProperties = new ArrayList<>();
-    private final Properties sessionProperties = new Properties();
-    private Properties persistentProperties;
+    private final List<ConfigurationFile> defaultProperties = new ArrayList<>();
+    private final ConfigurationFile sessionProperties = new ConfigurationFile();
+    private ConfigurationFile persistentProperties;
 
     Optional<File> userPath = Optional.empty();
 
@@ -184,11 +183,10 @@ public class Configuration {
         return has(QualifiedItem.of(property));
     }
 
-    // TODO has(...) does not traverse defaults chain
     public boolean has(QualifiedItem property) {
         String item = property.toString();
-        return sessionProperties.containsKey(item) || System.getProperties().containsKey(item)
-                || persistentProperties.containsKey(item);
+        return sessionProperties.has(item) || System.getProperties().containsKey(item)
+                || persistentProperties.has(item);
     }
 
     public String get(String property) {

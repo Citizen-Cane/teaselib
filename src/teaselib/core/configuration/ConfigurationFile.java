@@ -25,7 +25,7 @@ public class ConfigurationFile extends SortedProperties {
     }
 
     public boolean has(String key) {
-        return containsKey(key);
+        return containsKey(key) || (defaults != null ? ((ConfigurationFile) defaults).has(key) : false);
     }
 
     public String get(String key) {

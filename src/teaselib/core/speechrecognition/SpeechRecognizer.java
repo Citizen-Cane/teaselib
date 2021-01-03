@@ -22,7 +22,7 @@ public class SpeechRecognizer implements Closeable {
     public final AudioSync audioSync;
 
     public enum Config {
-        SpeechRecognitionImplementation;
+        Implementation;
     }
 
     private Class<? extends SpeechRecognitionNativeImplementation> srClass;
@@ -31,16 +31,18 @@ public class SpeechRecognizer implements Closeable {
         this(config, new AudioSync());
     }
 
-    @SuppressWarnings("unchecked")
     public SpeechRecognizer(Configuration config, AudioSync audioSync) {
         this.audioSync = audioSync;
         if (Boolean.parseBoolean(config.get(teaselib.Config.InputMethod.SpeechRecognition))) {
-            if (config.has(Config.SpeechRecognitionImplementation)) {
-                String className = config.get(Config.SpeechRecognitionImplementation);
+            if (config.has(Config.Implementation)) {
+                String className = config.get(Config.Implementation);
                 try {
-                    this.srClass = (Class<? extends SpeechRecognitionNativeImplementation>) Class.forName(className);
+                    @SuppressWarnings("unchecked")
+                    Class<? extends SpeechRecognitionNativeImplementation> implementationClass = //
+                            (Class<? extends SpeechRecognitionNativeImplementation>) Class.forName(className);
+                    this.srClass = implementationClass;
                 } catch (ClassNotFoundException e) {
-                    throw new NoSuchElementException(Config.SpeechRecognitionImplementation + ": " + className);
+                    throw new NoSuchElementException(Config.Implementation + ": " + className);
                 }
             } else {
                 this.srClass = TeaseLibSRGS.class;

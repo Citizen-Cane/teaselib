@@ -22,7 +22,8 @@ import teaselib.core.util.ExceptionUtil;
 public class SpeechRecognition {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
 
-    static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
+    // TODO move to TeaseLibSR impl and implement tiemout-based rejectedEvent in DeepSpeechRecognizer
+    private static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
 
     public final SpeechRecognitionEvents events;
     public final Locale locale;

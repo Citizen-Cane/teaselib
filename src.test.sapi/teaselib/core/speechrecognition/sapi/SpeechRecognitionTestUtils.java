@@ -54,7 +54,7 @@ public class SpeechRecognitionTestUtils {
         DebugSetup setup = new DebugSetup().withInput();
         Configuration config = new Configuration();
         setup.applyTo(config);
-        config.set(SpeechRecognizer.Config.SpeechRecognitionImplementation, srClass.getName());
+        config.set(SpeechRecognizer.Config.Implementation, srClass.getName());
         return new SpeechRecognizer(config, new AudioSync());
     }
 

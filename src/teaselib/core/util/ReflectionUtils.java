@@ -40,6 +40,10 @@ public final class ReflectionUtils {
         return namespace + "." + clazz.getSimpleName() + "." + name;
     }
 
+    public static String qualified(Enum<?> namespace, String name) {
+        return new QualifiedEnum(namespace) + "." + name;
+    }
+
     public static String qualified(String namespace, String name) {
         return namespace + "." + name;
     }

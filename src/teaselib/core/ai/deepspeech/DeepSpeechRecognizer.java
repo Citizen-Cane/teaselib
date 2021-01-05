@@ -1,6 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntUnaryOperator;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +102,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         if (results != null && !results.isEmpty()) {
             if (logger.isInfoEnabled()) {
                 logger.info("DeepSpeech results = \n{}",
-                        results.stream().map(Objects::toString).collect(Collectors.joining("\n")));
+                        results.stream().map(Objects::toString).collect(joining("\n")));
             }
             List<Rule> rules = RuleBuilder.rules(current.phrases, results);
             event.fire(new SpeechRecognizedEventArgs(rules));

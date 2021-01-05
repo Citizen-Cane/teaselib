@@ -39,6 +39,11 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
         return locale.toString().replace("_", "-");
     }
 
+    public static boolean hasRegion(String languageCode) {
+        int index = languageCode.indexOf("-");
+        return index >= 0;
+    }
+
     public final void startEventLoop(SpeechRecognitionEvents events) {
         CountDownLatch awaitInitialized = new CountDownLatch(1);
         Runnable speechRecognitionService = () -> {

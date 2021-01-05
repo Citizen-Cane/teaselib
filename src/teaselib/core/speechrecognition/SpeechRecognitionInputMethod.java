@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -461,7 +461,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
 
     private SpeechRecognition getRecognizer(Locale locale) {
         SpeechRecognition recognizer = speechRecognizer.get(locale);
-        if (usedRecognitionInstances.put(recognizer.locale, recognizer) == null) {
+        if (usedRecognitionInstances.put(locale, recognizer) == null) {
             add(recognizer.events);
         }
         return recognizer;

@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.emptyList;
-import static teaselib.core.speechrecognition.Confidence.High;
+import static java.util.Collections.*;
+import static teaselib.core.speechrecognition.Confidence.*;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -22,14 +22,14 @@ import teaselib.core.util.ExceptionUtil;
 public class SpeechRecognition {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
 
-    // TODO move to TeaseLibSR impl and implement tiemout-based rejectedEvent in DeepSpeechRecognizer
-    private static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
-
     public final SpeechRecognitionEvents events;
-    public final Locale locale;
 
+    // TODO move to sapi implementation
+    private static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
     private final SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
+
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
+    private final Locale locale;
     public final SpeechRecognitionNativeImplementation implementation;
 
     private PreparedChoices preparedChoices;

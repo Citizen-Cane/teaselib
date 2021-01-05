@@ -26,14 +26,13 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
         try {
             return newNativeInstance(languageCode);
         } catch (UnsupportedLanguageException e) {
-            logger.warn(e.getMessage());
-            int index = languageCode.indexOf("-");
-            if (index < 0) {
-                throw e;
-            } else {
-                languageCode = languageCode.substring(0, index);
+            if (hasRegion(languageCode)) {
+                logger.warn(e.getMessage());
+                languageCode = locale.getLanguage();
                 logger.info("-> trying language {}", languageCode);
                 return newNativeInstance(languageCode);
+            } else {
+                throw e;
             }
         }
     }

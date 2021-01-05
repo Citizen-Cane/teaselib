@@ -1,10 +1,7 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,7 +51,7 @@ public class SpeechRecognitionTestUtils {
         DebugSetup setup = new DebugSetup().withInput();
         Configuration config = new Configuration();
         setup.applyTo(config);
-        config.set(SpeechRecognizer.Config.Implementation, srClass.getName());
+        config.set(SpeechRecognizer.Config.Default, srClass.getName());
         return new SpeechRecognizer(config, new AudioSync());
     }
 

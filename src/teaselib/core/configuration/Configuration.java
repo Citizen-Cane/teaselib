@@ -185,8 +185,10 @@ public class Configuration {
 
     public boolean has(QualifiedItem property) {
         String item = property.toString();
-        return sessionProperties.has(item) || System.getProperties().containsKey(item)
-                || persistentProperties.has(item);
+
+        return sessionProperties.has(item) || //
+                System.getProperties().containsKey(item) || //
+                persistentProperties.has(item);
     }
 
     public String get(String property) {

@@ -96,7 +96,11 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     private void estimatePoses() throws InterruptedException {
         while (canProcessNextFrame()) {
             if (device == null) {
-                device = teaseLibAI.awaitCaptureDevice();
+                // TODO blocks pose annotations for the specified time -> wait outside queue
+                device = teaseLibAI.awaitCaptureDevice(5, TimeUnit.SECONDS);
+                if (device == null)
+                    continue;
+
                 device.start();
                 humanPose = teaseLibAI.getModel(Interest.Status);
             }

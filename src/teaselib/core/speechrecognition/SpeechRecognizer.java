@@ -1,5 +1,8 @@
 package teaselib.core.speechrecognition;
 
+import static java.lang.Class.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation.*;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,60 +15,91 @@ import teaselib.core.AudioSync;
 import teaselib.core.Closeable;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.speechrecognition.sapi.TeaseLibSRGS;
+import teaselib.core.util.ReflectionUtils;
 
 /**
  * @author Citizen-Cane
  *
  */
 public class SpeechRecognizer implements Closeable {
-    private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
+
     public final AudioSync audioSync;
 
     public enum Config {
-        Implementation;
+        Default,
+        Locale
     }
 
-    private Class<? extends SpeechRecognitionNativeImplementation> srClass;
+    private final Configuration config;
+    private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
 
     public SpeechRecognizer(Configuration config) {
         this(config, new AudioSync());
     }
 
     public SpeechRecognizer(Configuration config, AudioSync audioSync) {
+        this.config = config;
         this.audioSync = audioSync;
+    }
+
+    private static Class<? extends SpeechRecognitionNativeImplementation> defaultImplemntation(Configuration config) {
+        Class<? extends SpeechRecognitionNativeImplementation> defaultImplementation;
         if (Boolean.parseBoolean(config.get(teaselib.Config.InputMethod.SpeechRecognition))) {
-            if (config.has(Config.Implementation)) {
-                String className = config.get(Config.Implementation);
+            if (config.has(Config.Default)) {
+                String className = config.get(Config.Default);
                 try {
                     @SuppressWarnings("unchecked")
                     Class<? extends SpeechRecognitionNativeImplementation> implementationClass = //
-                            (Class<? extends SpeechRecognitionNativeImplementation>) Class.forName(className);
-                    this.srClass = implementationClass;
+                            (Class<? extends SpeechRecognitionNativeImplementation>) forName(className);
+                    defaultImplementation = implementationClass;
                 } catch (ClassNotFoundException e) {
-                    throw new NoSuchElementException(Config.Implementation + ": " + className);
+                    throw new NoSuchElementException(Config.Default + ": " + className);
                 }
             } else {
-                this.srClass = TeaseLibSRGS.class;
+                defaultImplementation = TeaseLibSRGS.class;
             }
         } else {
-            this.srClass = Unsupported.class;
+            defaultImplementation = Unsupported.class;
         }
+        return defaultImplementation;
     }
 
     public SpeechRecognition get(Locale locale) {
         synchronized (speechRecognitionInstances) {
             if (speechRecognitionInstances.containsKey(locale)) {
-                SpeechRecognition speechRecognition = speechRecognitionInstances.get(locale);
-                if (speechRecognition.implementation.getClass() != srClass) {
-                    throw new UnsupportedOperationException("SR implementation already set for locale " + locale);
-                }
-                return speechRecognition;
+                return speechRecognitionInstances.get(locale);
             } else {
-                SpeechRecognition speechRecognition = new SpeechRecognition(locale, srClass, audioSync);
-                speechRecognitionInstances.put(locale, speechRecognition);
-                return speechRecognition;
+                Class<? extends SpeechRecognitionNativeImplementation> implementationClass;
+                implementationClass = implementationClass(locale);
+                SpeechRecognition instance = new SpeechRecognition(locale, implementationClass, audioSync);
+                speechRecognitionInstances.put(locale, instance);
+                return instance;
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Class<? extends SpeechRecognitionNativeImplementation> implementationClass(Locale locale) {
+        Class<? extends SpeechRecognitionNativeImplementation> implementationClass;
+        if (Boolean.parseBoolean(config.get(teaselib.Config.InputMethod.SpeechRecognition))) {
+            String setting = ReflectionUtils.qualified(Config.Locale, languageCode(locale));
+            if (!config.has(setting)) {
+                setting = ReflectionUtils.qualified(Config.Locale, locale.getLanguage());
+            }
+            if (config.has(setting)) {
+                String className = config.get(setting);
+                try {
+                    implementationClass = (Class<? extends SpeechRecognitionNativeImplementation>) forName(className);
+                } catch (ClassNotFoundException e) {
+                    implementationClass = defaultImplemntation(config);
+                }
+            } else {
+                implementationClass = defaultImplemntation(config);
+            }
+        } else {
+            implementationClass = defaultImplemntation(config);
+        }
+        return implementationClass;
     }
 
     @Override

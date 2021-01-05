@@ -2,6 +2,7 @@ package teaselib.core.ai;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.core.Closeable;
 import teaselib.core.ai.perception.HumanPose;
@@ -26,11 +27,15 @@ public class TeaseLibAI implements Closeable {
         //
     }
 
-    public SceneCapture awaitCaptureDevice() throws InterruptedException {
-        while (true) {
+    private static long pollDurationMillis = 5000;
+
+    public SceneCapture awaitCaptureDevice(long timeout, TimeUnit unit) throws InterruptedException {
+        long durationMillis = TimeUnit.MILLISECONDS.convert(timeout, unit);
+        while (durationMillis > 0) {
             List<SceneCapture> devices = sceneCaptures();
             if (devices.isEmpty()) {
-                Thread.sleep(5000);
+                Thread.sleep(Math.min(pollDurationMillis, durationMillis));
+                durationMillis -= pollDurationMillis;
             } else {
                 Optional<SceneCapture> device = find(devices, EnclosureLocation.External);
                 if (device.isPresent()) {
@@ -43,9 +48,10 @@ public class TeaseLibAI implements Closeable {
                 }
             }
         }
+        return null;
     }
 
-    private Optional<SceneCapture> find(List<SceneCapture> sceneCaptures, EnclosureLocation location) {
+    private static Optional<SceneCapture> find(List<SceneCapture> sceneCaptures, EnclosureLocation location) {
         return sceneCaptures.stream().filter(s -> s.location == location).findFirst();
     }
 

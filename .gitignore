@@ -226,6 +226,7 @@ lib/TeaseLib_tests.jar
 lib/*.lib
 lib/*.dll
 lib/*.exp
+lib/deepspeech
 
 bin.test/
 bin.test.interactive/

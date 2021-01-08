@@ -1,16 +1,18 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.confidence;
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -53,7 +55,7 @@ public class DeepSpeechRecognizerTest {
                 Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(testData.groundTruth));
                 deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
                 deepSpeechRecognizer.emulateRecognition(testData.audio.toString());
-                await(deepSpeechRecognizer, speechRecognized, signal, testData.groundTruth);
+                await(choices, 0, deepSpeechRecognizer, speechRecognized, signal, testData.groundTruth);
             }
         }
     }
@@ -75,19 +77,22 @@ public class DeepSpeechRecognizerTest {
                 deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
                 deepSpeechRecognizer.emulateRecognition(
                         "experience prooves this\nexperience prooves that\nthe experience proofs it");
-                await(deepSpeechRecognizer, speechRecognized, signal, "experience prooves this");
+                await(choices, 0, deepSpeechRecognizer, speechRecognized, signal, choices.get(0).display);
                 assertNotNull(speechRecognized.get());
             }
         }
     }
 
-    private static void await(DeepSpeechRecognizer deepSpeechRecognizer,
+    private static void await(Choices choices, int choice, DeepSpeechRecognizer deepSpeechRecognizer,
             AtomicReference<SpeechRecognizedEventArgs> event, CountDownLatch signal, String speech)
             throws InterruptedException {
-        if (signal.await(10, SECONDS)) {
-            List<Rule> result = event.get().result;
-            assertFalse(result.isEmpty());
-            assertEquals(speech, result.get(0).text);
+        if (signal.await(10, TimeUnit.MINUTES)) {
+            List<Rule> rules = event.get().result;
+            assertFalse("Audio file result expected - path correct?", rules.isEmpty());
+            Rule best = rules.get(0);
+            assertEquals(1, best.indices.size());
+            assertEquals(choice, best.indices.iterator().next().intValue());
+            assertTrue(best.probability > confidence(choices.intention).probability);
         } else {
             Optional<Throwable> failure = deepSpeechRecognizer.getException();
             if (failure.isPresent()) {

@@ -53,7 +53,6 @@ public final class DebugSetup implements Setup {
         config.set(Config.Render.Sound, Boolean.toString(enableOutput));
         config.set(Config.Render.ActorImages, Boolean.toString(enableOutput));
         config.set(Config.Render.InstructionalImages, Boolean.toString(enableOutput));
-
     }
 
     private void applyDictionanries(Configuration config) {

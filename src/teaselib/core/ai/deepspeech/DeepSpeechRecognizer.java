@@ -1,6 +1,7 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -25,14 +26,11 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.IndexMap;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choices;
-import teaselib.core.util.ReflectionUtils;
 
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
     private static final Logger logger = LoggerFactory.getLogger(DeepSpeechRecognizer.class);
 
-    private static final Path project = ReflectionUtils.projectPath(DeepSpeechRecognizer.class);
-    static final Path modelPath = project.resolve(Path.of( //
-            "..", "..", "TeaseLibAIfx", "TeaseLibAIml", "models", "tflite", "deepspeech")).normalize();
+    static final Path modelPath = Path.of("lib", "deepspeech").normalize();
 
     private PreparedChoicesImplementation current = null;
     private final NamedExecutorService speechEmulation = NamedExecutorService
@@ -82,18 +80,30 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         signalInitialized.countDown();
         while (!Thread.interrupted()) {
             Status status = Status.of(decode());
-            if (status == Status.Started) {
-                events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
-                fire(events.speechDetected);
-            } else if (status == Status.Running) {
-                fire(events.speechDetected);
-            } else if (status == Status.Cancelled) {
-                return;
-            } else if (status == Status.Done) {
-                fire(events.recognitionCompleted);
-            } else if (status != Status.Idle) {
-                throw new UnsupportedOperationException(status.name());
+            try {
+                if (status == Status.Started) {
+                    events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
+                    fire(events.speechDetected);
+                } else if (status == Status.Running) {
+                    fire(events.speechDetected);
+                } else if (status == Status.Cancelled) {
+                    return;
+                } else if (status == Status.Done) {
+                    fire(events.recognitionCompleted);
+                } else if (status != Status.Idle) {
+                    throw new UnsupportedOperationException(status.name());
+                }
+            } catch (Throwable t) {
+                stopEventLoop();
+                freeDeepSpeechStreamOnError(status);
+                throw t;
             }
+        }
+    }
+
+    private void freeDeepSpeechStreamOnError(Status status) {
+        if (status == Status.Running) {
+            decode();
         }
     }
 

@@ -61,6 +61,28 @@ public class DeepSpeechRecognizerTest {
     }
 
     @Test
+    public void testLanguageFallbackWorks() throws InterruptedException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
+            SpeechRecognitionEvents events = new SpeechRecognitionEvents();
+
+            AtomicReference<SpeechRecognizedEventArgs> speechRecognized = new AtomicReference<>();
+            CountDownLatch signal = new CountDownLatch(1);
+            events.recognitionCompleted.add(e -> {
+                speechRecognized.set(e);
+                signal.countDown();
+            });
+            Locale australianEnglish = new Locale("en", "au");
+            try (DeepSpeechRecognizer deepSpeechRecognizer = new DeepSpeechRecognizer(australianEnglish)) {
+                deepSpeechRecognizer.startEventLoop(events);
+                Choices choices = new Choices(australianEnglish, Intention.Confirm, new Choice("foobar"));
+                deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
+                deepSpeechRecognizer.emulateRecognition("foobar");
+                await(choices, 0, deepSpeechRecognizer, speechRecognized, signal, choices.get(0).display);
+            }
+        }
+    }
+
+    @Test
     public void testEmulateText() throws InterruptedException {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             SpeechRecognitionEvents events = new SpeechRecognitionEvents();

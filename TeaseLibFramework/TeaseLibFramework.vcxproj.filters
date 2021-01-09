@@ -66,6 +66,9 @@
     <ClInclude Include="JNIArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UnsupportedLanguageException.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -111,6 +114,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="JNIArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UnsupportedLanguageException.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

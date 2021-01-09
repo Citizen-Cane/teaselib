@@ -13,9 +13,15 @@ public:
 	operator const T*() const {
 		return string;
 	};
+
+	const T* c_str() const {
+		return string;
+	};
+
 	size_t length() const {
 		return env->GetStringLength(jthis);
 	};
+
 private:
 	const T *string;
 };

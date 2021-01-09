@@ -21,20 +21,7 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
 
     private static long newNativeInstance(Locale locale) {
         teaselib.core.jni.LibraryLoader.load("TeaseLibSR");
-
-        String languageCode = languageCode(locale);
-        try {
-            return newNativeInstance(languageCode);
-        } catch (UnsupportedLanguageException e) {
-            if (hasRegion(languageCode)) {
-                logger.warn(e.getMessage());
-                languageCode = locale.getLanguage();
-                logger.info("-> trying language {}", languageCode);
-                return newNativeInstance(languageCode);
-            } else {
-                throw e;
-            }
-        }
+        return newNativeInstance(locale, TeaseLibSR::newNativeInstance);
     }
 
     /**

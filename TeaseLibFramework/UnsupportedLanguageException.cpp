@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include<COMException.h>
+#include "COMException.h"
 
 #include "UnsupportedLanguageException.h"
 

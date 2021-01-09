@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
  * Method:    newNativeInstance
- * Signature: (Ljava/lang/String;Ljava/lang/String;)J
+ * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_newNativeInstance
-  (JNIEnv *, jclass, jstring, jstring);
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer

@@ -3,6 +3,7 @@
 #include <shlwapi.h>
 
 #include <algorithm>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -10,7 +11,10 @@
 #include <JNIString.h>
 #include <JNIUtilities.h>
 
+#include <UnsupportedLanguageException.h>
+
 #include <Blob.h>
+#include <AIfxResource.h>
 #include <AIfxDeepSpeechAudioStream.h>
 
 #include <teaselib_core_ai_deepspeech_DeepSpeechRecognizer.h>
@@ -25,20 +29,33 @@ extern "C"
 	/*
 	 * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
 	 * Method:    init
-	 * Signature: (Ljava/lang/String;Ljava/lang/String;)J
+	 * Signature: (Ljava/lang/String;)J
 	 */
 	JNIEXPORT jlong JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_newNativeInstance
-	(JNIEnv* env, jclass, jstring jmodel, jstring jlanguageCode)
+	(JNIEnv* env, jclass, jstring jlanguageCode)
 	{
 		try {
-			Objects::requireNonNull(L"model", jmodel);
 			Objects::requireNonNull(L"locale", jlanguageCode);
 
-			JNIStringUTF8 model(env, jmodel);
+			char thisModule[MAX_PATH];
+			DWORD size = ::GetModuleFileNameA(aifx::util::Resource::getModuleHandle(), thisModule, MAX_PATH);
+			if (size == 0) {
+				throw NativeException(::GetLastError(), L"model");
+			}
+
+			const filesystem::path models = thisModule;
+			filesystem::path model = filesystem::path(thisModule).parent_path().append("deepspeech");
 			JNIStringUTF8 languageCode(env, jlanguageCode);
-			DeepSpeechRecognizer* speechRecognizer = new DeepSpeechRecognizer(model, languageCode);
-			return reinterpret_cast<jlong>(speechRecognizer);
-		} catch(std::exception& e) {
+			try {
+				DeepSpeechRecognizer* speechRecognizer = new DeepSpeechRecognizer(model.string().c_str(), languageCode);
+				return reinterpret_cast<jlong>(speechRecognizer);
+			} catch (exception& e) {
+				const string what = e.what();
+				wstringstream message;
+				message << what.substr(0, what.size() -1).c_str() << ": " << model.append(languageCode.c_str());
+				throw UnsupportedLanguageException(E_INVALIDARG, message.str().c_str());
+			}
+		} catch(exception& e) {
 			JNIException::rethrow(env, e);
 			return 0;
 		} catch (NativeException& e) {
@@ -61,7 +78,7 @@ extern "C"
 		try {
 			const DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			return JNIStringUTF8(env, speechRecognizer->languageCode());
-		} catch (std::exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return 0;
 		} catch (NativeException& e) {
@@ -86,7 +103,7 @@ extern "C"
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			const DeepSpeechAudioStream::Status status = speechRecognizer->decode();
 			return static_cast<int>(status);
-		} catch (std::exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return static_cast<int>(DeepSpeechAudioStream::Status::Cancelled);
 		} catch (NativeException& e) {
@@ -109,7 +126,7 @@ extern "C"
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			return DeepSpeechRecognizer::jresults(env, speechRecognizer->results());
-		} catch (std::exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return nullptr;
 		} catch (NativeException& e) {
@@ -132,7 +149,7 @@ extern "C"
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			speechRecognizer->start();
-		} catch (std::exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
@@ -154,12 +171,12 @@ extern "C"
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			JNIStringUTF8 speech(env, jspeech);
 			if (PathFileExistsA(speech)) {
-				aifx::Blob<short> data(speech);
+				const aifx::Blob<short> data(speech);
 				speechRecognizer->emulate(data, static_cast<unsigned int>(data.size()));
 			} else {
 				speechRecognizer->emulate(speech);
 			}
-		} catch (std::exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);			
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
@@ -179,7 +196,7 @@ extern "C"
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			speechRecognizer->stop();
-		} catch (std::exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
@@ -200,13 +217,11 @@ extern "C"
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			speechRecognizer->stopEventLoop();
 		}
-		catch (std::exception& e) {
+		catch (exception& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 		}
 	}
@@ -222,7 +237,7 @@ extern "C"
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			NativeInstance::dispose(env, jthis, speechRecognizer);
-		} catch (std::exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
@@ -344,7 +359,7 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 		}
 
 		return;
-	} catch (std::exception& e) {
+	} catch (exception& e) {
 		recognizer.cancel();
 		throw e;
 	}

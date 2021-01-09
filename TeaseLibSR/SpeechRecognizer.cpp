@@ -15,7 +15,7 @@
 #include <atlcom.h>
 
 #include <COMException.h>
-#include "UnsupportedLanguageException.h"
+#include <UnsupportedLanguageException.h>
 
 #include "AudioLevelUpdatedEvent.h"
 #include "AudioLevelSignalProblemOccuredEvent.h"

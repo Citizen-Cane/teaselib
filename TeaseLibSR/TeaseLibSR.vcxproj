@@ -168,7 +168,6 @@
   <ItemGroup>
     <ClInclude Include="AudioLevelSignalProblemOccuredEvent.h" />
     <ClInclude Include="AudioLevelUpdatedEvent.h" />
-    <ClInclude Include="UnsupportedLanguageException.h" />
     <ClInclude Include="UpdateGrammar.h" />
     <ClInclude Include="SpeechRecognitionStartedEvent.h" />
     <ClInclude Include="SpeechRecognizedEvent.h" />
@@ -193,7 +192,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="UnsupportedLanguageException.cpp" />
     <ClCompile Include="UpdateGrammar.cpp" />
     <ClCompile Include="SpeechRecognitionStartedEvent.cpp" />
     <ClCompile Include="SpeechRecognizedEvent.cpp" />

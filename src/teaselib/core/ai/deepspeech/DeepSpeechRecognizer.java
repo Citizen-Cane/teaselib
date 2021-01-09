@@ -3,7 +3,6 @@ package teaselib.core.ai.deepspeech;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -30,17 +29,15 @@ import teaselib.core.ui.Choices;
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
     private static final Logger logger = LoggerFactory.getLogger(DeepSpeechRecognizer.class);
 
-    static final Path modelPath = Path.of("lib", "deepspeech").normalize();
-
     private PreparedChoicesImplementation current = null;
     private final NamedExecutorService speechEmulation = NamedExecutorService
             .singleThreadedQueue("DeepSpeech Emulation");
 
     public DeepSpeechRecognizer(Locale locale) {
-        super(newNativeInstance(modelPath.toString(), languageCode(locale)));
+        super(newNativeInstance(locale, DeepSpeechRecognizer::newNativeInstance));
     }
 
-    protected static native long newNativeInstance(String model, String langugeCode);
+    protected static native long newNativeInstance(String langugeCode);
 
     @Override
     public native String languageCode();

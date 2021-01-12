@@ -58,6 +58,17 @@ public class SpeechRecognitionComplexTest {
     }
 
     @Test
+    public void testPunctationCharacters() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Oh Really?"), new Choice("?THese;_:are+a/lOT@(of)puncTAtion-maRkS!"),
+                new Choice("No I haven't"));
+
+        assertRecognized(choices, "Oh really", new Prompt.Result(0));
+        assertRecognized(choices, "theSE aRe A Lot Of PUnctaTion mArks", new Prompt.Result(1));
+        assertRecognized(choices, "No I haven't", new Prompt.Result(2));
+    }
+
+    @Test
     public void testRejected() throws InterruptedException {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice("Foo"));

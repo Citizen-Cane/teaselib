@@ -22,7 +22,6 @@ import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionProvider;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.srgs.IndexMap;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choices;
 
@@ -117,15 +116,14 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     }
 
     private final class PreparedChoicesImplementation implements PreparedChoices {
-        final List<PhraseString> phrases;
+        final List<String[]> phrases;
         final IntUnaryOperator mapper;
 
         public PreparedChoicesImplementation(Choices choices) {
-            IndexMap<Integer> index2choices = new IndexMap<>();
-            phrases = choices.stream().flatMap(choice -> choice.phrases.stream()
-                    .map(phrase -> new PhraseString(phrase.toLowerCase(), index2choices.add(choices.indexOf(choice)))))
+            phrases = choices.stream()
+                    .flatMap(choice -> choice.phrases.stream().map(String::toLowerCase).map(PhraseString::words))
                     .collect(toList());
-            this.mapper = index2choices::get;
+            this.mapper = choices.indexMapper();
         }
 
         @Override

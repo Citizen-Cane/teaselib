@@ -4,18 +4,17 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Answers are used to build choices for input methods. The first text is the dominant phrase - it's used for display
- * input methods - so it should be the longest and most detailed. Users will tend to abbreviate, so shorter phrases
- * should come last.
+ * Answers define choices for input methods. The first text is the dominant phrase - it's used for display input methods
+ * - so it should be the longest and most detailed.
  * <p>
- * On the other hand, while chatting shorter phrases may be more appropriate, and the shorter phrase comes first.
- * <p>
- * TODO Improve display to slice phrases and display all groups of an answer.
- * 
+ * Users will tend to abbreviate, so abbreviations of the phrase should come last. On the other hand, while chatting
+ * displaying shorter phrases may be more appropriate.
+ *
  * @author Citizen-Cane
  *
  */
 public class Answer {
+
     public enum Meaning {
         YES,
         NO,
@@ -24,7 +23,7 @@ public class Answer {
     }
 
     /**
-     * Returned when a sccript function has timed out.
+     * Returned when a script function has timed out.
      */
     public static Answer Timeout = new Answer(Meaning.TIMEOUT, ScriptFunction.TimeoutString);
 

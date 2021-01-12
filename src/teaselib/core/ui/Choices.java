@@ -6,10 +6,20 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 
 import teaselib.Answer.Meaning;
+import teaselib.core.speechrecognition.srgs.IndexMap;
 
+/**
+ * 
+ * Choices group Answers to form a prompt. Each {@link teaselib.core.ui.Choice} contains display text and phrases with
+ * text variables expanded.
+ * 
+ * @author Citizen-Cane
+ *
+ */
 public class Choices extends ArrayList<Choice> {
     private static final long serialVersionUID = 1L;
 
@@ -37,6 +47,12 @@ public class Choices extends ArrayList<Choice> {
         this.locale = locale;
         this.intention = intention;
         checkForDuplicates(this);
+    }
+
+    public IntUnaryOperator indexMapper() {
+        IndexMap<Integer> phraseToChoice = new IndexMap<>();
+        stream().forEach(choice -> choice.phrases.stream().forEach(phrase -> phraseToChoice.add(indexOf(choice))));
+        return phraseToChoice::get;
     }
 
     public List<Choice> get(Prompt.Result result) {

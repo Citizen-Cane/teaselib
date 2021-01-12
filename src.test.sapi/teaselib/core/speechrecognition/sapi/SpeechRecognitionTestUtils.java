@@ -1,10 +1,11 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
+import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -123,7 +124,7 @@ public class SpeechRecognitionTestUtils {
 
     public static List<Rule> awaitResult(Prompt prompt, SpeechRecognitionInputMethod inputMethod, String phrase,
             Prompt.Result expectedRules) throws InterruptedException {
-        boolean isAudioFile = Files.exists(Path.of(phrase));
+        boolean isAudioFile = phrase.toLowerCase().endsWith(".raw");
         if (!isAudioFile) {
             assertEquals("Phrase may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
         }

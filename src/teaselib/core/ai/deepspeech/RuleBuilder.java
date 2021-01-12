@@ -11,61 +11,58 @@ import java.util.Map;
 import teaselib.core.ai.deepspeech.DeepSpeechRecognizer.Result;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.srgs.PhraseString;
 
 public class RuleBuilder {
 
-    public static List<Rule> rules(List<PhraseString> phrases, List<Result> results) {
+    public static List<Rule> rules(List<String[]> phrases, List<Result> results) {
         Map<String, Rule> rules = new LinkedHashMap<>();
         // try each alternate, without match search less probable alternates
-        for (int i = 0; i < results.size(); i++) {
-            Result result = results.get(i);
-            for (int phrase_index = 0; phrase_index < phrases.size(); phrase_index++) {
-                PhraseString phrase = phrases.get(phrase_index);
-                List<String> words = phrase.split();
-                int word_index = 0;
-                int result_index = 0;
-                int child_index = 0;
+        for (Result result : results) {
+            for (int phraseIndex = 0; phraseIndex < phrases.size(); phraseIndex++) {
+                String[] words = phrases.get(phraseIndex);
+                int wordIndex = 0;
+                int resultIndex = 0;
+                int childIndex = 0;
                 List<Rule> children = new ArrayList<>(result.words.size());
-                while (word_index < words.size()) {
-                    int j = result_index - 1;
-                    int result_words = result.words.size();
-                    int null_rules = 0;
-                    while (++j < result_words) {
-                        String word = words.get(word_index);
-                        float probability = match(word, result_index, results);
+                while (wordIndex < words.length) {
+                    int j = resultIndex - 1;
+                    int resultWords = result.words.size();
+                    int nullRules = 0;
+                    while (++j < resultWords) {
+                        String word = words[wordIndex];
+                        float probability = match(word, resultIndex, results);
                         if (probability > 0.0f) {
-                            children.add(childRule(word, child_index, child_index + 1, phrase_index, probability));
-                            result_index = j + 1;
-                            child_index++;
+                            children.add(childRule(word, childIndex, childIndex + 1, phraseIndex, probability));
+                            resultIndex = j + 1;
+                            childIndex++;
                             break;
-                        } else if (result_index + 1 < words.size()) {
+                        } else if (resultIndex + 1 < words.length) {
                             // next word?
-                            probability = match(word, result_index + 1, results);
+                            probability = match(word, resultIndex + 1, results);
                             if (probability > 0.0f) {
-                                children.add(childRule(word, child_index, child_index + 1, phrase_index, probability));
-                                result_index = j + 2;
-                                child_index++;
+                                children.add(childRule(word, childIndex, childIndex + 1, phraseIndex, probability));
+                                resultIndex = j + 2;
+                                childIndex++;
                                 break;
                             } else {
                                 // no match in next word - extra garbage word
-                                null_rules++;
+                                nullRules++;
                             }
                         } else {
                             // no match - garbage word at the end of the phrase
-                            null_rules++;
+                            nullRules++;
                         }
                     }
 
-                    if (j == result_words) {
-                        children.add(nullRule(null, child_index, phrase_index, 0.0f));
-                    } else if (null_rules > 0) {
-                        for (int k = 0; k < null_rules; k++) {
-                            children.add(nullRule(null, child_index, phrase_index, 0.0f));
+                    if (j == resultWords) {
+                        children.add(nullRule(null, childIndex, phraseIndex, 0.0f));
+                    } else if (nullRules > 0) {
+                        for (int k = 0; k < nullRules; k++) {
+                            children.add(nullRule(null, childIndex, phraseIndex, 0.0f));
                         }
                     }
 
-                    word_index++;
+                    wordIndex++;
                 }
 
                 // TODO reduce object creation: defer rule building until all probabilities are complete

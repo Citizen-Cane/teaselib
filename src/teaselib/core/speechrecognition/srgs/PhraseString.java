@@ -69,7 +69,12 @@ public class PhraseString {
     }
 
     public static String[] words(String phrase) {
-        return phrase.split("[ .:,;\t\n_()]+");
+        String regex = "[ .,:;!?\t\n_{}()-/@]+";
+        if (regex.contains(phrase.subSequence(0, 1))) {
+            return phrase.substring(1).split(regex);
+        } else {
+            return phrase.split(regex);
+        }
     }
 
     private static int commonness(PhraseString element) {

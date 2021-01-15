@@ -597,6 +597,29 @@ public class PhrasesSliceTest {
                 choice("A B C F G H?", 1), //
                 choice("B C II F J K", 2), //
                 choice("B C L M N O P", 3), //
+                choice("B C L M Q RT", 4), //
+                choice("B C L M Q ST", 5), //
+                choice("B C II F J UV", 6), //
+                choice("B C W F N X Y U", 7), //
+                choice("A B C X Y U Z", 8), //
+                choice("B C 1 2 34 5", 9), //
+                choice("A B C F 6 7", 10));
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertSequence(result("A", 0, 1, 8, 10), optimal, 0);
+        assertSequence(result(Arrays.asList("B", "C"), 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), optimal, 1);
+        assertEquals(7, optimal.size());
+        assertEquals(0, optimal.rating.duplicatedSymbols);
+        assertEquals(11, optimal.rating.maxCommonness);
+    }
+
+    @Test
+    public void testSliceMultipleCommon4Hyphenation() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("A B C D E?", 0), //
+                choice("A B C F G H?", 1), //
+                choice("B C II F J K", 2), //
+                choice("B C L M N O P", 3), //
                 choice("B C L M Q R-T", 4), //
                 choice("B C L M Q S-T", 5), //
                 choice("B C II F J U-V", 6), //
@@ -608,7 +631,7 @@ public class PhrasesSliceTest {
 
         assertSequence(result("A", 0, 1, 8, 10), optimal, 0);
         assertSequence(result(Arrays.asList("B", "C"), 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), optimal, 1);
-        assertEquals(7, optimal.size());
+        assertEquals(8, optimal.size());
         assertEquals(0, optimal.rating.duplicatedSymbols);
         assertEquals(11, optimal.rating.maxCommonness);
     }

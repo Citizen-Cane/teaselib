@@ -3,12 +3,12 @@ package teaselib.core.speechrecognition;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
@@ -16,44 +16,46 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  * @author Citizen-Cane
  *
  */
-class SpeechRecognitionTimeoutWatchdog {
+public class SpeechRecognitionTimeoutWatchdog {
     static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTimeoutWatchdog.class);
 
     static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(2);
 
-    private final Runnable timeoutAction;
+    private final SpeechRecognitionEvents events;
+    private final Consumer<SpeechRecognitionEvents> timeoutAction;
 
     private boolean enabled = false;
+    private boolean recognitionStarted = false;
     private Timer timer = null;
 
-    public SpeechRecognitionTimeoutWatchdog(Runnable timeoutAction) {
+    public SpeechRecognitionTimeoutWatchdog(SpeechRecognitionEvents events,
+            Consumer<SpeechRecognitionEvents> timeoutAction) {
+        this.events = events;
         this.timeoutAction = timeoutAction;
     }
 
-    private TimerTask timerTask(Runnable timeoutAction) {
+    private TimerTask timerTask(Consumer<SpeechRecognitionEvents> timeoutAction) {
         return new TimerTask() {
             @Override
             public void run() {
                 if (enabled()) {
                     logger.info("Timeout after {}ms", TIMEOUT_MILLIS);
-                    timeoutAction.run();
+                    timeoutAction.accept(events);
                 }
             }
         };
     }
 
-    public void add(SpeechRecognitionEvents events) {
+    public void addEvents() {
         events.recognitionStarted.add(startWatching);
-        events.audioSignalProblemOccured.add(updateAudioProblemStatus);
-        events.speechDetected.add(updateSpeechDetectionStatus);
+        events.speechDetected.add(resetTimer);
         events.recognitionRejected.add(stopWatching);
         events.recognitionCompleted.add(stopWatching);
     }
 
-    public void remove(SpeechRecognitionEvents events) {
+    public void removeEvents() {
         events.recognitionStarted.remove(startWatching);
-        events.audioSignalProblemOccured.remove(updateAudioProblemStatus);
-        events.speechDetected.add(updateSpeechDetectionStatus);
+        events.speechDetected.add(resetTimer);
         events.recognitionRejected.remove(stopWatching);
         events.recognitionCompleted.remove(stopWatching);
     }
@@ -72,26 +74,30 @@ class SpeechRecognitionTimeoutWatchdog {
     private Event<SpeechRecognitionStartedEventArgs> startWatching = args -> {
         if (enabled()) {
             stopRecognitionTimeout();
+            recognitionStarted = true;
             startRecognitionTimeout();
             logger.info("Started");
         }
     };
 
-    private Event<AudioSignalProblemOccuredEventArgs> updateAudioProblemStatus = args -> {
+    private Event<SpeechRecognizedEventArgs> resetTimer = args -> {
         if (enabled()) {
-            // Don't restart timer to avoid long delay after last speechDetected event
-        }
-    };
-
-    private Event<SpeechRecognizedEventArgs> updateSpeechDetectionStatus = args -> {
-        if (enabled()) {
+            ensureFireRecognitionStartedEvent();
             restartRecognitionTimout();
             logger.debug("Restarted");
         }
     };
 
+    private void ensureFireRecognitionStartedEvent() {
+        if (!recognitionStarted) {
+            recognitionStarted = true;
+            events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
+        }
+    }
+
     private Event<SpeechRecognizedEventArgs> stopWatching = args -> {
         if (enabled()) {
+            recognitionStarted = false;
             stopRecognitionTimeout();
             logger.info("Stopped");
         }

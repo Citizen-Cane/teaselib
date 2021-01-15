@@ -9,10 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 import teaselib.core.ai.deepspeech.DeepSpeechRecognizer.Result;
-import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
 
 public class RuleBuilder {
+
+    private RuleBuilder() {
+    }
 
     public static List<Rule> rules(List<String[]> phrases, List<Result> results) {
         Map<String, Rule> rules = new LinkedHashMap<>();
@@ -28,7 +30,7 @@ public class RuleBuilder {
                     int j = resultIndex - 1;
                     int resultWords = result.words.size();
                     int nullRules = 0;
-                    while (++j < resultWords) {
+                    while (++j < words.length) {
                         String word = words[wordIndex];
                         float probability = match(word, resultIndex, results);
                         if (probability > 0.0f) {
@@ -83,32 +85,38 @@ public class RuleBuilder {
     }
 
     private static float match(String word, int index, List<Result> results) {
-        Result result = results.get(0);
-        if (index < result.words.size()) {
-            String hypothesis = result.words.get(index);
-            if (word.equals(hypothesis)) {
-                return result.confidence;
-            } else {
-                float alternateMatch = alternateMatch(word, index, results);
-                // TODO compare with choice intention derived probability
-                if (alternateMatch >= Confidence.High.probability) {
-                    return alternateMatch;
+        for (int i = 0; i < results.size(); i++) {
+            Result result = results.get(i);
+            if (index < result.words.size()) {
+                String hypothesis = result.words.get(index);
+                if (word.equals(hypothesis)) {
+                    return result.confidence;
                 } else {
-                    float partialMatch = partialMatch(hypothesis, word);
-                    return Math.max(alternateMatch, partialMatch);
+                    float confidence = partialMatch(hypothesis, word);
+                    if (confidence > 0.0f) {
+                        return confidence;
+                    } else {
+                        return alternateMatch(word, index, results.subList(i + 1, results.size()));
+                    }
                 }
             }
-        } else {
-            return 0.0f;
         }
+        return 0.0f;
     }
 
     private static float alternateMatch(String word, int index, List<Result> results) {
-        for (int i = 1; i < results.size(); i++) {
-            Result result = results.get(i);
+        for (Result result : results) {
             List<String> words = result.words;
-            if (index < words.size() && word.equals(words.get(index))) {
-                return result.confidence;
+            if (index < words.size()) {
+                String hypothesis = words.get(index);
+                if (word.equals(hypothesis)) {
+                    return result.confidence;
+                } else {
+                    float confidence = partialMatch(hypothesis, word);
+                    if (confidence > 0.0f) {
+                        return confidence;
+                    }
+                }
             }
         }
         return 0.0f;

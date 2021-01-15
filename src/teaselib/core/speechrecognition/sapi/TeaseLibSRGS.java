@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.util.ExceptionUtil.*;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
 
-public class TeaseLibSRGS extends TeaseLibSR {
+public class TeaseLibSRGS extends TeaseLibSR.SAPI {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSRGS.class);
 
     private PreparedChoicesImplementation preparedChoices = null;

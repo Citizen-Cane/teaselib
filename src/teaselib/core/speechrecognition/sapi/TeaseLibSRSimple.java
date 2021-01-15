@@ -17,7 +17,7 @@ import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 
-public class TeaseLibSRSimple extends TeaseLibSR {
+public class TeaseLibSRSimple extends TeaseLibSR.SAPI {
 
     List<String> phrases = null;
 
@@ -70,7 +70,7 @@ public class TeaseLibSRSimple extends TeaseLibSR {
             if (indices.isEmpty()) {
                 repaired.add(rule);
             } else {
-                repaired.add(new Rule(Rule.REPAIRED_MAIN__RULE_NAME, rule.text, rule.ruleIndex, indices,
+                repaired.add(new Rule(Rule.REPAIRED_MAIN_RULE_NAME, rule.text, rule.ruleIndex, indices,
                         rule.fromElement, rule.toElement, rule.probability, rule.confidence));
             }
         }

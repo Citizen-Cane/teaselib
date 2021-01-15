@@ -3,6 +3,7 @@ package teaselib.core.ai.deepspeech;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -14,18 +15,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.events.EventSource;
+import teaselib.core.speechrecognition.AudioSignalProblem;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionProvider;
+import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choices;
 
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
+    private static final AudioSignalProblemOccuredEventArgs NoiseDetected = new AudioSignalProblemOccuredEventArgs(
+            AudioSignalProblem.Noise);
+
+    private static final SpeechRecognizedEventArgs TimeoutEvent = new SpeechRecognizedEventArgs(
+            Collections.singletonList(Rule.Timeout));
+
     private static final Logger logger = LoggerFactory.getLogger(DeepSpeechRecognizer.class);
 
     private PreparedChoicesImplementation current = null;
@@ -45,6 +53,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         Idle,
         Started,
         Running,
+        Noise,
         Cancelled,
         Done,
 
@@ -71,6 +80,8 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     }
 
+    private Status recognitionState = Status.Idle;
+
     @Override
     protected void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized) {
         signalInitialized.countDown();
@@ -78,15 +89,30 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             Status status = Status.of(decode());
             try {
                 if (status == Status.Started) {
-                    events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
-                    fire(events.speechDetected);
+                    List<Rule> rules = rules();
+                    if (!rules.isEmpty()) {
+                        startRecognition(events);
+                        fireSpeechDetected(events);
+                    } else {
+                        recognitionState = Status.Idle;
+                    }
                 } else if (status == Status.Running) {
-                    fire(events.speechDetected);
+                    if (recognitionState == Status.Idle) {
+                        startRecognition(events);
+                    }
+                    fireSpeechDetected(events);
+                } else if (status == Status.Noise) {
+                    events.audioSignalProblemOccured.fire(NoiseDetected);
+                    rejectRecognition(events);
                 } else if (status == Status.Cancelled) {
+                    rejectRecognition(events);
                     return;
                 } else if (status == Status.Done) {
-                    fire(events.recognitionCompleted);
-                } else if (status != Status.Idle) {
+                    recognitionState = Status.Idle;
+                    fireRecognitionDone(events);
+                } else if (status == Status.Idle) {
+                    rejectRecognition(events);
+                } else {
                     throw new UnsupportedOperationException(status.name());
                 }
             } catch (Throwable t) {
@@ -95,6 +121,38 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
                 throw t;
             }
         }
+
+    }
+
+    private void startRecognition(SpeechRecognitionEvents events) {
+        recognitionState = Status.Running;
+        events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
+    }
+
+    private void rejectRecognition(SpeechRecognitionEvents events) {
+        if (recognitionState != Status.Idle) {
+            recognitionState = Status.Idle;
+            fireRecognitionRejected(events);
+        }
+    }
+
+    private void fireRecognitionRejected(SpeechRecognitionEvents events) {
+        List<Rule> rules = rules();
+        if (rules.isEmpty()) {
+            events.recognitionRejected.fire(TimeoutEvent);
+        } else {
+            events.recognitionRejected.fire(new SpeechRecognizedEventArgs(rules));
+        }
+    }
+
+    private void fireRecognitionDone(SpeechRecognitionEvents events) {
+        List<Rule> rules = rules();
+        if (rules.isEmpty()) {
+            events.recognitionRejected.fire(TimeoutEvent);
+        } else {
+            events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rules));
+        }
+
     }
 
     private void freeDeepSpeechStreamOnError(Status status) {
@@ -103,16 +161,26 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         }
     }
 
-    private void fire(EventSource<SpeechRecognizedEventArgs> event) {
+    private void fireSpeechDetected(SpeechRecognitionEvents events) {
+        List<Rule> rules = rules();
+        if (!rules.isEmpty()) {
+            events.speechDetected.fire(new SpeechRecognizedEventArgs(rules));
+        }
+    }
+
+    private List<Rule> rules() {
+        List<Rule> rules;
         List<Result> results = results();
-        if (results != null && !results.isEmpty()) {
+        if (results == null || results.isEmpty()) {
+            rules = Collections.emptyList();
+        } else {
             if (logger.isInfoEnabled()) {
                 logger.info("DeepSpeech results = \n{}",
                         results.stream().map(Objects::toString).collect(joining("\n")));
             }
-            List<Rule> rules = RuleBuilder.rules(current.phrases, results);
-            event.fire(new SpeechRecognizedEventArgs(rules));
+            rules = RuleBuilder.rules(current.phrases, results);
         }
+        return rules;
     }
 
     private final class PreparedChoicesImplementation implements PreparedChoices {

@@ -65,7 +65,7 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
         return index >= 0;
     }
 
-    public final void startEventLoop(SpeechRecognitionEvents events) {
+    public void startEventLoop(SpeechRecognitionEvents events) {
         CountDownLatch awaitInitialized = new CountDownLatch(1);
         Runnable speechRecognitionService = () -> {
             try {

@@ -10,12 +10,14 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionTimeoutWatchdog;
 import teaselib.core.speechrecognition.UnsupportedLanguageException;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
 abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSR.class);
 
-    public TeaseLibSR(Locale locale) {
+    protected TeaseLibSR(Locale locale) {
         super(newNativeInstance(locale));
     }
 
@@ -28,8 +30,8 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
      * Create a native recognizer instance for the requested language.
      * 
      * @param languageCode
-     *            A language code in the form XX[X]-YY[Y], like en-us, en-uk, ger, etc.
-     * @return Native object or 0 if the creation failed due to mising language support.
+     *            A language code in the form XX[X][-YY[Y]], like en-us, en-uk, en, de-ger, de-de, de, etc.
+     * @return Native object or 0 if the creation failed due to missing language support.
      * @throws UnsupportedLanguageException
      *             When the requested language is not supported.
      */
@@ -68,5 +70,45 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
 
     @Override
     public native void dispose();
+
+    public abstract static class SAPI extends TeaseLibSR {
+
+        private SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
+
+        protected SAPI(Locale locale) {
+            super(locale);
+        }
+
+        @Override
+        public void startEventLoop(SpeechRecognitionEvents events) {
+            this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(events, this::handleRecognitionTimeout);
+            this.timeoutWatchdog.addEvents();
+            super.startEventLoop(events);
+        }
+
+        private void handleRecognitionTimeout(SpeechRecognitionEvents events) {
+            events.recognitionRejected.fire(new SpeechRecognizedEventArgs(Rule.Timeout));
+        }
+
+        @Override
+        public void startRecognition() {
+            timeoutWatchdog.enable(true);
+            super.startRecognition();
+        }
+
+        @Override
+        public void stopRecognition() {
+            super.stopRecognition();
+            timeoutWatchdog.enable(false);
+        }
+
+        @Override
+        protected void stopEventLoop() {
+            super.stopEventLoop();
+            timeoutWatchdog.enable(false);
+            timeoutWatchdog.removeEvents();
+        }
+
+    }
 
 }

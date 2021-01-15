@@ -1,8 +1,5 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.*;
-import static teaselib.core.speechrecognition.Confidence.*;
-
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,10 +21,6 @@ public class SpeechRecognition {
 
     public final SpeechRecognitionEvents events;
 
-    // TODO move to sapi implementation
-    private static final Rule TIMEOUT = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
-    private final SpeechRecognitionTimeoutWatchdog timeoutWatchdog;
-
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
     private final Locale locale;
     public final SpeechRecognitionNativeImplementation implementation;
@@ -47,8 +40,6 @@ public class SpeechRecognition {
     };
 
     private Event<SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = args -> unlockSpeechRecognitionInProgressSyncObject();
-
-    private final Event<SpeechRecognizedEventArgs> handleMissingRecognitionStartedEvent;
 
     public final AudioSync audioSync;
 
@@ -98,9 +89,6 @@ public class SpeechRecognition {
                     } else {
                         return Unsupported.Instance;
                     }
-                } catch (UnsupportedLanguageException e) {
-                    logger.warn(e.getMessage());
-                    throw e;
                 } catch (RuntimeException e) {
                     throw e;
                 } catch (Throwable t) {
@@ -108,36 +96,12 @@ public class SpeechRecognition {
                 }
             });
         }
-
-        // Add watchdog last, to receive speechRejected/completed from the hypothesis event handler
-        this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(this::handleRecognitionTimeout);
-        this.timeoutWatchdog.add(events);
-
-        handleMissingRecognitionStartedEvent = e -> {
-            if (!audioSync.speechRecognitionInProgress()) {
-                events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
-            }
-        };
-
-        this.events.speechDetected.add(handleMissingRecognitionStartedEvent);
     }
 
     public void close() {
-        this.events.speechDetected.remove(handleMissingRecognitionStartedEvent);
-
-        timeoutWatchdog.enable(false);
-        timeoutWatchdog.remove(events);
-
         implementation.close();
-
         unlockSpeechRecognitionInProgressSyncObject();
         delegateThread.shutdown();
-    }
-
-    private void handleRecognitionTimeout() {
-        if (audioSync.speechRecognitionInProgress()) {
-            events.recognitionRejected.fire(new SpeechRecognizedEventArgs(TIMEOUT));
-        }
     }
 
     public PreparedChoices prepare(Choices choices) {
@@ -238,14 +202,12 @@ public class SpeechRecognition {
 
         preparedChoices.accept(implementation);
         audioSync.whenSpeechCompleted(implementation::startRecognition);
-        timeoutWatchdog.enable(true);
         speechRecognitionActive.set(true);
     }
 
     private void disableSR() {
         implementation.stopRecognition();
         speechRecognitionActive.set(false);
-        timeoutWatchdog.enable(false);
         unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
 
         Optional<Throwable> exception = implementation.getException();

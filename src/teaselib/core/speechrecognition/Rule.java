@@ -1,11 +1,13 @@
 package teaselib.core.speechrecognition;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.averagingDouble;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static teaselib.core.speechrecognition.Confidence.High;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,9 +26,11 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 public class Rule {
 
     public static final String MAIN_RULE_NAME = "Recognized";
-    public static final String REPAIRED_MAIN__RULE_NAME = "Repaired";
+    public static final String REPAIRED_MAIN_RULE_NAME = "Repaired";
     public static final String WITHOUT_IGNOREABLE_TRAILING_NULL_RULE = "Trailing Null rule removed";
     public static final String CHOICE_NODE_PREFIX = "r_";
+
+    public static final Rule Timeout = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
 
     public static final Set<Integer> NoIndices = emptySet();
 
@@ -250,7 +254,7 @@ public class Rule {
                     r.toElement + elementOffset, r.probability, r.confidence));
         }
 
-        return new Rule(REPAIRED_MAIN__RULE_NAME, text(repairedChildren), ruleIndex, repairedChildren, fromElement,
+        return new Rule(REPAIRED_MAIN_RULE_NAME, text(repairedChildren), ruleIndex, repairedChildren, fromElement,
                 toElement + elementOffset, probability, confidence);
     }
 

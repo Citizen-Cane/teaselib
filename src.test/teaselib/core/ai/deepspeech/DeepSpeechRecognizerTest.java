@@ -83,7 +83,41 @@ public class DeepSpeechRecognizerTest {
     }
 
     @Test
-    public void testEmulateText() throws InterruptedException {
+    public void testYesMissWithRealworldResults() throws InterruptedException {
+        testEmulateText("Yes Miss", """
+                yes\n
+                yes\n
+                yes i\n
+                yes miss\n
+                yes is\n
+                yes it\n
+                yes m\n
+                yes a\n
+                yes as\n
+                yes s
+                """);
+
+        testEmulateText("Yes Miss", """
+                        yes
+                        i guess
+                        as
+                        yet
+                        guess
+                        is
+                        get
+                        his
+                        at
+                        eyes
+                """);
+    }
+
+    @Test
+    public void testExperiencePrroovesThisAsText() throws InterruptedException {
+        testEmulateText("experience prooves this",
+                "experience prooves this\nexperience prooves that\nthe experience proofs it");
+    }
+
+    private void testEmulateText(String choice, String speech) throws InterruptedException, UnsatisfiedLinkError {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             SpeechRecognitionEvents events = new SpeechRecognitionEvents();
 
@@ -95,10 +129,9 @@ public class DeepSpeechRecognizerTest {
             });
             try (DeepSpeechRecognizer deepSpeechRecognizer = new DeepSpeechRecognizer(Locale.ENGLISH)) {
                 deepSpeechRecognizer.startEventLoop(events);
-                Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice("experience prooves this"));
+                Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(choice));
                 deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
-                deepSpeechRecognizer.emulateRecognition(
-                        "experience prooves this\nexperience prooves that\nthe experience proofs it");
+                deepSpeechRecognizer.emulateRecognition(speech);
                 await(choices, 0, deepSpeechRecognizer, speechRecognized, signal, choices.get(0).display);
                 assertNotNull(speechRecognized.get());
             }

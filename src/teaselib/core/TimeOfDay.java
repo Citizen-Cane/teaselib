@@ -7,6 +7,7 @@ import teaselib.util.Daytime;
  *
  */
 public interface TimeOfDay {
+
     boolean is(Daytime dayTime);
 
     boolean isEarlierThan(Daytime dayTime);
@@ -14,7 +15,5 @@ public interface TimeOfDay {
     boolean isLaterThan(Daytime dayTime);
 
     boolean isAnyOf(Daytime... daytimes);
-
-    Daytime dayTime();
 
 }

@@ -40,6 +40,10 @@ public class Interval implements Iterable<Integer> {
         };
     }
 
+    public boolean intersects(Interval other) {
+        return contains(other.start) || contains(other.end);
+    }
+
     public boolean contains(Interval other) {
         return start <= other.start && other.end <= end;
     }
@@ -53,11 +57,11 @@ public class Interval implements Iterable<Integer> {
     }
 
     public boolean contains(Integer n) {
-        return start <= n && n <= end;
+        return contains(n.intValue());
     }
 
     public int size() {
-        return end - start;
+        return end - start + 1;
     }
 
     @Override

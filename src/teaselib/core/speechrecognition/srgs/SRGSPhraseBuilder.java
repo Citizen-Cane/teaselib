@@ -24,10 +24,8 @@ import teaselib.core.ui.Choices;
 public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
     public final Choices choices;
+    public final PhraseMapping mapping;
     public final SlicedPhrases<PhraseString> slices;
-
-    private final IndexMap<Integer> index2choices;
-    private final List<PhraseString> phrases;
 
     int guid = 0;
 
@@ -35,13 +33,8 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
         super(languageCode);
         this.choices = choices;
-
-        this.index2choices = new IndexMap<>();
-        this.phrases = choices.stream()
-                .flatMap(choice -> choice.phrases.stream()
-                        .map(phrase -> new PhraseString(phrase, index2choices.add(choices.indexOf(choice)))))
-                .collect(Collectors.toList());
-        this.slices = SlicedPhrases.of(PhraseStringSequences.of(phrases), PhraseStringSequences::prettyPrint);
+        this.mapping = new PhraseMapping.Strict(choices);
+        this.slices = SlicedPhrases.of(PhraseStringSequences.of(mapping.phrases), PhraseStringSequences::prettyPrint);
 
         buildXML();
     }
@@ -99,32 +92,41 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     private void createNodes(Element grammar, Element main) {
-        Indices<Element> current = new Indices<>(phrases.size(), main);
+        Indices<Element> current = new Indices<>(mapping.phrases.size(), main);
         Indices<Element> next = new Indices<>(current);
         for (int i = 0; i < slices.size(); i++) {
             List<PhraseString> slice = slices.get(i).stream().map(Sequence::joined).collect(toList());
 
-            Set<Integer> coverage = slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
-            Set<Integer> missingIndices = allIndices();
-            if (current.collect(coverage).size() == 1) {
-                Element common = current.collect(coverage).iterator().next();
+            Set<Integer> coverage = mapping
+                    .choices(slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet()));
+            Set<Integer> missingPhraseIndices = allIndices();
+            Set<Element> currentCoverage = current.collect(coverage);
+            if (currentCoverage.size() == 1) {
+                Element common = currentCoverage.iterator().next();
                 List<Element> ruleRefs = new ArrayList<>();
 
                 for (PhraseString phrase : slice) {
-                    Set<Integer> indices = phrase.indices;
+                    Set<Integer> indices = mapping.choices(phrase.indices);
                     String ruleName = choiceName(i, indices);
                     Element ruleRef = ruleRef(ruleName);
-                    ruleRefs.add(ruleRef);
-                    missingIndices.removeAll(indices);
+                    if (isOptional(phrase)) {
+                        ruleRefs.add(ruleRef);
+                        // TODO use optional rule to avoid having to add special null rule
+                        // ruleRefs.add(optional(ruleRef));
+                    } else {
+                        ruleRefs.add(ruleRef);
+                    }
+                    missingPhraseIndices.removeAll(phrase.indices);
                     next.add(indices, common);
                     addRule(grammar, ruleName, phrase.phrase);
                 }
 
-                if (!missingIndices.isEmpty()) {
-                    String ruleName = choiceName(i, missingIndices);
+                if (!missingPhraseIndices.isEmpty()) {
+                    Set<Integer> missingChoiceIndices = mapping.choices(missingPhraseIndices);
+                    String ruleName = choiceName(i, missingChoiceIndices);
                     ruleRefs.add(ruleRef(ruleName));
                     specialRule(grammar, ruleName);
-                    next.add(missingIndices, common);
+                    next.add(missingChoiceIndices, common);
                 }
 
                 common.appendChild(gather(ruleRefs));
@@ -132,7 +134,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                 Map<Element, List<Element>> ruleRefs = new HashMap<>();
 
                 for (PhraseString phrase : slice) {
-                    Set<Integer> indices = phrase.indices;
+                    Set<Integer> indices = mapping.choices(phrase.indices);
                     Set<Element> nodes = current.collect(indices);
                     for (Element element : nodes) {
                         String ruleName = choiceName(i, indices);
@@ -141,17 +143,18 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                         next.add(indices, element);
                         addRule(grammar, ruleName, phrase.phrase);
                     }
-                    missingIndices.removeAll(indices);
+                    missingPhraseIndices.removeAll(phrase.indices);
                 }
 
-                if (!missingIndices.isEmpty()) {
-                    String ruleName = choiceName(i, missingIndices);
+                if (!missingPhraseIndices.isEmpty()) {
+                    Set<Integer> missingChoiceIndices = mapping.choices(missingPhraseIndices);
+                    String ruleName = choiceName(i, missingChoiceIndices);
                     Element ruleRef = ruleRef(ruleName);
-                    Set<Element> nodes = current.collect(missingIndices);
+                    Set<Element> nodes = current.collect(missingChoiceIndices);
                     for (Element element : nodes) {
                         ruleRefs.computeIfAbsent(element, e -> new ArrayList<>()).add(ruleRef);
                         specialRule(grammar, ruleName);
-                        next.add(missingIndices, element);
+                        next.add(missingChoiceIndices, element);
                     }
                 }
 
@@ -165,9 +168,22 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         }
     }
 
+    private boolean isOptional_(PhraseString phrase) {
+        Set<Integer> all = mapping.choices(phrase.indices).stream().flatMap(index -> mapping.phrases(index).stream())
+                .collect(toSet());
+        return !phrase.indices.equals(all);
+    }
+
+    private boolean isOptional(PhraseString phrase) {
+        Set<Integer> choices = mapping.choices(phrase.indices);
+        Set<Integer> all = choices.stream().flatMap(index -> mapping.phrases(index).stream()).collect(toSet());
+        // return !phrase.indices.equals(all);
+        return all.size() == mapping.phrases.size();
+    }
+
     private Set<Integer> allIndices() {
         Set<Integer> indices = new HashSet<>();
-        for (int i = 0; i < phrases.size(); i++) {
+        for (int i = 0; i < mapping.phrases.size(); i++) {
             indices.add(i);
         }
         return indices;
@@ -192,6 +208,15 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         return element;
     }
 
+    private Element optional(Element ruleRef) {
+        Element optional = item(ruleRef);
+        addAttribute(optional, "repeat", "0-1");
+        optional.appendChild(ruleRef);
+        Element oneOf = document.createElement("one-of");
+        oneOf.appendChild(optional);
+        return oneOf;
+    }
+
     private void addRule(Element grammar, String id, String text) {
         Element element = document.createElement("rule");
         addAttribute(element, "id", id);
@@ -204,10 +229,6 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         guid++;
         String encodedIndices = indices.stream().map(Object::toString).collect(joining(","));
         return Rule.CHOICE_NODE_PREFIX + n + "_" + encodedIndices + "_" + guid;
-    }
-
-    public int map(int index) {
-        return index2choices.get(index);
     }
 
     private Element gather(List<Element> elements) {

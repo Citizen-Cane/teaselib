@@ -1,17 +1,13 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -155,13 +151,13 @@ public class SpeechRecognitionTestUtils {
             Result result;
             prompt.lock.lockInterruptibly();
             try {
-                assertTrue(inputMethod.getActivePrompt() == null);
+                assertNull(inputMethod.getActivePrompt());
                 inputMethod.show(prompt);
                 inputMethod.emulateRecogntion(phrase);
                 dismissed = prompt.click.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
 
                 prompt.dismiss();
-                assertTrue(inputMethod.getActivePrompt() == null);
+                assertNull(inputMethod.getActivePrompt());
 
                 result = prompt.result();
                 if (dismissed) {
@@ -199,8 +195,8 @@ public class SpeechRecognitionTestUtils {
     }
 
     private static void assertAllTheSameChoices(Prompt.Result expectedRules, Prompt.Result result) {
-        List<Integer> choices = result.elements.stream().distinct().collect(Collectors.toList());
-        assertTrue("Result contains different choices: " + result, choices.size() == 1);
+        List<Integer> choices = result.elements.stream().distinct().collect(toList());
+        assertEquals("Result contains different choices: " + result, 1, choices.size());
         assertEquals("Expected choice " + expectedRules, expectedRules.elements.get(0), choices.get(0));
     }
 

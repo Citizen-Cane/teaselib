@@ -17,6 +17,10 @@ public class IndexMap<T> {
         return values.size() - 1;
     }
 
+    public int size() {
+        return values.size();
+    }
+
     public T get(int index) {
         return values.get(index);
     }

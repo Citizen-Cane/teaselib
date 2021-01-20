@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +84,7 @@ public class TeaseLibSRGS extends TeaseLibSR.SAPI {
 
             byte[] bytes = builder.toBytes();
             // TODO create op in builder to be able to release the builder instance
-            IntUnaryOperator mapper = builder::map;
+            IntUnaryOperator mapper = builder.mapping::choice;
 
             return new PreparedChoicesImplementation(choices, builder.slices, bytes, mapper);
         } catch (ParserConfigurationException | TransformerException e) {

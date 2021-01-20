@@ -104,7 +104,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
                             try {
                                 SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices,
                                         SpeechRecognitionNativeImplementation.languageCode(Foobar.locale));
-                                IntUnaryOperator mapper = builder::map;
+                                IntUnaryOperator mapper = builder.mapping::choice;
                                 preparedChoices = ((TestableTeaseLibSRGS) sr.implementation).new PreparedChoicesImplementation(
                                         choices, builder.slices, xml, mapper);
                                 sr.apply(preparedChoices);

@@ -17,12 +17,13 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionProvider;
+import teaselib.core.speechrecognition.srgs.PhraseMapping;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
 
-public class TeaseLibSRGS extends TeaseLibSR.SAPI {
+public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSRGS.class);
 
     private PreparedChoicesImplementation preparedChoices = null;
@@ -76,19 +77,44 @@ public class TeaseLibSRGS extends TeaseLibSR.SAPI {
     @Override
     public PreparedChoices prepare(Choices choices) {
         try {
-            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, languageCode());
+            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, languageCode(), mapping(choices));
+
             if (logger.isInfoEnabled()) {
                 logger.info("{}", builder.slices);
                 logger.info("{}", builder.toXML());
             }
 
             byte[] bytes = builder.toBytes();
-            // TODO create op in builder to be able to release the builder instance
             IntUnaryOperator mapper = builder.mapping::choice;
-
             return new PreparedChoicesImplementation(choices, builder.slices, bytes, mapper);
         } catch (ParserConfigurationException | TransformerException e) {
             throw asRuntimeException(e);
+        }
+    }
+
+    abstract PhraseMapping mapping(Choices choices);
+
+    public static class Strict extends TeaseLibSRGS {
+
+        public Strict(Locale locale) {
+            super(locale);
+        }
+
+        @Override
+        PhraseMapping mapping(Choices choices) {
+            return new PhraseMapping.Strict(choices);
+        }
+    }
+
+    public static class Relaxed extends TeaseLibSRGS {
+
+        public Relaxed(Locale locale) {
+            super(locale);
+        }
+
+        @Override
+        PhraseMapping mapping(Choices choices) {
+            return new PhraseMapping.Relaxed(choices);
         }
     }
 

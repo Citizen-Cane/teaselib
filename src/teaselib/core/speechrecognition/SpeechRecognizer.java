@@ -56,7 +56,7 @@ public class SpeechRecognizer implements Closeable {
                     throw new NoSuchElementException(Config.Default + ": " + className);
                 }
             } else {
-                defaultImplementation = TeaseLibSRGS.class;
+                defaultImplementation = TeaseLibSRGS.Relaxed.class;
             }
         } else {
             defaultImplementation = Unsupported.class;

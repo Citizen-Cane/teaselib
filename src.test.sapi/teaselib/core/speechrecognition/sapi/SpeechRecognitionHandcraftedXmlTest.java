@@ -68,7 +68,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
         return emulateSpeechRecognition(resource, emulatedRecognitionResult, expected, Prompt.Result.Accept.Multiple);
     }
 
-    public static class TestableTeaseLibSRGS extends TeaseLibSRGS {
+    public static class TestableTeaseLibSRGS extends TeaseLibSRGS.Strict {
 
         public TestableTeaseLibSRGS(Locale locale) {
             super(locale);

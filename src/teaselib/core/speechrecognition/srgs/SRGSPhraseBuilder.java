@@ -3,6 +3,7 @@ package teaselib.core.speechrecognition.srgs;
 import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,11 +32,15 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
     public SRGSPhraseBuilder(Choices choices, String languageCode)
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+        this(choices, languageCode, new PhraseMapping.Relaxed(choices));
+    }
+
+    public SRGSPhraseBuilder(Choices choices, String languageCode, PhraseMapping mapping)
+            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
         super(languageCode);
         this.choices = choices;
-        this.mapping = new PhraseMapping.Strict(choices);
+        this.mapping = mapping;
         this.slices = SlicedPhrases.of(PhraseStringSequences.of(mapping.phrases), PhraseStringSequences::prettyPrint);
-
         buildXML();
     }
 
@@ -44,7 +49,6 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         Element grammar = createGrammar();
         Element main = createMainRule(Rule.MAIN_RULE_NAME);
         grammar.appendChild(main);
-
         createNodes(grammar, main);
     }
 
@@ -94,39 +98,55 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     private void createNodes(Element grammar, Element main) {
         Indices<Element> current = new Indices<>(mapping.phrases.size(), main);
         Indices<Element> next = new Indices<>(current);
+        Set<Integer> all = Collections.unmodifiableSet(allIndices());
         for (int i = 0; i < slices.size(); i++) {
             List<PhraseString> slice = slices.get(i).stream().map(Sequence::joined).collect(toList());
 
             Set<Integer> coverage = mapping
-                    .choices(slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet()));
-            Set<Integer> missingPhraseIndices = allIndices();
+                    .srgs(slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet()));
+            Set<Integer> remaining = new HashSet<>(all);
             Set<Element> currentCoverage = current.collect(coverage);
+            Set<Integer> uncovered = new HashSet<>(all);
+            uncovered.removeAll(coverage);
             if (currentCoverage.size() == 1) {
                 Element common = currentCoverage.iterator().next();
                 List<Element> ruleRefs = new ArrayList<>();
 
                 for (PhraseString phrase : slice) {
-                    Set<Integer> indices = mapping.choices(phrase.indices);
-                    String ruleName = choiceName(i, indices);
-                    Element ruleRef = ruleRef(ruleName);
-                    if (isOptional(phrase)) {
-                        ruleRefs.add(ruleRef);
-                        // TODO use optional rule to avoid having to add special null rule
-                        // ruleRefs.add(optional(ruleRef));
+                    Set<Integer> indices;
+                    String ruleName;
+
+                    boolean fullCoverage = phrase.indices.size() == mapping.phrases.size();
+                    if (fullCoverage) {
+                        indices = mapping.srgs(phrase.indices);
+                        ruleName = choiceName(i, indices);
+                        ruleRefs.add(ruleRef(ruleName));
+                        remaining.clear();
                     } else {
-                        ruleRefs.add(ruleRef);
+                        if (mapping.isOptional(phrase, uncovered)) {
+                            indices = new HashSet<>();
+                            indices.addAll(mapping.srgs(phrase.indices));
+                            indices.addAll(uncovered);
+                            ruleName = choiceName(i, indices);
+                            ruleRefs.add(optional(ruleRef(ruleName)));
+                        } else {
+                            indices = mapping.srgs(phrase.indices);
+                            ruleName = choiceName(i, indices);
+                            ruleRefs.add(ruleRef(ruleName));
+                        }
+                        remaining.removeAll(indices);
                     }
-                    missingPhraseIndices.removeAll(phrase.indices);
+
                     next.add(indices, common);
                     addRule(grammar, ruleName, phrase.phrase);
                 }
 
-                if (!missingPhraseIndices.isEmpty()) {
-                    Set<Integer> missingChoiceIndices = mapping.choices(missingPhraseIndices);
-                    String ruleName = choiceName(i, missingChoiceIndices);
+                if (!remaining.isEmpty()) {
+                    Set<Integer> missing = mapping.srgs(remaining);
+                    String ruleName = choiceName(i, missing);
                     ruleRefs.add(ruleRef(ruleName));
-                    specialRule(grammar, ruleName);
-                    next.add(missingChoiceIndices, common);
+                    addNullRule(grammar, ruleName);
+                    next.add(missing, common);
                 }
 
                 common.appendChild(gather(ruleRefs));
@@ -134,7 +154,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                 Map<Element, List<Element>> ruleRefs = new HashMap<>();
 
                 for (PhraseString phrase : slice) {
-                    Set<Integer> indices = mapping.choices(phrase.indices);
+                    Set<Integer> indices = mapping.srgs(phrase.indices);
                     Set<Element> nodes = current.collect(indices);
                     for (Element element : nodes) {
                         String ruleName = choiceName(i, indices);
@@ -143,17 +163,17 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                         next.add(indices, element);
                         addRule(grammar, ruleName, phrase.phrase);
                     }
-                    missingPhraseIndices.removeAll(phrase.indices);
+                    remaining.removeAll(phrase.indices);
                 }
 
-                if (!missingPhraseIndices.isEmpty()) {
-                    Set<Integer> missingChoiceIndices = mapping.choices(missingPhraseIndices);
+                if (!remaining.isEmpty()) {
+                    Set<Integer> missingChoiceIndices = mapping.srgs(remaining);
                     String ruleName = choiceName(i, missingChoiceIndices);
                     Element ruleRef = ruleRef(ruleName);
                     Set<Element> nodes = current.collect(missingChoiceIndices);
                     for (Element element : nodes) {
                         ruleRefs.computeIfAbsent(element, e -> new ArrayList<>()).add(ruleRef);
-                        specialRule(grammar, ruleName);
+                        addNullRule(grammar, ruleName);
                         next.add(missingChoiceIndices, element);
                     }
                 }
@@ -168,22 +188,10 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         }
     }
 
-    private boolean isOptional_(PhraseString phrase) {
-        Set<Integer> all = mapping.choices(phrase.indices).stream().flatMap(index -> mapping.phrases(index).stream())
-                .collect(toSet());
-        return !phrase.indices.equals(all);
-    }
-
-    private boolean isOptional(PhraseString phrase) {
-        Set<Integer> choices = mapping.choices(phrase.indices);
-        Set<Integer> all = choices.stream().flatMap(index -> mapping.phrases(index).stream()).collect(toSet());
-        // return !phrase.indices.equals(all);
-        return all.size() == mapping.phrases.size();
-    }
-
     private Set<Integer> allIndices() {
-        Set<Integer> indices = new HashSet<>();
-        for (int i = 0; i < mapping.phrases.size(); i++) {
+        int size = mapping.phrases.size();
+        Set<Integer> indices = new HashSet<>(size);
+        for (int i = 0; i < size; i++) {
             indices.add(i);
         }
         return indices;
@@ -195,7 +203,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         return item;
     }
 
-    private Element specialRule(Element grammar, String id) {
+    private Element addNullRule(Element grammar, String id) {
         Element element = document.createElement("rule");
         addAttribute(element, "id", id);
         addAttribute(element, "scope", "private");
@@ -212,9 +220,10 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         Element optional = item(ruleRef);
         addAttribute(optional, "repeat", "0-1");
         optional.appendChild(ruleRef);
-        Element oneOf = document.createElement("one-of");
-        oneOf.appendChild(optional);
-        return oneOf;
+        return optional;
+        // Element oneOf = document.createElement("one-of");
+        // oneOf.appendChild(optional);
+        // return oneOf;
     }
 
     private void addRule(Element grammar, String id, String text) {
@@ -237,7 +246,11 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         } else {
             Element items = document.createElement("one-of");
             for (Element element : elements) {
-                items.appendChild(item(element));
+                if (element.getNodeName().equals("item")) {
+                    items.appendChild(element);
+                } else {
+                    items.appendChild(item(element));
+                }
             }
             return items;
         }

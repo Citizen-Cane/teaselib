@@ -1,10 +1,7 @@
 package teaselib.core.ai.deepspeech;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
+import static org.junit.jupiter.api.Assertions.*;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.util.Locale;
 
@@ -26,9 +23,21 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
         assertRecognized(inputMethod, choices, "Of course", new Prompt.Result(0));
         assertRecognized(inputMethod, choices, "Yes of course", new Prompt.Result(1));
 
-        // TODO throws IndexOutOfBounds exception in processing thread -> all tests fail
         assertRejected(inputMethod, choices, "Of");
         assertRejected(inputMethod, choices, "Not");
+        assertRejected(inputMethod, choices, "Foo bar");
+    }
+
+    @Test
+    void testOptionalStartOptionalRule() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes Of course", "Yes Of course", "Of course", "Yes Of course"));
+
+        assertRecognized(inputMethod, choices, "Of course", new Prompt.Result(0));
+        assertRecognized(inputMethod, choices, "Yes Of course", new Prompt.Result(0));
+        assertRejected(inputMethod, choices, "Of");
+        assertRejected(inputMethod, choices, "Yes");
+
         assertRejected(inputMethod, choices, "Foo bar");
     }
 
@@ -57,7 +66,7 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
     }
 
     @Test
-    void testWordSplit() throws InterruptedException {
+    void testWordSplit() {
         String[] abc = PhraseString.words("a_b-c");
         assertEquals(3, abc.length);
 
@@ -86,6 +95,16 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice("Foo"));
         assertRejected(inputMethod, choices, "Bar");
+    }
+
+    @Test
+    void testIDontHaveIt() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("I have it"), new Choice("I don't have it"));
+
+        assertRecognized(inputMethod, choices, "I have it", new Prompt.Result(0));
+        assertRecognized(inputMethod, choices, "I don't have it", new Prompt.Result(1));
+        assertRejected(inputMethod, choices, "have it");
     }
 
     @Test

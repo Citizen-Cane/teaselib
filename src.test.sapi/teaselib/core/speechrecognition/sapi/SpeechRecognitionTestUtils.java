@@ -41,7 +41,7 @@ public class SpeechRecognitionTestUtils {
     static final Confidence confidence = Confidence.High;
 
     public static SpeechRecognizer getRecognizer() {
-        return getRecognizer(TeaseLibSRGS.class);
+        return getRecognizer(TeaseLibSRGS.Relaxed.class);
     }
 
     public static SpeechRecognizer getRecognizer(Class<? extends SpeechRecognitionNativeImplementation> srClass) {

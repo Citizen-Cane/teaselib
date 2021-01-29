@@ -2,16 +2,13 @@ package teaselib.core.speechrecognition.srgs;
 
 import static java.util.stream.Collectors.*;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import teaselib.core.ui.Choices;
 
 public abstract class PhraseMapping {
+
     final IndexMap<Integer> phrase2choice;
     final List<PhraseString> phrases;
 
@@ -25,11 +22,11 @@ public abstract class PhraseMapping {
 
     public abstract int choice(int phrase);
 
-    public abstract Set<Integer> choices(Set<Integer> phrases);
+    public abstract Set<Integer> srgs(Set<Integer> phrases);
 
-    public abstract Set<Integer> phrases(int choice);
+    public abstract boolean isOptional(PhraseString phrase, Set<Integer> uncovered);
 
-    static class Strict extends PhraseMapping {
+    public static class Strict extends PhraseMapping {
         public Strict(Choices choices) {
             super(choices);
         }
@@ -40,43 +37,44 @@ public abstract class PhraseMapping {
         }
 
         @Override
-        public Set<Integer> choices(Set<Integer> indices) {
+        public Set<Integer> srgs(Set<Integer> indices) {
             return indices;
         }
 
         @Override
-        public Set<Integer> phrases(int index) {
-            return Collections.singleton(index);
+        public boolean isOptional(PhraseString phrase, Set<Integer> uncovered) {
+            return false;
         }
+
     }
 
-    static class Lax extends PhraseMapping {
+    public static class Relaxed extends PhraseMapping {
 
-        private final Map<Integer, Set<Integer>> choice2phrase;
-
-        public Lax(Choices choices) {
+        public Relaxed(Choices choices) {
             super(choices);
-            this.choice2phrase = new HashMap<>();
-            for (int i = 0; i < phrase2choice.size(); i++) {
-                int choice = phrase2choice.get(i);
-                choice2phrase.computeIfAbsent(choice, key -> new HashSet<>()).add(i);
-            }
         }
 
         @Override
         public int choice(int index) {
-            return index;
+            return phrase2choice.get(index);
         }
 
         @Override
-        public Set<Integer> choices(Set<Integer> indices) {
+        public Set<Integer> srgs(Set<Integer> indices) {
+            return indices;
+        }
+
+        @Override
+        public boolean isOptional(PhraseString phrase, Set<Integer> uncovered) {
+            return !uncovered.isEmpty() && choices(phrase.indices).equals(choices(uncovered))
+                    && phrase.indices.size() + uncovered.size() == phrase2choice.size();
+
+        }
+
+        private Set<Integer> choices(Set<Integer> indices) {
             return indices.stream().map(phrase2choice::get).collect(toSet());
         }
 
-        @Override
-        public Set<Integer> phrases(int index) {
-            return choice2phrase.get(index);
-        }
-
     }
+
 }

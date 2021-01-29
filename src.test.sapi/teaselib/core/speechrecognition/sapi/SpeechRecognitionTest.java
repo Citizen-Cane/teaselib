@@ -1,13 +1,8 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.bestSingleResult;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.withoutPunctation;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.*;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,9 +92,16 @@ public class SpeechRecognitionTest {
                 new Choice("My name is Foo, Mam"), //
                 new Choice("My name is Bar, Mam"), //
                 new Choice("My name is Foobar, Mam"));
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.class);
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Strict.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Bar", new Prompt.Result(1));
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foo", new Prompt.Result(0));
+            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
+            assertRejected(inputMethod, choices, "My name is");
+        }
 
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Bar", new Prompt.Result(1));
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foo", new Prompt.Result(0));
             assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));

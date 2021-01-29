@@ -1,16 +1,11 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
-import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.prettyPrint;
+import static java.util.Arrays.*;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.srgs.PhraseString.*;
+import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -734,6 +729,61 @@ public class PhrasesSliceTest {
         assertEquals(5, optimal.size());
         assertEquals(0, optimal.rating.duplicatedSymbols);
         assertEquals(3, optimal.rating.maxCommonness);
+    }
+
+    @Test
+    public void testPunctation() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("Yes, My Dearest Mistress", 0), //
+                choice("Yes, Dearest Mistress", 1), //
+                choice("Yes, Mistress", 2), //
+                choice("Yessir, My Dearest Mistress", 3), //
+                choice("Yessir, Dearest Mistress", 4), //
+                choice("Yessir, Mistress", 5), //
+                choice("Yessir", 6) //
+        );
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertEquals(4, optimal.size());
+        assertEquals(0, optimal.rating.duplicatedSymbols);
+        assertEquals(6, optimal.rating.maxCommonness);
+    }
+
+    @Test
+    public void testPunctation2() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("Yes, My Dearest Mistress", 0), //
+                choice("Yes, My Dearest", 1), //
+                choice("Yes, My", 2), //
+                choice("Yessir, My Dearest Mistress", 3), //
+                choice("Yessir, My Dearest", 4), //
+                choice("Yessir, My", 5), //
+                choice("Yessir", 6) //
+        );
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertEquals(4, optimal.size());
+        assertEquals(0, optimal.rating.duplicatedSymbols);
+        assertEquals(6, optimal.rating.maxCommonness);
+    }
+
+    @Test
+    public void testPunctation3() {
+        PhraseStringSequences choices = new PhraseStringSequences( //
+                choice("Yes, My Dearest Mistress", 0), //
+                choice("Yes, Dearest Mistress", 1), //
+                choice("Yes, Dearest", 2), //
+                choice("Yessir, My Dearest Mistress", 3), //
+                choice("Yessir, Dearest Mistress", 4), //
+                choice("Yessir, Dearest", 5), //
+                choice("Yessir", 6) //
+        );
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        // TODO result contains 1 duplicated symbol although a 4-size slice without duplicates is possible
+        assertEquals(3, optimal.size());
+        assertEquals(1, optimal.rating.duplicatedSymbols);
+        assertEquals(4, optimal.rating.maxCommonness);
     }
 
 }

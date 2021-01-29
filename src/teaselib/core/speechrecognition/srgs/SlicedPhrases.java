@@ -1,7 +1,8 @@
 package teaselib.core.speechrecognition.srgs;
 
+import static java.util.Arrays.*;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -146,13 +147,40 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
                 if (sequence.size() > 1) {
                     Sequences<T> next = slices.get(i + 1);
                     if (next.isJoinableWith(sequence)) {
-                        T element = sequence.remove(0);
-                        next.add(slice.set(k, new Sequence<>(element, sequence.traits)));
+                        T remaining = sequence.remove(0);
+                        Sequence<T> reduced = new Sequence<>(remaining, sequence.traits);
+                        Sequence<T> moved = slice.set(k, reduced);
+                        if (!join(moved, next, result)) {
+                            next.add(moved);
+                        }
+
+                        if (join(reduced, slice, result)) {
+                            slice.remove(reduced);
+                            k--;
+                        }
                     }
                 }
             }
         }
         return result;
+
+    }
+
+    private static <T> boolean join(Sequence<T> reduced, Sequences<T> slice, SlicedPhrases<T> result) {
+        boolean joined = false;
+        for (int l = 0; l < slice.size(); l++) {
+            Sequence<T> s = slice.get(l);
+            if (s != reduced && s.compareTo(reduced) == 0 && s.joinableSequences(reduced)) {
+                for (int m = 0; m < s.size(); m++) {
+                    s.set(m, reduced.traits.joinCommonOperator.apply(asList(s.get(m), reduced.get(m))));
+                }
+                result.rating.updateMaxCommonness(s);
+                result.rating.duplicatedSymbols--;
+                joined = true;
+                break;
+            }
+        }
+        return joined;
     }
 
     public SlicedPhrases(Sequence.Traits<T> traits, Function<Sequences<T>, String> toString) {
@@ -264,7 +292,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
                         int size = sequence.size();
                         for (int i = 0; i < size; i++) {
                             mergeableSequence.set(i, targetSlice.traits.joinCommonOperator
-                                    .apply(Arrays.asList(sequence.get(i), mergeableSequence.get(i))));
+                                    .apply(asList(sequence.get(i), mergeableSequence.get(i))));
                         }
                         rating.updateMaxCommonness(mergeableSequence);
                         sequence = mergeableSequence;

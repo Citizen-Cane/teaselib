@@ -577,7 +577,22 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 showInterTitle(currentText);
             } else {
                 show(currentBackgroundImage);
-                show(currentText);
+                if (currentText == null || currentText.isBlank()) {
+                    show("");
+                } else {
+                    // Border radius does not work - probably a JTextPane issue
+                    String html = "<html><head></head>" //
+                            + "<body style=\""//
+                            + "background-color:rgb(192, 192, 192);"//
+                            + "border: 3px solid rgb(192, 192, 192);"//
+                            + "border-radius: 5px;" //
+                            + "border-top-width: 3px;"//
+                            + "border-left-width: 7px;"//
+                            + "border-bottom-width: 5px;"//
+                            + "border-right-width: 0px;\\\">"//
+                            + currentText + "</body>" + "</html>";
+                    show(html);
+                }
             }
         });
     }

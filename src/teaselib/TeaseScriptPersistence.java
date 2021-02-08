@@ -3,8 +3,8 @@
  */
 package teaselib;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toList;
+import static java.util.Arrays.*;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -190,6 +190,10 @@ public abstract class TeaseScriptPersistence extends Script {
 
     public Items items(String[]... values) {
         return defaultDomain.items(values);
+    }
+
+    public Items items(Items.Query query) {
+        return query.get();
     }
 
     public Items items(Select.AbstractStatement query) {

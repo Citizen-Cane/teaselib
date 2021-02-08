@@ -22,28 +22,52 @@ public class Answer {
         TIMEOUT
     }
 
+    public static class Yes extends Answer {
+
+        public Yes(List<String> text) {
+            super(Meaning.YES, text);
+        }
+
+        public Yes(String... text) {
+            super(Meaning.YES, text);
+        }
+
+    }
+
+    public static class No extends Answer {
+
+        public No(List<String> text) {
+            super(Meaning.NO, text);
+        }
+
+        public No(String... text) {
+            super(Meaning.NO, text);
+        }
+
+    }
+
     /**
      * Returned when a script function has timed out.
      */
-    public static Answer Timeout = new Answer(Meaning.TIMEOUT, ScriptFunction.TimeoutString);
+    public static final Answer Timeout = new Answer(Meaning.TIMEOUT, ScriptFunction.TimeoutString);
 
     public final Meaning meaning;
     public final List<String> text;
 
-    public static Answer yes(String... text) {
+    public static Answer.Yes yes(String... text) {
         return yes(Arrays.asList(text));
     }
 
-    public static Answer yes(List<String> text) {
-        return new Answer(Meaning.YES, text);
+    public static Answer.Yes yes(List<String> text) {
+        return new Answer.Yes(text);
     }
 
-    public static Answer no(String... text) {
+    public static Answer.No no(String... text) {
         return no(Arrays.asList(text));
     }
 
-    public static Answer no(List<String> text) {
-        return new Answer(Meaning.NO, text);
+    public static Answer.No no(List<String> text) {
+        return new Answer.No(text);
     }
 
     public static Answer resume(String... text) {

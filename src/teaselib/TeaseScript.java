@@ -1,8 +1,7 @@
 package teaselib;
 
-import static teaselib.core.ai.perception.HumanPose.Interest.Proximity;
-import static teaselib.core.ai.perception.HumanPose.Interest.Status;
-import static teaselib.core.ai.perception.HumanPose.Status.Available;
+import static teaselib.core.ai.perception.HumanPose.Interest.*;
+import static teaselib.core.ai.perception.HumanPose.Status.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -552,23 +551,41 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return askYN(new ScriptFunction(script), Answer.yes(yes), Answer.no(no));
     }
 
-    public final boolean askYN(Answer yes, Answer no) {
+    public final boolean askYN(Answer.Yes yes, Answer answer) {
+        return askYN(null, yes, Answer.no(answer.text));
+    }
+
+    public final boolean askYN(Answer answer, Answer.Yes yes) {
+        return askYN(null, yes, Answer.no(answer.text));
+    }
+
+    public final boolean askYN(Answer answer, Answer.No no) {
+        return askYN(null, Answer.yes(answer.text), no);
+    }
+
+    public final boolean askYN(Answer.No no, Answer answer) {
+        return askYN(null, Answer.yes(answer.text), no);
+    }
+
+    public final boolean askYN(Answer.No no, Answer.Yes yes) {
         return askYN(null, yes, no);
     }
 
-    public final boolean askYN(ScriptFunction scriptFunction, Answer yes, Answer no) {
-        if (yes.meaning == Meaning.NO || no.meaning == Meaning.YES) {
-            Answer swap = yes;
-            yes = no;
-            no = swap;
-        }
-
-        teaselib.Answer answer = showChoices(Arrays.asList(yes, no), scriptFunction);
-        return answer.meaning == Meaning.YES || answer == yes;
+    public final boolean askYN(Answer.Yes yes, Answer.No no) {
+        return askYN(null, yes, no);
     }
 
-    public final void deny(String no) {
-        showChoices(Arrays.asList(Answer.no(no)));
+    public final boolean askYN(ScriptFunction scriptFunction, Answer.Yes yes, Answer.No no) {
+        teaselib.Answer answer = showChoices(Arrays.asList(yes, no), scriptFunction);
+        return answer == yes;
+    }
+
+    public final void deny(String... no) {
+        deny(Answer.no(no));
+    }
+
+    public final void deny(Answer.No no) {
+        showChoices(Arrays.asList(no));
     }
 
     public final boolean deny(ScriptFunction scriptFunction, String no) {
@@ -583,8 +600,12 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != Answer.Timeout;
     }
 
-    public final void agree(String yes) {
+    public final void agree(String... yes) {
         showChoices(Arrays.asList(Answer.yes(yes)));
+    }
+
+    public final void agree(Answer.Yes yes) {
+        showChoices(Arrays.asList(yes));
     }
 
     public final boolean agree(ScriptFunction scriptFunction, String yes) {
@@ -599,7 +620,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != Answer.Timeout;
     }
 
-    public final void chat(String chat) {
+    public final void chat(String... chat) {
         showChoices(Arrays.asList(Answer.resume(chat)), null, Intention.Chat);
     }
 

@@ -3,15 +3,17 @@ package teaselib.core;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import teaselib.Answer;
 import teaselib.Answer.Meaning;
 import teaselib.test.TestScript;
 
-public class AskYNTest {
+class AskYNTest {
 
     @Test
-    public void testYes() {
+    void testYes() {
         TestScript script = TestScript.getOne();
         script.debugger.addResponse("Yes", Debugger.Response.Choose);
 
@@ -20,7 +22,7 @@ public class AskYNTest {
     }
 
     @Test
-    public void testNo() {
+    void testNo() {
         TestScript script = TestScript.getOne();
         script.debugger.addResponse("No", Debugger.Response.Choose);
 
@@ -29,12 +31,12 @@ public class AskYNTest {
     }
 
     @Test
-    public void testYesAnswer() {
+    void testYesAnswer() {
         TestScript script = TestScript.getOne();
         script.debugger.addResponse("Yes", Debugger.Response.Choose);
 
-        Answer yes = Answer.yes("Yes");
-        Answer no = Answer.no("No");
+        Answer.Yes yes = Answer.yes("Yes");
+        Answer.No no = Answer.no("No");
 
         assertTrue(script.askYN(yes, no));
         assertTrue(script.askYN(no, yes));
@@ -46,12 +48,12 @@ public class AskYNTest {
     }
 
     @Test
-    public void testNoAnswer() {
+    void testNoAnswer() {
         TestScript script = TestScript.getOne();
         script.debugger.addResponse("No", Debugger.Response.Choose);
 
-        Answer yes = Answer.yes("Yes");
-        Answer no = Answer.no("No");
+        Answer.Yes yes = Answer.yes("Yes");
+        Answer.No no = Answer.no("No");
 
         assertFalse(script.askYN(yes, no));
         assertFalse(script.askYN(no, yes));
@@ -63,63 +65,30 @@ public class AskYNTest {
     }
 
     @Test
-    public void testResumYes() {
-        TestScript script = TestScript.getOne();
-        script.debugger.addResponse("Yes", Debugger.Response.Choose);
-
-        Answer yes = Answer.resume("Yes");
-        Answer no = Answer.resume("No");
-
-        assertTrue(script.askYN(yes, no));
-        assertFalse(script.askYN(no, yes));
-    }
-
-    @Test
-    public void testResumNo() {
-        TestScript script = TestScript.getOne();
-        script.debugger.addResponse("No", Debugger.Response.Choose);
-
-        Answer yes = Answer.resume("Yes");
-        Answer no = Answer.resume("No");
-
-        assertFalse(script.askYN(yes, no));
-        assertTrue(script.askYN(no, yes));
-    }
-
-    @Test
-    public void testReplyMultipleYesNo() {
+    void testReplyMultipleYesNo() {
         TestScript script = TestScript.getOne();
         script.debugger.addResponse("No", Debugger.Response.Choose);
 
         Answer answer = script.reply(Answer.yes("Yes"), Answer.yes("Maybe"), Answer.yes("Perhaps"), Answer.no("No"));
-        assertEquals(answer.meaning, Meaning.NO);
+        assertEquals(Meaning.NO, answer.meaning);
     }
 
-    @Test
-    public void testReplyMultipleYes1() {
+    @ParameterizedTest
+    @ValueSource(strings = { "Yes", "Maybe", "Perhaps" })
+    void testReplyMultipleYes(String choice) {
         TestScript script = TestScript.getOne();
-        script.debugger.addResponse("Yes", Debugger.Response.Choose);
-
+        script.debugger.addResponse(choice, Debugger.Response.Choose);
         Answer answer = script.reply(Answer.yes("Yes"), Answer.yes("Maybe"), Answer.yes("Perhaps"), Answer.no("No"));
-        assertEquals(answer.meaning, Meaning.YES);
+        assertEquals(Meaning.YES, answer.meaning);
     }
 
-    @Test
-    public void testReplyMultipleYes2() {
+    @ParameterizedTest
+    @ValueSource(strings = { "No", "Never", "Not ever" })
+    void testReplyMultipleNo(String choice) {
         TestScript script = TestScript.getOne();
-        script.debugger.addResponse("Maybe", Debugger.Response.Choose);
-
-        Answer answer = script.reply(Answer.yes("Yes"), Answer.yes("Maybe"), Answer.yes("Perhaps"), Answer.no("No"));
-        assertEquals(answer.meaning, Meaning.YES);
-    }
-
-    @Test
-    public void testReplyMultipleYes3() {
-        TestScript script = TestScript.getOne();
-        script.debugger.addResponse("Perhaps", Debugger.Response.Choose);
-
-        Answer answer = script.reply(Answer.yes("Yes"), Answer.yes("Maybe"), Answer.yes("Perhaps"), Answer.no("No"));
-        assertEquals(answer.meaning, Meaning.YES);
+        script.debugger.addResponse(choice, Debugger.Response.Choose);
+        Answer answer = script.reply(Answer.yes("Yes"), Answer.no("No"), Answer.no("Never"), Answer.no("Not ever"));
+        assertEquals(Meaning.NO, answer.meaning);
     }
 
 }

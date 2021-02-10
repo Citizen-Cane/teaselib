@@ -22,6 +22,7 @@ import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
 import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 import teaselib.core.ui.Choices;
+import teaselib.core.util.CodeDuration;
 
 public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSRGS.class);
@@ -76,20 +77,28 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
 
     @Override
     public PreparedChoices prepare(Choices choices) {
-        try {
-            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices, languageCode(), mapping(choices));
+        SRGSPhraseBuilder builder = CodeDuration.executionTimeMillis(logger, "Sliced in {}ms", () -> {
+            try {
+                return new SRGSPhraseBuilder(choices, languageCode(), mapping(choices));
+            } catch (ParserConfigurationException e) {
+                throw asRuntimeException(e);
+            }
+        });
 
+        byte[] bytes;
+        try {
             if (logger.isInfoEnabled()) {
                 logger.info("{}", builder.slices);
                 logger.info("{}", builder.toXML());
             }
 
-            byte[] bytes = builder.toBytes();
-            IntUnaryOperator mapper = builder.mapping::choice;
-            return new PreparedChoicesImplementation(choices, builder.slices, bytes, mapper);
-        } catch (ParserConfigurationException | TransformerException e) {
+            bytes = builder.toBytes();
+        } catch (TransformerException e) {
             throw asRuntimeException(e);
         }
+
+        IntUnaryOperator mapper = builder.mapping::choice;
+        return new PreparedChoicesImplementation(choices, builder.slices, bytes, mapper);
     }
 
     abstract PhraseMapping mapping(Choices choices);

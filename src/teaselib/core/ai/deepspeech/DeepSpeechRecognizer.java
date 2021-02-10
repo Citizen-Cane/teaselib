@@ -1,7 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +25,7 @@ import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choices;
+import teaselib.core.util.CodeDuration;
 
 public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation {
     private static final AudioSignalProblemOccuredEventArgs NoiseDetected = new AudioSignalProblemOccuredEventArgs(
@@ -169,18 +169,20 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     }
 
     private List<Rule> rules() {
-        List<Rule> rules;
-        List<Result> results = results();
-        if (results == null || results.isEmpty()) {
-            rules = Collections.emptyList();
-        } else {
-            if (logger.isInfoEnabled()) {
-                logger.info("DeepSpeech results = \n{}",
-                        results.stream().map(Objects::toString).collect(joining("\n")));
+        return CodeDuration.executionTimeMillis(logger, "Building rules took {} ms", () -> {
+            List<Rule> rules;
+            List<Result> results = results();
+            if (results == null || results.isEmpty()) {
+                rules = Collections.emptyList();
+            } else {
+                if (logger.isInfoEnabled()) {
+                    logger.info("DeepSpeech results = \n{}",
+                            results.stream().map(Objects::toString).collect(joining("\n")));
+                }
+                rules = RuleBuilder.rules(current.phrases, results);
             }
-            rules = RuleBuilder.rules(current.phrases, results);
-        }
-        return rules;
+            return rules;
+        });
     }
 
     private final class PreparedChoicesImplementation implements PreparedChoices {

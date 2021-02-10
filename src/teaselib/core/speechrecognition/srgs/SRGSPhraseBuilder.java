@@ -36,7 +36,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     public SRGSPhraseBuilder(Choices choices, String languageCode, PhraseMapping mapping)
-            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+            throws ParserConfigurationException, TransformerFactoryConfigurationError {
         super(languageCode);
         this.choices = choices;
         this.mapping = mapping;
@@ -45,7 +45,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     @Override
-    void buildXML() throws TransformerFactoryConfigurationError, TransformerException {
+    void buildXML() throws TransformerFactoryConfigurationError {
         Element grammar = createGrammar();
         Element main = createMainRule(Rule.MAIN_RULE_NAME);
         grammar.appendChild(main);

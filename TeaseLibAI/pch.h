@@ -7,6 +7,9 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define COMPILER_MSVC
+#define NOMINMAX
+
 // add headers that you want to pre-compile here
 #include "framework.h"
 

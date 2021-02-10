@@ -11,7 +11,6 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
@@ -30,7 +29,7 @@ abstract class AbstractSRGSBuilder {
     private final String languageCode;
     final Document document;
 
-    AbstractSRGSBuilder(String languageCode) throws ParserConfigurationException, TransformerFactoryConfigurationError {
+    AbstractSRGSBuilder(String languageCode) throws ParserConfigurationException {
         this.languageCode = languageCode;
         this.document = createDocument();
     }
@@ -41,7 +40,7 @@ abstract class AbstractSRGSBuilder {
         return documentBuilder.newDocument();
     }
 
-    abstract void buildXML() throws TransformerFactoryConfigurationError, TransformerException;
+    abstract void buildXML() throws TransformerException;
 
     Element createGrammar() {
         Element grammar = document.createElement("grammar");
@@ -85,7 +84,7 @@ abstract class AbstractSRGSBuilder {
         element.appendChild(document.createTextNode(text));
     }
 
-    public String toXML() throws TransformerFactoryConfigurationError, TransformerException {
+    public String toXML() throws TransformerException {
         DOMSource domSource = new DOMSource(document);
         StringWriter result = new StringWriter();
         StreamResult streamResult = new StreamResult(result);
@@ -101,7 +100,7 @@ abstract class AbstractSRGSBuilder {
         return result.toString();
     }
 
-    public byte[] toBytes() throws TransformerFactoryConfigurationError, TransformerException {
+    public byte[] toBytes() throws TransformerException {
         DOMSource domSource = new DOMSource(document);
 
         TransformerFactory factory = TransformerFactory.newInstance();

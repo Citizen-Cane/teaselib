@@ -20,6 +20,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.util.CodeDuration;
+
 public class PhrasesSliceTest {
     private static final Logger logger = LoggerFactory.getLogger(PhrasesSliceTest.class);
 
@@ -46,11 +48,9 @@ public class PhrasesSliceTest {
 
     public static SlicedPhrases<PhraseString> slice(PhraseStringSequences choices) {
         List<SlicedPhrases<PhraseString>> candidates = new ArrayList<>();
-        long start = System.currentTimeMillis();
-        SlicedPhrases<PhraseString> optimal = SlicedPhrases.of(new PhraseStringSequences(choices), candidates,
-                PhraseStringSequences::prettyPrint);
-        long end = System.currentTimeMillis();
-        logger.info("Slicing duration = {}ms", end - start);
+        SlicedPhrases<PhraseString> optimal = CodeDuration.executionTimeMillis(logger, "Slicing duration = {}ms",
+                () -> SlicedPhrases.of(new PhraseStringSequences(choices), candidates,
+                        PhraseStringSequences::prettyPrint));
 
         assertSliced(choices, optimal);
 

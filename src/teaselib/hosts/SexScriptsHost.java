@@ -589,7 +589,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                             + "border-top-width: 3px;"//
                             + "border-left-width: 7px;"//
                             + "border-bottom-width: 5px;"//
-                            + "border-right-width: 0px;\\\">"//
+                            + "border-right-width: 7px;\\\">"//
                             + currentText + "</body>" + "</html>";
                     show(html);
                 }

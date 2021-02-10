@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedName;
 import teaselib.core.util.ReflectionUtils;
 
 /**
@@ -57,31 +58,23 @@ public class Configuration {
         add(userConfig);
     }
 
-    public void addDefaultProperties(String defaults, String properties, String... namespaces) throws IOException {
-        addDefaultUserProperties(Optional.of(defaults), properties, Arrays.asList(namespaces));
-    }
-
     public void addDefaultProperties(String defaults, String properties, List<String> namespaces) throws IOException {
         addDefaultUserProperties(Optional.of(defaults), properties, namespaces);
     }
 
-    public void addPersistentUserProperties(String defaults, String properties, File userPath, String... namespaces)
+    void addPersistentUserProperties(String defaults, String properties, File userPath, List<String> namespaces)
             throws IOException {
-        addPersistentUserProperties(defaults, properties, userPath, Arrays.asList(namespaces));
+        addPersistentUserProperties(Optional.of(defaults), properties, userPath, QualifiedName.strip(namespaces));
     }
 
-    public void addPersistentUserProperties(String defaults, String properties, File userPath, List<String> namespaces)
-            throws IOException {
-        addPersistentUserProperties(Optional.of(defaults), properties, userPath, namespaces);
-    }
-
-    public void addScriptSettings(String properties, String namespace) throws IOException {
+    public void addScriptSettings(String namespace) throws IOException {
+        String path = QualifiedName.strip(namespace) + PROPERTIES_EXTENSION;
+        List<String> namespaces = Collections.singletonList(QualifiedName.strip(namespace));
         if (userPath.isPresent()) {
             File scriptSettingsFolder = new File(userPath.get(), "Script Settings");
-            addPersistentUserProperties(Optional.empty(), properties + PROPERTIES_EXTENSION, scriptSettingsFolder,
-                    Arrays.asList(namespace));
+            addPersistentUserProperties(Optional.empty(), path, scriptSettingsFolder, namespaces);
         } else {
-            addDefaultUserProperties(Optional.empty(), properties + PROPERTIES_EXTENSION, Arrays.asList(namespace));
+            addDefaultUserProperties(Optional.empty(), path, namespaces);
         }
     }
 
@@ -120,18 +113,17 @@ public class Configuration {
     }
 
     private boolean namespaceAlreadyRegistered(List<String> namespaces) {
-        return namespaces.stream().map(String::toLowerCase).anyMatch(userPropertiesNamespaceMapping::containsKey);
+        return namespaces.stream().anyMatch(userPropertiesNamespaceMapping::containsKey);
     }
 
     private void registerNamespaces(List<String> namespaces, ConfigurationFile p) {
         for (String namespace : namespaces) {
-            userPropertiesNamespaceMapping.put(namespace.toLowerCase(), p);
+            userPropertiesNamespaceMapping.put(namespace, p);
         }
     }
 
     public Optional<ConfigurationFile> getUserSettings(String namespace) {
-        return userPropertiesNamespaceMapping.entrySet().stream()
-                .filter(e -> namespace.toLowerCase().startsWith(e.getKey()))
+        return userPropertiesNamespaceMapping.entrySet().stream().filter(e -> namespace.startsWith(e.getKey()))
                 .map(Entry<String, ConfigurationFile>::getValue).findFirst();
     }
 

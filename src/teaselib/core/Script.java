@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -62,6 +61,7 @@ import teaselib.util.TextVariables;
 import teaselib.util.math.Random;
 
 public abstract class Script {
+
     private static final Logger logger = LoggerFactory.getLogger(Script.class);
 
     public final TeaseLib teaseLib;
@@ -93,7 +93,7 @@ public abstract class Script {
         // getOrDefault(teaseLib, TeaseLibAI.class, TeaseLibAI::new);
 
         try {
-            teaseLib.config.addScriptSettings(namespace, namespace);
+            teaseLib.config.addScriptSettings(namespace);
         } catch (IOException e) {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
         }
@@ -182,63 +182,67 @@ public abstract class Script {
         inputMethods.add(new SpeechRecognitionInputMethod(new SpeechRecognizer(teaseLib.config, audioSync)));
     }
 
+    private static final float UNTIL_REMOVE_LIMIT = 1.5f;
+    private static final float UNTIL_EXPIRED_LIMIT = 1.0f;
+
     protected void handleAutoRemove() {
         long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
         State persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.Internal.PERSISTED_DOMAINS_STATE);
         Collection<Object> domains = new ArrayList<>(((StateImpl) persistedDomains).peers());
         for (Object domain : domains) {
-            domain = domain.equals(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain : domain;
+            if (domain.equals(StateImpl.Domain.LAST_USED)) {
+                continue;
+            } else
+                domain = domain.equals(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain : domain;
             if (!handleUntilRemoved((String) domain, startupTimeSeconds).applied()
-                    && !handleUntilExpired((String) domain).applied()) {
+                    && !handleUntilExpired((String) domain, startupTimeSeconds).applied()) {
                 persistedDomains.removeFrom(domain);
             }
         }
     }
 
     private State handleUntilRemoved(String domain, long startupTimeSeconds) {
-        Consumer<State> autoRemove = state -> {
-            // Very implicit way of testing for unavailable items
-            Duration duration = state.duration();
-            if (state.applied() && duration.expired()) {
-                long limit = duration.limit(TimeUnit.SECONDS);
-                if (limit > State.TEMPORARY) {
-                    long autoRemovalTime = duration.start(TimeUnit.SECONDS) + limit + limit / 2;
-                    if (autoRemovalTime <= startupTimeSeconds) {
-                        state.remove();
-                    }
-                }
-            }
-        };
-        return handle(domain, autoRemove, State.Persistence.Until.Removed);
+        return handle(domain, State.Persistence.Until.Removed, startupTimeSeconds, UNTIL_REMOVE_LIMIT);
     }
 
-    private State handleUntilExpired(String domain) {
-        Consumer<State> autoRemove = state -> {
-            // Very implicit way of testing for unavailable items
-            Duration duration = state.duration();
-            if (state.applied() && duration.expired()) {
-                state.remove();
-            }
-        };
-        return handle(domain, autoRemove, State.Persistence.Until.Expired);
+    private State handleUntilExpired(String domain, long startupTimeSeconds) {
+        return handle(domain, State.Persistence.Until.Expired, startupTimeSeconds, UNTIL_EXPIRED_LIMIT);
     }
 
-    private State handle(String domain, Consumer<State> autoRemove, State.Persistence.Until until) {
+    private State handle(String domain, State.Persistence.Until until, long startupTimeSeconds, float limitFactor) {
         State untilState = teaseLib.state(domain, until);
         Set<Object> peers = ((StateImpl) untilState).peers();
         for (Object peer : new ArrayList<>(peers)) {
             State state = teaseLib.state(domain, peer);
-            cleanupRemovedUserItemReferences(state);
-            autoRemove.accept(state);
+            if (!cleanupRemovedUserItemReferences(state)) {
+                remove(state, startupTimeSeconds, limitFactor);
+            }
         }
         return untilState;
     }
 
-    private void cleanupRemovedUserItemReferences(State state) {
+    private boolean cleanupRemovedUserItemReferences(State state) {
         StateImpl stateImpl = AbstractProxy.stateImpl(state);
         if (stateImpl.peers().stream().filter(ItemGuid::isGuid).anyMatch(
                 guid -> teaseLib.findItem(stateImpl.domain, stateImpl.item, (ItemGuid) guid) == Item.NotFound)) {
             state.remove();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static void remove(State state, long startupTimeSeconds, float limitFactor) {
+        // Very implicit way of testing for unavailable items
+        Duration duration = state.duration();
+        if (state.applied() && duration.expired()) {
+            long limit = duration.limit(TimeUnit.SECONDS);
+            if (limit >= State.TEMPORARY && limit < Duration.INFINITE) {
+                long autoRemovalTime = duration.start(TimeUnit.SECONDS) + (long) (limit * limitFactor);
+                if (autoRemovalTime <= startupTimeSeconds) {
+                    state.remove();
+                }
+            }
         }
     }
 

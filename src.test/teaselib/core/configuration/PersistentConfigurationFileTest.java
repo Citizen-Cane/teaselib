@@ -1,12 +1,11 @@
 package teaselib.core.configuration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -22,14 +21,14 @@ public class PersistentConfigurationFileTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
-    public void testIO() throws IOException, InterruptedException {
+    public void testIO() throws IOException {
         TestScript script = TestScript.getOne(new DebugSetup());
         Configuration config = script.teaseLib.config;
         File file = new File(folder.getRoot(), "test.properties");
         assertFalse(file.exists());
 
         config.addPersistentUserProperties(Optional.empty(), "test.properties", folder.getRoot(),
-                Arrays.asList(script.namespace));
+                Collections.singletonList(script.namespace));
         script.persistentBoolean("testVariableName").set(true);
         config.persistentConfigurationFiles.flush();
 

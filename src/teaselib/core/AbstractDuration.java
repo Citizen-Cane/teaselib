@@ -28,8 +28,8 @@ public abstract class AbstractDuration implements Duration {
     static long convertToDuration(long value, TimeUnit unit) {
         if (value == Long.MIN_VALUE)
             return Long.MIN_VALUE;
-        if (value == Long.MAX_VALUE)
-            return Long.MAX_VALUE;
+        if (value == Duration.INFINITE)
+            return Duration.INFINITE;
         else
             return TeaseLib.DURATION_TIME_UNIT.convert(value, unit);
     }
@@ -37,8 +37,8 @@ public abstract class AbstractDuration implements Duration {
     static long convertToUnit(long value, TimeUnit unit) {
         if (value == Long.MIN_VALUE)
             return Long.MIN_VALUE;
-        if (value == Long.MAX_VALUE)
-            return Long.MAX_VALUE;
+        if (value == Duration.INFINITE)
+            return Duration.INFINITE;
         else
             return unit.convert(value, TeaseLib.DURATION_TIME_UNIT);
     }
@@ -62,8 +62,8 @@ public abstract class AbstractDuration implements Duration {
     public long end(TimeUnit unit) {
         long s = start(unit);
         long e = elapsed(unit);
-        if (s >= Long.MAX_VALUE - e) {
-            return Long.MAX_VALUE;
+        if (s >= Duration.INFINITE - e) {
+            return Duration.INFINITE;
         } else {
             return s + e;
         }

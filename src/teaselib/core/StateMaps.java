@@ -44,10 +44,9 @@ public class StateMaps {
 
     static String toStringWithoutRecursion(Set<Object> peers) {
         StringBuilder toString = new StringBuilder();
+        toString.append("[");
         for (Object object : peers) {
-            if (toString.length() == 0) {
-                toString.append("[");
-            } else {
+            if (toString.length() > 0) {
                 toString.append(", ");
             }
             if (object instanceof StateImpl) {

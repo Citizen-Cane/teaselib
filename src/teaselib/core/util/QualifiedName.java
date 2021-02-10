@@ -1,5 +1,8 @@
 package teaselib.core.util;
 
+import static java.util.stream.Collectors.*;
+
+import java.util.List;
 import java.util.Objects;
 
 public class QualifiedName implements Comparable<QualifiedName> {
@@ -8,23 +11,27 @@ public class QualifiedName implements Comparable<QualifiedName> {
 
     protected static final String[] StrippedPackageNames = { "teaselib.scripts", "teaselib" };
 
-    private static String stripPath(String path) {
+    public static List<String> strip(List<String> paths) {
+        return paths.stream().map(QualifiedName::strip).collect(toList());
+    }
+
+    public static String strip(String path) {
         for (String packageName : StrippedPackageNames) {
             String string = packageName + ".";
             if (path.startsWith(string)) {
-                path = path.substring(string.length());
+                return path.substring(string.length());
             }
         }
         return path;
     }
 
     public static QualifiedName of(String domain, String namespace, String name) {
-        return new QualifiedName(stripPath(domain), stripPath(namespace), name);
+        return new QualifiedName(strip(domain), strip(namespace), name);
     }
 
     public static QualifiedName of(String domain, Enum<?> item) {
         QualifiedItem qualifiedItem = QualifiedItem.of(item);
-        return QualifiedName.of(stripPath(domain), stripPath(qualifiedItem.namespace()), qualifiedItem.name());
+        return QualifiedName.of(strip(domain), strip(qualifiedItem.namespace()), qualifiedItem.name());
     }
 
     public final String domain;
@@ -125,13 +132,13 @@ public class QualifiedName implements Comparable<QualifiedName> {
 
     public boolean equals(Enum<?> item) {
         QualifiedItem qualifiedItem = QualifiedItem.of(item);
-        return this.namespace.equalsIgnoreCase(stripPath(qualifiedItem.namespace()))
+        return this.namespace.equalsIgnoreCase(strip(qualifiedItem.namespace()))
                 && this.name.equalsIgnoreCase(qualifiedItem.name());
     }
 
     public boolean equalsClass(Class<?> clazz) {
         QualifiedItem qualifiedItem = QualifiedItem.of(ReflectionUtils.normalizedClassName(clazz));
-        return this.namespace.equalsIgnoreCase(stripPath(qualifiedItem.namespace()))
+        return this.namespace.equalsIgnoreCase(strip(qualifiedItem.namespace()))
                 && this.name.equalsIgnoreCase(qualifiedItem.name());
     }
 

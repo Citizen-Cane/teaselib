@@ -34,7 +34,7 @@ public final class TeaseLibConfigSetup implements Setup {
         addSpeechDefaults(config);
         addIdentitiesDefaults(config);
 
-        config.userPath = Optional.of(userPath);
+        config.setUserPath(Optional.of(userPath));
         return config;
     }
 

@@ -1,9 +1,10 @@
 package teaselib.core.configuration;
 
-import static teaselib.core.configuration.Configuration.DEFAULTS;
+import static teaselib.core.configuration.Configuration.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 
 import teaselib.Config;
 import teaselib.core.UserItemsImpl;
@@ -17,6 +18,7 @@ public final class DebugSetup implements Setup {
     boolean enableOutput = false;
     boolean enableInput = false;
     boolean enableDictionaries = false;
+    Optional<File> userPath = Optional.empty();
 
     @Override
     public Configuration applyTo(Configuration config) {
@@ -27,7 +29,7 @@ public final class DebugSetup implements Setup {
         applyDictionanries(config);
         loadDefaultItemStores(config);
         loadIdentities(config);
-
+        config.setUserPath(userPath);
         return config;
     }
 
@@ -109,4 +111,10 @@ public final class DebugSetup implements Setup {
         enableDictionaries = true;
         return this;
     }
+
+    public DebugSetup withUserPath(File path) {
+        userPath = Optional.of(path);
+        return this;
+    }
+
 }

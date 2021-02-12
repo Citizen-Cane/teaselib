@@ -93,7 +93,7 @@ public abstract class Script {
         // getOrDefault(teaseLib, TeaseLibAI.class, TeaseLibAI::new);
 
         try {
-            teaseLib.config.addScriptSettings(namespace);
+            teaseLib.config.addScriptSettings(this.namespace);
         } catch (IOException e) {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
         }

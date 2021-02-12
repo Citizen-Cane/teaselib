@@ -1,8 +1,8 @@
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+
+import java.util.Optional;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.TeaseLib;
 import teaselib.core.TeaseLib.PersistentEnum;
+import teaselib.core.configuration.ConfigurationFile;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 
@@ -25,16 +26,40 @@ public class ScriptPersistenceTests {
     }
 
     @Test
-    public void testScriptPersistence() {
+    public void testScriptPersistenceStringItemStorage() {
         TestScript script = TestScript.getOne();
-
         script.item("My test namespace.My Test value toy").setAvailable(true);
-        assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "My test namespace", "My Test value toy")));
+        QualifiedName key = QualifiedName.of(TeaseLib.DefaultDomain, "My test namespace", "My Test value toy");
+        assertTrue(script.storage.containsKey(key));
+    }
+
+    @Test
+    public void testScriptPersistenceEnumItemStorage() {
+        TestScript script = TestScript.getOne();
+        script.item(TestValuesEnumClass.My_Test_Value_toy).setAvailable(true);
+        QualifiedName key = QualifiedName.of(TeaseLib.DefaultDomain, TestValuesEnumClass.My_Test_Value_toy);
+        assertTrue(script.storage.containsKey(key));
+    }
+
+    @Test
+    public void testScriptNamespacePersistence() {
+        TestScript script = TestScript.getOne();
+        assertNull(script.getString(TestValuesEnumClass.My_Test_Value_set_by_name.name()));
 
         script.set(TestValuesEnumClass.My_Test_Value_set_by_name.name(), "Saved as local enum by name");
-        assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, script.namespace, "My_Test_Value_set_by_name")));
+        Optional<ConfigurationFile> scriptSettings = script.teaseLib.config.getUserSettings(script.namespace);
+        assertTrue(scriptSettings.isPresent());
+        assertTrue(scriptSettings.get().containsKey(
+                QualifiedName.of(TeaseLib.DefaultDomain, script.namespace, "My_Test_Value_set_by_name").toString()));
+        assertEquals("Saved as local enum by name",
+                script.getString(TestValuesEnumClass.My_Test_Value_set_by_name.name()));
+
+    }
+
+    @Test
+    public void testGlobalPersistence() {
+        TestScript script = TestScript.getOne();
+        assertNull(script.getString(TestValuesEnumClass.My_Test_Value_set_by_enum));
 
         script.set(TestValuesEnumClass.My_Test_Value_set_by_enum, "Saved by local enum");
         Object expected = QualifiedName.of(TeaseLib.DefaultDomain, "ScriptPersistenceTests.TestValuesEnumClass",

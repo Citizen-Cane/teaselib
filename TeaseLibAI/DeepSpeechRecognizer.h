@@ -5,13 +5,16 @@
 
 #include <NativeObject.h>
 
-#include <AIfxAudioCapture.h>
-#include <AIfxDeepSpeech.h>
-#include <AIfxDeepSpeechAudioStream.h>
+#include <Audio/AIfxAudioCapture.h>
+#include <Audio/AIfxSpeechAudioStream.h>
+
+#include <DeepSpeech/AIfxDeepSpeech.h>
+#include <DeepSpeech/AIfxDeepSpeechAudioStreamRecognizer.h>
 
 
 class DeepSpeechRecognizer {
-	aifx::DeepSpeechAudioStream recognizer;
+	aifx::DeepSpeechAudioStreamRecognizer recognizer;
+	aifx::SpeechAudioStream audioStream;
 	aifx::AudioCapture audio;
 	aifx::AudioCapture::Input input;
 public:
@@ -26,9 +29,8 @@ public:
 
 	void stopEventLoop();
 
-	aifx::DeepSpeechAudioStream::Status decode();
+	aifx::SpeechAudioStream::Status decode();
 	const std::vector<aifx::DeepSpeech::Recognition> results() const;
 
 	static const jobject jresults(JNIEnv* env, const std::vector<aifx::DeepSpeech::Recognition>& results);
 };
-

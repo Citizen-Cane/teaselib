@@ -7,8 +7,8 @@
 #include <NativeException.h>
 #include <NativeObject.h>
 
-#include <AIfxVideoCapture.h>
-#include <AIfxPoseEstimation.h>
+#include <Video/AIfxVideoCapture.h>
+#include <Pose/AIfxPoseEstimation.h>
 
 #include <teaselib_core_ai_perception_SceneCapture.h>
 #include "SceneCapture.h"

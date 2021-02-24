@@ -13,11 +13,10 @@
 #include <JNIUtilities.h>
 
 
-#include <AIfxPoseEstimation.h>
-#include <AIfxVideoCapture.h>
-#include <TfLiteDelegateV2.h>
-
-#include <Pose.h>
+#include <TensorFlow/TfLiteDelegateV2.h>
+#include <Pose/AIfxPoseEstimation.h>
+#include <Pose/Pose.h>
+#include <Video/AIfxVideoCapture.h>
 
 #include <teaselib_core_ai_perception_HumanPose.h>
 #include "HumanPose.h"

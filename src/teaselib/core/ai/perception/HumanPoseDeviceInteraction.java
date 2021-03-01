@@ -1,12 +1,10 @@
 package teaselib.core.ai.perception;
 
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
-import static teaselib.core.util.ExceptionUtil.reduce;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -17,8 +15,8 @@ import teaselib.Actor;
 import teaselib.core.Closeable;
 import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.DeviceInteractionImplementation;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ScriptRenderer;
+import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
@@ -30,101 +28,68 @@ public class HumanPoseDeviceInteraction extends
         DeviceInteractionImplementation<HumanPose.Interest, EventSource<PoseEstimationEventArgs>> implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(HumanPoseDeviceInteraction.class);
 
-    private final NamedExecutorService executor;
-    private final PoseEstimationTask sceneCaptureTask;
-    private Future<PoseAspects> future = null;
+    private final NamedExecutorService taskExecutor;
     final ScriptRenderer scriptRenderer;
-    final HumanPose estimateImage;
+
+    private final PoseEstimationTask poseEstimationTask;
+    private Future<PoseAspects> future = null;
 
     public abstract static class EventListener implements Event<PoseEstimationEventArgs> {
         final Interest interest;
 
-        public EventListener(Interest interest) {
+        protected EventListener(Interest interest) {
             this.interest = interest;
         }
     }
 
-    public HumanPoseDeviceInteraction(ScriptRenderer scriptRenderer) {
+    public HumanPoseDeviceInteraction(TeaseLibAI teaseLibAI, ScriptRenderer scriptRenderer) {
         super(Object::equals);
         this.scriptRenderer = scriptRenderer;
-
-        executor = NamedExecutorService.sameThread("Pose Estimation");
-        sceneCaptureTask = new PoseEstimationTask(this, () -> executor.getQueue().isEmpty());
-        estimateImage = submitAndGet(() -> getModel(HumanPose.Interest.Status));
-
-        future = executor.submit(sceneCaptureTask);
-    }
-
-    public HumanPose getModel(Interest interest) {
-        return sceneCaptureTask.teaseLibAI.getModel(interest);
+        this.taskExecutor = NamedExecutorService.sameThread("Pose Estimation");
+        this.poseEstimationTask = new PoseEstimationTask(teaseLibAI, this);
+        future = taskExecutor.submit(poseEstimationTask);
     }
 
     @Override
     public void close() {
         if (future != null && !future.isDone() && !future.isCancelled()) {
             future.cancel(true);
-        } else {
-            submitAndGet(sceneCaptureTask::close);
         }
-        executor.shutdown();
+        taskExecutor.shutdown();
+        try {
+            taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public PoseAspects getPose(Interest interests) {
-        return sceneCaptureTask.getPose(interests);
+        return poseEstimationTask.getPose(interests);
     }
 
     public PoseAspects getPose(Interest interest, byte[] image) {
         Callable<PoseAspects> poseAspects = () -> {
-            List<Estimation> poses = estimateImage.poses(image);
+            HumanPose model = getModel(Interest.Status);
+            List<Estimation> poses = model.poses(image);
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
             } else {
                 return new PoseAspects(poses.get(0), Collections.singleton(interest));
             }
         };
-
-        try {
-            return submitAndGet(poseAspects);
-        } finally {
-            future = executor.submit(sceneCaptureTask);
-        }
+        return poseEstimationTask.submitAndGetResult(poseAspects);
     }
 
-    public void run(Runnable task) {
-        executor.submit(() -> {
-            logger.info("Pausing pose estimation");
-        });
-        executor.submit(task);
-        executor.submit(() -> {
-            logger.info("Resuming pose estimation");
-        });
-        executor.submit(sceneCaptureTask);
+    private HumanPose getModel(Interest interest) {
+        return poseEstimationTask.getModel(interest);
     }
 
-    private void submitAndGet(Runnable task) {
-        try {
-            executor.submit(task).get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (ExecutionException e) {
-            throw asRuntimeException(reduce(e));
-        }
-    }
-
-    private <T> T submitAndGet(Callable<T> task) {
-        try {
-            return executor.submit(task).get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (ExecutionException e) {
-            throw asRuntimeException(reduce(e));
-        }
+    public void setPause(Runnable task) {
+        poseEstimationTask.setPause(task);
     }
 
     public boolean awaitPose(Interest interests, long duration, TimeUnit unit, PoseAspect... aspects) {
-        return sceneCaptureTask.awaitPose(interests, duration, unit, aspects);
+        return poseEstimationTask.awaitPose(interests, duration, unit, aspects);
     }
 
     @Override
@@ -141,7 +106,7 @@ public class HumanPoseDeviceInteraction extends
         eventSource.add(listener);
 
         try {
-            listener.run(new PoseEstimationEventArgs(actor, sceneCaptureTask.getPose(listener.interest),
+            listener.run(new PoseEstimationEventArgs(actor, poseEstimationTask.getPose(listener.interest),
                     System.currentTimeMillis()));
         } catch (Exception e) {
             throw asRuntimeException(e);

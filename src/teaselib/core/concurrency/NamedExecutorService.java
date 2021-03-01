@@ -13,22 +13,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  */
 public class NamedExecutorService extends ThreadPoolExecutor {
+
     private static final String MULTITHREADED_NAME_PATTERN = "%s-%d";
     private static final String SINGLETHREADED_NAME_PATTERN = "%s";
 
     private NamedExecutorService(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, String name,
             BlockingQueue<Runnable> queue) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, queue, new ThreadFactory() {
-            private final AtomicInteger counter = new AtomicInteger();
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, queue, newThreadFactory(maximumPoolSize, name));
+    }
 
-            @Override
-            public Thread newThread(Runnable r) {
-                boolean multiThreaded = maximumPoolSize > 1;
-                String namePattern = multiThreaded ? MULTITHREADED_NAME_PATTERN : SINGLETHREADED_NAME_PATTERN;
-                String threadName = String.format(namePattern, name, counter.incrementAndGet());
-                return new Thread(r, threadName);
-            }
-        });
+    static ThreadFactory newThreadFactory(int maximumPoolSize, String name) {
+        return maximumPoolSize == 1 ? r -> newSingleThread(name, r) : r -> newThread(name, r);
+    }
+
+    private static Thread newSingleThread(String name, Runnable r) {
+        String threadName = String.format(SINGLETHREADED_NAME_PATTERN, name);
+        return new Thread(r, threadName);
+    }
+
+    private static Thread newThread(String name, Runnable r) {
+        AtomicInteger counter = new AtomicInteger();
+        String threadName = String.format(MULTITHREADED_NAME_PATTERN, name, counter.incrementAndGet());
+        return new Thread(r, threadName);
     }
 
     private NamedExecutorService(String name, long keepAliveTime, TimeUnit unit) {
@@ -36,11 +42,7 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     }
 
     private NamedExecutorService(String name, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> queue) {
-        super(1, 1, keepAliveTime, unit, queue, r -> {
-            String namePattern = SINGLETHREADED_NAME_PATTERN;
-            String threadName = String.format(namePattern, name);
-            return new Thread(r, threadName);
-        });
+        this(1, 1, keepAliveTime, unit, name, queue);
     }
 
     public static NamedExecutorService newUnlimitedThreadPool(String namePrefix, long keepAliveTime, TimeUnit unit) {

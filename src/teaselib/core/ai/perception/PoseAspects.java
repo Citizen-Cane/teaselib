@@ -18,7 +18,7 @@ public class PoseAspects {
 
     public final HumanPose.Estimation estimation;
 
-    private final Set<Interest> interests;
+    final Set<Interest> interests;
     private final Set<PoseAspect> aspects;
 
     PoseAspects() {
@@ -33,7 +33,7 @@ public class PoseAspects {
 
     PoseAspects(HumanPose.Estimation pose, Set<Interest> interests, PoseAspects previous) {
         this.estimation = pose;
-        this.interests = interests;
+        this.interests = Collections.unmodifiableSet(interests);
         this.aspects = new HashSet<>();
         aspects.add(Status.Available);
 

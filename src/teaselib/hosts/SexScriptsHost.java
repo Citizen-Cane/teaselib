@@ -279,6 +279,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         } else if (proximity == Proximity.FACE2FACE) {
             // TODO If kneeling, render face at the top of the image
             return render(image, ActorPart.Face, bounds);
+        } else if (proximity == Proximity.NEAR) {
+            // TODO upper/lower body half - zoom out a bit more
+            return render(image, ActorPart.Face, bounds);
         } else {
             return render(image, ActorPart.All, bounds);
         }

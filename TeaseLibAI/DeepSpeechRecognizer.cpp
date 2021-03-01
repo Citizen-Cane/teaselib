@@ -13,9 +13,8 @@
 
 #include <UnsupportedLanguageException.h>
 
-#include <Blob.h>
-#include <AIfxResource.h>
-#include <AIfxDeepSpeechAudioStream.h>
+#include <Tests/AIfxTestFramework/Blob.h>
+#include <Compute/AIfxResource.h>
 
 #include <teaselib_core_ai_deepspeech_DeepSpeechRecognizer.h>
 #include "DeepSpeechRecognizer.h"
@@ -101,17 +100,17 @@ extern "C"
 	{
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
-			const DeepSpeechAudioStream::Status status = speechRecognizer->decode();
+			const SpeechAudioStream::Status status = speechRecognizer->decode();
 			return static_cast<int>(status);
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-			return static_cast<int>(DeepSpeechAudioStream::Status::Cancelled);
+			return static_cast<int>(SpeechAudioStream::Status::Cancelled);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-			return static_cast<int>(DeepSpeechAudioStream::Status::Cancelled);
+			return static_cast<int>(SpeechAudioStream::Status::Cancelled);
 		} catch (JNIException& e) {
 			e.rethrow();
-			return static_cast<int>(DeepSpeechAudioStream::Status::Cancelled);
+			return static_cast<int>(SpeechAudioStream::Status::Cancelled);
 		}
 	}
 
@@ -250,12 +249,13 @@ extern "C"
 
 DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languageCode)
 	: recognizer(path, languageCode)
-	, audio(aifx::AudioCapture::DeviceInfo::defaultDevice(), recognizer.sample_rate(), aifx::DeepSpeechAudioStream::feed_audio_samples / 2)
+	, audioStream(recognizer)
+	, audio(aifx::AudioCapture::DeviceInfo::defaultDevice(), recognizer.sample_rate(), aifx::SpeechAudioStream::feed_audio_samples / 2)
 	, input([this](const short* audio, unsigned int samples) {
-		DeepSpeechAudioStream::FeedState feed_stste;
-		const unsigned int consumed = recognizer.feed(audio, samples, feed_stste);
+		SpeechAudioStream::FeedState feed_stste;
+		const unsigned int consumed = audioStream.feed(audio, samples, feed_stste);
 		if (consumed < samples) {
-			if (feed_stste == DeepSpeechAudioStream::FeedState::FinishDecodeStream) {
+			if (feed_stste == SpeechAudioStream::FeedState::FinishDecodeStream) {
 				// ok - waiting to finish decode
 			} else {
 				cerr << endl << "DeepSpeechAudioStream: buffer size insufficient - " << samples - consumed << " samples dropped";
@@ -269,7 +269,7 @@ DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languag
 DeepSpeechRecognizer::~DeepSpeechRecognizer()
 {
 	stop();
-	recognizer.cancel();
+	audioStream.cancel();
 }
 
 const string& DeepSpeechRecognizer::languageCode() const
@@ -279,7 +279,7 @@ const string& DeepSpeechRecognizer::languageCode() const
 
 void DeepSpeechRecognizer::start()
 {
-	recognizer.clear();
+	audioStream.clear();
 	audio.start(input);
 }
 
@@ -307,36 +307,7 @@ template <typename OutputIterator> void split(string const& s, OutputIterator ou
 void DeepSpeechRecognizer::emulate(const char* speech)
 {
 	stop();
-
-	vector<DeepSpeech::Recognition> results;
-	float confidence = -1.0f;
-
-	istringstream lines(speech);
-	string emulated_speech;
-	while (getline(lines, emulated_speech))
-	{
-		vector<string_view> words;
-		split(emulated_speech, back_inserter(words));
-
-		vector<DeepSpeech::meta_word> meta_words;
-		float timestamp = 0.0f;
-		for_each(words.begin(), words.end(), [&meta_words, &timestamp](const string_view& word) {
-			float duration = word.size() * 0.1f;
-			meta_words.push_back({ string(word), timestamp, duration });
-			timestamp += duration + 0.2f;
-		});
-
-		results.push_back(
-			DeepSpeech::Recognition(
-				speech,
-				meta_words,
-				confidence
-			)
-		);
-		confidence *= 1.05f;
-	}
-
-	recognizer.emulate(results);
+	audioStream.emulate(speech);
 }
 
 void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
@@ -344,23 +315,23 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 	stop();
 	try {
 		while (samples) {
-			DeepSpeechAudioStream::FeedState feed_state;
+			SpeechAudioStream::FeedState feed_state;
 			unsigned int consumed;
-			while (0 == (consumed = recognizer.feed(speech, std::min<unsigned int>(samples, DeepSpeechAudioStream::vad_frame_size), feed_state)))
+			while (0 == (consumed = audioStream.feed(speech, std::min<unsigned int>(samples, SpeechAudioStream::vad_frame_size), feed_state)))
 			{
-				if (feed_state == DeepSpeechAudioStream::FeedState::FinishDecodeStream) return; else this_thread::sleep_for(100ms);
+				if (feed_state == SpeechAudioStream::FeedState::FinishDecodeStream) return; else this_thread::sleep_for(100ms);
 			}
 			samples -= consumed;
 			speech += consumed;
 		}
 
-		if (recognizer != DeepSpeechAudioStream::Status::Done) {
-			recognizer.finish();
+		if (audioStream != SpeechAudioStream::Status::Done) {
+			audioStream.finish();
 		}
 
 		return;
 	} catch (exception& e) {
-		recognizer.cancel();
+		audioStream.cancel();
 		throw e;
 	}
 }
@@ -368,12 +339,12 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 void DeepSpeechRecognizer::stopEventLoop()
 {
 	stop();
-	recognizer.cancel();
+	audioStream.cancel();
 }
 
-DeepSpeechAudioStream::Status DeepSpeechRecognizer::decode()
+SpeechAudioStream::Status DeepSpeechRecognizer::decode()
 {
-	return recognizer.decode();
+	return audioStream.decode();
 }
 
 const vector<DeepSpeech::Recognition> DeepSpeechRecognizer::results() const

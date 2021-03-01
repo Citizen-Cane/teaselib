@@ -5,7 +5,7 @@
 
 #include <NativeObject.h>
 
-#include <AIfxPoseEstimation.h>
+#include <Pose/AIfxPoseEstimation.h>
 
 class HumanPose {
 public:

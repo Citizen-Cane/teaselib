@@ -5,8 +5,8 @@
 #include<JNIUtilities.h>
 #include<NativeObject.h>
 
-#include <AIfxOpenCL.h>
-#include <AIfxVideoCapture.h>
+#include <Compute/AIfxOpenCL.h>
+#include <Video/AIfxVideoCapture.h>
 
 #include <teaselib_core_ai_TeaseLibAI.h>
 

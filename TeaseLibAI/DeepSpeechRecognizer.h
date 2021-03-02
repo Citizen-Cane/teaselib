@@ -5,18 +5,18 @@
 
 #include <NativeObject.h>
 
-#include <Audio/AIfxAudioCapture.h>
-#include <Audio/AIfxSpeechAudioStream.h>
+#include <Audio/AudioCapture.h>
+#include <Speech/SpeechAudioStream.h>
 
-#include <DeepSpeech/AIfxDeepSpeech.h>
-#include <DeepSpeech/AIfxDeepSpeechAudioStreamRecognizer.h>
+#include <DeepSpeech/DeepSpeechContext.h>
+#include <DeepSpeech/DeepSpeechRecognizer.h>
 
 
 class DeepSpeechRecognizer {
-	aifx::DeepSpeechAudioStreamRecognizer recognizer;
-	aifx::SpeechAudioStream audioStream;
-	aifx::AudioCapture audio;
-	aifx::AudioCapture::Input input;
+	aifx::speech::DeepSpeechRecognizer recognizer;
+	aifx::speech::SpeechAudioStream audioStream;
+	aifx::audio::AudioCapture audio;
+	aifx::audio::AudioCapture::Input input;
 public:
 	DeepSpeechRecognizer(const char* path, const char* languageCode);
 	~DeepSpeechRecognizer();
@@ -29,8 +29,8 @@ public:
 
 	void stopEventLoop();
 
-	aifx::SpeechAudioStream::Status decode();
-	const std::vector<aifx::DeepSpeech::Recognition> results() const;
+	aifx::speech::SpeechAudioStream::Status decode();
+	const std::vector<aifx::speech::RecognitionResult> results() const;
 
-	static const jobject jresults(JNIEnv* env, const std::vector<aifx::DeepSpeech::Recognition>& results);
+	static const jobject jresults(JNIEnv* env, const std::vector<aifx::speech::RecognitionResult>& results);
 };

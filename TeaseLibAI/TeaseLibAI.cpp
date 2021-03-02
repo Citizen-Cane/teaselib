@@ -1,16 +1,21 @@
 #include "pch.h"
 
+#include <algorithm>
 #include <vector>
 
 #include<JNIUtilities.h>
 #include<NativeObject.h>
 
-#include <Compute/AIfxOpenCL.h>
-#include <Video/AIfxVideoCapture.h>
+#include <Compute/OpenCL.h>
+#include <Video/VideoCapture.h>
 
 #include <teaselib_core_ai_TeaseLibAI.h>
 
 #include "SceneCapture.h"
+
+using namespace aifx::compute;
+using namespace aifx::video;
+using namespace std;
 
 extern "C"
 {
@@ -22,7 +27,7 @@ extern "C"
  */
 	JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_TeaseLibAI_initOpenCL
 	(JNIEnv*, jobject) {
-		return aifx::OpenCL::init();
+		return OpenCL::init();
 	}
 
 	/*
@@ -32,10 +37,10 @@ extern "C"
 	 */
 	JNIEXPORT jobject JNICALL Java_teaselib_core_ai_TeaseLibAI_sceneCaptures
 	(JNIEnv* env, jobject) {
-		auto cameras = aifx::VideoCapture::devices();
-		std::vector<NativeObject*> sceneCaptures;
+		auto cameras = VideoCapture::devices();
+		vector<NativeObject*> sceneCaptures;
 
-		std::for_each(cameras.begin(), cameras.end(), [&sceneCaptures, env](const aifx::VideoCapture::Devices::value_type& cameraInfo) {
+		for_each(cameras.begin(), cameras.end(), [&sceneCaptures, env](const VideoCapture::Devices::value_type& cameraInfo) {
 			sceneCaptures.push_back(new SceneCapture(env, cameraInfo.second));
 		});
 

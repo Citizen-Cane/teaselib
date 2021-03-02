@@ -4,7 +4,7 @@
 
 class SceneCapture : public NativeObject {
 public:
-	SceneCapture(JNIEnv* env, const aifx::VideoCapture::CameraInfo& cameraInfo);
+	SceneCapture(JNIEnv* env, const aifx::video::VideoCapture::CameraInfo& cameraInfo);
 private:
-	std::unique_ptr<aifx::VideoCapture> device;
+	std::unique_ptr<aifx::video::VideoCapture> device;
 };

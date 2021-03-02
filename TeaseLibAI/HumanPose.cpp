@@ -14,14 +14,17 @@
 
 
 #include <TensorFlow/TfLiteDelegateV2.h>
-#include <Pose/AIfxPoseEstimation.h>
+#include <Pose/PoseEstimation.h>
 #include <Pose/Pose.h>
-#include <Video/AIfxVideoCapture.h>
+#include <Video/VideoCapture.h>
 
 #include <teaselib_core_ai_perception_HumanPose.h>
 #include "HumanPose.h"
 
-using namespace aifx;
+using namespace aifx::video;
+using namespace aifx::pose;
+using namespace aifx::tensorflow;
+
 using namespace cv;
 using namespace std;
 
@@ -39,11 +42,11 @@ extern "C"
 			HumanPose* humanPose = new HumanPose();
 			return reinterpret_cast<jlong>(humanPose);
 		}
-		catch (std::invalid_argument& e) {
+		catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return 0;
 		}
-		catch (std::exception& e) {
+		catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return 0;
 		}
@@ -80,11 +83,11 @@ extern "C"
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 			return humanPose->acquire(env, jdevice, jrotation);
 		}
-		catch (std::invalid_argument& e) {
+		catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return false;
 		}
-		catch (std::exception& e) {
+		catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return false;
 		}
@@ -110,11 +113,11 @@ extern "C"
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 			return humanPose->acquire(env, jimage);
 		}
-		catch (std::invalid_argument& e) {
+		catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return false;
 		}
-		catch (std::exception& e) {
+		catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return false;
 		}
@@ -138,14 +141,14 @@ extern "C"
 	{
 		try {
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
-			std::set<NativeObject*> aspects;
+			set<NativeObject*> aspects;
 
 			humanPose->estimate();
 		}
-		catch (std::invalid_argument& e) {
+		catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 		}
-		catch (std::exception& e) {
+		catch (exception& e) {
 			JNIException::rethrow(env, e);
 		}
 		catch (NativeException& e) {
@@ -170,7 +173,7 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 		vector<Pose> poses = humanPose->results();
 
 		vector<jobject> results;
-		for_each(poses.begin(), poses.end(), [&env, &results] (const aifx::Pose& pose) {
+		for_each(poses.begin(), poses.end(), [&env, &results] (const Pose& pose) {
 			const Point2f head = pose.head();
 			const Point3f gaze = pose.gaze();
 			jclass resultClass = JNIClass::getClass(env, "teaselib/core/ai/perception/HumanPose$Estimation");
@@ -216,11 +219,11 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 
 		return JNIUtilities::asList(env, results);
 	}
-	catch (std::invalid_argument& e) {
+	catch (invalid_argument& e) {
 		JNIException::rethrow(env, e);
 		return nullptr;
 	}
-	catch (std::exception& e) {
+	catch (exception& e) {
 		JNIException::rethrow(env, e);
 		return nullptr;
 	}
@@ -247,10 +250,10 @@ JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_dispose
 		HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 		delete humanPose;
 	}
-	catch (std::invalid_argument& e) {
+	catch (invalid_argument& e) {
 		JNIException::rethrow(env, e);
 	}
-	catch (std::exception& e) {
+	catch (exception& e) {
 		JNIException::rethrow(env, e);
 	}
 	catch (NativeException& e) {
@@ -279,7 +282,7 @@ bool HumanPose::acquire(JNIEnv* env, jobject jdevice, jobject jrotation)
 {
 	rotation = jrotation != nullptr ? PoseEstimation::Rotation::Clockwise : PoseEstimation::Rotation::None;
 
-	aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jdevice);
+	VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jdevice);
 	if (capture->started()) {
 		*capture >> frame;
 		return !frame.empty();
@@ -317,7 +320,7 @@ const vector<Pose>& HumanPose::results()
 	return poses;
 }
 
-aifx::PoseEstimation* HumanPose::interpreter()
+PoseEstimation* HumanPose::interpreter()
 {
 	PoseEstimation* interpreter = interpreterMap[rotation];
 	if (interpreter == nullptr) {

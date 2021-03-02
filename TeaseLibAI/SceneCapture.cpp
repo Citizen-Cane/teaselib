@@ -7,11 +7,14 @@
 #include <NativeException.h>
 #include <NativeObject.h>
 
-#include <Video/AIfxVideoCapture.h>
-#include <Pose/AIfxPoseEstimation.h>
+#include <Video/VideoCapture.h>
+#include <Pose/PoseEstimation.h>
 
 #include <teaselib_core_ai_perception_SceneCapture.h>
 #include "SceneCapture.h"
+
+using namespace aifx::video;
+using namespace std;
 
 extern "C"
 {
@@ -25,7 +28,7 @@ extern "C"
 	(JNIEnv* env, jclass, jstring jpath) {
 		try {
 			Objects::requireNonNull(L"path", jpath);
-			aifx::VideoCapture* capture = new aifx::VideoCapture(JNIStringUTF8(env, jpath));
+			VideoCapture* capture = new VideoCapture(JNIStringUTF8(env, jpath));
 			return reinterpret_cast<jlong>(capture);
 		}
 		catch (NativeException& e) {
@@ -45,7 +48,7 @@ extern "C"
 	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_start
 	(JNIEnv* env, jobject jthis) {
 		try {
-			aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jthis);
+			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jthis);
 			capture->start();
 		}
 		catch (NativeException& e) {
@@ -64,7 +67,7 @@ extern "C"
 	JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_SceneCapture_isStarted
 	(JNIEnv* env, jobject jthis) {
 		try {
-			aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jthis);
+			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jthis);
 			return capture->started();
 		}
 		catch (NativeException& e) {
@@ -84,7 +87,7 @@ extern "C"
 	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_SceneCapture_stop
 	(JNIEnv* env, jobject jthis) {
 		try {
-			aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jthis);
+			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jthis);
 			capture->stop();
 		}
 		catch (NativeException& e) {
@@ -104,13 +107,13 @@ extern "C"
 	(JNIEnv* env, jobject jthis)
 	{
 		try {
-			aifx::VideoCapture* capture = NativeInstance::get<aifx::VideoCapture>(env, jthis);
+			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jthis);
 			delete capture;
 		}
-		catch (std::invalid_argument& e) {
+		catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 		}
-		catch (std::exception& e) {
+		catch (exception& e) {
 			JNIException::rethrow(env, e);
 		}
 		catch (NativeException& e) {
@@ -125,8 +128,8 @@ extern "C"
 
 const char* enclosureLocationEnumName[] = { "Front", "Rear", "External" };
 
-SceneCapture::SceneCapture(JNIEnv* env, const aifx::VideoCapture::CameraInfo& cameraInfo)
-	: NativeObject(env), device(new aifx::VideoCapture(cameraInfo.id))
+SceneCapture::SceneCapture(JNIEnv* env, const VideoCapture::CameraInfo& cameraInfo)
+	: NativeObject(env), device(new VideoCapture(cameraInfo.id))
 {
 	jclass clazz = JNIClass::getClass(env, "teaselib/core/ai/perception/SceneCapture");
 	jthis = env->NewGlobalRef(env->NewObject(clazz,

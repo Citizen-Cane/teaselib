@@ -13,7 +13,7 @@ public class AnnotatedImage {
     public final HumanPose.Estimation pose;
 
     public AnnotatedImage(String resource, byte[] image) {
-        this(resource, image, null);
+        this(resource, image, HumanPose.Estimation.NONE);
     }
 
     public AnnotatedImage(String resource, byte[] bytes, Estimation pose) {

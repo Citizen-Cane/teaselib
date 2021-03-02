@@ -3,9 +3,11 @@ package teaselib.core.ai.perception;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.jni.NativeObject;
@@ -174,6 +176,20 @@ public class HumanPose extends NativeObject {
                 // since in this case there wouldn't be any estimation result at all
             }
         }
+
+        @Override
+        public String toString() {
+            StringBuilder pose = new StringBuilder();
+            pose.append('[');
+            List<String> elements = new ArrayList<>();
+            head.ifPresent(point -> elements.add("head=" + point));
+            distance.ifPresent(m -> elements.add("distance=" + m + "m"));
+            gaze.ifPresent(point -> elements.add("gaze=" + point));
+            pose.append(elements.stream().collect(Collectors.joining(", ")));
+            pose.append(']');
+            return pose.toString();
+        }
+
     }
 
     public void setInterests(Set<Interest> interests) {

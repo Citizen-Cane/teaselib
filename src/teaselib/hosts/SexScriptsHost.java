@@ -11,6 +11,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -271,22 +272,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         mainFrame.repaint();
     }
 
-    private BufferedImage renderBackgroundImage(Image image, Rectangle bounds) {
-        if (proximity == Proximity.CLOSE) {
-            // TODO render tits or boots, depending whether the slave can stand or is kneeling
-            boolean isKneeling = false;
-            return render(image, isKneeling ? ActorPart.Boots : ActorPart.Torso, bounds);
-        } else if (proximity == Proximity.FACE2FACE) {
-            // TODO If kneeling, render face at the top of the image
-            return render(image, ActorPart.Face, bounds);
-        } else if (proximity == Proximity.NEAR) {
-            // TODO upper/lower body half - zoom out a bit more
-            return render(image, ActorPart.Face, bounds);
-        } else {
-            return render(image, ActorPart.All, bounds);
-        }
-    }
-
     enum ActorPart {
         Face,
         Torso,
@@ -294,100 +279,86 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         All
     }
 
-    private BufferedImage render(Image image, ActorPart part, Rectangle bounds) {
+    private BufferedImage render(BufferedImage image, HumanPose.Estimation pose, Rectangle bounds) {
         BufferedImage bi = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = (Graphics2D) bi.getGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         // Draw original background image
         g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
 
-        float screenWidthFraction = 1.0f;
+        Point2D poseHead = pose.head.orElse(new Point2D.Double(0.5, 0.5));
+        // TODO Pose distance relates to image width -> map to screen dpi or draw area
+        Float poseDistance = pose.distance.orElse(1.0f);
 
-        int width = (int) (bounds.width * screenWidthFraction);
-        int height = bounds.height;
-        int left = 0;
-        int top = (bounds.height - height) / 2;
-
-        float windowAspect = (float) bounds.width / (float) bounds.height;
-        float imageAspect = (float) image.getWidth(null) / (float) image.getHeight(null);
-
-        boolean fillWidth = imageAspect < windowAspect;
-
-        int sx1;
-        int columns;
-        int rows;
-        if (fillWidth) {
-            columns = (int) (image.getWidth(null) * 1.0f);
-            rows = (int) (image.getWidth(null) * (float) height / width);
-            sx1 = 0;
+        // TODO adjust upper bound to avoid background border around actor image
+        Point2D head;
+        double actorDistance;
+        if (proximity == Proximity.CLOSE) {
+            head = new Point2D.Double(0.4, -0.2);
+            actorDistance = 0.4;
+        } else if (proximity == Proximity.FACE2FACE) {
+            head = new Point2D.Double(0.4, 0.15);
+            actorDistance = 0.7;
+        } else if (proximity == Proximity.NEAR) {
+            head = new Point2D.Double(0.4, 0.20);
+            actorDistance = 1.0;
+        } else if (proximity == Proximity.FAR) {
+            // TODO Blur
+            head = new Point2D.Double(0.4, 0.20);
+            actorDistance = 1.2;
+        } else if (proximity == Proximity.AWAY) {
+            // TODO Blur or turn display off
+            head = new Point2D.Double(0.4, 0.20);
+            actorDistance = 1.4;
         } else {
-            columns = (int) (image.getHeight(null) * ((float) width / (float) height));
-            rows = (int) (image.getHeight(null) * 1.0f);
-            sx1 = (image.getWidth(null) - columns) / 2;
+            throw new IllegalArgumentException(proximity.toString());
         }
 
-        int startRow;
-        if (fillWidth) {
-            // Pan
-            if (part == ActorPart.Face) {
-                int face = 0;
-                startRow = face;
-            } else if (part == ActorPart.Boots) {
-                // Pan to bottom
-                int boots = image.getHeight(null) - rows;
-                startRow = boots;
-            } else if (part == ActorPart.Torso) {
-                int torso = (image.getHeight(null) - rows) / 2;
-                startRow = torso;
-            } else if (part == ActorPart.All) {
-                // TODO show whole image
-                // Pan to bottom
-                int boots = image.getHeight(null) - rows;
-                startRow = boots;
-            } else {
-                throw new UnsupportedOperationException(part.name());
-            }
-        } else {
-            if (part == ActorPart.Face) {
-                // Zoom in face (upper image part)
-                float pan = 0.25f;
-                float zoom = 1.25f;
-                sx1 = sx1 + (int) (sx1 * pan / 2.0f);
-                columns = (int) (columns / zoom);
-                rows = (int) (rows / zoom);
-                startRow = 0;
-            } else if (part == ActorPart.Boots) {
-                // Zoom to bottom
-                startRow = 0;
-            } else if (part == ActorPart.Torso) {
-                startRow = 0;
-            } else if (part == ActorPart.All) {
-                // TODO show whole image
-                // Zoom to bottom
-                startRow = 0;
-            } else {
-                throw new UnsupportedOperationException(part.name());
-            }
-        }
+        // uncomment to test image->surface transform
+        // head = new Point2D.Double(0.5, 0.25);
+        // actorDistance = 1.0;
+        // poseDistance = 1.0f;
 
-        int sy1 = startRow;
-        int sx2 = sx1 + columns;
-        int sy2 = sy1 + rows;
+        // transforms are concatenated from bottom to top
+        AffineTransform surface = new AffineTransform();
+        // TODO translate image to avoid borders
+        // TODO translate image to avoid borders @ zoom=1.0 to avoid head shift when user changes proximity
 
-        g2d.drawImage(image, left, top, width, height, sx1, sy1, sx2, sy2, null);
+        surface.translate(head.getX() * bounds.width, head.getY() * bounds.height);
+        // translate head to center
 
-        // TODO Transform pose.head from s to d -> rewrite rendering with affine transforms
-        // if (currentPose != null) {
-        // if (currentPose.head.isPresent()) {
-        // Point2D head = currentPose.head.get();
-        // g2d.setColor(Color.BLUE);
-        // int x = (int) (head.getX() * (width - left));
-        // int y = (int) (head.getY() * (height - top));
-        // int w = width / 8;
-        // int h = height / 8;
-        // g2d.drawArc(left + x - w, top + y - h, x + w, y + h, 0, 360);
-        // }
-        // }
+        // TODO scale to always fill the screen for both portrait and landscape images
+        double aspect = Math.max((double) bounds.width / image.getWidth(), (double) bounds.height / image.getHeight());
+        surface.scale(aspect, aspect);
+        // scale to user space
+
+        surface.scale(image.getWidth(), image.getHeight());
+        // scale back to image space
+
+        surface.scale(1.0 / actorDistance, 1.0 / actorDistance);
+        // Adjust to proximity to indicate near/face2face/close
+
+        surface.scale(poseDistance, poseDistance);
+        // scale to distance so that the head is always the same size
+
+        surface.translate(-poseHead.getX(), -poseHead.getY());
+        // move face to 0,0
+
+        surface.scale(1.0 / image.getWidth(), 1.0 / image.getHeight());
+        // transform to normalized
+
+        g2d.drawImage(image, surface, null);
+
+        // uncomment to test pose estimation features
+        // Point2D p = surface.transform(
+        // new Point2D.Double(poseHead.getX() * image.getWidth(), poseHead.getY() * image.getHeight()),
+        // new Point2D.Double());
+        // int r = (int) (image.getWidth() / poseDistance * 0.1);
+        // g2d.setColor(pose.head.isPresent() ? Color.cyan : Color.orange);
+        // g2d.drawOval((int) p.getX() - 2, (int) p.getY() - 2, 2 * 2, 2 * 2);
+        // // TODO exact head scale
+        // g2d.setColor(pose.head.isPresent() ? Color.blue : Color.red);
+        // g2d.drawOval((int) p.getX() - r, (int) p.getY() - r, 2 * r, 2 * r);
 
         return bi;
     }
@@ -519,7 +490,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     String currentText = "";
-    Image currentImage = null;
+    BufferedImage currentImage = null;
     HumanPose.Estimation currentPose = null;
     BufferedImage currentBackgroundImage = null;
 
@@ -531,9 +502,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 currentPose = actorImage.pose;
             } catch (IOException e) {
                 currentImage = null;
-                currentPose = null;
+                currentPose = HumanPose.Estimation.NONE;
                 logger.error(e.getMessage(), e);
             }
+        } else {
+            currentImage = null;
+            currentPose = HumanPose.Estimation.NONE;
         }
 
         currentText = text;
@@ -570,7 +544,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     public void show() {
         Rectangle bounds = getContentBounds(mainFrame);
         if (currentImage != null) {
-            currentBackgroundImage = renderBackgroundImage(currentImage, bounds);
+            currentBackgroundImage = render(currentImage, currentPose, bounds);
         } else {
             currentBackgroundImage = null;
         }

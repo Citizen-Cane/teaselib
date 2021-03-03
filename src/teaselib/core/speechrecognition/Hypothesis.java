@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.*;
 
 public class Hypothesis extends Rule {
 
@@ -14,7 +14,7 @@ public class Hypothesis extends Rule {
     }
 
     public Hypothesis(Rule rule, float probability) {
-        super(rule, Name, probability, rule.confidence);
+        super(rule, Name, probability, Confidence.valueOf(probability));
     }
 
 }

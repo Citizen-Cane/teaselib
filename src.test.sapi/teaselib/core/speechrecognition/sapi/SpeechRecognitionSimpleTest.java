@@ -1,8 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.util.Locale;
 
@@ -129,9 +127,15 @@ public class SpeechRecognitionSimpleTest {
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRSimple.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
+            Choices chat = as(choices, Intention.Chat);
+            assertRecognized(inputMethod, chat);
+            assertRecognizedAsHypothesis(inputMethod, chat, "Yes Miss", new Prompt.Result(1));
+            assertRecognizedAsHypothesis(inputMethod, chat, "It's ready", new Prompt.Result(4));
+            assertRejected(inputMethod, chat, "I'm Sorry", "Ready, Miss", "Ready");
+
             assertRecognized(inputMethod, choices);
-            assertRecognizedAsHypothesis(inputMethod, choices, "Yes Miss", new Prompt.Result(1));
-            assertRecognizedAsHypothesis(inputMethod, choices, "It's ready", new Prompt.Result(4));
+            assertRejected(inputMethod, choices, "Yes Miss");
+            assertRejected(inputMethod, choices, "It's ready");
             assertRejected(inputMethod, choices, "I'm Sorry", "Ready, Miss", "Ready");
         }
     }

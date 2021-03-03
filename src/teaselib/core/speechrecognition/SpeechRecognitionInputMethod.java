@@ -244,7 +244,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 } else {
                     logger.info("Weighted hypothesis confidence {} < expected hypothesis confidence {}", //
                             weightedProbability, expectedConfidence);
-                    return Optional.of(new Hypothesis(rule));
+                    return Optional.of(new Hypothesis(rule, weightedProbability));
                 }
             }
         } else {
@@ -283,7 +283,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                                 logger.info("Considering hypothesis");
                                 return handle(prompt, this::singleResult, hypothesis, expectedConfidence);
                             } else {
-                                reject(prompt, eventArgs, "Ignoring hypothesis");
+                                reject(prompt, hypothesis, "Weighted hypothesis probability=" + hypothesis.probability
+                                        + " too low - ignoring");
                                 // Only if rejected by the speech recognition implementation
                                 // - would result in too may events otherwise
                                 signalHandlerInvocation(Notification.RecognitionRejected, eventArgs);
@@ -392,26 +393,26 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
             }
         } else if (rule.probability >= expectedConfidence) {
             logAudioSignalProblemPenalty(expectedConfidence, audioProblemPenalty);
-            reject(rule, prompt);
+            reject(prompt, rule);
             return prompt;
         } else {
             logLackOfConfidence(rule.probability, expectedConfidence);
-            reject(rule, prompt);
+            reject(prompt, rule);
             return prompt;
         }
     }
 
     private void reject(Prompt prompt, Rule rule, String reason) {
-        logger.info("{} in {} : {} - rejecting", reason, prompt.choices, rule);
-        reject(rule, prompt);
+        logger.info("{}: {}", reason, rule);
+        reject(prompt, rule);
     }
 
     private void reject(Prompt prompt, SpeechRecognizedEventArgs eventArgs, String reason) {
-        logger.info("{} in {} - rejecting", reason, eventArgs);
+        logger.info("{} in {}", reason, eventArgs);
         reject(prompt, eventArgs);
     }
 
-    private void reject(Rule rule, Prompt prompt) {
+    private void reject(Prompt prompt, Rule rule) {
         reject(prompt, new SpeechRecognizedEventArgs(rule));
     }
 

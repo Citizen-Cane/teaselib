@@ -26,9 +26,15 @@ public class SpeechRecognitionComplexTest {
 
         assertRecognized(choices, "Of course", new Prompt.Result(0));
         assertRecognized(choices, "Yes Of course", new Prompt.Result(1));
+
+        Choices chat = as(choices, Intention.Chat);
         // Recognized because of leading null rule with choice index == 0
-        assertRecognized(choices, "Of", new Prompt.Result(0));
-        assertRecognized(choices, "Yes", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(chat, "Of", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, "Yes", new Prompt.Result(1));
+
+        Choices confirm = as(choices, Intention.Confirm);
+        assertRejected(confirm, "Of");
+        assertRejected(confirm, "Yes");
 
         assertRejected(choices, "Foo bar");
     }
@@ -40,11 +46,18 @@ public class SpeechRecognitionComplexTest {
 
         assertRecognized(choices, "Of course", new Prompt.Result(0));
         assertRecognized(choices, "Yes Of course", new Prompt.Result(0));
-        // TODO accepted as hypothesis but word count isn't weighted - too short
-        assertRecognizedAsHypothesis(choices, "Of", new Prompt.Result(0));
-        assertRecognizedAsHypothesis(choices, "Yes", new Prompt.Result(0));
-
         assertRejected(choices, "Foo bar");
+
+        assertRejected(choices, "Of");
+        assertRejected(choices, "Yes");
+
+        Choices confirm = as(choices, Intention.Confirm);
+        assertRejected(confirm, "Of");
+        assertRejected(confirm, "Yes");
+
+        Choices chat = as(choices, Intention.Chat);
+        assertRecognizedAsHypothesis(chat, "Of", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, "Yes", new Prompt.Result(0));
     }
 
     @Test
@@ -128,9 +141,12 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("Of course, Miss"), new Prompt.Result(0));
 
-        // Accepted as Intention.Confirm because SAPI emulation provides wrong confidence values == 1.0
-        Choices hypothized = as(choices, Intention.Confirm);
-        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
+        Choices chat = as(choices, Intention.Chat);
+        assertRecognizedAsHypothesis(chat, "Yes Miss", new Prompt.Result(0));
+        assertRejected(chat, withoutPunctation("Miss"));
+
+        Choices confirm = as(choices, Intention.Confirm);
+        assertRejected(confirm, "Yes Miss");
 
         try (SpeechRecognizer recognizer = getRecognizer(TeaseLibSRGS.Strict.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
@@ -142,7 +158,6 @@ public class SpeechRecognitionComplexTest {
             assertRecognizedAsHypothesis(inputMethod, choices, "Of course", new Prompt.Result(0));
         }
 
-        assertRejected(choices, withoutPunctation("Miss"));
     }
 
     private static Choices multipleChoicesAlternativePhrases() {
@@ -167,30 +182,43 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1));
         assertRecognized(choices, withoutPunctation("of course not"), new Prompt.Result(1, 1));
 
-        Choices hypothized = as(choices, Intention.Confirm);
-        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
-        assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
+        assertRejected(choices, "Of not");
+    }
+
+    @Test
+    public void testSRGSBuilderAlternativePhrasesHypotheses() throws InterruptedException {
+        Choices choices = multipleChoicesAlternativePhrases();
+        Choices confirm = as(choices, Intention.Confirm);
 
         try (SpeechRecognizer recognizer = getRecognizer(TeaseLibSRGS.Strict.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
-            assertRecognizedAsHypothesis(inputMethod, hypothized, "No Miss of course", new Prompt.Result(1));
+            assertRecognizedAsHypothesis(inputMethod, confirm, "No Miss of course", new Prompt.Result(1));
         }
 
         try (SpeechRecognizer recognizer = getRecognizer(TeaseLibSRGS.Relaxed.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
-            assertRejected(inputMethod, hypothized, "No Miss of course");
+            assertRejected(inputMethod, confirm, "No Miss of course");
         }
 
-        assertRejected(choices, "Of not");
+        assertRejected(confirm, "Yes Miss");
+        assertRejected(confirm, "No Miss");
+
+        Choices chat = as(choices, Intention.Chat);
+        assertRecognizedAsHypothesis(chat, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, "No Miss", new Prompt.Result(1));
     }
 
     @Test
     public void testSRGSBuilderAlternativePhrasesToChoiceMappingWithRepair() throws InterruptedException {
         Choices choices = multipleChoicesAlternativePhrases();
 
-        Choices hypothized = as(choices, Intention.Confirm);
-        assertRecognizedAsHypothesis(hypothized, withoutPunctation("Yes, of"), new Prompt.Result(0));
-        assertRecognizedAsHypothesis(hypothized, withoutPunctation("No, of"), new Prompt.Result(1));
+        Choices chat = as(choices, Intention.Chat);
+        assertRecognizedAsHypothesis(chat, withoutPunctation("Yes, of"), new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, withoutPunctation("No, of"), new Prompt.Result(1));
+
+        Choices confirm = as(choices, Intention.Confirm);
+        assertRejected(confirm, withoutPunctation("Yes, of"));
+        assertRejected(confirm, withoutPunctation("No, of"));
     }
 
     private static Choices optionalPhraseToDistiniguishMulitpleChoices() {
@@ -225,26 +253,37 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1, 1));
         assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1));
 
-        Choices hypothized = as(choices, Intention.Confirm);
-        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
-        assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
+        assertRejected(choices, "Of not");
+        assertRejected(choices, "Of course");
+        assertRejected(choices, "Of course not");
+    }
+
+    @Test
+    public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctHypotheses() throws InterruptedException {
+        Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
+
+        Choices confirm = as(choices, Intention.Confirm);
+        assertRejected(confirm, "Yes Miss");
+        assertRejected(confirm, "No Miss");
 
         try (SpeechRecognizer recognizer = getRecognizer(TeaseLibSRGS.Strict.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
             // Repaired and recognized
-            assertRecognizedAsHypothesis(inputMethod, hypothized, "No Miss of course", new Prompt.Result(1));
+            assertRecognizedAsHypothesis(inputMethod, confirm, "No Miss of course", new Prompt.Result(1));
         }
 
         try (SpeechRecognizer recognizer = getRecognizer(TeaseLibSRGS.Relaxed.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
-            // TODO Not repaired, not recognized -> trailing NULL rule (missing "not") results in no indices
-            // - phrase would probably be recognized as hypothesis, but the event is not always fired by the emulation
-            assertRejected(inputMethod, hypothized, "No Miss of course");
+            // TODO Not repaired, not recognized
+            // -> trailing NULL rule (missing "not")=[0, 1, 2] results in no indices since disjunct to "No"=[3, 4, 5]
+            // - phrase would probably be recognized as hypothesis, but here the event is not always fired by the emulation
+            assertRejected(inputMethod, confirm, "No Miss of course");
         }
 
-        assertRejected(choices, "Of not");
-        assertRejected(choices, "Of course");
-        assertRejected(choices, "Of course not");
+        Choices chat = as(choices, Intention.Chat);
+        assertRecognizedAsHypothesis(chat, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, "No Miss", new Prompt.Result(1));
+        assertRejected(chat, "Of course not");
     }
 
     private static Choices multipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct() {
@@ -272,13 +311,24 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1, 1));
         assertRecognized(choices, withoutPunctation("of course not"), new Prompt.Result(1, 1, 1));
         assertRecognized(choices, withoutPunctation("I don't have it"), new Prompt.Result(1));
+    }
 
-        Choices hypothized = as(choices, Intention.Confirm);
-        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
-        assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
-        assertRecognizedAsHypothesis(hypothized, "No Miss of course", new Prompt.Result(1));
+    @Test
+    public void testSRGSBuilderMultipleChoicesAlternativePhrasesWithOptionalPartsAreDistinctHypotheses()
+            throws InterruptedException {
+        Choices choices = multipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct();
+        Choices chat = as(choices, Intention.Chat);
+        assertRecognizedAsHypothesis(chat, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, "No Miss", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(chat, "No Miss of course", new Prompt.Result(1));
+
+        Choices confirm = as(choices, Intention.Confirm);
+        assertRejected(confirm, "Yes Miss");
+        assertRejected(confirm, "No Miss");
+        assertRecognizedAsHypothesis(confirm, "No Miss of course", new Prompt.Result(1));
 
         assertRejected(choices, "Of not");
+
     }
 
     private static Choices multiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts() {
@@ -303,15 +353,30 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1, 1, 1, 1));
         assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1, 1, 1));
         assertRecognized(choices, withoutPunctation("I don't have it"), new Prompt.Result(1));
+    }
 
-        Choices hypothized = as(choices, Intention.Confirm);
-        assertRecognizedAsHypothesis(hypothized, "Yes Miss", new Prompt.Result(0));
-        assertRecognizedAsHypothesis(hypothized, "No Miss", new Prompt.Result(1));
-        assertRecognizedAsHypothesis(hypothized, "No Miss of course", new Prompt.Result(1));
+    @Test
+    public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalPartsHypotheses()
+            throws InterruptedException {
+        Choices decide = multiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts();
+        assertRecognizedAsHypothesis(decide, "Yes Miss of course", new Prompt.Result(0));
 
-        assertRejected(choices, "Of not");
-        assertRejected(choices, "Of course");
-        assertRejected(choices, "Of course not");
+        Choices confirmation = as(decide, Intention.Confirm);
+        assertRecognizedAsHypothesis(confirmation, "No Miss of course", new Prompt.Result(1));
+        assertRejected(confirmation, "Yes Miss");
+        assertRejected(confirmation, "No Miss");
+
+        Choices chat = as(decide, Intention.Chat);
+        assertRecognizedAsHypothesis(chat, "Yes Miss of", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, "No Miss of", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(chat, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, "No Miss", new Prompt.Result(1));
+
+        assertRejected(chat, "Yes");
+        assertRejected(chat, "No");
+        assertRejected(chat, "Of not");
+        assertRejected(chat, "Of course");
+        assertRejected(chat, "Of course not");
     }
 
     private static Choices phrasesWithMultipleCommonStartGroups() {

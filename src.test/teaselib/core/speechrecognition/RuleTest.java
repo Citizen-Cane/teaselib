@@ -1,13 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static java.lang.Integer.MIN_VALUE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.speechrecognition.Confidence.High;
-import static teaselib.core.speechrecognition.Confidence.Low;
-import static teaselib.core.speechrecognition.Confidence.Normal;
-import static teaselib.core.speechrecognition.srgs.PhrasesSliceTest.choice;
+import static java.lang.Integer.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.Confidence.*;
+import static teaselib.core.speechrecognition.srgs.PhrasesSliceTest.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -156,8 +152,10 @@ public class RuleTest {
         assertEquals(Collections.singleton(1), speechDetected.intersectionWithoutNullRules());
 
         assertTrue(speechDetected.hasTrailingNullRule());
+        assertTrue(speechDetected.hasIgnoreableTrailingNullRule());
         Rule speechDetectedwithoutTrailingNullRules = speechDetected.withoutIgnoreableTrailingNullRules();
-        assertFalse(speechDetectedwithoutTrailingNullRules.hasTrailingNullRule());
+        assertTrue(speechDetected.hasTrailingNullRule());
+        assertFalse(speechDetectedwithoutTrailingNullRules.hasIgnoreableTrailingNullRule());
 
         SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
         List<Rule> repaired = speechDetectedwithoutTrailingNullRules.repair(slicedPhrases);

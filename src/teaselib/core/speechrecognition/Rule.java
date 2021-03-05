@@ -1,19 +1,17 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.averagingDouble;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static teaselib.core.speechrecognition.Confidence.High;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.speechrecognition.Confidence.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.IntUnaryOperator;
+import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.Sequence;
@@ -176,9 +174,13 @@ public class Rule {
         }
     }
 
-    public boolean hasTrailingNullRule() {
-        Rule child = children.get(children.size() - 1);
-        return child.text == null && child.fromElement > PhraseString.words(text).length;
+    public boolean hasIgnoreableTrailingNullRule() {
+        if (children.isEmpty()) {
+            return false;
+        } else {
+            Rule child = children.get(children.size() - 1);
+            return child.text == null && child.fromElement > PhraseString.words(text).length;
+        }
     }
 
     public Rule withoutIgnoreableTrailingNullRules() {
@@ -186,6 +188,36 @@ public class Rule {
                 .filter(child -> child.fromElement <= PhraseString.words(text).length).collect(toList());
         return new Rule(WITHOUT_IGNOREABLE_TRAILING_NULL_RULE, text, ruleIndex, childrenWithoutTrailingNullRule,
                 fromElement, toElement, probability, confidence);
+    }
+
+    public boolean hasTrailingNullRule() {
+        if (children.isEmpty()) {
+            return false;
+        } else {
+            Rule child = children.get(children.size() - 1);
+            return child.text == null && child.fromElement >= PhraseString.words(text).length;
+        }
+    }
+
+    public Rule withoutDisjunctTrailingNullRules(IntUnaryOperator toChoices) {
+        if (children.isEmpty()) {
+            throw new NoSuchElementException(text);
+        }
+        Rule lastChild = children.get(children.size() - 1);
+        if (lastChild.text != null) {
+            throw new IllegalStateException(lastChild.toString());
+        }
+
+        List<Rule> childrenWithoutTrailingNullRule = new ArrayList<>(children.subList(0, children.size() - 1));
+        Set<Integer> newIndices = RuleIndicesList.intersection(
+                childrenWithoutTrailingNullRule.stream().map(rule -> rule.indices).collect(Collectors.toList()));
+        Set<Integer> choices = newIndices.stream().map(toChoices::applyAsInt).collect(Collectors.toSet());
+        if (choices.size() != 1) {
+            childrenWithoutTrailingNullRule.add(lastChild);
+        }
+
+        return new Rule(WITHOUT_IGNOREABLE_TRAILING_NULL_RULE, text, ruleIndex, childrenWithoutTrailingNullRule,
+                fromElement, toElement - lastChild.fromElement, probability, confidence);
     }
 
     public Set<Integer> intersectionWithoutNullRules() {

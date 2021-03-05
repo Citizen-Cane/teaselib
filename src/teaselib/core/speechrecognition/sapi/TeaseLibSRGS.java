@@ -161,7 +161,7 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
         for (Rule rule : result) {
             String text = rule.text;
             if (text != null && !text.isBlank()) {
-                if (rule.hasTrailingNullRule()) {
+                if (rule.hasIgnoreableTrailingNullRule()) {
                     rule = rule.withoutIgnoreableTrailingNullRules();
                 }
                 // TODO matching rule indices during repair must map to choices

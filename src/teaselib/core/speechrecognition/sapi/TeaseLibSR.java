@@ -45,6 +45,13 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     @Override
     protected native void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized);
 
+    /**
+     * Called by the native code to repair inconsistent SAPI rules.
+     * 
+     * @param result
+     *            The result of a speech detection.
+     * @return The same result, or a new list with some rules repaired.
+     */
     protected abstract List<Rule> repair(List<Rule> result);
 
     @Override

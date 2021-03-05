@@ -12,8 +12,6 @@ import org.junit.Test;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
@@ -92,21 +90,10 @@ public class SpeechRecognitionTest {
                 new Choice("My name is Foo, Mam"), //
                 new Choice("My name is Bar, Mam"), //
                 new Choice("My name is Foobar, Mam"));
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Strict.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
-            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Bar", new Prompt.Result(1));
-            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foo", new Prompt.Result(0));
-            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
-            assertRejected(inputMethod, choices, "My name is");
-        }
-
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
-            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Bar", new Prompt.Result(1));
-            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foo", new Prompt.Result(0));
-            assertRecognizedAsHypothesis(inputMethod, choices, "My name is Foobar", new Prompt.Result(2));
-            assertRejected(inputMethod, choices, "My name is");
-        }
+        assertRecognizedAsHypothesis(choices, "My name is Bar", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(choices, "My name is Foo", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(choices, "My name is Foobar", new Prompt.Result(2));
+        assertRejected(choices, "My name is");
     }
 
     @Test
@@ -155,7 +142,7 @@ public class SpeechRecognitionTest {
         rejected.addAll(assertRejected(choices, "Yes I haven't"));
         assertEquals("Filtered by speech recognition implementation", 1, rejected.size());
 
-        Rule distinct = bestSingleResult(expected.stream(), PreparedChoices.IdentityMapping).orElseThrow();
+        Rule distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
         assertEquals(expected.get(0), distinct);
         assertNotEquals(expected.get(0), rejected.get(0));
 
@@ -181,7 +168,7 @@ public class SpeechRecognitionTest {
         expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
         assertEquals(1, expected.size());
 
-        Rule distinct = bestSingleResult(expected.stream(), PreparedChoices.IdentityMapping).orElseThrow();
+        Rule distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
         assertEquals(expected.get(0), distinct);
         assertNotEquals(expected.get(0), rejected.get(0));
     }
@@ -194,6 +181,33 @@ public class SpeechRecognitionTest {
 
         // Hypothesis is weighted by amount of complete phrase, resulting in a probability of 1.0 / 5 = 0.2
         assertRejected(choices, "Yes");
+    }
+
+    @Test
+    public void testTrailingDominantNullRule() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Of course"), //
+                new Choice("Of course not"));
+
+        assertRecognized(choices, "Of course", new Prompt.Result(0));
+        assertRecognized(choices, "Of course not", new Prompt.Result(1));
+
+        Choices chat = as(choices, Intention.Chat);
+        assertRejected(chat, "Of");
+    }
+
+    @Test
+    public void testTrailingNonDominantNullRule() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice("Yes Of course"), //
+                new Choice("No Of course not"));
+
+        assertRecognized(choices, "Yes Of course", new Prompt.Result(0));
+        assertRecognized(choices, "No Of course not", new Prompt.Result(1));
+
+        Choices chat = as(choices, Intention.Chat);
+        assertRecognizedAsHypothesis(chat, "Yes Of", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(chat, "No Of", new Prompt.Result(1));
     }
 
 }

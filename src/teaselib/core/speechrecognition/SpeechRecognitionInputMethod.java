@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,6 +133,11 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         });
     }
 
+    /**
+     * Select the hypothesis with the highest probability.
+     * 
+     * @param eventArgs
+     */
     private void handleSpeechDetected(SpeechRecognizedEventArgs eventArgs) {
         // DONE
         // For single rules or long rules, confidence decreases with length
@@ -186,7 +190,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                             PreparedChoices preparedChoices = recognizer.preparedChoices();
                             // TODO accept indistinct results reject them in recognition completed/rejected
                             // -> better feedback for hypothesis building
-                            Optional<Hypothesis> best = bestSingleResult(eventArgs.result, prompt.choices,
+                            Optional<Hypothesis> best = bestHypothesis(eventArgs.result, prompt.choices,
                                     preparedChoices, hypothesis);
                             if (best.isPresent()) {
                                 hypothesis = best.get();
@@ -212,9 +216,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         });
     }
 
-    private Optional<Hypothesis> bestSingleResult(List<Rule> rules, Choices choices, PreparedChoices preparedChoices,
+    private Optional<Hypothesis> bestHypothesis(List<Rule> rules, Choices choices, PreparedChoices preparedChoices,
             Hypothesis currentHypothesis) {
-        Optional<Rule> result = SpeechRecognitionInputMethod.bestSingleResult(rules.stream(), preparedChoices.mapper());
+        Optional<Rule> result = SpeechRecognitionInputMethod.bestSingleResult(rules, preparedChoices.mapper());
         if (result.isPresent()) {
             Rule rule = result.get();
             if (rule.indices.equals(Rule.NoIndices)) {
@@ -351,12 +355,12 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private Prompt handle(SpeechRecognizedEventArgs eventArgs, Prompt prompt,
-            BiFunction<Stream<Rule>, IntUnaryOperator, Optional<Rule>> matcher,
+            BiFunction<List<Rule>, IntUnaryOperator, Optional<Rule>> matcher,
             BiFunction<Rule, IntUnaryOperator, Prompt.Result> resultor) {
         validate(eventArgs.result);
 
         IntUnaryOperator mapping = phraseToChoice(prompt);
-        Optional<Rule> result = matcher.apply(eventArgs.result.stream(), mapping);
+        Optional<Rule> result = matcher.apply(eventArgs.result, mapping);
         if (result.isPresent()) {
             Rule rule = result.get();
             float expectedConfidence = expectedConfidence(prompt.choices, rule, awarenessBonus);
@@ -417,7 +421,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     }
 
     private void reject(Prompt prompt, SpeechRecognizedEventArgs eventArgs) {
-        Optional<Rule> bestSingleResult = bestSingleResult(eventArgs.result.stream(), phraseToChoice(prompt));
+        Optional<Rule> bestSingleResult = bestSingleResult(eventArgs.result, phraseToChoice(prompt));
         if (bestSingleResult.isPresent()) {
             events.recognitionRejected.fire(new SpeechRecognizedEventArgs(bestSingleResult.get()));
         } else {
@@ -436,8 +440,18 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         return new Prompt.Result(multipleChoices);
     }
 
-    public static Optional<Rule> bestSingleResult(Stream<Rule> stream, IntUnaryOperator toChoices) {
-        return stream.filter(rule -> {
+    public static Optional<Rule> bestSingleResult(List<Rule> rules, IntUnaryOperator toChoices) {
+        Optional<Rule> best = reduceToSingleChoice(rules, toChoices);
+        if (best.isEmpty()) {
+            List<Rule> withoutTrailingDisjunctNullRules = rules.stream().filter(Rule::hasTrailingNullRule)
+                    .map(rule -> rule.withoutDisjunctTrailingNullRules(toChoices)).collect(Collectors.toList());
+            best = reduceToSingleChoice(withoutTrailingDisjunctNullRules, toChoices);
+        }
+        return best;
+    }
+
+    private static Optional<Rule> reduceToSingleChoice(List<Rule> rules, IntUnaryOperator toChoices) {
+        return rules.stream().filter(rule -> {
             Set<Integer> choices = choices(rule.indices(), toChoices);
             return choices.size() == 1;
         }).reduce(Rule::maxProbability);
@@ -451,9 +465,9 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         return indices.intersection().stream().map(toChoices::applyAsInt).collect(Collectors.toSet());
     }
 
-    public static Optional<Rule> bestMultipleChoices(Stream<Rule> stream,
+    public static Optional<Rule> bestMultipleChoices(List<Rule> rules,
             @SuppressWarnings("unused") IntUnaryOperator toChoices) {
-        return stream.reduce(Rule::maxProbability);
+        return rules.stream().reduce(Rule::maxProbability);
     }
 
     private SpeechRecognition getRecognizer(Prompt prompt) {

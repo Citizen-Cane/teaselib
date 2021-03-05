@@ -53,6 +53,11 @@ public class SpeechRecognitionHandcraftedXmlTest {
         return emulateSpeechRecognition(resource, emulatedRecognitionResult, expected, mode);
     }
 
+    private static List<Rule> assertRecognizedASHypothesis(String resource, String emulatedRecognitionResult,
+            Prompt.Result expected, Prompt.Result.Accept mode) throws IOException, InterruptedException {
+        return emulateSpeechRecognition(resource, emulatedRecognitionResult, expected, mode);
+    }
+
     private static List<Rule> assertRejected(String resource, String emulatedRecognitionResult)
             throws IOException, InterruptedException {
         return emulateSpeechRecognition(resource, emulatedRecognitionResult, null, Prompt.Result.Accept.Multiple);
@@ -301,7 +306,10 @@ public class SpeechRecognitionHandcraftedXmlTest {
         assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.Distinct);
         assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.Distinct);
         assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.Distinct);
-        assertRejected(srgs, "of course", Prompt.Result.Accept.Distinct);
+
+        // Recognized because the leading NULL rule #r_0_1_2 defines the single result,
+        // therefore the input method removes the trailing NULL rule #r_2_0_4 to produce a single result
+        assertRecognizedASHypothesis(srgs, "of course", new Prompt.Result(1), Prompt.Result.Accept.Distinct);
         assertRejected(srgs, "any", Prompt.Result.Accept.Distinct);
     }
 

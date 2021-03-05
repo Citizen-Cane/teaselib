@@ -1,6 +1,6 @@
 package teaselib.core.ai;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +16,8 @@ import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
 import teaselib.core.concurrency.NamedExecutorService;
 
 public class TeaseLibAI implements Closeable {
+    public static final long CAPTURE_DEVICE_POLL_DURATION_MILLIS = 5000;
+
     private final boolean haveAccelleratedImageProcesing;
     private final NamedExecutorService cl;
     private final NamedExecutorService cpu;
@@ -25,7 +27,12 @@ public class TeaseLibAI implements Closeable {
         NamedExecutorService executor = NamedExecutorService
                 .sameThread(TeaseLibAI.class.getSimpleName() + " OpenCL Inference");
         haveAccelleratedImageProcesing = initializeOpenCLInExecutorThread(executor);
-        cl = haveAccelleratedImageProcesing ? executor : null;
+        if (haveAccelleratedImageProcesing) {
+            cl = executor;
+        } else {
+            cl = null;
+            executor.shutdown();
+        }
         cpu = NamedExecutorService.sameThread(TeaseLibAI.class.getSimpleName() + " CPU inference");
     }
 
@@ -57,7 +64,7 @@ public class TeaseLibAI implements Closeable {
             awaitTermination(cpu);
     }
 
-    private void awaitTermination(ExecutorService executor) {
+    private static void awaitTermination(ExecutorService executor) {
         executor.shutdown();
         try {
             executor.awaitTermination(5, TimeUnit.SECONDS);
@@ -66,7 +73,9 @@ public class TeaseLibAI implements Closeable {
         }
     }
 
-    private static long pollDurationMillis = 5000;
+    public SceneCapture getCaptureDevice() throws InterruptedException {
+        return awaitCaptureDevice(0, TimeUnit.MILLISECONDS);
+    }
 
     public SceneCapture awaitCaptureDevice() throws InterruptedException {
         return awaitCaptureDevice(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -74,11 +83,16 @@ public class TeaseLibAI implements Closeable {
 
     public SceneCapture awaitCaptureDevice(long timeout, TimeUnit unit) throws InterruptedException {
         long durationMillis = TimeUnit.MILLISECONDS.convert(timeout, unit);
-        while (durationMillis > 0) {
+        while (durationMillis >= 0) {
             List<SceneCapture> devices = sceneCaptures();
             if (devices.isEmpty()) {
-                Thread.sleep(Math.min(pollDurationMillis, durationMillis));
-                durationMillis -= pollDurationMillis;
+                if (durationMillis > 0) {
+                    long sleepMillis = Math.min(CAPTURE_DEVICE_POLL_DURATION_MILLIS, durationMillis);
+                    Thread.sleep(sleepMillis);
+                    durationMillis -= sleepMillis;
+                } else {
+                    break;
+                }
             } else {
                 Optional<SceneCapture> device = find(devices, EnclosureLocation.External);
                 if (device.isPresent()) {

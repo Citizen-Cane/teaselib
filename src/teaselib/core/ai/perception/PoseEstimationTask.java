@@ -1,7 +1,6 @@
 package teaselib.core.ai.perception;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
-import static teaselib.core.util.ExceptionUtil.reduce;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -131,8 +130,9 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 if (device == null) {
-                    device = submitAndGetResult(teaseLibAI::awaitCaptureDevice);
+                    device = submitAndGetResult(teaseLibAI::getCaptureDevice);
                     if (device == null) {
+                        Thread.sleep(TeaseLibAI.CAPTURE_DEVICE_POLL_DURATION_MILLIS);
                         continue;
                     } else {
                         device.start();

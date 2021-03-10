@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionProvider;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.srgs.PhraseMapping;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
@@ -44,7 +44,7 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
         }
 
         @Override
-        public void accept(SpeechRecognitionProvider sri) {
+        public void accept(SpeechRecognitionImplementation sri) {
             if (sri == TeaseLibSRGS.this) {
                 setChoices(srgs);
                 preparedChoices = this;

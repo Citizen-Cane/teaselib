@@ -91,6 +91,28 @@ extern "C"
 		}
 	}
 
+	/*
+	 * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
+	 * Method:    setMaxAlternates
+	 * Signature: (I)V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_setMaxAlternates
+	(JNIEnv* env, jobject jthis, jint maxAlternates)
+	{
+		try {
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
+			speechRecognizer->setMaxAlternates(maxAlternates);
+		}
+		catch (exception& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (JNIException& e) {
+			e.rethrow();
+		}
+	}
 
 	/*
 	 * Class:     teaselib_core_ai_perception_DeepSpeechRecognizer
@@ -277,6 +299,11 @@ DeepSpeechRecognizer::~DeepSpeechRecognizer()
 const string& DeepSpeechRecognizer::languageCode() const
 {
 	return recognizer.language_code();
+}
+
+void DeepSpeechRecognizer::setMaxAlternates(int n)
+{
+	recognizer.setMaxAlternates(n);
 }
 
 void DeepSpeechRecognizer::start()

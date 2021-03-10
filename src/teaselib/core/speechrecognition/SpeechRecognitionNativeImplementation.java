@@ -17,7 +17,7 @@ import teaselib.core.util.ExceptionUtil;
  *
  */
 public abstract class SpeechRecognitionNativeImplementation extends NativeObject
-        implements Closeable, SpeechRecognitionProvider {
+        implements Closeable, SpeechRecognitionImplementation {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionNativeImplementation.class);
 
     private final class EventLoopThread extends Thread {

@@ -57,11 +57,12 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     @Override
     public native String languageCode();
 
+    @Override
+    public native void setMaxAlternates(int n);
+
     public native void setChoices(List<String> phrases);
 
     public native void setChoices(byte[] srgs);
-
-    native void setMaxAlternates(int n);
 
     @Override
     public native void startRecognition();

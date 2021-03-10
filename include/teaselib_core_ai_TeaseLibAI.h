@@ -7,6 +7,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef teaselib_core_ai_TeaseLibAI_CAPTURE_DEVICE_POLL_DURATION_MILLIS
+#define teaselib_core_ai_TeaseLibAI_CAPTURE_DEVICE_POLL_DURATION_MILLIS 5000i64
 /*
  * Class:     teaselib_core_ai_TeaseLibAI
  * Method:    initOpenCL

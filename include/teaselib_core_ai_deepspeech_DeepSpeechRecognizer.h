@@ -25,6 +25,14 @@ JNIEXPORT jstring JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_
 
 /*
  * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
+ * Method:    setMaxAlternates
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_setMaxAlternates
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
  * Method:    decode
  * Signature: ()I
  */

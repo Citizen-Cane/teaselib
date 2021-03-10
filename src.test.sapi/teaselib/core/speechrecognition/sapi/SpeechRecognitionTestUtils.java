@@ -37,7 +37,7 @@ import teaselib.core.ui.Prompt.Result;
 public class SpeechRecognitionTestUtils {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTestUtils.class);
 
-    private static final int RECOGNITION_TIMEOUT_MILLIS = 5000;
+    public static final int RECOGNITION_TIMEOUT_MILLIS = 5000;
     static final Confidence confidence = Confidence.High;
 
     public static SpeechRecognizer getRecognizer() {

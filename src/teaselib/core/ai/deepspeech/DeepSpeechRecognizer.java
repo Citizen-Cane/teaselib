@@ -19,7 +19,7 @@ import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
-import teaselib.core.speechrecognition.SpeechRecognitionProvider;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -48,6 +48,9 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public native String languageCode();
+
+    @Override
+    public native void setMaxAlternates(int n);
 
     enum Status {
         Idle,
@@ -197,7 +200,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         }
 
         @Override
-        public void accept(SpeechRecognitionProvider sri) {
+        public void accept(SpeechRecognitionImplementation sri) {
             if (sri == DeepSpeechRecognizer.this) {
                 ((DeepSpeechRecognizer) sri).current = this;
             } else {

@@ -33,6 +33,14 @@ JNIEXPORT jstring JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_l
 
 /*
  * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR
+ * Method:    setMaxAlternates
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setMaxAlternates
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR
  * Method:    setChoices
  * Signature: (Ljava/util/List;)V
  */
@@ -46,14 +54,6 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setC
  */
 JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setChoices___3B
   (JNIEnv *, jobject, jbyteArray);
-
-/*
- * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR
- * Method:    setMaxAlternates
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setMaxAlternates
-  (JNIEnv *, jobject, jint);
 
 /*
  * Class:     teaselib_core_speechrecognition_sapi_TeaseLibSR

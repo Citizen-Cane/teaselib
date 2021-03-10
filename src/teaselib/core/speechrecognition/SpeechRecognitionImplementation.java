@@ -2,7 +2,9 @@ package teaselib.core.speechrecognition;
 
 import teaselib.core.ui.Choices;
 
-public interface SpeechRecognitionProvider {
+public interface SpeechRecognitionImplementation {
+
+    static final int MAX_ALTERNATES_DEFAULT = 5;
 
     /**
      * The language code of the recognizer.
@@ -11,6 +13,14 @@ public interface SpeechRecognitionProvider {
      * 
      */
     String languageCode();
+
+    /**
+     * Set the maximal number of alternate recognition results
+     * 
+     * @param n
+     *            Number of alternate results
+     */
+    void setMaxAlternates(int n);
 
     /**
      * Create a recognition parameters object to set the choices for this Speech Recognition implementation. Since the

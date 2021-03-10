@@ -85,6 +85,7 @@ public class SpeechRecognition {
                         SpeechRecognitionNativeImplementation instance = srClass.getConstructor(Locale.class)
                                 .newInstance(locale);
                         instance.startEventLoop(events);
+                        instance.setMaxAlternates(SpeechRecognitionImplementation.MAX_ALTERNATES_DEFAULT);
                         return instance;
                     } else {
                         return Unsupported.Instance;

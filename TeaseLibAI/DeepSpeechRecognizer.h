@@ -22,6 +22,8 @@ public:
 	~DeepSpeechRecognizer();
 
 	const std::string& languageCode() const;
+	void setMaxAlternates(int n);
+
 	void start();
 	void stop();
 	void emulate(const char* speech);

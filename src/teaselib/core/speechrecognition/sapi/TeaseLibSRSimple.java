@@ -12,7 +12,7 @@ import java.util.function.IntUnaryOperator;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionProvider;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -29,7 +29,7 @@ public class TeaseLibSRSimple extends TeaseLibSR.SAPI {
     public PreparedChoices prepare(Choices choices) {
         return new PreparedChoices() {
             @Override
-            public void accept(SpeechRecognitionProvider sri) {
+            public void accept(SpeechRecognitionImplementation sri) {
                 if (sri != TeaseLibSRSimple.this)
                     throw new IllegalArgumentException();
                 phrases = firstPhraseOfEach(choices);

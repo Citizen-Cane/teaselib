@@ -5,9 +5,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.confidence;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -57,6 +58,7 @@ class DeepSpeechRecognizerTest {
                 deepSpeechRecognizer.setMaxAlternates(SpeechRecognitionImplementation.MAX_ALTERNATES_DEFAULT);
                 Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(testData.groundTruth));
                 deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
+                assertTrue(Files.exists(testData.audio), "File not found: " + testData.audio);
                 deepSpeechRecognizer.emulateRecognition(testData.audio.toString());
                 await(choices, 0, deepSpeechRecognizer, speechRecognized, signal);
             }

@@ -1,12 +1,7 @@
 package teaselib.core.speechrecognition.sapi;
 
 import static java.util.stream.Collectors.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.*;
 import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.*;
 import static teaselib.core.util.ExceptionUtil.*;
 
@@ -221,7 +216,7 @@ public class SpeechRecognitionTestUtils {
         return Arrays.stream(PhraseString.words(text)).collect(joining(" "));
     }
 
-    public static void await(Choices choices, int choice, DeepSpeechRecognizer deepSpeechRecognizer,
+    public static Rule await(int choice, DeepSpeechRecognizer deepSpeechRecognizer,
             AtomicReference<SpeechRecognizedEventArgs> event, CountDownLatch signal) throws InterruptedException {
         if (signal.await(SpeechRecognitionTestUtils.RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
             List<Rule> rules = event.get().result;
@@ -229,18 +224,21 @@ public class SpeechRecognitionTestUtils {
             Rule best = rules.get(0);
             assertEquals(1, best.indices.size());
             assertEquals(choice, best.indices.iterator().next().intValue());
-            assertTrue(
-                    "confidence=" + best.probability + " too low for " + choices.intention + "="
-                            + confidence(choices.intention).probability + " in rule " + best,
-                    best.probability > confidence(choices.intention).probability);
+            return best;
         } else {
             Optional<Throwable> failure = deepSpeechRecognizer.getException();
             if (failure.isPresent()) {
                 throw asRuntimeException(failure.get());
             } else {
-                fail("Speech detection timed out");
+                throw new AssertionError("Speech detection timed out");
             }
         }
+    }
+
+    public static void assertConfidence(Rule rule, Intention intention) {
+        assertTrue("confidence=" + rule.probability + " too low for " + intention + "="
+                + confidence(intention).probability + " in rule " + rule,
+                rule.probability > confidence(intention).probability);
     }
 
 }

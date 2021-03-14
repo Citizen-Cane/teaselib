@@ -30,10 +30,10 @@ public class DeepSpeechTestData {
     final String groundTruth;
     final String actual;
 
-    public DeepSpeechTestData(Path audio, String groundTruth, String expected) {
+    public DeepSpeechTestData(Path audio, String groundTruth, String actual) {
         this.audio = audio;
         this.groundTruth = groundTruth;
-        this.actual = expected;
+        this.actual = actual;
     }
 
     @Override

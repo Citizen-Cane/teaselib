@@ -50,12 +50,17 @@ extern "C"
 			try {
 				DeepSpeechRecognizer* speechRecognizer = new DeepSpeechRecognizer(model.string().c_str(), languageCode);
 				return reinterpret_cast<jlong>(speechRecognizer);
+			} catch (invalid_argument& e) {
+				throw e;
 			} catch (exception& e) {
 				const string what = e.what();
 				wstringstream message;
-				message << what.substr(0, what.size() -1).c_str() << ": " << model.append(languageCode.c_str());
+				message << what.substr(0, what.size()).c_str() << ": " << model.append(languageCode.c_str());
 				throw UnsupportedLanguageException(E_INVALIDARG, message.str().c_str());
 			}
+		} catch (invalid_argument& e) {
+			JNIException::rethrow(env, e);
+			return 0;
 		} catch(exception& e) {
 			JNIException::rethrow(env, e);
 			return 0;
@@ -273,7 +278,7 @@ extern "C"
 
 DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languageCode)
 	: recognizer(path, languageCode)
-	, audioStream(recognizer)
+	, audioStream(recognizer, aifx::speech::SpeechAudioStream::audio_buffer_capacity_default, aifx::speech::VoiceActivationDetection::Mode::Quality, 24, 16, 80)
 	, audio(AudioCapture::DeviceInfo::defaultDevice(), recognizer.sample_rate(), aifx::speech::SpeechAudioStream::feed_audio_samples / 2)
 	, input([this](const short* audio, unsigned int samples) {
 		aifx::speech::SpeechAudioStream::FeedState feed_stste;
@@ -308,7 +313,7 @@ void DeepSpeechRecognizer::setMaxAlternates(int n)
 
 void DeepSpeechRecognizer::start()
 {
-	audioStream.clear();
+	audioStream.reset();
 	audio.start(input);
 }
 
@@ -342,13 +347,14 @@ void DeepSpeechRecognizer::emulate(const char* speech)
 void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 {
 	stop();
+	audioStream.reset();
 	try {
 		while (samples) {
 			aifx::speech::SpeechAudioStream::FeedState feed_state;
 			unsigned int consumed;
 			while (0 == (consumed = audioStream.feed(speech, min<unsigned int>(samples, aifx::speech::SpeechAudioStream::vad_frame_size), feed_state)))
 			{
-				if (feed_state == aifx::speech::SpeechAudioStream::FeedState::FinishDecodeStream) return; else this_thread::sleep_for(100ms);
+				if (samples == 0) return; else this_thread::sleep_for(100ms);
 			}
 			samples -= consumed;
 			speech += consumed;

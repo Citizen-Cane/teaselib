@@ -38,7 +38,7 @@ void JNIException::rethrow(JNIEnv* env, std::exception& e, const char* runtimeCl
 void JNIException::rethrow(JNIEnv* env, NativeException& e) {
 	assert(!env->ExceptionCheck());
 	jclass jruntimeClass = env->FindClass(e.runtimeClass);
-	JNIString message(env, e.message.c_str());
+	JNIString message(env, e.message);
 
 	jmethodID methodId = env->GetMethodID(jruntimeClass, "<init>", "(ILjava/lang/String;)V");
 	if (methodId != nullptr) {
@@ -49,8 +49,7 @@ void JNIException::rethrow(JNIEnv* env, NativeException& e) {
 			message.detach()));
 		assert(throwable);
 		env->Throw(throwable);
-	}
-	else {
+	} else {
 		jmethodID methodId = env->GetMethodID(jruntimeClass, "<init>", "(Ljava/lang/String;)V");
 		assert(methodId);
 		jthrowable throwable = static_cast<jthrowable>(env->NewObject(

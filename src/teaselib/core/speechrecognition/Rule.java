@@ -29,6 +29,8 @@ public class Rule {
     public static final String CHOICE_NODE_PREFIX = "r_";
 
     public static final Rule Timeout = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
+    public static final Rule Nothing = new Rule("Nothing", "", Integer.MIN_VALUE, emptyList(), 0, 0, 0.0f,
+            Confidence.Noise);
 
     public static final Set<Integer> NoIndices = emptySet();
 
@@ -44,7 +46,11 @@ public class Rule {
     public final Confidence confidence;
 
     public static Rule mainRule(List<Rule> children) {
-        return mainRule(children, probability(children));
+        if (children.isEmpty()) {
+            return Rule.Nothing;
+        } else {
+            return mainRule(children, probability(children));
+        }
     }
 
     public static Rule mainRule(List<Rule> children, float probability) {

@@ -1,18 +1,28 @@
 package teaselib.core.speechrecognition.sapi;
 
 import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.*;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.AudioSync;
+import teaselib.core.ai.deepspeech.DeepSpeechRecognizer;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.events.Event;
@@ -209,6 +219,28 @@ public class SpeechRecognitionTestUtils {
 
     static String withoutPunctation(String text) {
         return Arrays.stream(PhraseString.words(text)).collect(joining(" "));
+    }
+
+    public static void await(Choices choices, int choice, DeepSpeechRecognizer deepSpeechRecognizer,
+            AtomicReference<SpeechRecognizedEventArgs> event, CountDownLatch signal) throws InterruptedException {
+        if (signal.await(SpeechRecognitionTestUtils.RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+            List<Rule> rules = event.get().result;
+            assertFalse("Audio file result expected - path correct?", rules.isEmpty());
+            Rule best = rules.get(0);
+            assertEquals(1, best.indices.size());
+            assertEquals(choice, best.indices.iterator().next().intValue());
+            assertTrue(
+                    "confidence=" + best.probability + " too low for " + choices.intention + "="
+                            + confidence(choices.intention).probability + " in rule " + best,
+                    best.probability > confidence(choices.intention).probability);
+        } else {
+            Optional<Throwable> failure = deepSpeechRecognizer.getException();
+            if (failure.isPresent()) {
+                throw asRuntimeException(failure.get());
+            } else {
+                fail("Speech detection timed out");
+            }
+        }
     }
 
 }

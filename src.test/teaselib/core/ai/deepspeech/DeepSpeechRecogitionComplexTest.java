@@ -23,6 +23,7 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
         assertRecognized(inputMethod, choices, "Of course", new Prompt.Result(0));
         assertRecognized(inputMethod, choices, "Yes of course", new Prompt.Result(1));
 
+        // TODO no reduced confidence for hypothesis
         assertRejected(inputMethod, choices, "Of");
         assertRejected(inputMethod, choices, "Not");
         assertRejected(inputMethod, choices, "Foo bar");
@@ -35,6 +36,8 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
 
         assertRecognized(inputMethod, choices, "Of course", new Prompt.Result(0));
         assertRecognized(inputMethod, choices, "Yes Of course", new Prompt.Result(0));
+
+        // TODO no reduced confidence for hypothesis
         assertRejected(inputMethod, choices, "Of");
         assertRejected(inputMethod, choices, "Yes");
 
@@ -61,6 +64,7 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
         assertRecognized(inputMethod, choices, "Of course Miss", new Prompt.Result(0));
         assertRecognized(inputMethod, choices, "Of course not Miss", new Prompt.Result(1));
 
+        // TODO no reduced confidence for hypothesis
         assertRejected(inputMethod, choices, "Of");
         assertRejected(inputMethod, choices, "Not");
     }
@@ -136,15 +140,24 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
         assertRecognized(inputMethod, choices, "Yes Miss of course", new Prompt.Result(0));
         assertRecognized(inputMethod, choices, "Of course Miss", new Prompt.Result(0));
 
+        // TODO Accepted by SAPI SRGS recognizer in Relaxed mode
+        assertRejected(inputMethod, choices, "Of course");
+
         // Accepted as Intention.Chat because DeepSpeech emulation provides correct confidence
-        Choices hypothized = as(choices, Intention.Chat);
-        assertRecognizedAsHypothesis(inputMethod, hypothized, "Yes Miss", new Prompt.Result(0));
+        Choices chat = as(choices, Intention.Chat);
+        assertRecognizedAsHypothesis(inputMethod, chat, "Yes Miss", new Prompt.Result(0));
+
+        // TODO Rejected by SAPI SRGS recognizer in Relaxed mode
+        assertRecognizedAsHypothesis(inputMethod, chat, "Miss", new Prompt.Result(0));
+
         // accepted as completed, whereas TeaseLibSRGS rejects the incomplete phrase with timeout
         // - accepted as hypothesis in recognitionRejected
         // TODO reject if not matching phrase completely, then use hypothesis
+        Choices confirm = as(choices, Intention.Confirm);
+        assertRecognizedAsHypothesis(inputMethod, confirm, "Yes Miss", new Prompt.Result(0));
 
-        assertRejected(inputMethod, choices, "Of course");
-        assertRejected(inputMethod, choices, "Miss");
+        // TODO SRGS Relaxed accepts this with higher probability as Intention.Decide
+        assertRecognizedAsHypothesis(inputMethod, confirm, "Of course", new Prompt.Result(0));
     }
 
 }

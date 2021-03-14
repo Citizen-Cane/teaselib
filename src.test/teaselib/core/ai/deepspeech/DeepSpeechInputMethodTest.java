@@ -12,7 +12,7 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 
-public class DeepSpeechInputMethodTest extends DeepSpeechRecognitionAbstractTest {
+class DeepSpeechInputMethodTest extends DeepSpeechRecognitionAbstractTest {
 
     static Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm) {
         private static final long serialVersionUID = 1L;
@@ -28,13 +28,13 @@ public class DeepSpeechInputMethodTest extends DeepSpeechRecognitionAbstractTest
 
     @ParameterizedTest
     @MethodSource("tests")
-    public void testExpectedAudio(DeepSpeechTestData testData) throws InterruptedException {
+    void testExpectedAudio(DeepSpeechTestData testData) throws InterruptedException {
         test(testData.audio.toString(), DeepSpeechTestData.tests.indexOf(testData));
     }
 
     @ParameterizedTest
     @MethodSource("tests")
-    public void testExpectedText(DeepSpeechTestData testData) throws InterruptedException {
+    void testExpectedText(DeepSpeechTestData testData) throws InterruptedException {
         test(testData.groundTruth, DeepSpeechTestData.tests.indexOf(testData));
     }
 

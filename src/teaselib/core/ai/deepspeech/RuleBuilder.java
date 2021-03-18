@@ -8,10 +8,9 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import teaselib.core.ai.deepspeech.DeepSpeechRecognizer.Result;
+import teaselib.core.ai.deepspeech.RuleBuilder.Rating.Rated;
 import teaselib.core.speechrecognition.Rule;
 
 public class RuleBuilder {
@@ -19,112 +18,116 @@ public class RuleBuilder {
     private RuleBuilder() {
     }
 
-    static class Matcher {
-        int wordIndex = 0;
-        int resultIndex = 0;
-        int childIndex = 0;
-        int insertNullRules = 0;
+    interface Rating {
+        Rated get(String word, Integer choice);
 
-        final List<Rule> children = new ArrayList<>();
+        class Rated {
+            final float probability;
+            final Runnable builder;
 
-        final List<Result> results;
-        final String[] words;
-
-        /**
-         * @param words
-         * @param phraseIndex
-         */
-        public Matcher(List<Result> results, String[] words, int phraseIndex) {
-            this.results = results;
-            this.words = words;
-            match(phraseIndex);
-        }
-
-        class MatchStrategy {
-            final Function<String, Float> probability;
-            final BiConsumer<String, Float> builder;
-
-            /**
-             * @param probability
-             * @param resultor
-             */
-            public MatchStrategy(Function<String, Float> probability, BiConsumer<String, Float> builder) {
+            public Rated(float probability, Runnable builder) {
+                super();
                 this.probability = probability;
                 this.builder = builder;
             }
 
         }
+    }
 
-        void match(int phraseIndex) {
-            MatchStrategy thisWord = new MatchStrategy(word -> match(word, resultIndex), (word, probability) -> {
-                addChild(word, phraseIndex, probability);
-                resultIndex += 1;
+    static class Matcher {
+        final List<String[]> phrases;
+        final List<Result> results;
+        final List<MatchStrategy> matchStrategies;
+
+        String[] phrase;
+        int wordIndex;
+        int resultIndex;
+        int childIndex;
+        int insertNullRules;
+        List<Rule> children;
+
+        public Matcher(List<String[]> phrases, List<Result> results) {
+            this.phrases = phrases;
+            this.results = results;
+            matchStrategies = createStrategies();
+        }
+
+        class MatchStrategy {
+            final Rating rating;
+
+            public MatchStrategy(Rating wordRater) {
+                this.rating = wordRater;
+            }
+        }
+
+        private List<MatchStrategy> createStrategies() {
+
+            MatchStrategy thisWord = new MatchStrategy((word, choice) -> {
+                float probability = match(word, resultIndex);
+                return new Rated(probability, () -> {
+                    addChild(word, choice, probability);
+                    resultIndex += 1;
+                });
             });
 
-            // TODO resolve decision making code duplication
             // TODO replace the words in result(s) -> no special casing
             // TODO detect partial matches for both words
             // TODO rate probability of partial matches
             // TODO implicit alternate matching not covered because additional tokens are generated - don't use
-            MatchStrategy splitWord = new MatchStrategy(word -> {
+            MatchStrategy splitWord = new MatchStrategy((word, choice) -> {
                 List<String> result = results.get(0).words;
-                if (resultIndex < result.size() - 1 && wordIndex < words.length - 1) {
+                if (resultIndex < result.size() - 1 && wordIndex < phrase.length - 1) {
                     String recognized = result.get(resultIndex);
-                    String nextWord = words[wordIndex + 1];
+                    String nextWord = phrase[wordIndex + 1];
                     if (recognized.startsWith(word)
                             && recognized.endsWith(nextWord.substring(nextWord.length() - 1, 1))) {
-                        return 1.0f;
+                        float probability = 1.0f;
+                        return new Rated(probability, () -> {
+                            addChild(word, choice, probability);
+                            addChild(nextWord, choice, probability / nextWord.length());
+                            resultIndex += 1;
+                            wordIndex += 1;
+                        });
                     } else if (recognized.startsWith(word.substring(0, 1)) && recognized.endsWith(nextWord)) {
-                        return 1.0f;
+                        float probability = 1.0f;
+                        return new Rated(probability, () -> {
+                            addChild(word, choice, 1.0f / word.length());
+                            addChild(nextWord, choice, 1.0f);
+                            resultIndex += 1;
+                            wordIndex += 1;
+                        });
                     } else {
-                        return 0.0f;
+                        return null;
                     }
                 } else {
-                    return 0.0f;
+                    return null;
                 }
-            }, (word, probability) -> {
-                List<String> result = results.get(0).words;
-                String recognized = result.get(resultIndex);
-                String nextWord = words[wordIndex + 1];
-                if (recognized.startsWith(word) && recognized.endsWith(nextWord.substring(nextWord.length() - 1, 1))) {
-                    addChild(word, phraseIndex, 1.0f);
-                    addChild(nextWord, phraseIndex, 1.0f / nextWord.length());
-                } else if (recognized.startsWith(word.substring(0, 1)) && recognized.endsWith(nextWord)) {
-                    addChild(word, phraseIndex, 1.0f / word.length());
-                    addChild(nextWord, phraseIndex, 1.0f);
-                } else {
-                    throw new IllegalStateException();
-                }
-
-                resultIndex += 1;
-                wordIndex += 1;
             });
 
-            MatchStrategy nextWord = new MatchStrategy(word -> match(word, resultIndex + 1), (word, probability) -> {
-                addChild(word, phraseIndex, probability);
-                resultIndex += 2;
+            MatchStrategy nextWord = new MatchStrategy((word, choice) -> {
+                float probability = match(word, resultIndex + 1);
+                return new Rated(probability, () -> {
+                    addChild(word, choice, probability);
+                    resultIndex += 2;
+                });
             });
 
-            List<MatchStrategy> matchStrategies = Arrays.asList(thisWord, splitWord, nextWord);
+            return Arrays.asList(thisWord, splitWord, nextWord);
+        }
 
-            while (wordIndex < words.length && resultIndex < words.length) {
-                String word = words[wordIndex];
+        void match(int phraseIndex) {
+            phrase = phrases.get(phraseIndex);
+            wordIndex = 0;
+            resultIndex = 0;
+            childIndex = 0;
+            insertNullRules = 0;
+            children = new ArrayList<>();
 
-                BiConsumer<String, Float> builder = null;
-                float probability = 0.0f;
-                for (MatchStrategy matchStrategy : matchStrategies) {
-                    float p = matchStrategy.probability.apply(word);
-                    if (p > probability) {
-                        probability = p;
-                        builder = matchStrategy.builder;
-                        if (probability >= 1.0) {
-                            break;
-                        }
-                    }
-                }
-
-                if (builder != null) {
-                    builder.accept(word, probability);
+            while (wordIndex < phrase.length && resultIndex < phrase.length) {
+                String word = phrase[wordIndex];
+                Rated ratedWord = rate(word, phraseIndex);
+                if (ratedWord != null) {
+                    ratedWord.builder.run();
                 } else {
                     insertNullRules++;
                 }
@@ -132,16 +135,31 @@ public class RuleBuilder {
             }
 
             if (insertNullRules > 0) {
-                children.add(nullRule(null, childIndex, phraseIndex, 0.0f));
+                children.add(nullRule(null, phraseIndex, 0.0f));
             }
+        }
+
+        private Rated rate(String word, int phraseIndex) {
+            Rated ratedWord = null;
+            for (MatchStrategy matchStrategy : matchStrategies) {
+                Rated r = matchStrategy.rating.get(word, phraseIndex);
+                if ((ratedWord == null && r != null && r.probability > 0.0f)
+                        || (ratedWord != null && r != null && r.probability > ratedWord.probability)) {
+                    ratedWord = r;
+                    if (ratedWord.probability >= 1.0) {
+                        break;
+                    }
+                }
+            }
+            return ratedWord;
         }
 
         private void addChild(String word, int phraseIndex, float probability) {
             if (insertNullRules > 0) {
-                children.add(nullRule(null, childIndex, phraseIndex, 0.0f));
+                children.add(nullRule(null, phraseIndex, 0.0f));
                 insertNullRules = 0;
             }
-            children.add(childRule(word, childIndex, childIndex + 1, phraseIndex, probability));
+            children.add(childRule(word, phraseIndex, probability));
             childIndex++;
         }
 
@@ -207,9 +225,17 @@ public class RuleBuilder {
             return (float) matches / word.length();
         }
 
+        private Rule childRule(String text, int choice, float probability) {
+            return childRule(text, childIndex, childIndex + 1, choice, probability);
+        }
+
         private static Rule childRule(String text, int from, int to, int choice, float probability) {
             int index = from;
             return new Rule("r_" + index, text, index, singleton(choice), from, to, probability, valueOf(probability));
+        }
+
+        private Rule nullRule(String word, int choice, float probability) {
+            return nullRule(word, childIndex, choice, probability);
         }
 
         private static Rule nullRule(String word, int from, int choice, float probability) {
@@ -221,13 +247,14 @@ public class RuleBuilder {
         Rule rule() {
             return Rule.mainRule(children);
         }
+
     }
 
     public static List<Rule> rules(List<String[]> phrases, List<Result> results) {
         Map<String, Rule> rules = new LinkedHashMap<>();
+        Matcher matcher = new Matcher(phrases, results);
         for (int phraseIndex = 0; phraseIndex < phrases.size(); phraseIndex++) {
-            String[] words = phrases.get(phraseIndex);
-            Matcher matcher = new Matcher(results, words, phraseIndex);
+            matcher.match(phraseIndex);
             if (!matcher.children.isEmpty()) {
                 Rule rule = matcher.rule();
                 if (rule.probability > 0.0f && rules.computeIfPresent(rule.text,

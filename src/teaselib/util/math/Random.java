@@ -13,6 +13,15 @@ import teaselib.util.Items;
 public class Random {
     private final java.util.Random generator = new java.util.Random(System.currentTimeMillis());
 
+    public boolean chance() {
+        return chance(0.5f);
+    }
+
+    public boolean chance(float probability) {
+        double r = generator.nextDouble();
+        return probability > r;
+    }
+
     /**
      * Return a random number
      * 

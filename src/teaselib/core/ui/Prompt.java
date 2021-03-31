@@ -119,9 +119,9 @@ public class Prompt {
     final Map<InputMethod.Notification, Action> inputMethodEventActions = new HashMap<>();
     final AtomicReference<InputMethodEventArgs> inputMethodEventArgs = new AtomicReference<>();
 
+    private List<InputMethod> realized = null;
     private Result result;
     private Throwable exception;
-
     private InputMethod resultInputMethod;
 
     public Prompt(Choices choices, InputMethods inputMethods) {
@@ -196,7 +196,8 @@ public class Prompt {
         throwIfNotLocked();
         throwIfPaused();
 
-        for (InputMethod inputMethod : inputMethods) {
+        realized = inputMethods.selected();
+        for (InputMethod inputMethod : realized) {
             inputMethod.show(this);
         }
     }
@@ -287,9 +288,10 @@ public class Prompt {
         throwIfNotLocked();
 
         try {
-            for (InputMethod inputMethod : inputMethods) {
+            for (InputMethod inputMethod : realized) {
                 inputMethod.dismiss(this);
             }
+            realized = null;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);

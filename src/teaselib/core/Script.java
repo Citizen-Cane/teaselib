@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Answer;
+import teaselib.Body;
 import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Message;
@@ -100,23 +102,27 @@ public abstract class Script {
 
         boolean startOnce = teaseLib.globals.get(ScriptCache.class) == null;
         if (startOnce) {
-            syncAudioAndSpeechRecognition();
             handleAutoRemove();
             bindNetworkProperties();
 
-            SpeechRecognitionInputMethod speechRecognitionInputMethod = teaseLib.globals.get(InputMethods.class)
-                    .get(SpeechRecognitionInputMethod.class);
+            InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
+            BooleanSupplier canSpeak = () -> !teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied();
+            SpeechRecognizer speechRecognizer = new SpeechRecognizer(teaseLib.config, scriptRenderer.audioSync);
+            inputMethods.add(new SpeechRecognitionInputMethod(speechRecognizer), canSpeak);
+            inputMethods.add(teaseLib.host.inputMethod());
+            inputMethods.add(scriptRenderer.scriptEventInputMethod);
+
             HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
+            SpeechRecognitionInputMethod speechRecognitionInputMethod = inputMethods
+                    .get(SpeechRecognitionInputMethod.class);
             speechRecognitionInputMethod.events.recognitionStarted
                     .add(ev -> humanPoseInteraction.setPause(speechRecognitionInputMethod::completeSpeechRecognition));
 
             // TODO Generalize - HeadGestures -> Perception
             if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
-                InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
-
                 inputMethods.add(new HeadGesturesV2InputMethod( //
                         deviceInteraction(HumanPoseDeviceInteraction.class),
-                        scriptRenderer.getInputMethodExecutorService()));
+                        scriptRenderer.getInputMethodExecutorService()), () -> !canSpeak.getAsBoolean());
 
                 scriptRenderer.events.when().actorChanged().then(e -> {
                     if (!humanPoseInteraction.contains(e.actor)) {
@@ -171,12 +177,6 @@ public abstract class Script {
         scriptInteractionImplementations.add(HumanPoseDeviceInteraction.class,
                 () -> new HumanPoseDeviceInteraction(teaseLib.globals.get(TeaseLibAI.class), scriptRenderer));
         return scriptInteractionImplementations;
-    }
-
-    private void syncAudioAndSpeechRecognition() {
-        InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
-        AudioSync audioSync = scriptRenderer.audioSync;
-        inputMethods.add(new SpeechRecognitionInputMethod(new SpeechRecognizer(teaseLib.config, audioSync)));
     }
 
     private static final float UNTIL_REMOVE_LIMIT = 1.5f;
@@ -397,7 +397,7 @@ public abstract class Script {
             scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech));
         }
 
-        InputMethods inputMethods = getInputMethods(answers);
+        InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
         Choices choices = choices(answers, intention);
         Prompt prompt = getPrompt(choices, inputMethods, scriptFunction);
 
@@ -471,24 +471,6 @@ public abstract class Script {
         teaseLib.host.endScene();
 
         return choice;
-    }
-
-    private InputMethods getInputMethods(List<Answer> answers) {
-        InputMethods inputMethods = new InputMethods(teaseLib.globals.get(InputMethods.class));
-        inputMethods.add(teaseLib.host.inputMethod());
-
-        // TODO Move this into head gestures method
-        // if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
-        // && teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied()
-        // && HeadGestureInputMethod.distinctGestures(answers)) {
-        // inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getInputMethodExecutorService(),
-        // teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
-        // }
-
-        inputMethods.add(scriptRenderer.scriptEventInputMethod);
-
-        return inputMethods;
-
     }
 
     private Prompt getPrompt(Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction) {

@@ -1,9 +1,14 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.confidence;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -157,10 +162,9 @@ public class SpeechRecognitionTestUtils {
             prompt.lock.lockInterruptibly();
             try {
                 assertNull(inputMethod.getActivePrompt());
-                inputMethod.show(prompt);
+                prompt.show();
                 inputMethod.emulateRecogntion(phrase);
                 dismissed = prompt.click.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-
                 prompt.dismiss();
                 assertNull(inputMethod.getActivePrompt());
 

@@ -73,6 +73,7 @@ public class TimeOfDayImplTest {
         script.debugger.setTime(Daytime.Morning);
         assertTrue(script.timeOfDay().is(Daytime.Morning));
         int morning = 7;
+        // Fails on transition dates (e.g. European Summer Time) since such days will have different lengths
         assertEquals(morning, new Date(script.debugger.teaseLib.getTime(TimeUnit.MILLISECONDS)).getHours());
         int h = 0;
         int m = 0;
@@ -107,6 +108,7 @@ public class TimeOfDayImplTest {
         script.debugger.freezeTime();
 
         script.debugger.setTime(Daytime.Noon);
+        // Fails on transition dates (e.g. European Summer Time) since such days will have different lengths
         assertEquals(4, script.duration(Daytime.Afternoon).remaining(TimeUnit.HOURS));
         assertEquals(8, script.duration(Daytime.Evening).remaining(TimeUnit.HOURS));
         assertEquals(14, script.duration(Daytime.Night).remaining(TimeUnit.HOURS));
@@ -135,6 +137,7 @@ public class TimeOfDayImplTest {
 
         script.debugger.setTime(Daytime.Noon);
 
+        // Fails on transition dates (e.g. European Summer Time) since such days will have different lengths
         assertEquals(8, script.duration(Daytime.Evening, 0).remaining(TimeUnit.HOURS));
         assertEquals(8 + 24, script.duration(Daytime.Evening, 1).remaining(TimeUnit.HOURS));
         assertEquals(8 + 48, script.duration(Daytime.Evening, 2).remaining(TimeUnit.HOURS));
@@ -211,6 +214,7 @@ public class TimeOfDayImplTest {
 
         // Around 8 o'clock
         script.debugger.setTime(Daytime.Evening);
+        // Fails on transition dates (e.g. European Summer Time) since such days will have different lengths
         assertEquals(0, script.duration(Daytime.Evening).remaining(TimeUnit.HOURS));
 
         // around 8pm + 6h -> 2 o'clock in the morning

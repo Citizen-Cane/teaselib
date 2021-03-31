@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 
 import teaselib.Accessoires;
 import teaselib.Body;
@@ -302,7 +303,8 @@ public class ItemImplTest {
         assertTrue(gag.is(gag));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Disabled("decide when to throw - possible in dev mode")
+    // @Test(expected = IllegalStateException.class)
     public void applyingTwiceRuinsPlausibilityOfActor() {
         TestScript script = TestScript.getOne();
         assertFalse(script.state(Toys.Gag).applied());
@@ -311,6 +313,19 @@ public class ItemImplTest {
         assertTrue(script.state(Toys.Gag).applied());
 
         script.item(Toys.Gag).apply();
+        assertTrue(script.state(Toys.Gag).applied());
+    }
+
+    @Test
+    public void applyingTwiceWorks() {
+        TestScript script = TestScript.getOne();
+        assertFalse(script.state(Toys.Gag).applied());
+
+        script.item(Toys.Gag).apply();
+        assertTrue(script.state(Toys.Gag).applied());
+
+        script.item(Toys.Gag).apply();
+        assertTrue(script.state(Toys.Gag).applied());
     }
 
     @Test

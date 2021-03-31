@@ -1,5 +1,10 @@
 package teaselib.core.state;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
+
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -89,7 +94,8 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
         if (applied()) {
             String humanReadableItem = item.displayName() + "(id=" + AbstractProxy.itemImpl(item).guid.name() + ")";
             if (is(namespace)) {
-                throw new IllegalStateException(humanReadableItem + " already applied");
+                String message = humanReadableItem + " already applied";
+                report(message);
             } else {
                 logger.warn("{} has already been applied in another namespace", humanReadableItem);
             }
@@ -108,11 +114,20 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     @Override
     public void remove() {
         if (!applied()) {
-            throw new IllegalStateException(AbstractProxy.itemImpl(item).guid + " is not applied");
+            String message = AbstractProxy.itemImpl(item).guid + " is not applied";
+            report(message);
         }
 
         events.itemRemoved.fire(new ScriptEvents.ItemChangedEventArgs(item));
         item.remove();
+    }
+
+    private void report(String message) {
+        StringBuilder result = new StringBuilder(message);
+        String newLine = System.getProperty("line.separator");
+        result.append(newLine);
+        result.append(stream(Thread.currentThread().getStackTrace()).map(Objects::toString).collect(joining(newLine)));
+        logger.warn("{}", result);
     }
 
     @Override

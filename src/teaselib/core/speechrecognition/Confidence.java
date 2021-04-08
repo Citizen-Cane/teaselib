@@ -18,6 +18,9 @@ public enum Confidence {
 
     public static final Confidence Default = Normal;
 
+    public static final float Higher = 0.25f;
+    public static final float Lower = 0.25f;
+
     /**
      * The default probability of the recognition confidence. The actual implementation may return a probability value
      * higher than the default, but still rate the confidence lower.
@@ -37,19 +40,43 @@ public enum Confidence {
     }
 
     public float slightlyRaisedProbability() {
-        return probability + (higher().probability - probability) * 3.0f / 10.0f;
+        return slightlyRaisedProbability(probability, higher().probability);
+    }
+
+    public static float slightlyRaisedProbability(float probability) {
+        return slightlyRaisedProbability(probability, Higher);
+    }
+
+    public static float slightlyRaisedProbability(float probability, float higher) {
+        return Math.min(1.0f, probability + (higher - probability) * 3.0f / 10.0f);
     }
 
     public float raisedProbability() {
-        return probability + (higher().probability - probability) / 2.0f;
+        return raisedProbability(probability, higher().probability);
+    }
+
+    public static float raisedProbability(float probability, float higher) {
+        return Math.min(1.0f, probability + (higher - probability) / 2.0f);
     }
 
     public float slightlyReducedProbability() {
-        return probability + (lower().probability - probability) * 3.0f / 10.0f;
+        return slightlyReducedProbability(probability, lower().probability);
+    }
+
+    public static float slightlyReducedProbability(float probability) {
+        return slightlyRaisedProbability(probability, Lower);
+    }
+
+    public static float slightlyReducedProbability(float probability, float lower) {
+        return Math.max(0.0f, probability + (lower - probability) * 3.0f / 10.0f);
     }
 
     public float reducedProbability() {
-        return probability + (lower().probability - probability) / 2.0f;
+        return reducedProbability(probability, lower().probability);
+    }
+
+    public static float reducedProbability(float probability, float lower) {
+        return Math.max(0.0f, probability + (lower - probability) / 2.0f);
     }
 
     public static Confidence lower(Confidence confidence) {
@@ -89,6 +116,10 @@ public enum Confidence {
 
     public float weighted(int n) {
         return weighted(n, 2.0f);
+    }
+
+    public static float weighted(int n, float start, float limit) {
+        return weighted(n, 2.0f, start, limit);
     }
 
     public float weighted(int n, float k) {

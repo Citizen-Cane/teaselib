@@ -7,7 +7,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.confidence;
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
@@ -26,7 +25,6 @@ import teaselib.core.ai.deepspeech.DeepSpeechRecognizer;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
@@ -48,10 +46,9 @@ public class SpeechRecognitionTestUtils {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTestUtils.class);
 
     public static final int RECOGNITION_TIMEOUT_MILLIS = 5000;
-    static final Confidence confidence = Confidence.High;
 
     public static SpeechRecognizer getRecognizer() {
-        return getRecognizer(TeaseLibSRGS.Relaxed.class);
+        return getRecognizer(TestableTeaseLibSR.class);
     }
 
     public static SpeechRecognizer getRecognizer(Class<? extends SpeechRecognitionNativeImplementation> srClass) {
@@ -239,10 +236,14 @@ public class SpeechRecognitionTestUtils {
         }
     }
 
-    public static void assertConfidence(Rule rule, Intention intention) {
-        assertTrue("confidence=" + rule.probability + " too low for " + intention + "="
-                + confidence(intention).probability + " in rule " + rule,
-                rule.probability > confidence(intention).probability);
+    public static void assertConfidence(SpeechRecognitionNativeImplementation recognizer, Rule rule,
+            Intention intention) {
+        assertConfidence(rule, recognizer.required.confidence(intention));
+    }
+
+    public static void assertConfidence(Rule rule, float confidence) {
+        assertTrue("confidence=" + rule.probability + " too low for required confidence=" + confidence + " in rule "
+                + rule, rule.probability > confidence);
     }
 
 }

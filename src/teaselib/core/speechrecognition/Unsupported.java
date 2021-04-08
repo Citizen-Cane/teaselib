@@ -17,7 +17,7 @@ class Unsupported extends SpeechRecognitionNativeImplementation {
     private final Locale locale;
 
     public Unsupported(Locale locale) {
-        super(0);
+        super(0, HearingAbility.Good);
         this.locale = locale;
     }
 
@@ -46,8 +46,8 @@ class Unsupported extends SpeechRecognitionNativeImplementation {
             }
 
             @Override
-            public float weightedProbability(Rule rule) {
-                return rule.probability;
+            public float hypothesisWeight(Rule rule) {
+                return 0.0f;
             }
 
             @Override

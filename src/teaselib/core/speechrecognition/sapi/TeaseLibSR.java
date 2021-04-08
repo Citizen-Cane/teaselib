@@ -7,6 +7,7 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.speechrecognition.HearingAbility;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
@@ -18,7 +19,7 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSR.class);
 
     protected TeaseLibSR(Locale locale) {
-        super(newNativeInstance(locale));
+        super(newNativeInstance(locale), HearingAbility.Impaired);
     }
 
     private static long newNativeInstance(Locale locale) {

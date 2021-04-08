@@ -1,9 +1,9 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.awaitResult;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -127,8 +127,8 @@ public class SpeechRecognitionHandcraftedXmlTest {
         }
     }
 
-    @Test
-    public void testMicrosoftSRGSExampleCitiesRejectedSinceItDoesntContainTesaseLibSrRules()
+    @Test(expected = Rule.IllegalRuleException.class)
+    public void testMicrosoftSRGSExampleCitiesRejectedSinceItDoesntContainTeaseLibSrRules()
             throws InterruptedException, IOException {
         String resource = "srgs/experimental/cities_srg.xml";
         assertRejected(resource, "I would like to fly from Miami to Los Angeles");
@@ -238,7 +238,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
      * <p>
      * not recognized because there are multiple results.
      */
-    @Test(expected = AssertionError.class)
+    @Test(expected = Rule.IllegalRuleException.class)
     public void testHandcraftedDelayedPhraseStartWithGarbage() throws InterruptedException, IOException {
         String srgs = "srgs/handcrafted_delayed_phrase_start_with_garbage.xml";
 
@@ -258,7 +258,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
      * not recognized since using special=GARBAGE in a choice ruleRef results in multiple recognitions, as "Yes" is
      * recognized as "Yes" and also as Garbage.
      */
-    @Test(expected = AssertionError.class)
+    @Test
     public void testHandcraftedDelayedPhraseStartWithGarbageRuleRef() throws InterruptedException, IOException {
         String srgs = "srgs/handcrafted_delayed_phrase_start_with_garbage_RuleRef.xml";
 
@@ -268,8 +268,14 @@ public class SpeechRecognitionHandcraftedXmlTest {
         assertEquals("sr result contains ambiguous rules since gargabe also matches allowed phrases", 2,
                 results.size());
 
-        assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.Distinct);
-        assertRejected(srgs, "of course", Prompt.Result.Accept.Distinct);
+        // Regcognized as choice 1 because the GARBAGE rule produces alterantes,
+        // which in turn produce a rule yes(choice index = 1)
+        assertRecognized(srgs, "Yes of course Miss", new Prompt.Result(1), Prompt.Result.Accept.Distinct);
+        // Regcognized as choice 1 because the missing phrase elements activate the GARBAGE rule
+        // rule yes evaluates to NULL(choice index = 1),
+        // the last rule Miss to NULL(choice index = 0),
+        // but is removed as a trailing NULL rule because the phrase is already distinct
+        assertRecognized(srgs, "of course", new Prompt.Result(1), Prompt.Result.Accept.Distinct);
     }
 
     /**

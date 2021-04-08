@@ -37,7 +37,7 @@ public class TeaseLibSRSimple extends TeaseLibSR.SAPI {
             }
 
             @Override
-            public float weightedProbability(Rule rule) {
+            public float hypothesisWeight(Rule rule) {
                 if (rule.indices.equals(Rule.NoIndices))
                     throw new IllegalArgumentException(
                             "Rule contains no indices - consider updating it after adding children");
@@ -45,8 +45,7 @@ public class TeaseLibSRSimple extends TeaseLibSR.SAPI {
                 Integer index = rule.indices.iterator().next();
                 PhraseString text = new PhraseString(rule.text, index);
                 List<PhraseString> complete = new PhraseString(choices.get(index).phrases.get(0), index).words();
-                float weight = (float) text.words().size() / (float) complete.size();
-                return rule.probability * weight;
+                return (float) text.words().size() / (float) complete.size();
             }
 
             @Override

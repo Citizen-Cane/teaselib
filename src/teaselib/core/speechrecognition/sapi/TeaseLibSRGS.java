@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.util.ExceptionUtil.*;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,7 @@ import teaselib.core.util.CodeDuration;
 public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSRGS.class);
 
-    private PreparedChoicesImplementation preparedChoices = null;
+    protected PreparedChoicesImplementation preparedChoices = null;
 
     class PreparedChoicesImplementation implements PreparedChoices {
         final Choices choices;
@@ -54,15 +54,14 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
         }
 
         @Override
-        public float weightedProbability(Rule rule) {
-            if (rule.indices.equals(Rule.NoIndices))
+        public float hypothesisWeight(Rule hypothesis) {
+            if (hypothesis.indices.equals(Rule.NoIndices))
                 throw new IllegalArgumentException(
                         "Rule contains no indices - consider updating it after adding children");
 
-            PhraseString text = new PhraseString(rule.text, rule.indices);
+            PhraseString text = new PhraseString(hypothesis.text, hypothesis.indices);
             List<PhraseString> complete = slicedPhrases.complete(text);
-            float weight = (float) text.words().size() / (float) complete.size();
-            return rule.probability * weight;
+            return (float) text.words().size() / (float) complete.size();
         }
 
         @Override

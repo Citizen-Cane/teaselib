@@ -1,6 +1,7 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,11 +16,12 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.speechrecognition.AudioSignalProblem;
+import teaselib.core.speechrecognition.HearingAbility;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
-import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -41,7 +43,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             .singleThreadedQueue("DeepSpeech Emulation");
 
     public DeepSpeechRecognizer(Locale locale) {
-        super(newNativeInstance(locale, DeepSpeechRecognizer::newNativeInstance));
+        super(newNativeInstance(locale, DeepSpeechRecognizer::newNativeInstance), HearingAbility.Good);
     }
 
     protected static native long newNativeInstance(String langugeCode);
@@ -209,8 +211,8 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         }
 
         @Override
-        public float weightedProbability(Rule rule) {
-            return rule.probability;
+        public float hypothesisWeight(Rule hypothesis) {
+            return 1.0f;
         }
 
         @Override

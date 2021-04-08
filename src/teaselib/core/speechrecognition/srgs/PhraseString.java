@@ -68,12 +68,18 @@ public class PhraseString {
         return Arrays.asList(words(phrase));
     }
 
+    private static final String[] blank = {};
+
     public static String[] words(String phrase) {
-        String regex = "[ .,:;!?\t\n_{}()-/@]+";
-        if (regex.contains(phrase.subSequence(0, 1))) {
-            return phrase.substring(1).split(regex);
+        if (phrase.isBlank()) {
+            return blank;
         } else {
-            return phrase.split(regex);
+            String regex = "[ .,:;!?\t\n_{}()-/@]+";
+            if (regex.contains(phrase.subSequence(0, 1))) {
+                return phrase.substring(1).split(regex);
+            } else {
+                return phrase.split(regex);
+            }
         }
     }
 

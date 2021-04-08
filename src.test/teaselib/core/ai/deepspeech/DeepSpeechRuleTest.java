@@ -1,6 +1,9 @@
 package teaselib.core.ai.deepspeech;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static teaselib.core.speechrecognition.Confidence.High;
 
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -84,13 +87,13 @@ public class DeepSpeechRuleTest {
     @Test
     public void testMissingWordsAtEnd() throws InterruptedException {
         Rule rule = emulateText("Yes Miss I have it", "yes miss i");
-        assertEquals(4, rule.children.size());
+        assertEquals(5, rule.children.size());
     }
 
     @Test
     public void testMissingWordInTheMiddle() throws InterruptedException {
         Rule rule = emulateText("Yes dear Mistress I have it here", "yes i have");
-        assertEquals(5, rule.children.size());
+        assertEquals(7, rule.children.size());
     }
 
     // Testdata taken from failing test when audio stream buffers weren't cleared after recognition
@@ -126,7 +129,7 @@ public class DeepSpeechRuleTest {
         assertNotNull(rule.children.get(3).text, "\"is\" should be recognized as null rule");
         assertNotNull(rule.children.get(4).text, "\"sufficient\" should be recognized as child 4");
         assertNotNull(rule.children.get(5).text, "\"I\" should be recognized as child 5");
-        SpeechRecognitionTestUtils.assertConfidence(rule, Intention.Decide);
+        SpeechRecognitionTestUtils.assertConfidence(rule, High.probability);
     }
 
     @Test
@@ -136,7 +139,7 @@ public class DeepSpeechRuleTest {
         assertNotNull(rule.children.get(3).text, "\"is\" should be recognized as null rule");
         assertNotNull(rule.children.get(4).text, "\"sufficient\" should be recognized as child 4");
         assertNotNull(rule.children.get(5).text, "\"I\" should be recognized as child 5");
-        SpeechRecognitionTestUtils.assertConfidence(rule, Intention.Decide);
+        SpeechRecognitionTestUtils.assertConfidence(rule, High.probability);
     }
 
     private static Rule emulateText(String expected, String actual) throws InterruptedException, UnsatisfiedLinkError {

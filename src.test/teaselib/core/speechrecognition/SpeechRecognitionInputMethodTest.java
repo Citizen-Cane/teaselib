@@ -13,6 +13,7 @@ import org.junit.Test;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils;
+import teaselib.core.speechrecognition.sapi.TeaseLibSRGS;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethods;
@@ -48,7 +49,7 @@ public class SpeechRecognitionInputMethodTest {
     }
 
     private static void test(Choices choices, String expected, int resultIndex) throws InterruptedException {
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer();
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
             SpeechRecognitionTestUtils.awaitResult(prompt, inputMethod, expected, new Prompt.Result(resultIndex));
@@ -60,7 +61,7 @@ public class SpeechRecognitionInputMethodTest {
         String phrase = "Foobar";
         Choices choices = new Choices(Locale.US, Intention.Decide, new Choice(phrase));
 
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer();
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
 
@@ -109,7 +110,7 @@ public class SpeechRecognitionInputMethodTest {
 
     @Test
     public void testSpeechRecognitionInputMethodStacked() throws InterruptedException {
-        try (SpeechRecognizer recognizer = SpeechRecognitionTestUtils.getRecognizer();
+        try (SpeechRecognizer recognizer = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer);) {
             Choices choices1 = new Choices(Locale.ENGLISH, Intention.Confirm, choice("Foo"));
             SpeechRecognition sr = recognizer.get(choices1.locale);

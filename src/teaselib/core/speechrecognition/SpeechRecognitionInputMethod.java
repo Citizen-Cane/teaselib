@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,9 +27,9 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
-import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
+import teaselib.util.math.WeightNormal;
 
 /**
  * @author Citizen-Cane
@@ -225,17 +225,19 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                 logger.info("Ignoring hypothesis {} since it contains results from multiple phrases", rule);
                 return Optional.empty();
             } else {
-                double expectedConfidence = expectedConfidence(choices, rule, awarenessBonus);
-                // Weighted probability is too low in tests for short hypotheses even with optimal probability of 1.0
+                double expectedConfidence = expectedConfidence(choices, rule);
+                // Weighted probability is very low in tests with short hypotheses even with optimal probability of 1.0
                 // This is intended because probability/confidence values of short short hypotheses cannot be trusted
                 // -> confidence moves towards ground truth when more speech is detected
-                float weightedProbability = preparedChoices.weightedProbability(rule);
+                // The legal way to have such results accepted is to provide them as alternative phrases
+                float weightedProbability = WeightNormal.square(preparedChoices.hypothesisWeight(rule))
+                        * rule.probability;
                 if (weightedProbability >= expectedConfidence) {
                     if (currentHypothesis == null) {
                         logger.info("Considering as new hypothesis");
                         return Optional.of(new Hypothesis(rule, weightedProbability));
                     } else if (currentHypothesis.indices.containsAll(rule.indices)) {
-                        float hypothesisProbability = preparedChoices.weightedProbability(currentHypothesis);
+                        float hypothesisProbability = preparedChoices.hypothesisWeight(currentHypothesis);
                         float h = currentHypothesis.children.size();
                         float r = rule.children.size();
                         float average = (hypothesisProbability * h + rule.probability * r) / (h + r);
@@ -243,7 +245,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                         return Optional.of(new Hypothesis(rule, Math.max(average, rule.probability)));
                     } else {
                         logger.info("Choice indices changed - reconsidering hypothesis");
-                        return Optional.of(new Hypothesis(rule));
+                        return Optional.of(new Hypothesis(rule, weightedProbability));
                     }
                 } else {
                     logger.info("Weighted hypothesis confidence {} < expected hypothesis confidence {}", //
@@ -256,12 +258,14 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
     }
 
-    public static float expectedHypothesisConfidence(Choices choices, Rule rule) {
-        return expectedConfidence(choices, rule, AWARENESS_BONUS);
-    }
-
-    private static float expectedConfidence(Choices choices, Rule rule, float awarenessBonus) {
-        float weighted = confidence(choices.intention).weighted(PhraseString.words(rule.text).length);
+    private float expectedConfidence(Choices choices, Rule rule) {
+        SpeechRecognition recognizer = getRecognizer(choices.locale);
+        HearingAbility required = recognizer.implementation.required;
+        float p = required.confidence(choices.intention);
+        float weighted = Confidence.weighted( //
+                PhraseString.words(rule.text).length, //
+                p, //
+                Confidence.slightlyReducedProbability(p));
         float expectedConfidence = weighted * awarenessBonus;
         logger.info("Expected weighted confidence {} * Awareness bonus {} = {}", weighted, awarenessBonus,
                 expectedConfidence);
@@ -282,7 +286,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
                         if (hypothesis != null) {
                             // rejectedResult may contain better result than hypothesis
                             // TODO accept if hypothesis and recognitionRejected result have the same indices
-                            float expectedConfidence = expectedConfidence(prompt.choices, hypothesis, awarenessBonus);
+                            float expectedConfidence = expectedConfidence(prompt.choices, hypothesis);
                             if (hypothesis.probability >= expectedConfidence) {
                                 logger.info("Considering hypothesis");
                                 return handle(prompt, this::singleResult, hypothesis, expectedConfidence);
@@ -363,7 +367,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         Optional<Rule> result = matcher.apply(eventArgs.result, mapping);
         if (result.isPresent()) {
             Rule rule = result.get();
-            float expectedConfidence = expectedConfidence(prompt.choices, rule, awarenessBonus);
+            float expectedConfidence = expectedConfidence(prompt.choices, rule);
             boolean useHypothesis = hypothesis != null && //
                     hypothesis.probability > rule.probability && //
                     resultor.apply(hypothesis, mapping).equals(resultor.apply(rule, mapping));
@@ -604,19 +608,6 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         }
     }
 
-    public static Confidence confidence(Intention intention) {
-        switch (intention) {
-        case Chat:
-            return Confidence.Low;
-        case Confirm:
-            return Confidence.Normal;
-        case Decide:
-            return Confidence.High;
-        default:
-            throw new IllegalArgumentException(intention.toString());
-        }
-    }
-
     private void add(SpeechRecognitionEvents speechRecognitionEvents) {
         speechRecognitionEvents.recognitionStarted.add(speechRecognitionStartedEventHandler);
         speechRecognitionEvents.audioLevelUpdated.add(audioLevelUpdatedEventHandler);
@@ -638,9 +629,13 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     @Override
     public String toString() {
         Prompt prompt = active.get();
-        String object = prompt != null ? getRecognizer(prompt.choices.locale).toString() : "<inactive>";
-        String expectedConfidence = prompt != null ? confidence(prompt.choices.intention).toString() : "<?>";
-        return "SpeechRecognizer=" + object + " confidence=" + expectedConfidence;
+        if (prompt == null) {
+            return "SpeechRecognizer <inactive>";
+        } else {
+            SpeechRecognition recognizer = getRecognizer(prompt.choices.locale);
+            float expectedConfidence = recognizer.implementation.required.confidence(prompt.choices.intention);
+            return "SpeechRecognizer=" + recognizer + " required confidence=" + expectedConfidence;
+        }
     }
 
     @Override

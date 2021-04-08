@@ -10,7 +10,7 @@ public interface PreparedChoices extends Consumer<SpeechRecognitionImplementatio
     @Override
     void accept(SpeechRecognitionImplementation sri);
 
-    public float weightedProbability(Rule rule);
+    public float hypothesisWeight(Rule rule);
 
     IntUnaryOperator mapper();
 }

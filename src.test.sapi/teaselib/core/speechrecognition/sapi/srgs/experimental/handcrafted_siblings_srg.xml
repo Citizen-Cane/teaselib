@@ -14,11 +14,14 @@
     elements seem to point to "the rest of the message"
         -->
   <rule id="Main" scope="public">
-    <item>Please Miss
+	    <ruleref uri="#r_0"/>
 	    <ruleref uri="#r_1"/>
   		<tag> out.r_0 = rules.latest(); </tag>
 	 	<ruleref uri="#r_2"/>
 	    <tag> out.r_1 = rules.latest(); </tag>
+  </rule>
+  <rule id="r_0" scope="public">
+    <item>Please Miss
 	</item>
    </rule>
   <rule id="r_1" scope="public">

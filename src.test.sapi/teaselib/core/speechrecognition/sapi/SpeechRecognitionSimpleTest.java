@@ -1,6 +1,9 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
 
 import java.util.Locale;
 
@@ -113,8 +116,7 @@ public class SpeechRecognitionSimpleTest {
         }
     }
 
-    @Test
-    public void testSimpleSRirregularPhrases() throws InterruptedException {
+    private Choices simpleSRirregularPhrases() {
         String sorry = "No Miss, I'm sorry";
         String ready = "Yes Miss, I'm ready";
         String haveIt = "I have it, Miss";
@@ -123,20 +125,35 @@ public class SpeechRecognitionSimpleTest {
 
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice(sorry), new Choice(ready), new Choice(haveIt), new Choice(ready2), new Choice(ready3));
+        return choices;
+    }
+
+    @Test
+    public void testSimpleSRirregularPhrases() throws InterruptedException {
 
         try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRSimple.class);
                 SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
 
-            Choices chat = as(choices, Intention.Chat);
-            assertRecognized(inputMethod, chat);
-            assertRecognizedAsHypothesis(inputMethod, chat, "Yes Miss", new Prompt.Result(1));
-            assertRecognizedAsHypothesis(inputMethod, chat, "It's ready", new Prompt.Result(4));
-            assertRejected(inputMethod, chat, "I'm Sorry", "Ready, Miss", "Ready");
-
+            Choices choices = simpleSRirregularPhrases();
             assertRecognized(inputMethod, choices);
-            assertRejected(inputMethod, choices, "Yes Miss");
-            assertRejected(inputMethod, choices, "It's ready");
-            assertRejected(inputMethod, choices, "I'm Sorry", "Ready, Miss", "Ready");
+        }
+    }
+
+    @Test
+    public void testSimpleSRirregularPhrasesHypootheses() throws InterruptedException {
+
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRSimple.class);
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+
+            Choices choices = simpleSRirregularPhrases();
+            assertRecognizedAsHypothesis(inputMethod, choices, "No Miss", new Prompt.Result(0));
+            assertRecognizedAsHypothesis(inputMethod, choices, "Yes Miss", new Prompt.Result(1));
+            assertRecognizedAsHypothesis(inputMethod, choices, "I have", new Prompt.Result(2));
+            assertRecognizedAsHypothesis(inputMethod, choices, "Yes it's", new Prompt.Result(3));
+            assertRecognizedAsHypothesis(inputMethod, choices, "It's ready", new Prompt.Result(4));
+
+            Choices chat = as(choices, Intention.Chat);
+            assertRejected(inputMethod, chat, "I'm Sorry", "Ready, Miss", "Ready");
         }
     }
 

@@ -20,6 +20,8 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
         implements Closeable, SpeechRecognitionImplementation {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionNativeImplementation.class);
 
+    public final HearingAbility required;
+
     private final class EventLoopThread extends Thread {
 
         private EventLoopThread(Runnable target) {
@@ -36,8 +38,9 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
     private EventLoopThread eventLoopThread = null;
     private Throwable eventLoopException = null;
 
-    public SpeechRecognitionNativeImplementation(long nativeObject) {
+    protected SpeechRecognitionNativeImplementation(long nativeObject, HearingAbility required) {
         super(nativeObject);
+        this.required = required;
     }
 
     protected static long newNativeInstance(Locale locale, ToLongFunction<String> newNativeInstance) {

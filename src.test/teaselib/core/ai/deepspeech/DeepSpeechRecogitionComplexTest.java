@@ -1,7 +1,10 @@
 package teaselib.core.ai.deepspeech;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
 
 import java.util.Locale;
 
@@ -128,6 +131,38 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
         assertRejected(inputMethod, choices, "Miss");
     }
 
+    @Test
+    void testOptionalStartOrderInvariance() throws InterruptedException {
+        String yes = "Of course";
+        String no = "No of course";
+
+        Choices choices1 = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice(yes), new Choice(no));
+        assertRecognized(inputMethod, choices1, "of course", new Prompt.Result(0));
+        assertRecognized(inputMethod, choices1, "No of course", new Prompt.Result(1));
+
+        Choices choices2 = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice(no), new Choice(yes));
+        assertRecognized(inputMethod, choices2, "of course", new Prompt.Result(1));
+        assertRecognized(inputMethod, choices2, "No of course", new Prompt.Result(0));
+    }
+
+    @Test
+    void testOptionalEndOrderInvariance() throws InterruptedException {
+        String yes = "Of course";
+        String no = "Of course not";
+
+        Choices choices1 = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice(yes), new Choice(no));
+        assertRecognized(inputMethod, choices1, "of course", new Prompt.Result(0));
+        assertRecognized(inputMethod, choices1, "Of course not", new Prompt.Result(1));
+
+        Choices choices2 = new Choices(Locale.ENGLISH, Intention.Decide, //
+                new Choice(no), new Choice(yes));
+        assertRecognized(inputMethod, choices2, "of course", new Prompt.Result(1));
+        assertRecognized(inputMethod, choices2, "Of course not", new Prompt.Result(0));
+    }
+
     private static Choices singleChoiceMultiplePhrasesAreDistinct() {
         String[] yes = { "Yes Miss, of course", "Of course, Miss" };
         return new Choices(Locale.ENGLISH, Intention.Decide, //
@@ -140,24 +175,18 @@ class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest 
         assertRecognized(inputMethod, choices, "Yes Miss of course", new Prompt.Result(0));
         assertRecognized(inputMethod, choices, "Of course Miss", new Prompt.Result(0));
 
-        // TODO Accepted by SAPI SRGS recognizer in Relaxed mode
+        assertRejected(inputMethod, choices, "Yes Miss");
         assertRejected(inputMethod, choices, "Of course");
 
-        // Accepted as Intention.Chat because DeepSpeech emulation provides correct confidence
-        Choices chat = as(choices, Intention.Chat);
-        assertRecognizedAsHypothesis(inputMethod, chat, "Yes Miss", new Prompt.Result(0));
-
-        // TODO Rejected by SAPI SRGS recognizer in Relaxed mode
-        assertRecognizedAsHypothesis(inputMethod, chat, "Miss", new Prompt.Result(0));
-
-        // accepted as completed, whereas TeaseLibSRGS rejects the incomplete phrase with timeout
-        // - accepted as hypothesis in recognitionRejected
-        // TODO reject if not matching phrase completely, then use hypothesis
+        // SRGS accepts these as Intention.Chat only but DeepSpeech is far more accurate
         Choices confirm = as(choices, Intention.Confirm);
         assertRecognizedAsHypothesis(inputMethod, confirm, "Yes Miss", new Prompt.Result(0));
-
-        // TODO SRGS Relaxed accepts this with higher probability as Intention.Decide
         assertRecognizedAsHypothesis(inputMethod, confirm, "Of course", new Prompt.Result(0));
+        assertRejected(inputMethod, confirm, "Miss");
+
+        Choices chat = as(choices, Intention.Chat);
+        // SRGS rejects this because it's not a phrase, but can be considered a hypothesis
+        assertRecognizedAsHypothesis(inputMethod, chat, "Miss", new Prompt.Result(0));
     }
 
 }

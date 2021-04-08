@@ -1,8 +1,14 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.*;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
+import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.bestSingleResult;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.withoutPunctation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +18,8 @@ import org.junit.Test;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
@@ -27,11 +35,11 @@ public class SpeechRecognitionTest {
     public void testSRGSBuilderSinglePhrase() throws InterruptedException {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice("Foo bar"));
-
         assertRecognized(choices, "Foo bar", new Prompt.Result(0));
-        assertRecognizedAsHypothesis(as(choices, Intention.Chat), "Foo", new Prompt.Result(0));
-        assertRejected(as(choices, Intention.Confirm), "Foo");
-        assertRejected(choices, "Bar");
+
+        Choices chat = as(choices, Intention.Chat);
+        assertRejected(chat, "Foo");
+        assertRejected(chat, "Bar");
     }
 
     @Test
@@ -90,8 +98,8 @@ public class SpeechRecognitionTest {
                 new Choice("My name is Foo, Mam"), //
                 new Choice("My name is Bar, Mam"), //
                 new Choice("My name is Foobar, Mam"));
-        assertRecognizedAsHypothesis(choices, "My name is Bar", new Prompt.Result(1));
         assertRecognizedAsHypothesis(choices, "My name is Foo", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(choices, "My name is Bar", new Prompt.Result(1));
         assertRecognizedAsHypothesis(choices, "My name is Foobar", new Prompt.Result(2));
         assertRejected(choices, "My name is");
     }
@@ -123,9 +131,12 @@ public class SpeechRecognitionTest {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice(a), new Choice(o), new Choice(u));
 
-        assertRecognized(choices, a, new Prompt.Result(0));
-        assertRecognized(choices, o, new Prompt.Result(1));
-        assertRecognized(choices, u, new Prompt.Result(2));
+        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
+                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+            assertRecognized(inputMethod, choices, a, new Prompt.Result(0));
+            assertRecognized(inputMethod, choices, o, new Prompt.Result(1));
+            assertRecognized(inputMethod, choices, u, new Prompt.Result(2));
+        }
     }
 
     @Test
@@ -204,6 +215,8 @@ public class SpeechRecognitionTest {
 
         assertRecognized(choices, "Yes Of course", new Prompt.Result(0));
         assertRecognized(choices, "No Of course not", new Prompt.Result(1));
+        assertRejected(choices, "Yes Of");
+        assertRejected(choices, "No Of");
 
         Choices chat = as(choices, Intention.Chat);
         assertRecognizedAsHypothesis(chat, "Yes Of", new Prompt.Result(0));

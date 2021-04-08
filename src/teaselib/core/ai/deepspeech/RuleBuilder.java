@@ -1,13 +1,15 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.Collections.*;
-import static teaselib.core.speechrecognition.Confidence.*;
+import static java.util.Collections.singleton;
+import static teaselib.core.speechrecognition.Confidence.valueOf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import teaselib.core.ai.deepspeech.DeepSpeechRecognizer.Result;
 import teaselib.core.ai.deepspeech.RuleBuilder.Rating.Rated;
@@ -134,8 +136,9 @@ public class RuleBuilder {
                 wordIndex++;
             }
 
-            if (insertNullRules > 0) {
-                children.add(nullRule(null, phraseIndex, 0.0f));
+            if (wordIndex < results.get(0).words.size() || insertNullRules > 0) {
+                int n = Math.max(results.get(0).words.size() - wordIndex, insertNullRules);
+                addPlaceholders(n, phraseIndex);
             }
         }
 
@@ -152,15 +155,6 @@ public class RuleBuilder {
                 }
             }
             return ratedWord;
-        }
-
-        private void addChild(String word, int phraseIndex, float probability) {
-            if (insertNullRules > 0) {
-                children.add(nullRule(null, phraseIndex, 0.0f));
-                insertNullRules = 0;
-            }
-            children.add(childRule(word, phraseIndex, probability));
-            childIndex++;
         }
 
         private float match(String word, int index) {
@@ -225,23 +219,33 @@ public class RuleBuilder {
             return (float) matches / word.length();
         }
 
+        private void addChild(String word, int phraseIndex, float probability) {
+            if (insertNullRules > 0) {
+                addPlaceholders(insertNullRules, phraseIndex);
+                insertNullRules = 0;
+            }
+            children.add(childRule(word, phraseIndex, probability));
+            childIndex++;
+        }
+
         private Rule childRule(String text, int choice, float probability) {
-            return childRule(text, childIndex, childIndex + 1, choice, probability);
+            return childRule(text, wordIndex, childIndex, childIndex + 1, choice, probability);
         }
 
-        private static Rule childRule(String text, int from, int to, int choice, float probability) {
-            int index = from;
-            return new Rule("r_" + index, text, index, singleton(choice), from, to, probability, valueOf(probability));
+        private static Rule childRule(String text, int index, int from, int to, int choice, float probability) {
+            Set<Integer> choices = singleton(choice);
+            return new Rule(Rule.name(Rule.CHOICE_NODE_NAME, index, choices), text, index, choices, from, to,
+                    probability, valueOf(probability));
         }
 
-        private Rule nullRule(String word, int choice, float probability) {
-            return nullRule(word, childIndex, choice, probability);
+        private void addPlaceholders(int n, int phraseIndex) {
+            for (int i = 0; i < n; i++) {
+                addPlaceholder(phraseIndex);
+            }
         }
 
-        private static Rule nullRule(String word, int from, int choice, float probability) {
-            int index = from;
-            return new Rule("r_" + index, word, index, singleton(choice), index, index, probability,
-                    valueOf(probability));
+        private void addPlaceholder(int phraseIndex) {
+            children.add(Rule.placeholder(wordIndex, childIndex, Collections.singleton(phraseIndex), 0.0f));
         }
 
         Rule rule() {

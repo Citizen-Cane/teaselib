@@ -9,7 +9,7 @@ public class Hysteresis {
     }
 
     public static Function<Boolean, Float> bool(UnaryOperator<Float> hysteresis, float max, float min) {
-        return new Function<Boolean, Float>() {
+        return new Function<>() {
 
             UnaryOperator<Float> function = hysteresis;
 
@@ -22,7 +22,7 @@ public class Hysteresis {
     }
 
     public static UnaryOperator<Float> function(float start, float up, float down) {
-        return new UnaryOperator<Float>() {
+        return new UnaryOperator<>() {
 
             float v = start;
 

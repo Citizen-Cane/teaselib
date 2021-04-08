@@ -1,7 +1,8 @@
 package teaselib.core.ai.deepspeech;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertConfidence;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.await;
 
 import java.nio.file.Files;
 import java.util.Locale;
@@ -51,7 +52,7 @@ class DeepSpeechRecognizerAudioTest {
                 assertTrue(Files.exists(testData.audio), "File not found: " + testData.audio);
                 deepSpeechRecognizer.emulateRecognition(testData.audio.toString());
                 Rule rule = await(0, deepSpeechRecognizer, speechRecognized, signal);
-                assertConfidence(rule, Intention.Decide);
+                assertConfidence(deepSpeechRecognizer, rule, Intention.Decide);
             }
         }
     }

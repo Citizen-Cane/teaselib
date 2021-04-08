@@ -1,17 +1,25 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.speechrecognition.Confidence.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+import static java.util.Collections.unmodifiableList;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.speechrecognition.Confidence.High;
+import static teaselib.core.speechrecognition.Confidence.valueOf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.Sequence;
@@ -24,9 +32,10 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 public class Rule {
 
     public static final String MAIN_RULE_NAME = "Recognized";
+    public static final int MAIN_RULE_INDEX = -1;
     public static final String REPAIRED_MAIN_RULE_NAME = "Repaired";
     public static final String WITHOUT_IGNOREABLE_TRAILING_NULL_RULE = "Trailing Null rule removed";
-    public static final String CHOICE_NODE_PREFIX = "r_";
+    public static final String CHOICE_NODE_NAME = "r";
 
     public static final Rule Timeout = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
     public static final Rule Nothing = new Rule("Nothing", "", Integer.MIN_VALUE, emptyList(), 0, 0, 0.0f,
@@ -54,11 +63,47 @@ public class Rule {
     }
 
     public static Rule mainRule(List<Rule> children, float probability) {
+        String name = name(MAIN_RULE_NAME, MAIN_RULE_INDEX, children);
         String text = Rule.text(children);
         int fromElement = children.get(0).fromElement;
         int toElement = children.get(children.size() - 1).toElement;
         Confidence confidence = Confidence.valueOf(probability);
-        return new Rule(Rule.MAIN_RULE_NAME, text, -1, children, fromElement, toElement, probability, confidence);
+        return new Rule(name, text, MAIN_RULE_INDEX, children, fromElement, toElement, probability, confidence);
+    }
+
+    public static Rule placeholder(int index, int position, int choice, float probability) {
+        return placeholder(index, position, Collections.singleton(choice), probability);
+    }
+
+    public static Rule placeholder(int index, int position, Set<Integer> choices, float probability) {
+        return new Rule(name(CHOICE_NODE_NAME, index, choices), "", position, choices, position, position, probability,
+                valueOf(probability));
+    }
+
+    public static String name(String name, int index, List<Rule> children) {
+        return name(name, index, indicesIntersection(children));
+    }
+
+    public static String name(String name, int index, Set<Integer> choices) {
+        StringBuilder s = new StringBuilder(name);
+        if (index > MAIN_RULE_INDEX) {
+            s.append("_");
+            s.append(index);
+        }
+        if (!choices.isEmpty()) {
+            s.append("_");
+            s.append(toString(choices));
+        }
+        return s.toString();
+    }
+
+    private static String toString(Set<Integer> choices) {
+        return choices.stream().map(Objects::toString).collect(Collectors.joining(","));
+    }
+
+    public Rule(Rule rule, float probability) {
+        this(rule.name, rule.text, rule.ruleIndex, rule.indices, rule.children, rule.fromElement, rule.toElement,
+                probability, Confidence.valueOf(probability));
     }
 
     public Rule(Rule rule, String name, float probability, Confidence confidence) {
@@ -69,6 +114,12 @@ public class Rule {
     public Rule(String name, String text, int ruleIndex, Set<Integer> indices, int fromElement, int toElement,
             float probability, Confidence confidence) {
         this(name, text, ruleIndex, indices, new ArrayList<>(), fromElement, toElement, probability, confidence);
+    }
+
+    public Rule(String name, List<Rule> children) {
+        this(name, text(children), -1, children, children.get(0).fromElement,
+                children.get(children.size() - 1).toElement, probability(children),
+                Confidence.valueOf(probability(children)));
     }
 
     public Rule(String name, String text, int ruleIndex, List<Rule> children, int fromElement, int toElement,
@@ -86,7 +137,7 @@ public class Rule {
     private static List<Rule> childRules(List<String> children, int choice, float probability) {
         List<Rule> rules = new ArrayList<>(children.size());
         for (int i = 0; i < children.size(); ++i) {
-            rules.add(new Rule(Rule.CHOICE_NODE_PREFIX + i + "_" + choice, children.get(i), i, singleton(choice), i,
+            rules.add(new Rule(Rule.CHOICE_NODE_NAME + "_" + i + "_" + choice, children.get(i), i, singleton(choice), i,
                     i + 1, probability, Confidence.valueOf(probability)));
         }
         return rules;
@@ -146,7 +197,7 @@ public class Rule {
         return isValid(this);
     }
 
-    class IllegalRuleException extends IllegalStateException {
+    public class IllegalRuleException extends IllegalStateException {
         private static final long serialVersionUID = 1L;
 
         final Rule rule;
@@ -170,8 +221,9 @@ public class Rule {
                 throw new IllegalRuleException(mainRule, "Rule contains less words than toElement");
             }
 
-            List<String> elements = words.subList(fromElement, toElement);
-            boolean equalsIgnoreCase = elements.stream().collect(joining(" ")).equalsIgnoreCase(text);
+            boolean equalsIgnoreCase = (children.isEmpty()
+                    ? words.subList(fromElement, toElement).stream().collect(Collectors.joining(" "))
+                    : text(children)).equalsIgnoreCase(text);
             if (!equalsIgnoreCase) {
                 throw new IllegalRuleException(mainRule, "Rule text must match child rules");
             } else {
@@ -297,11 +349,25 @@ public class Rule {
     }
 
     public static float probability(List<Rule> children) {
-        return children.stream().collect(averagingDouble(rule -> rule.probability)).floatValue();
+        return children.stream().flatMap(rule -> {
+            if (rule.text == null) {
+                // production data shows NULL rules as C=1.0, but they don't account to main rule probability
+                return Stream.empty();
+            } else {
+                String[] words = PhraseString.words(rule.text);
+                if (words.length == 0) {
+                    // placeholder rule
+                    return Stream.of(rule);
+                } else {
+                    return Arrays.stream(words).map(word -> rule);
+                }
+            }
+        }).collect(Collectors.averagingDouble(child -> child.probability)).floatValue();
     }
 
     public static String text(List<Rule> children) {
-        return children.stream().map(r -> r.text).filter(Objects::nonNull).collect(joining(" "));
+        return children.stream().map(r -> r.text) //
+                .filter(Objects::nonNull).filter(not(String::isBlank)).collect(joining(" "));
     }
 
     private static Set<Integer> indicesIntersection(List<Rule> rules) {

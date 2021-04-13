@@ -49,6 +49,14 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_
 
 /*
  * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
+ * Method:    setChoices
+ * Signature: (Ljava/util/List;)V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_setChoices
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
  * Method:    startRecognition
  * Signature: ()V
  */

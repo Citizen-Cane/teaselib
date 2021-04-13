@@ -20,6 +20,14 @@ jclass JNIClass::getClass(JNIEnv* env, const char* name)
 	return clazz;
 }
 
+jclass JNIClass::getClass(JNIEnv* env, const jobject jobject)
+{
+	jclass clazz = env->GetObjectClass(jobject);
+	assert(!env->ExceptionCheck());
+	if (env->ExceptionCheck()) throw JNIException(env);
+	return clazz;
+}
+
 
 jfieldID JNIClass::getFieldID(JNIEnv* env, jobject object, const char* name, const char* signature)
 {

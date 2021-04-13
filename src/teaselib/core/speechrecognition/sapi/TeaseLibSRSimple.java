@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,7 +75,7 @@ public class TeaseLibSRSimple extends TeaseLibSR.SAPI {
         return repaired;
     }
 
-    private boolean startsWith(Rule rule, String phrase) {
+    private static boolean startsWith(Rule rule, String phrase) {
         return PhraseString.words(rule.text).length < PhraseString.words(phrase).length && phrase.startsWith(rule.text);
     }
 

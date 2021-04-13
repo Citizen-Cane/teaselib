@@ -167,6 +167,35 @@ extern "C"
 	}
 
 	/*
+	 * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
+	 * Method:    setChoices
+	 * Signature: (Ljava/util/List;)V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_setChoices
+	(JNIEnv* env, jobject jthis, jobject jphrases)
+	{
+		try {
+			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
+			vector<jobjectArray> phrases = JNIUtilities::objectArrays(env, jphrases);
+			set<string> all;
+			for_each(phrases.begin(), phrases.end(), [env, &phrases, &all](jobjectArray phrase) {
+				vector<string> words = JNIUtilities::stringArray(env, phrase);
+				all.insert(words.begin(), words.end());
+			});
+			speechRecognizer->setHotWords(all);
+		}
+		catch (exception& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (JNIException& e) {
+			e.rethrow();
+		}
+	}
+
+	/*
 	 * Class:     teaselib_core_ai_perception_DeepSpeechRecognizer
 	 * Method:    startRecognition
 	 * Signature: ()V
@@ -311,6 +340,11 @@ void DeepSpeechRecognizer::setMaxAlternates(int n)
 	recognizer.setMaxAlternates(n);
 }
 
+void DeepSpeechRecognizer::setHotWords(const set<string>& words)
+{
+	recognizer.setHotWords(words, aifx::speech::SpeechRecognizer::HotwordBoost::Medium);
+}
+
 void DeepSpeechRecognizer::start()
 {
 	audioStream.reset();
@@ -350,21 +384,17 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 	audioStream.reset();
 	try {
 		while (samples) {
-			aifx::speech::SpeechAudioStream::FeedState feed_state;
 			unsigned int consumed;
-			while (0 == (consumed = audioStream.feed(speech, min<unsigned int>(samples, aifx::speech::SpeechAudioStream::vad_frame_size), feed_state)))
-			{
-				if (samples == 0) return; else this_thread::sleep_for(100ms);
-			}
+			aifx::speech::SpeechAudioStream::FeedState feed_state;
+			consumed = audioStream.feed(speech, min<unsigned int>(samples, aifx::speech::SpeechAudioStream::vad_frame_size * 5), feed_state);
 			samples -= consumed;
 			speech += consumed;
+			if (samples == 0 || audioStream == aifx::speech::SpeechAudioStream::Status::Done) break; else this_thread::sleep_for(10ms);
 		}
 
-		if (audioStream != aifx::speech::SpeechAudioStream::Status::Done) {
+		if (audioStream == aifx::speech::SpeechAudioStream::Status::Running) {
 			audioStream.finish();
 		}
-
-		return;
 	} catch (exception& e) {
 		audioStream.cancel();
 		throw e;

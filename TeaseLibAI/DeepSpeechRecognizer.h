@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,7 @@ public:
 
 	const std::string& languageCode() const;
 	void setMaxAlternates(int n);
+	void setHotWords(const std::set<std::string>& words);
 
 	void start();
 	void stop();

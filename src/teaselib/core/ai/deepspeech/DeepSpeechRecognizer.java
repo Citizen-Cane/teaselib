@@ -1,7 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -205,6 +204,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         public void accept(SpeechRecognitionImplementation sri) {
             if (sri == DeepSpeechRecognizer.this) {
                 ((DeepSpeechRecognizer) sri).current = this;
+                setChoices(phrases);
             } else {
                 throw new IllegalArgumentException();
             }
@@ -230,6 +230,8 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     private native int decode();
 
     private native List<Result> results();
+
+    public native void setChoices(List<String[]> phrases);
 
     @Override
     public native void startRecognition();

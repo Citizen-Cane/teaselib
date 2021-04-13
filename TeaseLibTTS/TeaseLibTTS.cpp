@@ -42,9 +42,11 @@ extern "C"
 		}
 		catch (NativeException& e) {
 			JNIException::rethrow(env, e);
+			return 0;
 		}
 		catch (JNIException& e) {
 			e.rethrow();
+			return 0;
 		}
 	}
 
@@ -133,7 +135,7 @@ extern "C"
 			Objects::requireNonNull(L"prompt", prompt);
 			
 			SpeechSynthesizer* speechSynthesizer = NativeInstance::get<SpeechSynthesizer>(env, jthis);
-            speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
+            speechSynthesizer->applyHints(JNIUtilities::wstringArray(env, getHints(env, jthis)));
             speechSynthesizer->speak(JNIString(env, prompt));
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
@@ -156,7 +158,7 @@ extern "C"
 			Objects::requireNonNull(L"path", path);
 			
 			SpeechSynthesizer* speechSynthesizer = NativeInstance::get<SpeechSynthesizer>(env, jthis);
-            speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
+            speechSynthesizer->applyHints(JNIUtilities::wstringArray(env, getHints(env, jthis)));
             const std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
             actualPath = JNIString(env, soundFile.c_str()).detach();
 		} catch (NativeException& e) {

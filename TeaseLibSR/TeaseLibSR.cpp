@@ -15,6 +15,7 @@
 #include <JNIException.h>
 #include <JNIString.h>
 #include <JNIObject.h>
+#include <JNIUtilities.h>
 #include <NativeException.h>
 #include <NativeObject.h>
 
@@ -100,21 +101,7 @@ extern "C"
 		try {
             Objects::requireNonNull(L"choices", jchoices);
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
-            jclass listClass = JNIClass::getClass(env, "Ljava/util/List;");
-            jobject iterator = env->CallObjectMethod(jchoices, env->GetMethodID(listClass, "iterator", "()Ljava/util/Iterator;"));
-            jclass iteratorClass = env->FindClass("Ljava/util/Iterator;");
-            if (env->ExceptionCheck()) {
-                throw JNIException(env);
-            }
-            SpeechRecognizer::Choices choices;
-            while (env->CallBooleanMethod(iterator, env->GetMethodID(iteratorClass, "hasNext", "()Z"))) {
-                jobject jchoice = env->CallObjectMethod(iterator, env->GetMethodID(iteratorClass, "next", "()Ljava/lang/Object;"));
-                if (env->ExceptionCheck()) {
-                    throw JNIException(env);
-                }
-                JNIString choice(env, reinterpret_cast<jstring>(jchoice));
-                choices.push_back(wstring(choice));
-            }
+            const SpeechRecognizer::Choices choices = JNIUtilities::wstrings(env, jchoices);
             speechRecognizer->setChoices(choices);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);

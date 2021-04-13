@@ -9,6 +9,7 @@ public:
 	virtual ~JNIClass();
 
 	static jclass getClass(JNIEnv* env, const char* name);
+	static jclass getClass(JNIEnv* env, const jobject jobject);
 
 	static jfieldID getFieldID(JNIEnv* env, jobject object, const char* name, const char* signature);
 	static jfieldID getFieldID(JNIEnv* env, jclass clazz, const char* name, const char* signature);

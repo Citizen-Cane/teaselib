@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +37,7 @@ import teaselib.Clothes;
 import teaselib.Gadgets;
 import teaselib.Household;
 import teaselib.Posture;
+import teaselib.Shoes;
 import teaselib.Toys;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.QualifiedEnum;
@@ -135,14 +136,14 @@ public class UserItemsImpl implements UserItems {
                     }
                 }
             }
-        } catch (ParserConfigurationException | SAXException | ClassNotFoundException e) {
+        } catch (ParserConfigurationException | SAXException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
 
         return items;
     }
 
-    private ItemImpl readItem(String domain, Node itemClass, Node itemNode) throws ClassNotFoundException {
+    private ItemImpl readItem(String domain, Node itemClass, Node itemNode) {
         NamedNodeMap attributes = itemNode.getAttributes();
         String itemName = attributes.getNamedItem("item").getNodeValue();
         String guid = attributes.getNamedItem("guid").getNodeValue();
@@ -269,10 +270,12 @@ public class UserItemsImpl implements UserItems {
     public Enum<?>[] defaults(QualifiedItem item) {
         if (item.namespace().equalsIgnoreCase(Toys.class.getName())) {
             return getToyDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Clothes.class.getName())) {
-            return getClothesDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Household.class.getName())) {
             return getHouseholdDefaults(item);
+        } else if (item.namespace().equalsIgnoreCase(Clothes.class.getName())) {
+            return getClothesDefaults(item);
+        } else if (item.namespace().equalsIgnoreCase(Shoes.class.getName())) {
+            return getShoesDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Accessoires.class.getName())) {
             return getAccessoiresDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Gadgets.class.getName())) {
@@ -282,19 +285,23 @@ public class UserItemsImpl implements UserItems {
         }
     }
 
-    private static Enum<?>[] getClothesDefaults(QualifiedItem item) {
+    private static Enum<?>[] getClothesDefaults(@SuppressWarnings("unused") QualifiedItem item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getHouseholdDefaults(QualifiedItem item) {
+    private static Enum<?>[] getShoesDefaults(@SuppressWarnings("unused") QualifiedItem item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getAccessoiresDefaults(QualifiedItem item) {
+    private static Enum<?>[] getHouseholdDefaults(@SuppressWarnings("unused") QualifiedItem item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getGadgetsDefaults(QualifiedItem item) {
+    private static Enum<?>[] getAccessoiresDefaults(@SuppressWarnings("unused") QualifiedItem item) {
+        return new Body[] {};
+    }
+
+    private static Enum<?>[] getGadgetsDefaults(@SuppressWarnings("unused") QualifiedItem item0) {
         return new Body[] {};
     }
 

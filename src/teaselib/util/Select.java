@@ -75,6 +75,10 @@ public class Select {
 
     }
 
+    public static Statement statement(AbstractStatement statement) {
+        return new Statement(statement);
+    }
+
     public static class Statement extends AbstractStatement {
 
         Statement(Enum<?>[] values, List<Clause<Items>> clauses) {

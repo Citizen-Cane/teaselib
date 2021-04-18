@@ -1,6 +1,10 @@
 package teaselib;
 
-import static teaselib.util.Select.items;
+import static teaselib.util.Select.*;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import teaselib.util.Select;
 
@@ -43,16 +47,17 @@ public enum Accessoires {
         Elbow,
     }
 
-    public static final Select.Statement all = items(Accessoires.values());
+    public static final Select.Statement All = items(Accessoires.values());
 
-    public static final Accessoires[] Male = { Tie, Gloves };
-    public static final Accessoires[] Female = { Belt, Gloves, Handbag, Jewelry, Makeup, Princess_Tiara, Scarf };
+    public static final Select.Statement Male = items(Tie, Gloves);
+    public static final Select.Statement Female = items(Belt, Gloves, Handbag, Jewelry, Makeup, Princess_Tiara, Scarf);
 
-    public static final Accessoires[] Maid = { Apron, Bonnet, Bells };
-    public static final Accessoires[] Crossdressing = { Breast_Forms, Wig };
+    public static final Select.Statement Maid = items(Apron, Bonnet, Bells);
+    public static final Select.Statement Crossdressing = items(Breast_Forms, Wig);
 
-    public static final Accessoires[] Fetish = { Corset, Harness, Hood };
+    public static final Select.Statement Fetish = items(Corset, Harness, Hood);
 
-    public static final Accessoires[][] Categories = { Male, Female, Maid, Crossdressing, Fetish };
+    public static final List<Select.Statement> Categories = Collections.unmodifiableList(Arrays.asList( //
+            Male, Female, Maid, Crossdressing, Fetish));
 
 }

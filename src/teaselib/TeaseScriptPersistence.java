@@ -13,6 +13,7 @@ import java.util.function.Function;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
+import teaselib.core.ScriptRenderer;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
@@ -41,11 +42,17 @@ public abstract class TeaseScriptPersistence extends Script {
         super(script, actor);
     }
 
-    public class Domain {
+    public static class Domain {
         final String name;
+        final TeaseLib teaseLib;
+        final String namespace;
+        final ScriptRenderer scriptRenderer;
 
-        public Domain(String name) {
+        public Domain(String name, Script script) {
             this.name = name;
+            this.namespace = script.namespace;
+            this.teaseLib = script.teaseLib;
+            this.scriptRenderer = script.scriptRenderer;
         }
 
         public Item item(Item item) {
@@ -119,6 +126,35 @@ public abstract class TeaseScriptPersistence extends Script {
             return new Items(items);
         }
 
+        public Items items(Items.Query query) {
+            return query.get();
+        }
+
+        public Items items(Select.AbstractStatement query) {
+            return select(query).get();
+        }
+
+        public Items items(Select.AbstractStatement... queries) {
+            return select(queries).get();
+        }
+
+        public Items.Query query(Enum<?>... values) {
+            return () -> items(values);
+        }
+
+        public Items.Query select(Select.AbstractStatement query) {
+            return query.get(query(query.values));
+        }
+
+        public Items.Query select(Select.AbstractStatement... queries) {
+            return () -> {
+                Function<? super Select.AbstractStatement, Items.Query> mapper = query -> query
+                        .get(query(query.values));
+                return new Items(
+                        stream(queries).map(mapper).map(Items.Query::get).flatMap(Items::stream).collect(toList()));
+            };
+        }
+
         @Override
         public String toString() {
             return name;
@@ -139,7 +175,7 @@ public abstract class TeaseScriptPersistence extends Script {
         }
     }
 
-    public final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain);
+    public final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain, this);
 
     public Domain domain(Enum<?> domain) {
         return domain(new QualifiedEnum(domain));
@@ -149,8 +185,14 @@ public abstract class TeaseScriptPersistence extends Script {
         return domain(domain.toString());
     }
 
+    /**
+     * Returns a script-local domain object that can be used to handle items in the specified domain.
+     * 
+     * @param domain
+     * @return
+     */
     public Domain domain(String domain) {
-        return new Domain(domain);
+        return new Domain(domain, this);
     }
 
     /**
@@ -190,6 +232,10 @@ public abstract class TeaseScriptPersistence extends Script {
 
     public Items items(String[]... values) {
         return defaultDomain.items(values);
+    }
+
+    public Items items(Items... items) {
+        return new Items(items);
     }
 
     public Items items(Items.Query query) {

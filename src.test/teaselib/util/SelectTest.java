@@ -78,7 +78,7 @@ public class SelectTest {
 
     @Test
     public void testValueSelection() {
-        Select.Statement query = Clothes.male.items(Clothes.Shirt, Clothes.Trousers);
+        Select.Statement query = Clothes.Male.items(Clothes.Shirt, Clothes.Trousers);
         Items attire = test.items(query);
         assertEquals(2, attire.valueSet().size());
     }
@@ -86,7 +86,7 @@ public class SelectTest {
     @Test
     public void testStatementPlusStatement() {
         Select.Statement[] query = { //
-                Clothes.male.items(Clothes.Shirt, Clothes.Trousers), //
+                Clothes.Male.items(Clothes.Shirt, Clothes.Trousers), //
                 Select.items(Toys.Collar) //
         };
         Items attire = test.items(query);

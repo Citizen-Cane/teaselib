@@ -1,11 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -21,6 +16,7 @@ import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.Household;
 import teaselib.Material;
+import teaselib.Shoes;
 import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.TeaseScriptPersistence.Domain;
@@ -987,5 +983,24 @@ public class ItemsTest {
         assertEquals(items.size(), handled.size());
         assertEquals(script.defaultDomain.toString(), AbstractProxy.itemImpl(items.get()).domain);
         assertEquals(domain.toString(), AbstractProxy.itemImpl(handled.get()).domain);
+    }
+
+    @Test
+    public void testItemsStatement() {
+        TestScript script = TestScript.getOne();
+
+        Items myOutfit = script.items(Toys.Collar, Shoes.High_Heels);
+        assertEquals(2, myOutfit.size());
+
+        Items allShoes = script.items(Shoes.All);
+        assertEquals(5, allShoes.size());
+
+        // TODO using Statement.values isn't a query -> change to (package-) private field
+        Items myShoes = myOutfit.items(Shoes.All.values);
+        assertEquals(1, myShoes.size());
+
+        Items myShoes2 = myOutfit.items(Shoes.All);
+        assertEquals(1, myShoes2.size());
+
     }
 }

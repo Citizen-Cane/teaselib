@@ -1,6 +1,10 @@
 package teaselib;
 
-import static teaselib.util.Select.items;
+import static teaselib.util.Select.*;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import teaselib.util.Items;
 import teaselib.util.Select;
@@ -38,7 +42,6 @@ public enum Clothes {
     Jacket,
     Shirt,
     Skirt,
-    Shoes,
     Suit,
     Sweater,
     Tanktop,
@@ -53,24 +56,14 @@ public enum Clothes {
         Thong,
     }
 
-    public enum Footwear {
-        Boots,
-        High_Heels,
-        Pumps,
-        Sandals,
-        Sneakers
-    }
-
     public enum SkirtType {
         MiniSkirt,
-        Skirt
     }
 
     public enum TrouwsersType {
         Jeans,
         Shorts,
         Sweatpants,
-        Trousers
     }
 
     public enum SwimwearType {
@@ -103,11 +96,7 @@ public enum Clothes {
         None
     }
 
-    /**
-     * TODO classify clothing items by category to define catsuits as lingerie or outer garments
-     * <p>
-     * TODO also classify by {@link teaselib.Sexuality#Gender}
-     */
+    @SuppressWarnings("hiding")
     public enum Category {
         Lingerie,
         Underwear,
@@ -118,6 +107,7 @@ public enum Clothes {
 
     // Namespaces of wearers of the diverse clothing items
 
+    // TODO change make these fields to domains (blocked because domain instances aren't static)
     public static final String Doll = "Doll";
     public static final String Partner = "Partner";
 
@@ -133,59 +123,23 @@ public enum Clothes {
     /**
      * Masculine underwear
      */
-    public static final Select.Statement underwear = new Select.Statement(
-            items(Socks, Underpants).where(Items::matching, Category.Underwear)
-                    .and(Items::without, Sexuality.Gender.Masculine).and(Items::without, Category.Swimwear));
+    public static final Select.Statement Underwear = new Select.Statement(items(Socks, Underpants)
+            .where(Items::matching, Category.Underwear).and(Items::without, Sexuality.Gender.Feminine));
 
-    public static final Select.Statement swimwear = new Select.Statement(
+    public static final Select.Statement Swimwear = new Select.Statement(
             items(Clothes.values()).where(Items::matching, Category.Swimwear));
 
-    public static final Select.Statement sleepwear = new Select.Statement(
+    public static final Select.Statement Sleepwear = new Select.Statement(
             items(Clothes.values()).where(Items::matching, Category.Sleepwear));
 
-    public static final Select.Statement female = new Select.Statement(
+    public static final Select.Statement Female = new Select.Statement(
             items(Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers, Vest).where(Items::without,
                     Sexuality.Gender.Masculine));
 
-    public static final Select.Statement male = new Select.Statement(
+    public static final Select.Statement Male = new Select.Statement(
             items(Shirt, Suit, Sweater, Trousers, Vest).where(Items::without, Sexuality.Gender.Feminine));
 
-    // TODO Move shoes to its own class - they're accessoires as gloves, but also an unique aspect of attire
-
-    public static final Select.Statement shoes(Sexuality.Gender gender) {
-        return new Select.Statement(items(Shoes).where(Items::matching, gender));
-    }
-
-    // Old style categories - all deprecated
-
-    @Deprecated // TODO Remove since it's all lingerie
-    public static final Clothes[] Underwear = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks,
-            Stockings, Underpants };
-
-    @Deprecated // TODO Remove since it's all male clothing
-    public static final Clothes[] Clothing = { Shirt, Socks, Suit, Sweater, Trousers };
-
-    @Deprecated // TODO Remove
-    public static final Clothes[] MaleUnderwear = { Underpants, Socks };
-    @Deprecated // TODO Remove
-    public static final Clothes[] MaleClothing = { Socks, Shirt, Sweater, Trousers, Jacket, Suit, Vest, Shoes };
-
-    @Deprecated // TODO Remove
-    public static final Clothes[] Lingerie = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks,
-            Stockings, Underpants };
-    @Deprecated // TODO Remove
-    public static final Clothes[] FemaleClothing = { Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
-            Vest, Shoes };
-
-    @Deprecated // TODO Remove
-    public static final Clothes[] Sleepwear = { Nightie, Pajamas };
-
-    @Deprecated // TODO Remove
-    public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, Lingerie, FemaleClothing, Sleepwear };
-
-    @Override
-    public String toString() {
-        return super.toString();
-    }
+    public static final List<Select.Statement> Categories = Collections
+            .unmodifiableList(Arrays.asList(Underwear, lingerie, Swimwear, Sleepwear, Female, Male));
 
 }

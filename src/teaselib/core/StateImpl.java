@@ -292,7 +292,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private boolean isCached(QualifiedItem qualifiedPeer) {
-        return this.stateMaps.stateMap(domain, qualifiedPeer.namespace().toLowerCase())
+        return this.stateMaps.stateMap(domain, qualifiedPeer)
                 .contains(qualifiedPeer.name().toLowerCase());
     }
 

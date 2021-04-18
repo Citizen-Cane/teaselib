@@ -1,9 +1,7 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static teaselib.core.state.AbstractProxy.removeProxies;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.state.AbstractProxy.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -528,7 +526,7 @@ public class Items implements Iterable<Item> {
 
     /**
      * Applies each item to the given peers. If there are multiple items of the same kind, only the first of each kind
-     * is applied. To apply to multiple instances, apply each through {@link Items#all}
+     * is applied. To apply to multiple instances, iterate over the elements and apply each with {@link Item#apply}
      * 
      */
     public State.Options applyTo(Object... peers) {
@@ -608,18 +606,22 @@ public class Items implements Iterable<Item> {
      * 
      * @return A sublist containing the requested items, or {@link Item#NotFound} for any missing item.
      */
-    public Items items(Enum<?>... itemOrAttribute) {
-        return itemsImpl((Object[]) itemOrAttribute);
+    public Items items(Enum<?>... anyItemOrAttribute) {
+        return itemsImpl((Object[]) anyItemOrAttribute);
     }
 
-    public Items items(String... itemOrAttribute) {
-        return itemsImpl((Object[]) itemOrAttribute);
+    public Items items(String... anyItemOrAttribute) {
+        return itemsImpl((Object[]) anyItemOrAttribute);
     }
 
-    public Items itemsImpl(Object... itemOrAttribute) {
+    public Items items(Select.Statement query) {
+        return query.get(() -> this.items(query.values)).get();
+    }
+
+    public Items itemsImpl(Object... anyItemOrAttribute) {
         List<Item> items = new ArrayList<>();
         for (Item item : elements) {
-            for (Object any : itemOrAttribute) {
+            for (Object any : anyItemOrAttribute) {
                 if (item.is(any)) {
                     items.add(item);
                 }

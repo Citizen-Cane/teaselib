@@ -1,9 +1,8 @@
 package teaselib.core.state;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.joining;
+import static java.util.Arrays.*;
+import static java.util.stream.Collectors.*;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -122,7 +121,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
         item.remove();
     }
 
-    private void report(String message) {
+    private static void report(String message) {
         StringBuilder result = new StringBuilder(message);
         String newLine = System.getProperty("line.separator");
         result.append(newLine);

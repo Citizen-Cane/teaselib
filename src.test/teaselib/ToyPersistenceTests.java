@@ -11,6 +11,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
+import teaselib.util.Items;
 
 /**
  * @author Citizen-Cane
@@ -21,14 +22,12 @@ public class ToyPersistenceTests {
     public void testDomainSeparation() {
         TestScript script = TestScript.getOne();
 
-        Item shoes = script.teaseLib.items(Clothes.Partner, Clothes.Shoes).get();
-        Item shoes2 = script.teaseLib.item(Clothes.Partner, Clothes.Shoes);
-
+        Item shoes = script.domain(Clothes.Partner).items(Shoes.All).get();
+        Item shoes2 = script.domain(Clothes.Partner).items(Shoes.All).get();
         assertEquals(shoes, shoes2);
 
-        Item shoes3 = script.teaseLib.items(Clothes.Doll, Clothes.Shoes).get();
-        Item shoes4 = script.teaseLib.item(Clothes.Doll, Clothes.Shoes);
-
+        Item shoes3 = script.domain(Clothes.Doll).items(Shoes.All).get();
+        Item shoes4 = script.domain(Clothes.Doll).items(Shoes.All).get();
         assertEquals(shoes3, shoes4);
 
         assertNotEquals(shoes, shoes4);
@@ -38,47 +37,45 @@ public class ToyPersistenceTests {
     public void testToysAndClothing() {
         TestScript script = TestScript.getOne();
 
-        Item gag = script.teaseLib.item(TeaseLib.DefaultDomain, Toys.Gag);
+        Item gag = script.defaultDomain.item(Toys.Gag);
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
 
         gag.setAvailable(true);
         assertTrue(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "ball_gag")));
 
-        Item highHeels = script.teaseLib.items(Clothes.Partner, Clothes.Shoes).matching(Clothes.Footwear.High_Heels)
-                .get();
+        Items shoes = script.domain(Clothes.Partner).items(Shoes.Feminine);
+        Item highHeels = shoes.matching(Shoes.High_Heels).get();
         highHeels.setAvailable(true);
 
         assertTrue("Domain item storage unsupported",
-                script.storage.containsKey(QualifiedName.of("Partner", "Clothes", "high_heels")));
+                script.storage.containsKey(QualifiedName.of("Partner", "Shoes", "high_heels")));
     }
 
     @Test
     public void testToysAndClothingAsItems() {
         TestScript script = TestScript.getOne();
 
-        Item gag = script.teaseLib.item(TeaseLib.DefaultDomain, Toys.Gag);
+        Item gag = script.defaultDomain.item(Toys.Gag);
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
 
         gag.setAvailable(true);
         assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Toys.class.getSimpleName(), "ball_gag")));
 
-        script.teaseLib.items(TeaseLib.DefaultDomain, Clothes.Shoes).matching(Clothes.Footwear.High_Heels).get()
-                .setAvailable(true);
+        script.defaultDomain.items(Shoes.Feminine).matching(Shoes.High_Heels).get().setAvailable(true);
         assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Clothes.class.getSimpleName(), "high_heels")));
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Shoes.class.getSimpleName(), "high_heels")));
     }
 
     @Test
     public void testAssignedToysAndClothingAsItems() {
         TestScript script = TestScript.getOne();
 
-        script.teaseLib.item(Clothes.Partner, Toys.Collar).setAvailable(true);
+        script.domain(Clothes.Partner).item(Toys.Collar).setAvailable(true);
         assertTrue(script.storage.containsKey(QualifiedName.of(Clothes.Partner, Toys.class.getSimpleName(), "collar")));
 
-        script.teaseLib.items(Clothes.Doll, Clothes.Shoes).matching(Clothes.Footwear.High_Heels).get()
-                .setAvailable(true);
-        assertTrue(script.storage
-                .containsKey(QualifiedName.of(Clothes.Doll, Clothes.class.getSimpleName(), "high_heels")));
+        script.domain(Clothes.Doll).items(Shoes.Feminine).matching(Shoes.High_Heels).get().setAvailable(true);
+        assertTrue(
+                script.storage.containsKey(QualifiedName.of(Clothes.Doll, Shoes.class.getSimpleName(), "high_heels")));
     }
 }

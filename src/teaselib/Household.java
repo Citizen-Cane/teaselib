@@ -1,5 +1,13 @@
 package teaselib;
 
+import static teaselib.util.Select.*;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import teaselib.util.Select;
+
 public enum Household {
     Balloons,
     Candle,
@@ -35,12 +43,16 @@ public enum Household {
         Water_Based,
     }
 
-    public static final Household[] Discipline = { Clothes_Pegs, Weight, Hairbrush, Ruler, Wooden_Spoon };
-    public static final Household[] Bondage = { Padlock, Shoe_Lace, Shrinkwrap, Duct_Tape, Leash };
-    public static final Household[] Commodities = { Balloons, Candle, Cigarettes, Condoms, Diaper, Heat_Rub, Lube,
-            Rubber_Bands, Tampons };
-    public static final Household[] Aids = { Dust_Pan, Sewing_Box, Vacuum_Cleaner };
-    public static final Household[] Kitchen = { Ice_Tray, Icecubes };
+    public static final Select.Statement All = items(values());
 
-    public static final Household[] Categories[] = { Discipline, Bondage, Commodities, Kitchen, Aids };
+    public static final Select.Statement Discipline = items(Clothes_Pegs, Weight, Hairbrush, Ruler, Wooden_Spoon);
+    public static final Select.Statement Bondage = items(Padlock, Shoe_Lace, Shrinkwrap, Duct_Tape, Leash);
+    public static final Select.Statement Commodities = items(Balloons, Candle, Cigarettes, Condoms, Diaper, Heat_Rub,
+            Lube, Rubber_Bands, Tampons);
+    public static final Select.Statement Aids = items(Dust_Pan, Sewing_Box, Vacuum_Cleaner);
+    public static final Select.Statement Kitchen = items(Ice_Tray, Icecubes);
+
+    public static final List<Select.Statement> Categories = Collections.unmodifiableList(Arrays.asList( //
+            Discipline, Bondage, Commodities, Kitchen, Aids));
+
 }

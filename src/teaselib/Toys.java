@@ -1,6 +1,13 @@
 package teaselib;
 
+import static teaselib.util.Select.*;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import teaselib.util.Item;
+import teaselib.util.Select;
 
 /**
  * Toys are generalized, which means their names have been chosen not be too specific.
@@ -117,13 +124,20 @@ public enum Toys {
         Vibrating_Egg,
     }
 
-    public static final Toys Essential[] = { Gag, Blindfold, Collar, Nipple_Clamps, Spanking_Implement };
-    public static final Toys Bondage[] = { Ankle_Restraints, Wrist_Restraints, Rope, Chains, Spreader_Bar };
-    public static final Toys Backdoor[] = { Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit };
-    public static final Toys Female[] = { Clit_Clamp, Pussy_Clamps, VaginalInsert };
-    public static final Toys Male[] = { Ball_Stretcher, Chastity_Device, Cock_Ring, Glans_Ring, Humbler, Masturbator };
-    public static final Toys Stimulation[] = { Vibrator, EStim_Device };
-    public static final Toys Partner[] = { Doll, Husband, Wife, Strap_On };
+    public static final Select.Statement All = items(values());
 
-    public static final Toys[] Categories[] = { Essential, Bondage, Backdoor, Female, Male, Stimulation, Partner };
+    public static final Select.Statement Essential = items(Gag, Blindfold, Collar, Nipple_Clamps, Spanking_Implement);
+
+    public static final Select.Statement Bondage = items(Ankle_Restraints, Wrist_Restraints, Rope, Chains,
+            Spreader_Bar);
+    public static final Select.Statement Backdoor = items(Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit);
+    public static final Select.Statement Female = items(Clit_Clamp, Pussy_Clamps, VaginalInsert);
+    public static final Select.Statement Male = items(Ball_Stretcher, Chastity_Device, Cock_Ring, Glans_Ring, Humbler,
+            Masturbator);
+    public static final Select.Statement Stimulation = items(Vibrator, EStim_Device);
+    public static final Select.Statement Partner = items(Doll, Husband, Wife, Strap_On);
+
+    public static final List<Select.Statement> Categories = Collections.unmodifiableList(Arrays.asList( //
+            Essential, Bondage, Backdoor, Female, Male, Stimulation, Partner));
+
 }

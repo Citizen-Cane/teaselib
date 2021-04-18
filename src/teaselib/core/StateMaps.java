@@ -173,12 +173,11 @@ public class StateMaps {
         return state.item;
     }
 
-    private StateMap stateMap(String domain, QualifiedItem item) {
-        return stateMap(domain, item.namespace().toLowerCase());
+    StateMap stateMap(String domain, QualifiedItem item) {
+        return stateMap(domain.toLowerCase(), item.namespace().toLowerCase());
     }
 
-    StateMap stateMap(String domain, String namespaceKey) {
-        domain = domain.toLowerCase();
+    private StateMap stateMap(String domain, String namespaceKey) {
         StateMapCache domainCache = getDomainCache(domain);
         final StateMap stateMap;
         if (domainCache.containsKey(namespaceKey)) {

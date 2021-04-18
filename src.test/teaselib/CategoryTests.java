@@ -4,9 +4,12 @@ import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
+
+import teaselib.util.Select;
 
 public class CategoryTests {
 
@@ -26,14 +29,20 @@ public class CategoryTests {
     }
 
     @Test
+    public void testShoesCategories() {
+        testCategories(Shoes.Categories, Shoes.values());
+    }
+
+    @Test
     public void testAccessoiresCategories() {
         testCategories(Accessoires.Categories, Accessoires.values());
     }
 
-    private static <T extends Enum<?>> void testCategories(T[][] categories, T[] values) {
+    @SuppressWarnings("unchecked")
+    private static <T extends Enum<?>> void testCategories(List<Select.Statement> categories, T[] values) {
         Set<T> all = new HashSet<>();
-        for (T[] items : Arrays.asList(categories)) {
-            all.addAll(asSet(items));
+        for (Select.Statement items : categories) {
+            all.addAll(asSet((T[]) items.values));
         }
 
         for (T item : values) {

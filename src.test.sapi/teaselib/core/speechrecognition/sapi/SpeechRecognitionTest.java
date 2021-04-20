@@ -1,14 +1,8 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
-import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.bestSingleResult;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.withoutPunctation;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.*;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +13,6 @@ import org.junit.Test;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
@@ -127,12 +120,10 @@ public class SpeechRecognitionTest {
         String a = "Äh";
         String o = "Öh";
         String u = "Üh";
-
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice(a), new Choice(o), new Choice(u));
 
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers)) {
+        try (SpeechRecognitionInputMethod inputMethod = getInputMethod(TeaseLibSRGS.Relaxed.class)) {
             assertRecognized(inputMethod, choices, a, new Prompt.Result(0));
             assertRecognized(inputMethod, choices, o, new Prompt.Result(1));
             assertRecognized(inputMethod, choices, u, new Prompt.Result(2));

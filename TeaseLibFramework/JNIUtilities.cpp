@@ -49,6 +49,16 @@ jobject JNIUtilities::newList(JNIEnv* env, size_t capacity)
 	return list;
 }
 
+jobject JNIUtilities::newNativeObjectList(JNIEnv* env, size_t capacity)
+{
+	jclass listClass = JNIClass::getClass(env, "teaselib/core/jni/NativeObjectList");
+	jobject list = env->NewObject(
+		listClass,
+		JNIClass::getMethodID(env, listClass, "<init>", "(I)V"), static_cast<jint>(capacity));
+	if (env->ExceptionCheck()) throw JNIException(env);
+	return list;
+}
+
 jobject JNIUtilities::asList(JNIEnv* env, const vector<string>& elements)
 {
 	jobject list = newList(env,	elements.size());
@@ -62,8 +72,8 @@ jobject JNIUtilities::asList(JNIEnv* env, const vector<string>& elements)
 
 jobject JNIUtilities::asList(JNIEnv* env, const vector<NativeObject*>& elements)
 {
-	jobject list = newList(env, elements.size());
-	jmethodID add = env->GetMethodID(JNIClass::getClass(env, "java/util/ArrayList"), "add", "(Ljava/lang/Object;)Z");
+	jobject list = newNativeObjectList(env, elements.size());
+	jmethodID add = env->GetMethodID(JNIClass::getClass(env, "teaselib/core/jni/NativeObjectList"), "add", "(Ljava/lang/Object;)Z");
 	for_each(elements.begin(), elements.end(), [&](const NativeObject* nativeObject) {
 		env->CallObjectMethod(list,	add, nativeObject->operator jobject());
 		if (env->ExceptionCheck()) throw JNIException(env);

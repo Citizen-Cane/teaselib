@@ -1,8 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -10,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.core.AudioSync;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils;
@@ -49,8 +49,7 @@ public class SpeechRecognitionInputMethodTest {
     }
 
     private static void test(Choices choices, String expected, int resultIndex) throws InterruptedException {
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
+        try (SpeechRecognitionInputMethod inputMethod = getInputMethod(TeaseLibSRGS.Relaxed.class);) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
             SpeechRecognitionTestUtils.awaitResult(prompt, inputMethod, expected, new Prompt.Result(resultIndex));
         }
@@ -61,8 +60,7 @@ public class SpeechRecognitionInputMethodTest {
         String phrase = "Foobar";
         Choices choices = new Choices(Locale.US, Intention.Decide, new Choice(phrase));
 
-        try (SpeechRecognizer recognizers = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizers);) {
+        try (SpeechRecognitionInputMethod inputMethod = getInputMethod(TeaseLibSRGS.Relaxed.class);) {
             Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
 
             Prompt.Result result;
@@ -70,7 +68,7 @@ public class SpeechRecognitionInputMethodTest {
             prompt.lock.lockInterruptibly();
             try {
                 inputMethod.show(prompt);
-                recognizers.get(choices.locale).emulateRecogntion(phrase);
+                inputMethod.emulateRecogntion(phrase);
                 dismissed = prompt.click.await(5, TimeUnit.SECONDS);
                 result = prompt.result();
             } finally {
@@ -88,16 +86,15 @@ public class SpeechRecognitionInputMethodTest {
                 choice("Yes, Miss"), choice("No, Miss"));
         DebugSetup setup = new DebugSetup().withInput();
         Configuration config = new Configuration(setup);
-        try (SpeechRecognizer recognizer = new SpeechRecognizer(config);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer);) {
-            SpeechRecognition sr = recognizer.get(choices.locale);
-            Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
+        try (InputMethods inputMethods = new InputMethods(new SpeechRecognitionInputMethod(config, new AudioSync()));) {
+            SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
+            Prompt prompt = new Prompt(choices, inputMethods);
 
             for (int i = 0; i < 10; i++) {
                 prompt.lock.lockInterruptibly();
                 try {
                     inputMethod.show(prompt);
-                    sr.emulateRecogntion("Foobar");
+                    inputMethod.emulateRecogntion("Foobar");
                     inputMethod.dismiss(prompt);
                 } finally {
                     prompt.lock.unlock();
@@ -110,50 +107,42 @@ public class SpeechRecognitionInputMethodTest {
 
     @Test
     public void testSpeechRecognitionInputMethodStacked() throws InterruptedException {
-        try (SpeechRecognizer recognizer = SpeechRecognitionTestUtils.getRecognizer(TeaseLibSRGS.Relaxed.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer);) {
+        try (InputMethods inputMethods = new InputMethods(
+                SpeechRecognitionTestUtils.getInputMethod(TeaseLibSRGS.Relaxed.class))) {
+            SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
             Choices choices1 = new Choices(Locale.ENGLISH, Intention.Confirm, choice("Foo"));
-            SpeechRecognition sr = recognizer.get(choices1.locale);
 
-            Prompt prompt1 = new Prompt(choices1, new InputMethods(inputMethod));
+            Prompt prompt1 = new Prompt(choices1, inputMethods);
             prompt1.lock.lockInterruptibly();
             try {
                 inputMethod.show(prompt1);
-                assertTrue(sr.isActive());
-                sr.emulateRecogntion("Bar");
+                inputMethod.emulateRecogntion("Bar");
                 assertFalse("Bar unexpected", prompt1.click.await(1, TimeUnit.SECONDS));
                 inputMethod.dismiss(prompt1);
                 assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
-                assertFalse(sr.isActive());
 
                 Choices choices2 = new Choices(Locale.ENGLISH, Intention.Confirm, choice("Bar"));
-                Prompt prompt2 = new Prompt(choices2, new InputMethods(inputMethod));
+                Prompt prompt2 = new Prompt(choices2, inputMethods);
                 prompt2.lock.lockInterruptibly();
                 try {
                     inputMethod.show(prompt2);
-                    assertTrue(sr.isActive());
-                    sr.emulateRecogntion("Bar");
+                    inputMethod.emulateRecogntion("Bar");
                     assertTrue("Bar expected", prompt2.click.await(1, TimeUnit.SECONDS));
                     assertEquals(new Prompt.Result(0), prompt2.result());
-                    assertFalse(sr.isActive());
                 } finally {
                     prompt2.lock.unlock();
                 }
 
                 inputMethod.show(prompt1);
-                assertTrue(sr.isActive());
-                sr.emulateRecogntion("Bar");
+                inputMethod.emulateRecogntion("Bar");
                 assertFalse("Bar unexpected", prompt1.click.await(1, TimeUnit.SECONDS));
                 inputMethod.dismiss(prompt1);
                 assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
-                assertFalse(sr.isActive());
 
                 inputMethod.show(prompt1);
-                assertTrue(sr.isActive());
-                sr.emulateRecogntion("Foo");
+                inputMethod.emulateRecogntion("Foo");
                 assertTrue("Foo expected", prompt1.click.await(1, TimeUnit.SECONDS));
                 assertEquals(new Prompt.Result(0), prompt1.result());
-                assertFalse(sr.isActive());
             } finally {
                 prompt1.lock.unlock();
             }

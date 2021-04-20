@@ -4,7 +4,7 @@ package teaselib.core.ui;
  * @author Citizen-Cane
  *
  */
-public interface InputMethod {
+public interface InputMethod extends teaselib.core.Closeable {
 
     public interface Setup {
         void apply();
@@ -21,8 +21,10 @@ public interface InputMethod {
     void dismiss(Prompt prompt) throws InterruptedException;
 
     public interface Listener {
+
         Prompt.Result promptShown(Prompt prompt);
 
         void promptDismissed(Prompt prompt);
     }
+
 }

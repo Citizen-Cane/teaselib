@@ -1,18 +1,12 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.as;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRecognizedAsHypothesis;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertRejected;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.getRecognizer;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.withoutPunctation;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.util.Locale;
 
 import org.junit.Test;
 
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
@@ -404,13 +398,11 @@ public class SpeechRecognitionComplexTest {
     public void testSRGSBuilderIdenticalPhrasesInDifferentChoices() throws InterruptedException {
         Choices choices = identicalPhrasesInDifferentChoices();
 
-        try (SpeechRecognizer recognizer = getRecognizer(TeaseLibSRGS.Strict.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
+        try (SpeechRecognitionInputMethod inputMethod = getInputMethod(TeaseLibSRGS.Strict.class)) {
             assertRecognized(inputMethod, choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0));
         }
 
-        try (SpeechRecognizer recognizer = getRecognizer(TeaseLibSRGS.Relaxed.class);
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
+        try (SpeechRecognitionInputMethod inputMethod = getInputMethod(TeaseLibSRGS.Relaxed.class)) {
             // Correct phrase not recognized - but acceptable since the choices definition
             // -> TODO add validation task for PCM-scripts
             assertRejected(inputMethod, choices, withoutPunctation("Yes, of course, Miss"));

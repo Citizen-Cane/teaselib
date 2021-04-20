@@ -53,7 +53,7 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     private Future<?> resultWorker;
 
-    public AbstractInputMethod(ExecutorService executor) {
+    protected AbstractInputMethod(ExecutorService executor) {
         this.executor = executor;
     }
 
@@ -168,6 +168,7 @@ public abstract class AbstractInputMethod implements InputMethod {
             } else if (!resultWorker.isCancelled()) {
                 resultWorker.cancel(true);
             }
+            resultWorker = null;
 
             try {
                 boolean tryLock = showLock.tryLock();
@@ -194,5 +195,16 @@ public abstract class AbstractInputMethod implements InputMethod {
     }
 
     protected abstract void handleDismiss(Prompt prompt) throws InterruptedException;
+
+    @Override
+    public void close() {
+        Future<?> result = resultWorker;
+        activePrompt.updateAndGet(prompt -> {
+            if (result != null && !result.isDone() && !result.isCancelled()) {
+                resultWorker.cancel(true);
+            }
+            return prompt;
+        });
+    }
 
 }

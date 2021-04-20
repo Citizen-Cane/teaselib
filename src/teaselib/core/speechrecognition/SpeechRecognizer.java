@@ -33,10 +33,6 @@ public class SpeechRecognizer implements Closeable {
     private final Configuration config;
     private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
 
-    public SpeechRecognizer(Configuration config) {
-        this(config, new AudioSync());
-    }
-
     public SpeechRecognizer(Configuration config, AudioSync audioSync) {
         this.config = config;
         this.audioSync = audioSync;

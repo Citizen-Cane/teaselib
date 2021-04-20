@@ -16,7 +16,8 @@ public:
     static std::vector<std::wstring> wstringArray(JNIEnv* env, jobjectArray jarray);
 
 	static jobject newList(JNIEnv* env, size_t capacity);
-	static jobject asList(JNIEnv* env, const std::vector<std::string>& elements);
+    static jobject newNativeObjectList(JNIEnv* env, size_t capacity);
+    static jobject asList(JNIEnv* env, const std::vector<std::string>& elements);
 	static jobject asList(JNIEnv* env, const std::vector<NativeObject*>& elements);
 	static jobject asList(JNIEnv* env, const std::vector<jobject>& elements);
 

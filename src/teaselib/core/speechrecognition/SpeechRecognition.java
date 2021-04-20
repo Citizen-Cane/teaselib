@@ -109,7 +109,7 @@ public class SpeechRecognition {
         return implementation.prepare(choices);
     }
 
-    public void apply(@SuppressWarnings("hiding") PreparedChoices preparedChoices) {
+    public void apply(PreparedChoices preparedChoices) {
         this.preparedChoices = preparedChoices;
     }
 

@@ -63,7 +63,7 @@ public class Debugger {
     }
 
     public Debugger(TeaseLib teaseLib) {
-        this(teaseLib, () -> {
+        this(teaseLib, () -> { //
         });
     }
 

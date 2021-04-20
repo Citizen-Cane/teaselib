@@ -1,6 +1,6 @@
 package teaselib.core.ui;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import java.util.function.BooleanSupplier;
  * @author Citizen-Cane
  *
  */
-public class InputMethods implements Iterable<InputMethod> {
+public class InputMethods implements Iterable<InputMethod>, teaselib.core.Closeable {
 
     public static class Initializers extends HashMap<Class<? extends InputMethod>, InputMethod.Setup> {
         private static final long serialVersionUID = 1L;
@@ -81,6 +81,11 @@ public class InputMethods implements Iterable<InputMethod> {
             initializers.put(inputMethod.getClass(), inputMethod.getSetup(choices));
         }
         return initializers;
+    }
+
+    @Override
+    public void close() {
+        elements.stream().forEach(InputMethod::close);
     }
 
 }

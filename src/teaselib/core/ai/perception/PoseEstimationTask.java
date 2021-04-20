@@ -32,7 +32,7 @@ import teaselib.core.util.ExceptionUtil;
 class PoseEstimationTask implements Callable<PoseAspects> {
     static final Logger logger = LoggerFactory.getLogger(PoseEstimationTask.class);
 
-    private static final Runnable Noop = () -> {
+    private static final Runnable Noop = () -> { //
     };
 
     private final TeaseLibAI teaseLibAI;
@@ -59,7 +59,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         return poseAspects.get();
     }
 
-    private void throwIfUnsupported(Interest interest) {
+    private static void throwIfUnsupported(Interest interest) {
         if (interest != Interest.Status && interest != Interest.Proximity && interest != Interest.HeadGestures) {
             // TODO manage multiple models (e.g. mobilenet_thin & CMU)
             throw new UnsupportedOperationException(

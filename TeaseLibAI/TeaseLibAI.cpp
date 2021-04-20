@@ -26,8 +26,19 @@ extern "C"
  * Signature: ()Z
  */
 	JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_TeaseLibAI_initOpenCL
-	(JNIEnv*, jobject) {
-		return OpenCL::init();
+	(JNIEnv* env, jobject) {
+		try {
+			return OpenCL::init();
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
+			return JNI_FALSE;
+		} catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+			return JNI_FALSE;
+		} catch (JNIException& e) {
+			e.rethrow();
+			return JNI_FALSE;
+		}
 	}
 
 	/*
@@ -37,14 +48,25 @@ extern "C"
 	 */
 	JNIEXPORT jobject JNICALL Java_teaselib_core_ai_TeaseLibAI_sceneCaptures
 	(JNIEnv* env, jobject) {
-		auto cameras = VideoCapture::devices();
-		vector<NativeObject*> sceneCaptures;
+		try {
+			auto cameras = VideoCapture::devices();
+			vector<NativeObject*> sceneCaptures;
 
-		for_each(cameras.begin(), cameras.end(), [&sceneCaptures, env](const VideoCapture::Devices::value_type& cameraInfo) {
-			sceneCaptures.push_back(new SceneCapture(env, cameraInfo.second));
-		});
+			for_each(cameras.begin(), cameras.end(), [&sceneCaptures, env](const VideoCapture::Devices::value_type& cameraInfo) {
+				sceneCaptures.push_back(new SceneCapture(env, cameraInfo.second));
+			});
 
-		return env->NewGlobalRef(JNIUtilities::asList(env, sceneCaptures));
+			return JNIUtilities::asList(env, sceneCaptures);
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
+			return nullptr;
+		} catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+			return nullptr;
+		} catch (JNIException& e) {
+			e.rethrow();
+			return nullptr;
+		}
 	}
 
 }

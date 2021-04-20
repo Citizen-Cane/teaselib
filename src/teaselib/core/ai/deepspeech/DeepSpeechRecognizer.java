@@ -173,20 +173,17 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     }
 
     private List<Rule> rules() {
-        return CodeDuration.executionTimeMillis(logger, "Building rules took {} ms", () -> {
-            List<Rule> rules;
-            List<Result> results = results();
-            if (results == null || results.isEmpty()) {
-                rules = Collections.emptyList();
-            } else {
-                if (logger.isInfoEnabled()) {
-                    logger.info("DeepSpeech results = \n{}",
-                            results.stream().map(Objects::toString).collect(joining("\n")));
-                }
-                rules = RuleBuilder.rules(current.phrases, results);
+        List<Result> results = results();
+        if (results == null || results.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            if (logger.isInfoEnabled()) {
+                logger.info("DeepSpeech results = \n{}",
+                        results.stream().map(Objects::toString).collect(joining("\n")));
             }
-            return rules;
-        });
+            return CodeDuration.executionTimeMillis(logger, "Building rules took {} ms",
+                    () -> RuleBuilder.rules(current.phrases, results));
+        }
     }
 
     private final class PreparedChoicesImplementation implements PreparedChoices {

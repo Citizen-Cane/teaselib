@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.AudioSync;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.AudioLevelUpdatedEventArgs;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
@@ -35,7 +36,7 @@ import teaselib.util.math.WeightNormal;
  * @author Citizen-Cane
  *
  */
-public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.Closeable {
+public class SpeechRecognitionInputMethod implements InputMethod {
     private static final float AWARENESS_BONUS = 0.6666f;
 
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
@@ -46,7 +47,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
         RecognitionRejected
     }
 
-    private final SpeechRecognizer speechRecognizer;
+    protected final SpeechRecognizer speechRecognizer;
     private final Map<Locale, SpeechRecognition> usedRecognitionInstances = new HashMap<>();
     private final AudioSignalProblems audioSignalProblems;
     public final SpeechRecognitionEvents events;
@@ -63,8 +64,8 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     private Hypothesis hypothesis = null;
     private float awarenessBonus;
 
-    public SpeechRecognitionInputMethod(SpeechRecognizer speechRecognizer) {
-        this.speechRecognizer = speechRecognizer;
+    public SpeechRecognitionInputMethod(Configuration config, AudioSync audioSync) {
+        this.speechRecognizer = new SpeechRecognizer(config, audioSync);
         this.audioSignalProblems = new AudioSignalProblems();
         this.events = new SpeechRecognitionEvents();
         this.audioSync = speechRecognizer.audioSync;
@@ -641,6 +642,7 @@ public class SpeechRecognitionInputMethod implements InputMethod, teaselib.core.
     @Override
     public void close() {
         usedRecognitionInstances.values().stream().map(recognizer -> recognizer.events).forEach(this::remove);
+        speechRecognizer.close();
     }
 
     public void setFaceToFace(boolean aware) {

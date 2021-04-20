@@ -164,4 +164,9 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         eventListeners.stream().forEach(e -> e.promptDismissed(prompt));
     }
 
+    @Override
+    public void close() {
+        //
+    }
+
 }

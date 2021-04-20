@@ -1,9 +1,9 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.awaitResult;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +21,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.AudioSync;
 import teaselib.core.ResourceLoader;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
@@ -86,6 +88,17 @@ public class SpeechRecognitionHandcraftedXmlTest {
 
     }
 
+    private static class XmlTestableSpeechRecognitionInputMethod extends SpeechRecognitionInputMethod {
+
+        public XmlTestableSpeechRecognitionInputMethod(Configuration config, AudioSync audioSync) {
+            super(config, audioSync);
+        }
+
+        SpeechRecognizer getRecognizer() {
+            return super.speechRecognizer;
+        }
+    }
+
     private static List<Rule> emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
             Prompt.Result expected, Prompt.Result.Accept mode) throws IOException, InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
@@ -95,34 +108,35 @@ public class SpeechRecognitionHandcraftedXmlTest {
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
         try (InputStream inputStream = resources.get(resource);) {
             byte[] xml = Stream.toByteArray(inputStream);
-            try (SpeechRecognizer sR = SpeechRecognitionTestUtils.getRecognizer(TestableTeaseLibSRGS.class);) {
-                SpeechRecognition sr = sR.get(Foobar.locale);
-                try (SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sR) {
-                    @Override
-                    public Setup getSetup(Choices choices) {
-                        Setup setup = super.getSetup(choices);
-                        return () -> {
-                            setup.apply();
-                            String xmlToString = new String(xml);
-                            logger.info("Injecting handcrafted xml\n{}", xmlToString);
-                            PreparedChoicesImplementation preparedChoices;
-                            try {
-                                SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices,
-                                        SpeechRecognitionNativeImplementation.languageCode(Foobar.locale));
-                                IntUnaryOperator mapper = builder.mapping::choice;
-                                preparedChoices = ((TestableTeaseLibSRGS) sr.implementation).new PreparedChoicesImplementation(
-                                        choices, builder.slices, xml, mapper);
-                                sr.apply(preparedChoices);
-                            } catch (ParserConfigurationException | TransformerException e) {
-                                throw asRuntimeException(e);
-                            }
+            try (SpeechRecognitionInputMethod inputMethod = new XmlTestableSpeechRecognitionInputMethod(
+                    getConfig(TestableTeaseLibSRGS.class), new AudioSync()) {
+                @Override
+                public Setup getSetup(Choices choices) {
+                    Setup setup = super.getSetup(choices);
+                    return () -> {
+                        setup.apply();
+                        String xmlToString = new String(xml);
+                        logger.info("Injecting handcrafted xml\n{}", xmlToString);
+                        PreparedChoicesImplementation preparedChoices;
+                        try {
+                            SRGSPhraseBuilder builder = new SRGSPhraseBuilder(choices,
+                                    SpeechRecognitionNativeImplementation.languageCode(Foobar.locale));
+                            IntUnaryOperator mapper = builder.mapping::choice;
 
-                        };
-                    }
-                };) {
-                    Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
-                    return awaitResult(prompt, inputMethod, emulatedRecognitionResult, expected);
+                            SpeechRecognition sr = getRecognizer().get(choices.locale);
+                            preparedChoices = ((TestableTeaseLibSRGS) sr.implementation).new PreparedChoicesImplementation(
+                                    choices, builder.slices, xml, mapper);
+                            sr.apply(preparedChoices);
+
+                        } catch (ParserConfigurationException | TransformerException e) {
+                            throw asRuntimeException(e);
+                        }
+
+                    };
                 }
+            };) {
+                Prompt prompt = new Prompt(Foobar, new InputMethods(inputMethod), mode);
+                return awaitResult(prompt, inputMethod, emulatedRecognitionResult, expected);
             }
         }
     }

@@ -1,13 +1,8 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,16 +42,30 @@ public class SpeechRecognitionTestUtils {
 
     public static final int RECOGNITION_TIMEOUT_MILLIS = 5000;
 
-    public static SpeechRecognizer getRecognizer() {
-        return getRecognizer(TestableTeaseLibSR.class);
-    }
-
     public static SpeechRecognizer getRecognizer(Class<? extends SpeechRecognitionNativeImplementation> srClass) {
         DebugSetup setup = new DebugSetup().withInput();
         Configuration config = new Configuration();
         setup.applyTo(config);
         config.set(SpeechRecognizer.Config.Default, srClass.getName());
         return new SpeechRecognizer(config, new AudioSync());
+    }
+
+    public static SpeechRecognitionInputMethod getInputMethod() {
+        return getInputMethod(TestableTeaseLibSR.class);
+    }
+
+    public static SpeechRecognitionInputMethod getInputMethod(
+            Class<? extends SpeechRecognitionNativeImplementation> srClass) {
+        Configuration config = getConfig(srClass);
+        return new SpeechRecognitionInputMethod(config, new AudioSync());
+    }
+
+    public static Configuration getConfig(Class<? extends SpeechRecognitionNativeImplementation> srClass) {
+        DebugSetup setup = new DebugSetup().withInput();
+        Configuration config = new Configuration();
+        setup.applyTo(config);
+        config.set(SpeechRecognizer.Config.Default, srClass.getName());
+        return config;
     }
 
     private SpeechRecognitionTestUtils() {
@@ -74,8 +83,7 @@ public class SpeechRecognitionTestUtils {
 
     public static List<Rule> assertRecognizedAsHypothesis(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
-        try (SpeechRecognizer recognizer = getRecognizer();
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
+        try (SpeechRecognitionInputMethod inputMethod = getInputMethod()) {
             return assertRecognizedAsHypothesis(inputMethod, choices, phrase, expected);
         }
     }
@@ -95,8 +103,7 @@ public class SpeechRecognitionTestUtils {
 
     public static List<Rule> emulateSpeechRecognition(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
-        try (SpeechRecognizer recognizer = getRecognizer();
-                SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(recognizer)) {
+        try (SpeechRecognitionInputMethod inputMethod = getInputMethod()) {
             return emulateSpeechRecognition(inputMethod, choices, phrase, expected);
         }
     }

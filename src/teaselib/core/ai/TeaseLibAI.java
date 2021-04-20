@@ -14,11 +14,12 @@ import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.SceneCapture;
 import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.jni.NativeObjectList;
 
 public class TeaseLibAI implements Closeable {
     public static final long CAPTURE_DEVICE_POLL_DURATION_MILLIS = 5000;
 
-    private final boolean haveAccelleratedImageProcesing;
+    private final boolean haveAccelleratedImageProcessing;
     private final NamedExecutorService cl;
     private final NamedExecutorService cpu;
 
@@ -26,8 +27,8 @@ public class TeaseLibAI implements Closeable {
         teaselib.core.jni.LibraryLoader.load("TeaseLibAI");
         NamedExecutorService executor = NamedExecutorService
                 .sameThread(TeaseLibAI.class.getSimpleName() + " OpenCL Inference");
-        haveAccelleratedImageProcesing = initializeOpenCLInExecutorThread(executor);
-        if (haveAccelleratedImageProcesing) {
+        haveAccelleratedImageProcessing = initializeOpenCLInExecutorThread(executor);
+        if (haveAccelleratedImageProcessing) {
             cl = executor;
         } else {
             cl = null;
@@ -49,7 +50,7 @@ public class TeaseLibAI implements Closeable {
 
     private native boolean initOpenCL();
 
-    public native List<SceneCapture> sceneCaptures();
+    public native NativeObjectList<SceneCapture> sceneCaptures();
 
     @Override
     public void close() {
@@ -84,23 +85,24 @@ public class TeaseLibAI implements Closeable {
     public SceneCapture awaitCaptureDevice(long timeout, TimeUnit unit) throws InterruptedException {
         long durationMillis = TimeUnit.MILLISECONDS.convert(timeout, unit);
         while (durationMillis >= 0) {
-            List<SceneCapture> devices = sceneCaptures();
-            if (devices.isEmpty()) {
-                if (durationMillis > 0) {
-                    long sleepMillis = Math.min(CAPTURE_DEVICE_POLL_DURATION_MILLIS, durationMillis);
-                    Thread.sleep(sleepMillis);
-                    durationMillis -= sleepMillis;
+            try (NativeObjectList<SceneCapture> devices = sceneCaptures()) {
+                if (devices.isEmpty()) {
+                    if (durationMillis > 0) {
+                        long sleepMillis = Math.min(CAPTURE_DEVICE_POLL_DURATION_MILLIS, durationMillis);
+                        Thread.sleep(sleepMillis);
+                        durationMillis -= sleepMillis;
+                    } else {
+                        break;
+                    }
                 } else {
-                    break;
-                }
-            } else {
-                Optional<SceneCapture> device = find(devices, EnclosureLocation.External);
-                if (device.isPresent()) {
-                    return device.get();
-                } else {
-                    device = find(devices, EnclosureLocation.Front);
+                    Optional<SceneCapture> device = find(devices, EnclosureLocation.External);
+                    if (device.isEmpty()) {
+                        device = find(devices, EnclosureLocation.Front);
+                    }
                     if (device.isPresent()) {
-                        return device.get();
+                        SceneCapture captureDevice = device.get();
+                        devices.remove(captureDevice);
+                        return captureDevice;
                     }
                 }
             }
@@ -125,7 +127,7 @@ public class TeaseLibAI implements Closeable {
     }
 
     public NamedExecutorService getExecutor(ExecutionType executionType) {
-        if (executionType == ExecutionType.Accelerated && haveAccelleratedImageProcesing) {
+        if (executionType == ExecutionType.Accelerated && haveAccelleratedImageProcessing) {
             return cl;
         } else {
             return cpu;

@@ -224,4 +224,10 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         }
     }
 
+    @Override
+    public void close() {
+        super.executor.shutdown();
+        super.close();
+    }
+
 }

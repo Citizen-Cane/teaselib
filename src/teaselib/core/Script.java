@@ -42,7 +42,6 @@ import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethodEventArgs;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -107,8 +106,7 @@ public abstract class Script {
 
             InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
             BooleanSupplier canSpeak = () -> !teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied();
-            SpeechRecognizer speechRecognizer = new SpeechRecognizer(teaseLib.config, scriptRenderer.audioSync);
-            inputMethods.add(new SpeechRecognitionInputMethod(speechRecognizer), canSpeak);
+            inputMethods.add(new SpeechRecognitionInputMethod(teaseLib.config, scriptRenderer.audioSync), canSpeak);
             inputMethods.add(teaseLib.host.inputMethod());
             inputMethods.add(scriptRenderer.scriptEventInputMethod);
 

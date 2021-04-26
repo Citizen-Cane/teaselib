@@ -44,7 +44,7 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
     private final TimeAdvanceListener timeAdvanceListener = this::handleRealTime;
     private final CheckPointListener checkPointListener = this::handleFrozenTime;
 
-    private void handleRealTime(TimeAdvancedEvent e) {
+    private void handleRealTime(@SuppressWarnings("unused") TimeAdvancedEvent e) {
         synchronized (this) {
             Prompt prompt = activePrompt.get();
             if (prompt != null) {
@@ -86,7 +86,7 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
     }
 
     private void handleFrozenTime(CheckPoint checkPoint) {
-        // TODO add explicit late reply for script functions to improve code coverage
+        // TODO implement explicit late reply for script functions to improve code coverage
         // - differentiate between script confirmation in time or late
         if (checkPoint == CheckPoint.ScriptFunction.Started || checkPoint == CheckPoint.ScriptFunction.Finished) {
             synchronized (this) {
@@ -95,35 +95,23 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
                 } else {
                     Prompt prompt = activePrompt.get();
                     if (prompt != null) {
-                        Result debugResponse = responses.getResponse(prompt.choices);
-                        if (debugResponse.response == Response.Choose) {
-                            waitUntilScriptFunctionIsCancelled();
-                        } else if (debugResponse.response == Response.Invoke) {
-                            // TODO This might not work with frozen time
-                            logger.info("Signalling handler invocation {} to {}", debugResponse, prompt);
-                            invokeHandlerOnce(prompt, debugResponse);
-                        } else if (debugResponse.response == Response.Ignore) {
+                        Result response = responses.getResponse(prompt.choices);
+                        if (response.response == Response.Choose) {
+                            respond(response);
+                        } else if (response.response == Response.Invoke) {
+                            // TODO This might not work when time is frozen
+                            logger.info("Signalling handler invocation {} to {}", response, prompt);
+                            invokeHandlerOnce(prompt, response);
+                        } else if (response.response == Response.Ignore) {
                             logger.info("Ignoring {}", result);
                         } else {
-                            throw new UnsupportedOperationException(debugResponse.toString());
+                            throw new UnsupportedOperationException(response.toString());
                         }
                     }
                 }
             }
         } else {
             // Ignore
-        }
-    }
-
-    private void waitUntilScriptFunctionIsCancelled() {
-        synchronized (this) {
-            try {
-                while (System.currentTimeMillis() < Long.MAX_VALUE) {
-                    wait(Long.MAX_VALUE);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
         }
     }
 
@@ -142,6 +130,7 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
             while (result == Prompt.Result.UNDEFINED) {
                 wait();
             }
+
             return result;
         }
     }
@@ -197,21 +186,38 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
 
     public void replyScriptFunction(String match) {
         synchronized (this) {
-            if (!dismissed()) {
-                Prompt prompt = activePrompt.get();
-                if (prompt == null) {
-                    throw new IllegalStateException("No active prompt: " + match);
+            Prompt prompt = activePrompt.get();
+            if (prompt == null) {
+                throw new IllegalStateException("No active prompt: " + match);
+            } else {
+                Result response = DebugResponses.getResponse(prompt.choices, new ResponseAction(match), null);
+                if (response != null) {
+                    respond(response);
                 } else {
-                    Result response = DebugResponses.getResponse(prompt.choices, new ResponseAction(match), null);
-                    if (response != null) {
-                        result = new Prompt.Result(response.index);
-                        notifyAll();
-                    } else {
-                        throw new IllegalArgumentException("Prompt " + prompt + " doesn't match '" + match + "'");
-                    }
+                    throw new IllegalArgumentException("Prompt " + prompt + " doesn't match '" + match + "'");
                 }
             }
         }
+    }
+
+    private void respond(Result response) {
+        logger.info("Dismissing script function with {}", response);
+        result = new Prompt.Result(response.index);
+        notifyAll();
+        waitUntilScriptFunctionIsCancelled();
+    }
+
+    private void waitUntilScriptFunctionIsCancelled() {
+        synchronized (this) {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    wait(Long.MAX_VALUE);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+        throw new ScriptInterruptedException();
     }
 
     @Override

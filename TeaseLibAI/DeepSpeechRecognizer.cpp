@@ -321,7 +321,7 @@ DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languag
 		}
 	})
 {
-	recognizer.enableExternalScorer();
+	recognizer.enableExternalScorer(true);
 }
 
 DeepSpeechRecognizer::~DeepSpeechRecognizer()

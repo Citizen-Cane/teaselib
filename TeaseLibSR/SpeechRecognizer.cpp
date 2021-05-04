@@ -27,8 +27,7 @@
 
 using namespace std;
 
-SpeechRecognizer::SpeechRecognizer(JNIEnv *env, const wchar_t* locale)
-    //: NativeObject(env)
+SpeechRecognizer::SpeechRecognizer(const wchar_t* locale)
     : locale(locale)
 	, langID(0x0000)
 	, eventHandler(nullptr)
@@ -235,8 +234,8 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 						case SPEI_HYPOTHESIS: {
 							// Estimated result - can still be recognized false
 							ISpRecoResult* pResult = spevent.RecoResult();
-							LPWSTR pszCoMemResultText = NULL;
-							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
+							LPWSTR pszCoMemResultText = nullptr;
+							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, nullptr);
 							if (SUCCEEDED(recognizerStatus)) {
 								SpeechRecognizedEvent(env, jthis, "speechDetected", jteaselibsr).fire(pResult);
 							}
@@ -248,8 +247,8 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 						case SPEI_FALSE_RECOGNITION: {
 							// False recognition
 							ISpRecoResult* pResult = spevent.RecoResult();
-							LPWSTR pszCoMemResultText = NULL;
-							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
+							LPWSTR pszCoMemResultText = nullptr;
+							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, nullptr);
 							if (SUCCEEDED(recognizerStatus)) {
 								SpeechRecognizedEvent(env, jthis, "recognitionRejected", jteaselibsr).fire(pResult);
 							}
@@ -266,7 +265,7 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 						}
 						case SPEI_TTS_AUDIO_LEVEL: {
 							// Audio level for level meter
-							AudioLevelUpdatedEvent(env, jthis, "audioLevelUpdated").fire(spevent.wParam);
+							AudioLevelUpdatedEvent(env, jthis, "audioLevelUpdated").fire(static_cast<int>(spevent.wParam));
 							break;
 						}
 						case SPEI_INTERFERENCE: {
@@ -283,7 +282,7 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 				} catch (std::exception& e) {
 					cerr << "Uncatched std::exception in SpeechRecognizer::EventHandler::eventLoop: " << e.what() << endl;
 				} catch (NativeException& e) {
-					wcerr << "Uncatched native exception in SpeechRecognizer::EventHandler::eventLoop: " << e.message.c_str() << "(error code=" << e.errorCode << ")" << endl;
+					wcerr << "Uncatched native exception in SpeechRecognizer::EventHandler::eventLoop: " << e.message << "(error code=" << e.errorCode << ")" << endl;
 				} catch (JNIException& e) {
 					JNIStringUTF8 message(env, e.getMessage());
 					cerr << "Uncatched Java exception in SpeechRecognizer::EventHandler::eventLoop: " << message.operator LPCSTR() << endl;
@@ -364,9 +363,8 @@ public:
 		/* [in] */ const long lLineNumber,
 		/* [in] */ HRESULT hr,
 		/* [in] */ LPCWSTR pszDescription,
-		/* [in][annotation] */
-		_In_opt_  LPCWSTR pszHelpFile,
-		/* [in] */ DWORD dwHelpContext) override {
+		/* [in][annotation] */ _In_opt_  LPCWSTR /* pszHelpFile */,
+		/* [in] */ DWORD /* dwHelpContext */ ) override {
 		if (errorAdded) errors << std::endl;
 		errors << L"line " << lLineNumber;
 		errors << L" hr=0x" << std::uppercase << std::setfill(L'0') << std::setw(8) << std::hex << hr;

@@ -36,7 +36,7 @@ extern "C"
         try {
             Objects::requireNonNull(L"locale", jlanguageCode);
             JNIString languageCode(env, jlanguageCode);
-            SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, languageCode);
+            SpeechRecognizer* speechRecognizer = new SpeechRecognizer(languageCode);
             if (speechRecognizer == nullptr) throw COMException(E_OUTOFMEMORY);
             return reinterpret_cast<jlong>(speechRecognizer);
         } catch (NativeException& e) {

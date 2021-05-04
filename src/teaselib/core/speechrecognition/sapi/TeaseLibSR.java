@@ -1,5 +1,8 @@
 package teaselib.core.speechrecognition.sapi;
 
+import static teaselib.core.jni.NativeLibraries.TEASELIB_FRAMEWORK;
+import static teaselib.core.jni.NativeLibraries.TEASELIB_SR;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -7,6 +10,7 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.jni.NativeLibraries;
 import teaselib.core.speechrecognition.HearingAbility;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
@@ -23,7 +27,7 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     }
 
     private static long newNativeInstance(Locale locale) {
-        teaselib.core.jni.LibraryLoader.load("TeaseLibSR");
+        NativeLibraries.require(TEASELIB_FRAMEWORK, TEASELIB_SR);
         return newNativeInstance(locale, TeaseLibSR::newNativeInstance);
     }
 

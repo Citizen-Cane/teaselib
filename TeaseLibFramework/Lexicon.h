@@ -2,7 +2,7 @@
 
 #include <sapi.h>
 
-class Lexicon
+class TEASELIB_FRAMEWORK_EXPORT Lexicon
 {
 public:
 	Lexicon();

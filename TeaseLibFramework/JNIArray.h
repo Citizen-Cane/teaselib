@@ -31,9 +31,9 @@ public:
 	}
 
 protected:
-	jsize getSize();
-	E* getElements();
-	void releaseElements(int mode);
+	TEASELIB_FRAMEWORK_EXPORT jsize getSize();
+	TEASELIB_FRAMEWORK_EXPORT E* getElements();
+	TEASELIB_FRAMEWORK_EXPORT void releaseElements(int mode);
 };
 
 template JNIArray<jbyte, jbyteArray>;

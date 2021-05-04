@@ -14,7 +14,12 @@ NativeException::NativeException(const long errorCode, const wchar_t* message)
 
 NativeException::NativeException(long errorCode, const wchar_t* const message, const char* runtimeClass)
 	: errorCode(errorCode)
-	, message(message)
+	, message(_wcsdup(message))
 	, runtimeClass(runtimeClass)
 {
+}
+
+NativeException::~NativeException()
+{
+	delete message;
 }

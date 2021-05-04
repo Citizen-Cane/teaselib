@@ -2,7 +2,7 @@
 
 #include <jni.h>
 
-class Event {
+class TEASELIB_FRAMEWORK_EXPORT Event {
 public:
 	Event(JNIEnv *env, jobject jevent, const char* name);
 	virtual ~Event();

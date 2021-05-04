@@ -1,6 +1,8 @@
 package teaselib.core.ai;
 
-import static teaselib.core.util.ExceptionUtil.*;
+import static teaselib.core.jni.NativeLibraries.TEASELIB_AI;
+import static teaselib.core.jni.NativeLibraries.TEASELIB_FRAMEWORK;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,9 +16,11 @@ import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.SceneCapture;
 import teaselib.core.ai.perception.SceneCapture.EnclosureLocation;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.jni.NativeLibraries;
 import teaselib.core.jni.NativeObjectList;
 
 public class TeaseLibAI implements Closeable {
+
     public static final long CAPTURE_DEVICE_POLL_DURATION_MILLIS = 5000;
 
     private final boolean haveAccelleratedImageProcessing;
@@ -24,7 +28,7 @@ public class TeaseLibAI implements Closeable {
     private final NamedExecutorService cpu;
 
     public TeaseLibAI() throws UnsatisfiedLinkError {
-        teaselib.core.jni.LibraryLoader.load("TeaseLibAI");
+        NativeLibraries.require(TEASELIB_FRAMEWORK, TEASELIB_AI);
         NamedExecutorService executor = NamedExecutorService
                 .sameThread(TeaseLibAI.class.getSimpleName() + " OpenCL Inference");
         haveAccelleratedImageProcessing = initializeOpenCLInExecutorThread(executor);

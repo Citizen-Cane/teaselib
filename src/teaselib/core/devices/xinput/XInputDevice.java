@@ -1,5 +1,8 @@
 package teaselib.core.devices.xinput;
 
+import static teaselib.core.jni.NativeLibraries.TEASELIB_FRAMEWORK;
+import static teaselib.core.jni.NativeLibraries.TEASELIB_X360C;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -12,7 +15,7 @@ import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
-import teaselib.core.jni.LibraryLoader;
+import teaselib.core.jni.NativeLibraries;
 
 /**
  * Represents all XInput devices registered in the system.
@@ -22,6 +25,7 @@ import teaselib.core.jni.LibraryLoader;
  * @see XInputComponentsDelta
  */
 public class XInputDevice implements Device.Creatable {
+
     private static final String DeviceClassName = "XInput360GameController";
 
     private static DeviceCache<XInputDevice> Instance;
@@ -96,7 +100,7 @@ public class XInputDevice implements Device.Creatable {
                     "Invalid player number: " + playerNum + ". Must be between 0 and " + (MAX_PLAYERS - 1));
         }
         if (!libLoaded) {
-            LibraryLoader.load("TeaseLibx360c");
+            NativeLibraries.require(TEASELIB_FRAMEWORK, TEASELIB_X360C);
             for (int i = 0; i < MAX_PLAYERS; i++) {
                 DEVICES[i] = new XInputDevice(i);
             }

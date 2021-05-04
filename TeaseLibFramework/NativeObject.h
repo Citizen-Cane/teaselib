@@ -7,7 +7,7 @@
 #include "NativeException.h"
 #include "JNIException.h"
 
-class JObject {
+class TEASELIB_FRAMEWORK_EXPORT JObject {
 public:
 	JObject(JNIEnv* env);
 	JObject(JNIEnv* env, jobject jthis);
@@ -21,7 +21,7 @@ protected:
 	jobject jthis;
 };
 
-class NativeObject : public JObject {
+class TEASELIB_FRAMEWORK_EXPORT NativeObject : public JObject {
 public:
 	NativeObject(JNIEnv* env);
 	/* _declspec(deprecated("Use JNI-supplied jthis instead of member - remove jthis from native object class")) */
@@ -31,7 +31,7 @@ public:
 
 };
 
-class NativeInstance {
+class TEASELIB_FRAMEWORK_EXPORT NativeInstance {
 public:
 	template<class T> static T* get(JNIEnv* env, jobject jthis)
 	{

@@ -2,12 +2,11 @@
 
 #include "SpHelper.h"
 
-class Language {
+class TEASELIB_FRAMEWORK_EXPORT Language {
 public:
 	static const wchar_t* Unknown;
 
 	Language(ISpObjectToken * pVoiceToken);
-	Language(LANGID langId);
 	~Language();
 
 	static LANGID getLangID(ISpObjectToken * pVoiceToken);

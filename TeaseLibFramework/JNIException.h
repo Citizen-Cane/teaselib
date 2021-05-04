@@ -10,7 +10,7 @@
 
 class NativeException;
 
-class JNIException : public JNIObject<jthrowable>
+class TEASELIB_FRAMEWORK_EXPORT JNIException : public JNIObject<jthrowable>
 {
 public:
 	static void rethrow(JNIEnv* env, std::invalid_argument& e);

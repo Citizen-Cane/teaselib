@@ -15,11 +15,6 @@ Language::Language(ISpObjectToken* pVoiceToken) : langID(getLangID(pVoiceToken))
 	getDisplayName(langID, displayName, MAX_PATH);
 }
 
-Language::Language(LANGID langId) : langID(langID) {
-	getName(langID, sname, 6);
-	getDisplayName(langID, displayName, MAX_PATH);
-}
-
 Language::~Language() {
 }
 

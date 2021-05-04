@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bridj.BridJ;
 import org.bridj.Pointer;
@@ -20,34 +21,28 @@ import teaselib.core.util.Environment;
 
 public class LoquendoTTS extends TextToSpeechImplementation {
     private static final byte ASYNCHRONOUS = (byte) LoquendoTTSLibrary.ttsFALSE;
-
     private static final byte SYNCHRONOUS = (byte) LoquendoTTSLibrary.ttsTRUE;
 
-    private static LoquendoTTS instance = null;
-
-    public static synchronized TextToSpeechImplementation getInstance() throws IOException {
-        if (instance == null) {
-            if (Environment.SYSTEM == Environment.Windows) {
-                File library = new File(System.getenv("ProgramFiles"), "Loquendo/LTTS7/bin/LoqTTS7.dll");
-                if (library.exists()) {
-                    BridJ.getNativeLibrary("LoquendoTTS", library);
-                    instance = new LoquendoTTS();
-                } else {
-                    return Unsupported.Instance;
-                }
+    public static TextToSpeechImplementation newInstance() throws IOException {
+        if (Environment.SYSTEM == Environment.Windows) {
+            File library = new File(System.getenv("ProgramFiles"), "Loquendo/LTTS7/bin/LoqTTS7.dll");
+            if (library.exists()) {
+                BridJ.getNativeLibrary("LoquendoTTS", library);
+                return new LoquendoTTS();
             } else {
                 return Unsupported.Instance;
             }
+        } else {
+            return Unsupported.Instance;
         }
-        return instance;
     }
 
     private final List<Voice> voices;
 
     final Pointer<?> hSession;
-    Pointer<?> hReader = null;
+    final Pointer<?> hReader;
 
-    private boolean cancelSpeech = false;
+    private final AtomicBoolean cancelSpeech = new AtomicBoolean(false);
 
     private LoquendoTTS() {
         Pointer<Pointer<?>> phSession = Pointer.allocatePointer();
@@ -134,16 +129,16 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     @Override
     public void speak(String prompt) {
+        cancelSpeech.set(false);
         applyHintsAndSpeak(prompt, SYNCHRONOUS);
         waitForAsynchronousSpeech();
     }
 
     private void waitForAsynchronousSpeech() {
-        cancelSpeech = false;
         Pointer<Byte> bSignaled = Pointer.allocate(Byte.class);
         bSignaled.set((byte) 0);
         while (bSignaled.getByte() == 0) {
-            if (cancelSpeech) {
+            if (cancelSpeech.get()) {
                 checkResult(LoquendoTTSLibrary.ttsStop(hReader));
                 break;
             } else {
@@ -193,12 +188,14 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     @Override
     public void stop() {
-        cancelSpeech = true;
+        cancelSpeech.set(true);
     }
 
     @Override
     public void dispose() {
         stop();
+        LoquendoTTSLibrary.ttsDeleteReader(hReader);
+        LoquendoTTSLibrary.ttsDeleteSession(hSession);
     }
 
     @Override

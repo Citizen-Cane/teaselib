@@ -127,15 +127,15 @@ jobject JNIUtilities::enumValue(JNIEnv* env, const char* enumClass, const char* 
 vector<string> JNIUtilities::strings(JNIEnv* env, jobject jcollection)
 {
 	return list<string>(env, jcollection, [&env](jobject jelement)->string {
-		 return JNIStringUTF8(env, (jstring) jelement);
+		 return JNIStringUTF8(env, (jstring) jelement).c_str();
 	});
 }
 
 vector<wstring> JNIUtilities::wstrings(JNIEnv* env, jobject jcollection)
 {
 	return list<wstring>(env, jcollection, [&env](jobject jelement)->wstring {
-		return JNIString(env, (jstring) jelement);
-		});
+		return JNIString(env, (jstring) jelement).c_str();
+	});
 }
 
 vector<jobjectArray> JNIUtilities::objectArrays(JNIEnv* env, jobject jcollection)

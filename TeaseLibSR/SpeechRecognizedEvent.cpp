@@ -48,7 +48,7 @@ float getProbability(const SPPHRASERULE* rule)
 	}
 }
 
-jobject SpeechRecognizedEvent::getConfidenceField(JNIEnv *env, signed char confidence) const {
+jobject SpeechRecognizedEvent::getConfidenceField(signed char confidence) const {
     const char* confidenceFieldName = getConfidenceFieldName(confidence);
     jobject confidenceValue = env->GetStaticObjectField(
 		confidenceClass,
@@ -121,7 +121,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	wchar_t* text;
 	HRESULT hr = pResult->GetText(rule->ulFirstElement, rule->ulCountOfElements, false, &text, nullptr);
 	if (FAILED(hr)) {
-		jRule = newRule(L"Invalid", nullptr, -1, JNIUtilities::newSet(env), 0, 0, 0.0f, getConfidenceField(env, rule->Confidence));
+		jRule = newRule(L"Invalid", nullptr, -1, JNIUtilities::newSet(env), 0, 0, 0.0f, getConfidenceField(rule->Confidence));
 		if (env->ExceptionCheck()) throw JNIException(env);
 	} else {
 		std::vector<jobject> children;
@@ -142,7 +142,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 				rule->ulFirstElement,
 				rule->ulFirstElement + rule->ulCountOfElements,
 				getProbability(rule),
-				getConfidenceField(env, rule->Confidence));
+				getConfidenceField(rule->Confidence));
 		} else {
 			jRule = newRule(
 				ruleName.name.c_str(),
@@ -152,7 +152,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 				rule->ulFirstElement,
 				rule->ulFirstElement + rule->ulCountOfElements,
 				getProbability(rule),
-				getConfidenceField(env, rule->Confidence));
+				getConfidenceField(rule->Confidence));
 		}
 
 		if (text) {
@@ -164,14 +164,14 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	return jRule;
 }
 jobject SpeechRecognizedEvent::newRule(
-	const wchar_t* name, const wchar_t* text, int rule_index,
+	const wchar_t* ruleName, const wchar_t* text, int rule_index,
 	jobject choiceIndices,  ULONG fromElement, ULONG toElement,
 	float probability, jobject confidence) const
 {
 	jobject jrule = env->NewObject(
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/Set;IIFLteaselib/core/speechrecognition/Confidence;)V"),
-		static_cast<jstring>(JNIString(env, name)),
+		static_cast<jstring>(JNIString(env, ruleName)),
 		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
 		rule_index,
 		choiceIndices,
@@ -184,14 +184,14 @@ jobject SpeechRecognizedEvent::newRule(
 }
 
 jobject SpeechRecognizedEvent::newRule(
-	const wchar_t* name, const wchar_t* text, int rule_index,
+	const wchar_t* ruleName, const wchar_t* text, int rule_index,
 	const std::vector<jobject>& children,
 	ULONG fromElement, ULONG toElement, float probability, jobject confidence) const 
 {
 	jobject jrule = env->NewObject(
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/List;IIFLteaselib/core/speechrecognition/Confidence;)V"),
-		static_cast<jstring>(JNIString(env, name)),
+		static_cast<jstring>(JNIString(env, ruleName)),
 		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
 		rule_index,
 		JNIUtilities::asList(env, children),

@@ -2,7 +2,7 @@
 
 #include "JNIObject.h"
 
-template<typename T> class JNIStringT : public JNIObject<jstring>
+template<typename T> class TEASELIB_FRAMEWORK_EXPORT JNIStringT : public JNIObject<jstring>
 {
 public:
 	JNIStringT(JNIEnv *env, jstring string);

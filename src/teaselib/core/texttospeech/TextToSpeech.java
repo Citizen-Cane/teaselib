@@ -121,7 +121,7 @@ public class TextToSpeech {
         DelegateExecutor delegateThread = newDelegateExecutor(ttsClass.getSimpleName());
 
         delegateThread.run(() -> {
-            Method getInstance = ttsClass.getDeclaredMethod("getInstance");
+            Method getInstance = ttsClass.getDeclaredMethod("newInstance");
             TextToSpeechImplementation newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
             addSDK(newTTS, delegateThread);
         });

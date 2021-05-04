@@ -6,7 +6,7 @@
 
 #include "NativeException.h"
 
-class COMException : public NativeException {
+class TEASELIB_FRAMEWORK_EXPORT COMException : public NativeException {
 public:
 	COMException(HRESULT hr);
 	COMException(HRESULT hr, const wchar_t* message);

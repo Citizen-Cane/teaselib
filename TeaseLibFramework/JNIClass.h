@@ -2,7 +2,7 @@
 
 #include <jni.h>
 
-class JNIClass
+class TEASELIB_FRAMEWORK_EXPORT JNIClass
 {
 public:
 	JNIClass();

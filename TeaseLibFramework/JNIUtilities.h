@@ -9,7 +9,7 @@
 
 #include "NativeObject.h"
 
-class JNIUtilities
+class TEASELIB_FRAMEWORK_EXPORT JNIUtilities
 {
 public:
     static std::vector<std::string> stringArray(JNIEnv* env, jobjectArray jarray);

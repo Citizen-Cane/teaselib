@@ -50,7 +50,7 @@ void JNIException::rethrow(JNIEnv* env, NativeException& e) {
 		assert(throwable);
 		env->Throw(throwable);
 	} else {
-		jmethodID methodId = env->GetMethodID(jruntimeClass, "<init>", "(Ljava/lang/String;)V");
+		methodId = env->GetMethodID(jruntimeClass, "<init>", "(Ljava/lang/String;)V");
 		assert(methodId);
 		jthrowable throwable = static_cast<jthrowable>(env->NewObject(
 			jruntimeClass,
@@ -76,7 +76,6 @@ void JNIException::rethrow() const {
 }
 
 JNIString JNIException::getMessage() const {
-	jclass runtimeClass = env->GetObjectClass(jthis);
 	jstring message = static_cast<jstring>(env->CallObjectMethod(jthis, getMethodID("toString", "()Ljava/lang/String;")));
 	assert(message);
 	return JNIString(env, message);

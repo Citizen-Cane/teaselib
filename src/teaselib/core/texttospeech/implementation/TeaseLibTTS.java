@@ -1,19 +1,23 @@
 package teaselib.core.texttospeech.implementation;
 
+import static teaselib.core.jni.NativeLibraries.TEASELIB_FRAMEWORK;
+import static teaselib.core.jni.NativeLibraries.TEASELIB_TTS;
+
 import java.util.List;
 
+import teaselib.core.jni.NativeLibraries;
 import teaselib.core.texttospeech.TextToSpeechImplementation;
 import teaselib.core.texttospeech.Voice;
 
 public class TeaseLibTTS extends TextToSpeechImplementation {
-    private static TeaseLibTTS instance = null;
 
-    public static synchronized TeaseLibTTS getInstance() {
-        if (instance == null) {
-            teaselib.core.jni.LibraryLoader.load("TeaseLibTTS");
-            instance = new TeaseLibTTS(newNativeInstance());
+    public static TextToSpeechImplementation newInstance() {
+        try {
+            NativeLibraries.require(TEASELIB_FRAMEWORK, TEASELIB_TTS);
+            return new TeaseLibTTS(newNativeInstance());
+        } catch (UnsatisfiedLinkError e) {
+            return Unsupported.Instance;
         }
-        return instance;
     }
 
     // TODO refactor TextToSpeechImplementation to interface in order to derive from NativeObject

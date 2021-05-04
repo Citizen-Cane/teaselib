@@ -47,9 +47,6 @@
     <ClCompile Include="TeaseLibSR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dllmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SpeechRecognizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

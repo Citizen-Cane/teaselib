@@ -2,7 +2,7 @@
 
 #include "NativeException.h"
 
-class UnsupportedLanguageException : public NativeException {
+class TEASELIB_FRAMEWORK_EXPORT UnsupportedLanguageException : public NativeException {
 public:
 	UnsupportedLanguageException(HRESULT hr);
 	UnsupportedLanguageException(HRESULT hr, const wchar_t* message);

@@ -21,7 +21,7 @@ class SpeechRecognizer : private COMUser
 public:
 	typedef std::vector<std::wstring> Choices;
 
-	SpeechRecognizer(JNIEnv *env, const wchar_t* recognizerAttributes);
+	SpeechRecognizer(const wchar_t* recognizerAttributes);
 	virtual ~SpeechRecognizer();
 	void startEventHandler(JNIEnv* env, jobject jthis, jobject jevents, const std::function<void(void)>& signalInitialized);
 

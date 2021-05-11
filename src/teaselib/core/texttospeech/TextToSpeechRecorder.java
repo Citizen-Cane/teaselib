@@ -339,8 +339,7 @@ public class TextToSpeechRecorder {
 
     private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, String storageSoundFile,
             String mood, String text) throws InterruptedException {
-        String recordedSoundFile = generateMultithreadingIncomatibleTextToSpeechPlayer(actor, mood, text);
-
+        String recordedSoundFile = recordMultithreadingIncompatible(actor, mood, text);
         return storage.encode(() -> {
             if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
                 try {
@@ -348,11 +347,14 @@ public class TextToSpeechRecorder {
                             SpeechResourceFileTypeExtension);
                     String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
                     logger.info("Recording part {}", storageSoundFile);
-                    mp3.Main mp3Encoder = new mp3.Main();
+                    var mp3Encoder = new mp3.Main();
                     mp3Encoder.run(argv);
                     return storage.storeRecordedSoundFile(actor, voice, hash, encodedSoundFile, storageSoundFile).get();
                 } finally {
-                    Files.delete(Paths.get(recordedSoundFile));
+                    var path = Paths.get(recordedSoundFile);
+                    if (Files.exists(path)) {
+                        Files.delete(path);
+                    }
                 }
             } else {
                 return storage.storeRecordedSoundFile(actor, voice, hash, recordedSoundFile, storageSoundFile).get();
@@ -360,10 +362,9 @@ public class TextToSpeechRecorder {
         });
     }
 
-    private String generateMultithreadingIncomatibleTextToSpeechPlayer(Actor actor, String mood, String text)
-            throws InterruptedException {
-        return ttsPlayer.speak(actor, text, mood,
-                createTempFileName(SpeechResourceTempFilePrefix + "_", SpeechResourceFileUncompressedFormat));
+    private String recordMultithreadingIncompatible(Actor actor, String mood, String text) throws InterruptedException {
+        var filename = createTempFileName(SpeechResourceTempFilePrefix + "_", SpeechResourceFileUncompressedFormat);
+        return ttsPlayer.speak(actor, text, mood, filename);
     }
 
     private static String storageSoundFile(String name) {

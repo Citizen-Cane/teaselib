@@ -1,16 +1,16 @@
 #pragma once
 
-#include <COMUser.h>
+#include <jni.h>
+
+#include <JNIObject.h>
 #include <NativeObject.h>
 
-class Voice : public NativeObject, protected COMUser
-{
+class Voice : public NativeObject {
 public:
-	Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl);
-	virtual ~Voice();
-	operator ISpObjectToken*() const;
-	std::wstring guid;
-private:
-	ISpObjectToken* pVoiceToken;
-	HRESULT SpGetAttribute(_In_ ISpObjectToken * pObjToken, _In_ LPCWSTR pAttributeName, _Outptr_ PWSTR *ppszDescription);
+	Voice(JNIEnv* env);
+protected:
+	jobject getGenderField(const char* gender);
+	jobject getGenderField(const wchar_t* gender);
+	jobject newVoiceInfo(const JNIObject<jstring>& vendor, const JNIObject<jstring>& language, const JNIObject<jstring>& name);
+	jobject newNativeVoice(jobject ttsImpl, const JNIObject<jstring>& guid, jobject jgender, const JNIObject<jstring>& locale, jobject jvoiceInfo);
 };

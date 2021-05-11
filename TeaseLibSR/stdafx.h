@@ -11,4 +11,4 @@
 // Windows Header Files:
 #include <windows.h>
 
-#include <TeaseLibFramework.h>
+#include <TeaseLib.h>

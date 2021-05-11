@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS
  * Method:    newNativeInstance
- * Signature: ()J
+ * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_newNativeInstance
-  (JNIEnv *, jclass);
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS

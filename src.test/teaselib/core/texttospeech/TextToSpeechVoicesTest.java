@@ -42,10 +42,11 @@ public class TextToSpeechVoicesTest {
     }
 
     @Test
-    public void testEachVoice() throws InterruptedException, IOException {
+    public void testEachVoice() throws IOException {
         File testFile = testFolder.newFile(voice.guid() + ".wav");
 
-        String file = textToSpeech.speak(voice, "Test.", testFile);
+        String file = textToSpeech.speak(voice, "Test.", testFile, new String[] {});
         assertEquals(testFile.getAbsolutePath(), file);
+        assertTrue(testFile.exists());
     }
 }

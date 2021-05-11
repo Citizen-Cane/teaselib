@@ -7,4 +7,4 @@
 #include <windows.h>
 #include <Xinput.h>
 
-#include <TeaseLibFramework.h>
+#include <TeaseLib.h>

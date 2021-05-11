@@ -34,6 +34,10 @@ public abstract class TextToSpeechImplementation implements teaselib.core.Closea
 
     public abstract void dispose();
 
+    // TODO simplify hint system ->
+    // - use set instead of list
+    // - apply from java side
+    // - apply on native side only when changed
     protected String[] hints = null;
 
     public void setHints(String... hints) {

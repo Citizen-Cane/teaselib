@@ -1,26 +1,37 @@
 #include "stdafx.h"
 
-#include <assert.h>
-
-#include <locale.h>
-#include <sapi.h>
-#include <sperror.h>
-
-#include <COMException.h>
-#include <JNIString.h>
-#include <Language.h>
+#include <JNIClass.h>
 
 #include "Voice.h"
 
-// sphelper in Windows 8.1 SDK uses deprecated function GetVersionEx,
-// so for the time being, we'll use a copy with the annoying stuff commented out or changed
-#include "sphelper.h"
+Voice::Voice(JNIEnv* env)
+    : NativeObject(env)
+{
+}
 
-jobject getGenderField(JNIEnv *env, const wchar_t* gender) {
+jobject Voice::getGenderField(const char* gender)
+{
     const char* genderFieldName;
-    //public enum Gender {
-    //  Male, Female, Robot
-    //}
+    if (_stricmp(gender, "Female") == 0) {
+        genderFieldName = "Female";
+    } else if (_stricmp(gender, "Male") == 0) {
+        genderFieldName = "Male";
+    } else {
+        genderFieldName = "Robot";
+    }
+
+    jclass voiceClass = JNIClass::getClass(env, "teaselib/core/texttospeech/Voice");
+    jobject genderValue = env->GetStaticObjectField(
+        voiceClass,
+        JNIClass::getStaticFieldID(env, voiceClass, genderFieldName, "Lteaselib/Sexuality$Gender;"));
+    if (env->ExceptionCheck()) throw JNIException(env);
+
+    return genderValue;
+}
+
+jobject Voice::getGenderField(const wchar_t* gender)
+{
+    const char* genderFieldName;
     if (_wcsicmp(gender, L"Female") == 0) {
         genderFieldName = "Female";
     } else if (_wcsicmp(gender, L"Male") == 0) {
@@ -28,144 +39,44 @@ jobject getGenderField(JNIEnv *env, const wchar_t* gender) {
     } else {
         genderFieldName = "Robot";
     }
+
     jclass voiceClass = JNIClass::getClass(env, "teaselib/core/texttospeech/Voice");
     jobject genderValue = env->GetStaticObjectField(
-                              voiceClass,
-                              JNIClass::getStaticFieldID(
-								  env, voiceClass, genderFieldName, "Lteaselib/Sexuality$Gender;"));
+        voiceClass,
+        JNIClass::getStaticFieldID(env, voiceClass, genderFieldName, "Lteaselib/Sexuality$Gender;"));
+    if (env->ExceptionCheck()) throw JNIException(env);
+
     return genderValue;
 }
 
-Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
-	: NativeObject(env)
-	, pVoiceToken(pVoiceToken) {
-	pVoiceToken->AddRef();
-
-	// Guid
-	LPWSTR id;
-	HRESULT hr = pVoiceToken->GetId(&id);
-	guid = ::PathFindFileName(id);
-	if (FAILED(hr)) throw COMException(hr);
-
-	Language language(pVoiceToken);
-
-	// Gender
-	LPWSTR gender;
-	hr = SpGetAttribute(pVoiceToken, L"Gender", &gender);
-	if (FAILED(hr)) throw COMException(hr);
-	jobject jgender = getGenderField(env, gender);
-	if (env->ExceptionCheck()) throw JNIException(env);
-
-	jobject jvoiceInfo;
-    {
-		// Full name (Vendor, version, Name)
-		LPWSTR vendor;
-		hr = SpGetAttribute(pVoiceToken, L"Vendor", &vendor);
-		if (FAILED(hr)) throw COMException(hr);
-
-		// Name
-		LPWSTR voiceName;
-		hr = pVoiceToken->GetStringValue(NULL, &voiceName);
-		if (FAILED(hr)) throw COMException(hr);
-
-		jclass clazz = env->FindClass("teaselib/core/texttospeech/VoiceInfo");
-		if (env->ExceptionCheck()) throw JNIException(env);
-		const char* signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
-
-		jvoiceInfo = env->NewObject(
-			clazz,
-			JNIClass::getMethodID(env, clazz, "<init>", signature),
-			JNIString(env, vendor).operator jstring(),
-			JNIString(env, language.displayName).operator jstring(),
-			JNIString(env, voiceName).operator jstring());
-		if (env->ExceptionCheck()) throw JNIException(env);
-	}
-
-	{
-		jclass clazz = env->FindClass("teaselib/core/texttospeech/NativeVoice");
-		if (env->ExceptionCheck()) throw JNIException(env);
-
-		const char* signature = "(JLteaselib/core/texttospeech/TextToSpeechImplementation;Ljava/lang/String;Ljava/lang/String;Lteaselib/Sexuality$Gender;Lteaselib/core/texttospeech/VoiceInfo;)V";
-		jthis = env->NewGlobalRef(env->NewObject(
-			clazz,
-			JNIClass::getMethodID(env, clazz, "<init>", signature),
-			reinterpret_cast<jlong>(this),
-			ttsImpl,
-			JNIString(env, guid.c_str()).operator jstring(),
-			JNIString(env, language.sname).operator jstring(),
-			jgender,
-			jvoiceInfo));
-        if (env->ExceptionCheck()) throw JNIException(env);
-	}
+jobject Voice::newVoiceInfo(const JNIObject<jstring>& vendor, const JNIObject<jstring>& language, const JNIObject<jstring>& name)
+{
+	jclass clazz = JNIClass::getClass(env, "teaselib/core/texttospeech/VoiceInfo");
+    jobject jvoiceInfo = env->NewObject(
+        clazz,
+        JNIClass::getMethodID(env, clazz, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V"),
+        env->NewLocalRef(vendor),
+        env->NewLocalRef(language),
+        env->NewLocalRef(name));
+    if (env->ExceptionCheck()) throw JNIException(env);
+    return jvoiceInfo;
 }
 
-Voice::~Voice() {
-    pVoiceToken->Release();
-}
+jobject Voice::newNativeVoice(jobject ttsImpl, const JNIObject<jstring>& guid, jobject jgender, const JNIObject<jstring>& locale, jobject jvoiceInfo)
+{
+    jclass clazz = env->FindClass("teaselib/core/texttospeech/NativeVoice");
+    if (env->ExceptionCheck()) throw JNIException(env);
 
-Voice::operator ISpObjectToken*() const {
-    return pVoiceToken;
-}
-
-// Why can't M$ do something right and comfortable? - copy from SpHelper, slightly changed to read any attribute
-HRESULT Voice::SpGetAttribute(_In_ ISpObjectToken * pObjToken, _In_ LPCWSTR pAttributeName, _Outptr_ PWSTR *ppszDescription) {
-    if (ppszDescription == NULL || pObjToken == NULL) {
-        return E_POINTER;
-    }
-    *ppszDescription = NULL;
-    WCHAR* pRegKeyPath = 0;
-    WCHAR* pszTemp = 0;
-    HKEY   Handle = NULL;
-    HRESULT hr = pObjToken->GetId(&pszTemp);
-    if (SUCCEEDED(hr)) {
-        LONG   lErrorCode = ERROR_SUCCESS;
-        pRegKeyPath = wcschr(pszTemp, L'\\');   // Find the first occurance of '\\' in the absolute registry key path
-        if (pRegKeyPath) {
-            *pRegKeyPath = L'\0';
-            pRegKeyPath++;                         // pRegKeyPath now points to the path to the recognizer token under the HKLM or HKCR hive
-            TCHAR keyPath[MAX_PATH];
-            keyPath[0] = L'\0';
-            wcscat_s(keyPath, MAX_PATH, pRegKeyPath);
-            // Add "Attributes" to pszTemp
-            wcscat_s(keyPath, MAX_PATH, L"\\Attributes");
-            *ppszDescription = 0;
-            // Open the registry key for read and get the handle
-            if (wcsncmp(pszTemp, L"HKEY_LOCAL_MACHINE", MAX_PATH) == 0) {
-                lErrorCode = RegOpenKeyExW(HKEY_LOCAL_MACHINE, keyPath, 0, KEY_QUERY_VALUE, &Handle);
-            } else if (wcsncmp(pszTemp, L"HKEY_CURRENT_USER", MAX_PATH) == 0) {
-                lErrorCode = RegOpenKeyExW(HKEY_CURRENT_USER, keyPath, 0, KEY_QUERY_VALUE, &Handle);
-            } else {
-                lErrorCode = ERROR_BAD_ARGUMENTS;
-            }
-            if (ERROR_SUCCESS == lErrorCode) {
-                *ppszDescription = (WCHAR*)CoTaskMemAlloc(MAX_PATH * sizeof(WCHAR));
-                DWORD count = MAX_PATH;
-                lErrorCode = RegGetValue(Handle, NULL, pAttributeName, RRF_RT_REG_SZ, NULL, *ppszDescription, &count);
-            }
-        } else {
-            // pRegKeyPath should never be 0 if we are querying for relative hkey path
-            lErrorCode = ERROR_BAD_ARGUMENTS;
-        }
-        hr = HRESULT_FROM_WIN32(lErrorCode);
-    }
-    // Close registry key handle
-    if (Handle) {
-        RegCloseKey(Handle);
-    }
-    // Free memory allocated to locals
-    if (pszTemp) {
-        CoTaskMemFree(pszTemp);
-    }
-    _ASSERT(FAILED(hr) || *ppszDescription != NULL);
-    if (FAILED(hr)) {
-        // Free memory allocated above if necessary
-        if (*ppszDescription != NULL) {
-            CoTaskMemFree(*ppszDescription);
-            *ppszDescription = NULL;
-        }
-        *ppszDescription = (WCHAR*)CoTaskMemAlloc(4);
-        wcscpy_s(*ppszDescription, 4, L"???");
-        hr = S_OK;
-    }
-    return hr;
+    const char* signature = "(JLteaselib/core/texttospeech/TextToSpeechImplementation;Ljava/lang/String;Ljava/lang/String;Lteaselib/Sexuality$Gender;Lteaselib/core/texttospeech/VoiceInfo;)V";
+    jobject jvoice = env->NewObject(
+        clazz,
+        JNIClass::getMethodID(env, clazz, "<init>", signature),
+        reinterpret_cast<jlong>(this),
+        ttsImpl,
+        env->NewLocalRef(guid),
+        env->NewLocalRef(locale),
+        jgender,
+        jvoiceInfo);
+    if (env->ExceptionCheck()) throw JNIException(env);
+    return jvoice;
 }

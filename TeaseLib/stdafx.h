@@ -21,4 +21,4 @@
 extern CComModule _Module;
 #include <atlcom.h>
 
-#include "TeaseLibFramework.h"
+#include "TeaseLib.h"

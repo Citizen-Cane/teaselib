@@ -10,7 +10,7 @@ public class NativeLibraries {
     private NativeLibraries() { //
     }
 
-    public static final String TEASELIB_FRAMEWORK = "TeaseLibFramework";
+    public static final String TEASELIB = "TeaseLib";
 
     public static final String TEASELIB_AI = "TeaseLibAI";
     public static final String TEASELIB_SR = "TeaseLibSR";

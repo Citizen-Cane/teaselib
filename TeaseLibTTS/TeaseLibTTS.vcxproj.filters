@@ -21,10 +21,22 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SpeechSynthesizer.h">
+    <ClInclude Include="SpVoice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpSpeechSynthesizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Voice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpeechSynthesizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LoquendoSpeechSynthesizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LoquendoVoice.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,10 +47,22 @@
     <ClCompile Include="TeaseLibTTS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SpeechSynthesizer.cpp">
+    <ClCompile Include="SpVoice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SpSpeechSynthesizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Voice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SpeechSynthesizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LoquendoSpeechSynthesizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LoquendoVoice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

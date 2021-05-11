@@ -20,7 +20,7 @@ JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_TeaseLibAI_initOpenCL
 /*
  * Class:     teaselib_core_ai_TeaseLibAI
  * Method:    sceneCaptures
- * Signature: ()Ljava/util/List;
+ * Signature: ()Lteaselib/core/jni/NativeObjectList;
  */
 JNIEXPORT jobject JNICALL Java_teaselib_core_ai_TeaseLibAI_sceneCaptures
   (JNIEnv *, jobject);

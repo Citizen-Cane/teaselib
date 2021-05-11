@@ -32,7 +32,6 @@ SpeechRecognizer::SpeechRecognizer(const wchar_t* locale)
 	, langID(0x0000)
 	, eventHandler(nullptr)
 {
-    assert(env);
     assert(locale);
     if (locale == NULL) throw NativeException(E_POINTER, L"Locale");
 

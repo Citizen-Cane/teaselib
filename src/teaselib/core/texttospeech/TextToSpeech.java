@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -17,7 +18,6 @@ import teaselib.core.AudioSync;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 import teaselib.core.texttospeech.implementation.Unsupported;
-import teaselib.core.texttospeech.implementation.loquendo.LoquendoTTS;
 import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeech {
@@ -66,47 +66,45 @@ public class TextToSpeech {
         throw new IllegalStateException("TTS engine not initialized");
     }
 
-    public static TextToSpeech allSystemVoices() {
+    static TextToSpeech allSystemVoices() {
         return new TextToSpeech(ttsProviderClassNames());
     }
 
-    public static TextToSpeech none() {
+    static TextToSpeech none() {
         return new TextToSpeech(Collections.emptySet());
     }
 
-    public TextToSpeech(Set<String> speechProviderClassNames) {
+    private TextToSpeech(Set<String> speechProviderClassNames) {
         this.audioSync = new AudioSync();
         for (String name : speechProviderClassNames) {
             addImplementation(name);
         }
     }
 
-    public TextToSpeech(TextToSpeechImplementation ttsImpl) {
+    // TODO only used by test code -> use production code constructor instead
+    TextToSpeech(TextToSpeechImplementation ttsImpl) {
         this.audioSync = new AudioSync();
         addSDK(ttsImpl, newDelegateExecutor(ttsImpl.sdkName()));
     }
 
-    static Set<String> ttsProviderClassNames() {
+    private static Set<String> ttsProviderClassNames() {
         Set<String> names = new HashSet<>();
-        addVendorSpecificSDKs(names);
         addOperatingSpecificSDKs(names);
         return names;
     }
 
-    public static void addOperatingSpecificSDKs(Set<String> names) {
-        names.add(TeaseLibTTS.class.getName());
+    private static void addOperatingSpecificSDKs(Set<String> names) {
+        names.add(TeaseLibTTS.Loquendo.class.getName());
+        names.add(TeaseLibTTS.Microsoft.class.getName());
     }
 
-    public static void addVendorSpecificSDKs(Set<String> names) {
-        names.add(LoquendoTTS.class.getName());
-    }
-
+    // TODO just require the classes instead of strings denoting class names
     private void addImplementation(String className) {
         try {
             @SuppressWarnings("unchecked")
             Class<? extends TextToSpeechImplementation> ttsClass = (Class<? extends TextToSpeechImplementation>) getClass()
                     .getClassLoader().loadClass(className);
-            if (ttsSDKClasses.contains(ttsClass)) {
+            if (ttsSDKCLass2Implementation.containsKey(ttsClass)) {
                 addNewVoices(getVoices(ttsSDKCLass2Implementation.get(ttsClass)));
             } else {
                 addImplementation(ttsClass);
@@ -141,8 +139,15 @@ public class TextToSpeech {
     }
 
     private static Map<String, Voice> getVoices(TextToSpeechImplementation ttsImpl) {
+        List<Voice> voices;
+        try {
+            voices = ttsImpl.getVoices();
+        } catch (UnsupportedOperationException e) {
+            return Collections.emptyMap();
+        }
+
         Map<String, Voice> newVoices = new LinkedHashMap<>();
-        for (Voice voice : ttsImpl.getVoices()) {
+        for (Voice voice : voices) {
             if (!isBlackListed(voice)) {
                 newVoices.put(voice.guid(), voice);
             }
@@ -150,7 +155,7 @@ public class TextToSpeech {
         return newVoices;
     }
 
-    public void addNewVoices(Map<String, Voice> newVoices) {
+    private void addNewVoices(Map<String, Voice> newVoices) {
         for (Entry<String, Voice> entry : newVoices.entrySet()) {
             if (!notAlreadyAVailableByVendorSepcificSDK(entry)) {
                 voices.put(entry.getKey(), entry.getValue());
@@ -158,7 +163,7 @@ public class TextToSpeech {
         }
     }
 
-    public boolean notAlreadyAVailableByVendorSepcificSDK(Entry<String, Voice> entry) {
+    private boolean notAlreadyAVailableByVendorSepcificSDK(Entry<String, Voice> entry) {
         return voices.containsKey(entry.getKey());
     }
 
@@ -203,10 +208,6 @@ public class TextToSpeech {
         } finally {
             tts.setHints(NoHints);
         }
-    }
-
-    public String speak(Voice voice, String prompt, File file) throws IOException {
-        return speak(voice, prompt, file, new String[] {});
     }
 
     public String speak(Voice voice, String prompt, File file, String[] hints) throws IOException {

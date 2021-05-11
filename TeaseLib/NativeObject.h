@@ -35,12 +35,18 @@ class TEASELIB_FRAMEWORK_EXPORT NativeInstance {
 public:
 	template<class T> static T* get(JNIEnv* env, jobject jthis)
 	{
+		return get<T>(env, jthis, "nativeObject");
+	}
+
+	template<class T> static T* get(JNIEnv* env, jobject jthis, const char* nativeObjectField)
+	{
 		Objects::requireNonNull(L"jenv", env);
 		Objects::requireNonNull(L"jthis", jthis);
+		Objects::requireNonNull(L"nativeObjectField", nativeObjectField);
 
 		jclass nativeObjectClass = env->GetObjectClass(jthis);
 		if (env->ExceptionCheck()) throw JNIException(env);
-		const jlong nativeObject = env->GetLongField(jthis, env->GetFieldID(nativeObjectClass, "nativeObject", "J"));
+		const jlong nativeObject = env->GetLongField(jthis, env->GetFieldID(nativeObjectClass, nativeObjectField, "J"));
 		if (env->ExceptionCheck()) throw JNIException(env);
 
 		if (nativeObject == 0) {

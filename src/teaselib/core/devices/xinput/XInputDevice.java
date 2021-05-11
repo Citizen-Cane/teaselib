@@ -1,6 +1,6 @@
 package teaselib.core.devices.xinput;
 
-import static teaselib.core.jni.NativeLibraries.TEASELIB_FRAMEWORK;
+import static teaselib.core.jni.NativeLibraries.TEASELIB;
 import static teaselib.core.jni.NativeLibraries.TEASELIB_X360C;
 
 import java.nio.ByteBuffer;
@@ -100,7 +100,7 @@ public class XInputDevice implements Device.Creatable {
                     "Invalid player number: " + playerNum + ". Must be between 0 and " + (MAX_PLAYERS - 1));
         }
         if (!libLoaded) {
-            NativeLibraries.require(TEASELIB_FRAMEWORK, TEASELIB_X360C);
+            NativeLibraries.require(TEASELIB, TEASELIB_X360C);
             for (int i = 0; i < MAX_PLAYERS; i++) {
                 DEVICES[i] = new XInputDevice(i);
             }

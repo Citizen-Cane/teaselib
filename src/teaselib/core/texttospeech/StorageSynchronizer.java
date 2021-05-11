@@ -86,13 +86,16 @@ class StorageSynchronizer {
         return encoderTask;
     }
 
-    Future<String> storeRecordedSoundFile(Actor actor, Voice voice, String hash, String recordedSoundFile,
+    Future<String> storeRecordedSoundFile(Actor actor, Voice voice, String hash, String encodedSoundFile,
             String storedSoundFileNane) {
         return submitIO(() -> {
-            try (FileInputStream inputStream = new FileInputStream(recordedSoundFile);) {
+            try (var inputStream = new FileInputStream(encodedSoundFile);) {
                 storage.storeSpeechResource(actor, voice, hash, inputStream, storedSoundFileNane);
             } finally {
-                Files.delete(Paths.get(recordedSoundFile));
+                var path = Paths.get(encodedSoundFile);
+                if (Files.exists(path)) {
+                    Files.delete(path);
+                }
             }
             return storedSoundFileNane;
         });

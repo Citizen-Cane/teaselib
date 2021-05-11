@@ -9,7 +9,7 @@
 class TEASELIB_FRAMEWORK_EXPORT Objects {
 public:
 	static void requireNonNull(const wchar_t* name, jobject jobj);
-	static void requireNonNull(const wchar_t* name, void* jobj);
+	static void requireNonNull(const wchar_t* name, const void* jobj);
 };
 
 template<typename T> class JNIObject

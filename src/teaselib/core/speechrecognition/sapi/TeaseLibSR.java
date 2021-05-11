@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.jni.NativeLibraries.TEASELIB_FRAMEWORK;
+import static teaselib.core.jni.NativeLibraries.TEASELIB;
 import static teaselib.core.jni.NativeLibraries.TEASELIB_SR;
 
 import java.util.List;
@@ -27,7 +27,7 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
     }
 
     private static long newNativeInstance(Locale locale) {
-        NativeLibraries.require(TEASELIB_FRAMEWORK, TEASELIB_SR);
+        NativeLibraries.require(TEASELIB, TEASELIB_SR);
         return newNativeInstance(locale, TeaseLibSR::newNativeInstance);
     }
 

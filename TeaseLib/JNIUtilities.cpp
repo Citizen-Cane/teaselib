@@ -39,6 +39,15 @@ vector<wstring> JNIUtilities::wstringArray(JNIEnv* env, jobjectArray jarray)
     return elements;
 }
 
+jobject JNIUtilities::emptyList(JNIEnv* env) {
+	jclass listClass = JNIClass::getClass(env, "java/util/Collections");
+	jobject list = env->CallStaticObjectMethod(
+		listClass,
+		JNIClass::getStaticMethodID(env, listClass, "emptyList", "()Ljava/util/List;"));
+	if (env->ExceptionCheck()) throw JNIException(env);
+	return list;
+}
+
 jobject JNIUtilities::newList(JNIEnv* env, size_t capacity)
 {
 	jclass listClass = JNIClass::getClass(env, "java/util/ArrayList");
@@ -62,7 +71,7 @@ jobject JNIUtilities::newNativeObjectList(JNIEnv* env, size_t capacity)
 jobject JNIUtilities::asList(JNIEnv* env, const vector<string>& elements)
 {
 	jobject list = newList(env,	elements.size());
-	jmethodID add = env->GetMethodID(JNIClass::getClass(env, "java/util/ArrayList"), "add", "(Ljava/lang/Object;)Z");
+	jmethodID add = JNIClass::getMethodID(env, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z");
 	for_each(elements.begin(), elements.end(), [&](const string& chars) {
 		env->CallObjectMethod(list,	add, JNIStringUTF8(env, chars).operator jstring());
 		if (env->ExceptionCheck()) throw JNIException(env);
@@ -73,7 +82,7 @@ jobject JNIUtilities::asList(JNIEnv* env, const vector<string>& elements)
 jobject JNIUtilities::asList(JNIEnv* env, const vector<NativeObject*>& elements)
 {
 	jobject list = newNativeObjectList(env, elements.size());
-	jmethodID add = env->GetMethodID(JNIClass::getClass(env, "teaselib/core/jni/NativeObjectList"), "add", "(Ljava/lang/Object;)Z");
+	jmethodID add = JNIClass::getMethodID(env, "teaselib/core/jni/NativeObjectList", "add", "(Ljava/lang/Object;)Z");
 	for_each(elements.begin(), elements.end(), [&](const NativeObject* nativeObject) {
 		env->CallObjectMethod(list,	add, nativeObject->operator jobject());
 		if (env->ExceptionCheck()) throw JNIException(env);
@@ -84,7 +93,7 @@ jobject JNIUtilities::asList(JNIEnv* env, const vector<NativeObject*>& elements)
 jobject JNIUtilities::asList(JNIEnv* env, const vector<jobject>& elements)
 {
 	jobject list = newList(env, elements.size());
-	jmethodID add = env->GetMethodID(JNIClass::getClass(env, "java/util/ArrayList"), "add", "(Ljava/lang/Object;)Z");
+	jmethodID add = JNIClass::getMethodID(env, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z");
 	for_each(elements.begin(), elements.end(), [&](const jobject element) {
 		env->CallObjectMethod(list, add, element);
 		if (env->ExceptionCheck()) throw JNIException(env);
@@ -109,7 +118,7 @@ jobject JNIUtilities::asSet(JNIEnv* env, const set<NativeObject*>& elements)
 		elements.size());
 	if (env->ExceptionCheck()) throw JNIException(env);
 
-	jmethodID add = env->GetMethodID(setClass, "add", "(Ljava/lang/Object;)Z");
+	jmethodID add = JNIClass::getMethodID(env, setClass, "add", "(Ljava/lang/Object;)Z");
 	for_each(elements.begin(), elements.end(), [&](const NativeObject* nativeObject) {
 		env->CallObjectMethod(set, add, nativeObject->operator jobject());
 		if (env->ExceptionCheck()) throw JNIException(env);

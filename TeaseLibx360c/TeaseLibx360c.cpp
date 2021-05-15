@@ -22,20 +22,20 @@ HMODULE hXInputLib = NULL;
 bool isInitialized = false;
 
 typedef DWORD (WINAPI *XInputGetStateExProc)(DWORD dwUserIndex, XINPUT_STATE *pState);
-int XInputGetStateExOrdinal = 100;
+LPCSTR XInputGetStateExOrdinal = (LPCSTR) 100;
 XInputGetStateExProc XInputGetStateEx = NULL;
 
 struct IUnknown;
 typedef DWORD(WINAPI *XInputWaitForGuideButtonProc)(DWORD dwUserIndex, DWORD dwFlag, IUnknown **pUnk);
-int XInputWaitForGuideButtonOrdinal = 101;
+LPCSTR XInputWaitForGuideButtonOrdinal = (LPCSTR) 101;
 XInputWaitForGuideButtonProc XInputWaitForGuideButton = NULL;
 
 typedef DWORD(WINAPI *XInputCancelGuideButtonWaitProc)(DWORD dwUserIndex);
-int XInputCancelGuideButtonWaitOrdinal = 102;
+LPCSTR XInputCancelGuideButtonWaitOrdinal = (LPCSTR) 102;
 XInputCancelGuideButtonWaitProc XInputCancelGuideButtonWaitEx = NULL;
 
 typedef DWORD(WINAPI *XInputShutdownControllerProc)(DWORD dwUserIndex);
-int XInputShutdownControllerOrdinal = 103;
+LPCSTR XInputShutdownControllerOrdinal = (LPCSTR) 103;
 XInputShutdownControllerProc XInputShutdownController = NULL;
 
 void initExtendedFunctions() {
@@ -50,10 +50,10 @@ void initExtendedFunctions() {
 			return;
 		}
 		// Get ProcAdresses
-		XInputGetStateEx = (XInputGetStateExProc)GetProcAddress(hXInputLib, (LPCSTR)XInputGetStateExOrdinal);
-		XInputWaitForGuideButton = (XInputWaitForGuideButtonProc)GetProcAddress(hXInputLib, (LPCSTR)XInputWaitForGuideButtonOrdinal);
-		XInputCancelGuideButtonWaitEx = (XInputCancelGuideButtonWaitProc)GetProcAddress(hXInputLib, (LPCSTR)XInputCancelGuideButtonWaitOrdinal);
-		XInputShutdownController = (XInputShutdownControllerProc)GetProcAddress(hXInputLib, (LPCSTR)XInputShutdownControllerOrdinal);
+		XInputGetStateEx = (XInputGetStateExProc)GetProcAddress(hXInputLib, XInputGetStateExOrdinal);
+		XInputWaitForGuideButton = (XInputWaitForGuideButtonProc)GetProcAddress(hXInputLib, XInputWaitForGuideButtonOrdinal);
+		XInputCancelGuideButtonWaitEx = (XInputCancelGuideButtonWaitProc)GetProcAddress(hXInputLib, XInputCancelGuideButtonWaitOrdinal);
+		XInputShutdownController = (XInputShutdownControllerProc)GetProcAddress(hXInputLib, XInputShutdownControllerOrdinal);
 	}
 }
 

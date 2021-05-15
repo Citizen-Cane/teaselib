@@ -21,7 +21,7 @@ jobject SpeechSynthesizer::voices(jobject jthis) {
 	return jvoices;
 }
 
-void SpeechSynthesizer::setHints(const std::vector<std::wstring>& hints)
+void SpeechSynthesizer::setHints(const std::vector<std::wstring>& hints_)
 {
-	this->hints = hints;
+	this->hints = hints_;
 }

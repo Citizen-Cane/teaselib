@@ -131,8 +131,8 @@ void SpSpeechSynthesizer::setVoice(const Voice * voice) {
 	if (FAILED(hr)) throw COMException(hr);
 }
 
-void SpSpeechSynthesizer::setHints(const vector<wstring>& hints) {
-	SpeechSynthesizer::setHints(hints);
+void SpSpeechSynthesizer::setHints(const vector<wstring>& hints_) {
+	SpeechSynthesizer::setHints(hints_);
 
 	hintsPromptPrefix.clear();
 	hintsPromptPostfix.clear();

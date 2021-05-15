@@ -67,8 +67,10 @@ jobject LoquendoSpeechSynthesizer::enumerate_voices(jobject jttsImpl)
         const char whitespace = ' ';
         const string languageDescription = queryLanguageAttribute(language.c_str(), "Description");
         const vector<string> words = teaselib::strings::split(languageDescription, whitespace);
-        const string languageName = !words.empty() &&  (words.end() -1)->find("anguage") != string::npos
-            ?  teaselib::strings::join(words.begin(), words.end() - 1, whitespace) : languageDescription;
+        auto begin = words.begin();
+        auto end = words.end() - 1;
+        const string languageName = !words.empty() &&  end->find("anguage") != string::npos
+            ?  teaselib::strings::join(begin, end, whitespace) : languageDescription;
 
         voices.push_back(new LoquendoVoice(env, jttsImpl, phVoice, phLanguage, id, gender.c_str(), locale.c_str(), languageName.c_str()));
         checkResult(ttsEnumNext(phEnum, &id));
@@ -78,7 +80,7 @@ jobject LoquendoSpeechSynthesizer::enumerate_voices(jobject jttsImpl)
 }
 
 
-void LoquendoSpeechSynthesizer::addLexiconEntry(const wchar_t* const locale, const wchar_t* const word, const SPPARTOFSPEECH partOfSpeech, const wchar_t* const pronunciation)
+void LoquendoSpeechSynthesizer::addLexiconEntry(const wchar_t* const /*locale*/, const wchar_t* const /*word*/, const SPPARTOFSPEECH /*partOfSpeech*/, const wchar_t* const /*pronunciation*/)
 {
     // Can only load complete dictionaries, plus entries with phonemes distort the prosody
     // TODO review ssml tests and relevance on SAPI side -> remove custom impl  dictionaires in favor for java solution

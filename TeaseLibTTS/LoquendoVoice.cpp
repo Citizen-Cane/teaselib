@@ -15,7 +15,7 @@ LoquendoVoice::LoquendoVoice(JNIEnv* env, jobject ttsImpl, ttsHandleType hVoice,
 {
 	string guid = string("LTTS7") + id;
 	jobject jgender = getGenderField(gender);
-	jobject jvoiceInfo = newVoiceInfo(JNIStringUTF8(env, "Loquendo"), JNIStringUTF8(env, locale), JNIStringUTF8(env, id));
+	jobject jvoiceInfo = newVoiceInfo(JNIStringUTF8(env, "Loquendo"), JNIStringUTF8(env, languageName), JNIStringUTF8(env, id));
 	jthis = env->NewGlobalRef(newNativeVoice(ttsImpl, JNIStringUTF8(env, guid), jgender, JNIStringUTF8(env, locale), jvoiceInfo));
 }
 

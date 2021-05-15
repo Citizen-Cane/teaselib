@@ -234,7 +234,10 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 							// Estimated result - can still be recognized false
 							ISpRecoResult* pResult = spevent.RecoResult();
 							LPWSTR pszCoMemResultText = nullptr;
-							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, nullptr);
+							recognizerStatus = pResult->GetText(
+								static_cast<ULONG>(SP_GETWHOLEPHRASE),
+								static_cast<ULONG>(SP_GETWHOLEPHRASE),
+								false, &pszCoMemResultText, nullptr);
 							if (SUCCEEDED(recognizerStatus)) {
 								SpeechRecognizedEvent(env, jthis, "speechDetected", jteaselibsr).fire(pResult);
 							}
@@ -247,7 +250,10 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 							// False recognition
 							ISpRecoResult* pResult = spevent.RecoResult();
 							LPWSTR pszCoMemResultText = nullptr;
-							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, nullptr);
+							recognizerStatus = pResult->GetText(
+								static_cast<ULONG>(SP_GETWHOLEPHRASE),
+								static_cast<ULONG>(SP_GETWHOLEPHRASE),
+								false, &pszCoMemResultText, nullptr);
 							if (SUCCEEDED(recognizerStatus)) {
 								SpeechRecognizedEvent(env, jthis, "recognitionRejected", jteaselibsr).fire(pResult);
 							}

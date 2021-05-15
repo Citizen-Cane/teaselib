@@ -11,10 +11,10 @@ namespace teaselib {
         std::string utf8(const wchar_t* unicode)
         {
             if (*unicode == 0) return string();
-            const size_t unicode_size = wcslen(unicode);
-            const size_t utf8_size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, unicode, unicode_size, nullptr, 0, nullptr, nullptr);
+            const int unicode_size = static_cast<int>(wcslen(unicode));
+            const int utf8_size = WideCharToMultiByte(CP_UTF8, 0, unicode, unicode_size, nullptr, 0, nullptr, nullptr);
             string utf8(utf8_size, 0);
-            WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, unicode, unicode_size, &utf8[0], utf8_size, nullptr, nullptr);
+            WideCharToMultiByte(CP_UTF8, 0, unicode, unicode_size, &utf8[0], utf8_size, nullptr, nullptr);
             return utf8;
         }
 

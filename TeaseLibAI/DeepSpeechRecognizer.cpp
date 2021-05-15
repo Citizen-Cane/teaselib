@@ -316,7 +316,7 @@ DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languag
 			if (feed_stste == aifx::speech::SpeechAudioStream::FeedState::FinishDecodeStream) {
 				// ok - waiting to finish decode
 			} else {
-				cerr << endl << "DeepSpeechAudioStream: buffer size insufficient - " << samples - consumed << " samples dropped";
+				cerr << "DeepSpeechAudioStream feed buffer size insufficient - " << samples - consumed << " samples dropped." << endl;
 			}
 		}
 	})

@@ -1,6 +1,7 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,8 +39,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     private static final Logger logger = LoggerFactory.getLogger(DeepSpeechRecognizer.class);
 
     private PreparedChoicesImplementation current = null;
-    private final NamedExecutorService speechEmulation = NamedExecutorService
-            .singleThreadedQueue("DeepSpeech Emulation");
+    private NamedExecutorService speechEmulation = null;
 
     public DeepSpeechRecognizer(Locale locale) {
         super(newNativeInstance(locale, DeepSpeechRecognizer::newNativeInstance), HearingAbility.Good);
@@ -235,6 +235,9 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public void emulateRecognition(String speech) {
+        if (speechEmulation == null) {
+            speechEmulation = NamedExecutorService.singleThreadedQueue("DeepSpeech Emulation");
+        }
         speechEmulation.execute(() -> emulate(speech.toLowerCase()));
     }
 
@@ -251,13 +254,16 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public void close() {
-        speechEmulation.shutdown();
-        while (!speechEmulation.isTerminated()) {
-            try {
-                speechEmulation.awaitTermination(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+        if (speechEmulation != null) {
+            speechEmulation.shutdown();
+            while (!speechEmulation.isTerminated()) {
+                try {
+                    speechEmulation.awaitTermination(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
+            speechEmulation = null;
         }
         super.close();
     }

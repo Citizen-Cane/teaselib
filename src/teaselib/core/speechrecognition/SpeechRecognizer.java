@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static java.lang.Class.*;
-import static teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation.*;
+import static java.lang.Class.forName;
+import static teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation.languageCode;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -113,7 +113,7 @@ public class SpeechRecognizer implements Closeable {
      */
     public Runnable pauseRecognition() {
         synchronized (speechRecognitionInstances) {
-            final Collection<SpeechRecognition> pausedInstances = new HashSet<>();
+            Collection<SpeechRecognition> pausedInstances = new HashSet<>();
             for (SpeechRecognition sR : speechRecognitionInstances.values()) {
                 if (sR.isActive()) {
                     sR.pauseRecognition();

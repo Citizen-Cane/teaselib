@@ -1,6 +1,6 @@
 package teaselib.core.ui;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +20,7 @@ public class InputMethods implements Iterable<InputMethod>, teaselib.core.Closea
         private static final long serialVersionUID = 1L;
 
         public void setup(InputMethod inputMethod) {
-            get(inputMethod.getClass()).apply();
+            super.get(inputMethod.getClass()).apply();
         }
 
     }

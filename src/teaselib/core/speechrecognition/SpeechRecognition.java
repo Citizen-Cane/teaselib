@@ -2,7 +2,6 @@ package teaselib.core.speechrecognition;
 
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +27,14 @@ public class SpeechRecognition {
     private PreparedChoices preparedChoices;
 
     /**
-     * Speech recognition has been started or resumed and is listening for voice input
+     * Speech recognition has been started or resumed and is actively listening for voice input
      */
-    private AtomicBoolean speechRecognitionActive = new AtomicBoolean(false);
+    private boolean active = false;
+
+    /**
+     * Speech recognition has been paused and is ready to be resumed
+     */
+    private boolean paused = false;
 
     // Allow other threads to wait for speech recognition to complete
     private Event<SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = args -> {
@@ -123,7 +127,9 @@ public class SpeechRecognition {
                 if (isActiveCalledFromDelegateThread()) {
                     logger.warn("Speech recognition already running");
                 } else {
+                    preparedChoices.accept(implementation);
                     enableSR();
+                    paused = false;
                     logger.info("Speech recognition started");
                 }
             });
@@ -137,6 +143,7 @@ public class SpeechRecognition {
             delegateThread.run(() -> {
                 if (isActiveCalledFromDelegateThread()) {
                     disableSR();
+                    paused = true;
                     logger.info("Speech recognition paused");
                 } else {
                     logger.warn("Speech recognition already stopped");
@@ -152,10 +159,11 @@ public class SpeechRecognition {
             delegateThread.run(() -> {
                 if (isActiveCalledFromDelegateThread()) {
                     logger.warn("Speech recognition already running on resume attempt");
-                } else if (preparedChoices == null) {
+                } else if (!paused) {
                     logger.warn("Speech recognition already stopped - not resumed");
                 } else {
                     enableSR();
+                    paused = false;
                     logger.info("Speech recognition resumed");
                 }
             });
@@ -170,9 +178,10 @@ public class SpeechRecognition {
                 if (isActiveCalledFromDelegateThread()) {
                     implementation.stopRecognition();
                     enableSR();
+                    paused = false;
                     logger.info("Speech recognition restarted");
                 } else {
-                    logger.warn("Speech recognition already stopped - restarting not allowed");
+                    logger.warn("Speech recognition already stopped - restart request ignored");
                 }
             });
         } else {
@@ -183,9 +192,9 @@ public class SpeechRecognition {
     public void endRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
-                preparedChoices = null;
                 if (isActiveCalledFromDelegateThread()) {
                     disableSR();
+                    paused = false;
                     logger.info("Speech recognition stopped");
                 } else {
                     logger.warn("Speech recognition already stopped");
@@ -201,14 +210,13 @@ public class SpeechRecognition {
         if (exception.isPresent())
             throw ExceptionUtil.asRuntimeException(exception.get());
 
-        preparedChoices.accept(implementation);
+        active = true;
         audioSync.whenSpeechCompleted(implementation::startRecognition);
-        speechRecognitionActive.set(true);
     }
 
     private void disableSR() {
         implementation.stopRecognition();
-        speechRecognitionActive.set(false);
+        active = false;
         unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
 
         Optional<Throwable> exception = implementation.getException();
@@ -230,7 +238,7 @@ public class SpeechRecognition {
      * @return True if speech recognition is listening to voice input
      */
     private boolean isActiveCalledFromDelegateThread() {
-        return speechRecognitionActive.get();
+        return active;
     }
 
     public void emulateRecogntion(String emulatedRecognitionResult) {

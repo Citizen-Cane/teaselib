@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.HashMap;
 import java.util.List;
@@ -188,7 +188,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         recognizer.restartRecognition();
                     } else {
                         if (prompt.acceptedResult == Result.Accept.Distinct) {
-                            PreparedChoices preparedChoices = recognizer.preparedChoices();
+                            var preparedChoices = recognizer.preparedChoices();
                             // TODO accept indistinct results reject them in recognition completed/rejected
                             // -> better feedback for hypothesis building
                             Optional<Hypothesis> best = bestHypothesis(eventArgs.result, prompt.choices,

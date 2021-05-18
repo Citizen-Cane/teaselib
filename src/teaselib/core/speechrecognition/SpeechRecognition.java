@@ -124,10 +124,10 @@ public class SpeechRecognition {
     public void startRecognition() {
         if (implementation != null) {
             delegateThread.run(() -> {
+                preparedChoices.accept(implementation);
                 if (isActiveCalledFromDelegateThread()) {
-                    logger.warn("Speech recognition already running");
+                    logger.warn("Speech recognition already running - re-initialized for active prompt");
                 } else {
-                    preparedChoices.accept(implementation);
                     enableSR();
                     paused = false;
                     logger.info("Speech recognition started");
@@ -146,7 +146,7 @@ public class SpeechRecognition {
                     paused = true;
                     logger.info("Speech recognition paused");
                 } else {
-                    logger.warn("Speech recognition already stopped");
+                    logger.warn("Speech recognition already stopped - pause request ignored");
                 }
             });
         } else {
@@ -210,8 +210,8 @@ public class SpeechRecognition {
         if (exception.isPresent())
             throw ExceptionUtil.asRuntimeException(exception.get());
 
-        active = true;
         audioSync.whenSpeechCompleted(implementation::startRecognition);
+        active = true;
     }
 
     private void disableSR() {

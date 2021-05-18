@@ -221,7 +221,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             Hypothesis currentHypothesis) {
         Optional<Rule> result = SpeechRecognitionInputMethod.bestSingleResult(rules, preparedChoices.mapper());
         if (result.isPresent()) {
-            Rule rule = result.get();
+            var rule = result.get();
             if (rule.indices.equals(Rule.NoIndices)) {
                 logger.info("Ignoring hypothesis {} since it contains results from multiple phrases", rule);
                 return Optional.empty();
@@ -367,7 +367,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         IntUnaryOperator mapping = phraseToChoice(prompt);
         Optional<Rule> result = matcher.apply(eventArgs.result, mapping);
         if (result.isPresent()) {
-            Rule rule = result.get();
+            var rule = result.get();
             float expectedConfidence = expectedConfidence(prompt.choices, rule);
             boolean useHypothesis = hypothesis != null && //
                     hypothesis.probability > rule.probability && //
@@ -388,14 +388,13 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         float audioProblemPenalty = audioSignalProblems.penalty() * AUDIO_PROBLEM_PENALTY_WEIGHT;
 
         if (rule.probability - audioProblemPenalty >= expectedConfidence) {
-            Prompt.Result promptResult = resultor.apply(rule, phraseToChoice(prompt));
+            var promptResult = resultor.apply(rule, phraseToChoice(prompt));
             if (promptResult.elements.isEmpty()) {
                 reject(prompt, rule, "Empty result");
                 return prompt;
             } else if (promptResult.valid(prompt.choices)) {
                 events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rule));
-                accept(prompt, promptResult);
-                return null;
+                return accept(prompt, promptResult);
             } else {
                 reject(prompt, rule, "Undefined result index");
                 return prompt;
@@ -516,7 +515,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     private void signalHandlerInvocation(InputMethod.Notification eventType, SpeechRecognizedEventArgs eventArgs) {
-        Prompt prompt = active.get();
+        var prompt = active.get();
         if (prompt != null) {
             prompt.lock.lock();
             try {
@@ -601,7 +600,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     public void emulateRecogntion(String phrase) {
-        Prompt activePrompt = active.get();
+        var activePrompt = active.get();
         if (activePrompt == null) {
             throw new NoSuchElementException("Active prompt");
         } else {
@@ -629,7 +628,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     @Override
     public String toString() {
-        Prompt prompt = active.get();
+        var prompt = active.get();
         if (prompt == null) {
             return "SpeechRecognizer <inactive>";
         } else {

@@ -395,13 +395,16 @@ public abstract class Script {
             scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech));
         }
 
-        InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
-        Choices choices = choices(answers, intention);
-        Prompt prompt = getPrompt(choices, inputMethods, scriptFunction);
+        var inputMethods = teaseLib.globals.get(InputMethods.class);
+        var choices = choices(answers, intention);
+        var prompt = getPrompt(choices, inputMethods, scriptFunction);
 
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             scriptRenderer.stopBackgroundRenderers();
+        }
+        if (scriptFunction == null || scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
+            scriptRenderer.showAll();
         }
 
         Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript = speechRecognitioneRejectedScript(
@@ -410,12 +413,14 @@ public abstract class Script {
             addRecognitionRejectedAction(prompt, speechRecognitionRejectedScript.get());
         }
 
-        Choice choice = showPrompt(prompt).get(0);
+        return anwser(prompt);
+    }
 
-        String chosen = "< " + choice;
+    private Answer anwser(Prompt prompt) {
+        var choice = showPrompt(prompt).get(0);
+        String chosen = "< " + choice.display;
         logger.info("{}", chosen);
         teaseLib.transcript.info(chosen);
-
         return choice.answer;
     }
 
@@ -465,14 +470,13 @@ public abstract class Script {
         endAll();
 
         scriptRenderer.events.afterChoices.fire(new ScriptEventArgs());
-
         teaseLib.host.endScene();
 
         return choice;
     }
 
     private Prompt getPrompt(Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction) {
-        Prompt prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct);
+        var prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct);
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {
             logger.info("{} {}", inputMethod.getClass().getSimpleName(), inputMethod);

@@ -56,16 +56,16 @@ public class TeaseLibAITest {
     public void testImageCapture() {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             assertNotNull(teaseLibAI.sceneCaptures());
-        }
-        String name = "images/p2_320x240_01.jpg";
-        String pattern = "p2_320x240_%02d.jpg";
+            String name = "images/p2_320x240_01.jpg";
+            String pattern = "p2_320x240_%02d.jpg";
 
-        try (SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern));
-                HumanPose humanPose = new HumanPose()) {
-            sceneCapture.start();
-            List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
-            assertEquals(2, poses.size());
-            assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
+            try (SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern));
+                    HumanPose humanPose = new HumanPose()) {
+                sceneCapture.start();
+                List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
+                assertEquals(2, poses.size());
+                assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
+            }
         }
     }
 

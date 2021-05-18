@@ -30,7 +30,7 @@ public class RenderSound extends MediaRendererThread {
     @Override
     public void renderMedia() throws IOException, InterruptedException {
         try {
-            teaseLib.transcript.info("Message sound = " + soundFile);
+            teaseLib.transcript.info("Sound = " + soundFile);
             logger.info("{} started", soundFile);
             startCompleted();
             audio.play();

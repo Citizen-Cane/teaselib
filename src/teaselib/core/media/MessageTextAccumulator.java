@@ -1,37 +1,49 @@
 package teaselib.core.media;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import teaselib.Message;
 import teaselib.MessagePart;
 
 public class MessageTextAccumulator {
-    private final StringBuilder message;
-    boolean appendToParagraph = true;
+    private static final String PARAGRAPH_SEPARATOR = "\n\n";
+    List<String> paragraphs;
+    private String tail;
+
+    boolean appendToParagraph = false;
 
     public MessageTextAccumulator() {
-        message = new StringBuilder();
+        this.paragraphs = new ArrayList<>();
+        this.tail = "";
     }
 
     public final void add(MessagePart part) {
+        StringBuilder tailBuilder;
         if (part.type == Message.Type.Text) {
-            if (!appendToParagraph) {
-                newParagraph();
+            if (appendToParagraph) {
+                tailBuilder = new StringBuilder(removeLast());
+                tailBuilder.append(" ");
             } else {
-                message.append(" ");
+                tailBuilder = new StringBuilder();
             }
-            message.append(part.value);
-            appendToParagraph = canAppendToParagraph();
+            tailBuilder.append(part.value);
+            tail = tailBuilder.toString();
+            paragraphs.add(tail);
+            appendToParagraph = canAppendTo(tail);
         } else if (part.type == Message.Type.Item) {
-            newParagraph();
-            message.append("° ");
-            message.append(removeKeyword(part));
+            tailBuilder = new StringBuilder();
+            tailBuilder.append("° ");
+            tailBuilder.append(removeKeyword(part));
+            tail = tailBuilder.toString();
+            paragraphs.add(tail);
             appendToParagraph = true;
         }
     }
 
-    protected void newParagraph() {
-        if (message.length() > 0) {
-            message.append("\n\n");
-        }
+    private String removeLast() {
+        return paragraphs.remove(paragraphs.size() - 1);
     }
 
     private static String removeKeyword(MessagePart part) {
@@ -45,10 +57,6 @@ public class MessageTextAccumulator {
         }
     }
 
-    private boolean canAppendToParagraph() {
-        return canAppendTo(message.toString());
-    }
-
     public static boolean canAppendTo(String string) {
         String ending = string.isEmpty() ? " " : string.substring(string.length() - 1, string.length());
         return Message.MainClauseAppendableCharacters.contains(ending);
@@ -58,9 +66,13 @@ public class MessageTextAccumulator {
         return appendToParagraph;
     }
 
+    public String getTail() {
+        return tail;
+    }
+
     @Override
     public String toString() {
-        return message.toString();
+        return paragraphs.stream().collect(Collectors.joining(PARAGRAPH_SEPARATOR));
     }
 
 }

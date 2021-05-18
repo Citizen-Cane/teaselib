@@ -206,7 +206,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     /**
      * Show instructional text, this is not spoken, just displayed.
      * 
-     * @param message
+     * @param paragraphs
      *            The text to be displayed, or null to display no message at all
      */
     public void show(String text) {

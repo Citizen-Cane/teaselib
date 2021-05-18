@@ -199,6 +199,10 @@ public class ScriptRenderer implements Closeable {
         renderMessage(teaseLib, actor, replaced);
     }
 
+    void showAll() {
+        sectionRenderer.showAll();
+    }
+
     private void fireNewMessageEvent(TeaseLib teaseLib, Actor actor, BeforeNewMessage.OutlineType outlineType) {
         teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
         if (actor != currentActor) {

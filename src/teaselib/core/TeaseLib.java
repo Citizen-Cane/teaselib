@@ -17,6 +17,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -206,7 +207,7 @@ public class TeaseLib implements Closeable {
                 logger.warn(ignored.getMessage(), ignored);
             }
         }
-        host.show(null, "");
+        host.show(null, Collections.emptyList());
     }
 
     static class MainScriptConstructorMissingException extends NoSuchMethodException {

@@ -36,7 +36,7 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public void show(AnnotatedImage actorImage, String text) {
+    public void show(AnnotatedImage actorImage, List<String> text) {
         // Ignore
     }
 

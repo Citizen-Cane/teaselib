@@ -17,8 +17,9 @@ public abstract class MessageRenderer implements Runnable {
     final ResourceLoader resources;
     final BinaryOperator<MessageRenderer> operator;
 
+    final RendererFacade renderer = new RendererFacade();
+
     Future<Void> thisTask = null;
-    RendererFacade renderer = new RendererFacade();
     Replay.Position position = Replay.Position.FromCurrentPosition;
     MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
 
@@ -26,7 +27,7 @@ public abstract class MessageRenderer implements Runnable {
     String displayImage = null;
     AbstractMessage lastSection;
 
-    public MessageRenderer(Actor actor, List<RenderedMessage> messages, BinaryOperator<MessageRenderer> operator,
+    protected MessageRenderer(Actor actor, List<RenderedMessage> messages, BinaryOperator<MessageRenderer> operator,
             ResourceLoader resources) {
         this.actor = actor;
         this.resources = resources;
@@ -34,6 +35,10 @@ public abstract class MessageRenderer implements Runnable {
         this.operator = operator;
 
         this.lastSection = RenderedMessage.getLastSection(getLastMessage());
+    }
+
+    public boolean hasActorImage() {
+        return actor.images.contains(displayImage);
     }
 
     private RenderedMessage getLastMessage() {
@@ -60,8 +65,8 @@ public abstract class MessageRenderer implements Runnable {
     // TODO Contains duplicated code from ThreadedMediaRenderer
     class RendererFacade implements MediaRenderer.Threaded {
         final CountDownLatch completedStart = new CountDownLatch(1);
-        final CountDownLatch completedMandatory = new CountDownLatch(1);;
-        final CountDownLatch completedAll = new CountDownLatch(1);;
+        final CountDownLatch completedMandatory = new CountDownLatch(1);
+        final CountDownLatch completedAll = new CountDownLatch(1);
 
         private long startMillis = 0;
 
@@ -106,8 +111,8 @@ public abstract class MessageRenderer implements Runnable {
         protected final void startCompleted() {
             completedStart.countDown();
             if (SectionRenderer.logger.isDebugEnabled()) {
-                SectionRenderer.logger.debug(getClass().getSimpleName() + " completed start after "
-                        + String.format("%.2f seconds", getElapsedSeconds()));
+                SectionRenderer.logger.debug("{} completed start after {}", getClass().getSimpleName(),
+                        String.format("%.2f seconds", getElapsedSeconds()));
             }
         }
 

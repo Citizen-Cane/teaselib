@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 import javax.swing.ComboBoxModel;
@@ -490,12 +491,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     String currentText = "";
+    int numberOfParagraphs = 0;
+
     BufferedImage currentImage = null;
     HumanPose.Estimation currentPose = null;
     BufferedImage currentBackgroundImage = null;
 
     @Override
-    public void show(AnnotatedImage actorImage, String text) {
+    public void show(AnnotatedImage actorImage, List<String> text) {
         if (actorImage != null) {
             try {
                 currentImage = ImageIO.read(new ByteArrayInputStream(actorImage.bytes));
@@ -510,7 +513,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             currentPose = HumanPose.Estimation.NONE;
         }
 
-        currentText = text;
+        currentText = text.stream().collect(Collectors.joining("\n\n"));
+        numberOfParagraphs = text.size();
+
         intertitleActive = false;
         setImage(currentImage);
         show();
@@ -558,17 +563,32 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                     show("");
                 } else {
                     // Border radius does not work - probably a JTextPane issue
-                    String html = "<html><head></head>" //
-                            + "<body style=\""//
-                            + "background-color:rgb(192, 192, 192);"//
-                            + "border: 3px solid rgb(192, 192, 192);"//
-                            + "border-radius: 5px;" //
-                            + "border-top-width: 3px;"//
-                            + "border-left-width: 7px;"//
-                            + "border-bottom-width: 5px;"//
-                            + "border-right-width: 7px;\\\">"//
-                            + currentText + "</body>" + "</html>";
-                    show(html);
+                    var html = new StringBuilder();
+                    html.append("<html><head></head>");
+
+                    html.append("<body style=\"");
+                    html.append("background-color:rgb(192, 192, 192);");
+                    html.append("border: 3px solid rgb(192, 192, 192);");
+                    html.append("border-radius: 5px;");
+                    html.append("border-top-width: 3px;");
+                    html.append("border-left-width: 7px;");
+                    html.append("border-bottom-width: 5px;");
+                    html.append("border-right-width: 7px;");
+
+                    if (numberOfParagraphs == 1) {
+                        html.append("font-size: ");
+                        html.append(1.5);
+                        html.append("em;");
+                    }
+
+                    html.append("\\\">");
+
+                    html.append(currentText);
+
+                    html.append("</body>");
+                    html.append("</html>");
+
+                    show(html.toString());
                 }
             }
         });

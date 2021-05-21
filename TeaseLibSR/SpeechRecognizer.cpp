@@ -97,7 +97,7 @@ void SpeechRecognizer::initContext() {
 	hr = cpContext->SetContextState(SPCS_DISABLED);
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw COMException(hr);
-	hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
+	hr = cpRecognizer->SetRecoState(SPRST_INACTIVE);
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw COMException(hr);
 	hr = cpContext->CreateGrammar(0, &cpGrammar);
@@ -434,19 +434,26 @@ void SpeechRecognizer::setMaxAlternates(const int maxAlternates) {
 void SpeechRecognizer::startRecognition() {
 	checkRecogizerStatus();
 
-	HRESULT hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
-    assert(SUCCEEDED(hr));
+	HRESULT hr = cpContext->SetContextState(SPCS_ENABLED);
+	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw COMException(hr);
 
-	hr = cpContext->SetContextState(SPCS_ENABLED);
-	assert(SUCCEEDED(hr));
+	// enable audio input - microhpone indicator on
+	hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
+    assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw COMException(hr);
 }
 
 void SpeechRecognizer::stopRecognition() {
 	checkRecogizerStatus();
 
-    HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
+	// Disable audio input - microhpone indicator off
+	// -> this should also end emiting any on-going speechDetected-events for the current grammar
+	HRESULT hr = cpRecognizer->SetRecoState(SPRST_INACTIVE_WITH_PURGE);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw COMException(hr);
+
+	hr = cpContext->SetContextState(SPCS_DISABLED);
     assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw COMException(hr);
 }

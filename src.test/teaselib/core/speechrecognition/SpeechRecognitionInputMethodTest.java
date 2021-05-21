@@ -1,7 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.getInputMethod;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -49,8 +51,9 @@ public class SpeechRecognitionInputMethodTest {
     }
 
     private static void test(Choices choices, String expected, int resultIndex) throws InterruptedException {
-        try (SpeechRecognitionInputMethod inputMethod = getInputMethod(TeaseLibSRGS.Relaxed.class);) {
-            Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
+        try (InputMethods inputMethods = new InputMethods(getInputMethod(TeaseLibSRGS.Relaxed.class))) {
+            SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
+            Prompt prompt = new Prompt(choices, inputMethods);
             SpeechRecognitionTestUtils.awaitResult(prompt, inputMethod, expected, new Prompt.Result(resultIndex));
         }
     }
@@ -60,8 +63,9 @@ public class SpeechRecognitionInputMethodTest {
         String phrase = "Foobar";
         Choices choices = new Choices(Locale.US, Intention.Decide, new Choice(phrase));
 
-        try (SpeechRecognitionInputMethod inputMethod = getInputMethod(TeaseLibSRGS.Relaxed.class);) {
-            Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
+        try (InputMethods inputMethods = new InputMethods(getInputMethod(TeaseLibSRGS.Relaxed.class))) {
+            SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
+            Prompt prompt = new Prompt(choices, inputMethods);
 
             Prompt.Result result;
             boolean dismissed;
@@ -77,6 +81,64 @@ public class SpeechRecognitionInputMethodTest {
 
             assertEquals(phrase, new Prompt.Result(0), result);
             assertTrue("Expected dismissed prompt", dismissed);
+        }
+    }
+
+    @Test
+    public void testEventHandlingIsStoppedBetweenRecognitions() throws InterruptedException {
+        String foo = "Foo foo";
+        String bar = "Bar bar";
+
+        try (InputMethods inputMethods = new InputMethods(getInputMethod(TeaseLibSRGS.Relaxed.class))) {
+            SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
+
+            {
+                Choices choices = new Choices(Locale.US, Intention.Decide, new Choice(foo), new Choice(bar));
+                Prompt prompt = new Prompt(choices, inputMethods);
+
+                Prompt.Result result;
+                boolean dismissed;
+                prompt.lock.lockInterruptibly();
+                try {
+                    inputMethod.show(prompt);
+                    inputMethod.emulateRecogntion(bar);
+                    dismissed = prompt.click.await(5, TimeUnit.SECONDS);
+                    result = prompt.result();
+
+                    assertEquals(bar, new Prompt.Result(1), result);
+                    assertTrue("Expected dismissed prompt", dismissed);
+                } finally {
+                    inputMethod.dismiss(prompt);
+                    prompt.lock.unlock();
+                }
+
+            }
+
+            // SAPI text emulation is different from actual recognition
+            SpeechRecognition speechRecognition = inputMethod.speechRecognizer.get(Locale.US);
+            speechRecognition.emulateRecogntion("bar");
+
+            {
+                Choices choices = new Choices(Locale.US, Intention.Decide, new Choice(foo));
+                Prompt prompt = new Prompt(choices, inputMethods);
+                Prompt.Result result;
+                boolean dismissed;
+                prompt.lock.lockInterruptibly();
+                try {
+                    inputMethod.show(prompt);
+                    // inputMethod.emulateRecogntion(bar);
+                    dismissed = prompt.click.await(5, TimeUnit.SECONDS);
+                    result = prompt.result();
+
+                    assertEquals(Prompt.Result.UNDEFINED, result);
+                    assertFalse("Expected dismissed prompt", dismissed);
+                } finally {
+                    inputMethod.dismiss(prompt);
+                    prompt.lock.unlock();
+                }
+
+            }
+
         }
     }
 
@@ -107,8 +169,7 @@ public class SpeechRecognitionInputMethodTest {
 
     @Test
     public void testSpeechRecognitionInputMethodStacked() throws InterruptedException {
-        try (InputMethods inputMethods = new InputMethods(
-                SpeechRecognitionTestUtils.getInputMethod(TeaseLibSRGS.Relaxed.class))) {
+        try (InputMethods inputMethods = new InputMethods(getInputMethod(TeaseLibSRGS.Relaxed.class))) {
             SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
             Choices choices1 = new Choices(Locale.ENGLISH, Intention.Confirm, choice("Foo"));
 

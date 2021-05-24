@@ -407,8 +407,7 @@ public abstract class Script {
             if (!scriptRenderer.isShowingInstructionalImage()) {
                 appendMessage(new Message(actor, Message.ActorImage));
             }
-            scriptRenderer.showAll();
-            completeMandatory();
+            scriptRenderer.showAll(10.0); // seconds
         }
 
         Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript = speechRecognitioneRejectedScript(

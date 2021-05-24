@@ -12,6 +12,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.Rectangle2D.Double;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
@@ -34,6 +35,7 @@ import javax.imageio.ImageIO;
 import javax.swing.ComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.WindowConstants;
 
 import org.slf4j.Logger;
@@ -99,8 +101,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     IScript ss;
 
-    final MainFrame mainFrame;
+    private final MainFrame mainFrame;
+
+    private final JLabel textLabel;
     private final ImageIcon backgroundImageIcon;
+
     private final Image backgroundImage;
 
     // TODO Consolidate, use a single thread pool
@@ -128,11 +133,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         Thread.currentThread().setName("TeaseScript main thread");
 
         // Initialize rendering via background image
-        var fieldName = "backgroundImage";
         ImageIcon imageIcon = null;
         try {
             mainFrame = getMainFrame();
-            imageIcon = getImageIcon(fieldName);
+            textLabel = getField("label");
+            imageIcon = getField("backgroundImage");
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
@@ -144,7 +149,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             backgroundImage = null;
         }
 
-        // automatically show popup
+        // automatically show pop-up
         int originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {
             @Override
@@ -264,40 +269,44 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
         AffineTransform surface;
         if (actorProximity == Proximity.CLOSE) {
-            surface = scale(image, pose.boobs(), bounds, 2.5);
+            surface = surfaceTransform(image, bounds, pose.boobs(), 2.5);
         } else if (actorProximity == Proximity.FACE2FACE) {
-            surface = scale(image, pose.face(), bounds, 1.4);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.4);
         } else if (actorProximity == Proximity.NEAR) {
-            surface = scale(image, pose.face(), bounds, 1.0);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.0);
         } else if (actorProximity == Proximity.FAR) {
-            // TODO could be fitInside() for images with non-matching aspect
-            surface = scale(image, Optional.empty(), bounds, 1.0);
+            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0);
         } else if (actorProximity == Proximity.AWAY) {
             // TODO Blur or turn display off
-            surface = scale(image, Optional.empty(), bounds, 1.0);
+            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0);
         } else {
             throw new IllegalArgumentException(actorProximity.toString());
         }
 
+        // debug code
+        // surface = scale(image, pose.face(), bounds, 2.0);
+
         g2d.drawImage(image, surface, null);
 
+        // debug code
         // renderPoseDebugInfo(g2d, Transform.dimension(image), pose, surface);
 
         return bi;
     }
 
-    private AffineTransform scale(BufferedImage image, Optional<Rectangle.Double> focusArea, Rectangle bounds,
-            double zoom) {
+    private AffineTransform surfaceTransform(BufferedImage image, Rectangle bounds,
+            Optional<Rectangle2D.Double> focusArea, double zoom) {
         var surface = Transform.maxImage(image, bounds, focusArea);
-        if (focusArea.isPresent()) {
-            surface = Transform.adjustToFocusArea(surface, image, bounds,
-                    Transform.scale(focusArea.get(), Transform.dimension(image)));
-        }
 
-        // TODO zoom to focus area
-        // + Actor images are zoomed towards focus area (face, feet etc.)
-        // t.scale(zoom, zoom);
-        // distance simulation
+        if (focusArea.isPresent()) {
+            Double r = Transform.scale(focusArea.get(), Transform.dimension(image));
+            surface = Transform.keepFocusAreaVisible(surface, image, bounds, r);
+            if (zoom > 1.0) {
+                surface = Transform.zoom(surface, r, zoom);
+            }
+
+            Transform.avoidFousAreaBehindText(surface, bounds, r);
+        }
 
         return surface;
     }
@@ -333,16 +342,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         return bounds;
     }
 
-    private ImageIcon getImageIcon(String fieldName) throws NoSuchFieldException, IllegalAccessException {
-        // Get image icon
-        Class<?> mainFrameClass = mainFrame.getClass();
-        // Multiple choices are managed via an array of buttons,
-        // whereas a single choice is implemented as a single button
-        var backgroundImageField = mainFrameClass.getDeclaredField(fieldName);
-        backgroundImageField.setAccessible(true);
-        return (ImageIcon) backgroundImageField.get(mainFrame);
-    }
-
     private ss.desktop.MainFrame getMainFrame() throws NoSuchFieldException, IllegalAccessException {
         Class<?> scriptClass = ss.getClass().getSuperclass();
         var mainField = scriptClass.getDeclaredField("mainWindow");
@@ -350,12 +349,21 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         return (ss.desktop.MainFrame) mainField.get(ss);
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> T getField(String fieldName) throws NoSuchFieldException, IllegalAccessException {
+        Class<?> mainFrameClass = mainFrame.getClass();
+        var field = mainFrameClass.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return (T) field.get(mainFrame);
+    }
+
     private void show(String message) {
         ss.show(message);
     }
 
     String currentText = "";
-    int numberOfParagraphs = 0;
+    private int estimatedTextFieldHeight = 0;
+    private boolean slightlySmallerText = false;
 
     BufferedImage currentImage = null;
     HumanPose.Estimation currentPose = null;
@@ -384,8 +392,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             centerText();
         }
 
-        currentText = text.stream().collect(Collectors.joining("\n\n"));
-        numberOfParagraphs = text.size();
+        String newText = text.stream().collect(Collectors.joining("\n\n"));
+        estimatedTextFieldHeight = currentText.isBlank() || text.size() == 1 ? 0
+                : textLabel.getHeight() / currentText.length() * (newText.length() - text.size());
+        currentText = newText;
+        slightlySmallerText = text.size() > 1;
 
         intertitleActive = false;
         show();
@@ -442,55 +453,78 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 if (currentText == null || currentText.isBlank()) {
                     show("");
                 } else {
-                    // Border radius does not work - probably a JTextPane issue
-                    var html = new StringBuilder();
-                    html.append("<html><head></head>");
-
-                    html.append("<body style=\"");
-                    html.append("background-color:rgb(192, 192, 192);");
-                    html.append("border: 3px solid rgb(192, 192, 192);");
-                    html.append("border-radius: 5px;");
-                    html.append("border-top-width: 3px;");
-                    html.append("border-left-width: 7px;");
-                    html.append("border-bottom-width: 5px;");
-                    html.append("border-right-width: 7px;");
-
-                    if (numberOfParagraphs == 1) {
-                        html.append("font-size: ");
-                        html.append(1.4); // TODO undo test text size
-                        html.append("em;");
-                    }
-
-                    html.append("\\\">");
-
-                    html.append(currentText);
-
-                    html.append("</body>");
-                    html.append("</html>");
-
-                    show(html.toString());
+                    show(html());
                 }
             }
         });
+    }
+
+    private String html() {
+        // Border radius does not work - probably a JLabel issue
+        var html = new StringBuilder();
+        html.append("<html><head></head>");
+
+        html.append("<body style=\"");
+        html.append(bodyStyle());
+        html.append(currentText);
+
+        html.append("</body>");
+        html.append("</html>");
+
+        return html.toString();
+    }
+
+    private String bodyStyle() {
+        var html = new StringBuilder();
+
+        // text background transparency doens't work because the html implentation
+        // of the text label doesn't seem to support it:
+        // rgb(r,g,b,a) -> opaque
+        // rgba(r,g,b,a) -> transparent, no color lucency
+
+        // setting a translucent color for the text label doesn't work either,
+        // because the text label spans the whole panel width, therefore resulting in
+        // a horizontal bar.
+
+        html.append("background-color:rgb(192, 192, 192, 144);");
+        html.append("border: 3px solid rgb(192, 192, 192, 144);");
+        html.append("border-radius: 5px;");
+        html.append("border-top-width: 3px;");
+        html.append("border-left-width: 7px;");
+        html.append("border-bottom-width: 5px;");
+        html.append("border-right-width: 7px;");
+
+        if (estimatedTextFieldHeight < backgroundImageIcon.getIconHeight()) {
+            html.append("font-size: ");
+            if (slightlySmallerText) {
+                html.append(1.25);
+            } else {
+                html.append(1.4);
+            }
+            html.append("em;");
+        }
+
+        html.append("\\\">");
+
+        return html.toString();
     }
 
     @Override
     public void showInterTitle(String text) {
         EventQueue.invokeLater(() -> {
             if (!intertitleActive) {
-                Image image = backgroundImageIcon.getImage();
+                var image = backgroundImageIcon.getImage();
                 centerText();
                 Rectangle bounds = getContentBounds(mainFrame);
                 bounds.x = 0;
                 bounds.y = 0;
-                BufferedImage interTitleImage = new BufferedImage(bounds.width, bounds.height,
-                        BufferedImage.TYPE_INT_ARGB);
+                var interTitleImage = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = (Graphics2D) interTitleImage.getGraphics();
                 g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 // Draw original background image
                 g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
                 // Compensate for the text not being centered (causes the text area to be not centered anymore)
-                int offset = 0;
+                var offset = 0;
                 g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
                 int top = bounds.height / 4 + offset;
                 int bottom = bounds.height * 3 / 4 + offset;
@@ -621,7 +655,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     class ShowPopupTask {
         final FutureTask<Boolean> task;
         final AtomicBoolean resetPopupVisibility = new AtomicBoolean(false);
-        static final int PollIntervalMillis = 100;
+        static final int POLL_INTERVAL_MILLIS = 100;
 
         JComboBox<String> comboBox = null;
 
@@ -642,7 +676,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                             showPopup();
                             return true;
                         }
-                        Thread.sleep(PollIntervalMillis);
+                        Thread.sleep(POLL_INTERVAL_MILLIS);
                     }
                     return false;
                 }

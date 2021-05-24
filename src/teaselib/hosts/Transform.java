@@ -5,6 +5,7 @@ import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.Rectangle2D.Double;
 import java.awt.image.BufferedImage;
 import java.util.Optional;
 
@@ -111,7 +112,7 @@ public class Transform {
      * 
      * @return
      */
-    public static AffineTransform adjustToFocusArea(AffineTransform t, BufferedImage image, Rectangle bounds,
+    public static AffineTransform keepFocusAreaVisible(AffineTransform t, BufferedImage image, Rectangle bounds,
             Rectangle2D.Double r) {
         var adjusted = new AffineTransform();
 
@@ -144,6 +145,28 @@ public class Transform {
 
         adjusted.concatenate(t);
         return adjusted;
+    }
+
+    public static AffineTransform zoom(AffineTransform t, Rectangle2D.Double focusArea, double zoom) {
+        var zoomed = new AffineTransform();
+
+        Point2D focus = new Point2D.Double(focusArea.getCenterX(), focusArea.getCenterY());
+        t.translate(focus.getX(), focus.getY());
+        t.scale(zoom, zoom);
+        t.translate(-focus.getX(), -focus.getY());
+
+        zoomed.concatenate(t);
+        return zoomed;
+    }
+
+    public static void avoidFousAreaBehindText(AffineTransform surface, Rectangle bounds, Double r) {
+        Point2D focusRight = surface.transform(new Point2D.Double(r.getMaxX(), r.getCenterY() + 200),
+                new Point2D.Double());
+        int textLeft = bounds.width * 4 / 5;
+        double overlap = textLeft - focusRight.getX();
+        if (overlap > 0) {
+            surface.translate(-overlap, 0);
+        }
     }
 
     /**

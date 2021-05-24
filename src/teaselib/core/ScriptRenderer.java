@@ -209,11 +209,12 @@ public class ScriptRenderer implements Closeable {
     }
 
     boolean isShowingInstructionalImage() {
-        return currentMessage.contains(Message.Type.Image);
+        var current = currentMessage;
+        return current != null && current.contains(Message.Type.Image);
     }
 
-    void showAll() {
-        sectionRenderer.showAll();
+    void showAll(double delaySeconds) {
+        sectionRenderer.showAll(delaySeconds);
     }
 
     private void fireNewMessageEvent(TeaseLib teaseLib, Actor actor, BeforeNewMessage.OutlineType outlineType) {

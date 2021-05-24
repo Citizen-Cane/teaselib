@@ -83,27 +83,34 @@ public class SectionRenderer implements Closeable {
         return createBatch(actor, messages, replace, resources);
     }
 
-    public void showAll() {
-        var current = currentMessageRenderer;
-        if (current != null) {
-            current.thisTask.cancel(true);
-            // TODO show subsequent messages as single paragraphs, then show all appended
+    public void showAll(double delaySeconds) {
+        if (delaySeconds < DELAY_AT_END_OF_MESSAGE) {
+            var current = currentMessageRenderer;
+            if (current != null) {
+                current.thisTask.cancel(true);
+                // TODO show subsequent messages as single paragraphs, then show all appended
+            }
         }
 
-        executor.submit(() -> {
-            try {
-                var actual = currentMessageRenderer;
-                if (actual != null) {
-                    show(actual);
+        if (delaySeconds > DELAY_AT_END_OF_MESSAGE) {
+            executor.submit(() -> {
+                try {
+                    var actual = currentMessageRenderer;
+                    if (actual != null) {
+                        completeSectionMandatory();
+                        renderTimeSpannedPart(delay(delaySeconds - DELAY_AT_END_OF_MESSAGE));
+                        currentRenderer.completeMandatory();
+                        show(actual);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new ScriptInterruptedException(e);
+                } catch (IOException e) {
+                    ExceptionUtil.handleIOException(e, teaseLib.config, logger);
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            } catch (IOException e) {
-                ExceptionUtil.handleIOException(e, teaseLib.config, logger);
-            }
-            return null;
-        });
+                return null;
+            });
+        }
     }
 
     private final class Batch extends MessageRenderer {

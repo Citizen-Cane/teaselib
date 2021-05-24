@@ -1,27 +1,20 @@
 package teaselib.hosts;
 
-import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.Rectangle2D.Double;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
-import java.awt.image.ColorModel;
-import java.awt.image.ConvolveOp;
-import java.awt.image.Kernel;
-import java.awt.image.Raster;
-import java.awt.image.RasterOp;
-import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +22,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -96,6 +90,10 @@ import teaselib.util.Interval;
 // TODO Combobox doesn't respond to speech recognition reliably
 // - This is in fact not a speech recognition related problem,
 // but dismissing the combobox after showing the list programatically
+/**
+ * @author admin
+ *
+ */
 public class SexScriptsHost implements Host, HostInputMethod.Backend {
     static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
@@ -130,7 +128,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         Thread.currentThread().setName("TeaseScript main thread");
 
         // Initialize rendering via background image
-        String fieldName = "backgroundImage";
+        var fieldName = "backgroundImage";
         ImageIcon imageIcon = null;
         try {
             mainFrame = getMainFrame();
@@ -173,7 +171,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             public void windowClosing(WindowEvent e) {
                 if (onQuitHandler != null) {
                     mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-                    Runnable runnable = onQuitHandler;
+                    var runnable = onQuitHandler;
                     // Execute each quit handler just once
                     onQuitHandler = null;
                     logger.info("Running quit handler {}", runnable.getClass().getName());
@@ -225,29 +223,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         };
     }
 
-    private void setImage(Image image) {
-        if (image != null) {
-            setBackgroundImage(image);
-        } else {
-            setBackgroundImage(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
-        }
-    }
-
-    private void setBackgroundImage(Image image) {
-        Rectangle bounds = getContentBounds(mainFrame);
-        // keep text at the right
-        BufferedImage spacer = new BufferedImage(bounds.width, 16, BufferedImage.TYPE_INT_ARGB);
-        setImageInternal(spacer);
-    }
-
-    private void setImageInternal(Image image) {
-        if (image != null) {
-            ((ss.desktop.Script) ss).setImage(image, false);
-        } else {
-            ss.setImage((byte[]) null, 0);
-        }
-    }
-
     private void show(BufferedImage image) {
         if (image != null) {
             if (focusLevel < 1.0) {
@@ -255,12 +230,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 float m = 0.80f;
                 int width = (int) (image.getWidth() * (b + focusLevel * m));
                 int height = (int) (image.getHeight() * (b + focusLevel * m));
-                BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                var resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D resizedg2d = (Graphics2D) resized.getGraphics();
-                BufferedImageOp blurOp = getBlurOp(7);
+                BufferedImageOp blurOp = ConvolveEdgeReflectOp.blur(7);
                 resizedg2d.drawImage(image, 0, 0, width, height, null);
 
-                BufferedImage blurred = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                var blurred = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D blurredg2d = (Graphics2D) blurred.getGraphics();
                 blurredg2d.drawImage(resized, blurOp, 0, 0);
                 backgroundImageIcon.setImage(blurred);
@@ -281,187 +256,76 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     private BufferedImage render(BufferedImage image, HumanPose.Estimation pose, Rectangle bounds) {
-        BufferedImage bi = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
+        var bi = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = (Graphics2D) bi.getGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         // Draw original background image
         g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
 
-        Point2D poseHead = pose.head.orElse(new Point2D.Double(0.5, 0.5));
-        // TODO Pose distance relates to image width -> map to screen dpi or draw area
-        Float poseDistance = pose.distance.orElse(1.0f);
-
-        // TODO adjust upper bound to avoid background border around actor image
-        Point2D head;
-        double actorDistance;
-        if (proximity == Proximity.CLOSE) {
-            head = new Point2D.Double(0.4, -0.2);
-            actorDistance = 0.4;
-        } else if (proximity == Proximity.FACE2FACE) {
-            head = new Point2D.Double(0.4, 0.15);
-            actorDistance = 0.7;
-        } else if (proximity == Proximity.NEAR) {
-            head = new Point2D.Double(0.4, 0.20);
-            actorDistance = 1.0;
-        } else if (proximity == Proximity.FAR) {
-            // TODO Blur
-            head = new Point2D.Double(0.4, 0.20);
-            actorDistance = 1.2;
-        } else if (proximity == Proximity.AWAY) {
+        AffineTransform surface;
+        if (actorProximity == Proximity.CLOSE) {
+            surface = scale(image, pose.boobs(), bounds, 2.5);
+        } else if (actorProximity == Proximity.FACE2FACE) {
+            surface = scale(image, pose.face(), bounds, 1.4);
+        } else if (actorProximity == Proximity.NEAR) {
+            surface = scale(image, pose.face(), bounds, 1.0);
+        } else if (actorProximity == Proximity.FAR) {
+            // TODO could be fitInside() for images with non-matching aspect
+            surface = scale(image, Optional.empty(), bounds, 1.0);
+        } else if (actorProximity == Proximity.AWAY) {
             // TODO Blur or turn display off
-            head = new Point2D.Double(0.4, 0.20);
-            actorDistance = 1.4;
+            surface = scale(image, Optional.empty(), bounds, 1.0);
         } else {
-            throw new IllegalArgumentException(proximity.toString());
+            throw new IllegalArgumentException(actorProximity.toString());
         }
-
-        // uncomment to test image->surface transform
-        // head = new Point2D.Double(0.5, 0.25);
-        // actorDistance = 1.0;
-        // poseDistance = 1.0f;
-
-        // transforms are concatenated from bottom to top
-        AffineTransform surface = new AffineTransform();
-        // TODO translate image to avoid borders
-        // TODO translate image to avoid borders @ zoom=1.0 to avoid head shift when user changes proximity
-
-        surface.translate(head.getX() * bounds.width, head.getY() * bounds.height);
-        // translate head to center
-
-        // TODO scale to always fill the screen for both portrait and landscape images
-        double aspect = Math.max((double) bounds.width / image.getWidth(), (double) bounds.height / image.getHeight());
-        surface.scale(aspect, aspect);
-        // scale to user space
-
-        surface.scale(image.getWidth(), image.getHeight());
-        // scale back to image space
-
-        surface.scale(1.0 / actorDistance, 1.0 / actorDistance);
-        // Adjust to proximity to indicate near/face2face/close
-
-        surface.scale(poseDistance, poseDistance);
-        // scale to distance so that the head is always the same size
-
-        surface.translate(-poseHead.getX(), -poseHead.getY());
-        // move face to 0,0
-
-        surface.scale(1.0 / image.getWidth(), 1.0 / image.getHeight());
-        // transform to normalized
 
         g2d.drawImage(image, surface, null);
 
-        // uncomment to test pose estimation features
-        // Point2D p = surface.transform(
-        // new Point2D.Double(poseHead.getX() * image.getWidth(), poseHead.getY() * image.getHeight()),
-        // new Point2D.Double());
-        // int r = (int) (image.getWidth() / poseDistance * 0.1);
-        // g2d.setColor(pose.head.isPresent() ? Color.cyan : Color.orange);
-        // g2d.drawOval((int) p.getX() - 2, (int) p.getY() - 2, 2 * 2, 2 * 2);
-        // // TODO exact head scale
-        // g2d.setColor(pose.head.isPresent() ? Color.blue : Color.red);
-        // g2d.drawOval((int) p.getX() - r, (int) p.getY() - r, 2 * r, 2 * r);
+        // renderPoseDebugInfo(g2d, Transform.dimension(image), pose, surface);
 
         return bi;
     }
 
-    private static BufferedImageOp getBlurOp(int n) {
-        return new ConvolveEdgeReflectOp(blurKernel(n));
+    private AffineTransform scale(BufferedImage image, Optional<Rectangle.Double> focusArea, Rectangle bounds,
+            double zoom) {
+        var surface = Transform.maxImage(image, bounds, focusArea);
+        if (focusArea.isPresent()) {
+            surface = Transform.adjustToFocusArea(surface, image, bounds,
+                    Transform.scale(focusArea.get(), Transform.dimension(image)));
+        }
+
+        // TODO zoom to focus area
+        // + Actor images are zoomed towards focus area (face, feet etc.)
+        // t.scale(zoom, zoom);
+        // distance simulation
+
+        return surface;
     }
 
-    private static Kernel blurKernel(int n) {
-        int size = n * n;
-        float nth = 1.0f / size;
-        float[] data = new float[size];
-        for (int i = 0; i < size; i++) {
-            data[i] = nth;
-        }
-        return new Kernel(n, n, data);
-    }
+    void renderPoseDebugInfo(Graphics2D g2d, Dimension image, HumanPose.Estimation pose, AffineTransform surface) {
+        g2d.setColor(Color.red);
+        Point2D p0 = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
+        Point2D p1 = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()), new Point2D.Double());
+        g2d.drawRect((int) p0.getX(), (int) p0.getY(), (int) (p1.getX() - p0.getX()), (int) (p1.getY() - p0.getY()));
 
-    public static class ConvolveEdgeReflectOp implements BufferedImageOp, RasterOp {
-        private final ConvolveOp convolve;
+        Point2D poseHead = pose.head.orElse(new Point2D.Double(0, 0));
+        Point2D p = surface.transform(
+                new Point2D.Double(poseHead.getX() * image.getWidth(), poseHead.getY() * image.getHeight()),
+                new Point2D.Double());
 
-        public ConvolveEdgeReflectOp(Kernel kernel) {
-            this.convolve = new ConvolveOp(kernel, ConvolveOp.EDGE_NO_OP, null);
-        }
+        Optional<Double> face = pose.face();
+        g2d.setColor(face.isPresent() ? Color.cyan : Color.orange);
+        g2d.drawOval((int) p.getX() - 2, (int) p.getY() - 2, 2 * 2, 2 * 2);
 
-        @Override
-        public BufferedImage filter(BufferedImage source, BufferedImage destination) {
-            Kernel kernel = convolve.getKernel();
-            int borderWidth = kernel.getWidth() / 2;
-            int borderHeight = kernel.getHeight() / 2;
-
-            BufferedImage original = addBorder(source, borderWidth, borderHeight);
-            return convolve.filter(original, destination) //
-                    .getSubimage(borderWidth, borderHeight, source.getWidth(), source.getHeight());
-        }
-
-        private static BufferedImage addBorder(BufferedImage image, int borderWidth, int borderHeight) {
-            int w = image.getWidth();
-            int h = image.getHeight();
-
-            ColorModel cm = image.getColorModel();
-            WritableRaster raster = cm.createCompatibleWritableRaster(w + 2 * borderWidth, h + 2 * borderHeight);
-            BufferedImage bordered = new BufferedImage(cm, raster, cm.isAlphaPremultiplied(), null);
-            Graphics2D g = bordered.createGraphics();
-            try {
-                g.setComposite(AlphaComposite.Src);
-                g.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE);
-                g.drawImage(image, borderWidth, borderHeight, null);
-                g.drawImage(image, borderWidth, 0, borderWidth + w, borderHeight, 0, 0, w, 1, null);
-                g.drawImage(image, -w + borderWidth, borderHeight, borderWidth, h + borderHeight, 0, 0, 1, h, null);
-                g.drawImage(image, w + borderWidth, borderHeight, 2 * borderWidth + w, h + borderHeight, w - 1, 0, w, h,
-                        null);
-                g.drawImage(image, borderWidth, borderHeight + h, borderWidth + w, 2 * borderHeight + h, 0, h - 1, w, h,
-                        null);
-            } finally {
-                g.dispose();
-            }
-
-            return bordered;
-        }
-
-        @Override
-        public WritableRaster filter(Raster src, WritableRaster dst) {
-            return convolve.filter(src, dst);
-        }
-
-        @Override
-        public BufferedImage createCompatibleDestImage(BufferedImage src, ColorModel destCM) {
-            return convolve.createCompatibleDestImage(src, destCM);
-        }
-
-        @Override
-        public WritableRaster createCompatibleDestRaster(Raster src) {
-            return convolve.createCompatibleDestRaster(src);
-        }
-
-        @Override
-        public Rectangle2D getBounds2D(BufferedImage src) {
-            return convolve.getBounds2D(src);
-        }
-
-        @Override
-        public Rectangle2D getBounds2D(Raster src) {
-            return convolve.getBounds2D(src);
-        }
-
-        @Override
-        public Point2D getPoint2D(Point2D srcPt, Point2D dstPt) {
-            return convolve.getPoint2D(srcPt, dstPt);
-        }
-
-        @Override
-        public RenderingHints getRenderingHints() {
-            return convolve.getRenderingHints();
-        }
-
+        g2d.setColor(face.isPresent() ? Color.blue : Color.red);
+        int radius = face.isPresent() ? (int) (image.getWidth() * face.get().width / 2.0f) : 2;
+        g2d.drawOval((int) p.getX() - radius, (int) p.getY() - radius, 2 * radius, 2 * radius);
     }
 
     private static Rectangle getContentBounds(ss.desktop.MainFrame mainFrame) {
         Container contentPane = mainFrame.getContentPane();
         Rectangle bounds = contentPane.getBounds();
-        Insets insets = contentPane.getInsets();
+        var insets = contentPane.getInsets();
         bounds.x += insets.left;
         bounds.y += insets.top;
         bounds.width -= insets.left + insets.right;
@@ -474,14 +338,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         Class<?> mainFrameClass = mainFrame.getClass();
         // Multiple choices are managed via an array of buttons,
         // whereas a single choice is implemented as a single button
-        Field backgroundImageField = mainFrameClass.getDeclaredField(fieldName);
+        var backgroundImageField = mainFrameClass.getDeclaredField(fieldName);
         backgroundImageField.setAccessible(true);
         return (ImageIcon) backgroundImageField.get(mainFrame);
     }
 
     private ss.desktop.MainFrame getMainFrame() throws NoSuchFieldException, IllegalAccessException {
         Class<?> scriptClass = ss.getClass().getSuperclass();
-        Field mainField = scriptClass.getDeclaredField("mainWindow");
+        var mainField = scriptClass.getDeclaredField("mainWindow");
         mainField.setAccessible(true);
         return (ss.desktop.MainFrame) mainField.get(ss);
     }
@@ -513,12 +377,28 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             currentPose = HumanPose.Estimation.NONE;
         }
 
+        // keep text at the right
+        if (currentImage != null) {
+            alignTextRight();
+        } else {
+            centerText();
+        }
+
         currentText = text.stream().collect(Collectors.joining("\n\n"));
         numberOfParagraphs = text.size();
 
         intertitleActive = false;
-        setImage(currentImage);
         show();
+    }
+
+    private void alignTextRight() {
+        Rectangle bounds = getContentBounds(mainFrame);
+        Image spacer = new BufferedImage(bounds.width, 16, BufferedImage.TYPE_INT_ARGB);
+        ((ss.desktop.Script) ss).setImage(spacer, false);
+    }
+
+    private void centerText() {
+        ss.setImage((byte[]) null, 0);
     }
 
     float focusLevel = 1.0f;
@@ -535,12 +415,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         this.gaze = gaze;
     }
 
-    HumanPose.Proximity proximity = Proximity.FACE2FACE;
+    HumanPose.Proximity actorProximity = Proximity.FACE2FACE;
 
     @Override
-    public void setUserProximity(HumanPose.Proximity proximity) {
-        if (this.proximity != proximity) {
-            this.proximity = proximity;
+    public void setActorProximity(HumanPose.Proximity proximity) {
+        if (this.actorProximity != proximity) {
+            this.actorProximity = proximity;
             show();
         }
     }
@@ -577,7 +457,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
                     if (numberOfParagraphs == 1) {
                         html.append("font-size: ");
-                        html.append(1.5);
+                        html.append(1.4); // TODO undo test text size
                         html.append("em;");
                     }
 
@@ -599,7 +479,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         EventQueue.invokeLater(() -> {
             if (!intertitleActive) {
                 Image image = backgroundImageIcon.getImage();
-                ss.setImage((byte[]) null, 0);
+                centerText();
                 Rectangle bounds = getContentBounds(mainFrame);
                 bounds.x = 0;
                 bounds.y = 0;
@@ -731,7 +611,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     public javax.swing.JComboBox<String> getComboBox() throws NoSuchFieldException, IllegalAccessException {
-        Field comboField = mainFrame.getClass().getDeclaredField("comboBox");
+        var comboField = mainFrame.getClass().getDeclaredField("comboBox");
         comboField.setAccessible(true);
         @SuppressWarnings("unchecked")
         final javax.swing.JComboBox<String> ssComboBox = (javax.swing.JComboBox<String>) comboField.get(mainFrame);
@@ -799,7 +679,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         }
         // open the combo box pop-up if necessary in order to
         // allow the user to read prompts without mouse/touch interaction
-        ShowPopupTask showPopupTask = new ShowPopupTask();
+        var showPopupTask = new ShowPopupTask();
         boolean showPopup = choices.size() > 1;
         if (showPopup) {
             showPopupThreadPool.execute(showPopupTask.task);

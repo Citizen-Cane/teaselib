@@ -1,6 +1,5 @@
 package teaselib.core;
 
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.stream.Collectors.toList;
 import static teaselib.core.concurrency.NamedExecutorService.newUnlimitedThreadPool;
@@ -20,7 +19,9 @@ import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Replay;
 import teaselib.core.ScriptEventArgs.BeforeNewMessage;
+import teaselib.core.ScriptEventArgs.BeforeNewMessage.OutlineType;
 import teaselib.core.debug.CheckPoint;
+import teaselib.core.functional.TriFunction;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRendererQueue;
@@ -36,21 +37,22 @@ import teaselib.core.media.SectionRenderer;
 public class ScriptRenderer implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(ScriptRenderer.class);
 
-    final MediaRendererQueue renderQueue = new MediaRendererQueue();
+    private final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final ExecutorService scriptFunctionExecutor = newUnlimitedThreadPool("Script task", 1, HOURS);
     private final ExecutorService inputMethodExecutor = newUnlimitedThreadPool("Input method", 1, HOURS);
     private final ExecutorService prefetchExecutor = singleThreadedQueue("Image prefetch", 1, HOURS);
 
-    final List<MediaRenderer> queuedRenderers = new ArrayList<>();
+    private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
 
-    List<MediaRenderer> playedRenderers = null;
+    private List<MediaRenderer> playedRenderers = null;
     private final List<Message> prependedMessages = new ArrayList<>();
     private Actor currentActor = null;
-
-    final SectionRenderer sectionRenderer;
+    private Message currentMessage = null;
 
     public final ScriptEvents events;
+
+    final SectionRenderer sectionRenderer;
     final ScriptEventInputMethod scriptEventInputMethod;
 
     public final AudioSync audioSync;
@@ -162,8 +164,6 @@ public class ScriptRenderer implements Closeable {
 
     void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
             Decorator[] decorators) {
-        fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.NewSection);
-        List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
 
         // TODO run method of media renderer should start rendering
         // -> currently it's started when say() is called
@@ -175,8 +175,12 @@ public class ScriptRenderer implements Closeable {
         // TODO render section delay in queue, so it's not part of the paragraph anymore
 
         // Workaround: keep it for now, renderer is started and queued, waited for and ended
-        MediaRenderer say = sectionRenderer.say(actor, renderedMessages, resources);
-        renderMessage(teaseLib, actor, say);
+
+        renderMessage(teaseLib, resources, actor, messages, decorators, //
+                sectionRenderer::say, BeforeNewMessage.OutlineType.NewSection);
+    }
+
+    public interface ConcatFunction extends TriFunction<Actor, List<RenderedMessage>, ResourceLoader, MediaRenderer> { //
     }
 
     void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
@@ -184,19 +188,28 @@ public class ScriptRenderer implements Closeable {
         if (!prependedMessages.isEmpty()) {
             renderMessage(teaseLib, resources, message, decorators);
         } else {
-            fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.AppendParagraph);
-            List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
-            MediaRenderer appended = sectionRenderer.append(actor, renderedMessages, resources);
-            renderMessage(teaseLib, actor, appended);
+            renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
+                    sectionRenderer::append, BeforeNewMessage.OutlineType.AppendParagraph);
         }
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
-        fireNewMessageEvent(teaseLib, actor, BeforeNewMessage.OutlineType.ReplaceParagraph);
-        List<RenderedMessage> renderedMessages = convertMessagesToRendered(message, decorators);
-        MediaRenderer replaced = sectionRenderer.replace(actor, renderedMessages, resources);
+        renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
+                sectionRenderer::replace, BeforeNewMessage.OutlineType.ReplaceParagraph);
+    }
+
+    private void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
+            Decorator[] decorators, ConcatFunction concatFunction, OutlineType outlineType) {
+        fireNewMessageEvent(teaseLib, actor, outlineType);
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
+        MediaRenderer replaced = concatFunction.apply(actor, renderedMessages, resources);
         renderMessage(teaseLib, actor, replaced);
+        currentMessage = messages.get(messages.size() - 1);
+    }
+
+    boolean isShowingInstructionalImage() {
+        return currentMessage.contains(Message.Type.Image);
     }
 
     void showAll() {
@@ -210,10 +223,6 @@ public class ScriptRenderer implements Closeable {
             events.actorChanged.fire(new ScriptEventArgs.ActorChanged(currentActor));
         }
         events.beforeMessage.fire(new ScriptEventArgs.BeforeNewMessage(outlineType));
-    }
-
-    private List<RenderedMessage> convertMessagesToRendered(Message message, Decorator[] decorators) {
-        return convertMessagesToRendered(singletonList(message), decorators);
     }
 
     private List<RenderedMessage> convertMessagesToRendered(List<Message> messages, Decorator[] decorators) {

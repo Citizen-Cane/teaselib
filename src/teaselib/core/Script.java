@@ -104,15 +104,14 @@ public abstract class Script {
             handleAutoRemove();
             bindNetworkProperties();
 
-            InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
+            var inputMethods = teaseLib.globals.get(InputMethods.class);
             BooleanSupplier canSpeak = () -> !teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied();
             inputMethods.add(new SpeechRecognitionInputMethod(teaseLib.config, scriptRenderer.audioSync), canSpeak);
             inputMethods.add(teaseLib.host.inputMethod());
             inputMethods.add(scriptRenderer.scriptEventInputMethod);
 
             HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-            SpeechRecognitionInputMethod speechRecognitionInputMethod = inputMethods
-                    .get(SpeechRecognitionInputMethod.class);
+            var speechRecognitionInputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
             speechRecognitionInputMethod.events.recognitionStarted
                     .add(ev -> humanPoseInteraction.setPause(speechRecognitionInputMethod::completeSpeechRecognition));
 
@@ -152,15 +151,15 @@ public abstract class Script {
                         boolean speechProximity;
                         if (aspect.isPresent()) {
                             Proximity proximity = aspect.get();
-                            teaseLib.host.setUserProximity(proximity);
+                            teaseLib.host.setActorProximity(proximity);
                             speechProximity = proximity == Proximity.FACE2FACE;
                             previous = proximity;
                         } else {
                             speechProximity = false;
                             if (previous == Proximity.CLOSE || previous == Proximity.FACE2FACE) {
-                                teaseLib.host.setUserProximity(Proximity.NEAR);
+                                teaseLib.host.setActorProximity(Proximity.NEAR);
                             } else {
-                                teaseLib.host.setUserProximity(previous);
+                                teaseLib.host.setActorProximity(previous);
                             }
                         }
                         speechRecognitionInputMethod.setFaceToFace(speechProximity);
@@ -182,7 +181,7 @@ public abstract class Script {
 
     protected void handleAutoRemove() {
         long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
-        State persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.Internal.PERSISTED_DOMAINS_STATE);
+        var persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.Internal.PERSISTED_DOMAINS_STATE);
         Collection<Object> domains = new ArrayList<>(((StateImpl) persistedDomains).peers());
         for (Object domain : domains) {
             if (domain.equals(StateImpl.Domain.LAST_USED)) {
@@ -205,10 +204,10 @@ public abstract class Script {
     }
 
     private State handle(String domain, State.Persistence.Until until, long startupTimeSeconds, float limitFactor) {
-        State untilState = teaseLib.state(domain, until);
+        var untilState = teaseLib.state(domain, until);
         Set<Object> peers = ((StateImpl) untilState).peers();
         for (Object peer : new ArrayList<>(peers)) {
-            State state = teaseLib.state(domain, peer);
+            var state = teaseLib.state(domain, peer);
             if (!cleanupRemovedUserItemReferences(state)) {
                 remove(state, startupTimeSeconds, limitFactor);
             }
@@ -217,7 +216,7 @@ public abstract class Script {
     }
 
     private boolean cleanupRemovedUserItemReferences(State state) {
-        StateImpl stateImpl = AbstractProxy.stateImpl(state);
+        var stateImpl = AbstractProxy.stateImpl(state);
         if (stateImpl.peers().stream().filter(ItemGuid::isGuid).anyMatch(
                 guid -> teaseLib.findItem(stateImpl.domain, stateImpl.item, (ItemGuid) guid) == Item.NotFound)) {
             state.remove();
@@ -229,7 +228,7 @@ public abstract class Script {
 
     private static void remove(State state, long startupTimeSeconds, float limitFactor) {
         // Very implicit way of testing for unavailable items
-        Duration duration = state.duration();
+        var duration = state.duration();
         if (state.applied() && duration.expired()) {
             long limit = duration.limit(TimeUnit.SECONDS);
             if (limit >= State.TEMPORARY && limit < Duration.INFINITE) {
@@ -404,7 +403,12 @@ public abstract class Script {
             scriptRenderer.stopBackgroundRenderers();
         }
         if (scriptFunction == null || scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
+
+            if (!scriptRenderer.isShowingInstructionalImage()) {
+                appendMessage(new Message(actor, Message.ActorImage));
+            }
             scriptRenderer.showAll();
+            completeMandatory();
         }
 
         Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript = speechRecognitioneRejectedScript(
@@ -549,7 +553,7 @@ public abstract class Script {
      */
     public Resources resources(String wildcardPattern) {
         List<String> items;
-        int size = 0;
+        int size;
         Class<?> scriptClass = getClass();
         do {
             items = resources.resources(wildcardPattern, scriptClass);

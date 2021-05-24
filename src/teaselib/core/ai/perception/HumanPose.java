@@ -1,6 +1,8 @@
 package teaselib.core.ai.perception;
 
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.Rectangle2D.Double;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -177,9 +179,29 @@ public class HumanPose extends NativeObject {
             }
         }
 
+        public Optional<Rectangle2D.Double> face() {
+            if (head.isEmpty()) {
+                return Optional.empty();
+            } else {
+                Point2D h = head.get();
+                float r = 1.0f / distance.orElse(1.0f) * 0.1f;
+                return Optional.of(new Rectangle2D.Double(h.getX() - r, h.getY() - r, 2 * r, 2 * r));
+            }
+        }
+
+        public Optional<Rectangle2D.Double> boobs() {
+            Optional<Double> face = face();
+            if (face.isEmpty()) {
+                return Optional.empty();
+            } else {
+                var r = face.get();
+                return Optional.of(new Rectangle2D.Double(r.x, r.y + r.height, r.width, r.height));
+            }
+        }
+
         @Override
         public String toString() {
-            StringBuilder pose = new StringBuilder();
+            var pose = new StringBuilder();
             pose.append('[');
             List<String> elements = new ArrayList<>();
             head.ifPresent(point -> elements.add("head=" + point));

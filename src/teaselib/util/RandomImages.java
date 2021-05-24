@@ -5,6 +5,7 @@ import java.util.NoSuchElementException;
 
 import teaselib.Resources;
 import teaselib.core.AbstractImages;
+import teaselib.util.math.Random;
 
 /**
  * Handles image iteration over a set of resources
@@ -14,6 +15,8 @@ import teaselib.core.AbstractImages;
 public class RandomImages extends AbstractImages {
 
     protected final List<String> images;
+    private final Random random = new Random();
+    private String current;
 
     /**
      * Builds a list of resource paths to all jpg images that match the given path.
@@ -45,20 +48,13 @@ public class RandomImages extends AbstractImages {
         if (!hasNext()) {
             throw new NoSuchElementException();
         } else {
-            return getRandomResource(images);
+            return resource(images);
         }
     }
 
-    protected String getRandomResource(List<String> selection) {
-        final String path;
-        if (!selection.isEmpty()) {
-            int i = (int) (Math.random() * selection.size());
-            path = selection.get(i);
-        } else {
-            // Empty image set
-            path = null;
-        }
-        return path;
+    protected String resource(List<String> items) {
+        current = random.item(current, items);
+        return current;
     }
 
     @Override

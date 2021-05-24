@@ -102,7 +102,7 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public void setUserProximity(HumanPose.Proximity proximity) {
+    public void setActorProximity(HumanPose.Proximity proximity) {
         // Ignore
     }
 }

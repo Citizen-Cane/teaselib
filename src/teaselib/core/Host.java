@@ -81,5 +81,5 @@ public interface Host {
 
     void setGaze(Point2D gaze);
 
-    void setUserProximity(HumanPose.Proximity proximity);
+    void setActorProximity(HumanPose.Proximity proximity);
 }

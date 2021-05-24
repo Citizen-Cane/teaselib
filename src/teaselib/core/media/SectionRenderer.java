@@ -151,7 +151,7 @@ public class SectionRenderer implements Closeable {
                 return null;
             });
 
-            running = thisTask = new MediaFutureTask<RendererFacade>(renderer, future) {
+            running = thisTask = new MediaFutureTask<>(renderer, future) {
                 @Override
                 public boolean cancel(boolean mayInterruptIfRunning) {
                     boolean cancel = super.cancel(mayInterruptIfRunning);

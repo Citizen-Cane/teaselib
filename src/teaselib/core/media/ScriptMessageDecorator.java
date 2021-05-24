@@ -124,7 +124,7 @@ public class ScriptMessageDecorator {
                             currentMood = nextMood;
                         }
                         // Inject mood if changed
-                        if (currentMood != lastMood) {
+                        if (!currentMood.equalsIgnoreCase(lastMood)) {
                             parsedMessage.add(Message.Type.Mood, currentMood);
                             lastMood = currentMood;
                         }

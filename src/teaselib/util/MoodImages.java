@@ -27,9 +27,9 @@ public class MoodImages extends RandomImages {
             for (String hint : hints) {
                 // process each hint type
                 if (Mood.isMood(hint)) {
-                    List<String> matches = getMatchingResources(hint);
-                    if (!matches.isEmpty()) {
-                        return getRandomResource(matches);
+                    List<String> matching = getMatchingResources(hint);
+                    if (!matching.isEmpty()) {
+                        return resource(matching);
                     }
                 }
             }
@@ -40,7 +40,7 @@ public class MoodImages extends RandomImages {
     private List<String> getMatchingResources(String mood) {
         String name = Mood.extractName(mood);
         List<String> matches = getMatches(name);
-        if (matches.isEmpty() && mood != Mood.Neutral) {
+        if (matches.isEmpty() && !Mood.Neutral.equalsIgnoreCase(mood)) {
             return getMatchingResources(Mood.lessIntense(mood));
         }
         return matches;

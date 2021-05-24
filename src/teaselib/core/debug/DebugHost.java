@@ -217,7 +217,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void setUserProximity(HumanPose.Proximity proximity) {
+    public void setActorProximity(HumanPose.Proximity proximity) {
         // Ignore
 
     }

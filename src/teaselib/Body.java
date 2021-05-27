@@ -27,6 +27,9 @@ public enum Body {
     OnClit,
     OnLabia,
 
+    AnklesCuffed,
+    WristsCuffed,
+
     AnklesTied,
     WristsTied,
 

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Disabled;
 
 import teaselib.Accessoires;
 import teaselib.Body;
+import teaselib.Bondage;
 import teaselib.Household;
 import teaselib.Length;
 import teaselib.Material;
@@ -206,6 +207,7 @@ public class ItemImplTest {
         assertTrue(script.state(Body.WristsTied).is(script.namespace));
 
         script.state(Body.WristsTied).remove();
+        script.state(Body.WristsCuffed).remove();
         assertFalse(script.state(Body.WristsTied).applied());
 
         assertFalse(script.state(Body.WristsTied).is(script.namespace));
@@ -230,6 +232,7 @@ public class ItemImplTest {
         assertTrue(script.state(Body.AnklesTied).is(script.namespace));
 
         script.state(Body.WristsTied).remove();
+        script.state(Body.WristsCuffed).remove();
         assertFalse(script.state(Body.WristsTied).applied());
 
         assertFalse(script.state(Body.WristsTied).is(script.namespace));
@@ -427,7 +430,7 @@ public class ItemImplTest {
 
         script.teaseLib.temporaryItems().remove();
 
-        assertFalse(script.state(Toys.Chains).applied());
+        assertFalse(script.state(Bondage.Chains).applied());
         script.teaseLib.temporaryItems().remove();
 
         Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
@@ -461,12 +464,12 @@ public class ItemImplTest {
                 .prefer(Material.Leather);
         restraints.apply();
 
-        Items chains = script.items(Toys.Chains, Accessoires.Bells);
+        Items chains = script.items(Bondage.Chains, Accessoires.Bells);
         chains.applyTo(restraints);
         assertTrue(chains.allApplied());
         assertTrue(restraints.allApplied());
 
-        Item singleChainItem = chains.get(Toys.Chains);
+        Item singleChainItem = chains.get(Bondage.Chains);
         Item bell = script.item(Accessoires.Bells);
         assertTrue(bell.applied());
         singleChainItem.remove();

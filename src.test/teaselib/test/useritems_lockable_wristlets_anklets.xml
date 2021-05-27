@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE Items SYSTEM "items.dtd">
+
+<!-- item defaults - defines default item set in TeaseLib -->
+<Items>
+	<Household>
+		<Item item="Wooden_Spoon" guid="wooden_spoon" displayName="Wooden spoon">
+			<Attribute> Material.Wood </Attribute>
+		</Item>
+	</Household>
+	
+</Items>

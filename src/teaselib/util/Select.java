@@ -1,5 +1,6 @@
 package teaselib.util;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,8 +25,12 @@ public class Select {
 
     @SafeVarargs
     public static Items.Query select(Items.Query items, Clause<Items>... statements) {
+        return select(items, Arrays.asList(statements));
+    }
+
+    public static Items.Query select(Items.Query items, List<Clause<Items>> statements) {
         return () -> {
-            Items result = items.get();
+            var result = items.get();
             for (Clause<Items> statement : statements) {
                 result = statement.apply(result);
             }
@@ -36,12 +41,18 @@ public class Select {
     @SafeVarargs
     public static States.Query select(States.Query states, Clause<States>... statements) {
         return () -> {
-            States result = states.get();
+            var result = states.get();
             for (Clause<States> statement : statements) {
                 result = statement.apply(result);
             }
             return result;
         };
+    }
+
+    public static Statement items(Enum<?>[]... values) {
+        Enum<?>[] all = Arrays.stream(values).flatMap(Arrays::stream)
+                .toArray(size -> (Enum<?>[]) Array.newInstance(values[0].getClass().getComponentType(), size));
+        return new Statement(all, Collections.emptyList());
     }
 
     public static Statement items(Enum<?>... values) {
@@ -60,9 +71,7 @@ public class Select {
         }
 
         public Items.Query get(Items.Query items) {
-            @SuppressWarnings("unchecked")
-            Clause<Items>[] array = new Clause[clauses.size()];
-            return select(items, clauses.toArray(array));
+            return select(items, clauses);
         }
 
         List<Clause<Items>> gather(Enum<?>... items) {

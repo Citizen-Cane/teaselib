@@ -1,6 +1,7 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -31,6 +32,11 @@ public class CategoryTests {
     @Test
     public void testShoesCategories() {
         testCategories(Shoes.Categories, Shoes.values());
+    }
+
+    @Test
+    public void testBondageCategories() {
+        testCategories(Bondage.Categories, Bondage.values());
     }
 
     @Test

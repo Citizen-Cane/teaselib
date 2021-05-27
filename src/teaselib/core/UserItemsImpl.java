@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +24,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -33,6 +32,7 @@ import org.xml.sax.SAXException;
 
 import teaselib.Accessoires;
 import teaselib.Body;
+import teaselib.Bondage;
 import teaselib.Clothes;
 import teaselib.Gadgets;
 import teaselib.Household;
@@ -107,7 +107,7 @@ public class UserItemsImpl implements UserItems {
     private List<ItemImpl> readItems(String domain, URL url) throws IOException {
         List<ItemImpl> items = new ArrayList<>();
 
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        var dbf = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
             db.setEntityResolver((publicId, systemId) -> {
@@ -123,11 +123,11 @@ public class UserItemsImpl implements UserItems {
                 dom = db.parse(data);
             }
 
-            Element doc = dom.getDocumentElement();
+            var doc = dom.getDocumentElement();
             Node itemClass = doc.getFirstChild();
             for (; itemClass != null; itemClass = itemClass.getNextSibling()) {
                 if (itemClass.getNodeType() == Node.ELEMENT_NODE) {
-                    Node itemNode = itemClass.getFirstChild();
+                    var itemNode = itemClass.getFirstChild();
                     for (; itemNode != null; itemNode = itemNode.getNextSibling()) {
                         if ("Item".equalsIgnoreCase(itemNode.getNodeName())
                                 && itemNode.getNodeType() == Node.ELEMENT_NODE) {
@@ -156,7 +156,7 @@ public class UserItemsImpl implements UserItems {
 
         NodeList childNodes = itemNode.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
-            Node node = childNodes.item(i);
+            var node = childNodes.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 if ("Attribute".equalsIgnoreCase(node.getNodeName())) {
                     String enumClassName = "teaselib." + node.getTextContent().trim();
@@ -181,7 +181,7 @@ public class UserItemsImpl implements UserItems {
 
     @Override
     public List<Item> get(String domain, QualifiedItem item) {
-        ItemMap itemMap = getItemMap(domain);
+        var itemMap = getItemMap(domain);
         List<Item> all = collectItems(item, itemMap);
 
         if (all.isEmpty()) {
@@ -197,7 +197,7 @@ public class UserItemsImpl implements UserItems {
     }
 
     private ItemMap getItemMap(String domain) {
-        ItemMap itemMap = domainMap.get(domain);
+        var itemMap = domainMap.get(domain);
 
         if (itemMap == null) {
             itemMap = new ItemMap();
@@ -241,7 +241,7 @@ public class UserItemsImpl implements UserItems {
         // }
 
         for (Entry<Object, Map<String, Item>> entry : itemMap.entrySet()) {
-            QualifiedString key = new QualifiedString(qualifiedItem.namespace(), qualifiedItem.name());
+            var key = new QualifiedString(qualifiedItem.namespace(), qualifiedItem.name());
             if (key.equals(entry.getKey())) {
                 Optional<String> guid = qualifiedItem.guid();
                 if (guid.isPresent()) {
@@ -256,7 +256,7 @@ public class UserItemsImpl implements UserItems {
     }
 
     private static List<Item> itemsMatchingGuid(Map<String, Item> items, String guid) {
-        return items.values().stream().map(item -> ((ItemImpl) item)).filter(item -> item.guid.name().equals(guid))
+        return items.values().stream().map(ItemImpl.class::cast).filter(item -> item.guid.name().equals(guid))
                 .collect(toList());
     }
 
@@ -268,20 +268,46 @@ public class UserItemsImpl implements UserItems {
 
     @Override
     public Enum<?>[] defaults(QualifiedItem item) {
-        if (item.namespace().equalsIgnoreCase(Toys.class.getName())) {
-            return getToyDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Household.class.getName())) {
-            return getHouseholdDefaults(item);
+        if (item.namespace().equalsIgnoreCase(Accessoires.class.getName())) {
+            return getAccessoiresDefaults(item);
+        } else if (item.namespace().equalsIgnoreCase(Bondage.class.getName())) {
+            return getBondageDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Clothes.class.getName())) {
             return getClothesDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Shoes.class.getName())) {
-            return getShoesDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Accessoires.class.getName())) {
-            return getAccessoiresDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Gadgets.class.getName())) {
             return getGadgetsDefaults(item);
+        } else if (item.namespace().equalsIgnoreCase(Household.class.getName())) {
+            return getHouseholdDefaults(item);
+        } else if (item.namespace().equalsIgnoreCase(Shoes.class.getName())) {
+            return getShoesDefaults(item);
+        } else if (item.namespace().equalsIgnoreCase(Toys.class.getName())) {
+            return getToyDefaults(item);
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);
+        }
+    }
+
+    private static Enum<?>[] getAccessoiresDefaults(QualifiedItem item) {
+        if (item.is(Accessoires.Breast_Forms)) {
+            return new Body[] { Body.OnNipples };
+        } else {
+            return new Body[] {};
+        }
+    }
+
+    private static Enum<?>[] getBondageDefaults(QualifiedItem item) {
+        if (item.is(Bondage.Chains)) {
+            return new Body[] {};
+        } else if (item.is(Bondage.Rope)) {
+            return new Body[] {};
+        } else if (item.is(Bondage.Spreader_Bar)) {
+            return new Body[] {};
+        } else if (item.is(Bondage.Anklets)) {
+            return new Body[] { Body.AnklesCuffed };
+        } else if (item.is(Bondage.Wristlets)) {
+            return new Body[] { Body.WristsCuffed };
+        } else {
+            return new Body[] {};
         }
     }
 
@@ -289,7 +315,7 @@ public class UserItemsImpl implements UserItems {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getShoesDefaults(@SuppressWarnings("unused") QualifiedItem item) {
+    private static Enum<?>[] getGadgetsDefaults(@SuppressWarnings("unused") QualifiedItem item) {
         return new Body[] {};
     }
 
@@ -297,11 +323,7 @@ public class UserItemsImpl implements UserItems {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getAccessoiresDefaults(@SuppressWarnings("unused") QualifiedItem item) {
-        return new Body[] {};
-    }
-
-    private static Enum<?>[] getGadgetsDefaults(@SuppressWarnings("unused") QualifiedItem item0) {
+    private static Enum<?>[] getShoesDefaults(@SuppressWarnings("unused") QualifiedItem item) {
         return new Body[] {};
     }
 
@@ -320,9 +342,9 @@ public class UserItemsImpl implements UserItems {
         if (item.is(Toys.Buttplug)) {
             return new Body[] { Body.InButt };
         } else if (item.is(Toys.Ankle_Restraints)) {
-            return new Body[] { Body.AnklesTied };
+            return new Body[] { Body.AnklesCuffed, Body.AnklesTied };
         } else if (item.is(Toys.Wrist_Restraints)) {
-            return new Body[] { Body.WristsTied };
+            return new Body[] { Body.WristsCuffed, Body.WristsTied };
         } else if (item.is(Toys.Gag)) {
             return new Body[] { Body.InMouth };
         } else if (item.is(Toys.Spanking_Implement)) {
@@ -361,22 +383,12 @@ public class UserItemsImpl implements UserItems {
             return new Body[] { Body.OnLabia, Body.OnBalls };
         } else if (item.is(Toys.Clit_Clamp)) {
             return new Body[] { Body.OnClit, Body.OnPenis };
-        } else if (item.is(Toys.Spreader_Bar)) {
-            return new Body[] {};
         } else if (item.is(Toys.EStim_Device)) {
-            return new Body[] {};
-        } else if (item.is(Toys.Chains)) {
-            return new Body[] {};
-        } else if (item.is(Toys.Rope)) {
             return new Body[] {};
         } else if (item.is(Toys.Doll)) {
             return new Body[] {};
-        } else if (item.is(Toys.Husband)) {
+        } else if (item.is(Toys.Spouse)) {
             return new Body[] {};
-        } else if (item.is(Toys.Wife)) {
-            return new Body[] {};
-        } else if (item.is(Toys.Strap_On)) {
-            return new Body[] { Body.CrotchRoped };
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);
         }

@@ -17,6 +17,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import teaselib.Actor;
+import teaselib.Bondage;
 import teaselib.Duration;
 import teaselib.Features;
 import teaselib.Gadgets;
@@ -159,17 +160,16 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         // - add anklets/wristlets as explicit type to Accessoires, however they're still connectable as
         // - find a way to specify that anklets/wristlets can be detached -> via removeFrom Hands/Wrists Tied
         // -> blocks applying/removing all states with applying/removing an item - but that feature isn't needed anyway
-        Items cuffs = new Items( //
-                teaseLib.items(TeaseLib.DefaultDomain, Toys.Wrist_Restraints, Toys.Ankle_Restraints)
-                        .matching(Features.Detachable), //
-                teaseLib.items(TeaseLib.DefaultDomain, Toys.Collar, Toys.Humbler).matching(Features.Lockable) //
+        var cuffs = new Items( //
+                teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wristlets, Bondage.Anklets, Toys.Collar, Toys.Humbler)
+                        .matching(Features.Lockable) //
         );
 
-        Items handcuffs = new Items( //
+        var handcuffs = new Items( //
                 teaseLib.items(TeaseLib.DefaultDomain, Toys.Wrist_Restraints, Toys.Ankle_Restraints)
                         .without(Features.Detachable), //
-                teaseLib.items(TeaseLib.DefaultDomain, Toys.Chains).matching(Features.Lockable) //
-        );
+                teaseLib.items(TeaseLib.DefaultDomain, Bondage.Chains) //
+        ).matching(Features.Lockable);
 
         prepare(actor, handcuffs, 1, TimeUnit.HOURS, defaultInstructions);
         prepare(actor, cuffs, 2, TimeUnit.HOURS, defaultInstructions);

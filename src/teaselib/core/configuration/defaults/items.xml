@@ -70,11 +70,7 @@
 			<Attribute> Toys.Spanking_Implements.Whip </Attribute>
 		</Item>
 
-
-		<Item item="Rope" guid="rope" displayName="Rope">
-			<Attribute> Material.Rope </Attribute>
-		</Item>
-
+	
 		<Item item="Ankle_Restraints" guid="ankle_restraints" displayName="Ankle restraints">
 			<Attribute> Features.Detachable </Attribute>
 			<Attribute> Material.Leather </Attribute>
@@ -97,14 +93,6 @@
 			<Attribute> Features.Coupled </Attribute>
 			<Attribute> Features.Lockable </Attribute>
 			<Attribute> Material.Metal </Attribute>
-		</Item>
-
-		<Item item="Chains" guid="chains" displayName="Chains">
-			<Attribute> Features.Lockable </Attribute>
-			<Attribute> Material.Metal </Attribute>
-		</Item>
-
-		<Item item="Spreader_Bar" guid="spreader_bar" displayName="Spreader bar">
 		</Item>
 
 
@@ -196,13 +184,10 @@
 			<Attribute> Material.Rubber </Attribute>
 		</Item>
 
-		<Item item="Husband" guid="husband" displayName="Husband">
+		<Item item="Spouse" guid="husband" displayName="Husband">
 		</Item>
 
-		<Item item="Wife" guid="wife" displayName="Wife">
-		</Item>
-
-		<Item item="Strap_On" guid="strap_on" displayName="Strap-on">
+		<Item item="Spouse" guid="spouse" displayName="Wife">
 		</Item>
 
 	</Toys>
@@ -444,6 +429,14 @@
 		<Item item="Vest" guid="vest" displayName="Vest">
 		</Item>
 
+		
+		<Item item="Corset" guid="corset" displayName="Corset">
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
+		</Item>
+
+		<Item item="Hood" guid="hood" displayName="Hood">
+		</Item>
+	
 	</Clothes>
 
 	<Shoes>
@@ -459,7 +452,60 @@
 		</Item>
 		<Item item="Sneakers" guid="sneakers" displayName="Sneakers">
 		</Item>
+		
 	</Shoes>
+
+	<Bondage>
+
+		<Item item="Wristlets" guid="wristlets" displayName="Wristlets">
+			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Material.Leather </Attribute>
+		</Item>
+
+	
+		<Item item="Anklets" guid="anklets" displayName="Anklets">
+			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Material.Leather </Attribute>
+		</Item>
+
+		<Item item="Rope" guid="rope" displayName="Rope">
+			<Attribute> Material.Rope </Attribute>
+		</Item>
+		
+		<Item item="Chains" guid="chains" displayName="Chains">
+			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Material.Metal </Attribute>
+		</Item>
+
+		<Item item="Tape" guid="bondage_tape" displayName="Bondage Tape">
+			<Attribute> Material.Rubber </Attribute>
+		</Item>
+
+		<Item item="Harness" guid="harness" displayName="Harness">
+			<Attribute> Bondage.HarnessType.Torso </Attribute>
+7			<DefaultPeer> Body.CrotchRoped </DefaultPeer>
+			<DefaultPeer> Body.AroundWaist </DefaultPeer>
+			<DefaultPeer> Body.Harnessed </DefaultPeer>
+		</Item>
+
+		<Item item="Harness" guid="strap_on" displayName="Strap-On">
+			<Attribute> Bondage.HarnessType.Strap_On </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
+			<DefaultPeer> Body.CrotchRoped </DefaultPeer>
+			<DefaultPeer> Body.AroundWaist </DefaultPeer>
+		</Item>
+
+		<Item item="Harness" guid="crotch_harness" displayName="Crotch Harness">
+			<Attribute> Bondage.HarnessType.Crotch </Attribute>
+			<DefaultPeer> Body.CrotchRoped </DefaultPeer>
+			<DefaultPeer> Body.AroundWaist </DefaultPeer>
+		</Item>
+
+		<Item item="Spreader_Bar" guid="spreader_bar" displayName="Spreader bar">
+		</Item>
+
+
+	</Bondage>
 
 	<Accessoires>
 		<Item item="Apron" guid="apron" displayName="Apron">
@@ -512,16 +558,6 @@
 
 		<Item item="Wig" guid="wig" displayName="Wig">
 			<Attribute> Sexuality.Gender.Feminine </Attribute>
-		</Item>
-		
-		<Item item="Corset" guid="corset" displayName="Corset">
-			<Attribute> Sexuality.Gender.Feminine </Attribute>
-		</Item>
-
-		<Item item="Harness" guid="harness" displayName="Harness">
-		</Item>
-
-		<Item item="Hood" guid="hood" displayName="Hood">
 		</Item>
 	
 	</Accessoires>

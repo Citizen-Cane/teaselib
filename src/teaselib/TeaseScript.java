@@ -1,7 +1,8 @@
 package teaselib;
 
-import static teaselib.core.ai.perception.HumanPose.Interest.*;
-import static teaselib.core.ai.perception.HumanPose.Status.*;
+import static teaselib.core.ai.perception.HumanPose.Interest.Proximity;
+import static teaselib.core.ai.perception.HumanPose.Interest.Status;
+import static teaselib.core.ai.perception.HumanPose.Status.Available;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -552,31 +553,35 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean askYN(Answer.Yes yes, Answer answer) {
-        return askYN(null, yes, Answer.no(answer.text));
+        return askYN(yes, Answer.no(answer.text));
     }
 
     public final boolean askYN(Answer answer, Answer.Yes yes) {
-        return askYN(null, yes, Answer.no(answer.text));
+        return askYN(yes, Answer.no(answer.text));
     }
 
     public final boolean askYN(Answer answer, Answer.No no) {
-        return askYN(null, Answer.yes(answer.text), no);
+        return askYN(Answer.yes(answer.text), no);
     }
 
     public final boolean askYN(Answer.No no, Answer answer) {
-        return askYN(null, Answer.yes(answer.text), no);
+        return askYN(Answer.yes(answer.text), no);
     }
 
     public final boolean askYN(Answer.No no, Answer.Yes yes) {
-        return askYN(null, yes, no);
+        return askYN(yes, no);
     }
 
     public final boolean askYN(Answer.Yes yes, Answer.No no) {
-        return askYN(null, yes, no);
+        return askYN((ScriptFunction) null, yes, no);
+    }
+
+    public final boolean askYN(RunnableScript script, Answer.Yes yes, Answer.No no) {
+        return askYN(new ScriptFunction(script), yes, no);
     }
 
     public final boolean askYN(ScriptFunction scriptFunction, Answer.Yes yes, Answer.No no) {
-        teaselib.Answer answer = showChoices(Arrays.asList(yes, no), scriptFunction);
+        var answer = showChoices(Arrays.asList(yes, no), scriptFunction);
         return answer == yes;
     }
 

@@ -1,6 +1,6 @@
 package teaselib;
 
-import static teaselib.util.Select.*;
+import static teaselib.util.Select.items;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,11 +31,8 @@ public enum Toys {
     Nipple_Clamps,
     Spanking_Implement,
 
-    Rope,
     Ankle_Restraints,
     Wrist_Restraints,
-    Chains,
-    Spreader_Bar,
 
     Ball_Stretcher,
     Chastity_Device,
@@ -57,10 +54,7 @@ public enum Toys {
     EStim_Device,
 
     Doll,
-    Husband,
-    Wife,
-
-    Strap_On,
+    Spouse,
 
     ;
 
@@ -126,18 +120,17 @@ public enum Toys {
 
     public static final Select.Statement All = items(values());
 
-    public static final Select.Statement Essential = items(Gag, Blindfold, Collar, Nipple_Clamps, Spanking_Implement);
+    public static final Select.Statement Essential = items(Blindfold, Collar, Gag, Nipple_Clamps, Spanking_Implement,
+            Ankle_Restraints, Wrist_Restraints);
 
-    public static final Select.Statement Bondage = items(Ankle_Restraints, Wrist_Restraints, Rope, Chains,
-            Spreader_Bar);
     public static final Select.Statement Backdoor = items(Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit);
-    public static final Select.Statement Female = items(Clit_Clamp, Pussy_Clamps, VaginalInsert);
-    public static final Select.Statement Male = items(Ball_Stretcher, Chastity_Device, Cock_Ring, Glans_Ring, Humbler,
+    public static final Select.Statement Female = items(Chastity_Device, Clit_Clamp, Pussy_Clamps, VaginalInsert);
+    public static final Select.Statement Male = items(Ball_Stretcher, Chastity_Device, Glans_Ring, Cock_Ring, Humbler,
             Masturbator);
     public static final Select.Statement Stimulation = items(Vibrator, EStim_Device);
-    public static final Select.Statement Partner = items(Doll, Husband, Wife, Strap_On);
+    public static final Select.Statement Partner = items(Doll, Spouse);
 
     public static final List<Select.Statement> Categories = Collections.unmodifiableList(Arrays.asList( //
-            Essential, Bondage, Backdoor, Female, Male, Stimulation, Partner));
+            Essential, Backdoor, Female, Male, Stimulation, Partner));
 
 }

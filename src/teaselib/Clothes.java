@@ -1,11 +1,12 @@
 package teaselib;
 
-import static teaselib.util.Select.*;
+import static teaselib.util.Select.items;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import teaselib.util.Item;
 import teaselib.util.Items;
 import teaselib.util.Select;
 
@@ -46,9 +47,19 @@ public enum Clothes {
     Sweater,
     Tanktop,
     Trousers,
-    Vest,;
+    Vest,
 
-    public enum UnderpantsType {
+    Corset,
+
+    /**
+     * In the BDSM context, a hood is full head cover with optional holes for eyes, nose and mouth, otherwise a head
+     * harness. A mask is similar but also different, as for disguising the wearers identity.
+     */
+    Hood,
+
+    ;
+
+    public enum UnderpantsType implements Item.Attribute {
         Boxers,
         Briefs,
         G_String,
@@ -56,48 +67,48 @@ public enum Clothes {
         Thong,
     }
 
-    public enum SkirtType {
+    public enum SkirtType implements Item.Attribute {
         MiniSkirt,
     }
 
-    public enum TrouwsersType {
+    public enum TrouwsersType implements Item.Attribute {
         Jeans,
         Shorts,
         Sweatpants,
     }
 
-    public enum SwimwearType {
+    public enum SwimwearType implements Item.Attribute {
         Bikini, // bra/underpants
         Monokini, // body/leotard
         Swimsuit, // body/leotard
     }
 
-    public enum GenitalAccessType {
+    public enum GenitalAccessType implements Item.Attribute {
         Ouvert,
         Zipper,
         None
     }
 
-    public enum AnalAccessType {
+    public enum AnalAccessType implements Item.Attribute {
         Ouvert,
         Zipper,
         None
     }
 
-    public enum BreastAccessType {
+    public enum BreastAccessType implements Item.Attribute {
         Ouvert,
         Zipper,
         None
     }
 
-    public enum NippleAccessType {
+    public enum NippleAccessType implements Item.Attribute {
         Ouvert,
         Zipper,
         None
     }
 
     @SuppressWarnings("hiding")
-    public enum Category {
+    public enum Category implements Item.Attribute {
         Lingerie,
         Underwear,
         Sleepwear,
@@ -111,12 +122,12 @@ public enum Clothes {
     public static final String Doll = "Doll";
     public static final String Partner = "Partner";
 
-    public static final Select.Statement all = items(Clothes.values());
+    public static final Select.Statement All = items(Clothes.values());
 
     /**
      * Feminine underwear
      */
-    public static final Select.Statement lingerie = new Select.Statement(
+    public static final Select.Statement Lingerie = new Select.Statement(
             items(Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks, Stockings, Underpants)
                     .where(Items::matching, Category.Lingerie).and(Items::without, Sexuality.Gender.Masculine));
 
@@ -139,7 +150,9 @@ public enum Clothes {
     public static final Select.Statement Male = new Select.Statement(
             items(Shirt, Suit, Sweater, Trousers, Vest).where(Items::without, Sexuality.Gender.Feminine));
 
+    public static final Select.Statement Fetish = items(Corset, Hood);
+
     public static final List<Select.Statement> Categories = Collections
-            .unmodifiableList(Arrays.asList(Underwear, lingerie, Swimwear, Sleepwear, Female, Male));
+            .unmodifiableList(Arrays.asList(Underwear, Lingerie, Swimwear, Sleepwear, Female, Male, Fetish));
 
 }

@@ -1,11 +1,12 @@
 package teaselib;
 
-import static teaselib.util.Select.*;
+import static teaselib.util.Select.items;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import teaselib.util.Item;
 import teaselib.util.Select;
 
 public enum Household {
@@ -36,7 +37,12 @@ public enum Household {
 
     ;
 
-    enum LubeType {
+    enum PadlockType implements Item.Attribute {
+        Key,
+        Numeric,
+    }
+
+    enum LubeType implements Item.Attribute {
         Baby_Oil,
         Silicone_Based,
         Vaseline,

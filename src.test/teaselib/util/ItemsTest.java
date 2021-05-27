@@ -1,6 +1,11 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,6 +16,7 @@ import org.junit.Test;
 
 import teaselib.Accessoires;
 import teaselib.Body;
+import teaselib.Bondage;
 import teaselib.Clothes;
 import teaselib.Features;
 import teaselib.Gadgets;
@@ -264,19 +270,19 @@ public class ItemsTest {
         assertNotEquals(Item.NotFound, analBeads);
 
         Items allAnalbeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads);
-        assertTrue(allAnalbeads.size() == 1);
+        assertEquals(1, allAnalbeads.size());
         assertEquals(analBeads, allAnalbeads.get());
     }
 
     @Test
     public void testGetDoesntSearchForPeersOrAttributes() {
         TeaseScript script = TestScript.getOne();
-        Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Chains);
+        Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Bondage.Chains);
 
-        Item chains = chainedUp.get(Toys.Chains);
-        assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
-        chainedUp.get(Toys.Wrist_Restraints).applyTo(Toys.Chains);
-        assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
+        Item chains = chainedUp.get(Bondage.Chains);
+        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
+        chainedUp.get(Toys.Wrist_Restraints).applyTo(Bondage.Chains);
+        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
     }
 
     @Test
@@ -358,7 +364,7 @@ public class ItemsTest {
         script.addTestUserItems();
         script.addTestUserItems2();
 
-        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
+        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains);
         Varieties<Items> all = inventory.varieties();
         assertEquals(4, all.size());
     }
@@ -369,14 +375,14 @@ public class ItemsTest {
         script.addTestUserItems();
         script.addTestUserItems2();
 
-        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
+        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains);
         Items restraints = inventory.prefer(Features.Lockable, Material.Leather);
         assertEquals(4, restraints.size());
 
         Item collar = restraints.get(Toys.Collar);
         Item anklecuffs = restraints.get(Toys.Ankle_Restraints);
         Item wristCuffs = restraints.get(Toys.Wrist_Restraints);
-        Item chains = restraints.get(Toys.Chains);
+        Item chains = restraints.get(Bondage.Chains);
 
         assertNotEquals(Item.NotFound, collar);
         assertNotEquals(Item.NotFound, anklecuffs);
@@ -390,7 +396,7 @@ public class ItemsTest {
         script.addTestUserItems();
         script.addTestUserItems2();
 
-        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
+        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains);
         testAnyWithAppliedItem(inventory, Material.Leather);
         testAnyWithAppliedItem(inventory, Material.Metal);
     }
@@ -941,10 +947,10 @@ public class ItemsTest {
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
         restraints.apply();
-        Items chains = script.items(Toys.Chains, Accessoires.Bells);
+        Items chains = script.items(Bondage.Chains, Accessoires.Bells);
         chains.applyTo(restraints);
 
-        Item singleChainItem = chains.get(Toys.Chains);
+        Item singleChainItem = chains.get(Bondage.Chains);
         Item bells = chains.get(Accessoires.Bells);
         State bellsState = script.state(Accessoires.Bells);
         assertTrue(bells.applied());

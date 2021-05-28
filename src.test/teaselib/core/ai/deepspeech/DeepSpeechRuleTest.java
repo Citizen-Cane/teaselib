@@ -3,13 +3,18 @@ package teaselib.core.ai.deepspeech;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static teaselib.core.speechrecognition.Confidence.High;
 
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.speechrecognition.Rule;
@@ -21,13 +26,13 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
 
 /**
- * @author someone
+ * @author Citien-Cane
  *
  */
-public class DeepSpeechRuleTest {
+class DeepSpeechRuleTest {
 
     @Test
-    public void testLanguageFallbackWorks() throws InterruptedException {
+    void testLanguageFallbackWorks() throws InterruptedException {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             SpeechRecognitionEvents events = new SpeechRecognitionEvents();
 
@@ -49,22 +54,39 @@ public class DeepSpeechRuleTest {
         }
     }
 
-    @Test
-    public void testYesMissWithRealworldResults() throws InterruptedException {
-        testEmulateText("Yes Miss", """
-                yes\n
-                yes\n
-                yes i\n
-                yes miss\n
-                yes is\n
-                yes it\n
-                yes m\n
-                yes a\n
-                yes as\n
-                yes s
-                """);
+    static class EmulatedSpeech {
+        final String expected;
+        final float expectedProbability;
+        final String actual;
 
-        testEmulateText("Yes Miss", """
+        public EmulatedSpeech(String expected, float probability, String actual) {
+            this.expected = expected;
+            this.actual = actual;
+            this.expectedProbability = probability;
+        }
+
+        @Override
+        public String toString() {
+            return expected;
+        }
+
+    }
+
+    static Stream<EmulatedSpeech> emulatedSpeechTests() {
+        return Stream.of(//
+                new EmulatedSpeech("Yes Miss", 0.9113f, """
+                        yes
+                        yes
+                        yes i
+                        yes is
+                        yes miss
+                        yes it
+                        yes m
+                        yes a
+                        yes as
+                        yes s
+                        """), //
+                new EmulatedSpeech("Yes Miss", 0.7380f, """
                         yes
                         i guess
                         as
@@ -75,24 +97,44 @@ public class DeepSpeechRuleTest {
                         his
                         at
                         eyes
-                """);
+                        """), //
+                new EmulatedSpeech("I have new shoes Miss", 0.7575f, """
+                        i have now so is
+                        i have now she is
+                        i have new so as
+                        i have now to ask
+                        i have now to his
+                        """));
+    }
+
+    @ParameterizedTest
+    @MethodSource("emulatedSpeechTests")
+    void testEmulatedSpeech(EmulatedSpeech test) throws InterruptedException {
+        assertGreaterThan(test.expectedProbability, emulateSpeech(test.expected, test.actual).probability,
+                () -> "Probability");
+    }
+
+    static void assertGreaterThan(float expected, float actual, Supplier<String> meessage) {
+        if (actual < expected) {
+            fail(meessage.get() + " " + expected + " expected, but got " + actual);
+        }
     }
 
     @Test
-    public void testMissingWordAtEnd() throws InterruptedException {
-        Rule rule = emulateText("Yes Miss I have it", "yes miss i have");
+    void testMissingWordAtEnd() throws InterruptedException {
+        Rule rule = emulateSpeech("Yes Miss I have it", "yes miss i have");
         assertEquals(5, rule.children.size());
     }
 
     @Test
-    public void testMissingWordsAtEnd() throws InterruptedException {
-        Rule rule = emulateText("Yes Miss I have it", "yes miss i");
+    void testMissingWordsAtEnd() throws InterruptedException {
+        Rule rule = emulateSpeech("Yes Miss I have it", "yes miss i");
         assertEquals(5, rule.children.size());
     }
 
     @Test
-    public void testMissingWordInTheMiddle() throws InterruptedException {
-        Rule rule = emulateText("Yes dear Mistress I have it here", "yes i have");
+    void testMissingWordInTheMiddle() throws InterruptedException {
+        Rule rule = emulateSpeech("Yes dear Mistress I have it here", "yes i have");
         assertEquals(7, rule.children.size());
     }
 
@@ -123,8 +165,8 @@ public class DeepSpeechRuleTest {
             """;
 
     @Test
-    public void testMissingWordAndWrongRecognitionGroundTruth() throws InterruptedException {
-        Rule rule = emulateText(DeepSpeechTestData.AUDIO_8455_210777_0068_RAW.groundTruth, detectedSpeech);
+    void testMissingWordAndWrongRecognitionGroundTruth() throws InterruptedException {
+        Rule rule = emulateSpeech(DeepSpeechTestData.AUDIO_8455_210777_0068_RAW.groundTruth, detectedSpeech);
         assertEquals(6, rule.children.size());
         assertNotNull(rule.children.get(3).text, "\"is\" should be recognized as null rule");
         assertNotNull(rule.children.get(4).text, "\"sufficient\" should be recognized as child 4");
@@ -133,8 +175,8 @@ public class DeepSpeechRuleTest {
     }
 
     @Test
-    public void testMissingWordAndWrongRecognitionActual() throws InterruptedException {
-        Rule rule = emulateText(DeepSpeechTestData.AUDIO_8455_210777_0068_RAW.actual, detectedSpeech);
+    void testMissingWordAndWrongRecognitionActual() throws InterruptedException {
+        Rule rule = emulateSpeech(DeepSpeechTestData.AUDIO_8455_210777_0068_RAW.actual, detectedSpeech);
         assertEquals(6, rule.children.size());
         assertNotNull(rule.children.get(3).text, "\"is\" should be recognized as null rule");
         assertNotNull(rule.children.get(4).text, "\"sufficient\" should be recognized as child 4");
@@ -142,18 +184,13 @@ public class DeepSpeechRuleTest {
         SpeechRecognitionTestUtils.assertConfidence(rule, High.probability);
     }
 
-    private static Rule emulateText(String expected, String actual) throws InterruptedException, UnsatisfiedLinkError {
-        return testEmulateText(expected, actual);
-    }
-
     @Test
-    public void testExperienceProovesThisAsText() throws InterruptedException {
-        testEmulateText("experience prooves this",
+    void testExperienceProovesThisAsText() throws InterruptedException {
+        emulateSpeech("experience prooves this",
                 "experience prooves this\nexperience prooves that\nthe experience proofs it");
     }
 
-    private static Rule testEmulateText(String choice, String speech)
-            throws InterruptedException, UnsatisfiedLinkError {
+    private static Rule emulateSpeech(String choice, String speech) throws InterruptedException, UnsatisfiedLinkError {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             SpeechRecognitionEvents events = new SpeechRecognitionEvents();
 

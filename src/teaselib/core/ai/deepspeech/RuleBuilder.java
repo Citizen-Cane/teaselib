@@ -64,7 +64,7 @@ public class RuleBuilder {
 
         private List<MatchStrategy> createStrategies() {
 
-            MatchStrategy thisWord = new MatchStrategy((word, choice) -> {
+            var thisWord = new MatchStrategy((word, choice) -> {
                 float probability = match(word, resultIndex);
                 return new Rated(probability, () -> {
                     addChild(word, choice, probability);
@@ -76,7 +76,7 @@ public class RuleBuilder {
             // TODO detect partial matches for both words
             // TODO rate probability of partial matches
             // TODO implicit alternate matching not covered because additional tokens are generated - don't use
-            MatchStrategy splitWord = new MatchStrategy((word, choice) -> {
+            var splitWord = new MatchStrategy((word, choice) -> {
                 List<String> result = results.get(0).words;
                 if (resultIndex < result.size() - 1 && wordIndex < phrase.length - 1) {
                     String recognized = result.get(resultIndex);
@@ -106,7 +106,7 @@ public class RuleBuilder {
                 }
             });
 
-            MatchStrategy nextWord = new MatchStrategy((word, choice) -> {
+            var nextWord = new MatchStrategy((word, choice) -> {
                 float probability = match(word, resultIndex + 1);
                 return new Rated(probability, () -> {
                     addChild(word, choice, probability);
@@ -127,7 +127,7 @@ public class RuleBuilder {
 
             while (wordIndex < phrase.length && resultIndex < phrase.length) {
                 String word = phrase[wordIndex];
-                Rated ratedWord = rate(word, phraseIndex);
+                var ratedWord = rate(word, phraseIndex);
                 if (ratedWord != null) {
                     ratedWord.builder.run();
                 } else {
@@ -158,37 +158,19 @@ public class RuleBuilder {
         }
 
         private float match(String word, int index) {
-            for (int i = 0; i < results.size(); i++) {
-                Result result = results.get(i);
-                if (index < result.words.size()) {
-                    String hypothesis = result.words.get(index);
-                    if (word.equals(hypothesis)) {
-                        return result.confidence;
-                    } else {
-                        float confidence = partialMatch(hypothesis, word);
-                        if (confidence > 0.0f) {
-                            return confidence;
-                        } else {
-                            return alternateMatch(word, index, results.subList(i + 1, results.size()));
-                        }
-                    }
-                }
-            }
-            return 0.0f;
+            return match(word, index, 0, 0.0f);
         }
 
-        private static float alternateMatch(String word, int index, List<Result> results) {
-            for (Result result : results) {
-                List<String> words = result.words;
-                if (index < words.size()) {
-                    String hypothesis = words.get(index);
-                    if (word.equals(hypothesis)) {
+        private float match(String word, int index, int startResult, float currentConfidence) {
+            for (int i = startResult; i < results.size(); i++) {
+                var result = results.get(i);
+                if (index < result.words.size()) {
+                    String hypothesis = result.words.get(index);
+                    if (word.equals(hypothesis) && result.confidence >= currentConfidence) {
                         return result.confidence;
                     } else {
-                        float confidence = partialMatch(hypothesis, word);
-                        if (confidence > 0.0f) {
-                            return confidence;
-                        }
+                        float confidence = partialMatch(hypothesis, word) * result.confidence;
+                        return Math.max(currentConfidence, match(word, index, startResult + 1, confidence));
                     }
                 }
             }
@@ -200,23 +182,29 @@ public class RuleBuilder {
             // - string approximation (interesting but complex)
             // - pronunciation comparison - what we want, but locale-dependent
             // See https://en.wikipedia.org/wiki/Approximate_string_matching
+            int hypothesis_length = hypothesis.length();
+            int word_length = word.length();
             int matches = 0;
             int i = 0;
-            int length = Math.min(hypothesis.length(), word.length());
+            int length = Math.min(hypothesis_length, word_length);
             while (i < length && hypothesis.charAt(i) == word.charAt(i)) {
                 matches++;
                 i++;
             }
 
-            int j = word.length() - 1;
-            int k = hypothesis.length() - 1;
+            int j = word_length - 1;
+            int k = hypothesis_length - 1;
             while (k >= i && j >= i && hypothesis.charAt(k) == word.charAt(j)) {
                 matches++;
                 j--;
                 k--;
             }
 
-            return (float) matches / word.length();
+            if (matches < hypothesis_length && word.contains(hypothesis)) {
+                matches = hypothesis_length;
+            }
+
+            return (float) matches / word_length;
         }
 
         private void addChild(String word, int phraseIndex, float probability) {

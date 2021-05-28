@@ -98,10 +98,10 @@ extern "C"
 
 	/*
 	 * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
-	 * Method:    setMaxAlternates
+	 * Method:    setMaxResults
 	 * Signature: (I)V
 	 */
-	JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_setMaxAlternates
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_setMaxResults
 	(JNIEnv* env, jobject jthis, jint maxAlternates)
 	{
 		try {

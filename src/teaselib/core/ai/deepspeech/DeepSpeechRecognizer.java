@@ -51,7 +51,11 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     public native String languageCode();
 
     @Override
-    public native void setMaxAlternates(int n);
+    public void setMaxAlternates(int n) {
+        setMaxResults(n * 10);
+    }
+
+    public native void setMaxResults(int n);
 
     enum Status {
         Idle,
@@ -90,34 +94,11 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     protected void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized) {
         signalInitialized.countDown();
         while (!Thread.interrupted()) {
-            Status status = Status.of(decode());
+            var status = Status.of(decode());
             try {
-                if (status == Status.Started) {
-                    List<Rule> rules = rules();
-                    if (!rules.isEmpty()) {
-                        startRecognition(events);
-                        fireSpeechDetected(events);
-                    } else {
-                        recognitionState = Status.Idle;
-                    }
-                } else if (status == Status.Running) {
-                    if (recognitionState == Status.Idle) {
-                        startRecognition(events);
-                    }
-                    fireSpeechDetected(events);
-                } else if (status == Status.Noise) {
-                    events.audioSignalProblemOccured.fire(NoiseDetected);
-                    rejectRecognition(events);
-                } else if (status == Status.Cancelled) {
-                    rejectRecognition(events);
+                process(events, status);
+                if (status == Status.Cancelled) {
                     return;
-                } else if (status == Status.Done) {
-                    recognitionState = Status.Idle;
-                    fireRecognitionDone(events);
-                } else if (status == Status.Idle) {
-                    rejectRecognition(events);
-                } else {
-                    throw new UnsupportedOperationException(status.name());
                 }
             } catch (Throwable t) {
                 stopEventLoop();
@@ -126,6 +107,35 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             }
         }
 
+    }
+
+    private void process(SpeechRecognitionEvents events, Status status) {
+        if (status == Status.Started) {
+            List<Rule> rules = rules();
+            if (!rules.isEmpty()) {
+                startRecognition(events);
+                fireSpeechDetected(events);
+            } else {
+                recognitionState = Status.Idle;
+            }
+        } else if (status == Status.Running) {
+            if (recognitionState == Status.Idle) {
+                startRecognition(events);
+            }
+            fireSpeechDetected(events);
+        } else if (status == Status.Noise) {
+            events.audioSignalProblemOccured.fire(NoiseDetected);
+            rejectRecognition(events);
+        } else if (status == Status.Cancelled) {
+            rejectRecognition(events);
+        } else if (status == Status.Done) {
+            recognitionState = Status.Idle;
+            fireRecognitionDone(events);
+        } else if (status == Status.Idle) {
+            rejectRecognition(events);
+        } else {
+            throw new UnsupportedOperationException(status.name());
+        }
     }
 
     private void startRecognition(SpeechRecognitionEvents events) {

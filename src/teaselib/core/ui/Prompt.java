@@ -260,7 +260,8 @@ public class Prompt {
 
     private void forwardAndThrowResultAlreadySet() {
         String message = "Prompt " + this + " already set to "
-                + (resultInputMethod != null ? resultInputMethod : "timeout") + " -> " + result;
+                + (resultInputMethod != null ? resultInputMethod : "timeout") + " -> " + result + "="
+                + choices.get(result.elements.get(0));
         forwardToScriptAndThrow(new IllegalStateException(message));
     }
 

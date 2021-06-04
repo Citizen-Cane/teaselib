@@ -246,27 +246,27 @@ public abstract class TeaseScriptPersistence extends Script {
         return query.get();
     }
 
-    public Items items(Select.AbstractStatement query) {
-        return select(query).get();
+    public Items items(Select.AbstractStatement statement) {
+        return select(statement).get();
     }
 
-    public Items items(Select.AbstractStatement... queries) {
-        return select(queries).get();
+    public Items items(Select.AbstractStatement... statements) {
+        return select(statements).get();
     }
 
     public Items.Query query(Enum<?>... values) {
         return () -> defaultDomain.items(values);
     }
 
-    public Items.Query select(Select.AbstractStatement query) {
-        return query.get(query(query.values));
+    public Items.Query select(Select.AbstractStatement statement) {
+        return statement.get(query(statement.values));
     }
 
-    public Items.Query select(Select.AbstractStatement... queries) {
+    public Items.Query select(Select.AbstractStatement... statements) {
         return () -> {
-            Function<? super Select.AbstractStatement, Items.Query> mapper = query -> query.get(query(query.values));
+            Function<? super Select.AbstractStatement, Items.Query> mapper = statement -> statement.get(query(statement.values));
             return new Items(
-                    stream(queries).map(mapper).map(Items.Query::get).flatMap(Items::stream).collect(toList()));
+                    stream(statements).map(mapper).map(Items.Query::get).flatMap(Items::stream).collect(toList()));
         };
     }
 

@@ -1,7 +1,9 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.*;
-import static teaselib.core.state.AbstractProxy.*;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.state.AbstractProxy.removeProxies;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -218,7 +220,7 @@ public class Items implements Iterable<Item> {
     // TODO get() and item() are the same ->
     // + keep get() since item(...).item(...) is confusing - I misinterpreted it myself
     public final Item get(Enum<?> item) {
-        return item(QualifiedItem.of(item));
+        return item(item);
     }
 
     public final Item get(int index) {
@@ -572,16 +574,16 @@ public class Items implements Iterable<Item> {
         Set<QualifiedItem> kinds = new HashSet<>();
 
         for (Object item : this.valueSet()) {
-            QualifiedItem kind = QualifiedItem.of(item);
+            var kind = QualifiedItem.of(item);
             if (!kinds.contains(kind)) {
                 kinds.add(kind);
-                firstOfEachKind.add(getFirstAvailableOrNotFound(item));
+                firstOfEachKind.add(getAppliedOrFirstAvailableOrNotFound(item));
             }
         }
         return firstOfEachKind;
     }
 
-    private Item getFirstAvailableOrNotFound(Object item) {
+    private Item getAppliedOrFirstAvailableOrNotFound(Object item) {
         Item firstAvailable = getApplied().findFirst(item);
         if (firstAvailable == Item.NotFound) {
             firstAvailable = getAvailable().findFirst(item);

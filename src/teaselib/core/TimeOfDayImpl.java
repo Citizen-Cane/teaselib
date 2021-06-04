@@ -37,7 +37,7 @@ public class TimeOfDayImpl implements TimeOfDay {
     static boolean is(LocalTime localTime, Daytime dayTime) {
         // TODO finds always the first interval but for overlapping intervals the first interval may not be the right
         // one
-        Interval interval = hours(dayTime);
+        var interval = hours(dayTime);
         return is(localTime, interval);
     }
 
@@ -63,13 +63,13 @@ public class TimeOfDayImpl implements TimeOfDay {
 
     @Override
     public boolean isEarlierThan(Daytime dayTime) {
-        Daytime thisDayTime = dayTimeEarly();
+        var thisDayTime = dayTimeEarly();
         return hours(thisDayTime).average() < hours(dayTime).average();
     }
 
     @Override
     public boolean isLaterThan(Daytime dayTime) {
-        Daytime thisDayTime = dayTimeLater();
+        var thisDayTime = dayTimeLater();
         return hours(thisDayTime).average() > hours(dayTime).average();
     }
 

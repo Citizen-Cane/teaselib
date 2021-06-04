@@ -84,6 +84,13 @@ public class ItemImplTest {
         assertFalse(item.is(Size.Large, Length.Short));
 
         assertFalse(item.is(Size.Small, Length.Short));
+
+        Body inButt = Body.InButt;
+        item.applyTo(inButt);
+        assertTrue(script.state(inButt).is(Size.Large));
+        assertTrue(script.state(inButt).is(Length.Long));
+        assertFalse(script.state(inButt).is(Size.Small));
+        assertFalse(script.state(inButt).is(Length.Short));
     }
 
     @Test

@@ -614,15 +614,27 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean agree(ScriptFunction scriptFunction, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction) != Answer.Timeout;
+        return agree(scriptFunction, Answer.yes(yes));
     }
 
     public final boolean agree(RunnableScript script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != Answer.Timeout;
+        return agree(script, Answer.yes(yes));
     }
 
     public final boolean agree(CallableScript<Answer> script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) != Answer.Timeout;
+        return agree(script, Answer.yes(yes));
+    }
+
+    public final boolean agree(ScriptFunction scriptFunction, Answer.Yes yes) {
+        return showChoices(Arrays.asList(yes), scriptFunction) != Answer.Timeout;
+    }
+
+    public final boolean agree(RunnableScript script, Answer.Yes yes) {
+        return showChoices(Arrays.asList(yes), new ScriptFunction(script)) != Answer.Timeout;
+    }
+
+    public final boolean agree(CallableScript<Answer> script, Answer.Yes yes) {
+        return showChoices(Arrays.asList(yes), new ScriptFunction(script)) != Answer.Timeout;
     }
 
     public final void chat(String... chat) {

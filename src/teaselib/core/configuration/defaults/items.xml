@@ -185,9 +185,13 @@
 		</Item>
 
 		<Item item="Spouse" guid="husband" displayName="Husband">
+			<Attribute> Sexuality.Sex.Male </Attribute>
+			<Attribute> Sexuality.Gender.Masculine </Attribute>
 		</Item>
 
 		<Item item="Spouse" guid="spouse" displayName="Wife">
+			<Attribute> Sexuality.Sex.Female </Attribute>
+			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 
 	</Toys>

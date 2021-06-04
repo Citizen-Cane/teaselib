@@ -132,8 +132,7 @@ public class DurationTest {
         assertEquals(30, frozen.since(unit));
 
         assertTrue(state.removed());
-        assertTrue(state.removed(30, unit));
-        assertFalse(state.removed(31, unit));
+        assertEquals(30, state.removed(unit));
     }
 
     @Test
@@ -168,8 +167,7 @@ public class DurationTest {
         assertEquals(10, frozen.since(unit));
 
         assertTrue(item.removed());
-        assertTrue(item.removed(10, unit));
-        assertFalse(item.removed(11, unit));
+        assertEquals(10, item.removed(unit));
     }
 
     @Test
@@ -188,7 +186,7 @@ public class DurationTest {
         assertEquals(0, elapsing.since(unit));
 
         assertFalse(state.removed());
-        assertFalse(state.removed(0, SECONDS));
+        assertEquals(0, state.removed(SECONDS));
     }
 
     @Test

@@ -1,7 +1,7 @@
 package teaselib.core.state;
 
-import static java.util.Arrays.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -161,8 +161,8 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     }
 
     @Override
-    public boolean removed(long duration, TimeUnit unit) {
-        return item.removed(duration, unit);
+    public long removed(TimeUnit unit) {
+        return item.removed(unit);
     }
 
     @Override

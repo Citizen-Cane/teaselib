@@ -87,8 +87,8 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     }
 
     @Override
-    public boolean removed(long duration, TimeUnit unit) {
-        return state.removed(duration, unit);
+    public long removed(TimeUnit unit) {
+        return state.removed(unit);
     }
 
     @Override

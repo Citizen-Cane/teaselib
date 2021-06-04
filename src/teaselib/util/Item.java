@@ -69,8 +69,8 @@ public interface Item extends State {
         }
 
         @Override
-        public boolean removed(long duration, TimeUnit unit) {
-            return true;
+        public long removed(TimeUnit unit) {
+            return Long.MAX_VALUE;
         }
 
         @Override

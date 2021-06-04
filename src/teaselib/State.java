@@ -23,7 +23,7 @@ public interface State {
 
     boolean removed();
 
-    boolean removed(long duration, TimeUnit unit);
+    long removed(TimeUnit unit);
 
     interface Options extends State.Persistence {
         Persistence over(long duration, TimeUnit unit);

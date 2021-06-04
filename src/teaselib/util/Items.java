@@ -145,19 +145,24 @@ public class Items implements Iterable<Item> {
         return elements.stream().allMatch(Item::removed);
     }
 
-    public boolean noneRemoved(long duration, TimeUnit unit) {
-        return elements.stream().noneMatch(item -> item.removed(duration, unit));
+    /**
+     * Returns the time span since any of the items has been removed.
+     * 
+     * @param unit
+     * @return The time span since the first item has been removed, or 0 if all are still applied.
+     */
+    public long anyRemoved(TimeUnit unit) {
+        return elements.stream().map(item -> item.removed(unit)).reduce(Math::max).orElse(Long.MAX_VALUE);
     }
 
-    public boolean anyRemoved(long duration, TimeUnit unit) {
-        return elements.stream().anyMatch(item -> item.removed(duration, unit));
-    }
-
-    public boolean allRemoved(long duration, TimeUnit unit) {
-        if (elements.isEmpty()) {
-            return false;
-        }
-        return elements.stream().allMatch(item -> item.removed(duration, unit));
+    /**
+     * Returns the time span since all of the items have been removed.
+     * 
+     * @param unit
+     * @return The time span since the last item has been removed, or 0 if any is still applied.
+     */
+    public long allRemoved(TimeUnit unit) {
+        return elements.stream().map(item -> item.removed(unit)).reduce(Math::min).orElse(Long.MAX_VALUE);
     }
 
     public boolean anyAre(Object... attributes) {

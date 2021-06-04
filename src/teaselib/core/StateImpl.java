@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -292,8 +292,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private boolean isCached(QualifiedItem qualifiedPeer) {
-        return this.stateMaps.stateMap(domain, qualifiedPeer)
-                .contains(qualifiedPeer.name().toLowerCase());
+        return this.stateMaps.stateMap(domain, qualifiedPeer).contains(qualifiedPeer.name().toLowerCase());
     }
 
     private void restoreAttributes() {
@@ -671,8 +670,12 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    public boolean removed(long duration, TimeUnit unit) {
-        return removed() && duration().since(unit) >= duration;
+    public long removed(TimeUnit unit) {
+        if (applied()) {
+            return 0L;
+        } else {
+            return duration().since(unit);
+        }
     }
 
     @Override

@@ -267,18 +267,19 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         // Draw original background image
         g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
 
+        int estimatedTextAreaX = bounds.width * 14 / 24;
         AffineTransform surface;
         if (actorProximity == Proximity.CLOSE) {
-            surface = surfaceTransform(image, bounds, pose.boobs(), 2.5);
+            surface = surfaceTransform(image, bounds, pose.boobs(), 2.5, estimatedTextAreaX);
         } else if (actorProximity == Proximity.FACE2FACE) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.4);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.4, estimatedTextAreaX);
         } else if (actorProximity == Proximity.NEAR) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.0);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.0, estimatedTextAreaX);
         } else if (actorProximity == Proximity.FAR) {
-            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0);
+            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0, estimatedTextAreaX);
         } else if (actorProximity == Proximity.AWAY) {
             // TODO Blur or turn display off
-            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0);
+            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0, estimatedTextAreaX);
         } else {
             throw new IllegalArgumentException(actorProximity.toString());
         }
@@ -289,13 +290,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         g2d.drawImage(image, surface, null);
 
         // debug code
-        // renderPoseDebugInfo(g2d, Transform.dimension(image), pose, surface);
+        // renderPoseDebugInfo(g2d, Transform.dimension(image), pose, surface, bounds, estimatedTextAreaX);
 
         return bi;
     }
 
     private AffineTransform surfaceTransform(BufferedImage image, Rectangle bounds,
-            Optional<Rectangle2D.Double> focusArea, double zoom) {
+            Optional<Rectangle2D.Double> focusArea, double zoom, int textAreaX) {
         var surface = Transform.maxImage(image, bounds, focusArea);
 
         if (focusArea.isPresent()) {
@@ -305,13 +306,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 surface = Transform.zoom(surface, r, zoom);
             }
 
-            Transform.avoidFousAreaBehindText(surface, bounds, r);
+            Transform.avoidFocusAreaBehindText(surface, bounds, r, textAreaX);
         }
 
         return surface;
     }
 
-    void renderPoseDebugInfo(Graphics2D g2d, Dimension image, HumanPose.Estimation pose, AffineTransform surface) {
+    void renderPoseDebugInfo(Graphics2D g2d, Dimension image, HumanPose.Estimation pose, AffineTransform surface,
+            Rectangle bounds, int textAreaInsetRight) {
         g2d.setColor(Color.red);
         Point2D p0 = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
         Point2D p1 = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()), new Point2D.Double());
@@ -322,13 +324,18 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 new Point2D.Double(poseHead.getX() * image.getWidth(), poseHead.getY() * image.getHeight()),
                 new Point2D.Double());
 
-        Optional<Double> face = pose.face();
+        Optional<Rectangle2D.Double> face = pose.face();
         g2d.setColor(face.isPresent() ? Color.cyan : Color.orange);
         g2d.drawOval((int) p.getX() - 2, (int) p.getY() - 2, 2 * 2, 2 * 2);
 
         g2d.setColor(face.isPresent() ? Color.blue : Color.red);
         int radius = face.isPresent() ? (int) (image.getWidth() * face.get().width / 2.0f) : 2;
         g2d.drawOval((int) p.getX() - radius, (int) p.getY() - radius, 2 * radius, 2 * radius);
+
+        if (face.isPresent()) {
+            g2d.setColor(Color.gray);
+            g2d.drawLine(textAreaInsetRight, 0, textAreaInsetRight, bounds.height);
+        }
     }
 
     private static Rectangle getContentBounds(ss.desktop.MainFrame mainFrame) {
@@ -363,7 +370,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     String currentText = "";
     private int estimatedTextFieldHeight = 0;
-    private boolean slightlySmallerText = false;
+    private boolean slightlyLargerText = false;
 
     BufferedImage currentImage = null;
     HumanPose.Estimation currentPose = null;
@@ -396,7 +403,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         estimatedTextFieldHeight = currentText.isBlank() || text.size() == 1 ? 0
                 : textLabel.getHeight() / currentText.length() * (newText.length() - text.size());
         currentText = newText;
-        slightlySmallerText = text.size() > 1;
+        slightlyLargerText = text.size() == 1;
 
         intertitleActive = false;
         show();
@@ -447,7 +454,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
         EventQueue.invokeLater(() -> {
             if (intertitleActive) {
-                showInterTitle(currentText);
+                show(html());
             } else {
                 show(currentBackgroundImage);
                 if (currentText == null || currentText.isBlank()) {
@@ -477,8 +484,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private String bodyStyle() {
         var html = new StringBuilder();
 
-        // text background transparency doens't work because the html implentation
-        // of the text label doesn't seem to support it:
+        // text background transparency doens't work because
+        // the html implentation of the text label doesn't seem to support it:
         // rgb(r,g,b,a) -> opaque
         // rgba(r,g,b,a) -> transparent, no color lucency
 
@@ -486,25 +493,28 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         // because the text label spans the whole panel width, therefore resulting in
         // a horizontal bar.
 
-        html.append("background-color:rgb(192, 192, 192, 144);");
-        html.append("border: 3px solid rgb(192, 192, 192, 144);");
-        html.append("border-radius: 5px;");
-        html.append("border-top-width: 3px;");
-        html.append("border-left-width: 7px;");
-        html.append("border-bottom-width: 5px;");
-        html.append("border-right-width: 7px;");
-
         float size = Math.min(backgroundImageIcon.getIconWidth() * 3.0f / 4.0f, backgroundImageIcon.getIconHeight());
+
+        if (intertitleActive) {
+            html.append("color:rgb(255, 255, 255);");
+            int margin = (int) size / 20;
+            html.append("margin:" + margin + ";padding:0;");
+        } else {
+            html.append("background-color:rgb(192, 192, 192, 144);");
+            html.append("border: 3px solid rgb(192, 192, 192, 144);");
+            html.append("border-radius: 5px;");
+            html.append("border-top-width: 3px;");
+            html.append("border-left-width: 7px;");
+            html.append("border-bottom-width: 5px;");
+            html.append("border-right-width: 7px;");
+        }
+
         if (estimatedTextFieldHeight < size) {
             html.append("font-size: ");
-            float fontSize = size / 40.0f;
+            float fontSize = size / 30.0f;
             float factor;
-            if (slightlySmallerText) {
-                factor = 1.25f;
-            } else {
-                factor = 1.4f;
-            }
-            html.append(fontSize * factor);
+            factor = slightlyLargerText ? 1.25f : 1.0f;
+            html.append(Math.max(fontSize * factor, 18));
             html.append("px;");
         }
 
@@ -515,43 +525,47 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     @Override
     public void showInterTitle(String text) {
-        EventQueue.invokeLater(() -> {
-            if (!intertitleActive) {
-                var image = backgroundImageIcon.getImage();
-                centerText();
-                Rectangle bounds = getContentBounds(mainFrame);
-                bounds.x = 0;
-                bounds.y = 0;
-                var interTitleImage = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g2d = (Graphics2D) interTitleImage.getGraphics();
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                // Draw original background image
-                g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
-                // Compensate for the text not being centered (causes the text area to be not centered anymore)
-                var offset = 0;
-                g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
-                int top = bounds.height / 4 + offset;
-                int bottom = bounds.height * 3 / 4 + offset;
-                // Render the intertitle top, text and bottom areas
-                g2d.fillRect(bounds.x, bounds.y, bounds.width, top);
-                g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f));
-                g2d.fillRect(bounds.x, top, bounds.width, bottom - top);
-                g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
-                g2d.fillRect(bounds.x, bottom, bounds.width, bounds.height - bottom);
-                backgroundImageIcon.setImage(interTitleImage);
-                mainFrame.repaint();
+        if (!intertitleActive) {
+            createIntertitleImage(backgroundImageIcon.getImage());
+            centerText();
+            slightlyLargerText = false;
+            intertitleActive = true;
+        }
+        currentText = text;
+        show();
+    }
 
-                intertitleActive = true;
-            }
-            // Show white text, since the background is black
-            ss.show("<p style=\"color:#e0e0e0\">" + text + "</p>");
-        });
+    private void createIntertitleImage(Image image) {
+        Rectangle bounds = getContentBounds(mainFrame);
+        bounds.x = 0;
+        bounds.y = 0;
+        var interTitleImage = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = (Graphics2D) interTitleImage.getGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        // Draw original background image
+        g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
+        // Compensate for the text not being centered (causes the text area to be not centered anymore)
+        var offset = 0;
+        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
+        int top = bounds.height / 4 + offset;
+        int bottom = bounds.height * 3 / 4 + offset;
+        // Render the intertitle top, text and bottom areas
+        g2d.fillRect(bounds.x, bounds.y, bounds.width, top);
+        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f));
+        g2d.fillRect(bounds.x, top, bounds.width, bottom - top);
+        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
+        g2d.fillRect(bounds.x, bottom, bounds.width, bounds.height - bottom);
+
+        // TODO replace currentImage and show with show()
+        backgroundImageIcon.setImage(interTitleImage);
+        mainFrame.repaint();
     }
 
     @Override
     public void endScene() {
         // Keep the image, remove any text to provide feedback
-        show("");
+        currentText = "";
+        show(currentText);
     }
 
     @Override

@@ -2,7 +2,6 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -317,7 +316,7 @@ public abstract class Script {
 
     protected void renderIntertitle(String... text) {
         try {
-            scriptRenderer.renderIntertitle(teaseLib, new Message(actor, expandTextVariables(Arrays.asList(text))));
+            scriptRenderer.renderIntertitle(teaseLib, new Message(actor, text), textOnly());
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
@@ -349,6 +348,11 @@ public abstract class Script {
     Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {
         return new ScriptMessageDecorator(teaseLib.config, displayImage, actor, mood, resources,
                 this::expandTextVariables, textToSpeech).messageModifiers();
+    }
+
+    Decorator[] textOnly() {
+        return new ScriptMessageDecorator(teaseLib.config, displayImage, actor, mood, resources,
+                this::expandTextVariables, Optional.empty()).textOnly();
     }
 
     protected void appendMessage(Message message) {
@@ -404,10 +408,12 @@ public abstract class Script {
         }
         if (scriptFunction == null || scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
 
-            if (!scriptRenderer.isShowingInstructionalImage()) {
-                appendMessage(new Message(actor, Message.ActorImage));
+            if (!scriptRenderer.isInterTitle()) {
+                if (!scriptRenderer.isShowingInstructionalImage()) {
+                    appendMessage(new Message(actor, Message.ActorImage));
+                }
+                scriptRenderer.showAll(10.0); // seconds
             }
-            scriptRenderer.showAll(10.0); // seconds
         }
 
         Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript = speechRecognitioneRejectedScript(

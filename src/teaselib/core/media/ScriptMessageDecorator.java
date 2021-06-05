@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import teaselib.Actor;
 import teaselib.Config;
@@ -33,11 +33,11 @@ public class ScriptMessageDecorator {
     private final Actor actor;
     private final String mood;
     private final ResourceLoader resources;
-    private final Function<String, String> expandTextVariables;
+    private final UnaryOperator<String> expandTextVariables;
     private final TextToSpeechPlayer textToSpeech;
 
     public ScriptMessageDecorator(Configuration config, String displayImage, Actor actor, String mood,
-            ResourceLoader resources, Function<String, String> expandTextVariables,
+            ResourceLoader resources, UnaryOperator<String> expandTextVariables,
             Optional<TextToSpeechPlayer> textToSpeech) {
         super();
         this.config = config;
@@ -55,8 +55,13 @@ public class ScriptMessageDecorator {
                 this::addActorImages };
     }
 
+    public RenderedMessage.Decorator[] textOnly() {
+        return new RenderedMessage.Decorator[] { //
+                this::filterDebug, this::applyDelayRules, this::expandTextVariables };
+    }
+
     private AbstractMessage filterDebug(AbstractMessage message) {
-        AbstractMessage debugFiltered = new AbstractMessage();
+        var debugFiltered = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.DesktopItem
                     && !Boolean.parseBoolean(config.get(Config.Render.InstructionalImages))) {
@@ -81,7 +86,7 @@ public class ScriptMessageDecorator {
     }
 
     private AbstractMessage expandTextVariables(AbstractMessage message) {
-        AbstractMessage expandedTextVariables = new AbstractMessage();
+        var expandedTextVariables = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.Speech && !Message.Type.isSound(part.value)) {
                 if (Boolean.parseBoolean(config.get(Config.Render.Speech))) {
@@ -98,7 +103,7 @@ public class ScriptMessageDecorator {
     }
 
     public AbstractMessage addActorImages(AbstractMessage message) {
-        AbstractMessage parsedMessage = new AbstractMessage();
+        var parsedMessage = new AbstractMessage();
 
         if (message.isEmpty()) {
             ensureEmptyMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(displayImage, mood));
@@ -124,10 +129,10 @@ public class ScriptMessageDecorator {
                             currentMood = nextMood;
                         }
                         // Inject mood if changed
-                        if (!currentMood.equalsIgnoreCase(lastMood)) {
+                        if (currentMood != null && !currentMood.equalsIgnoreCase(lastMood)) {
                             parsedMessage.add(Message.Type.Mood, currentMood);
-                            lastMood = currentMood;
                         }
+                        lastMood = currentMood;
                         imageType = nextImage = getActorOrDisplayImage(part.value, currentMood);
                         parsedMessage.add(part.type, nextImage);
                     }
@@ -145,12 +150,12 @@ public class ScriptMessageDecorator {
                         nextMood = null;
                     }
                     // Inject mood if changed
-                    if (currentMood != lastMood) {
+                    if (currentMood != null && !currentMood.equalsIgnoreCase(lastMood)) {
                         parsedMessage.add(Message.Type.Mood, currentMood);
-                        lastMood = currentMood;
                     }
+                    lastMood = currentMood;
                     // Update image if changed
-                    if (imageType != nextImage) {
+                    if (!imageType.equalsIgnoreCase(nextImage)) {
                         nextImage = getActorOrDisplayImage(imageType, currentMood);
                         parsedMessage.add(Message.Type.Image, nextImage);
                     }
@@ -166,6 +171,7 @@ public class ScriptMessageDecorator {
         }
 
         return parsedMessage;
+
     }
 
     private String getActorOrDisplayImage(String imageType, String currentMood) {
@@ -196,7 +202,7 @@ public class ScriptMessageDecorator {
     private AbstractMessage applyDelayRules(AbstractMessage message) {
         AbstractMessage lastSection = RenderedMessage.getLastSection(message);
         MessagePart currentDelay = null;
-        AbstractMessage messageWithDelays = new AbstractMessage();
+        var messageWithDelays = new AbstractMessage();
 
         for (MessagePart messagePart : message) {
             if (messagePart.type == Type.Delay) {

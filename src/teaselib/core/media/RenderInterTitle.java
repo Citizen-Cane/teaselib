@@ -2,13 +2,12 @@ package teaselib.core.media;
 
 import java.io.IOException;
 
-import teaselib.Message;
 import teaselib.core.TeaseLib;
 
 public class RenderInterTitle extends MediaRendererThread implements ReplayableMediaRenderer {
-    private final Message message;
+    private final RenderedMessage message;
 
-    public RenderInterTitle(Message message, TeaseLib teaseLib) {
+    public RenderInterTitle(RenderedMessage message, TeaseLib teaseLib) {
         super(teaseLib);
         this.message = message;
     }

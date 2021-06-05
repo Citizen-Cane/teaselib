@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Message;
+import teaselib.Message.Type;
 import teaselib.Replay;
 import teaselib.core.ScriptEventArgs.BeforeNewMessage;
 import teaselib.core.ScriptEventArgs.BeforeNewMessage.OutlineType;
@@ -100,7 +101,7 @@ public class ScriptRenderer implements Closeable {
      */
     void endAll() {
         renderQueue.endAll();
-        // TODO decide whether background renderers should be stopped manually
+        // TODO decide whether background renderers should be stoppable manually
         // - > additional flexibility
         stopBackgroundRenderers();
     }
@@ -109,12 +110,19 @@ public class ScriptRenderer implements Closeable {
         return renderQueue.hasCompletedMandatory();
     }
 
-    void renderIntertitle(TeaseLib teaseLib, Message message) {
+    void renderIntertitle(TeaseLib teaseLib, Message message, Decorator[] decorators) {
+        Message composed;
         if (hasPrependedMessages()) {
-            throw new IllegalStateException("renderIntertitle doesn't support prepended messages");
+            composed = new Message(currentActor);
+            prependedMessages.add(message);
+            prependedMessages.stream().flatMap(Message::stream).filter(part -> part.type == Type.Text)
+                    .forEach(composed::add);
+            prependedMessages.clear();
+        } else {
+            composed = message;
         }
 
-        RenderInterTitle interTitle = new RenderInterTitle(message, teaseLib);
+        var interTitle = new RenderInterTitle(RenderedMessage.of(composed, decorators), teaseLib);
         renderMessage(teaseLib, message.actor, interTitle);
     }
 
@@ -211,6 +219,10 @@ public class ScriptRenderer implements Closeable {
     boolean isShowingInstructionalImage() {
         var current = currentMessage;
         return current != null && current.contains(Message.Type.Image);
+    }
+
+    boolean isInterTitle() {
+        return playedRenderers != null && playedRenderers.stream().anyMatch(RenderInterTitle.class::isInstance);
     }
 
     void showAll(double delaySeconds) {

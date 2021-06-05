@@ -5,7 +5,6 @@ import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.Rectangle2D.Double;
 import java.awt.image.BufferedImage;
 import java.util.Optional;
 
@@ -159,11 +158,11 @@ public class Transform {
         return zoomed;
     }
 
-    public static void avoidFousAreaBehindText(AffineTransform surface, Rectangle bounds, Double r) {
-        Point2D focusRight = surface.transform(new Point2D.Double(r.getMaxX(), r.getCenterY() + 200),
+    public static void avoidFocusAreaBehindText(AffineTransform surface, Rectangle bounds, Rectangle2D.Double focusArea,
+            int textAreaX) {
+        Point2D focusRight = surface.transform(new Point2D.Double(focusArea.getMaxX(), focusArea.getCenterY()),
                 new Point2D.Double());
-        int textLeft = bounds.width * 4 / 5;
-        double overlap = textLeft - focusRight.getX();
+        double overlap = focusRight.getX() - textAreaX;
         if (overlap > 0) {
             surface.translate(-overlap, 0);
         }

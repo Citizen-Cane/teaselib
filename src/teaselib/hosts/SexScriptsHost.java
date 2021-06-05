@@ -494,14 +494,18 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         html.append("border-bottom-width: 5px;");
         html.append("border-right-width: 7px;");
 
-        if (estimatedTextFieldHeight < backgroundImageIcon.getIconHeight()) {
+        float size = Math.min(backgroundImageIcon.getIconWidth() * 3.0f / 4.0f, backgroundImageIcon.getIconHeight());
+        if (estimatedTextFieldHeight < size) {
             html.append("font-size: ");
+            float fontSize = size / 40.0f;
+            float factor;
             if (slightlySmallerText) {
-                html.append(1.25);
+                factor = 1.25f;
             } else {
-                html.append(1.4);
+                factor = 1.4f;
             }
-            html.append("em;");
+            html.append(fontSize * factor);
+            html.append("px;");
         }
 
         html.append("\\\">");

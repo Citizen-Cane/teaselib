@@ -1,6 +1,7 @@
 package teaselib.core.ai.perception;
 
-import static teaselib.core.util.ExceptionUtil.*;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.reduce;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -21,15 +22,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
-import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
-import teaselib.core.events.EventSource;
 import teaselib.core.util.ExceptionUtil;
 
 class PoseEstimationTask implements Callable<PoseAspects> {
+    private static final int PROXIMITY_SENSOR_FRAMERATE_MILLIS = 500;
+    private static final int HEAD_GESTURE_FRAME_RATE_MILLIS = 125;
+
     static final Logger logger = LoggerFactory.getLogger(PoseEstimationTask.class);
 
     private static final Runnable Noop = () -> { //
@@ -143,7 +145,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (ExecutionException e) {
-                Exception cause = ExceptionUtil.reduce(e);
+                var cause = ExceptionUtil.reduce(e);
                 logger.error(cause.getMessage(), cause);
             } catch (Throwable e) {
                 logger.error(e.getMessage(), e);
@@ -184,6 +186,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             task.run();
             return Noop;
         });
+
         estimatePoses.lockInterruptibly();
         PoseAspects previous;
         Actor actor;
@@ -198,9 +201,8 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                     signal(actor, unavailable, previous);
                 }
                 // TODO sleep until actor changes and interests not empty
-                Thread.sleep(1000);
+                ensureFrametimeMillis(1000);
                 // TODO Listen to actorChanged event and adding/removing listeners -> wait here for condition
-
             }
         } finally {
             estimatePoses.unlock();
@@ -215,9 +217,9 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         poseAspects.set(update);
         signal(actor, update, previous);
         if (update.is(HumanPose.Status.Stream)) {
-            ensureFrametimeMillis(125);
+            ensureFrametimeMillis(HEAD_GESTURE_FRAME_RATE_MILLIS);
         } else {
-            ensureFrametimeMillis(500);
+            ensureFrametimeMillis(PROXIMITY_SENSOR_FRAMERATE_MILLIS);
         }
     }
 
@@ -251,12 +253,10 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             // TODO fire only stream-relevant interests (Gaze), but not proximity
             // - stream relevant aspects are fired always, change relevant only when they've changed
             if (update.is(HumanPose.Status.Stream) || !update.equals(previous)) {
-                DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = interaction
-                        .definitions(actor);
+                var definitions = interaction.definitions(actor);
                 Set<Interest> previousInterests = definitions.keySet();
 
-                PoseEstimationEventArgs eventArgs = new PoseEstimationEventArgs(actor, update,
-                        humanPose.getTimestamp());
+                var eventArgs = new PoseEstimationEventArgs(actor, update, humanPose.getTimestamp());
                 definitions.stream().filter(e -> update.is(e.getKey())).map(Map.Entry::getValue)
                         .forEach(e -> e.fire(eventArgs));
 

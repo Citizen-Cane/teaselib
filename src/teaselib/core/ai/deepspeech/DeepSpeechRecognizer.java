@@ -52,7 +52,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     @Override
     public void setMaxAlternates(int n) {
-        setMaxResults(n * 10);
+        setMaxResults(n * 5);
     }
 
     public native void setMaxResults(int n);

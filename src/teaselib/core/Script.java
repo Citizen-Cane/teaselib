@@ -27,7 +27,6 @@ import teaselib.Resources;
 import teaselib.ScriptFunction;
 import teaselib.State;
 import teaselib.TeaseScript;
-import teaselib.core.ScriptEventArgs.ActorChanged;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HeadGesturesV2InputMethod;
 import teaselib.core.ai.perception.HumanPose;
@@ -119,12 +118,6 @@ public abstract class Script {
                 inputMethods.add(new HeadGesturesV2InputMethod( //
                         deviceInteraction(HumanPoseDeviceInteraction.class),
                         scriptRenderer.getInputMethodExecutorService()), () -> !canSpeak.getAsBoolean());
-
-                scriptRenderer.events.when().actorChanged().then(e -> {
-                    if (!humanPoseInteraction.contains(e.actor)) {
-                        define(humanPoseInteraction, e);
-                    }
-                });
             }
 
         }
@@ -135,39 +128,51 @@ public abstract class Script {
 
     // TODO move speech recognition-related part to sr input method, find out how to deal with absent camera
 
-    protected void define(HumanPoseDeviceInteraction humanPoseInteraction, ActorChanged e) {
-        SpeechRecognitionInputMethod speechRecognitionInputMethod = teaseLib.globals.get(InputMethods.class)
-                .get(SpeechRecognitionInputMethod.class);
+    protected void define(HumanPoseDeviceInteraction humanPoseInteraction, Actor actor) {
+        humanPoseInteraction.addEventListener(actor, proximitySensor);
+    }
 
-        humanPoseInteraction.addEventListener(e.actor,
-                new HumanPoseDeviceInteraction.EventListener(HumanPose.Interest.Proximity) {
+    protected void undefine(HumanPoseDeviceInteraction humanPoseInteraction, Actor actor) {
+        humanPoseInteraction.removeEventListener(actor, proximitySensor);
+        // TODO set actor proximity with next image to avoid additional un-zoom of current image
+        teaseLib.host.setActorProximity(Proximity.FAR);
+        setFaceToFace(false);
+    }
 
-                    private Proximity previous = Proximity.FACE2FACE;
+    private final HumanPoseDeviceInteraction.EventListener proximitySensor = new HumanPoseDeviceInteraction.EventListener(
+            HumanPose.Interest.Proximity) {
 
-                    @Override
-                    public void run(PoseEstimationEventArgs eventArgs) throws Exception {
-                        Optional<Proximity> aspect = eventArgs.pose.aspect(Proximity.class);
-                        boolean speechProximity;
-                        if (aspect.isPresent()) {
-                            Proximity proximity = aspect.get();
-                            teaseLib.host.setActorProximity(proximity);
-                            speechProximity = proximity == Proximity.FACE2FACE;
-                            previous = proximity;
-                        } else {
-                            speechProximity = false;
-                            if (previous == Proximity.CLOSE || previous == Proximity.FACE2FACE) {
-                                teaseLib.host.setActorProximity(Proximity.NEAR);
-                            } else {
-                                teaseLib.host.setActorProximity(previous);
-                            }
-                        }
-                        speechRecognitionInputMethod.setFaceToFace(speechProximity);
-                    }
-                });
+        private Proximity previous = Proximity.FACE2FACE;
+
+        @Override
+        public void run(PoseEstimationEventArgs eventArgs) throws Exception {
+            Optional<Proximity> aspect = eventArgs.pose.aspect(Proximity.class);
+            boolean speechProximity;
+            if (aspect.isPresent()) {
+                var proximity = aspect.get();
+                teaseLib.host.setActorProximity(proximity);
+                speechProximity = proximity == Proximity.FACE2FACE;
+                previous = proximity;
+            } else {
+                speechProximity = false;
+                if (previous == Proximity.CLOSE || previous == Proximity.FACE2FACE) {
+                    teaseLib.host.setActorProximity(Proximity.NEAR);
+                } else {
+                    teaseLib.host.setActorProximity(previous);
+                }
+            }
+            setFaceToFace(speechProximity);
+        }
+
+    };
+
+    private void setFaceToFace(boolean speechProximity) {
+        var inputMethod = teaseLib.globals.get(InputMethods.class).get(SpeechRecognitionInputMethod.class);
+        inputMethod.setFaceToFace(speechProximity);
     }
 
     private DeviceInteractionImplementations initScriptInteractions() {
-        DeviceInteractionImplementations scriptInteractionImplementations = new DeviceInteractionImplementations();
+        var scriptInteractionImplementations = new DeviceInteractionImplementations();
         scriptInteractionImplementations.add(KeyReleaseDeviceInteraction.class,
                 () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer));
         scriptInteractionImplementations.add(HumanPoseDeviceInteraction.class,
@@ -422,7 +427,13 @@ public abstract class Script {
             addRecognitionRejectedAction(prompt, speechRecognitionRejectedScript.get());
         }
 
-        return anwser(prompt);
+        HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
+        try {
+            define(humanPoseInteraction, actor);
+            return anwser(prompt);
+        } finally {
+            undefine(humanPoseInteraction, actor);
+        }
     }
 
     private Answer anwser(Prompt prompt) {

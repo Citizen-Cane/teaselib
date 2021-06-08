@@ -272,9 +272,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         if (actorProximity == Proximity.CLOSE) {
             surface = surfaceTransform(image, bounds, pose.boobs(), 2.5, estimatedTextAreaX);
         } else if (actorProximity == Proximity.FACE2FACE) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.4, estimatedTextAreaX);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.3, estimatedTextAreaX);
         } else if (actorProximity == Proximity.NEAR) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.0, estimatedTextAreaX);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.1, estimatedTextAreaX);
         } else if (actorProximity == Proximity.FAR) {
             surface = surfaceTransform(image, bounds, Optional.empty(), 1.0, estimatedTextAreaX);
         } else if (actorProximity == Proximity.AWAY) {
@@ -433,7 +433,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         this.gaze = gaze;
     }
 
-    HumanPose.Proximity actorProximity = Proximity.FACE2FACE;
+    HumanPose.Proximity actorProximity = Proximity.FAR;
 
     @Override
     public void setActorProximity(HumanPose.Proximity proximity) {

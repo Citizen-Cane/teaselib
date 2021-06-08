@@ -74,4 +74,30 @@ public abstract class AbstractDuration implements Duration {
         return elapsed(TeaseLib.DURATION_TIME_UNIT) >= limit;
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (limit ^ (limit >>> 32));
+        result = prime * result + (int) (start ^ (start >>> 32));
+        result = prime * result + ((teaseLib == null) ? 0 : teaseLib.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        AbstractDuration other = (AbstractDuration) obj;
+        if (limit != other.limit)
+            return false;
+        if (start != other.start)
+            return false;
+        return teaseLib == other.teaseLib;
+    }
+
 }

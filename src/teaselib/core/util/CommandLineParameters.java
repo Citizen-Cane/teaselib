@@ -26,13 +26,13 @@ public class CommandLineParameters<T extends Enum<T>> extends EnumMap<T, List<St
     public CommandLineParameters(List<String> args, T[] keywords, Class<T> keyType) {
         super(keyType);
         this.defaultKeyword = keywords[0];
-        put(defaultKeyword, new ArrayList<String>());
-        T currentKeyword = defaultKeyword;
+        put(defaultKeyword, new ArrayList<>());
+        var currentKeyword = defaultKeyword;
         for (String arg : args) {
-            T keyword = getKeyword(arg, keywords);
+            var keyword = getKeyword(arg, keywords);
             if (keyword != null) {
                 currentKeyword = keyword;
-                put(currentKeyword, new ArrayList<String>());
+                put(currentKeyword, new ArrayList<>());
             } else {
                 get(currentKeyword).add(arg);
             }

@@ -5,6 +5,12 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.util.DurationFormat;
 
+/**
+ * An elapsing duration wit h a planned end.
+ * 
+ * @author Citizen-Cane
+ *
+ */
 public class DurationImpl extends AbstractDuration {
 
     public DurationImpl(TeaseLib teaseLib) {

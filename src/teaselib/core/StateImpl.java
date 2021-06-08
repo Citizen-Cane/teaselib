@@ -228,7 +228,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 throw new IllegalStateException(storage.durationStorage.value());
             }
         } else {
-            this.duration = new DurationImpl(this.stateMaps.teaseLib, 0, 0, TimeUnit.SECONDS);
+            this.duration = new FrozenDuration(this.stateMaps.teaseLib, 0, 0, TimeUnit.SECONDS);
         }
     }
 

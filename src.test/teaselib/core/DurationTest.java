@@ -190,6 +190,22 @@ public class DurationTest {
     }
 
     @Test
+    public void testStateNeverApplied() {
+        script.debugger.freezeTime();
+        State state = script.state("test");
+        assertTrue(state.removed());
+        assertTrue(state.removed(TimeUnit.DAYS) > 0);
+    }
+
+    @Test
+    public void testItemNeverApplied() {
+        script.debugger.freezeTime();
+        Item item = script.item("test");
+        assertTrue(item.removed());
+        assertTrue(item.removed(TimeUnit.DAYS) > 0);
+    }
+
+    @Test
     public void testIndefiniteDuration() {
         assertEquals(Duration.INFINITE, script.duration(Duration.INFINITE, SECONDS).limit(SECONDS));
     }

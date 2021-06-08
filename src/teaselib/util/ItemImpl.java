@@ -354,11 +354,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public long removed(TimeUnit unit) {
-        if (applied()) {
-            return 0L;
-        } else {
-            return duration().since(unit);
-        }
+        return state(value).removed(unit);
     }
 
     @Override

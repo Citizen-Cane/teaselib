@@ -85,12 +85,12 @@ public class StateMaps {
 
     private State state(String domain, QualifiedItem item) {
         if (PersistedObject.isPersistedString(item.toString())) {
-            StateMap stateMapForPersistedKey = stateMap(domain, item);
-            State existing = stateMapForPersistedKey.get(item.toString());
+            var stateMapForPersistedKey = stateMap(domain, item);
+            var existing = stateMapForPersistedKey.get(item.toString());
             if (existing != null) {
                 return existing;
             } else {
-                String persistedKey = item.toString();
+                var persistedKey = item.toString();
                 State state;
                 try {
                     state = Persist.from(persistedKey, clazz -> teaseLib);
@@ -99,31 +99,29 @@ public class StateMaps {
                 }
                 stateMapForPersistedKey.put(persistedKey, state);
 
-                QualifiedItem qualifiedItem = QualifiedItem.of(((StateImpl) state).item);
-                StateMap stateMapForQualifiedKey = stateMap(domain, qualifiedItem);
+                var qualifiedItem = QualifiedItem.of(((StateImpl) state).item);
+                var stateMapForQualifiedKey = stateMap(domain, qualifiedItem);
                 String qualifiedKey = qualifiedItem.name().toLowerCase();
                 stateMapForQualifiedKey.put(qualifiedKey, state);
                 return state;
             }
         } else if (item.value() instanceof StateImpl) {
-            StateImpl stateImpl = (StateImpl) item.value();
-            StateMap stateMap = stateMap(domain, QualifiedItem.of(stateImpl.item));
+            var state = (StateImpl) item.value();
+            var stateMap = stateMap(domain, QualifiedItem.of(state.item));
             String key = item.name().toLowerCase();
-            State existing = stateMap.get(key);
+            var existing = stateMap.get(key);
             if (existing == null) {
-                State state = (State) item.value();
                 stateMap.put(key, state);
                 return state;
             } else if (!existing.equals(item.value())) {
-                throw new IllegalArgumentException(
-                        "States cannot be replaced: " + stateImpl.toString() + " -> " + existing.toString());
+                throw new IllegalArgumentException("States cannot be replaced: " + state + " -> " + existing);
             } else {
                 return existing;
             }
         } else {
-            StateMap stateMap = stateMap(domain, item);
+            var stateMap = stateMap(domain, item);
             String key = item.name().toLowerCase();
-            State state = stateMap.get(key);
+            var state = stateMap.get(key);
             if (state == null) {
                 state = new StateImpl(this, domain, item.value());
                 stateMap.put(key, state);

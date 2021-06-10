@@ -21,6 +21,7 @@ import teaselib.Body;
 import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Message;
+import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.Resources;
@@ -128,11 +129,11 @@ public abstract class Script {
 
     // TODO move speech recognition-related part to sr input method, find out how to deal with absent camera
 
-    protected void define(HumanPoseDeviceInteraction humanPoseInteraction, Actor actor) {
+    protected void define(HumanPoseDeviceInteraction humanPoseInteraction) {
         humanPoseInteraction.addEventListener(actor, proximitySensor);
     }
 
-    protected void undefine(HumanPoseDeviceInteraction humanPoseInteraction, Actor actor) {
+    protected void undefine(HumanPoseDeviceInteraction humanPoseInteraction) {
         humanPoseInteraction.removeEventListener(actor, proximitySensor);
         // TODO set actor proximity with next image to avoid additional un-zoom of current image
         teaseLib.host.setActorProximity(Proximity.FAR);
@@ -321,7 +322,7 @@ public abstract class Script {
 
     protected void renderIntertitle(String... text) {
         try {
-            scriptRenderer.renderIntertitle(teaseLib, new Message(actor, text), textOnly());
+            scriptRenderer.renderIntertitle(teaseLib, new Message(actor, text), withoutSpeech());
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
@@ -355,9 +356,8 @@ public abstract class Script {
                 this::expandTextVariables, textToSpeech).messageModifiers();
     }
 
-    Decorator[] textOnly() {
-        return new ScriptMessageDecorator(teaseLib.config, displayImage, actor, mood, resources,
-                this::expandTextVariables, Optional.empty()).textOnly();
+    Decorator[] withoutSpeech() {
+        return decorators(Optional.empty());
     }
 
     protected void appendMessage(Message message) {
@@ -366,6 +366,15 @@ public abstract class Script {
 
     protected void replaceMessage(Message message) {
         scriptRenderer.replaceMessage(teaseLib, resources, actor, message, decorators(getTextToSpeech()));
+    }
+
+    void showAll(double delaySeconds) {
+        var message = new Message(actor);
+        message.add(Type.Delay, Double.toString(delaySeconds));
+        if (!scriptRenderer.isShowingInstructionalImage()) {
+            message.add(Type.Image, displayImage);
+        }
+        scriptRenderer.showAll(teaseLib, resources, actor, message, withoutSpeech());
     }
 
     protected final Answer showChoices(List<Answer> answers) {
@@ -414,10 +423,7 @@ public abstract class Script {
         if (scriptFunction == null || scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
 
             if (!scriptRenderer.isInterTitle()) {
-                if (!scriptRenderer.isShowingInstructionalImage()) {
-                    appendMessage(new Message(actor, Message.ActorImage));
-                }
-                scriptRenderer.showAll(10.0); // seconds
+                showAll(5.0);
             }
         }
 
@@ -429,10 +435,10 @@ public abstract class Script {
 
         HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
         try {
-            define(humanPoseInteraction, actor);
+            define(humanPoseInteraction);
             return anwser(prompt);
         } finally {
-            undefine(humanPoseInteraction, actor);
+            undefine(humanPoseInteraction);
         }
     }
 
@@ -488,9 +494,9 @@ public abstract class Script {
         // TODO endAll() cancels renderers, but doesn't wait for completion
         // -> integrate this with endScene() which is just there to workaround the delay until the next say() command
         endAll();
+        teaseLib.host.endScene();
 
         scriptRenderer.events.afterChoices.fire(new ScriptEventArgs());
-        teaseLib.host.endScene();
 
         return choice;
     }

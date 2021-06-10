@@ -4,13 +4,17 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import teaselib.Config;
+import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
+import teaselib.Mood;
+import teaselib.test.TestScript;
 
 public class ScriptMessageDecoratorTest {
 
     @Test
-    public void testScriptMessageDecorator() {
+    public void testAccumulateDelay() {
         assertEquals(new MessagePart(Type.Delay, "30.0"), ScriptMessageDecorator
                 .accumulateDelay(new MessagePart(Type.Delay, "10"), new MessagePart(Type.Delay, "20.0")));
 
@@ -26,4 +30,41 @@ public class ScriptMessageDecoratorTest {
         assertEquals(new MessagePart(Type.Delay, "5.5 20.0"), ScriptMessageDecorator
                 .accumulateDelay(new MessagePart(Type.Delay, "2 12.5"), new MessagePart(Type.Delay, "3.5 7.5")));
     }
+
+    @Test
+    public void testStandardMessage() {
+        TestScript script = TestScript.getOne();
+        script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
+
+        Message m = new Message(script.actor);
+        m.add(Type.Image, Message.ActorImage);
+        m.add(Type.Text, "FooBar");
+        m.add(Type.Delay, "30.0");
+
+        ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
+                Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
+        RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.messageModifiers());
+        assertEquals(r.toString(), 4, r.size());
+
+        assertEquals(r.toString(), Type.Mood, r.get(0).type);
+        assertEquals(r.toString(), Type.Image, r.get(1).type);
+        assertEquals(r.toString(), Type.Text, r.get(2).type);
+        assertEquals(r.toString(), Type.Delay, r.get(3).type);
+    }
+
+    @Test
+    public void testImageAfterDelay() {
+        TestScript script = TestScript.getOne();
+        script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
+
+        Message m = new Message(script.actor);
+        m.add(Type.Delay, "30.0");
+        m.add(Type.Image, Message.ActorImage);
+
+        ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
+                Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
+        RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.messageModifiers());
+        assertEquals("Actor image", 2, r.size());
+    }
+
 }

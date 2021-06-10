@@ -30,6 +30,7 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
 
         @Override
         public void interrupt() {
+            super.interrupt();
             stopEventLoop();
         }
 
@@ -69,7 +70,7 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
     }
 
     public void startEventLoop(SpeechRecognitionEvents events) {
-        CountDownLatch awaitInitialized = new CountDownLatch(1);
+        var awaitInitialized = new CountDownLatch(1);
         Runnable speechRecognitionService = () -> {
             try {
                 process(events, awaitInitialized);

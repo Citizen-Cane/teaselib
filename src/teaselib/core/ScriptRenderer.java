@@ -207,6 +207,11 @@ public class ScriptRenderer implements Closeable {
                 sectionRenderer::replace, BeforeNewMessage.OutlineType.ReplaceParagraph);
     }
 
+    void showAll(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message, Decorator[] decorators) {
+        renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
+                sectionRenderer::showAll, BeforeNewMessage.OutlineType.ReplaceParagraph);
+    }
+
     private void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
             Decorator[] decorators, ConcatFunction concatFunction, OutlineType outlineType) {
         fireNewMessageEvent(teaseLib, actor, outlineType);
@@ -223,10 +228,6 @@ public class ScriptRenderer implements Closeable {
 
     boolean isInterTitle() {
         return playedRenderers != null && playedRenderers.stream().anyMatch(RenderInterTitle.class::isInstance);
-    }
-
-    void showAll(double delaySeconds) {
-        sectionRenderer.showAll(delaySeconds);
     }
 
     private void fireNewMessageEvent(TeaseLib teaseLib, Actor actor, BeforeNewMessage.OutlineType outlineType) {

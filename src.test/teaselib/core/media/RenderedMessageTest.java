@@ -39,4 +39,5 @@ public class RenderedMessageTest {
 
         assertEquals(3, RenderedMessage.getLastSection(message).size());
     }
+
 }

@@ -47,7 +47,7 @@ public class RenderedMessage extends AbstractMessage {
         int index = findLastTextElement(message);
 
         if (index < 0) {
-            RenderedMessage renderedMessage = new RenderedMessage();
+            var renderedMessage = new RenderedMessage();
             renderedMessage.addAll(message);
             return renderedMessage;
         }
@@ -74,7 +74,7 @@ public class RenderedMessage extends AbstractMessage {
         AbstractMessage parts = message;
         int index = parts.size();
         while (index-- > 0) {
-            Message.Type type = parts.get(index).type;
+            var type = parts.get(index).type;
             if (type == Message.Type.Text) {
                 break;
             }

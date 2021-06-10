@@ -26,6 +26,7 @@ import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
 import teaselib.Mood;
+import teaselib.Replay;
 import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
 import teaselib.core.AbstractImages;
@@ -83,9 +84,13 @@ public class SectionRenderer implements Closeable {
         return createBatch(actor, messages, replace, resources);
     }
 
+    public MediaRenderer.Threaded showAll(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
+        return createBatch(actor, messages, showAll, resources);
+    }
+
     public void showAll(double delaySeconds) {
+        var current = currentMessageRenderer;
         if (delaySeconds < DELAY_AT_END_OF_MESSAGE) {
-            var current = currentMessageRenderer;
             if (current != null) {
                 current.thisTask.cancel(true);
                 // TODO show subsequent messages as single paragraphs, then show all appended
@@ -110,7 +115,21 @@ public class SectionRenderer implements Closeable {
                 }
                 return null;
             });
+        } else if (current != null) {
+            try {
+                show(current);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            } catch (IOException e) {
+                try {
+                    ExceptionUtil.handleIOException(e, teaseLib.config, logger);
+                } catch (IOException e1) {
+                    throw ExceptionUtil.asRuntimeException(e1);
+                }
+            }
         }
+
     }
 
     private final class Batch extends MessageRenderer {
@@ -221,11 +240,24 @@ public class SectionRenderer implements Closeable {
         return next;
     };
 
+    static BinaryOperator<MessageRenderer> showAll = (current, next) -> {
+        collectText(current, next);
+        next.position = Replay.Position.End;
+        next.currentMessage = next.messages.size() - 1;
+        return next;
+    };
+
     private static void copy(MessageRenderer batch, MessageRenderer next, List<RenderedMessage> messages) {
         next.accumulatedText = new MessageTextAccumulator();
         messages.forEach(m -> m.forEach(next.accumulatedText::add));
         next.messages.addAll(0, messages);
         next.position = batch.position;
+    }
+
+    private static void collectText(MessageRenderer current, MessageRenderer next) {
+        next.accumulatedText = new MessageTextAccumulator();
+        current.messages.stream().flatMap(RenderedMessage::stream).filter(p -> p.type == Type.Text)
+                .forEach(next.accumulatedText::add);
     }
 
     public void run(MessageRenderer messageRenderer) throws InterruptedException, IOException {
@@ -280,7 +312,10 @@ public class SectionRenderer implements Closeable {
             // TODO Remove all but last speech and delay parts
             renderMessage(messageRenderer, messageRenderer.getMandatory());
         } else if (messageRenderer.position == Position.End) {
-            renderMessage(messageRenderer, messageRenderer.getEnd());
+            completeSectionMandatory();
+            renderMessages(messageRenderer);
+            show(messageRenderer, messageRenderer.accumulatedText.paragraphs);
+
         } else {
             throw new IllegalStateException(messageRenderer.position.toString());
         }

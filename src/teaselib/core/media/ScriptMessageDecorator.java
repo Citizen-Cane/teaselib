@@ -37,6 +37,11 @@ public class ScriptMessageDecorator {
     private final TextToSpeechPlayer textToSpeech;
 
     public ScriptMessageDecorator(Configuration config, String displayImage, Actor actor, String mood,
+            ResourceLoader resources, UnaryOperator<String> expandTextVariables) {
+        this(config, displayImage, actor, mood, resources, expandTextVariables, Optional.empty());
+    }
+
+    public ScriptMessageDecorator(Configuration config, String displayImage, Actor actor, String mood,
             ResourceLoader resources, UnaryOperator<String> expandTextVariables,
             Optional<TextToSpeechPlayer> textToSpeech) {
         super();
@@ -50,14 +55,13 @@ public class ScriptMessageDecorator {
     }
 
     public RenderedMessage.Decorator[] messageModifiers() {
-        return new RenderedMessage.Decorator[] { //
-                this::filterDebug, this::applyDelayRules, this::addTextToSpeech, this::expandTextVariables,
-                this::addActorImages };
-    }
-
-    public RenderedMessage.Decorator[] textOnly() {
-        return new RenderedMessage.Decorator[] { //
-                this::filterDebug, this::applyDelayRules, this::expandTextVariables };
+        if (textToSpeech != null) {
+            return new RenderedMessage.Decorator[] { this::filterDebug, this::applyDelayRules, this::addTextToSpeech,
+                    this::expandTextVariables, this::addActorImages };
+        } else {
+            return new RenderedMessage.Decorator[] { this::filterDebug, this::applyDelayRules,
+                    this::expandTextVariables, this::addActorImages };
+        }
     }
 
     private AbstractMessage filterDebug(AbstractMessage message) {
@@ -82,7 +86,7 @@ public class ScriptMessageDecorator {
     }
 
     private AbstractMessage addTextToSpeech(AbstractMessage message) {
-        return textToSpeech != null ? textToSpeech.createSpeechMessage(actor, message, resources) : message;
+        return textToSpeech.createSpeechMessage(actor, message, resources);
     }
 
     private AbstractMessage expandTextVariables(AbstractMessage message) {
@@ -165,7 +169,7 @@ public class ScriptMessageDecorator {
                 }
             }
 
-            if (parsedMessage.isEmpty()) {
+            if (nextImage == null) {
                 ensureEmptyMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(imageType, mood));
             }
         }

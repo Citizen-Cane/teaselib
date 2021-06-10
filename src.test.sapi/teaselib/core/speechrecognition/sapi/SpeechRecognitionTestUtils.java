@@ -1,8 +1,13 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
@@ -141,6 +147,13 @@ public class SpeechRecognitionTestUtils {
 
         List<Rule> results = new ArrayList<>();
 
+        var speechDetected = new AtomicInteger(0);
+        Event<SpeechRecognizedEventArgs> detectedHandler = eventArgs -> {
+            logger.info("Speech detected '{}'", eventArgs.result.get(0).text);
+            speechDetected.incrementAndGet();
+        };
+        inputMethod.events.speechDetected.add(detectedHandler);
+
         Event<SpeechRecognizedEventArgs> completedHandler = eventArgs -> {
             results.addAll(eventArgs.result);
             logger.info("Recognized '{}'", eventArgs.result.get(0).text);
@@ -168,7 +181,13 @@ public class SpeechRecognitionTestUtils {
                 assertNull(inputMethod.getActivePrompt());
                 prompt.show();
                 inputMethod.emulateRecogntion(phrase);
-                dismissed = prompt.click.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+
+                int speechDetectedCount;
+                do {
+                    speechDetectedCount = speechDetected.get();
+                    dismissed = prompt.click.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+                } while (!dismissed && speechDetectedCount < speechDetected.get());
+
                 prompt.dismiss();
                 assertNull(inputMethod.getActivePrompt());
 
@@ -202,6 +221,7 @@ public class SpeechRecognitionTestUtils {
         } finally {
             inputMethod.events.recognitionRejected.remove(rejectedHandler);
             inputMethod.events.recognitionCompleted.remove(completedHandler);
+            inputMethod.events.speechDetected.remove(detectedHandler);
         }
 
         return results;

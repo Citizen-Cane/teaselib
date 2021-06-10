@@ -354,6 +354,7 @@ void DeepSpeechRecognizer::start()
 void DeepSpeechRecognizer::stop()
 {
 	audio.stop();
+	audioStream.cancel();
 }
 
 static auto const isSpace = [](char c){ return c == ' '; };
@@ -375,6 +376,7 @@ template <typename OutputIterator> void split(string const& s, OutputIterator ou
 void DeepSpeechRecognizer::emulate(const char* speech)
 {
 	stop();
+	audioStream.reset();
 	audioStream.emulate(speech);
 }
 
@@ -389,7 +391,7 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 			consumed = audioStream.feed(speech, min<unsigned int>(samples, aifx::speech::SpeechAudioStream::vad_frame_size * 5), feed_state);
 			samples -= consumed;
 			speech += consumed;
-			if (samples == 0 || audioStream == aifx::speech::SpeechAudioStream::Status::Done) break; else this_thread::sleep_for(10ms);
+			if (samples == 0 || audioStream == aifx::speech::SpeechAudioStream::Status::Done) break; else this_thread::sleep_for(100ms);
 		}
 
 		if (audioStream == aifx::speech::SpeechAudioStream::Status::Running) {

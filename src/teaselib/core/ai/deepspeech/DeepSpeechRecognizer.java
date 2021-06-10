@@ -93,12 +93,13 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     @Override
     protected void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized) {
         signalInitialized.countDown();
-        while (!Thread.interrupted()) {
-            var status = Status.of(decode());
+        while (!Thread.currentThread().isInterrupted()) {
+            var status = Status.Idle;
             try {
+                status = Status.of(decode());
                 process(events, status);
-                if (status == Status.Cancelled) {
-                    return;
+                if (status == Status.Cancelled && Thread.currentThread().isInterrupted()) {
+                    break;
                 }
             } catch (Throwable t) {
                 stopEventLoop();

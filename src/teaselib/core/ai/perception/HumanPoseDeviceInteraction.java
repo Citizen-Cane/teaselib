@@ -94,16 +94,19 @@ public class HumanPoseDeviceInteraction extends
 
     @Override
     public DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions(Actor actor) {
-        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> all = super.definitions(actor);
-        return new DeviceInteractionDefinitions<>(all, entry -> !entry.getValue().isEmpty());
+        synchronized (this) {
+            return new DeviceInteractionDefinitions<>(super.definitions(actor), entry -> !entry.getValue().isEmpty());
+        }
     }
 
     public void addEventListener(Actor actor, EventListener listener) {
-        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
-                actor);
-        EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest,
-                k -> new EventSource<>(k.toString()));
-        eventSource.add(listener);
+        synchronized (this) {
+            DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
+                    actor);
+            EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest,
+                    k -> new EventSource<>(k.toString()));
+            eventSource.add(listener);
+        }
 
         try {
             listener.run(new PoseEstimationEventArgs(actor, poseEstimationTask.getPose(listener.interest),
@@ -114,17 +117,22 @@ public class HumanPoseDeviceInteraction extends
     }
 
     public boolean containsEventListener(Actor actor, EventListener listener) {
-        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
-                actor);
-        EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
-        return eventSource != null && eventSource.contains(listener);
+        EventSource<PoseEstimationEventArgs> eventSource;
+        synchronized (this) {
+            DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
+                    actor);
+            eventSource = definitions.get(listener.interest);
+            return eventSource != null && eventSource.contains(listener);
+        }
     }
 
     public void removeEventListener(Actor actor, EventListener listener) {
-        DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
-                actor);
-        EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
-        eventSource.remove(listener);
+        synchronized (this) {
+            DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
+                    actor);
+            EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
+            eventSource.remove(listener);
+        }
     }
 
 }

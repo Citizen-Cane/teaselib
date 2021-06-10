@@ -30,10 +30,11 @@ public class DeviceInteractionDefinitions<K, V> implements Iterable<Map.Entry<K,
         this.matcher = matcher;
     }
 
-    public DeviceInteractionDefinitions(DeviceInteractionDefinitions<K, V> all, Predicate<Map.Entry<K, V>> filter) {
-        this.actor = all.actor;
-        this.matcher = all.matcher;
-        all.stream().filter(filter).forEach(this::put);
+    public DeviceInteractionDefinitions(DeviceInteractionDefinitions<K, V> definitions,
+            Predicate<Map.Entry<K, V>> interest) {
+        this.actor = definitions.actor;
+        this.matcher = definitions.matcher;
+        definitions.stream().filter(interest).forEach(this::put);
     }
 
     private void put(Map.Entry<K, V> entry) {

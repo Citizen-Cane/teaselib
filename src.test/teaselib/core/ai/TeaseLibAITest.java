@@ -1,10 +1,7 @@
 package teaselib.core.ai;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,9 +39,9 @@ public class TeaseLibAITest {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
                 NativeObjectList<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures();
                 HumanPose humanPose = new HumanPose()) {
-            SceneCapture sceneCapture = sceneCaptures.get(0);
             assertNotNull(sceneCaptures);
             assumeFalse("No Scene Capture devices found", sceneCaptures.isEmpty());
+            var sceneCapture = sceneCaptures.get(0);
             sceneCapture.start();
             List<Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
             assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));

@@ -40,6 +40,8 @@ public class Rule {
     public static final Rule Timeout = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
     public static final Rule Nothing = new Rule("Nothing", "", Integer.MIN_VALUE, emptyList(), 0, 0, 0.0f,
             Confidence.Noise);
+    public static final Rule Noise = new Rule("Noise", "", Integer.MIN_VALUE, emptyList(), 0, 0, 0.0f,
+            Confidence.Noise);
 
     public static final Set<Integer> NoIndices = emptySet();
 
@@ -67,7 +69,7 @@ public class Rule {
         String text = Rule.text(children);
         int fromElement = children.get(0).fromElement;
         int toElement = children.get(children.size() - 1).toElement;
-        Confidence confidence = Confidence.valueOf(probability);
+        var confidence = Confidence.valueOf(probability);
         return new Rule(name, text, MAIN_RULE_INDEX, children, fromElement, toElement, probability, confidence);
     }
 
@@ -85,7 +87,7 @@ public class Rule {
     }
 
     public static String name(String name, int index, Set<Integer> choices) {
-        StringBuilder s = new StringBuilder(name);
+        var s = new StringBuilder(name);
         if (index > MAIN_RULE_INDEX) {
             s.append("_");
             s.append(index);
@@ -331,7 +333,7 @@ public class Rule {
     }
 
     private Rule repair(Integer index, PhraseString replacement) {
-        Rule nullRule = children.get(index);
+        var nullRule = children.get(index);
         int elementOffset = replacement.words().size();
 
         List<Rule> repairedChildren = new ArrayList<>(children.subList(0, index.intValue()));

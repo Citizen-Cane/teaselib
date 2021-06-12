@@ -1,8 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-import static teaselib.ScriptFunction.*;
-import static teaselib.core.speechrecognition.TimeoutBehavior.*;
+import static org.junit.Assert.assertEquals;
+import static teaselib.ScriptFunction.TimeoutString;
+import static teaselib.core.speechrecognition.TimeoutBehavior.InDubioContraReum;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -74,8 +74,8 @@ public class ShowChoicesConfirmTest {
         TestScript script = TestScript.getOne();
         String choice = "Foobar";
 
-        script.debugger.resumeTime();
-        script.debugger.addResponse(new Debugger.ResponseAction(choice, chooseAfterTimeout(script, 2000)));
+        script.debugger.resumeTime(); // TODO resolve huge timeout value -> 2000 should be enough
+        script.debugger.addResponse(new Debugger.ResponseAction(choice, chooseAfterTimeout(script, 5000)));
         assertEquals(TimeoutString, script.reply(script.timeoutWithAutoConfirmation(1, InDubioContraReum), choice));
     }
 

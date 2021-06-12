@@ -20,16 +20,16 @@ import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.SceneCapture;
 import teaselib.core.ai.perception.SceneCapture.Rotation;
+import teaselib.core.jni.NativeObjectList;
 
 public class TeaseLibAITest {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibAITest.class);
 
     @Test
     public void loadNativeLibrary() {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            List<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures();
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI();
+                NativeObjectList<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures()) {
             assertNotNull(sceneCaptures);
-
             int n = 0;
             for (SceneCapture device : sceneCaptures) {
                 logger.info("Device {}: '{}' , enclosure location = {}", n++, device.name, device.location);
@@ -39,26 +39,23 @@ public class TeaseLibAITest {
 
     @Test
     public void accessCamera() {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            List<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures();
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI();
+                NativeObjectList<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures();
+                HumanPose humanPose = new HumanPose()) {
+            SceneCapture sceneCapture = sceneCaptures.get(0);
             assertNotNull(sceneCaptures);
             assumeFalse("No Scene Capture devices found", sceneCaptures.isEmpty());
-
-            try (SceneCapture sceneCapture = sceneCaptures.get(0); HumanPose humanPose = new HumanPose()) {
-                sceneCapture.start();
-                List<Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
-                assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
-            }
+            sceneCapture.start();
+            List<Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
+            assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
         }
     }
 
     @Test
     public void testImageCapture() {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            assertNotNull(teaseLibAI.sceneCaptures());
             String name = "images/p2_320x240_01.jpg";
             String pattern = "p2_320x240_%02d.jpg";
-
             try (SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern));
                     HumanPose humanPose = new HumanPose()) {
                 sceneCapture.start();

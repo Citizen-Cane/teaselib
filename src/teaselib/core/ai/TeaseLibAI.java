@@ -1,7 +1,7 @@
 package teaselib.core.ai;
 
-import static teaselib.core.jni.NativeLibraries.TEASELIB_AI;
 import static teaselib.core.jni.NativeLibraries.TEASELIB;
+import static teaselib.core.jni.NativeLibraries.TEASELIB_AI;
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.List;
@@ -29,8 +29,7 @@ public class TeaseLibAI implements Closeable {
 
     public TeaseLibAI() throws UnsatisfiedLinkError {
         NativeLibraries.require(TEASELIB, TEASELIB_AI);
-        NamedExecutorService executor = NamedExecutorService
-                .sameThread(TeaseLibAI.class.getSimpleName() + " OpenCL Inference");
+        var executor = NamedExecutorService.sameThread(TeaseLibAI.class.getSimpleName() + " OpenCL Inference");
         haveAccelleratedImageProcessing = initializeOpenCLInExecutorThread(executor);
         if (haveAccelleratedImageProcessing) {
             cl = executor;

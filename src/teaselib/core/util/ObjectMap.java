@@ -61,6 +61,10 @@ public class ObjectMap implements Closeable {
         }
     }
 
+    public <T> boolean has(Class<T> clazz) {
+        return realized.containsKey(clazz) || suppliers.containsKey(clazz);
+    }
+
     public <T> T get(Class<T> clazz) {
         return get((Object) clazz);
     }

@@ -12,7 +12,7 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 
-class DeepSpeechInputMethodTest extends DeepSpeechRecognitionAbstractTest {
+class DeepSpeechInputMethodTest extends DeepSpeechInputMethodAbstractTest {
 
     static Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm) {
         private static final long serialVersionUID = 1L;

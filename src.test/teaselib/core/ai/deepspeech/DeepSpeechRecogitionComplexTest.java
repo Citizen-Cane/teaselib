@@ -16,7 +16,7 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
 import teaselib.core.ui.Prompt;
 
-class DeepSpeechRecogitionComplexTest extends DeepSpeechRecognitionAbstractTest {
+class DeepSpeechRecogitionComplexTest extends DeepSpeechInputMethodAbstractTest {
 
     @Test
     void testOptionalStart() throws InterruptedException {

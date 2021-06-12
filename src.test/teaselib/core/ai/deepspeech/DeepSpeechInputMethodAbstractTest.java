@@ -12,7 +12,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils;
 
 @TestInstance(Lifecycle.PER_CLASS)
-abstract class DeepSpeechRecognitionAbstractTest {
+abstract class DeepSpeechInputMethodAbstractTest {
 
     private TeaseLibAI teaseLibAI;
     protected SpeechRecognitionInputMethod inputMethod;
@@ -27,6 +27,7 @@ abstract class DeepSpeechRecognitionAbstractTest {
     @AfterAll
     @After
     public void cleanup() {
+        inputMethod.close();
         teaseLibAI.close();
     }
 

@@ -7,6 +7,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognizer;
@@ -244,22 +246,51 @@ public class SpeechRecognitionTestUtils {
         return Arrays.stream(PhraseString.words(text)).collect(joining(" "));
     }
 
-    public static Rule await(int choice, DeepSpeechRecognizer deepSpeechRecognizer,
-            AtomicReference<SpeechRecognizedEventArgs> event, CountDownLatch signal) throws InterruptedException {
-        if (signal.await(SpeechRecognitionTestUtils.RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-            List<Rule> rules = event.get().result;
-            assertFalse("Audio file result expected - path correct?", rules.isEmpty());
-            Rule best = rules.get(0);
-            assertEquals(1, best.indices.size());
-            assertEquals(choice, best.indices.iterator().next().intValue());
-            return best;
-        } else {
-            Optional<Throwable> failure = deepSpeechRecognizer.getException();
-            if (failure.isPresent()) {
-                throw asRuntimeException(failure.get());
+    public static Rule await(int choice, DeepSpeechRecognizer deepSpeechRecognizer, SpeechRecognitionEvents events)
+            throws InterruptedException {
+
+        var speechDetected = new AtomicInteger(0);
+        Event<SpeechRecognizedEventArgs> detectedHandler = eventArgs -> {
+            logger.info("Speech detected '{}'", eventArgs.result.get(0).text);
+            speechDetected.incrementAndGet();
+        };
+        events.speechDetected.add(detectedHandler);
+
+        AtomicReference<SpeechRecognizedEventArgs> speechRecognized = new AtomicReference<>();
+        CountDownLatch signal = new CountDownLatch(1);
+        Event<SpeechRecognizedEventArgs> speechCompleted = e -> {
+            speechRecognized.set(e);
+            signal.countDown();
+        };
+        events.recognitionCompleted.add(speechCompleted);
+
+        try {
+            int speechDetectedCount;
+            boolean dismissed = false;
+            do {
+                speechDetectedCount = speechDetected.get();
+                dismissed = signal.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            } while (!dismissed && speechDetectedCount < speechDetected.get());
+
+            if (dismissed) {
+                assertNotNull(speechRecognized.get());
+                List<Rule> rules = speechRecognized.get().result;
+                assertFalse("Audio file result expected - path correct?", rules.isEmpty());
+                Rule best = rules.get(0);
+                assertEquals(1, best.indices.size());
+                assertEquals(choice, best.indices.iterator().next().intValue());
+                return best;
             } else {
-                throw new AssertionError("Speech detection timed out");
+                Optional<Throwable> failure = deepSpeechRecognizer.getException();
+                if (failure.isPresent()) {
+                    throw asRuntimeException(failure.get());
+                } else {
+                    throw new AssertionError("Speech detection timed out");
+                }
             }
+        } finally {
+            events.speechDetected.remove(detectedHandler);
+            events.recognitionCompleted.remove(speechCompleted);
         }
     }
 

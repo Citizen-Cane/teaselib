@@ -35,6 +35,8 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     private static final SpeechRecognizedEventArgs TimeoutEvent = new SpeechRecognizedEventArgs(
             Collections.singletonList(Rule.Timeout));
+    private static final SpeechRecognizedEventArgs NoiseEvent = new SpeechRecognizedEventArgs(
+            Collections.singletonList(Rule.Noise));
 
     private static final Logger logger = LoggerFactory.getLogger(DeepSpeechRecognizer.class);
 
@@ -61,6 +63,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         Idle,
         Started,
         Running,
+        Pending,
         Noise,
         Cancelled,
         Done,
@@ -88,7 +91,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     }
 
-    private Status recognitionState = Status.Idle;
+    private boolean recognitionStartedEventFired = false;
 
     @Override
     protected void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized) {
@@ -115,23 +118,19 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             List<Rule> rules = rules();
             if (!rules.isEmpty()) {
                 startRecognition(events);
-                fireSpeechDetected(events);
-            } else {
-                recognitionState = Status.Idle;
+                speechDetected(events);
             }
         } else if (status == Status.Running) {
-            if (recognitionState == Status.Idle) {
-                startRecognition(events);
-            }
-            fireSpeechDetected(events);
+            startRecognition(events);
+            speechDetected(events);
+        } else if (status == Status.Pending) {
+            // ignore
         } else if (status == Status.Noise) {
-            events.audioSignalProblemOccured.fire(NoiseDetected);
-            rejectRecognition(events);
+            noiseDetected(events);
         } else if (status == Status.Cancelled) {
             rejectRecognition(events);
         } else if (status == Status.Done) {
-            recognitionState = Status.Idle;
-            fireRecognitionDone(events);
+            recognitionCompleted(events);
         } else if (status == Status.Idle) {
             rejectRecognition(events);
         } else {
@@ -140,46 +139,52 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     }
 
     private void startRecognition(SpeechRecognitionEvents events) {
-        recognitionState = Status.Running;
-        events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
+        if (!recognitionStartedEventFired) {
+            events.recognitionStarted.fire(new SpeechRecognitionStartedEventArgs());
+            recognitionStartedEventFired = true;
+        }
+    }
+
+    private void speechDetected(SpeechRecognitionEvents events) {
+        List<Rule> rules = rules();
+        if (!rules.isEmpty()) {
+            events.speechDetected.fire(new SpeechRecognizedEventArgs(rules));
+        }
+    }
+
+    private void noiseDetected(SpeechRecognitionEvents events) {
+        events.audioSignalProblemOccured.fire(NoiseDetected);
+        if (recognitionStartedEventFired) {
+            events.recognitionRejected.fire(NoiseEvent);
+            recognitionStartedEventFired = false;
+        }
     }
 
     private void rejectRecognition(SpeechRecognitionEvents events) {
-        if (recognitionState != Status.Idle) {
-            recognitionState = Status.Idle;
-            fireRecognitionRejected(events);
+        if (recognitionStartedEventFired) {
+            List<Rule> rules = rules();
+            if (rules.isEmpty()) {
+                events.recognitionRejected.fire(TimeoutEvent);
+            } else {
+                events.recognitionRejected.fire(new SpeechRecognizedEventArgs(rules));
+            }
+            recognitionStartedEventFired = false;
         }
     }
 
-    private void fireRecognitionRejected(SpeechRecognitionEvents events) {
-        List<Rule> rules = rules();
-        if (rules.isEmpty()) {
-            events.recognitionRejected.fire(TimeoutEvent);
-        } else {
-            events.recognitionRejected.fire(new SpeechRecognizedEventArgs(rules));
-        }
-    }
-
-    private void fireRecognitionDone(SpeechRecognitionEvents events) {
+    private void recognitionCompleted(SpeechRecognitionEvents events) {
         List<Rule> rules = rules();
         if (rules.isEmpty()) {
             events.recognitionRejected.fire(TimeoutEvent);
         } else {
             events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rules));
         }
-
+        recognitionStartedEventFired = false;
     }
 
     private void freeDeepSpeechStreamOnError(Status status) {
         if (status == Status.Running) {
             decode();
-        }
-    }
-
-    private void fireSpeechDetected(SpeechRecognitionEvents events) {
-        List<Rule> rules = rules();
-        if (!rules.isEmpty()) {
-            events.speechDetected.fire(new SpeechRecognizedEventArgs(rules));
         }
     }
 

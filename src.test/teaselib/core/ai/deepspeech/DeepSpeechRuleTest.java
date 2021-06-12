@@ -2,13 +2,10 @@ package teaselib.core.ai.deepspeech;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static teaselib.core.speechrecognition.Confidence.High;
 
 import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -16,10 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionEvents;
-import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -29,30 +23,7 @@ import teaselib.core.ui.Intention;
  * @author Citien-Cane
  *
  */
-class DeepSpeechRuleTest {
-
-    @Test
-    void testLanguageFallbackWorks() throws InterruptedException {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            SpeechRecognitionEvents events = new SpeechRecognitionEvents();
-
-            AtomicReference<SpeechRecognizedEventArgs> speechRecognized = new AtomicReference<>();
-            CountDownLatch signal = new CountDownLatch(1);
-            events.recognitionCompleted.add(e -> {
-                speechRecognized.set(e);
-                signal.countDown();
-            });
-            Locale australianEnglish = new Locale("en", "au");
-            try (DeepSpeechRecognizer deepSpeechRecognizer = new DeepSpeechRecognizer(australianEnglish)) {
-                deepSpeechRecognizer.startEventLoop(events);
-                Choices choices = new Choices(australianEnglish, Intention.Confirm, new Choice("foobar"));
-                deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
-                deepSpeechRecognizer.emulateRecognition("foobar");
-                SpeechRecognitionTestUtils.await(0, deepSpeechRecognizer, speechRecognized, signal);
-                assertTrue(deepSpeechRecognizer.getException().isEmpty());
-            }
-        }
-    }
+class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
 
     static class EmulatedSpeech {
         final String expected;
@@ -186,33 +157,16 @@ class DeepSpeechRuleTest {
 
     @Test
     void testExperienceProovesThisAsText() throws InterruptedException {
-        emulateSpeech("experience prooves this",
+        Rule rule = emulateSpeech("experience prooves this",
                 "experience prooves this\nexperience prooves that\nthe experience proofs it");
+        assertNotNull(rule);
     }
 
-    private static Rule emulateSpeech(String choice, String speech) throws InterruptedException, UnsatisfiedLinkError {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            SpeechRecognitionEvents events = new SpeechRecognitionEvents();
-
-            AtomicReference<SpeechRecognizedEventArgs> speechRecognized = new AtomicReference<>();
-            CountDownLatch signal = new CountDownLatch(1);
-            events.recognitionCompleted.add(e -> {
-                speechRecognized.set(e);
-                signal.countDown();
-            });
-
-            Rule best;
-            try (DeepSpeechRecognizer deepSpeechRecognizer = new DeepSpeechRecognizer(Locale.ENGLISH)) {
-                deepSpeechRecognizer.startEventLoop(events);
-                Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(choice));
-                deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
-                deepSpeechRecognizer.emulateRecognition(speech);
-                best = SpeechRecognitionTestUtils.await(0, deepSpeechRecognizer, speechRecognized, signal);
-            }
-
-            assertNotNull(speechRecognized.get());
-            return best;
-        }
+    private Rule emulateSpeech(String choice, String speech) throws InterruptedException, UnsatisfiedLinkError {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(choice));
+        deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
+        deepSpeechRecognizer.emulateRecognition(speech);
+        return SpeechRecognitionTestUtils.await(0, deepSpeechRecognizer, events);
     }
 
 }

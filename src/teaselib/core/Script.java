@@ -34,6 +34,7 @@ import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
 import teaselib.core.ai.perception.PoseEstimationEventArgs;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.RenderedMessage.Decorator;
@@ -90,12 +91,17 @@ public abstract class Script {
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
         getOrDefault(teaseLib, DeviceInteractionImplementations.class, this::initScriptInteractions);
-        getOrDefault(teaseLib, TeaseLibAI.class, TeaseLibAI::new);
+        Configuration config = teaseLib.config;
+        if (Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))
+                || Boolean.parseBoolean(config.get(Config.InputMethod.SpeechRecognition))
+                || Boolean.parseBoolean(config.get(Config.Render.ActorImages))) {
+            getOrDefault(teaseLib, TeaseLibAI.class, TeaseLibAI::new);
+        }
 
         try {
-            teaseLib.config.addScriptSettings(this.namespace);
+            config.addScriptSettings(this.namespace);
         } catch (IOException e) {
-            ExceptionUtil.handleException(e, teaseLib.config, logger);
+            ExceptionUtil.handleException(e, config, logger);
         }
 
         boolean startOnce = teaseLib.globals.get(ScriptCache.class) == null;
@@ -105,22 +111,23 @@ public abstract class Script {
 
             var inputMethods = teaseLib.globals.get(InputMethods.class);
             BooleanSupplier canSpeak = () -> !teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied();
-            inputMethods.add(new SpeechRecognitionInputMethod(teaseLib.config, scriptRenderer.audioSync), canSpeak);
+            inputMethods.add(new SpeechRecognitionInputMethod(config, scriptRenderer.audioSync), canSpeak);
             inputMethods.add(teaseLib.host.inputMethod());
             inputMethods.add(scriptRenderer.scriptEventInputMethod);
 
-            HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-            var speechRecognitionInputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
-            speechRecognitionInputMethod.events.recognitionStarted
-                    .add(ev -> humanPoseInteraction.setPause(speechRecognitionInputMethod::completeSpeechRecognition));
+            if (teaseLib.globals.has(TeaseLibAI.class)) {
+                HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
+                var speechRecognitionInputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
+                speechRecognitionInputMethod.events.recognitionStarted.add(
+                        ev -> humanPoseInteraction.setPause(speechRecognitionInputMethod::completeSpeechRecognition));
 
-            // TODO Generalize - HeadGestures -> Perception
-            if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
-                inputMethods.add(new HeadGesturesV2InputMethod( //
-                        deviceInteraction(HumanPoseDeviceInteraction.class),
-                        scriptRenderer.getInputMethodExecutorService()), () -> !canSpeak.getAsBoolean());
+                // TODO Generalize - HeadGestures -> Perception
+                if (Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))) {
+                    inputMethods.add(new HeadGesturesV2InputMethod( //
+                            deviceInteraction(HumanPoseDeviceInteraction.class),
+                            scriptRenderer.getInputMethodExecutorService()), () -> !canSpeak.getAsBoolean());
+                }
             }
-
         }
 
         // TODO initializing in actorChanged-event breaks device handling
@@ -438,12 +445,16 @@ public abstract class Script {
             addRecognitionRejectedAction(prompt, speechRecognitionRejectedScript.get());
         }
 
-        HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-        try {
-            define(humanPoseInteraction);
+        if (teaseLib.globals.has(TeaseLibAI.class)) {
+            HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
+            try {
+                define(humanPoseInteraction);
+                return anwser(prompt);
+            } finally {
+                undefine(humanPoseInteraction);
+            }
+        } else {
             return anwser(prompt);
-        } finally {
-            undefine(humanPoseInteraction);
         }
     }
 

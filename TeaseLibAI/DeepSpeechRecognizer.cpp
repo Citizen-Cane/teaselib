@@ -307,7 +307,10 @@ extern "C"
 
 DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languageCode)
 	: recognizer(path, languageCode)
-	, audioStream(recognizer, aifx::speech::SpeechAudioStream::audio_buffer_capacity_default, aifx::speech::VoiceActivationDetection::Mode::Quality, 24, 16, 80)
+	, audioStream(recognizer,
+		aifx::speech::SpeechAudioStream::audio_buffer_capacity_default * 2, // avoid buffer saturation on low-end systems
+		aifx::speech::VoiceActivationDetection::Mode::VeryAggressive, // ignore noise & breathing
+		24, 24, 80) // restore speech frames cut off by vad 
 	, audio(AudioCapture::DeviceInfo::defaultDevice(), recognizer.sample_rate(), aifx::speech::SpeechAudioStream::feed_audio_samples / 2)
 	, input([this](const short* audio, unsigned int samples) {
 		aifx::speech::SpeechAudioStream::FeedState feed_stste;
@@ -394,7 +397,7 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 			if (samples == 0 || audioStream == aifx::speech::SpeechAudioStream::Status::Done) break; else this_thread::sleep_for(100ms);
 		}
 
-		if (audioStream == aifx::speech::SpeechAudioStream::Status::Running) {
+		if (audioStream == aifx::speech::SpeechAudioStream::Status::Running || audioStream == aifx::speech::SpeechAudioStream::Status::Pending) {
 			audioStream.finish();
 		}
 	} catch (exception& e) {

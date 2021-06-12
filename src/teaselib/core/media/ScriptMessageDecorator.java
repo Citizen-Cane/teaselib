@@ -54,7 +54,7 @@ public class ScriptMessageDecorator {
         this.textToSpeech = textToSpeech.isPresent() ? textToSpeech.get() : null;
     }
 
-    public RenderedMessage.Decorator[] messageModifiers() {
+    public RenderedMessage.Decorator[] all() {
         if (textToSpeech != null) {
             return new RenderedMessage.Decorator[] { this::filterDebug, this::applyDelayRules, this::addTextToSpeech,
                     this::expandTextVariables, this::addActorImages };
@@ -62,6 +62,10 @@ public class ScriptMessageDecorator {
             return new RenderedMessage.Decorator[] { this::filterDebug, this::applyDelayRules,
                     this::expandTextVariables, this::addActorImages };
         }
+    }
+
+    public RenderedMessage.Decorator[] justText() {
+        return new RenderedMessage.Decorator[] { this::filterDebug, this::applyDelayRules, this::expandTextVariables };
     }
 
     private AbstractMessage filterDebug(AbstractMessage message) {

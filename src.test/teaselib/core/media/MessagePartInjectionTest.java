@@ -39,7 +39,7 @@ public class MessagePartInjectionTest {
 
         public RenderedMessage.Decorator[] getDecorators() {
             return new ScriptMessageDecorator(teaseLib.config, displayImage, actor, mood, resources,
-                    this::expandTextVariables, Optional.empty()).messageModifiers();
+                    this::expandTextVariables, Optional.empty()).all();
         }
 
         @Override

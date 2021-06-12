@@ -43,7 +43,7 @@ public class ScriptMessageDecoratorTest {
 
         ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
                 Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
-        RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.messageModifiers());
+        RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
         assertEquals(r.toString(), 4, r.size());
 
         assertEquals(r.toString(), Type.Mood, r.get(0).type);
@@ -63,7 +63,7 @@ public class ScriptMessageDecoratorTest {
 
         ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
                 Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
-        RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.messageModifiers());
+        RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
         assertEquals("Actor image", 2, r.size());
     }
 

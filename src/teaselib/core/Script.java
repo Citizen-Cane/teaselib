@@ -322,7 +322,7 @@ public abstract class Script {
 
     protected void renderIntertitle(String... text) {
         try {
-            scriptRenderer.renderIntertitle(teaseLib, new Message(actor, text), withoutSpeech());
+            scriptRenderer.renderIntertitle(teaseLib, new Message(actor, text), justText());
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
@@ -353,11 +353,16 @@ public abstract class Script {
 
     Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {
         return new ScriptMessageDecorator(teaseLib.config, displayImage, actor, mood, resources,
-                this::expandTextVariables, textToSpeech).messageModifiers();
+                this::expandTextVariables, textToSpeech).all();
     }
 
     Decorator[] withoutSpeech() {
         return decorators(Optional.empty());
+    }
+
+    Decorator[] justText() {
+        return new ScriptMessageDecorator(teaseLib.config, displayImage, actor, mood, resources,
+                this::expandTextVariables).justText();
     }
 
     protected void appendMessage(Message message) {

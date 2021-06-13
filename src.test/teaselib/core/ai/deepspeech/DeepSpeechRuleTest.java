@@ -109,6 +109,12 @@ class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
         assertEquals(7, rule.children.size());
     }
 
+    @Test
+    void testAlright() throws InterruptedException {
+        Rule rule = emulateSpeech("Alright Miss", "All right");
+        assertEquals(2, rule.children.size());
+    }
+
     // Testdata taken from failing test when audio stream buffers weren't cleared after recognition
     // "paris" decomposes to "par is" - contains the missing word, better than nothing
 

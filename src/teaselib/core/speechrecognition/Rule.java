@@ -56,16 +56,17 @@ public class Rule {
     public final float probability;
     public final Confidence confidence;
 
-    public static Rule mainRule(String text, List<Rule> children) {
+    public static Rule mainRule(List<Rule> children) {
         if (children.isEmpty()) {
             return Rule.Nothing;
         } else {
-            return mainRule(text, children, probability(children));
+            return mainRule(children, probability(children));
         }
     }
 
-    private static Rule mainRule(String text, List<Rule> children, float probability) {
+    private static Rule mainRule(List<Rule> children, float probability) {
         String name = name(MAIN_RULE_NAME, MAIN_RULE_INDEX, children);
+        String text = text(children);
         int fromElement = children.get(0).fromElement;
         int toElement = children.get(children.size() - 1).toElement;
         var confidence = Confidence.valueOf(probability);

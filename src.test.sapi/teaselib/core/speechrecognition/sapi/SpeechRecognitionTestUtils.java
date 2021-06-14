@@ -276,10 +276,11 @@ public class SpeechRecognitionTestUtils {
                 assertNotNull(speechRecognized.get());
                 List<Rule> rules = speechRecognized.get().result;
                 assertFalse("Audio file result expected - path correct?", rules.isEmpty());
-                Rule best = rules.get(0);
-                assertEquals(1, best.indices.size());
-                assertEquals(choice, best.indices.iterator().next().intValue());
-                return best;
+                Rule rule = rules.get(0);
+                assertTrue(rule.isValid());
+                assertEquals("Distinct rule", 1, rule.indices.size());
+                assertEquals(choice, rule.indices.iterator().next().intValue());
+                return rule;
             } else {
                 Optional<Throwable> failure = deepSpeechRecognizer.getException();
                 if (failure.isPresent()) {

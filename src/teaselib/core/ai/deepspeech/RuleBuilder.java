@@ -1,8 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
 import static java.util.Collections.singleton;
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.joining;
 import static teaselib.core.speechrecognition.Confidence.valueOf;
 
 import java.util.ArrayList;
@@ -11,7 +9,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import teaselib.core.ai.deepspeech.DeepSpeechRecognizer.Result;
@@ -239,8 +236,8 @@ public class RuleBuilder {
             children.add(Rule.placeholder(wordIndex, childIndex, Collections.singleton(phraseIndex), 0.0f));
         }
 
-        Rule rule(String phrase) {
-            return Rule.mainRule(phrase, children);
+        Rule rule() {
+            return Rule.mainRule(children);
         }
 
     }
@@ -251,9 +248,7 @@ public class RuleBuilder {
         for (int phraseIndex = 0; phraseIndex < phrases.size(); phraseIndex++) {
             matcher.match(phraseIndex);
             if (!matcher.children.isEmpty()) {
-                String phrase = Arrays.stream(phrases.get(phraseIndex)).filter(Objects::nonNull)
-                        .filter(not(String::isBlank)).collect(joining(" "));
-                var rule = matcher.rule(phrase);
+                var rule = matcher.rule();
                 if (rule.probability > 0.0f && rules.computeIfPresent(rule.text,
                         (t, r) -> r.probability > rule.probability ? r : rule) == null) {
                     rules.put(rule.text, rule);

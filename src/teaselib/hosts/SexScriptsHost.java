@@ -19,7 +19,6 @@ import java.awt.image.BufferedImageOp;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +33,7 @@ import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.swing.ComboBoxModel;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.WindowConstants;
@@ -105,6 +105,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     private final JLabel textLabel;
     private final ImageIcon backgroundImageIcon;
+    private final JButton[] ssButtons;
+    private final JButton ssButton;
+    private final JComboBox<String> ssComboBox;
 
     private final Image backgroundImage;
 
@@ -138,6 +141,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             mainFrame = getMainFrame();
             textLabel = getField("label");
             imageIcon = getField("backgroundImage");
+            ssButtons = getField("buttons");
+            ssButton = getField("button");
+            ssComboBox = getField("comboBox");
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
@@ -276,7 +282,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         } else if (actorProximity == Proximity.NEAR) {
             surface = surfaceTransform(image, bounds, pose.face(), 1.1, estimatedTextAreaX);
         } else if (actorProximity == Proximity.FAR) {
-            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0, estimatedTextAreaX);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.0, estimatedTextAreaX);
         } else if (actorProximity == Proximity.AWAY) {
             // TODO Blur or turn display off
             surface = surfaceTransform(image, bounds, Optional.empty(), 1.0, estimatedTextAreaX);
@@ -376,6 +382,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     HumanPose.Estimation currentPose = null;
     BufferedImage currentBackgroundImage = null;
 
+    boolean repaintImage = true;
+    boolean repaintText = true;
+
     @Override
     public void show(AnnotatedImage actorImage, List<String> text) {
         if (actorImage != null) {
@@ -405,8 +414,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         currentText = newText;
         slightlyLargerText = text.size() == 1;
 
+        repaintImage = true;
+        repaintText = true;
         intertitleActive = false;
-        show();
     }
 
     private void alignTextRight() {
@@ -424,6 +434,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     @Override
     public void setFocusLevel(float focusLevel) {
         this.focusLevel = focusLevel;
+        repaintImage = true;
+
     }
 
     Point2D gaze = new Point2D.Double(0.5, 0.5); // The middle of the screen, complete image
@@ -431,6 +443,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     @Override
     public void setGaze(Point2D gaze) {
         this.gaze = gaze;
+        repaintImage = true;
     }
 
     HumanPose.Proximity actorProximity = Proximity.FAR;
@@ -439,31 +452,51 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     public void setActorProximity(HumanPose.Proximity proximity) {
         if (this.actorProximity != proximity) {
             this.actorProximity = proximity;
-            show();
+            repaintImage = true;
         }
     }
 
     @Override
     public void show() {
-        Rectangle bounds = getContentBounds(mainFrame);
+        if (intertitleActive && repaintText) {
+            repaintText = false;
+            EventQueue.invokeLater(() -> {
+                show(html());
+            });
+        } else if (repaintImage && repaintText) {
+            preapreCurrentImage();
+            repaintText = false;
+            EventQueue.invokeLater(() -> {
+                show(currentBackgroundImage);
+                showCurrentText();
+            });
+        } else if (repaintImage) {
+            preapreCurrentImage();
+            EventQueue.invokeLater(() -> {
+                show(currentBackgroundImage);
+            });
+        } else if (repaintText) {
+            repaintText = false;
+            EventQueue.invokeLater(this::showCurrentText);
+        }
+    }
+
+    private void preapreCurrentImage() {
+        var bounds = getContentBounds(mainFrame);
         if (currentImage != null) {
             currentBackgroundImage = render(currentImage, currentPose, bounds);
         } else {
             currentBackgroundImage = null;
         }
+        repaintImage = false;
+    }
 
-        EventQueue.invokeLater(() -> {
-            if (intertitleActive) {
-                show(html());
-            } else {
-                show(currentBackgroundImage);
-                if (currentText == null || currentText.isBlank()) {
-                    show("");
-                } else {
-                    show(html());
-                }
-            }
-        });
+    private void showCurrentText() {
+        if (currentText == null || currentText.isBlank()) {
+            show("");
+        } else {
+            show(html());
+        }
     }
 
     private String html() {
@@ -526,16 +559,18 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     @Override
     public void showInterTitle(String text) {
         if (!intertitleActive) {
-            createIntertitleImage(backgroundImageIcon.getImage());
+            currentImage = createIntertitleImage(backgroundImageIcon.getImage());
+            currentPose = HumanPose.Estimation.NONE;
             centerText();
             slightlyLargerText = false;
+            repaintImage = true;
             intertitleActive = true;
         }
         currentText = text;
-        show();
+        repaintText = true;
     }
 
-    private void createIntertitleImage(Image image) {
+    private BufferedImage createIntertitleImage(Image image) {
         Rectangle bounds = getContentBounds(mainFrame);
         bounds.x = 0;
         bounds.y = 0;
@@ -555,10 +590,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         g2d.fillRect(bounds.x, top, bounds.width, bottom - top);
         g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
         g2d.fillRect(bounds.x, bottom, bounds.width, bounds.height - bottom);
-
-        // TODO replace currentImage and show with show()
-        backgroundImageIcon.setImage(interTitleImage);
-        mainFrame.repaint();
+        return interTitleImage;
     }
 
     @Override
@@ -584,69 +616,51 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     private List<Runnable> getClickableChoices(List<Choice> choices) {
-        try {
-            // Get buttons
-            Class<?> mainFrameClass = mainFrame.getClass();
-            List<Runnable> clickableChoices = new ArrayList<>(choices.size());
-            // Multiple choices are managed via an array of buttons,
-            // whereas a single choice is implemented as a single button
-            Field buttonsField = mainFrameClass.getDeclaredField("buttons");
-            buttonsField.setAccessible(true);
-            javax.swing.JButton[] ssButtons = (javax.swing.JButton[]) buttonsField.get(mainFrame);
-            // Must also test the single button
-            Field buttonField = mainFrameClass.getDeclaredField("button");
-            buttonField.setAccessible(true);
-            final javax.swing.JButton ssButton = (javax.swing.JButton) buttonField.get(mainFrame);
-            List<javax.swing.JButton> buttons = new ArrayList<>(ssButtons.length + 1);
-            for (javax.swing.JButton button : ssButtons) {
-                if (button.isVisible()) {
-                    buttons.add(button);
-                }
-            }
-            // TODO Only for ss timed button?
-            buttons.add(ssButton);
-            // Combobox
-            final javax.swing.JComboBox<String> ssComboBox = getComboBox();
-            // Init all slots
-            for (int index : new Interval(0, choices.size() - 1)) {
-                clickableChoices.add(index, null);
-            }
-            // Combobox
-            final ComboBoxModel<String> model = ssComboBox.getModel();
-            for (int j = 0; j < model.getSize(); j++) {
-                final int comboboxIndex = j;
-                for (final int index : new Interval(0, choices.size() - 1)) {
-                    final String text = model.getElementAt(j);
-                    if (text.contains(Choice.getDisplay(choices.get(index)))) {
-                        clickableChoices.set(index, (Runnable) () -> ssComboBox.setSelectedIndex(comboboxIndex));
-                    }
-                }
-            }
-            // Check pretty buttons for corresponding text
-            // There might be more buttons than expected,
-            // probably some kind of caching
-            for (final javax.swing.JButton button : buttons) {
-                for (int index : new Interval(0, choices.size() - 1)) {
-                    String buttonText = button.getText();
-                    String choice = Choice.getDisplay(choices.get(index));
-                    if (buttonText.contains(choice)) {
-                        clickableChoices.set(index, () -> {
-                            button.doClick();
-                        });
-                    }
-                }
-            }
-            // Assign clicks to combo box
-            // If there are too many choices, a combo box will be used
-
-            // If a choice wasn't found, the element at the corresponding index
-            // would be null
-            return clickableChoices;
-        } catch (ReflectiveOperationException e) {
-            logger.error(e.getMessage(), e);
+        // Init all slots
+        List<Runnable> clickableChoices = new ArrayList<>(choices.size());
+        for (int index : new Interval(0, choices.size() - 1)) {
+            clickableChoices.add(index, null);
         }
-        return new ArrayList<>();
 
+        // Combobox
+        ComboBoxModel<String> model = ssComboBox.getModel();
+        for (int j = 0; j < model.getSize(); j++) {
+            final int comboboxIndex = j;
+            for (final int index : new Interval(0, choices.size() - 1)) {
+                final String text = model.getElementAt(j);
+                if (text.contains(Choice.getDisplay(choices.get(index)))) {
+                    clickableChoices.set(index, () -> ssComboBox.setSelectedIndex(comboboxIndex));
+                }
+            }
+        }
+
+        List<javax.swing.JButton> buttons = new ArrayList<>(ssButtons.length + 1);
+        for (javax.swing.JButton button : ssButtons) {
+            if (button.isVisible()) {
+                buttons.add(button);
+            }
+        }
+        // TODO Only for ss timed button?
+        buttons.add(ssButton);
+
+        // Check pretty buttons for corresponding text
+        // There might be more buttons than expected,
+        // probably some kind of caching
+        for (javax.swing.JButton button : buttons) {
+            for (int index : new Interval(0, choices.size() - 1)) {
+                String buttonText = button.getText();
+                String choice = Choice.getDisplay(choices.get(index));
+                if (buttonText.contains(choice)) {
+                    clickableChoices.set(index, button::doClick);
+                }
+            }
+        }
+        // Assign clicks to combo box
+        // If there are too many choices, a combo box will be used
+
+        // If a choice wasn't found, the element at the corresponding index
+        // would be null
+        return clickableChoices;
     }
 
     @Override
@@ -666,7 +680,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         var comboField = mainFrame.getClass().getDeclaredField("comboBox");
         comboField.setAccessible(true);
         @SuppressWarnings("unchecked")
-        final javax.swing.JComboBox<String> ssComboBox = (javax.swing.JComboBox<String>) comboField.get(mainFrame);
+        JComboBox<String> ssComboBox = (JComboBox<String>) comboField.get(mainFrame);
         return ssComboBox;
     }
 
@@ -711,10 +725,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
         void cleanup() {
             java.awt.EventQueue.invokeLater(() -> {
-                if (resetPopupVisibility.get())
-                    if (comboBox.isPopupVisible()) {
-                        comboBox.setPopupVisible(false);
-                    }
+                if (resetPopupVisibility.get() && comboBox.isPopupVisible()) {
+                    comboBox.setPopupVisible(false);
+                }
             });
         }
     }
@@ -747,36 +760,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         try {
             result = showChoices.get();
             if (showPopup) {
-                try {
-                    showPopupTask.task.get();
-                } catch (ExecutionException e) {
-                    logger.error(e.getMessage(), e);
-                }
+                awaitFinished(showPopupTask);
             }
         } catch (InterruptedException e) {
-            List<Runnable> clickableChoices = getClickableChoices(choices);
-            if (!clickableChoices.isEmpty()) {
-                // Click any button
-                Runnable delegate = clickableChoices.get(0);
-                while (!showChoices.isDone()) {
-                    // Stupid trick to be able to actually click a combo item
-                    if (showPopupTask.comboBox.isVisible()) {
-                        showPopupTask.showPopup();
-                    }
-
-                    try {
-                        delegate.run();
-                    } catch (Exception e1) {
-                        throw ExceptionUtil.asRuntimeException(e1);
-                    }
-
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException ignored) { // Ignore
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
+            dismissPrompt(choices, showPopupTask, showChoices);
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } catch (Exception e) {
@@ -786,6 +773,40 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             showPopupTask.cleanup();
         }
         return result;
+    }
+
+    private void awaitFinished(ShowPopupTask showPopupTask) throws InterruptedException {
+        try {
+            showPopupTask.task.get();
+        } catch (ExecutionException e) {
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+    private void dismissPrompt(Choices choices, ShowPopupTask showPopupTask, FutureTask<Prompt.Result> showChoices) {
+        List<Runnable> clickableChoices = getClickableChoices(choices);
+        if (!clickableChoices.isEmpty()) {
+            // Click any button
+            Runnable delegate = clickableChoices.get(0);
+            while (!showChoices.isDone()) {
+                // Stupid trick to be able to actually click a combo item
+                if (showPopupTask.comboBox.isVisible()) {
+                    showPopupTask.showPopup();
+                }
+
+                try {
+                    delegate.run();
+                } catch (Exception e1) {
+                    throw ExceptionUtil.asRuntimeException(e1);
+                }
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) { // Ignore
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
     }
 
     @Override

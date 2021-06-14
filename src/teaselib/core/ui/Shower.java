@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Answer;
 import teaselib.ScriptFunction.AnswerOverride;
-import teaselib.core.Host;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.util.ExceptionUtil;
 
@@ -21,13 +20,11 @@ public class Shower {
 
     static final int PAUSED = -1;
 
-    final Host host;
     final Deque<Prompt> stack = new ArrayDeque<>();
 
     private final PromptQueue promptQueue;
 
-    public Shower(Host host) {
-        this.host = host;
+    public Shower() {
         this.promptQueue = new PromptQueue();
     }
 
@@ -50,7 +47,7 @@ public class Shower {
             ScriptFutureTask scriptTask = prompt.scriptTask;
             if (scriptTask != null) {
                 try {
-                    Answer answer = scriptTask.get();
+                    var answer = scriptTask.get();
                     if (answer != null) {
                         return Collections.singletonList(new Choice(answer));
                     } else if (prompt.result().equals(Prompt.Result.UNDEFINED)
@@ -81,12 +78,17 @@ public class Shower {
     private static void throwScriptTaskException(Prompt prompt) throws InterruptedException {
         ScriptFutureTask scriptTask = prompt.scriptTask;
         if (scriptTask != null && !scriptTask.isCancelled()) {
+            boolean isInterrupted = Thread.interrupted(); // clear flag to be able to call get() on the future task
             try {
                 scriptTask.get();
             } catch (CancellationException ignore) {
                 // ignore
             } catch (ExecutionException e) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+            } finally {
+                if (isInterrupted) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }
@@ -94,7 +96,10 @@ public class Shower {
     private void resumePreviousAfterException() {
         try {
             resumePrevious();
-        } catch (Exception ignore) {
+        } catch (RuntimeException ignore) {
+            logger.warn(ignore.getMessage(), "");
+        } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
             logger.warn(ignore.getMessage(), "");
         }
     }
@@ -107,7 +112,7 @@ public class Shower {
     }
 
     private List<Choice> result(Prompt prompt) throws InterruptedException {
-        Prompt.Result result = prompt.result();
+        var result = prompt.result();
         if (result.equals(Prompt.Result.DISMISSED)) {
             return cancelScriptTaskAndReturnResult(prompt);
         } else {
@@ -183,7 +188,7 @@ public class Shower {
 
     private void resumePrevious() throws InterruptedException {
         if (!stack.isEmpty()) {
-            Prompt prompt = stack.peek();
+            var prompt = stack.peek();
 
             if (promptQueue.getActive() == prompt) {
                 throw new IllegalStateException("Prompt not dismissed: " + prompt);

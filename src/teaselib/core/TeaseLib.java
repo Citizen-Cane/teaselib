@@ -193,6 +193,7 @@ public class TeaseLib implements Closeable {
 
     private void run(String scriptName) throws ReflectiveOperationException {
         host.showInterTitle("");
+        host.show();
         try {
             logger.info("Running script {}", scriptName);
             ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -208,6 +209,7 @@ public class TeaseLib implements Closeable {
             }
         }
         host.show(null, Collections.emptyList());
+        host.show();
     }
 
     static class MainScriptConstructorMissingException extends NoSuchMethodException {

@@ -511,6 +511,7 @@ public class SectionRenderer implements Closeable {
     private void show(MessageRenderer message, List<String> paragraphs) throws IOException, InterruptedException {
         if (!Thread.currentThread().isInterrupted()) {
             teaseLib.host.show(annotatedImage(message.actor, message.displayImage), paragraphs);
+            teaseLib.host.show();
         }
     }
 

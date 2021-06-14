@@ -159,7 +159,9 @@ public class ScriptRenderer implements Closeable {
     }
 
     void renderPrependedMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Decorator[] decorators) {
-        renderMessages(teaseLib, resources, actor, Collections.emptyList(), decorators);
+        List<Message> prepended = new ArrayList<>(prependedMessages);
+        prependedMessages.clear();
+        renderMessages(teaseLib, resources, actor, prepended, decorators);
     }
 
     boolean hasPrependedMessages() {
@@ -188,6 +190,7 @@ public class ScriptRenderer implements Closeable {
                 sectionRenderer::say, BeforeNewMessage.OutlineType.NewSection);
     }
 
+    @FunctionalInterface
     public interface ConcatFunction extends TriFunction<Actor, List<RenderedMessage>, ResourceLoader, MediaRenderer> { //
     }
 

@@ -28,6 +28,9 @@ public interface Host {
 
     void setFocusLevel(float focusLevel);
 
+    /**
+     * Repaint the content area to show actor image and text.
+     */
     void show();
 
     /**

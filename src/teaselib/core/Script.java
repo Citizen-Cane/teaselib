@@ -88,7 +88,7 @@ public abstract class Script {
         this(teaseLib, resources, actor, namespace, //
                 getOrDefault(teaseLib, ScriptRenderer.class, () -> new ScriptRenderer(teaseLib)));
 
-        getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
+        getOrDefault(teaseLib, Shower.class, Shower::new);
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
         getOrDefault(teaseLib, DeviceInteractionImplementations.class, this::initScriptInteractions);
         Configuration config = teaseLib.config;
@@ -169,6 +169,8 @@ public abstract class Script {
                     teaseLib.host.setActorProximity(previous);
                 }
             }
+            teaseLib.host.show();
+
             setFaceToFace(speechProximity);
         }
 
@@ -445,24 +447,32 @@ public abstract class Script {
             addRecognitionRejectedAction(prompt, speechRecognitionRejectedScript.get());
         }
 
+        scriptRenderer.events.beforeChoices.fire(new ScriptEventArgs());
+        var answer = anwser(prompt);
+        endAll();
+        teaseLib.host.endScene();
+        scriptRenderer.events.afterChoices.fire(new ScriptEventArgs());
+        return answer;
+    }
+
+    private Answer anwser(Prompt prompt) {
+        Choice choice;
         if (teaseLib.globals.has(TeaseLibAI.class)) {
             HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
             try {
                 define(humanPoseInteraction);
-                return anwser(prompt);
+                choice = showPrompt(prompt).get(0);
             } finally {
                 undefine(humanPoseInteraction);
             }
         } else {
-            return anwser(prompt);
+            choice = showPrompt(prompt).get(0);
         }
-    }
 
-    private Answer anwser(Prompt prompt) {
-        var choice = showPrompt(prompt).get(0);
-        String chosen = "< " + choice.display;
-        logger.info("{}", chosen);
-        teaseLib.transcript.info(chosen);
+        String answer = "< " + choice.display;
+        logger.info("{}", answer);
+        teaseLib.transcript.info(answer);
+
         return choice.answer;
     }
 
@@ -498,8 +508,6 @@ public abstract class Script {
     }
 
     private List<Choice> showPrompt(Prompt prompt) {
-        scriptRenderer.events.beforeChoices.fire(new ScriptEventArgs());
-
         List<Choice> choice;
         try {
             choice = teaseLib.globals.get(Shower.class).show(prompt);
@@ -507,13 +515,6 @@ public abstract class Script {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException();
         }
-        // TODO endAll() cancels renderers, but doesn't wait for completion
-        // -> integrate this with endScene() which is just there to workaround the delay until the next say() command
-        endAll();
-        teaseLib.host.endScene();
-
-        scriptRenderer.events.afterChoices.fire(new ScriptEventArgs());
-
         return choice;
     }
 

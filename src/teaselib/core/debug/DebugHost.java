@@ -24,6 +24,7 @@ import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
+import teaselib.core.ui.InputMethod.UiEvent;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.AnnotatedImage;
@@ -115,8 +116,15 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
+    public void updateUI(UiEvent event) {
+        // Ignore
+    }
+
+    @Override
     public boolean dismissChoices(List<Choice> choices) {
-        logger.info("Dismiss {} @ {}", choices, Thread.currentThread().getStackTrace()[1]);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Dismiss {} @ {}", choices, Thread.currentThread().getStackTrace()[1]);
+        }
 
         replySection.lock();
         try {

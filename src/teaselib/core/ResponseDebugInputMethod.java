@@ -46,7 +46,7 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
 
     private void handleRealTime(@SuppressWarnings("unused") TimeAdvancedEvent e) {
         synchronized (this) {
-            Prompt prompt = activePrompt.get();
+            var prompt = activePrompt.get();
             if (prompt != null) {
                 Runnable respond = () -> {
                     prompt.lock.lock();
@@ -133,6 +133,12 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
 
             return result;
         }
+    }
+
+
+    @Override
+    public void updateUI(UiEvent event) {
+        // ignore
     }
 
     @Override

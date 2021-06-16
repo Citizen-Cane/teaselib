@@ -37,8 +37,6 @@ import teaselib.util.math.WeightNormal;
  *
  */
 public class SpeechRecognitionInputMethod implements InputMethod {
-    private static final float AWARENESS_BONUS = 0.6666f;
-
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
     private static final float AUDIO_PROBLEM_PENALTY_WEIGHT = 0.005f;
@@ -62,7 +60,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
     private Hypothesis hypothesis = null;
-    private float awarenessBonus;
 
     public SpeechRecognitionInputMethod(Configuration config, AudioSync audioSync) {
         this.speechRecognizer = new SpeechRecognizer(config, audioSync);
@@ -76,8 +73,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.speechDetectedEventHandler = this::handleSpeechDetected;
         this.recognitionRejected = this::handleRecognitionRejected;
         this.recognitionCompleted = this::handleRecogntionCompleted;
-
-        setFaceToFace(false);
     }
 
     private void handleRecognitionStarted(SpeechRecognitionStartedEventArgs eventArgs) {
@@ -263,14 +258,10 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         SpeechRecognition recognizer = getRecognizer(choices.locale);
         HearingAbility required = recognizer.implementation.required;
         float p = required.confidence(choices.intention);
-        float weighted = Confidence.weighted( //
+        return Confidence.weighted( //
                 PhraseString.words(rule.text).length, //
                 p, //
                 Confidence.slightlyReducedProbability(p));
-        float expectedConfidence = weighted * awarenessBonus;
-        logger.info("Expected weighted confidence {} * Awareness bonus {} = {}", weighted, awarenessBonus,
-                expectedConfidence);
-        return expectedConfidence;
     }
 
     private void handleRecognitionRejected(SpeechRecognizedEventArgs eventArgs) {
@@ -548,13 +539,36 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             }
 
             prompt.inputMethodInitializers.setup(this);
-            recognizer.startRecognition();
+
+            UiEvent initialState = prompt.initialState.get();
+            if (initialState.enabled) {
+                recognizer.startRecognition();
+            }
             return prompt;
         });
     }
 
     public Prompt getActivePrompt() {
         return active.get();
+    }
+
+    @Override
+    public void updateUI(UiEvent event) {
+        active.updateAndGet(previousPrompt -> {
+            SpeechRecognition recognizer = getRecognizer(previousPrompt);
+            if (event.enabled) {
+                if (recognizer.isActive()) {
+                    recognizer.resumeRecognition();
+                } else {
+                    recognizer.startRecognition();
+                }
+            } else {
+                if (recognizer.isActive()) {
+                    recognizer.pauseRecognition();
+                }
+            }
+            return previousPrompt;
+        });
     }
 
     @Override
@@ -642,10 +656,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     public void close() {
         usedRecognitionInstances.values().stream().map(recognizer -> recognizer.events).forEach(this::remove);
         speechRecognizer.close();
-    }
-
-    public void setFaceToFace(boolean aware) {
-        awarenessBonus = aware ? AWARENESS_BONUS : 1.0f;
     }
 
     public void completeSpeechRecognition() {

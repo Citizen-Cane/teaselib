@@ -31,6 +31,11 @@ public class ScriptEventInputMethod extends AbstractInputMethod {
     }
 
     @Override
+    public void updateUI(UiEvent event) {
+        // ignore
+    }
+
+    @Override
     protected void handleDismiss(Prompt prompt) throws InterruptedException {
         // Nothing to do
     }

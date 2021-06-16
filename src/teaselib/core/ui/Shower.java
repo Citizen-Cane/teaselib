@@ -170,7 +170,7 @@ public class Shower {
 
     private void pauseCurrent() throws InterruptedException {
         if (!stack.isEmpty()) {
-            Prompt prompt = stack.peek();
+            var prompt = stack.peek();
             prompt.lock.lockInterruptibly();
             try {
                 if (!prompt.paused()) {
@@ -208,4 +208,12 @@ public class Shower {
             }
         }
     }
+
+    public void updateUI(InputMethod.UiEvent event) {
+        if (!stack.isEmpty()) {
+            var prompt = stack.peek();
+            prompt.updateUI(event);
+        }
+    }
+
 }

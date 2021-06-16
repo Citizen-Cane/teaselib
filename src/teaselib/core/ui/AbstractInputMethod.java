@@ -66,6 +66,7 @@ public abstract class AbstractInputMethod implements InputMethod {
 
         activePrompt.set(prompt);
         start(prompt);
+        updateUI(prompt.initialState.get());
 
         if (Thread.interrupted()) {
             throw new InterruptedException();
@@ -87,7 +88,7 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     Prompt.Result awaitAndSignalResult(Prompt prompt) throws InterruptedException, ExecutionException {
         if (prompt.unsynchronizedResult() == Prompt.Result.UNDEFINED) {
-            Prompt.Result result = handleShow(prompt);
+            var result = handleShow(prompt);
             signal(prompt, result);
         }
         return prompt.unsynchronizedResult();
@@ -110,7 +111,7 @@ public abstract class AbstractInputMethod implements InputMethod {
     }
 
     protected <T extends InputMethodEventArgs> boolean signalActivePrompt(Runnable action, T eventArgs) {
-        Prompt prompt = activePrompt.get();
+        var prompt = activePrompt.get();
         if (prompt != null) {
             prompt.lock.lock();
             try {
@@ -149,6 +150,9 @@ public abstract class AbstractInputMethod implements InputMethod {
 
         return true;
     }
+
+    @Override
+    public abstract void updateUI(UiEvent event);
 
     @Override
     public final void dismiss(Prompt prompt) throws InterruptedException {

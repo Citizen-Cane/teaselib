@@ -122,6 +122,11 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     @Override
+    public void updateUI(UiEvent event) {
+        // ignore
+    }
+
+    @Override
     public void handleDismiss(Prompt prompt) {
         synchronized (this) {
             checkPointScriptFunctionFinished.reset();

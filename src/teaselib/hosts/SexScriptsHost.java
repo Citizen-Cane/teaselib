@@ -20,21 +20,25 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 import javax.swing.ComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.WindowConstants;
 
@@ -105,9 +109,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     private final JLabel textLabel;
     private final ImageIcon backgroundImageIcon;
+
     private final JButton[] ssButtons;
     private final JButton ssButton;
     private final JComboBox<String> ssComboBox;
+    private final Set<JComponent> uiComponents = new HashSet<>();
+    private final Set<JComponent> uiMemento = new HashSet<>();
 
     private final Image backgroundImage;
 
@@ -141,9 +148,15 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             mainFrame = getMainFrame();
             textLabel = getField("label");
             imageIcon = getField("backgroundImage");
+
             ssButtons = getField("buttons");
             ssButton = getField("button");
             ssComboBox = getField("comboBox");
+
+            uiComponents.add(ssButton);
+            Stream.of(ssButtons).forEach(uiComponents::add);
+            uiComponents.add(ssComboBox);
+
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
@@ -739,6 +752,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     @Override
     public Prompt.Result reply(Choices choices) {
+        uiMemento.clear();
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
@@ -783,6 +797,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         }
     }
 
+    @Override
+    public void updateUI(InputMethod.UiEvent event) {
+        enableUI(event.enabled);
+    }
+
     private void dismissPrompt(Choices choices, ShowPopupTask showPopupTask, FutureTask<Prompt.Result> showChoices) {
         List<Runnable> clickableChoices = getClickableChoices(choices);
         if (!clickableChoices.isEmpty()) {
@@ -807,6 +826,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 }
             }
         }
+
+        enableUI(false);
+    }
+
+    private void enableUI(boolean enabled) {
+        if (uiMemento.isEmpty()) {
+            uiComponents.stream().filter(JComponent::isVisible).forEach(uiMemento::add);
+        }
+
+        uiMemento.stream().forEach(c -> c.setVisible(enabled));
     }
 
     @Override

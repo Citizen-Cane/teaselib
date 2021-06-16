@@ -222,10 +222,10 @@ public class SpeechRecognitionInputMethodTest {
         assertEquals("Foo", script.reply(() -> {
             assertEquals("Bar", script.reply(() -> {
                 speechRecognition.emulateRecogntion("Bar");
-                script.sleep(1, TimeUnit.SECONDS);
+                script.sleep(4, TimeUnit.SECONDS);
             }, "Bar"));
             speechRecognition.emulateRecogntion("Foo");
-            script.sleep(1, TimeUnit.SECONDS);
+            script.sleep(4, TimeUnit.SECONDS);
         }, "Foo"));
     }
 

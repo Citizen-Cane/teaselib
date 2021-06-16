@@ -31,8 +31,10 @@ import teaselib.TeaseScript;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HeadGesturesV2InputMethod;
 import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
+import teaselib.core.ai.perception.PoseAspects;
 import teaselib.core.ai.perception.PoseEstimationEventArgs;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
@@ -48,6 +50,7 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
+import teaselib.core.ui.InputMethod.UiEvent;
 import teaselib.core.ui.InputMethodEventArgs;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Intention;
@@ -144,7 +147,6 @@ public abstract class Script {
         humanPoseInteraction.removeEventListener(actor, proximitySensor);
         // TODO set actor proximity with next image to avoid additional un-zoom of current image
         teaseLib.host.setActorProximity(Proximity.FAR);
-        setFaceToFace(false);
     }
 
     private final HumanPoseDeviceInteraction.EventListener proximitySensor = new HumanPoseDeviceInteraction.EventListener(
@@ -171,15 +173,10 @@ public abstract class Script {
             }
             teaseLib.host.show();
 
-            setFaceToFace(speechProximity);
+            teaseLib.globals.get(Shower.class).updateUI(new InputMethod.UiEvent(speechProximity));
         }
 
     };
-
-    private void setFaceToFace(boolean speechProximity) {
-        var inputMethod = teaseLib.globals.get(InputMethods.class).get(SpeechRecognitionInputMethod.class);
-        inputMethod.setFaceToFace(speechProximity);
-    }
 
     private DeviceInteractionImplementations initScriptInteractions() {
         var scriptInteractionImplementations = new DeviceInteractionImplementations();
@@ -435,7 +432,6 @@ public abstract class Script {
             scriptRenderer.stopBackgroundRenderers();
         }
         if (scriptFunction == null || scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
-
             if (!scriptRenderer.isInterTitle()) {
                 showAll(5.0);
             }
@@ -519,12 +515,28 @@ public abstract class Script {
     }
 
     private Prompt getPrompt(Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction) {
-        var prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct);
+        var prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct, uiEvents());
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {
             logger.info("{} {}", inputMethod.getClass().getSimpleName(), inputMethod);
         }
         return prompt;
+    }
+
+    protected Supplier<UiEvent> uiEvents() {
+        // TODO depends on camera input and pose available
+        if (teaseLib.globals.has(TeaseLibAI.class)) {
+            return () -> new InputMethod.UiEvent(isFace2Face());
+        } else {
+            return Prompt.AlwaysEnabledSupplier;
+        }
+    }
+
+    boolean isFace2Face() {
+        HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
+        // TODO multiple interests
+        PoseAspects pose = humanPoseInteraction.getPose(Interest.Proximity);
+        return pose.is(Proximity.FACE2FACE) || !pose.is(HumanPose.Status.Available);
     }
 
     private Optional<SpeechRecognitionRejectedScript> speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {

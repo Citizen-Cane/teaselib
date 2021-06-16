@@ -12,6 +12,8 @@ public class HostInputMethod extends AbstractInputMethod {
     public interface Backend {
         Prompt.Result reply(Choices choices);
 
+        void updateUI(InputMethod.UiEvent event);
+
         boolean dismissChoices(List<Choice> choices);
     }
 
@@ -30,6 +32,11 @@ public class HostInputMethod extends AbstractInputMethod {
     @Override
     protected Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
         return host.reply(prompt.choices);
+    }
+
+    @Override
+    public void updateUI(UiEvent event) {
+        host.updateUI(event);
     }
 
     @Override

@@ -75,7 +75,7 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
         @Override
         public void run(PoseEstimationEventArgs eventArgs) throws Exception {
             activePrompt.updateAndGet(prompt -> {
-                Actor actor = eventArgs.actor;
+                var actor = eventArgs.actor;
                 if (prompt == null) {
                     stopGazeTracking(actor);
                 } else {
@@ -132,7 +132,7 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
         @Override
         public void run(PoseEstimationEventArgs eventArgs) throws Exception {
             if (eventArgs.pose.is(HeadGestures.Gaze)) {
-                Gaze gaze = eventArgs.pose.estimation.gaze.orElseThrow();
+                var gaze = eventArgs.pose.estimation.gaze.orElseThrow();
                 boolean nod = nodding.update(eventArgs.timestamp, gaze.nod * rad2deg);
                 boolean shake = shaking.update(eventArgs.timestamp, gaze.shake * rad2deg);
                 if (nod && !shake) {
@@ -166,12 +166,12 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
     @Override
     protected Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
         if (trackGestures) {
-            startProximityTracking(prompt);
+            updateUI(prompt.initialState.get());
             while (!Thread.currentThread().isInterrupted()) {
                 gestureDetectionLock.lockInterruptibly();
                 try {
                     gestureDetected.await();
-                    Meaning meaning = meaning(detectedGesture.get());
+                    var meaning = meaning(detectedGesture.get());
                     Optional<Choice> choice = prompt.choices.stream().filter(c -> c.answer.meaning == meaning)
                             .findFirst();
                     if (choice.isPresent()) {
@@ -198,14 +198,26 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
     }
 
     @Override
+    public void updateUI(UiEvent event) {
+        var actor = activePrompt.get().script.actor;
+        if (event.enabled) {
+            // TODO just track gaze since proximity handled by UiEvent
+            startProximityTracking(actor);
+        } else {
+            stopProximityTracking(actor);
+            stopGazeTracking(actor);
+        }
+    }
+
+    @Override
     protected void handleDismiss(Prompt prompt) throws InterruptedException {
-        Actor actor = prompt.script.actor;
+        var actor = prompt.script.actor;
         stopProximityTracking(actor);
         stopGazeTracking(actor);
     }
 
-    private void startProximityTracking(Prompt prompt) {
-        humanPoseInteraction.addEventListener(prompt.script.actor, trackProximity);
+    private void startProximityTracking(Actor actor) {
+        humanPoseInteraction.addEventListener(actor, trackProximity);
     }
 
     private void stopProximityTracking(Actor actor) {

@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import teaselib.Answer;
@@ -19,10 +20,15 @@ import teaselib.ScriptFunction;
 import teaselib.core.Script;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.ui.InputMethod.UiEvent;
 import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
+    public static final UiEvent AlwaysEnabled = new InputMethod.UiEvent(true);
+
     private static final List<Choice> SCRIPTFUNCTION_TIMEOUT = Collections.singletonList(new Choice(Answer.Timeout));
+
+    public static final Supplier<InputMethod.UiEvent> AlwaysEnabledSupplier = () -> AlwaysEnabled;
 
     public static class Result {
         public static final Result UNDEFINED = new Result(Integer.MIN_VALUE) {
@@ -109,6 +115,7 @@ public class Prompt {
 
     final InputMethods inputMethods;
     public final InputMethods.Initializers inputMethodInitializers;
+    public final Supplier<InputMethod.UiEvent> initialState;
 
     final ScriptFutureTask scriptTask;
 
@@ -134,10 +141,17 @@ public class Prompt {
 
     public Prompt(Script script, Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction,
             Result.Accept mode) {
+        this(script, choices, inputMethods, scriptFunction, mode, AlwaysEnabledSupplier);
+    }
+
+    public Prompt(Script script, Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction,
+            Result.Accept mode, Supplier<InputMethod.UiEvent> initialState) {
         this.script = script;
         this.choices = choices;
         this.inputMethods = inputMethods;
         this.inputMethodInitializers = inputMethods.initializers(choices);
+        this.initialState = initialState;
+
         this.scriptTask = scriptFunction != null ? new ScriptFutureTask(script, scriptFunction, this) : null;
         this.acceptedResult = mode;
 
@@ -285,6 +299,12 @@ public class Prompt {
         paused.set(false);
     }
 
+    public void updateUI(UiEvent event) {
+        for (InputMethod inputMethod : realized) {
+            inputMethod.updateUI(event);
+        }
+    }
+
     public void dismiss() {
         throwIfNotLocked();
 
@@ -390,7 +410,7 @@ public class Prompt {
         }
         String scriptTaskDescription = scriptTask != null ? scriptTask.getRelation() + " " : " ";
         String isPaused = paused.get() ? " paused" : "";
-        String resultString = " result=" + toString(result, choice(choices, result));
+        var resultString = " result=" + toString(result, choice(choices, result));
         String inputMethodName = resultInputMethod != null
                 ? "(input method =" + resultInputMethod.getClass().getSimpleName() + ")"
                 : "";

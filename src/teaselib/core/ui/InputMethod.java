@@ -14,9 +14,19 @@ public interface InputMethod extends teaselib.core.Closeable {
         // tag interface
     }
 
+    public class UiEvent {
+        public final boolean enabled;
+
+        public UiEvent(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
+
     Setup getSetup(Choices choices);
 
     void show(Prompt prompt) throws InterruptedException;
+
+    void updateUI(UiEvent event);
 
     void dismiss(Prompt prompt) throws InterruptedException;
 

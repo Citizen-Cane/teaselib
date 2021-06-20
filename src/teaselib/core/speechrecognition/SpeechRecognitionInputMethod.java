@@ -59,6 +59,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
+    private final AtomicReference<SpeechRecognition> activeRecognizer = new AtomicReference<>();
     private Hypothesis hypothesis = null;
 
     public SpeechRecognitionInputMethod(Configuration config, AudioSync audioSync) {
@@ -521,7 +522,10 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     public Setup getSetup(Choices choices) {
         SpeechRecognition recognizer = getRecognizer(choices.locale);
         PreparedChoices prepared = recognizer.prepare(choices);
-        return () -> recognizer.apply(prepared);
+        return () -> {
+            this.activeRecognizer.set(recognizer);
+            recognizer.apply(prepared);
+        };
     }
 
     @Override
@@ -554,8 +558,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     @Override
     public void updateUI(UiEvent event) {
-        active.updateAndGet(previousPrompt -> {
-            SpeechRecognition recognizer = getRecognizer(previousPrompt);
+        active.updateAndGet(prompt -> {
+            SpeechRecognition recognizer = activeRecognizer.get();
             if (event.enabled) {
                 if (recognizer.isActive()) {
                     recognizer.resumeRecognition();
@@ -567,7 +571,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                     recognizer.pauseRecognition();
                 }
             }
-            return previousPrompt;
+            return prompt;
         });
     }
 

@@ -308,6 +308,7 @@
 		</Item>
 
 		<Item item="Nightie" guid="nightie" displayName="Nightie">
+			<Attribute> Clothes.Category.Sleepwear </Attribute>
 			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 

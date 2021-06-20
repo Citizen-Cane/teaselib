@@ -159,7 +159,11 @@ public class Rule {
     }
 
     public static Rule maxProbability(Rule a, Rule b) {
-        return a.probability > b.probability ? a : b;
+        if (a.probability == b.probability) {
+            return a.text.length() > b.text.length() ? a : b;
+        } else {
+            return a.probability > b.probability ? a : b;
+        }
     }
 
     public RuleIndicesList indices() {

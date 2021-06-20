@@ -57,7 +57,7 @@ class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
                         yes as
                         yes s
                         """), //
-                new EmulatedSpeech("Yes Miss", 0.7380f, """
+                new EmulatedSpeech("Yes Miss", 0.6900f, """
                         yes
                         i guess
                         as
@@ -112,6 +112,29 @@ class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
     @Test
     void testAlright() throws InterruptedException {
         Rule rule = emulateSpeech("Alright Miss", "All right");
+        assertEquals(2, rule.children.size());
+    }
+
+    @Test
+    void testAlrightMissSplitWord() throws InterruptedException {
+        Rule rule = emulateSpeech("Alright Miss", "all right miss");
+        assertEquals(2, rule.children.size());
+    }
+
+    @Test
+    void testAlrightMissDifferentResultSizes() throws InterruptedException {
+        Rule rule = emulateSpeech("Alright Miss", """
+                    all, rightness
+                    all right miss
+                """);
+        assertEquals(2, rule.children.size());
+    }
+
+    @Test
+    void testAlrightMissDifferentSpelling() throws InterruptedException {
+        Rule rule = emulateSpeech("Alright Miss", """
+                    all right men
+                """);
         assertEquals(2, rule.children.size());
     }
 

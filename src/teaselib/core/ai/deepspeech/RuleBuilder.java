@@ -67,36 +67,58 @@ public class RuleBuilder {
             var thisWord = new MatchStrategy((word, choice) -> {
                 float probability = match(word, resultIndex);
                 return new Rated(probability, () -> {
-                    addChild(word, choice, probability);
+                    addChild("thisWord", word, choice, probability);
                     resultIndex += 1;
                 });
             });
 
-            // TODO replace the words in result(s) -> no special casing
-            // TODO detect partial matches for both words
-            // TODO rate probability of partial matches
-            // TODO implicit alternate matching not covered because additional tokens are generated - don't use
-            var splitWord = new MatchStrategy((word, choice) -> {
+            // recognized word -> two expected words
+            var joinedWord = new MatchStrategy((word, choice) -> {
                 List<String> result = results.get(0).words;
                 if (resultIndex < result.size() - 1 && wordIndex < phrase.length - 1) {
                     String recognized = result.get(resultIndex);
                     String nextWord = phrase[wordIndex + 1];
-                    if (recognized.startsWith(word)
-                            && recognized.endsWith(nextWord.substring(nextWord.length() - 1, 1))) {
-                        float probability = 1.0f;
+
+                    float probability = partialMatch(word + nextWord, recognized);
+                    if (probability > 0.0f) {
+                        float a = recognized.startsWith(word.substring(0, 1)) //
+                                ? partialMatch(word, recognized)
+                                : 0.0f;
+                        float b = recognized.endsWith(nextWord.substring(nextWord.length() - 1)) //
+                                ? partialMatch(nextWord, recognized)
+                                : 0.0f;
+                        if (a > 0.0f && b > 0.0f) {
+                            return new Rated(probability, () -> {
+                                if (a > 0.0f)
+                                    addChild("Join word " + "a", word, choice, a);
+                                if (b > 0.0f)
+                                    addChild("Join word " + "b", nextWord, choice, b);
+                                resultIndex += 1;
+                                wordIndex += 1;
+                            });
+                        } else {
+                            return null;
+                        }
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            });
+
+            // recognized words -> ome expected word
+            var splitWord = new MatchStrategy((word, choice) -> {
+                List<String> result = results.get(0).words;
+                if (resultIndex < result.size() - 1) {
+                    String recognized = result.get(resultIndex);
+                    String nextRecognized = result.get(resultIndex + 1);
+
+                    float probability = partialMatch(recognized + nextRecognized, word);
+                    if (probability > 0.0f) {
                         return new Rated(probability, () -> {
-                            addChild(word, choice, probability);
-                            addChild(nextWord, choice, probability / nextWord.length());
+                            addChild("splitWord", word, choice, probability);
                             resultIndex += 1;
-                            wordIndex += 1;
-                        });
-                    } else if (recognized.startsWith(word.substring(0, 1)) && recognized.endsWith(nextWord)) {
-                        float probability = 1.0f;
-                        return new Rated(probability, () -> {
-                            addChild(word, choice, 1.0f / word.length());
-                            addChild(nextWord, choice, 1.0f);
-                            resultIndex += 1;
-                            wordIndex += 1;
                         });
                     } else {
                         return null;
@@ -109,12 +131,12 @@ public class RuleBuilder {
             var nextWord = new MatchStrategy((word, choice) -> {
                 float probability = match(word, resultIndex + 1);
                 return new Rated(probability, () -> {
-                    addChild(word, choice, probability);
+                    addChild("nextWord", word, choice, probability);
                     resultIndex += 2;
                 });
             });
 
-            return Arrays.asList(thisWord, splitWord, nextWord);
+            return Arrays.asList(thisWord, nextWord, joinedWord, splitWord);
         }
 
         void match(int phraseIndex) {
@@ -125,7 +147,7 @@ public class RuleBuilder {
             insertNullRules = 0;
             children = new ArrayList<>();
 
-            while (wordIndex < phrase.length && resultIndex < phrase.length) {
+            while (wordIndex < phrase.length) {
                 String word = phrase[wordIndex];
                 var ratedWord = rate(word, phraseIndex);
                 if (ratedWord != null) {
@@ -136,7 +158,7 @@ public class RuleBuilder {
                 wordIndex++;
             }
 
-            if (wordIndex < results.get(0).words.size() || insertNullRules > 0) {
+            if (resultIndex < results.get(0).words.size() || insertNullRules > 0) {
                 int n = Math.max(results.get(0).words.size() - wordIndex, insertNullRules);
                 addPlaceholders(n, phraseIndex);
             }
@@ -204,26 +226,31 @@ public class RuleBuilder {
                 matches = hypothesis_length;
             }
 
-            return (float) matches / word_length;
+            if (hypothesis_length < word_length) {
+                return (float) matches / word_length;
+            } else {
+                return (float) matches / hypothesis_length;
+            }
         }
 
-        private void addChild(String word, int phraseIndex, float probability) {
+        private void addChild(String name, String word, int phraseIndex, float probability) {
             if (insertNullRules > 0) {
                 addPlaceholders(insertNullRules, phraseIndex);
                 insertNullRules = 0;
             }
-            children.add(childRule(word, phraseIndex, probability));
+            children.add(childRule(name, word, phraseIndex, probability));
             childIndex++;
         }
 
-        private Rule childRule(String text, int choice, float probability) {
-            return childRule(text, wordIndex, childIndex, childIndex + 1, choice, probability);
+        private Rule childRule(String name, String text, int choice, float probability) {
+            return childRule(name, text, wordIndex, childIndex, childIndex + 1, choice, probability);
         }
 
-        private static Rule childRule(String text, int index, int from, int to, int choice, float probability) {
+        private static Rule childRule(String name, String text, int index, int from, int to, int choice,
+                float probability) {
             Set<Integer> choices = singleton(choice);
-            return new Rule(Rule.name(Rule.CHOICE_NODE_NAME, index, choices), text, index, choices, from, to,
-                    probability, valueOf(probability));
+            return new Rule(Rule.name(Rule.CHOICE_NODE_NAME, index, choices) + "_" + name, text, index, choices, from,
+                    to, probability, valueOf(probability));
         }
 
         private void addPlaceholders(int n, int phraseIndex) {

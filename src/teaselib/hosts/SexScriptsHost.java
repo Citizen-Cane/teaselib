@@ -638,17 +638,17 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         // Combobox
         ComboBoxModel<String> model = ssComboBox.getModel();
         for (int j = 0; j < model.getSize(); j++) {
-            final int comboboxIndex = j;
-            for (final int index : new Interval(0, choices.size() - 1)) {
-                final String text = model.getElementAt(j);
+            int comboboxIndex = j;
+            for (int index : new Interval(0, choices.size() - 1)) {
+                String text = model.getElementAt(j);
                 if (text.contains(Choice.getDisplay(choices.get(index)))) {
                     clickableChoices.set(index, () -> ssComboBox.setSelectedIndex(comboboxIndex));
                 }
             }
         }
 
-        List<javax.swing.JButton> buttons = new ArrayList<>(ssButtons.length + 1);
-        for (javax.swing.JButton button : ssButtons) {
+        List<JButton> buttons = new ArrayList<>(ssButtons.length + 1);
+        for (JButton button : ssButtons) {
             if (button.isVisible()) {
                 buttons.add(button);
             }
@@ -659,7 +659,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         // Check pretty buttons for corresponding text
         // There might be more buttons than expected,
         // probably some kind of caching
-        for (javax.swing.JButton button : buttons) {
+        for (JButton button : buttons) {
             for (int index : new Interval(0, choices.size() - 1)) {
                 String buttonText = button.getText();
                 String choice = Choice.getDisplay(choices.get(index));
@@ -689,27 +689,15 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         return false;
     }
 
-    public javax.swing.JComboBox<String> getComboBox() throws NoSuchFieldException, IllegalAccessException {
-        var comboField = mainFrame.getClass().getDeclaredField("comboBox");
-        comboField.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        JComboBox<String> ssComboBox = (JComboBox<String>) comboField.get(mainFrame);
-        return ssComboBox;
-    }
-
     class ShowPopupTask {
-        final FutureTask<Boolean> task;
-        final AtomicBoolean resetPopupVisibility = new AtomicBoolean(false);
-        static final int POLL_INTERVAL_MILLIS = 100;
+        private static final int POLL_INTERVAL_MILLIS = 100;
 
-        JComboBox<String> comboBox = null;
+        private final FutureTask<Boolean> task;
+        private final AtomicBoolean resetPopupVisibility = new AtomicBoolean(false);
+        private final JComboBox<String> comboBox;
 
-        public ShowPopupTask() {
-            try {
-                comboBox = getComboBox();
-            } catch (ReflectiveOperationException e) {
-                logger.error(e.getMessage(), e);
-            }
+        public ShowPopupTask(JComboBox<String> comboBox) {
+            this.comboBox = comboBox;
             task = new FutureTask<>(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
@@ -758,7 +746,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         }
         // open the combo box pop-up if necessary in order to
         // allow the user to read prompts without mouse/touch interaction
-        var showPopupTask = new ShowPopupTask();
+        var showPopupTask = new ShowPopupTask(ssComboBox);
         boolean showPopup = choices.size() > 1;
         if (showPopup) {
             showPopupThreadPool.execute(showPopupTask.task);
@@ -807,22 +795,24 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         if (!clickableChoices.isEmpty()) {
             // Click any button
             Runnable delegate = clickableChoices.get(0);
-            while (!showChoices.isDone()) {
-                // Stupid trick to be able to actually click a combo item
-                if (showPopupTask.comboBox.isVisible()) {
-                    showPopupTask.showPopup();
-                }
+            if (delegate != null) {
+                while (!showChoices.isDone()) {
+                    // Stupid trick to be able to actually click a combo item
+                    if (showPopupTask.comboBox.isVisible()) {
+                        showPopupTask.showPopup();
+                    }
 
-                try {
-                    delegate.run();
-                } catch (Exception e1) {
-                    throw ExceptionUtil.asRuntimeException(e1);
-                }
+                    try {
+                        delegate.run();
+                    } catch (Exception e1) {
+                        throw ExceptionUtil.asRuntimeException(e1);
+                    }
 
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ignored) { // Ignore
-                    Thread.currentThread().interrupt();
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ignored) { // Ignore
+                        Thread.currentThread().interrupt();
+                    }
                 }
             }
         }

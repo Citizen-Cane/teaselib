@@ -20,6 +20,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -114,7 +116,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private final JButton ssButton;
     private final JComboBox<String> ssComboBox;
     private final Set<JComponent> uiComponents = new HashSet<>();
-    private final Set<JComponent> uiMemento = new HashSet<>();
 
     private final Image backgroundImage;
 
@@ -122,11 +123,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private final ExecutorService showPopupThreadPool = NamedExecutorService.singleThreadedQueue("Show-Choices");
     private final ExecutorService showChoicesThreadPool = NamedExecutorService.singleThreadedQueue("Show-Popup");
 
-    private boolean intertitleActive = false;
-
-    Runnable onQuitHandler = null;
-
     private final InputMethod inputMethod;
+    private Choices activeChoices;
+
+    private boolean intertitleActive = false;
+    Runnable onQuitHandler = null;
 
     public static Host from(IScript script) {
         return new SexScriptsHost(script);
@@ -658,7 +659,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
         // Check pretty buttons for corresponding text
         // There might be more buttons than expected,
-        // probably some kind of caching
+        // to display up to five choices
         for (JButton button : buttons) {
             for (int index : new Interval(0, choices.size() - 1)) {
                 String buttonText = button.getText();
@@ -729,6 +730,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 if (resetPopupVisibility.get() && comboBox.isPopupVisible()) {
                     comboBox.setPopupVisible(false);
                 }
+                comboBox.removeAllItems();
             });
         }
     }
@@ -740,7 +742,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     @Override
     public Prompt.Result reply(Choices choices) {
-        uiMemento.clear();
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
@@ -759,6 +760,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 () -> new Prompt.Result(ss.getSelectedValue(null, choices.toDisplay())));
         Prompt.Result result;
         showChoicesThreadPool.execute(showChoices);
+        this.activeChoices = choices;
         try {
             result = showChoices.get();
             if (showPopup) {
@@ -787,7 +789,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     @Override
     public void updateUI(InputMethod.UiEvent event) {
-        enableUI(event.enabled);
+        enableButtons(event.enabled);
     }
 
     private void dismissPrompt(Choices choices, ShowPopupTask showPopupTask, FutureTask<Prompt.Result> showChoices) {
@@ -816,16 +818,29 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 }
             }
         }
-
-        enableUI(false);
+        activeChoices = null;
     }
 
-    private void enableUI(boolean enabled) {
-        if (uiMemento.isEmpty()) {
-            uiComponents.stream().filter(JComponent::isVisible).forEach(uiMemento::add);
+    private void enableButtons(boolean enabled) {
+        if (activeChoices != null) {
+            int count = activeChoices.size();
+            // No clue what the single button is used for
+            if (ssComboBox.getModel().getSize() == 0) {
+                List<? extends JComponent> subList = Arrays.asList(ssButtons).subList(0, count);
+                enable(subList, enabled);
+            } else {
+                boolean enabledBefore = ssComboBox.isVisible();
+                enable(Collections.singletonList(ssComboBox), enabled);
+                if (!enabledBefore && enabled) {
+                    var showPopupTask = new ShowPopupTask(ssComboBox);
+                    showPopupThreadPool.execute(showPopupTask.task);
+                }
+            }
         }
+    }
 
-        uiMemento.stream().forEach(c -> c.setVisible(enabled));
+    private void enable(List<? extends JComponent> elements, boolean enabled) {
+        elements.stream().forEach(c -> c.setVisible(enabled));
     }
 
     @Override

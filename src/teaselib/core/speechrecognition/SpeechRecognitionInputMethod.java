@@ -539,7 +539,9 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
             SpeechRecognition recognizer = getRecognizer(prompt);
             if (recognizer.isActive()) {
-                throw new IllegalStateException("Speech recognizer already active");
+                // TODO triggered in the middle of the script
+                // throw new IllegalStateException("Speech recognizer already active");
+                logger.warn("Speech recognizer already active");
             }
 
             prompt.inputMethodInitializers.setup(this);

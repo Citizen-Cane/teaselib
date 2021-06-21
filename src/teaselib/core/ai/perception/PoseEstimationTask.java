@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +43,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     private final ExecutorService inferenceExecutor;
     private final Thread inferenceThread;
     private final Lock awaitPose = new ReentrantLock();
+    private final AtomicReference<Set<Interest>> awaitInterests = new AtomicReference<>(Collections.emptySet());
     private final Condition poseChanged = awaitPose.newCondition();
     private final AtomicReference<PoseAspects> poseAspects = new AtomicReference<>(PoseAspects.Unavailable);
     private final ReentrantLock estimatePoses = new ReentrantLock();
@@ -62,6 +64,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     }
 
     private static void throwIfUnsupported(Interest interest) {
+        Objects.requireNonNull(interest);
         if (interest != Interest.Status && interest != Interest.Proximity && interest != Interest.HeadGestures) {
             // TODO manage multiple models (e.g. mobilenet_thin & CMU)
             throw new UnsupportedOperationException(
@@ -72,21 +75,23 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     // TODO replace the aspects with a condition a l Requires.all(...), Requires.any(...)
     boolean awaitPose(Interest interests, long duration, TimeUnit unit, PoseAspect... aspects) {
         throwIfUnsupported(interests);
-        PoseAspects result = poseAspects.get();
-        if (result.containsAll(interests) && result.is(aspects)) {
+        var pose = poseAspects.get();
+        if (pose.containsAll(interests) && pose.is(aspects)) {
             return true;
         } else {
             try {
                 awaitPose.lockInterruptibly();
+                awaitInterests.set(Collections.singleton(interests));
                 try {
                     while (poseChanged.await(duration, unit)) {
-                        result = poseAspects.get();
-                        if (result.is(aspects)) {
+                        pose = poseAspects.get();
+                        if (pose.is(aspects)) {
                             return true;
                         }
                     }
                     return false;
                 } finally {
+                    awaitInterests.set(Collections.emptySet());
                     awaitPose.unlock();
                 }
             } catch (InterruptedException e) {
@@ -194,7 +199,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         try {
             previous = poseAspects.get();
             while ((actor = interaction.scriptRenderer.currentActor()) == null
-                    || (interests = interestOf(actor)).isEmpty()) {
+                    || (interests = joinInterests(actor, awaitInterests.get())).isEmpty()) {
                 PoseAspects unavailable = PoseAspects.Unavailable;
                 if (poseAspects.get() != unavailable) {
                     poseAspects.set(unavailable);
@@ -223,8 +228,18 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         }
     }
 
-    private Set<Interest> interestOf(Actor actor) {
-        return interaction.definitions(actor).keySet();
+    private Set<Interest> joinInterests(Actor actor, Set<Interest> more) {
+        Set<Interest> actorInterests = interaction.definitions(actor).keySet();
+        if (actorInterests.isEmpty()) {
+            return more;
+        } else if (more.isEmpty()) {
+            return actorInterests;
+        } else {
+            Set<Interest> joined = new HashSet<>(actorInterests.size() + more.size());
+            joined.addAll(actorInterests);
+            joined.addAll(more);
+            return joined;
+        }
     }
 
     private void ensureFrametimeMillis(long frameTimeMillis) throws InterruptedException {
@@ -240,11 +255,18 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     private PoseAspects getPoseAspects(Set<Interest> interests, PoseAspects previous) {
         // TODO Select the human pose model that matches the interests
         humanPose.setInterests(interests);
+        wakeUpFromHibernate();
         List<HumanPose.Estimation> poses = humanPose.poses(device);
         if (poses.isEmpty()) {
             return PoseAspects.Unavailable;
         } else {
             return new PoseAspects(poses.get(0), interests, previous);
+        }
+    }
+
+    private void wakeUpFromHibernate() {
+        if (!device.isStarted()) {
+            device.start();
         }
     }
 

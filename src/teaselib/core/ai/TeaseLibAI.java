@@ -57,6 +57,9 @@ public class TeaseLibAI implements Closeable {
 
     @Override
     public void close() {
+        if (cachedModel != null) {
+            cachedModel.close();
+        }
         if (cl != null)
             cl.shutdown();
         if (cpu != null)
@@ -117,11 +120,16 @@ public class TeaseLibAI implements Closeable {
         return sceneCaptures.stream().filter(s -> s.location == location).findFirst();
     }
 
+    private HumanPose cachedModel = null;
+
     public HumanPose getModel(Interest interest) {
         if (interest != Interest.Status) {
             throw new UnsupportedOperationException("TODO Match interests with pose estiamtion model");
         }
-        return new HumanPose();
+        if (cachedModel == null) {
+            cachedModel = new HumanPose();
+        }
+        return cachedModel;
     }
 
     public enum ExecutionType {

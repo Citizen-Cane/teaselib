@@ -83,6 +83,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                 awaitPose.lockInterruptibly();
                 awaitInterests.set(Collections.singleton(interests));
                 try {
+                    logger.info("Awaiting pose {} and {}", interests, aspects);
                     while (poseChanged.await(duration, unit)) {
                         pose = poseAspects.get();
                         if (pose.is(aspects)) {

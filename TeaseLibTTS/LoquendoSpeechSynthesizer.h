@@ -25,7 +25,7 @@ private:
 	ttsHandleType hSession;
 	ttsHandleType hReader;
 
-	jobject enumerate_voices(jobject jthis) override;
+	void enumerate_voices(jobject jthis, std::vector<NativeObject*>& voices) override;
 
 	enum class OutputType {
 		None, AudioDevice, File

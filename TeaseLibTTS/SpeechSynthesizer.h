@@ -26,9 +26,9 @@ public:
 protected:
 	JNIEnv* env;
 	jobject jvoices;
-	virtual jobject enumerate_voices(jobject jthis) = 0;
+	std::vector<NativeObject*> cached_voices;
+	virtual void enumerate_voices(jobject jthis, std::vector<NativeObject*>& voices) = 0;
 
 	std::vector<std::wstring> hints;
 	std::atomic_bool cancelSpeech;
-
 };

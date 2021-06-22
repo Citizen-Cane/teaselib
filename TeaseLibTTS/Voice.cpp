@@ -9,6 +9,9 @@ Voice::Voice(JNIEnv* env)
 {
 }
 
+Voice::~Voice()
+{}
+
 jobject Voice::getGenderField(const char* gender)
 {
     const char* genderFieldName;

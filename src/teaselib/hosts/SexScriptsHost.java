@@ -33,7 +33,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 import javax.swing.ComboBoxModel;
@@ -105,14 +104,15 @@ import teaselib.util.Interval;
 public class SexScriptsHost implements Host, HostInputMethod.Backend {
     static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
-    IScript ss;
+    private final IScript ss;
+    private final Thread mainThread;
 
     private final MainFrame mainFrame;
 
     private final JLabel textLabel;
     private final ImageIcon backgroundImageIcon;
 
-    private final JButton[] ssButtons;
+    private final List<JButton> ssButtons;
     private final JButton ssButton;
     private final JComboBox<String> ssComboBox;
     private final Set<JComponent> uiComponents = new HashSet<>();
@@ -127,6 +127,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private Choices activeChoices;
 
     private boolean intertitleActive = false;
+
     Runnable onQuitHandler = null;
 
     public static Host from(IScript script) {
@@ -140,8 +141,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     public SexScriptsHost(ss.IScript script) {
         this.ss = script;
+        this.mainThread = Thread.currentThread();
         // Should be set by the host, but SexScript doesn't, so we do
-        Thread.currentThread().setName("TeaseScript main thread");
+        this.mainThread.setName("TeaseScript main thread");
 
         // Initialize rendering via background image
         ImageIcon imageIcon = null;
@@ -150,12 +152,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             textLabel = getField("label");
             imageIcon = getField("backgroundImage");
 
-            ssButtons = getField("buttons");
+            ssButtons = Arrays.asList(getField("buttons"));
             ssButton = getField("button");
             ssComboBox = getField("comboBox");
 
             uiComponents.add(ssButton);
-            Stream.of(ssButtons).forEach(uiComponents::add);
+            uiComponents.addAll(ssButtons);
             uiComponents.add(ssComboBox);
 
         } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -169,7 +171,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             backgroundImage = null;
         }
 
-        // automatically show pop-up
         int originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {
             @Override
@@ -193,16 +194,25 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             }
 
             @Override
-            public void windowClosing(WindowEvent e) {
-                if (onQuitHandler != null) {
-                    mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-                    var runnable = onQuitHandler;
-                    // Execute each quit handler just once
-                    onQuitHandler = null;
-                    logger.info("Running quit handler {}", runnable.getClass().getName());
-                    runnable.run();
-                } else {
-                    mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
+            public void windowClosing(WindowEvent event) {
+                try {
+                    if (onQuitHandler != null) {
+                        mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+                        var runnable = onQuitHandler;
+                        // Execute each quit handler just once
+                        onQuitHandler = null;
+                        logger.info("Running quit handler {}", runnable.getClass().getName());
+                        runnable.run();
+                    } else {
+                        mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
+                    }
+                } finally {
+                    mainThread.interrupt();
+                    try {
+                        mainThread.join();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
             }
 
@@ -270,7 +280,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         } else {
             backgroundImageIcon.setImage(backgroundImage);
         }
-        mainFrame.repaint();
+        mainFrame.repaint(100);
     }
 
     enum ActorPart {
@@ -474,9 +484,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     public void show() {
         if (intertitleActive && repaintText) {
             repaintText = false;
-            EventQueue.invokeLater(() -> {
-                show(html());
-            });
+            EventQueue.invokeLater(() -> show(html()));
         } else if (repaintImage && repaintText) {
             preapreCurrentImage();
             repaintText = false;
@@ -486,9 +494,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             });
         } else if (repaintImage) {
             preapreCurrentImage();
-            EventQueue.invokeLater(() -> {
-                show(currentBackgroundImage);
-            });
+            EventQueue.invokeLater(() -> show(currentBackgroundImage));
         } else if (repaintText) {
             repaintText = false;
             EventQueue.invokeLater(this::showCurrentText);
@@ -648,7 +654,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             }
         }
 
-        List<JButton> buttons = new ArrayList<>(ssButtons.length + 1);
+        List<JButton> buttons = new ArrayList<>(ssButtons.size() + 1);
         for (JButton button : ssButtons) {
             if (button.isVisible()) {
                 buttons.add(button);
@@ -818,7 +824,17 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 }
             }
         }
+
         activeChoices = null;
+        disableAllButtons();
+    }
+
+    private void disableAllButtons() {
+        List<JComponent> buttons = new ArrayList<>();
+        buttons.add(ssButton);
+        buttons.addAll(ssButtons);
+        buttons.add(ssComboBox);
+        enable(buttons, false);
     }
 
     private void enableButtons(boolean enabled) {
@@ -826,7 +842,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             int count = activeChoices.size();
             // No clue what the single button is used for
             if (ssComboBox.getModel().getSize() == 0) {
-                List<? extends JComponent> subList = Arrays.asList(ssButtons).subList(0, count);
+                List<? extends JComponent> subList = ssButtons.subList(0, count);
                 enable(subList, enabled);
             } else {
                 boolean enabledBefore = ssComboBox.isVisible();

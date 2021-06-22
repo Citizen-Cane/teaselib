@@ -24,6 +24,7 @@
 #include <NativeObject.h>
 
 #include <teaselib_core_texttospeech_implementation_TeaseLibTTS.h>
+#include <teaselib_core_texttospeech_NativeVoice.h>
 
 #include "SpeechSynthesizer.h"
 #include "Voice.h"
@@ -235,5 +236,21 @@ extern "C"
 		SpeechSynthesizer* speechSynthesizer = NativeInstance::get<SpeechSynthesizer>(env, jthis);
         delete speechSynthesizer;
     }
+
+
+	////////
+
+
+	/*
+	 * Class:     teaselib_core_texttospeech_NativeVoice
+	 * Method:    dispose
+	 * Signature: ()V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_NativeVoice_dispose
+	(JNIEnv* env, jobject jthis)
+	{
+		Voice* voice = NativeInstance::get<Voice>(env, jthis);
+		delete voice;
+	}
 
 }

@@ -8,6 +8,8 @@
 class Voice : public NativeObject {
 public:
 	Voice(JNIEnv* env);
+	virtual ~Voice();
+
 protected:
 	jobject getGenderField(const char* gender);
 	jobject getGenderField(const wchar_t* gender);

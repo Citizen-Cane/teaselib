@@ -28,9 +28,10 @@ public:
     void stop();
 
 private:
-	jobject enumerate_voices(jobject jthis) override;
+	void enumerate_voices(jobject jthis, std::vector<NativeObject*>& voices) override;
 	HRESULT addVoices(jobject jthis, const wchar_t* pszCatName, std::vector<NativeObject*>& voices);
 
 	ISpVoice *pVoice;
 	Lexicon lexicon;
 };
+

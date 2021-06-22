@@ -70,6 +70,9 @@ public class SectionRenderer implements Closeable {
     public void close() {
         executor.shutdown();
         executor.getQueue().drainTo(new ArrayList<>());
+        if (textToSpeechPlayer != null) {
+            textToSpeechPlayer.close();
+        }
     }
 
     public MediaRenderer.Threaded say(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {

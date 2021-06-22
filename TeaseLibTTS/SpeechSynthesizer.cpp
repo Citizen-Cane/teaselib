@@ -1,4 +1,7 @@
 #include "stdafx.h"
+
+#include <JNIUtilities.h>
+
 #include "SpeechSynthesizer.h"
 
 SpeechSynthesizer::SpeechSynthesizer(JNIEnv* env)
@@ -14,9 +17,11 @@ SpeechSynthesizer::~SpeechSynthesizer()
 	}
 }
 
-jobject SpeechSynthesizer::voices(jobject jthis) {
+jobject SpeechSynthesizer::voices(jobject jthis)
+{
 	if (!jvoices) {
-		jvoices = env->NewGlobalRef(enumerate_voices(jthis));
+		 enumerate_voices(jthis, cached_voices);
+		 jvoices = env->NewGlobalRef(JNIUtilities::asList(env, cached_voices));
 	}
 	return jvoices;
 }

@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.time.Instant;
@@ -139,7 +138,7 @@ public class TeaseLib implements Closeable {
         Set<String> javaProperties = new LinkedHashSet<>(
                 Arrays.asList("java.vm.name", "java.runtime.version", "os.name", "os.arch"));
 
-        StringBuilder javaVersion = new StringBuilder();
+        var javaVersion = new StringBuilder();
         for (String name : javaProperties) {
             String property = System.getProperties().getProperty(name);
             if (property != null) {
@@ -173,7 +172,7 @@ public class TeaseLib implements Closeable {
 
         try (URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();) {
             Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
-            Method method = classLoaderClass.getDeclaredMethod("addURL", URL.class);
+            var method = classLoaderClass.getDeclaredMethod("addURL", URL.class);
             method.setAccessible(true);
             method.invoke(classLoader, scriptClassPath.toURI().toURL());
             logger.info("Added class path {}", scriptClassPath.getAbsolutePath());
@@ -182,7 +181,7 @@ public class TeaseLib implements Closeable {
     }
 
     public static void run(Host host, Persistence persistence, Setup setup, String script) throws IOException {
-        try (TeaseLib teaseLib = new TeaseLib(host, persistence, setup)) {
+        try (var teaseLib = new TeaseLib(host, persistence, setup)) {
             teaseLib.run(script);
         } catch (IOException e) {
             throw e;
@@ -196,7 +195,7 @@ public class TeaseLib implements Closeable {
         host.show();
         try {
             logger.info("Running script {}", scriptName);
-            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            var contextClassLoader = Thread.currentThread().getContextClassLoader();
             @SuppressWarnings("unchecked")
             Class<RunnableScript> scriptClass = (Class<RunnableScript>) contextClassLoader.loadClass(scriptName);
             RunnableScript script = script(scriptClass);
@@ -236,9 +235,16 @@ public class TeaseLib implements Closeable {
 
     @Override
     public void close() {
-        globals.close();
-        if (host instanceof Closeable) {
-            ((Closeable) host).close();
+        boolean isInterrupted = Thread.interrupted();
+        try {
+            globals.close();
+            if (host instanceof Closeable) {
+                ((Closeable) host).close();
+            }
+        } finally {
+            if (isInterrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -370,7 +376,7 @@ public class TeaseLib implements Closeable {
     }
 
     public TimeOfDay timeOfDay() {
-        LocalTime now = localTime(getTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS);
+        var now = localTime(getTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS);
         return new TimeOfDayImpl(now);
     }
 
@@ -727,7 +733,7 @@ public class TeaseLib implements Closeable {
         public T value() {
             T any = defaultValue;
             if (persistence.has(name)) {
-                String valueAsString = persistence.get(name);
+                var valueAsString = persistence.get(name);
                 @SuppressWarnings({ "unchecked", "static-access" })
                 T value = (T) any.valueOf(any.getClass(), valueAsString);
                 if (value == null) {
@@ -836,7 +842,7 @@ public class TeaseLib implements Closeable {
     }
 
     public TextVariables getTextVariables(String domain, Locale locale) {
-        TextVariables variables = new TextVariables();
+        var variables = new TextVariables();
         variables.setUserIdentity(this, domain, locale);
         variables.setAll(persistence.getTextVariables(locale));
         return variables;
@@ -954,7 +960,7 @@ public class TeaseLib implements Closeable {
                     if (!ItemGuid.isGuid(state.item.toString())
                             && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
                         temporaryItems.addAll(state.peers().stream().filter(guid -> guid instanceof ItemGuid)
-                                .map(guid -> (ItemGuid) guid).map(guid -> getItem(domain, state.item, guid.name()))
+                                .map(ItemGuid.class::cast).map(guid -> getItem(domain, state.item, guid.name()))
                                 .collect(Collectors.toList()));
                     }
                 }
@@ -985,7 +991,7 @@ public class TeaseLib implements Closeable {
     }
 
     public Item getItem(String domain, Object item, String guid) {
-        Item match = findItem(domain, item, guid);
+        var match = findItem(domain, item, guid);
         if (match == Item.NotFound) {
             throw new NoSuchElementException(
                     "Item " + QualifiedName.of(domain, QualifiedName.NONE, item.toString()) + ":" + guid);

@@ -2,7 +2,6 @@ package teaselib.core.texttospeech;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -15,12 +14,13 @@ import java.util.Set;
 
 import teaselib.Sexuality.Gender;
 import teaselib.core.AudioSync;
+import teaselib.core.Closeable;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 import teaselib.core.texttospeech.implementation.Unsupported;
 import teaselib.core.util.ExceptionUtil;
 
-public class TextToSpeech {
+public class TextToSpeech implements Closeable {
     public static final Voice None = new Voice() {
 
         @Override
@@ -116,10 +116,10 @@ public class TextToSpeech {
     }
 
     private void addImplementation(Class<?> ttsClass) {
-        DelegateExecutor delegateThread = newDelegateExecutor(ttsClass.getSimpleName());
+        var delegateThread = newDelegateExecutor(ttsClass.getSimpleName());
 
         delegateThread.run(() -> {
-            Method getInstance = ttsClass.getDeclaredMethod("newInstance");
+            var getInstance = ttsClass.getDeclaredMethod("newInstance");
             TextToSpeechImplementation newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
             addSDK(newTTS, delegateThread);
         });
@@ -211,7 +211,7 @@ public class TextToSpeech {
     }
 
     public String speak(Voice voice, String prompt, File file, String[] hints) throws IOException {
-        StringBuilder soundFilePath = new StringBuilder();
+        var soundFilePath = new StringBuilder();
         TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
@@ -248,7 +248,7 @@ public class TextToSpeech {
     }
 
     private static void run(TextToSpeechImplementation tts, DelegateExecutor.Runnable delegate) {
-        DelegateExecutor delegateExecutor = ttsExecutors.get(tts.sdkName());
+        var delegateExecutor = ttsExecutors.get(tts.sdkName());
         delegateExecutor.run(delegate);
     }
 
@@ -291,4 +291,15 @@ public class TextToSpeech {
             throwIOException(e);
         }
     }
+
+    @Override
+    public void close() {
+        for (Entry<String, DelegateExecutor> entry : ttsExecutors.entrySet()) {
+            String key = entry.getKey();
+            DelegateExecutor executorService = entry.getValue();
+            executorService.run(ttsSDKs.get(key)::close);
+            executorService.shutdown();
+        }
+    }
+
 }

@@ -9,7 +9,6 @@
 #include <sphelper.h>
 
 #include <COMException.h>
-#include <JNIUtilities.h>
 #include <Language.h>
 
 #include "SpSpeechSynthesizer.h"
@@ -54,13 +53,11 @@ SpSpeechSynthesizer::~SpSpeechSynthesizer() {
     pVoice = nullptr;
 }
 
-jobject SpSpeechSynthesizer::enumerate_voices(jobject jthis) {
-	vector<NativeObject*> voices;
+void SpSpeechSynthesizer::enumerate_voices(jobject jthis, vector<NativeObject*>& voices) {
 	for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
 		HRESULT hr = addVoices(jthis, voiceCategories[i], voices );
 		if (FAILED(hr)) throw COMException(hr);
 	}
-	return env->NewGlobalRef(JNIUtilities::asList(env, voices));
 }
 
 HRESULT SpSpeechSynthesizer::addVoices(jobject jthis, const wchar_t* pszCatName, vector<NativeObject*>& voices) {

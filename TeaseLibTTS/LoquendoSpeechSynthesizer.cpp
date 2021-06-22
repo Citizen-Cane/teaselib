@@ -46,9 +46,8 @@ LoquendoSpeechSynthesizer::~LoquendoSpeechSynthesizer()
     dispose();
 }
 
-jobject LoquendoSpeechSynthesizer::enumerate_voices(jobject jttsImpl)
+void LoquendoSpeechSynthesizer::enumerate_voices(jobject jttsImpl, vector<NativeObject*>& voices)
 {
-    vector<NativeObject*> voices;
     char* id = 0;
     ttsHandleType phEnum = nullptr;
     checkResult(ttsEnumFirst(&phEnum, hSession, ttsQueryType::TTSOBJECTVOICE, nullptr, &id));
@@ -76,7 +75,6 @@ jobject LoquendoSpeechSynthesizer::enumerate_voices(jobject jttsImpl)
         checkResult(ttsEnumNext(phEnum, &id));
     }
     checkResult(ttsEnumClose(phEnum));
-    return JNIUtilities::asList(env, voices);
 }
 
 

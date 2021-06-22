@@ -71,6 +71,13 @@ public class ScriptRenderer implements Closeable {
 
     @Override
     public void close() {
+        var actor = currentActor;
+        if (actor != null) {
+            var textToSpeechPlayer = sectionRenderer.textToSpeechPlayer;
+            if (textToSpeechPlayer != null && textToSpeechPlayer.hasTTSVoice(actor)) {
+                textToSpeechPlayer.stop(actor);
+            }
+        }
         scriptFunctionExecutor.shutdown();
         inputMethodExecutor.shutdown();
         renderQueue.getExecutorService().shutdown();

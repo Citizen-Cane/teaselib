@@ -27,11 +27,12 @@ import teaselib.Message;
 import teaselib.MessagePart;
 import teaselib.core.AbstractMessage;
 import teaselib.core.AudioSync;
+import teaselib.core.Closeable;
 import teaselib.core.ResourceLoader;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.util.ExceptionUtil;
 
-public class TextToSpeechPlayer {
+public class TextToSpeechPlayer implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechPlayer.class);
 
     private static final String SIMULATED_SPEECH_TAG = "SimulatedSpeech=";
@@ -216,7 +217,7 @@ public class TextToSpeechPlayer {
     public void loadActorVoiceProperties(ResourceLoader resources) {
         if (!loadedActorVoiceProperties.contains(resources)) {
             loadedActorVoiceProperties.add(resources);
-            ActorVoices voiceAssignments = new ActorVoices(resources);
+            var voiceAssignments = new ActorVoices(resources);
             for (String actorKey : voiceAssignments.keySet()) {
                 String voiceGuid = voiceAssignments.getGuid(actorKey);
                 Optional<PreRecordedVoice> preRecordedVoice = getPrerecordedVoice(resources, actorKey, voiceGuid);
@@ -261,7 +262,7 @@ public class TextToSpeechPlayer {
     }
 
     public void useTTSVoice(String actorKey, String voiceGuid) {
-        Voice voice = voices.get(voiceGuid);
+        var voice = voices.get(voiceGuid);
         if (voice != null) {
             logger.info("Actor key={}: using TTS voice '{}'", actorKey, voiceGuid);
             actorKey2TTSVoice.put(actorKey, voice);
@@ -296,7 +297,7 @@ public class TextToSpeechPlayer {
         ensureNotPrerecordedVoice(actor);
         ensureVoiceNotAcquired(voiceGuid);
 
-        if (voiceGuid != null && voiceGuid != ACQUIRE_VOICE_ON_FIRST_USE) {
+        if (voiceGuid != null && !ACQUIRE_VOICE_ON_FIRST_USE.equals(voiceGuid)) {
             useTTSVoice(actor.key, voiceGuid);
             return getVoiceFor(actor);
         } else {
@@ -344,8 +345,8 @@ public class TextToSpeechPlayer {
         }
         // Partial match: language only
         for (Voice voice : genderFilteredVoices) {
-            String voiceLanguage = voice.locale().substring(0, 2);
-            String actorLanguage = actor.locale().getLanguage();
+            var voiceLanguage = voice.locale().substring(0, 2);
+            var actorLanguage = actor.locale().getLanguage();
             if (voiceLanguage.equals(actorLanguage) && !used(voice)) {
                 useVoice(actor, voice);
                 return voice;
@@ -414,7 +415,7 @@ public class TextToSpeechPlayer {
     public void speak(Actor actor, String prompt, String mood) throws InterruptedException {
         ensureNotPrerecordedVoice(actor);
 
-        Voice voice = getVoiceFor(actor);
+        var voice = getVoiceFor(actor);
         if (voice != TextToSpeech.None) {
             try {
                 // TODO consuming exception renders TextToSpeechPlayerTest.testTextTOSpeechPlayerPhonemeDictionarySetup
@@ -431,8 +432,8 @@ public class TextToSpeechPlayer {
         }
     }
 
-    public String speak(Actor actor, String prompt, String mood, File file) throws InterruptedException {
-        Voice voice = getVoiceFor(actor);
+    public String speak(Actor actor, String prompt, String mood, File file) {
+        var voice = getVoiceFor(actor);
         if (voice != TextToSpeech.None) {
             try {
                 return textToSpeech.speak(voice, pronunciationDictionary.correct(voice, prompt), file,
@@ -475,7 +476,7 @@ public class TextToSpeechPlayer {
     }
 
     private static AbstractMessage simulatedSpeechMessage(AbstractMessage message) {
-        AbstractMessage speechMessage = new AbstractMessage();
+        var speechMessage = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
                 speechMessage.add(part);
@@ -503,7 +504,7 @@ public class TextToSpeechPlayer {
     }
 
     AbstractMessage speechMessage(AbstractMessage message) {
-        AbstractMessage speechMessage = new AbstractMessage();
+        var speechMessage = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
                 speechMessage.add(part);
@@ -580,7 +581,7 @@ public class TextToSpeechPlayer {
         } else {
             String path = actorKey2SpeechResourcesLocation.get(actor.key) + TextToSpeechRecorder.getHash(message) + "/";
             List<String> speechResources = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(
+            try (var reader = new BufferedReader(
                     new InputStreamReader(resources.get(path + TextToSpeechRecorder.ResourcesFilename)));) {
                 String soundFile = null;
                 while ((soundFile = reader.readLine()) != null) {
@@ -602,4 +603,10 @@ public class TextToSpeechPlayer {
             throw new IllegalStateException("Prerecorded voice available");
         }
     }
+
+    @Override
+    public void close() {
+        textToSpeech.close();
+    }
+
 }

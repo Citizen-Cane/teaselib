@@ -552,13 +552,13 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         updateLastUsed(this.duration);
     }
 
-    private void updateLastUsed(Duration duration) {
+    public void updateLastUsed(Duration duration) {
         if (!Domain.LAST_USED.equals(domain)) {
             updateLastUsed(new FrozenDuration(stateMaps.teaseLib, duration));
         }
     }
 
-    private void updateLastUsed() {
+    public void updateLastUsed() {
         if (!Domain.LAST_USED.equals(domain)) {
             long now = stateMaps.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT);
             // TODO update with actual duration value

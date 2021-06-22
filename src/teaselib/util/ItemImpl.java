@@ -19,6 +19,7 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.Storage;
 
 /**
@@ -189,7 +190,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
         state.applyTo(this.guid);
         applyMyAttributesTo(state);
-
+        updateLastUsedGuidState();
         return this;
     }
 
@@ -210,7 +211,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         applyMyAttributesTo(state);
         state.applyTo(this.guid);
         state.applyTo(flattenedPeers);
-
+        updateLastUsedGuidState();
         return this;
     }
 
@@ -269,6 +270,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             if (state.peers().isEmpty()) {
                 state.remove();
             }
+            updateLastUsedGuidState(duration());
         } else {
             throw new IllegalStateException("This item is not applied: " + guid);
         }
@@ -293,6 +295,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             if (state.peers().isEmpty()) {
                 state.remove();
             }
+            updateLastUsedGuidState(duration());
         } else {
             throw new IllegalStateException("This item is not applied: " + guid);
         }
@@ -310,6 +313,20 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
         state.removeFrom(this.guid);
         return true;
+    }
+
+    private void updateLastUsedGuidState() {
+        lastUsed().updateLastUsed();
+    }
+
+    private void updateLastUsedGuidState(Duration duration) {
+        lastUsed().updateLastUsed(duration);
+    }
+
+    private StateImpl lastUsed() {
+        var itemGuid = ReflectionUtils.qualified(QualifiedItem.of(value).toString(), guid.name());
+        var lastUsed = (StateImpl) teaseLib.state(TeaseLib.DefaultDomain, itemGuid);
+        return lastUsed;
     }
 
     private Stream<StateImpl> defaultStates() {
@@ -354,7 +371,11 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public long removed(TimeUnit unit) {
-        return state(value).removed(unit);
+        if (applied()) {
+            return 0;
+        } else {
+            return lastUsed().removed(unit);
+        }
     }
 
     @Override

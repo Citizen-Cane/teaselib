@@ -171,6 +171,40 @@ public class DurationTest {
     }
 
     @Test
+    public void testItemDurationForDifferentItemsOfSameKind() {
+        TimeUnit unit = TimeUnit.HOURS;
+        FrozenDuration neverApplied = new FrozenDuration(script.teaseLib, 0, 0, TimeUnit.HOURS);
+
+        script.debugger.freezeTime();
+        Item item1 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Cage).get();
+        Item item2 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).get();
+
+        assertEquals("Removed since for item1", neverApplied.since(unit), item1.removed(unit));
+        assertEquals("Removed since for item2", neverApplied.since(unit), item2.removed(unit));
+
+        item1.apply();
+        script.debugger.advanceTime(4, unit);
+        assertEquals("Removed since for item1", 0, item1.removed(unit));
+
+        item1.remove();
+        assertEquals("Removed since for item1", 0, item1.removed(unit));
+
+        script.debugger.advanceTime(1, unit);
+
+        item2.apply();
+        script.debugger.advanceTime(1, unit);
+        assertEquals("Removed since for item2", 0, item2.removed(unit));
+
+        item2.remove();
+        assertEquals("Removed since for item1", 2, item1.removed(unit));
+        assertEquals("Removed since for item2", 0, item2.removed(unit));
+
+        script.debugger.advanceTime(2, unit);
+        assertEquals("Removed since for item1", 4, item1.removed(unit));
+        assertEquals("Removed since for item2", 2, item2.removed(unit));
+    }
+
+    @Test
     public void testStateNotRemovedSince() {
         TimeUnit unit = SECONDS;
 

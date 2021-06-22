@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 class SliceCollector<T> {
     final Sequences<T> sequences;
@@ -33,6 +34,10 @@ class SliceCollector<T> {
         this.sequences = sequences;
     }
 
+    public int size() {
+        return sequences.size();
+    }
+
     public void add(T element) {
         throw new UnsupportedOperationException("Add " + element);
     }
@@ -40,13 +45,21 @@ class SliceCollector<T> {
     public void add(int index, T element) {
         sequences.get(index, () -> new Sequence<>(sequences.traits)).add(element);
         modified = true;
-        isEmpty = false;
+        isEmpty = sequences.isEmpty();
+    }
+
+    public Sequence<T> get(int index) {
+        return sequences.get(index);
     }
 
     public void set(int index, Sequence<T> sequence) {
         sequences.set(index, sequence);
         modified = true;
-        isEmpty = sequences.isEmpty(); // TODO refator into method, check on demand
+        isEmpty = sequences.isEmpty();
+    }
+
+    public Stream<Sequence<T>> stream() {
+        return sequences.stream();
     }
 
     Sequences<T> slice() {
@@ -96,6 +109,36 @@ class SliceCollector<T> {
             }
         }
         return disjunctWithoutLaterOccurrences;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (isEmpty ? 1231 : 1237);
+        result = prime * result + (modified ? 1231 : 1237);
+        result = prime * result + ((sequences == null) ? 0 : sequences.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        @SuppressWarnings("unchecked")
+        var other = (SliceCollector<T>) obj;
+        if (isEmpty != other.isEmpty)
+            return false;
+        if (sequences == null) {
+            if (other.sequences != null)
+                return false;
+        } else if (!sequences.equals(other.sequences))
+            return false;
+        return true;
     }
 
     @Override

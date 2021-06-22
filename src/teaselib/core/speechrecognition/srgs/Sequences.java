@@ -114,7 +114,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         for (int i = 0; i < size; i++) {
             Sequence<T> sequence = get(i);
             if (!sequence.isEmpty()) {
-                T element = sequence.get(0);
+                var element = sequence.get(0);
                 boolean othersStartWithElement = lookup.othersStartWith(element);
                 if (!othersStartWithElement) {
                     disjunct.add(i, element);
@@ -153,11 +153,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         if (disjunctWithoutLaterOccurrencesAtDistance.modified) {
             disjunctWithoutLaterOccurrencesAtDistance.modified = false;
-            if (!disjunctWithoutLaterOccurrencesAtDistance.sequences.equals(disjunct.sequences)) {
+            if (!disjunctWithoutLaterOccurrencesAtDistance.equals(disjunct)) {
                 sliceDisjunctVariation(candidates, soFar, disjunctWithoutLaterOccurrencesAtDistance.sequences);
             }
         }
-
     }
 
     private void sliceDisjunctVariation(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar,
@@ -262,7 +261,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             if (sequence.size() >= length) {
                 List<T> startElements = sequence.subList(0, length);
                 if (lookup.othersStartWith(startElements)) {
-                    common.sequences.set(i, new Sequence<>(startElements, traits));
+                    common.set(i, new Sequence<>(startElements, traits));
                     success = true;
                 }
             }
@@ -274,9 +273,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Sequences<T> commonSlice = common.gather();
 
         Set<Sequence<T>> remove = null;
-        int size = common.sequences.size();
+        int size = common.size();
         for (int i = 0; i < size; i++) {
-            Sequence<T> sequence = common.sequences.get(i);
+            Sequence<T> sequence = common.get(i);
             for (Sequence<T> sequence2 : commonSlice) {
                 if (get(i).matchesAt(sequence2, sequence.size())) {
                     if (remove == null) {
@@ -293,7 +292,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         } else {
             var shorter = new SliceCollector<>(size, traits);
             for (int i = 0; i < size; i++) {
-                Sequence<T> sequence = common.sequences.get(i);
+                Sequence<T> sequence = common.get(i);
                 if (remove.stream().anyMatch(e -> e.startsWith(sequence))) {
                     shorter.set(i, new Sequence<>(traits));
                 } else {
@@ -340,14 +339,14 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private Optional<Integer> maxCommonAfter(SliceCollector<T> sliceCollector) {
-        List<Integer> startIndices = sliceCollector.sequences.stream()
+        List<Integer> startIndices = sliceCollector.stream()
                 .map(sequence -> sequence != null && !sequence.isEmpty() ? sequence.size() : 0).collect(toList());
         Sequences<T> remaining = remaining(startIndices);
         return remaining.maxCommon(0, 1);
     }
 
     private Sequences<T> remaining(List<Integer> from) {
-        Sequences<T> remaining = new Sequences<>(size(), traits);
+        var remaining = new Sequences<>(size(), traits);
 
         for (int i = 0; i < size(); i++) {
             Sequence<T> sequence = get(i);

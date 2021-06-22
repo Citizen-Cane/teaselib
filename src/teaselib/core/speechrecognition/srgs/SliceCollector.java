@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.Map;
@@ -43,6 +43,12 @@ class SliceCollector<T> {
         isEmpty = false;
     }
 
+    public void set(int index, Sequence<T> sequence) {
+        sequences.set(index, sequence);
+        modified = true;
+        isEmpty = sequences.isEmpty(); // TODO refator into method, check on demand
+    }
+
     Sequences<T> slice() {
         List<Sequence<T>> elements = sequences.stream().filter(Objects::nonNull).filter(Sequence::nonEmpty)
                 .map(element -> new Sequence<>(element, sequences.traits)).collect(toList());
@@ -79,11 +85,11 @@ class SliceCollector<T> {
 
     SliceCollector<T> without(Set<T> symbols) {
         int size = sequences.size();
-        SliceCollector<T> disjunctWithoutLaterOccurrences = new SliceCollector<>(size, sequences.traits);
+        var disjunctWithoutLaterOccurrences = new SliceCollector<>(size, sequences.traits);
         for (int i = 0; i < size; i++) {
             Sequence<T> sequence = sequences.get(i);
             if (sequence != null) {
-                T disjunctElement = sequence.get(0);
+                var disjunctElement = sequence.get(0);
                 if (!symbols.contains(disjunctElement)) {
                     disjunctWithoutLaterOccurrences.add(i, disjunctElement);
                 }

@@ -1,11 +1,16 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.srgs.PhraseString.*;
-import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.*;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
+import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.prettyPrint;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -784,6 +789,26 @@ public class PhrasesSliceTest {
         assertEquals(3, optimal.size());
         assertEquals(1, optimal.rating.duplicatedSymbols);
         assertEquals(4, optimal.rating.maxCommonness);
+    }
+
+    private PhraseStringSequences choices(String... answers) {
+        List<Sequence<PhraseString>> choices = new ArrayList<>();
+        for (var answer : answers) {
+            choices.add(choice(answer, choices.size()));
+        }
+        return new PhraseStringSequences(choices);
+    }
+
+    @Test
+    public void testLongComputeTimeAndOutOfMemory() {
+        PhraseStringSequences choices = choices( //
+                "A B, F G H", "A B, G H", "A B, G", "A B", "C, F G H, A B", "C, G H, A B", "C, G, A B",
+                "U V W X Y Z, G H");
+        SlicedPhrases<PhraseString> optimal = slice(choices);
+
+        assertEquals(5, optimal.size());
+        assertEquals(2, optimal.rating.duplicatedSymbols);
+        assertEquals(7, optimal.rating.maxCommonness);
     }
 
 }

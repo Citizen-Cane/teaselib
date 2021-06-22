@@ -1,8 +1,8 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static java.lang.Math.min;
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -228,11 +228,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     break;
                 } else {
                     SliceCollector<T> shorter = computeShorterCommmon(common);
-                    if (shorter != null) {
+                    if (shorter != null && !shorter.isEmpty) {
                         SlicedPhrases<T> soFarClone = soFar.clone(traits);
                         soFarClone.addCompact(shorter.gather());
 
-                        Sequences<T> withoutElement = new Sequences<>(this);
+                        var withoutElement = new Sequences<>(this);
                         withoutElement.removeCommon(shorter.sequences);
                         SlicedPhrases<T> candidate = withoutElement.slice(candidates, soFarClone);
                         candidates.add(candidate);
@@ -291,15 +291,16 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         if (remove == null) {
             return null;
         } else {
-            Sequences<T> shorter = new Sequences<>(traits);
+            var shorter = new SliceCollector<>(size, traits);
             for (int i = 0; i < size; i++) {
                 Sequence<T> sequence = common.sequences.get(i);
-                shorter.add(sequence);
                 if (remove.stream().anyMatch(e -> e.startsWith(sequence))) {
                     shorter.set(i, new Sequence<>(traits));
+                } else {
+                    shorter.set(i, sequence);
                 }
             }
-            return new SliceCollector<>(shorter);
+            return shorter;
         }
     }
 

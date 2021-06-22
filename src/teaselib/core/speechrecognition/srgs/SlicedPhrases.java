@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,7 +58,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
 
         @Override
         public String toString() {
-            StringBuilder rating = new StringBuilder();
+            var rating = new StringBuilder();
             rating.append("Rating=[Cmax=");
             rating.append(maxCommonness);
             rating.append(" ");
@@ -331,7 +331,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         if (rating.isInvalidated()) {
             return "dropped";
         } else {
-            StringBuilder phrases = new StringBuilder();
+            var phrases = new StringBuilder();
             phrases.append(rating.toString());
             phrases.append("\n");
             phrases.append("Cmax=");

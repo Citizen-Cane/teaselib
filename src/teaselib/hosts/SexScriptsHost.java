@@ -1,5 +1,8 @@
 package teaselib.hosts;
 
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
+
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -124,7 +127,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private final ExecutorService showChoicesThreadPool = NamedExecutorService.singleThreadedQueue("Show-Popup");
 
     private final InputMethod inputMethod;
-    private Choices activeChoices;
+    private Set<String> activeChoices;
 
     private boolean intertitleActive = false;
 
@@ -486,14 +489,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             repaintText = false;
             EventQueue.invokeLater(() -> show(html()));
         } else if (repaintImage && repaintText) {
-            preapreCurrentImage();
+            prepareCurrentImage();
             repaintText = false;
             EventQueue.invokeLater(() -> {
                 show(currentBackgroundImage);
                 showCurrentText();
             });
         } else if (repaintImage) {
-            preapreCurrentImage();
+            prepareCurrentImage();
             EventQueue.invokeLater(() -> show(currentBackgroundImage));
         } else if (repaintText) {
             repaintText = false;
@@ -501,7 +504,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         }
     }
 
-    private void preapreCurrentImage() {
+    private void prepareCurrentImage() {
         var bounds = getContentBounds(mainFrame);
         if (currentImage != null) {
             currentBackgroundImage = render(currentImage, currentPose, bounds);
@@ -751,6 +754,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
+        this.activeChoices = choices.stream().map(Choice::getDisplay).collect(toSet());
         // open the combo box pop-up if necessary in order to
         // allow the user to read prompts without mouse/touch interaction
         var showPopupTask = new ShowPopupTask(ssComboBox);
@@ -766,7 +770,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 () -> new Prompt.Result(ss.getSelectedValue(null, choices.toDisplay())));
         Prompt.Result result;
         showChoicesThreadPool.execute(showChoices);
-        this.activeChoices = choices;
         try {
             result = showChoices.get();
             if (showPopup) {
@@ -825,37 +828,57 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             }
         }
 
+        enable(uiComponents, false);
         activeChoices = null;
-        disableAllButtons();
     }
 
-    private void disableAllButtons() {
-        List<JComponent> buttons = new ArrayList<>();
-        buttons.add(ssButton);
-        buttons.addAll(ssButtons);
-        buttons.add(ssComboBox);
-        enable(buttons, false);
-    }
+    // TODO UI components are always visible at first:
+    // - because SexScripts defines the initial visibility,
+    // instead of using initial updateUI event
 
     private void enableButtons(boolean enabled) {
-        if (activeChoices != null) {
-            int count = activeChoices.size();
-            // No clue what the single button is used for
-            if (ssComboBox.getModel().getSize() == 0) {
-                List<? extends JComponent> subList = ssButtons.subList(0, count);
-                enable(subList, enabled);
-            } else {
-                boolean enabledBefore = ssComboBox.isVisible();
-                enable(Collections.singletonList(ssComboBox), enabled);
-                if (!enabledBefore && enabled) {
-                    var showPopupTask = new ShowPopupTask(ssComboBox);
-                    showPopupThreadPool.execute(showPopupTask.task);
-                }
-            }
+        Set<JComponent> activeComponents = activeComponents();
+        boolean popupCombobox = activeComponents.contains(ssComboBox) && ssComboBox.isVisible();
+
+        enable(activeComponents, enabled);
+        var unusedComponents = uiComponents.stream().filter(not(activeComponents::contains)).collect(toSet());
+        enable(unusedComponents, false);
+
+        if (!popupCombobox && enabled) {
+            var showPopupTask = new ShowPopupTask(ssComboBox);
+            showPopupThreadPool.execute(showPopupTask.task);
         }
     }
 
-    private void enable(List<? extends JComponent> elements, boolean enabled) {
+    private Set<JComponent> activeComponents() {
+        if (activeChoices == null) {
+            return Collections.emptySet();
+        }
+        Set<JComponent> components = new HashSet<>();
+
+        ComboBoxModel<String> model = ssComboBox.getModel();
+        for (int j = 0; j < model.getSize(); j++) {
+            String text = model.getElementAt(j);
+            if (activeChoices.contains(text)) {
+                components.add(ssComboBox);
+                break;
+            }
+        }
+
+        for (JButton button : ssButtons) {
+            if (activeChoices.contains(button.getText())) {
+                components.add(button);
+            }
+        }
+
+        if (activeChoices.contains(ssButton.getText())) {
+            components.add(ssButton);
+        }
+
+        return components;
+    }
+
+    private void enable(Set<? extends JComponent> elements, boolean enabled) {
         elements.stream().forEach(c -> c.setVisible(enabled));
     }
 

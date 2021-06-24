@@ -1,13 +1,17 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -90,23 +94,124 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
-        slice(candidates, phrases, Objects::toString);
+        slice(candidates, withJoinedDuplicates(phrases), Objects::toString);
         return reduceNullRules(candidates.getResult());
     }
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases, Function<Sequences<T>, String> toString) {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
-        slice(candidates, phrases, toString);
+        slice(candidates, withJoinedDuplicates(phrases), toString);
         return reduceNullRules(candidates.getResult());
     }
 
     public static <T> SlicedPhrases<T> of(Sequences<T> phrases, List<SlicedPhrases<T>> results,
             Function<Sequences<T>, String> toString) {
-        slice(results, phrases, toString);
+        slice(results, withJoinedDuplicates(phrases), toString);
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         results.removeIf(candidate -> candidate.rating.isInvalidated());
         results.stream().forEach(candidates::add);
         return reduceNullRules(candidates.getResult());
+    }
+
+    static <T> Sequences<T> withJoinedDuplicates(Sequences<T> sequences) {
+
+        while (true) {
+            Set<String> symbols = new TreeSet<>(String::compareToIgnoreCase);
+            symbols.addAll(sequences.stream().flatMap(Sequence::stream).map(Objects::toString).collect(toSet()));
+            Map<String, String> used = new TreeMap<>(String::compareToIgnoreCase);
+            ignoreLastSymbols(sequences, symbols, used);
+            removeNonJoinable(sequences, symbols, used);
+            joinRemaining(sequences, symbols);
+            if (symbols.isEmpty()) {
+                break;
+            }
+        }
+
+        return sequences;
+    }
+
+    private static <T> void ignoreLastSymbols(Sequences<T> sequences, Set<String> symbols, Map<String, String> used) {
+        // remove last symbol in each sequence, since last symbols don't have next symbols
+        for (Sequence<T> sequence : sequences) {
+            var key = sequence.get(sequence.size() - 1).toString();
+            if (symbols.contains(key)) {
+                symbols.remove(key);
+                used.put(key, "");
+            }
+        }
+    }
+
+    private static <T> void removeNonJoinable(Sequences<T> sequences, Set<String> symbols, Map<String, String> used) {
+        Map<String, String> matches = new TreeMap<>(String::compareToIgnoreCase);
+
+        // Ignore first symbols since they don't have previous symbols
+        for (Sequence<T> sequence : sequences) {
+            used.put(sequence.get(0).toString(), "");
+        }
+
+        for (Sequence<T> sequence : sequences) {
+            for (int i = 0; i < sequence.size() - 1; i++) {
+                var t = sequences.traits.joinSequenceOperator.apply(sequence.subList(i, i + 2)).toString();
+                var first = sequence.get(i).toString();
+                var second = sequence.get(i + 1).toString();
+                if (symbols.contains(first)) {
+                    var existing = matches.get(first);
+                    if (existing == null) {
+                        var usedSymbol = used.get(second);
+                        if (usedSymbol == null) {
+                            matches.put(first, t);
+                            used.put(second, first);
+                        } else if (!usedSymbol.equalsIgnoreCase(first)) {
+                            remove(symbols, matches, first, usedSymbol);
+                        }
+                    } else if (!existing.equalsIgnoreCase(t)) {
+                        symbols.remove(first);
+                        matches.remove(first);
+                    } else {
+                        String usedSymbol = used.get(second);
+                        if (usedSymbol != null && !usedSymbol.equalsIgnoreCase(first)) {
+                            remove(symbols, matches, first, usedSymbol);
+                        }
+                    }
+                } else if (used.containsKey(second)) {
+                    remove(symbols, matches, first, second);
+                } else if (used.containsKey(first)) {
+                    // prepare to ignore matches that are successors of previously ignoreed symbols
+                    matches.put(first, second);
+                    used.put(second, first);
+                }
+            }
+        }
+
+        // Remove successors of previously ignored symbols
+        for (Entry<String, String> entry : used.entrySet()) {
+            if (entry.getValue().isBlank()) {
+                symbols.remove(entry.getKey());
+            }
+        }
+    }
+
+    private static <T> void joinRemaining(Sequences<T> sequences, Set<String> symbols) {
+        for (String symbol : symbols) {
+            for (Sequence<T> sequence : sequences) {
+                for (int i = 0; i < sequence.size() - 1; i++) {
+                    var t = sequence.get(i).toString();
+                    if (t.equalsIgnoreCase(symbol)) {
+                        List<T> elements = sequence.subList(i, i + 2);
+                        T joined = sequences.traits.joinSequenceOperator.apply(elements);
+                        sequence.set(i, joined);
+                        sequence.remove(i + 1);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void remove(Set<String> symbols, Map<String, String> matches, String symbol, String usedSymbol) {
+        symbols.remove(symbol);
+        matches.remove(symbol);
+        symbols.remove(usedSymbol);
+        matches.remove(usedSymbol);
     }
 
     static <T> void slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences,
@@ -144,16 +249,22 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
             Sequences<T> slice = slices.get(i);
             for (int k = 0; k < slice.size(); k++) {
                 Sequence<T> sequence = slice.get(k);
-                if (sequence.size() > 1) {
-                    Sequences<T> next = slices.get(i + 1);
-                    if (next.isJoinableWith(sequence)) {
+                Sequences<T> next = slices.get(i + 1);
+                if (next.isJoinableWith(sequence)) {
+                    if (sequence.size() == 1) {
+                        List<T> elements = sequence.traits.splitter.apply(sequence.get(0));
+                        if (elements.size() > 1) {
+                            sequence.set(0, elements.get(0));
+                            var moved = elements.subList(1, elements.size());
+                            next.add(new Sequence<>(moved, sequence.traits));
+                        }
+                    } else if (sequence.size() > 1) {
                         T remaining = sequence.remove(0);
                         Sequence<T> reduced = new Sequence<>(remaining, sequence.traits);
                         Sequence<T> moved = slice.set(k, reduced);
                         if (!join(moved, next, result)) {
                             next.add(moved);
                         }
-
                         if (join(reduced, slice, result)) {
                             slice.remove(reduced);
                             k--;

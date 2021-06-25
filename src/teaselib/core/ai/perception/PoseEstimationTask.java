@@ -27,7 +27,6 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
-import teaselib.core.util.ExceptionUtil;
 
 class PoseEstimationTask implements Callable<PoseAspects> {
     private static final int PROXIMITY_SENSOR_FRAMERATE_MILLIS = 500;
@@ -137,26 +136,20 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     public PoseAspects call() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                if (device == null) {
-                    device = submitAndGetResult(teaseLibAI::getCaptureDevice);
-                    if (device == null) {
-                        Thread.sleep(TeaseLibAI.CAPTURE_DEVICE_POLL_DURATION_MILLIS);
-                        continue;
-                    } else {
-                        device.start();
-                        humanPose = getModel(Interest.Status);
-                    }
-                }
+                device = awaitCaptureDevice();
+                device.start();
+                humanPose = getModel(Interest.Status);
                 estimatePoses();
+            } catch (SceneCapture.DeviceLost e) {
+                HumanPoseDeviceInteraction.logger.warn(e.getMessage());
+                device.stop();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } catch (ExecutionException e) {
-                var cause = ExceptionUtil.reduce(e);
-                logger.error(cause.getMessage(), cause);
             } catch (Throwable e) {
                 logger.error(e.getMessage(), e);
             }
         }
+
         if (humanPose != null) {
             submit(humanPose::close);
             humanPose = null;
@@ -168,18 +161,20 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         return PoseAspects.Unavailable;
     }
 
-    private void estimatePoses() throws InterruptedException, ExecutionException {
-        try {
-            while (!Thread.currentThread().isInterrupted()) {
-                estimatePose();
+    private SceneCapture awaitCaptureDevice() throws InterruptedException {
+        SceneCapture newDevice = null;
+        while (newDevice == null) {
+            newDevice = submitAndGetResult(teaseLibAI::getCaptureDevice);
+            if (newDevice == null) {
+                Thread.sleep(TeaseLibAI.CAPTURE_DEVICE_POLL_DURATION_MILLIS);
             }
-        } catch (SceneCapture.DeviceLost e) {
-            HumanPoseDeviceInteraction.logger.warn(e.getMessage());
-            device.stop();
-            device = submit(() -> teaseLibAI.awaitCaptureDevice()).get();
-            if (device == null) {
-                Thread.sleep(10000);
-            }
+        }
+        return newDevice;
+    }
+
+    private void estimatePoses() throws InterruptedException {
+        while (!Thread.currentThread().isInterrupted()) {
+            estimatePose();
         }
     }
 
@@ -187,7 +182,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         pause.set(task);
     }
 
-    public void estimatePose() throws InterruptedException, ExecutionException {
+    public void estimatePose() throws InterruptedException {
         pause.updateAndGet(task -> {
             task.run();
             return Noop;
@@ -217,9 +212,8 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         estimatePose(actor, previous, interests);
     }
 
-    private void estimatePose(Actor actor, PoseAspects previous, Set<Interest> interests)
-            throws InterruptedException, ExecutionException {
-        PoseAspects update = inferenceExecutor.submit(() -> getPoseAspects(interests, previous)).get();
+    private void estimatePose(Actor actor, PoseAspects previous, Set<Interest> interests) throws InterruptedException {
+        PoseAspects update = submitAndGetResult(() -> getPoseAspects(interests, previous));
         poseAspects.set(update);
         signal(actor, update, previous);
         if (update.is(HumanPose.Status.Stream)) {

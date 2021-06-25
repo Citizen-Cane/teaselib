@@ -399,8 +399,8 @@ public class TeaseLib implements Closeable {
     }
 
     public Duration duration(Daytime dayTime, long daysInTheFuture) {
-        LocalTime start = TimeOfDayImpl.getTime(timeOfDay());
-        LocalTime end = localTime((long) TimeOfDayImpl.hours(dayTime).average() * 60L, TimeUnit.MINUTES);
+        var start = TimeOfDayImpl.getTime(timeOfDay());
+        var end = localTime((long) TimeOfDayImpl.hours(dayTime).average() * 60L, TimeUnit.MINUTES);
 
         long durationMinutes = end.getHour() * 60 + end.getMinute() //
                 - start.getHour() * 60 - start.getMinute();
@@ -954,12 +954,12 @@ public class TeaseLib implements Closeable {
         List<Item> temporaryItems = new ArrayList<>();
         for (Entry<String, StateMapCache> domains : stateMaps.cache.entrySet()) {
             String domain = domains.getKey();
-            for (Entry<String, StateMap> namespace : domains.getValue().entrySet()) {
-                for (Entry<Object, State> entries : namespace.getValue().states.entrySet()) {
+            for (Entry<String, StateMap> namespace : new ArrayList<>(domains.getValue().entrySet())) {
+                for (Entry<Object, State> entries : new ArrayList<>(namespace.getValue().states.entrySet())) {
                     StateImpl state = (StateImpl) entries.getValue();
                     if (!ItemGuid.isGuid(state.item.toString())
                             && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        temporaryItems.addAll(state.peers().stream().filter(guid -> guid instanceof ItemGuid)
+                        temporaryItems.addAll(state.peers().stream().filter(ItemGuid.class::isInstance)
                                 .map(ItemGuid.class::cast).map(guid -> getItem(domain, state.item, guid.name()))
                                 .collect(Collectors.toList()));
                     }

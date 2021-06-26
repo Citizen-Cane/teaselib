@@ -64,6 +64,7 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
+import teaselib.core.ui.Prompt.Result;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.PropertyNameMappingPersistence;
@@ -118,6 +119,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private final List<JButton> ssButtons;
     private final JButton ssButton;
     private final JComboBox<String> ssComboBox;
+    private final ShowPopupTask showPopupTask;
     private final Set<JComponent> uiComponents = new HashSet<>();
 
     private final Image backgroundImage;
@@ -128,7 +130,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     private final InputMethod inputMethod;
     private Set<String> activeChoices;
-
+    private FutureTask<Prompt.Result> showChoices;
     private boolean intertitleActive = false;
 
     Runnable onQuitHandler = null;
@@ -158,6 +160,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             ssButtons = Arrays.asList(getField("buttons"));
             ssButton = getField("button");
             ssComboBox = getField("comboBox");
+            showPopupTask = new ShowPopupTask(ssComboBox);
 
             uiComponents.add(ssButton);
             uiComponents.addAll(ssButtons);
@@ -645,36 +648,39 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             clickableChoices.add(index, null);
         }
 
-        // Combobox
+        // Combobox items
         ComboBoxModel<String> model = ssComboBox.getModel();
         for (int j = 0; j < model.getSize(); j++) {
             int comboboxIndex = j;
             for (int index : new Interval(0, choices.size() - 1)) {
                 String text = model.getElementAt(j);
                 if (text.contains(Choice.getDisplay(choices.get(index)))) {
-                    clickableChoices.set(index, () -> ssComboBox.setSelectedIndex(comboboxIndex));
+                    clickableChoices.set(index, () -> {
+                        enable(Collections.singleton(ssComboBox), true);
+                        ssComboBox.setSelectedIndex(comboboxIndex);
+                    });
                 }
             }
         }
 
         List<JButton> buttons = new ArrayList<>(ssButtons.size() + 1);
         for (JButton button : ssButtons) {
-            if (button.isVisible()) {
-                buttons.add(button);
-            }
+            buttons.add(button);
         }
-        // TODO Only for ss timed button?
         buttons.add(ssButton);
 
         // Check pretty buttons for corresponding text
-        // There might be more buttons than expected,
-        // to display up to five choices
+        // There are five buttons to display up to five choices,
+        // depending on the available window width
         for (JButton button : buttons) {
             for (int index : new Interval(0, choices.size() - 1)) {
                 String buttonText = button.getText();
                 String choice = Choice.getDisplay(choices.get(index));
                 if (buttonText.contains(choice)) {
-                    clickableChoices.set(index, button::doClick);
+                    clickableChoices.set(index, () -> {
+                        enable(Collections.singleton(button), true);
+                        button.doClick();
+                    });
                 }
             }
         }
@@ -688,15 +694,41 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     @Override
     public boolean dismissChoices(List<Choice> choices) {
+        var dismissed = false;
         List<Runnable> clickableChoices = getClickableChoices(choices);
-        if (clickableChoices != null) {
+        if (clickableChoices != null && !clickableChoices.isEmpty()) {
             Runnable delegate = clickableChoices.get(0);
             if (delegate != null) {
-                delegate.run();
-                return true;
+                clickAnyButton(delegate);
+                dismissed = true;
             }
         }
-        return false;
+        enable(uiComponents, false);
+        activeChoices = null;
+        showChoices = null;
+        return dismissed;
+    }
+
+    private void clickAnyButton(Runnable dismiss) {
+        FutureTask<Result> choicesToBeDismissed = showChoices;
+        while (choicesToBeDismissed != null && !choicesToBeDismissed.isDone()) {
+            // Stupid trick to be able to actually click a combo item
+            if (showPopupTask.comboBox.isVisible()) {
+                showPopupTask.showPopup();
+            }
+
+            try {
+                dismiss.run();
+            } catch (Exception e1) {
+                throw ExceptionUtil.asRuntimeException(e1);
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) { // Ignore
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     class ShowPopupTask {
@@ -734,6 +766,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             });
         }
 
+        void awaitFinished() throws InterruptedException {
+            try {
+                task.get();
+            } catch (ExecutionException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+
         void cleanup() {
             java.awt.EventQueue.invokeLater(() -> {
                 if (resetPopupVisibility.get() && comboBox.isPopupVisible()) {
@@ -757,26 +797,20 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         this.activeChoices = choices.stream().map(Choice::getDisplay).collect(toSet());
         // open the combo box pop-up if necessary in order to
         // allow the user to read prompts without mouse/touch interaction
-        var showPopupTask = new ShowPopupTask(ssComboBox);
         boolean showPopup = choices.size() > 1;
         if (showPopup) {
             showPopupThreadPool.execute(showPopupTask.task);
         }
-        // getSelectedValue() won't throw InterruptedException,
-        // and won't clean up buttons
-        // -> Execute it in a separate thread, and
-        // cancel the same way as speech recognition
-        FutureTask<Prompt.Result> showChoices = new FutureTask<>(
-                () -> new Prompt.Result(ss.getSelectedValue(null, choices.toDisplay())));
+        showChoices = new FutureTask<>(() -> new Prompt.Result(ss.getSelectedValue(null, choices.toDisplay())));
         Prompt.Result result;
         showChoicesThreadPool.execute(showChoices);
         try {
             result = showChoices.get();
             if (showPopup) {
-                awaitFinished(showPopupTask);
+                showPopupTask.awaitFinished();
             }
         } catch (InterruptedException e) {
-            dismissPrompt(choices, showPopupTask, showChoices);
+            dismissChoices(choices);
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } catch (Exception e) {
@@ -784,52 +818,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             result = Prompt.Result.DISMISSED;
         } finally {
             showPopupTask.cleanup();
+            showChoices = null;
+            activeChoices = null;
+
         }
         return result;
-    }
-
-    private void awaitFinished(ShowPopupTask showPopupTask) throws InterruptedException {
-        try {
-            showPopupTask.task.get();
-        } catch (ExecutionException e) {
-            logger.error(e.getMessage(), e);
-        }
     }
 
     @Override
     public void updateUI(InputMethod.UiEvent event) {
         enableButtons(event.enabled);
-    }
-
-    private void dismissPrompt(Choices choices, ShowPopupTask showPopupTask, FutureTask<Prompt.Result> showChoices) {
-        List<Runnable> clickableChoices = getClickableChoices(choices);
-        if (!clickableChoices.isEmpty()) {
-            // Click any button
-            Runnable delegate = clickableChoices.get(0);
-            if (delegate != null) {
-                while (!showChoices.isDone()) {
-                    // Stupid trick to be able to actually click a combo item
-                    if (showPopupTask.comboBox.isVisible()) {
-                        showPopupTask.showPopup();
-                    }
-
-                    try {
-                        delegate.run();
-                    } catch (Exception e1) {
-                        throw ExceptionUtil.asRuntimeException(e1);
-                    }
-
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException ignored) { // Ignore
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
-        }
-
-        enable(uiComponents, false);
-        activeChoices = null;
     }
 
     // TODO UI components are always visible at first:

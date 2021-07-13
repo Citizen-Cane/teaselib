@@ -55,7 +55,6 @@ public class StateMapsPersistenceTest extends StateMaps {
     }
 
     final TestScript script;
-    final Persistence persistence;
     final TestParameter rememberState;
 
     enum TestParameter {
@@ -76,7 +75,6 @@ public class StateMapsPersistenceTest extends StateMaps {
     StateMapsPersistenceTest(TestScript script, TestParameter remember) {
         super(script.teaseLib);
         this.script = script;
-        persistence = script.persistence;
         rememberState = remember;
 
         script.teaseLib.freezeTime();

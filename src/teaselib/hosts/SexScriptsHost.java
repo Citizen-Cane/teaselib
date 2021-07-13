@@ -22,6 +22,7 @@ import java.awt.image.BufferedImageOp;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,12 +60,14 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Result;
+import teaselib.core.util.CachedPersistenceImpl;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.PropertyNameMappingPersistence;
@@ -137,11 +140,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     public static Host from(IScript script) {
         return new SexScriptsHost(script);
-    }
-
-    public static Persistence persistence(IScript script) {
-        return new PropertyNameMappingPersistence(new SexScriptsPersistence(script),
-                new SexScriptsPropertyNameMapping());
     }
 
     public SexScriptsHost(ss.IScript script) {
@@ -234,6 +232,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         });
 
         inputMethod = new HostInputMethod(NamedExecutorService.singleThreadedQueue(getClass().getSimpleName()), this);
+    }
+
+    @Override
+    public Persistence persistence(Configuration configuration) throws IOException {
+        var file = configuration.addPersistentConfigurationFile(
+                Paths.get(getLocation(Location.Host).getAbsolutePath(), "data.properties"));
+        return new PropertyNameMappingPersistence(new CachedPersistenceImpl(file), new SexScriptsPropertyNameMapping());
     }
 
     @Override
@@ -843,7 +848,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         enable(unusedComponents, false);
 
         if (!popupCombobox && enabled) {
-            var showPopupTask = new ShowPopupTask(ssComboBox);
             showPopupThreadPool.execute(showPopupTask.task);
         }
     }

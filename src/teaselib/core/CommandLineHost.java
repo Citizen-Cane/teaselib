@@ -9,11 +9,17 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.FileUtilities;
 import teaselib.util.AnnotatedImage;
 
 public class CommandLineHost implements Host {
+
+    @Override
+    public Persistence persistence(Configuration configuration) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public Audio audio(ResourceLoader resources, String path) {

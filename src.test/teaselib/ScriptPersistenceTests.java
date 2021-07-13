@@ -1,6 +1,9 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Optional;
 
@@ -49,7 +52,7 @@ public class ScriptPersistenceTests {
         script.set(TestValuesEnumClass.My_Test_Value_set_by_name.name(), "Saved as local enum by name");
         Optional<ConfigurationFile> scriptSettings = script.teaseLib.config.getUserSettings(script.namespace);
         assertTrue(scriptSettings.isPresent());
-        assertTrue(scriptSettings.get().containsKey(
+        assertTrue(scriptSettings.get().has(
                 QualifiedName.of(TeaseLib.DefaultDomain, script.namespace, "My_Test_Value_set_by_name").toString()));
         assertEquals("Saved as local enum by name",
                 script.getString(TestValuesEnumClass.My_Test_Value_set_by_name.name()));
@@ -62,7 +65,7 @@ public class ScriptPersistenceTests {
         assertNull(script.getString(TestValuesEnumClass.My_Test_Value_set_by_enum));
 
         script.set(TestValuesEnumClass.My_Test_Value_set_by_enum, "Saved by local enum");
-        Object expected = QualifiedName.of(TeaseLib.DefaultDomain, "ScriptPersistenceTests.TestValuesEnumClass",
+        QualifiedName expected = QualifiedName.of(TeaseLib.DefaultDomain, "ScriptPersistenceTests.TestValuesEnumClass",
                 "My_Test_Value_set_by_enum");
         assertTrue(script.storage.containsKey(expected));
     }

@@ -82,10 +82,6 @@ public class ExceptionUtil {
         return new RuntimeException(name + (message != null ? ": " + message : ""), t);
     }
 
-    public static RuntimeException asRuntimeException(Exception e) {
-        return asRuntimeException((Throwable) e);
-    }
-
     public static RuntimeException asRuntimeException(Exception e, String message) {
         if (e instanceof RuntimeException) {
             return (RuntimeException) e;

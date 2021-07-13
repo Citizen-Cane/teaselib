@@ -1,6 +1,9 @@
 package teaselib.core.configuration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,13 +26,12 @@ public class PersistentConfigurationFileTest {
     public void testIO() throws IOException {
         TestScript script = TestScript.getOne(new DebugSetup().withUserPath(folder.getRoot()));
         File settingsFolder = new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS);
-        settingsFolder.mkdir();
         File file = new File(settingsFolder, script.namespace + Configuration.PROPERTIES_EXTENSION);
-        assertFalse(file.exists());
 
         script.persistentBoolean("testVariableName").set(true);
-        Configuration config = script.teaseLib.config;
-        config.persistentConfigurationFiles.flush();
+        assertFalse(file.exists());
+        script.say("Write ony say");
+        script.teaseLib.config.close(); // flush files
         assertTrue(file.exists());
 
         Properties test = new Properties();
@@ -61,11 +63,11 @@ public class PersistentConfigurationFileTest {
             TestScript script = TestScript.getOne(setup);
             File file = new File(new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS),
                     script.namespace + ".properties");
-            assertFalse(file.exists());
 
             script.persistentBoolean("testVariableName").set(true);
-            Configuration config = script.teaseLib.config;
-            config.persistentConfigurationFiles.flush();
+            assertFalse(file.exists());
+            script.say("Write ony say");
+            script.teaseLib.config.close(); // flush files
             assertTrue(file.exists());
         }
 

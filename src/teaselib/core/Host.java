@@ -2,9 +2,11 @@ package teaselib.core;
 
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
 import teaselib.util.AnnotatedImage;
 
@@ -16,6 +18,9 @@ import teaselib.util.AnnotatedImage;
  *
  */
 public interface Host {
+
+    Persistence persistence(Configuration configuration) throws IOException;
+
     Audio audio(ResourceLoader resources, String path);
 
     /**

@@ -35,29 +35,21 @@ public class ConfigFileMapping implements Persistence {
 
     @Override
     public String get(QualifiedName name) {
-        if (persistence.has(name)) {
-            return persistence.get(name);
+        Optional<ConfigurationFile> properties = getConfigFile(name);
+        if (properties.isPresent()) {
+            return properties.get().get(name.toString());
         } else {
-            Optional<ConfigurationFile> properties = getConfigFile(name);
-            if (properties.isPresent()) {
-                return properties.get().get(name.toString());
-            } else {
-                return persistence.get(name);
-            }
+            return persistence.get(name);
         }
     }
 
     @Override
     public boolean getBoolean(QualifiedName name) {
-        if (persistence.has(name)) {
-            return persistence.getBoolean(name);
+        Optional<ConfigurationFile> properties = getConfigFile(name);
+        if (properties.isPresent()) {
+            return properties.get().getBoolean(name.toString());
         } else {
-            Optional<ConfigurationFile> properties = getConfigFile(name);
-            if (properties.isPresent()) {
-                return properties.get().getBoolean(name.toString());
-            } else {
-                return persistence.getBoolean(name);
-            }
+            return persistence.getBoolean(name);
         }
     }
 

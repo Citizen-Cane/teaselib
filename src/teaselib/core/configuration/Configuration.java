@@ -1,12 +1,13 @@
 package teaselib.core.configuration;
 
-import static java.util.Collections.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.Collections.singletonList;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 
+import teaselib.core.Closeable;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
@@ -33,20 +36,20 @@ import teaselib.core.util.ReflectionUtils;
  * @author Citizen-Cane
  *
  */
-public class Configuration {
+public class Configuration implements Closeable {
     static final String DEFAULTS = ReflectionUtils.absolutePath(Configuration.class) + "defaults/";
 
     static final String SCRIPT_SETTINGS = "Script Settings";
     static final String PROPERTIES_EXTENSION = ".properties";
 
     private final Map<String, ConfigurationFile> userPropertiesNamespaceMapping = new HashMap<>();
-    final PersistentConfigurationFiles persistentConfigurationFiles = new PersistentConfigurationFiles();
+    final PersistentConfigurationFileStoreService persistentConfigurationFiles = new PersistentConfigurationFileStoreService();
 
     private final List<ConfigurationFile> defaultProperties = new ArrayList<>();
     private final ConfigurationFile sessionProperties = new ConfigurationFile();
     private ConfigurationFile persistentProperties;
 
-    private Optional<File> scriptSettingsFolder = null;
+    private Optional<File> scriptSettingsFolder = Optional.empty();
 
     public Configuration() {
         this.persistentProperties = sessionProperties;
@@ -57,9 +60,13 @@ public class Configuration {
         setup.applyTo(this);
     }
 
+    public PersistentConfigurationFile addPersistentConfigurationFile(Path path) throws IOException {
+        return persistentConfigurationFiles.openFile(path);
+    }
+
     public void add(String defaults, String properties, File userPath) throws IOException {
         add(defaults + properties);
-        File userConfig = new File(userPath, properties);
+        var userConfig = new File(userPath, properties);
         initUserFileWithDefaults(defaults + properties, userConfig);
         add(userConfig);
     }
@@ -92,7 +99,7 @@ public class Configuration {
         if (namespaceAlreadyRegistered(namespaces)) {
             throw new IllegalArgumentException("Namespace already registered: " + namespaces);
         } else {
-            ConfigurationFile configurationFile = new ConfigurationFile();
+            var configurationFile = new ConfigurationFile();
             if (defaults.isPresent()) {
                 try (InputStream stream = getClass().getResourceAsStream(defaults.get() + resource)) {
                     configurationFile.load(stream);
@@ -114,7 +121,7 @@ public class Configuration {
                 }
             }
         } else {
-            File userFile = new File(folder, filename);
+            var userFile = new File(folder, filename);
             if (defaultResource.isPresent()) {
                 initUserFileWithDefaults(defaultResource.get() + filename, userFile);
             }
@@ -158,7 +165,7 @@ public class Configuration {
         } else {
             configurationFile = new ConfigurationFile(defaultProperties.get(defaultProperties.size() - 1));
         }
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+        try (var fileInputStream = new FileInputStream(file)) {
             configurationFile.load(fileInputStream);
         }
         defaultProperties.add(configurationFile);
@@ -172,7 +179,7 @@ public class Configuration {
         } else {
             configurationFile = new ConfigurationFile(defaultProperties.get(defaultProperties.size() - 1));
         }
-        try (InputStream fileInputStream = getClass().getResourceAsStream(configResource)) {
+        try (var fileInputStream = getClass().getResourceAsStream(configResource)) {
             Objects.requireNonNull(fileInputStream, "Configuration file not found:" + configResource);
             configurationFile.load(fileInputStream);
         }
@@ -189,7 +196,7 @@ public class Configuration {
     }
 
     public boolean has(QualifiedItem property) {
-        String item = property.toString();
+        var item = property.toString();
 
         return sessionProperties.has(item) || //
                 System.getProperties().containsKey(item) || //
@@ -205,9 +212,9 @@ public class Configuration {
     }
 
     public String get(QualifiedItem property) {
-        String item = property.toString();
+        var item = property.toString();
 
-        String value = sessionProperties.getProperty(item);
+        String value = sessionProperties.get(item);
         if (value != null) {
             return value;
         }
@@ -217,7 +224,7 @@ public class Configuration {
             return value;
         }
 
-        value = persistentProperties.getProperty(item);
+        value = persistentProperties.get(item);
         if (value != null) {
             return value;
         }
@@ -238,7 +245,7 @@ public class Configuration {
     }
 
     public Configuration set(QualifiedItem property, String value) {
-        sessionProperties.setProperty(property.toString(), value);
+        sessionProperties.set(property.toString(), value);
         return this;
     }
 
@@ -249,13 +256,13 @@ public class Configuration {
 
     public void setUserPath(Optional<File> path) {
         if (path.isPresent()) {
-            File settings = new File(path.get(), SCRIPT_SETTINGS);
+            var settings = new File(path.get(), SCRIPT_SETTINGS);
             settings.mkdirs();
             File[] files = settings.listFiles(Configuration::settingsFile);
             Arrays.stream(files).map(File::getName).forEach(name -> {
                 int index = name.lastIndexOf('.');
                 if (index > 0) {
-                    String namespace = name.substring(0, index);
+                    var namespace = name.substring(0, index);
                     try {
                         addPersistentUserProperties(Optional.empty(), namespace + PROPERTIES_EXTENSION, settings,
                                 singletonList(namespace));
@@ -272,6 +279,19 @@ public class Configuration {
 
     public static boolean settingsFile(File file) {
         return file.getName().endsWith(PROPERTIES_EXTENSION);
+    }
+
+    public void flushSettings() {
+        try {
+            persistentConfigurationFiles.write();
+        } catch (IOException e) {
+            throw asRuntimeException(ExceptionUtil.reduce(e));
+        }
+    }
+
+    @Override
+    public void close() {
+        persistentConfigurationFiles.close();
     }
 
 }

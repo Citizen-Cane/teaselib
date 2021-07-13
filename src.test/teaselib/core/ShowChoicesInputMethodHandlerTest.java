@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -21,7 +21,6 @@ import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.debug.DebugHost;
-import teaselib.core.debug.DebugPersistence;
 import teaselib.test.IntegrationTests;
 import teaselib.test.TestScript;
 
@@ -56,7 +55,7 @@ public class ShowChoicesInputMethodHandlerTest {
     @Before
     public void init() throws IOException {
         host = new DebugHost();
-        teaseLib = new TeaseLib(host, new DebugPersistence(), new DebugSetup());
+        teaseLib = new TeaseLib(host, new DebugSetup());
         Actor actor = TestScript.newActor(Gender.Masculine);
         ResourceLoader resourceLoader = new ResourceLoader(this.getClass());
 

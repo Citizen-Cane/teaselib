@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.debug.DebugHost;
-import teaselib.core.debug.DebugPersistence;
 
 public class TeaseLibGlobalObjectsTest {
 
@@ -53,7 +52,7 @@ public class TeaseLibGlobalObjectsTest {
 
     @Test
     public void testTeaseLibGLobals() throws IOException {
-        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());) {
+        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugSetup());) {
             teaseLib.globals.store(TestObject.OBJECT1, value1);
             teaseLib.globals.store(TestObject.OBJECT2, value2);
 
@@ -68,7 +67,7 @@ public class TeaseLibGlobalObjectsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testTeaseLibGlobalObjectsAreWriteOnceToEnsureIntegrityAndOwnership() throws IOException {
-        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());) {
+        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugSetup());) {
             teaseLib.globals.store(TestObject.OBJECT1, value1);
             teaseLib.globals.store(TestObject.OBJECT1, value2);
         }
@@ -76,7 +75,7 @@ public class TeaseLibGlobalObjectsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testTeaseLibGlobalObjectSuppliersAreWriteOnceToEnsureIntegrityAndOwnership() throws IOException {
-        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());) {
+        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugSetup());) {
             teaseLib.globals.store(TestObject.OBJECT1, () -> value1);
             teaseLib.globals.store(TestObject.OBJECT1, () -> value2);
         }
@@ -84,7 +83,7 @@ public class TeaseLibGlobalObjectsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testTeaseLibGlobalObjectSuppliersAreWriteOnceToEnsureIntegrityAndOwnership2() throws IOException {
-        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());) {
+        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugSetup());) {
             teaseLib.globals.store(TestObject.OBJECT1, () -> value1);
             teaseLib.globals.store(TestObject.OBJECT1, value2);
         }
@@ -92,7 +91,7 @@ public class TeaseLibGlobalObjectsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testTeaseLibGlobalObjectSuppliersAreWriteOnceToEnsureIntegrityAndOwnership3() throws IOException {
-        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());) {
+        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugSetup());) {
             teaseLib.globals.store(TestObject.OBJECT1, () -> value1);
             teaseLib.globals.store(TestObject.OBJECT1, value2);
         }
@@ -100,7 +99,7 @@ public class TeaseLibGlobalObjectsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testTeaseLibGlobalObjectSuppliersAreWriteOnceToEnsureIntegrityAndOwnership4() throws IOException {
-        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());) {
+        try (TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugSetup());) {
             teaseLib.globals.store(TestObject.OBJECT1, value1);
             teaseLib.globals.store(TestObject.OBJECT1, () -> value2);
         }

@@ -19,10 +19,6 @@ public class DebugPersistence implements Persistence {
 
     public final DebugStorage storage;
 
-    public DebugPersistence() {
-        this(new DebugStorage());
-    }
-
     public DebugPersistence(DebugStorage storage) {
         this.storage = storage;
     }

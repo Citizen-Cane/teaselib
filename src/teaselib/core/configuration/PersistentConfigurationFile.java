@@ -1,86 +1,44 @@
 package teaselib.core.configuration;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.swing.Timer;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PersistentConfigurationFile extends ConfigurationFile {
-    private static final Logger logger = LoggerFactory.getLogger(PersistentConfigurationFile.class);
-
-    private static final long serialVersionUID = 1L;
-
     private final Path path;
-    private final ExecutorService fileWriterService;
+    private final PersistentConfigurationFileStoreService fileWriterService;
 
-    private final AtomicBoolean writeBack = new AtomicBoolean(false);
-    private final Timer writeBackDelay;
-
-    PersistentConfigurationFile(Path path, PersistentConfigurationFiles persistentConfigurationFiles)
-            throws IOException {
+    PersistentConfigurationFile(Path path,
+            PersistentConfigurationFileStoreService persistentConfigurationFileStoreService) throws IOException {
         this.path = path;
-        this.fileWriterService = persistentConfigurationFiles.fileWriterService;
+        this.fileWriterService = persistentConfigurationFileStoreService;
 
         if (path.toFile().exists()) {
-            try (InputStream inputStream = Files.newInputStream(path)) {
+            try (var inputStream = Files.newInputStream(path)) {
                 load(inputStream);
             }
         }
-
-        writeBackDelay = new Timer(1000, e -> {
-            submitWriteTask();
-        });
-        writeBackDelay.setRepeats(false);
     }
 
-    Future<Void> submitWriteTask() {
-        synchronized (PersistentConfigurationFile.this) {
-            writeBackDelay.stop();
-            boolean mustWrite = writeBack.getAndSet(false);
-            if (mustWrite) {
-                // TODO Remember and forward exception
-                return fileWriterService.submit(this::writeTask);
-            } else {
-                return null;
-            }
+    void store() throws IOException {
+        var backupPath = path.resolveSibling(path.getFileName() + ".backup");
+        var tempPath = path.resolveSibling(path.getFileName() + ".temp");
+        try (var outputStream = Files.newOutputStream(tempPath)) {
+            this.store(outputStream, "Teaselib settings file");
         }
-    }
 
-    private Void writeTask() throws IOException {
-        try {
-            Path backupPath = path.resolveSibling(path.getFileName() + ".backup");
-            Path tempPath = path.resolveSibling(path.getFileName() + ".temp");
-            try (OutputStream outputStream = Files.newOutputStream(tempPath)) {
-                // TODO Properties base class is legacy cruft -> replace it with own implementation
-                this.save(outputStream, "Teaselib settings file");
-            }
-
-            if (backupPath.toFile().exists()) {
-                Files.delete(backupPath);
-            }
-            if (path.toFile().exists()) {
-                Files.move(path, backupPath);
-            }
-            Files.move(tempPath, path);
-        } catch (Throwable t) {
-            // TODO Forward error to main script on next read, or interrupt main thread
-            logger.error(t.getMessage(), t);
+        if (backupPath.toFile().exists()) {
+            Files.delete(backupPath);
         }
-        return null;
+        if (path.toFile().exists()) {
+            Files.move(path, backupPath);
+        }
+        Files.move(tempPath, path);
     }
 
     @Override
     public void set(String key, String value) {
-        synchronized (this) {
+        synchronized (fileWriterService) {
             super.set(key, value);
             writeBackLater();
         }
@@ -88,7 +46,7 @@ public class PersistentConfigurationFile extends ConfigurationFile {
 
     @Override
     public void set(String key, boolean value) {
-        synchronized (this) {
+        synchronized (fileWriterService) {
             super.set(key, value);
             writeBackLater();
         }
@@ -96,19 +54,14 @@ public class PersistentConfigurationFile extends ConfigurationFile {
 
     @Override
     public void clear(String key) {
-        synchronized (this) {
+        synchronized (fileWriterService) {
             super.clear(key);
             writeBackLater();
         }
     }
 
     private void writeBackLater() {
-        if (!writeBack.getAndSet(true)) {
-            writeBackDelay.start();
-        }
+        fileWriterService.queue(this);
     }
 
-    public boolean pendingChanges() {
-        return writeBack.get();
-    }
 }

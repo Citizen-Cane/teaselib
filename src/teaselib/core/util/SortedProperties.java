@@ -1,12 +1,18 @@
 package teaselib.core.util;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Properties;
-import java.util.Vector;
+import java.util.Set;
 
-@SuppressWarnings("serial")
 public class SortedProperties extends Properties {
+
+    private static final long serialVersionUID = 1L;
+
+    private final transient Comparator<String> sortOrder = String::compareToIgnoreCase;
 
     public SortedProperties() {
         super();
@@ -16,16 +22,11 @@ public class SortedProperties extends Properties {
         super(defaults);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public synchronized Enumeration<Object> keys() {
-        Enumeration<Object> keysEnum = super.keys();
-        @SuppressWarnings("rawtypes")
-        Vector keyList = new Vector();
-        while (keysEnum.hasMoreElements()) {
-            keyList.add(keysEnum.nextElement());
-        }
-        Collections.sort(keyList);
-        return keyList.elements();
+    public Set<java.util.Map.Entry<Object, Object>> entrySet() {
+        List<java.util.Map.Entry<Object, Object>> entries = new ArrayList<>(super.entrySet());
+        Collections.sort(entries, (a, b) -> sortOrder.compare(a.getKey().toString(), b.getKey().toString()));
+        return new LinkedHashSet<>(entries);
     }
+
 }

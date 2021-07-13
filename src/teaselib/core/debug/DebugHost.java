@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,12 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.Audio;
 import teaselib.core.Closeable;
 import teaselib.core.Host;
+import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
@@ -44,8 +47,16 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
 
     private List<Choice> currentChoices = Collections.emptyList();
 
+    public final DebugPersistence persistence;
+    private final UnaryOperator<Persistence> persistenceSupplier;
+
     public DebugHost() {
-        super();
+        this(p -> p);
+    }
+
+    public DebugHost(UnaryOperator<Persistence> persistenceSupplier) {
+        this.persistence = new DebugPersistence(new DebugStorage());
+        this.persistenceSupplier = persistenceSupplier;
         Thread.currentThread().setName(getClass().getSimpleName() + " main script thread");
         executorService = NamedExecutorService.singleThreadedQueue(HostInputMethod.class.getSimpleName());
         inputMethod = new HostInputMethod(executorService, this);
@@ -54,6 +65,11 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     @Override
     public void close() {
         executorService.shutdown();
+    }
+
+    @Override
+    public Persistence persistence(Configuration configuration) {
+        return persistenceSupplier.apply(persistence);
     }
 
     @Override

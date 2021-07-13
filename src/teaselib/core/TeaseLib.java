@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -91,14 +92,13 @@ public class TeaseLib implements Closeable {
     private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
     private final Set<CheckPointListener> checkPointListeners = new HashSet<>();
 
-    public TeaseLib(final Host host, Persistence persistence) throws IOException {
-        this(host, persistence, new TeaseLibConfigSetup(host));
+    public TeaseLib(final Host host) throws IOException {
+        this(host, new TeaseLibConfigSetup(host));
     }
 
-    public TeaseLib(Host host, Persistence persistence, Setup setup) throws IOException {
-        if (host == null || persistence == null || setup == null) {
-            throw new IllegalArgumentException();
-        }
+    public TeaseLib(Host host, Setup setup) throws IOException {
+        Objects.requireNonNull(host);
+        Objects.requireNonNull(setup);
 
         logDateTime();
         logJavaVersion();
@@ -106,7 +106,7 @@ public class TeaseLib implements Closeable {
 
         this.config = new Configuration(setup);
         this.host = host;
-        this.persistence = new ConfigFileMapping(config, persistence);
+        this.persistence = new ConfigFileMapping(config, host.persistence(config));
 
         this.userItems = persistence.getUserItems(this);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
@@ -159,12 +159,12 @@ public class TeaseLib implements Closeable {
         return transcriptLogger;
     }
 
-    public static void run(Host host, Persistence persistence, File scriptClassPath, String script)
+    public static void run(Host host, File scriptClassPath, String script)
             throws IOException, ReflectiveOperationException {
-        run(host, persistence, scriptClassPath, new TeaseLibConfigSetup(host), script);
+        run(host, scriptClassPath, new TeaseLibConfigSetup(host), script);
     }
 
-    public static void run(Host host, Persistence persistence, File scriptClassPath, Setup setup, String script)
+    public static void run(Host host, File scriptClassPath, Setup setup, String script)
             throws ReflectiveOperationException, IOException {
         if (!scriptClassPath.exists()) {
             throw new FileNotFoundException(scriptClassPath.getAbsolutePath());
@@ -176,12 +176,12 @@ public class TeaseLib implements Closeable {
             method.setAccessible(true);
             method.invoke(classLoader, scriptClassPath.toURI().toURL());
             logger.info("Added class path {}", scriptClassPath.getAbsolutePath());
-            run(host, persistence, setup, script);
+            run(host, setup, script);
         }
     }
 
-    public static void run(Host host, Persistence persistence, Setup setup, String script) throws IOException {
-        try (var teaseLib = new TeaseLib(host, persistence, setup)) {
+    public static void run(Host host, Setup setup, String script) throws IOException {
+        try (var teaseLib = new TeaseLib(host, setup)) {
             teaseLib.run(script);
         } catch (IOException e) {
             throw e;
@@ -237,6 +237,7 @@ public class TeaseLib implements Closeable {
     public void close() {
         boolean isInterrupted = Thread.interrupted();
         try {
+            config.close();
             globals.close();
             if (host instanceof Closeable) {
                 ((Closeable) host).close();
@@ -731,7 +732,7 @@ public class TeaseLib implements Closeable {
 
         @Override
         public T value() {
-            T any = defaultValue;
+            var any = defaultValue;
             if (persistence.has(name)) {
                 var valueAsString = persistence.get(name);
                 @SuppressWarnings({ "unchecked", "static-access" })

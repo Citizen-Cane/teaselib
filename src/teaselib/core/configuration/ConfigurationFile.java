@@ -2,45 +2,43 @@ package teaselib.core.configuration;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
+import java.io.OutputStream;
 
 import teaselib.core.util.SortedProperties;
 
-public class ConfigurationFile extends SortedProperties {
-    private static final long serialVersionUID = 1L;
+public class ConfigurationFile {
+
+    private final SortedProperties properties;
 
     public ConfigurationFile() {
+        this.properties = new SortedProperties();
     }
 
-    public ConfigurationFile(Properties defaults) {
-        super(defaults);
+    public ConfigurationFile(ConfigurationFile defaults) {
+        this.properties = new SortedProperties(defaults.properties);
     }
 
-    // TODO Move loading resource to super class
-
-    public ConfigurationFile(String resource) throws IOException {
-        try (InputStream data = getClass().getResourceAsStream(resource)) {
-            load(data);
-        }
+    public void load(InputStream inputStream) throws IOException {
+        properties.load(inputStream);
     }
 
     public boolean has(String key) {
-        return containsKey(key) || (defaults != null ? ((ConfigurationFile) defaults).has(key) : false);
+        return properties.getProperty(key) != null;
     }
 
     public String get(String key) {
-        return getProperty(key);
+        return properties.getProperty(key);
     }
 
     public boolean getBoolean(String key) {
-        return Boolean.toString(true).equalsIgnoreCase(getProperty(key));
+        return Boolean.toString(true).equalsIgnoreCase(get(key));
     }
 
     public void set(String key, String value) {
         if (value == null) {
             clear(key);
         } else {
-            setProperty(key, value);
+            properties.setProperty(key, value);
         }
     }
 
@@ -49,7 +47,11 @@ public class ConfigurationFile extends SortedProperties {
     }
 
     public void clear(String key) {
-        remove(key);
+        properties.remove(key);
+    }
+
+    public void store(OutputStream outputStream, String comments) throws IOException {
+        properties.store(outputStream, comments);
     }
 
 }

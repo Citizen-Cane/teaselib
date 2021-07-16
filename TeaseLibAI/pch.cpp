@@ -15,6 +15,7 @@
 #pragma comment(lib, "Math.lib") 
 #pragma comment(lib, "Speech.lib") 
 #pragma comment(lib, "TensorFlow.lib") 
+#pragma comment(lib, "TfLiteDelegateV2.lib") 
 #pragma comment(lib, "Video.lib") 
 
 

@@ -13,7 +13,7 @@
 #include <JNIUtilities.h>
 
 
-#include <TensorFlow/TfLiteDelegateV2.h>
+#include <TensorFlow/TfLiteDelegateV2/TfLiteDelegateV2.h>
 #include <Pose/PoseEstimation.h>
 #include <Pose/Pose.h>
 #include <Video/VideoCapture.h>

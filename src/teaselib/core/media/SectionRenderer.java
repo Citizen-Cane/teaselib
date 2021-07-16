@@ -232,9 +232,6 @@ public class SectionRenderer implements Closeable {
         List<RenderedMessage> messages = current.messages;
         copy(current, next, messages);
         next.currentMessage = current.currentMessage;
-        // TODO append after a prompt will result in accumulated text to be displayed on the next prompt,
-        // then replaced by all text in showAll - on the first prompt only the last append is shown.
-        // - the accumulated text is displayed before showAll becomes active
         return next;
     };
 
@@ -258,7 +255,6 @@ public class SectionRenderer implements Closeable {
         next.accumulatedText = new MessageTextAccumulator();
         messages.forEach(m -> m.forEach(next.accumulatedText::add));
         next.messages.addAll(0, messages);
-        next.position = batch.position;
     }
 
     public void run(MessageRenderer messageRenderer) throws InterruptedException, IOException {

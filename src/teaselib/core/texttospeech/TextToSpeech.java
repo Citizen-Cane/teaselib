@@ -53,10 +53,10 @@ public class TextToSpeech implements Closeable {
     static final Set<String> BlackList = new HashSet<>(Arrays.asList("LTTS7Ludoviko", "MSMary", "MSMike"));
     private static final String[] NoHints = null;
 
-    private static final Set<Class<?>> ttsSDKClasses = new LinkedHashSet<>();
-    private static final Map<Class<? extends TextToSpeechImplementation>, TextToSpeechImplementation> ttsSDKCLass2Implementation = new LinkedHashMap<>();
-    private static final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
-    private static final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
+    private final Set<Class<?>> ttsSDKClasses = new LinkedHashSet<>();
+    private final Map<Class<? extends TextToSpeechImplementation>, TextToSpeechImplementation> ttsSDKCLass2Implementation = new LinkedHashMap<>();
+    private final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
+    private final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
 
     public final AudioSync audioSync;
 
@@ -67,17 +67,17 @@ public class TextToSpeech implements Closeable {
     }
 
     static TextToSpeech allSystemVoices() {
-        return new TextToSpeech(ttsProviderClassNames());
+        return new TextToSpeech(operatingSpecificSDKs());
     }
 
     static TextToSpeech none() {
-        return new TextToSpeech(Collections.emptySet());
+        return new TextToSpeech(Collections.emptyList());
     }
 
-    private TextToSpeech(Set<String> speechProviderClassNames) {
+    private TextToSpeech(List<Class<? extends TextToSpeechImplementation>> ttsClasses) {
         this.audioSync = new AudioSync();
-        for (String name : speechProviderClassNames) {
-            addImplementation(name);
+        for (Class<? extends TextToSpeechImplementation> ttsClass : ttsClasses) {
+            addImplementation(ttsClass);
         }
     }
 
@@ -87,37 +87,21 @@ public class TextToSpeech implements Closeable {
         addSDK(ttsImpl, newDelegateExecutor(ttsImpl.sdkName()));
     }
 
-    private static Set<String> ttsProviderClassNames() {
-        Set<String> names = new HashSet<>();
-        addOperatingSpecificSDKs(names);
-        return names;
+    private static List<Class<? extends TextToSpeechImplementation>> operatingSpecificSDKs() {
+        return Arrays.asList(TeaseLibTTS.Loquendo.class, TeaseLibTTS.Microsoft.class);
     }
 
-    private static void addOperatingSpecificSDKs(Set<String> names) {
-        names.add(TeaseLibTTS.Loquendo.class.getName());
-        names.add(TeaseLibTTS.Microsoft.class.getName());
-    }
-
-    // TODO just require the classes instead of strings denoting class names
-    private void addImplementation(String className) {
-        try {
-            @SuppressWarnings("unchecked")
-            Class<? extends TextToSpeechImplementation> ttsClass = (Class<? extends TextToSpeechImplementation>) getClass()
-                    .getClassLoader().loadClass(className);
-            if (ttsSDKCLass2Implementation.containsKey(ttsClass)) {
-                addNewVoices(getVoices(ttsSDKCLass2Implementation.get(ttsClass)));
-            } else {
-                addImplementation(ttsClass);
-                ttsSDKClasses.add(ttsClass);
-            }
-        } catch (ReflectiveOperationException e) {
-            throw ExceptionUtil.asRuntimeException(e);
+    private void addImplementation(Class<? extends TextToSpeechImplementation> ttsClass) {
+        if (ttsSDKCLass2Implementation.containsKey(ttsClass)) {
+            throw new IllegalStateException("Implementation " + ttsClass.getName() + " already added.");
+        } else {
+            addImplementationInstance(ttsClass);
+            ttsSDKClasses.add(ttsClass);
         }
     }
 
-    private void addImplementation(Class<?> ttsClass) {
+    private void addImplementationInstance(Class<? extends TextToSpeechImplementation> ttsClass) {
         var delegateThread = newDelegateExecutor(ttsClass.getSimpleName());
-
         delegateThread.run(() -> {
             var getInstance = ttsClass.getDeclaredMethod("newInstance");
             TextToSpeechImplementation newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
@@ -127,7 +111,6 @@ public class TextToSpeech implements Closeable {
 
     private void addSDK(TextToSpeechImplementation ttsImpl, DelegateExecutor executor) {
         Map<String, Voice> newVoices = getVoices(ttsImpl);
-
         if (!newVoices.isEmpty()) {
             addNewVoices(newVoices);
             ttsSDKCLass2Implementation.put(ttsImpl.getClass(), ttsImpl);
@@ -247,7 +230,7 @@ public class TextToSpeech implements Closeable {
         }
     }
 
-    private static void run(TextToSpeechImplementation tts, DelegateExecutor.Runnable delegate) {
+    private void run(TextToSpeechImplementation tts, DelegateExecutor.Runnable delegate) {
         var delegateExecutor = ttsExecutors.get(tts.sdkName());
         delegateExecutor.run(delegate);
     }
@@ -297,9 +280,11 @@ public class TextToSpeech implements Closeable {
         for (Entry<String, DelegateExecutor> entry : ttsExecutors.entrySet()) {
             String key = entry.getKey();
             DelegateExecutor executorService = entry.getValue();
-            executorService.run(ttsSDKs.get(key)::close);
+            executorService.run(ttsSDKs.remove(key)::close);
             executorService.shutdown();
         }
+        ttsExecutors.clear();
+        voices.clear();
     }
 
 }

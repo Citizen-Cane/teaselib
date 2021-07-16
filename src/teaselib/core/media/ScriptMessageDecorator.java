@@ -17,10 +17,11 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class ScriptMessageDecorator {
-    private static final long DELAY_BETWEEN_PARAGRAPHS_MILLIS = 500;
+    private static final long DELAY_BETWEEN_PARAGRAPHS_MILLIS = 750;
     private static final long DELAY_FOR_APPEND_MILLIS = 0;
 
-    static final double DELAY_BETWEEN_SECTIONS_SECONDS = 5.0;
+    static final double DELAY_BETWEEN_PARAGRAPHS_SECONDS = DELAY_BETWEEN_PARAGRAPHS_MILLIS / 1000.0;
+    static final double DELAY_BETWEEN_SECTIONS_SECONDS = 2.0;
 
     static final MessagePart DelayBetweenParagraphs = delay(DELAY_BETWEEN_PARAGRAPHS_MILLIS);
     static final MessagePart DelayAfterAppend = delay(DELAY_FOR_APPEND_MILLIS);
@@ -220,12 +221,23 @@ public class ScriptMessageDecorator {
                         && isGeneratedDelay(currentDelay)) {
                     messageWithDelays.add(messagePart);
                 } else {
-                    injectDelay(messageWithDelays, currentDelay);
+                    if (messagePart.type == Type.Text || messagePart.type == Type.Image
+                            || messagePart.type == Type.Mood) {
+                        injectDelay(messageWithDelays, currentDelay);
+                        currentDelay = null;
+                    }
 
                     if (messagePart.type == Type.Speech) {
-                        currentDelay = injectSpeechDelay(messageWithDelays, messagePart, lastSection);
+                        currentDelay = accumulateDelay(currentDelay,
+                                injectSpeechDelay(messageWithDelays, messagePart, lastSection));
+                    } else if (messagePart.type == Type.Text && !lastSection.contains(messagePart)) {
+                        messageWithDelays.add(messagePart);
+                        if (MessageTextAccumulator.canAppendTo(messagePart.value)) {
+                            currentDelay = accumulateDelay(currentDelay, DelayAfterAppend);
+                        } else {
+                            currentDelay = accumulateDelay(currentDelay, DelayBetweenParagraphs);
+                        }
                     } else {
-                        currentDelay = null;
                         messageWithDelays.add(messagePart);
                     }
                 }
@@ -233,18 +245,17 @@ public class ScriptMessageDecorator {
         }
 
         injectDelay(messageWithDelays, currentDelay);
-
         return messageWithDelays;
     }
 
-    private static MessagePart injectSpeechDelay(AbstractMessage messageWithDelays, MessagePart messagePart,
+    private static MessagePart injectSpeechDelay(AbstractMessage messageWithDelays, MessagePart speech,
             AbstractMessage lastSection) {
         MessagePart currentDelay;
-        messageWithDelays.add(messagePart);
+        messageWithDelays.add(speech);
 
-        if (MessageTextAccumulator.canAppendTo(messagePart.value)) {
+        if (MessageTextAccumulator.canAppendTo(speech.value)) {
             currentDelay = DelayAfterAppend;
-        } else if (lastSection.contains(messagePart)) {
+        } else if (lastSection.contains(speech)) {
             currentDelay = null;
         } else {
             currentDelay = DelayBetweenParagraphs;
@@ -263,14 +274,16 @@ public class ScriptMessageDecorator {
     }
 
     static MessagePart accumulateDelay(MessagePart currentDelay, MessagePart additionalDelay) {
+        MessagePart newDelay;
         if (currentDelay == null) {
-            currentDelay = additionalDelay;
+            newDelay = additionalDelay;
+        } else if (additionalDelay == null) {
+            newDelay = currentDelay;
         } else if (isGeneratedDelay(currentDelay)) {
-            currentDelay = additionalDelay;
+            newDelay = additionalDelay;
         } else {
             double[] currentDelayValues = getDelayInterval(currentDelay.value);
             double[] additionalDelayValues = getDelayInterval(additionalDelay.value);
-
             String newInterval;
             if (currentDelayValues.length == additionalDelayValues.length) {
                 if (currentDelayValues.length == 1) {
@@ -288,10 +301,9 @@ public class ScriptMessageDecorator {
             } else {
                 throw new IllegalArgumentException(currentDelay.value + " or " + additionalDelay.value);
             }
-
-            currentDelay = new MessagePart(Type.Delay, newInterval);
+            newDelay = new MessagePart(Type.Delay, newInterval);
         }
-        return currentDelay;
+        return newDelay;
 
     }
 

@@ -130,7 +130,7 @@ public class ScriptRenderer implements Closeable {
         }
 
         var interTitle = new RenderInterTitle(RenderedMessage.of(composed, decorators), teaseLib);
-        renderMessage(teaseLib, message.actor, interTitle);
+        renderMessage(teaseLib, message.actor, interTitle, OutlineType.NewSection);
     }
 
     class ReplayImpl implements Replay {
@@ -227,7 +227,7 @@ public class ScriptRenderer implements Closeable {
         fireNewMessageEvent(teaseLib, actor, outlineType);
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
         MediaRenderer replaced = concatFunction.apply(actor, renderedMessages, resources);
-        renderMessage(teaseLib, actor, replaced);
+        renderMessage(teaseLib, actor, replaced, outlineType);
         currentMessage = messages.get(messages.size() - 1);
     }
 
@@ -257,20 +257,21 @@ public class ScriptRenderer implements Closeable {
         return renderedMessages;
     }
 
-    private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer renderMessage) {
+    private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer renderMessage, OutlineType outlineType) {
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
                 queueRenderer(renderMessage);
                 // Remember this set for replay
+                // TODO remember the outline type for this set to ensure proper section/paragraph pauses
                 playedRenderers = new ArrayList<>(queuedRenderers);
 
                 // Remember in order to clear queued before completing previous set
                 List<MediaRenderer> nextSet = new ArrayList<>(queuedRenderers);
 
-                // Must clear queue for next set before completing current,
-                // because if the current set is cancelled,
-                // the next set must be discarded
+                // clear queue for next set before completing the current set,
+                // to ensure the next set is empty when the current set is cancelled
                 queuedRenderers.clear();
+                sectionRenderer.nextOutlineType = outlineType;
                 completeMandatory();
 
                 // Now the current set can be completed, and canceling the

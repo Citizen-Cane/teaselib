@@ -22,16 +22,7 @@ public class MessageTextAccumulator {
     public final void add(MessagePart part) {
         StringBuilder tailBuilder;
         if (part.type == Message.Type.Text) {
-            if (appendToParagraph) {
-                tailBuilder = new StringBuilder(removeLast());
-                tailBuilder.append(" ");
-            } else {
-                tailBuilder = new StringBuilder();
-            }
-            tailBuilder.append(part.value);
-            tail = tailBuilder.toString();
-            paragraphs.add(tail);
-            appendToParagraph = canAppendTo(tail);
+            add(part.value);
         } else if (part.type == Message.Type.Item) {
             tailBuilder = new StringBuilder();
             tailBuilder.append("° ");
@@ -40,6 +31,20 @@ public class MessageTextAccumulator {
             paragraphs.add(tail);
             appendToParagraph = true;
         }
+    }
+
+    public final void add(String text) {
+        StringBuilder tailBuilder;
+        if (appendToParagraph) {
+            tailBuilder = new StringBuilder(removeLast());
+            tailBuilder.append(" ");
+        } else {
+            tailBuilder = new StringBuilder();
+        }
+        tailBuilder.append(text);
+        tail = tailBuilder.toString();
+        paragraphs.add(tail);
+        appendToParagraph = canAppendTo(tail);
     }
 
     private String removeLast() {

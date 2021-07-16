@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -32,6 +31,7 @@ import teaselib.Replay.Replayable;
 import teaselib.core.AbstractImages;
 import teaselib.core.Closeable;
 import teaselib.core.ResourceLoader;
+import teaselib.core.ScriptEventArgs.BeforeNewMessage.OutlineType;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -47,9 +47,7 @@ public class SectionRenderer implements Closeable {
             Message.Type.Image, Message.Type.Mood, Message.Type.Sound, Message.Type.Speech, Message.Type.Delay));
     static final Set<Type> SoundTypes = new HashSet<>(Arrays.asList(Type.Speech, Type.Sound, Type.BackgroundSound));
 
-    private static final double DELAY_AT_END_OF_MESSAGE = 2.0;
-
-    public final TeaseLib teaseLib;
+    private final TeaseLib teaseLib;
     private final MediaRendererQueue renderQueue;
     // TODO Handle message decorator processing here in order to make textToSpeechPlayer private
     public final TextToSpeechPlayer textToSpeechPlayer;
@@ -57,6 +55,8 @@ public class SectionRenderer implements Closeable {
     final NamedExecutorService executor = singleThreadedQueue("Message renderer queue", 1, TimeUnit.HOURS);
     Future<?> running = null;
 
+    // TODO workaround to tell section renderer to add the proper delay for the next message
+    public OutlineType nextOutlineType;
     private MediaRenderer.Threaded currentRenderer = null;
     private RenderSound backgroundSoundRenderer = null;
 
@@ -92,21 +92,14 @@ public class SectionRenderer implements Closeable {
     }
 
     public void showAll(double delaySeconds) {
-        var current = currentMessageRenderer;
-        if (delaySeconds < DELAY_AT_END_OF_MESSAGE) {
-            if (current != null) {
-                current.thisTask.cancel(true);
-                // TODO show subsequent messages as single paragraphs, then show all appended
-            }
-        }
-
-        if (delaySeconds > DELAY_AT_END_OF_MESSAGE) {
+        if (delaySeconds > ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS) {
             executor.submit(() -> {
                 try {
                     var actual = currentMessageRenderer;
                     if (actual != null) {
                         completeSectionMandatory();
-                        renderTimeSpannedPart(delay(delaySeconds - DELAY_AT_END_OF_MESSAGE));
+                        renderTimeSpannedPart(
+                                delay(delaySeconds - ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
                         currentRenderer.completeMandatory();
                         show(actual);
                     }
@@ -118,17 +111,22 @@ public class SectionRenderer implements Closeable {
                 }
                 return null;
             });
-        } else if (current != null) {
-            try {
-                show(current);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            } catch (IOException e) {
+        } else {
+            var current = currentMessageRenderer;
+            if (current != null) {
+                current.renderer.getTask().cancel(true);
+                // TODO show appended messages as single paragraphs again, then show all appended
                 try {
-                    ExceptionUtil.handleIOException(e, teaseLib.config, logger);
-                } catch (IOException e1) {
-                    throw ExceptionUtil.asRuntimeException(e1);
+                    show(current);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new ScriptInterruptedException(e);
+                } catch (IOException e) {
+                    try {
+                        ExceptionUtil.handleIOException(e, teaseLib.config, logger);
+                    } catch (IOException e1) {
+                        throw ExceptionUtil.asRuntimeException(e1);
+                    }
                 }
             }
         }
@@ -211,7 +209,9 @@ public class SectionRenderer implements Closeable {
             for (RenderedMessage message : messages) {
                 prefetchImages(actor, message);
             }
-            ((AbstractImages) actor.images).prefetcher().fetch();
+            if (actor.images instanceof AbstractImages) {
+                ((AbstractImages) actor.images).prefetcher().fetch();
+            }
         }
     }
 
@@ -219,7 +219,7 @@ public class SectionRenderer implements Closeable {
         for (MessagePart part : message) {
             if (part.type == Message.Type.Image) {
                 String resource = part.value;
-                if (!Message.NoImage.equals(part.value)) {
+                if (!Message.NoImage.equals(part.value) && actor.images instanceof AbstractImages) {
                     ((AbstractImages) actor.images).prefetcher().add(resource);
                 }
             }
@@ -232,6 +232,9 @@ public class SectionRenderer implements Closeable {
         List<RenderedMessage> messages = current.messages;
         copy(current, next, messages);
         next.currentMessage = current.currentMessage;
+        // TODO append after a prompt will result in accumulated text to be displayed on the next prompt,
+        // then replaced by all text in showAll - on the first prompt only the last append is shown.
+        // - the accumulated text is displayed before showAll becomes active
         return next;
     };
 
@@ -244,7 +247,8 @@ public class SectionRenderer implements Closeable {
     };
 
     static BinaryOperator<MessageRenderer> showAll = (current, next) -> {
-        collectText(current, next);
+        List<RenderedMessage> messages = new ArrayList<>(current.messages);
+        copy(current, next, messages);
         next.position = Replay.Position.End;
         next.currentMessage = next.messages.size() - 1;
         return next;
@@ -255,12 +259,6 @@ public class SectionRenderer implements Closeable {
         messages.forEach(m -> m.forEach(next.accumulatedText::add));
         next.messages.addAll(0, messages);
         next.position = batch.position;
-    }
-
-    private static void collectText(MessageRenderer current, MessageRenderer next) {
-        next.accumulatedText = new MessageTextAccumulator();
-        current.messages.stream().flatMap(RenderedMessage::stream).filter(p -> p.type == Type.Text)
-                .forEach(next.accumulatedText::add);
     }
 
     public void run(MessageRenderer messageRenderer) throws InterruptedException, IOException {
@@ -275,8 +273,9 @@ public class SectionRenderer implements Closeable {
             } else {
                 play(messageRenderer);
             }
+
+            messageRenderer.renderer.mandatoryCompleted();
             finalizeRendering(messageRenderer);
-            messageRenderer.renderer.allCompleted();
         } catch (InterruptedException | ScriptInterruptedException e) {
             if (currentRenderer != null) {
                 renderQueue.interrupt(currentRenderer);
@@ -327,16 +326,22 @@ public class SectionRenderer implements Closeable {
     private void renderMessages(MessageRenderer messageRenderer) throws IOException, InterruptedException {
         while (haveMoreMessages(messageRenderer)) {
             RenderedMessage message = messageRenderer.messages.get(messageRenderer.currentMessage);
-            renderMessage(messageRenderer, message);
-            messageRenderer.currentMessage++;
-            addDefaultDelayBetweenMultipleMessages(messageRenderer, message);
+            try {
+                renderMessage(messageRenderer, message);
+            } finally {
+                messageRenderer.currentMessage++;
+            }
+            renderOptionalDefaultDelayBetweenMultipleMessages(messageRenderer);
         }
     }
 
-    private void addDefaultDelayBetweenMultipleMessages(MessageRenderer messageRenderer, RenderedMessage message) {
-        boolean last = messageRenderer.currentMessage == messageRenderer.messages.size();
-        if (!last && textToSpeechPlayer != null && !lastSectionHasDelay(message)) {
-            renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_SECTIONS_SECONDS));
+    private void renderOptionalDefaultDelayBetweenMultipleMessages(MessageRenderer messageRenderer) {
+        if (textToSpeechPlayer != null) {
+            boolean last = messageRenderer.currentMessage == messageRenderer.messages.size()
+                    && nextOutlineType != OutlineType.AppendParagraph;
+            if (!last && !messageRenderer.lastSection.contains(Type.Delay)) {
+                renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
+            }
         }
     }
 
@@ -344,20 +349,18 @@ public class SectionRenderer implements Closeable {
         return messageRenderer.currentMessage < messageRenderer.messages.size();
     }
 
-    private static boolean lastSectionHasDelay(RenderedMessage message) {
-        return message.getLastSection().contains(Type.Delay);
+    protected void finalizeRendering(MessageRenderer messageRenderer) {
+        completeSectionMandatory();
+        if (nextOutlineType == OutlineType.NewSection && textToSpeechPlayer != null
+                && !messageRenderer.lastSection.contains(Type.Delay)) {
+            renderSectionEndDelay();
+        }
+        completeSectionAll();
     }
 
-    protected void finalizeRendering(MessageRenderer messageRenderer) {
-        messageRenderer.renderer.mandatoryCompleted();
-        completeSectionAll();
-
-        if (executor.getQueue().isEmpty() && getTextToSpeech().isPresent()
-                && !messageRenderer.lastSection.contains(Type.Delay)) {
-            completeSectionMandatory();
-            renderTimeSpannedPart(delay(DELAY_AT_END_OF_MESSAGE));
-            completeSectionAll();
-        }
+    private void renderSectionEndDelay() {
+        completeSectionMandatory();
+        renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_SECTIONS_SECONDS));
     }
 
     private void renderMessage(MessageRenderer messageRenderer, RenderedMessage message)
@@ -526,7 +529,9 @@ public class SectionRenderer implements Closeable {
                 handleIOException(e);
                 return AnnotatedImage.NoImage;
             } finally {
-                ((AbstractImages) actor.images).prefetcher().fetch();
+                if (actor.images instanceof AbstractImages) {
+                    ((AbstractImages) actor.images).prefetcher().fetch();
+                }
             }
         } else {
             return AnnotatedImage.NoImage;
@@ -604,10 +609,6 @@ public class SectionRenderer implements Closeable {
 
     private boolean isInstructionalImageOutputEnabled() {
         return Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages));
-    }
-
-    public Optional<TextToSpeechPlayer> getTextToSpeech() {
-        return Optional.ofNullable(textToSpeechPlayer);
     }
 
 }

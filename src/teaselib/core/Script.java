@@ -93,13 +93,13 @@ public abstract class Script {
 
         getOrDefault(teaseLib, Shower.class, Shower::new);
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
-        getOrDefault(teaseLib, DeviceInteractionImplementations.class, this::initScriptInteractions);
         Configuration config = teaseLib.config;
         if (Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))
                 || Boolean.parseBoolean(config.get(Config.InputMethod.SpeechRecognition))
                 || Boolean.parseBoolean(config.get(Config.Render.ActorImages))) {
             getOrDefault(teaseLib, TeaseLibAI.class, TeaseLibAI::new);
         }
+        getOrDefault(teaseLib, DeviceInteractionImplementations.class, this::initScriptInteractions);
 
         try {
             config.addScriptSettings(this.namespace);
@@ -120,16 +120,18 @@ public abstract class Script {
 
             if (teaseLib.globals.has(TeaseLibAI.class)) {
                 HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-                var speechRecognitionInputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
-                speechRecognitionInputMethod.events.recognitionStarted.add(
-                        ev -> humanPoseInteraction.setPause(speechRecognitionInputMethod::completeSpeechRecognition));
-
-                // TODO Generalize - HeadGestures -> Perception
-                if (Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))) {
-                    inputMethods.add(new HeadGesturesV2InputMethod( //
-                            deviceInteraction(HumanPoseDeviceInteraction.class),
-                            scriptRenderer.getInputMethodExecutorService()), () -> !canSpeak.getAsBoolean());
+                if (humanPoseInteraction != null) {
+                    var speechRecognitionInputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
+                    speechRecognitionInputMethod.events.recognitionStarted.add(ev -> humanPoseInteraction
+                            .setPause(speechRecognitionInputMethod::completeSpeechRecognition));
+                    // TODO Generalize - HeadGestures -> Perception
+                    if (Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))) {
+                        inputMethods.add(new HeadGesturesV2InputMethod( //
+                                deviceInteraction(HumanPoseDeviceInteraction.class),
+                                scriptRenderer.getInputMethodExecutorService()), () -> !canSpeak.getAsBoolean());
+                    }
                 }
+
             }
         }
 
@@ -182,8 +184,10 @@ public abstract class Script {
         var scriptInteractionImplementations = new DeviceInteractionImplementations();
         scriptInteractionImplementations.add(KeyReleaseDeviceInteraction.class,
                 () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer));
-        scriptInteractionImplementations.add(HumanPoseDeviceInteraction.class,
-                () -> new HumanPoseDeviceInteraction(teaseLib.globals.get(TeaseLibAI.class), scriptRenderer));
+        if (teaseLib.globals.has(TeaseLibAI.class)) {
+            scriptInteractionImplementations.add(HumanPoseDeviceInteraction.class,
+                    () -> new HumanPoseDeviceInteraction(teaseLib.globals.get(TeaseLibAI.class), scriptRenderer));
+        }
         return scriptInteractionImplementations;
     }
 
@@ -347,6 +351,7 @@ public abstract class Script {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
         }
+        teaseLib.config.flushSettings();
     }
 
     private Optional<TextToSpeechPlayer> getTextToSpeech() {
@@ -423,18 +428,16 @@ public abstract class Script {
             scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech));
         }
 
-        var inputMethods = teaseLib.globals.get(InputMethods.class);
-        var choices = choices(answers, intention);
-        var prompt = getPrompt(choices, inputMethods, scriptFunction);
+        var prompt = getPrompt(answers, intention, scriptFunction);
 
-        waitToStartScriptFunction(scriptFunction);
+        if (scriptFunction == null) {
+            completeSection();
+        } else {
+            completeSectionBeforeStarting(scriptFunction);
+        }
+
         if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             scriptRenderer.stopBackgroundRenderers();
-        }
-        if (scriptFunction == null || scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
-            if (!scriptRenderer.isInterTitle()) {
-                showAll(5.0);
-            }
         }
 
         Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript = speechRecognitioneRejectedScript(
@@ -451,15 +454,45 @@ public abstract class Script {
         return answer;
     }
 
+    private void completeSection() {
+        // If we don't have a script function,
+        // then the mandatory part of the renderers
+        // must be completed before displaying the ui choices
+        if (scriptRenderer.isInterTitle()) {
+            completeMandatory();
+        } else {
+            // queuing implies completing the previous mandatory message
+            showAll(5.0);
+        }
+    }
+
+    private void completeSectionBeforeStarting(ScriptFunction scriptFunction) {
+        if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
+            // A confirmation relates to the current message,
+            // and must appears like a normal button,
+            // so in a way it is concatenated to the current message
+            completeMandatory();
+        } else {
+            // An autonomous script function does not relate to the current
+            // message, therefore we'll wait until all of the last message
+            // has been completed
+            completeAll();
+        }
+    }
+
     private Answer anwser(Prompt prompt) {
         Choice choice;
         if (teaseLib.globals.has(TeaseLibAI.class)) {
             HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-            try {
-                define(humanPoseInteraction);
+            if (humanPoseInteraction != null) {
+                try {
+                    define(humanPoseInteraction);
+                    choice = showPrompt(prompt).get(0);
+                } finally {
+                    undefine(humanPoseInteraction);
+                }
+            } else {
                 choice = showPrompt(prompt).get(0);
-            } finally {
-                undefine(humanPoseInteraction);
             }
         } else {
             choice = showPrompt(prompt).get(0);
@@ -500,7 +533,10 @@ public abstract class Script {
 
     private String selectPhrase(Answer answer) {
         // TODO Use a random function that is not used for control flow
-        return answer.text.get(random.value(0, answer.text.size() - 1));
+        // TODO intead of returning a fixed or completely random value,
+        // - select one of the main phrases -> those that support the story line
+        // - use all other phrases as alternatives to speak, but not to display
+        return answer.text.get(0);
     }
 
     private List<Choice> showPrompt(Prompt prompt) {
@@ -514,7 +550,9 @@ public abstract class Script {
         return choice;
     }
 
-    private Prompt getPrompt(Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction) {
+    private Prompt getPrompt(List<Answer> answers, Intention intention, ScriptFunction scriptFunction) {
+        var choices = choices(answers, intention);
+        var inputMethods = teaseLib.globals.get(InputMethods.class);
         var prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct, uiEvents());
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {
@@ -524,7 +562,7 @@ public abstract class Script {
     }
 
     protected Supplier<UiEvent> uiEvents() {
-        // TODO depends on camera input and pose available
+        // TODO depends on camera input
         if (teaseLib.globals.has(TeaseLibAI.class)) {
             return () -> new InputMethod.UiEvent(isFace2Face());
         } else {
@@ -534,9 +572,13 @@ public abstract class Script {
 
     boolean isFace2Face() {
         HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
-        // TODO multiple interests
-        PoseAspects pose = humanPoseInteraction.getPose(Interest.Proximity);
-        return pose.is(Proximity.FACE2FACE) || !pose.is(HumanPose.Status.Available);
+        if (humanPoseInteraction != null) {
+            // TODO multiple interests
+            PoseAspects pose = humanPoseInteraction.getPose(Interest.Proximity);
+            return pose.is(Proximity.FACE2FACE) || !pose.is(HumanPose.Status.Available);
+        } else {
+            return true;
+        }
     }
 
     private Optional<SpeechRecognitionRejectedScript> speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {
@@ -547,28 +589,6 @@ public abstract class Script {
 
     public Replay getReplay() {
         return scriptRenderer.getReplay();
-    }
-
-    private void waitToStartScriptFunction(final ScriptFunction scriptFunction) {
-        // Wait for previous message to complete
-        if (scriptFunction == null) {
-            // If we don't have a script function,
-            // then the mandatory part of the renderers
-            // must be completed before displaying the ui choices
-            completeMandatory();
-        } else {
-            if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
-                // A confirmation relates to the current message,
-                // and must appears like a normal button,
-                // so in a way it is concatenated to the current message
-                completeMandatory();
-            } else {
-                // An autonomous script function does not relate to the current
-                // message, therefore we'll wait until all of the last message
-                // has been completed
-                completeAll();
-            }
-        }
     }
 
     public List<String> expandTextVariables(List<String> strings) {

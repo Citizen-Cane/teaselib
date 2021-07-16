@@ -39,9 +39,6 @@ public class MediaRendererQueue {
      * 
      * The functions waits for running renderers to complete, then starts the renderers suppplied in {@code renderers}.
      * 
-     * @param activeRenderers
-     *            The renderers to start.
-     * @param teaseLib
      */
     public void start(List<MediaRenderer> newSet) {
         synchronized (activeRenderers) {
@@ -215,17 +212,15 @@ public class MediaRendererQueue {
 
     public Future<?> submit(MediaRenderer.Threaded mediaRenderer) {
         synchronized (activeRenderers) {
-            // TODO Must be managed by named executor service
-            // setThreadName(nameForActiveThread());
             Future<?> future;
             // TODO Batch renderer facade and ThreadedMediaRenderer have duplicated code -> merge
-            // TODO encapsulate this instanceof branches into the referenced classes
+            // TODO encapsulate these instanceof branches into the referenced classes
             if (mediaRenderer instanceof MessageRenderer.RendererFacade) {
                 mediaRenderer.run();
                 future = ((MessageRenderer.RendererFacade) mediaRenderer).getTask();
             } else if (mediaRenderer instanceof MediaRendererThread) {
-                future = new MediaFutureTask<MediaRendererThread>((MediaRendererThread) mediaRenderer,
-                        (Future<Void>) executor.submit(mediaRenderer)) {
+                Future<?> task = executor.submit(mediaRenderer);
+                future = new MediaFutureTask<>((MediaRendererThread) mediaRenderer, task) {
                     @Override
                     public boolean cancel(boolean mayInterruptIfRunning) {
                         boolean cancel = super.cancel(mayInterruptIfRunning);
@@ -255,8 +250,6 @@ public class MediaRendererQueue {
                 return future;
             }
         }
-        // TODO Must be managed by named executor service
-        // setThreadName(nameForSleepingThread());
     }
 
     public void interruptAndJoin(MediaRenderer.Threaded mediaRenderer) {

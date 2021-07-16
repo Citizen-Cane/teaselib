@@ -7,9 +7,9 @@ import java.util.concurrent.TimeoutException;
 
 class MediaFutureTask<T extends MediaRenderer.Threaded> implements Future<Void> {
     protected final T mediaRenderer;
-    private final Future<Void> future;
+    private final Future<?> future;
 
-    MediaFutureTask(T mediaRenderer, Future<Void> future) {
+    MediaFutureTask(T mediaRenderer, Future<?> future) {
         this.mediaRenderer = mediaRenderer;
         this.future = future;
     }
@@ -36,11 +36,11 @@ class MediaFutureTask<T extends MediaRenderer.Threaded> implements Future<Void> 
 
     @Override
     public Void get() throws InterruptedException, ExecutionException {
-        return future.get();
+        return (Void) future.get();
     }
 
     @Override
     public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return future.get(timeout, unit);
+        return (Void) future.get(timeout, unit);
     }
 }

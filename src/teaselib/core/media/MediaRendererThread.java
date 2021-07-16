@@ -105,8 +105,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     protected final void startCompleted() {
         completedStart.countDown();
         if (logger.isDebugEnabled()) {
-            logger.debug(getClass().getSimpleName() + " completed start after "
-                    + String.format("%.2f seconds", getElapsedSeconds()));
+            logger.debug("{} completed start after {}", getClass().getSimpleName(),
+                    String.format("%.2f seconds", getElapsedSeconds()));
         }
     }
 

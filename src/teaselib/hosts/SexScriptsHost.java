@@ -659,7 +659,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             int comboboxIndex = j;
             for (int index : new Interval(0, choices.size() - 1)) {
                 String text = model.getElementAt(j);
-                if (text.contains(Choice.getDisplay(choices.get(index)))) {
+                if (text != null && text.contains(choices.get(index).display)) {
                     clickableChoices.set(index, () -> {
                         enable(Collections.singleton(ssComboBox), true);
                         ssComboBox.setSelectedIndex(comboboxIndex);

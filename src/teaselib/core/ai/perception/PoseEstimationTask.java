@@ -137,6 +137,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 device = awaitCaptureDevice();
+                logger.info("Using capture device {}", device.name);
                 device.start();
                 humanPose = getModel(Interest.Status);
                 estimatePoses();

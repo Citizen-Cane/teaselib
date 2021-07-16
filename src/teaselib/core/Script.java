@@ -159,25 +159,24 @@ public abstract class Script {
         @Override
         public void run(PoseEstimationEventArgs eventArgs) throws Exception {
             Optional<Proximity> aspect = eventArgs.pose.aspect(Proximity.class);
-            boolean speechProximity;
+            Proximity proximity;
             if (aspect.isPresent()) {
-                var proximity = aspect.get();
-                teaseLib.host.setActorProximity(proximity);
-                speechProximity = proximity == Proximity.FACE2FACE;
+                proximity = aspect.get();
                 previous = proximity;
             } else {
-                speechProximity = false;
                 if (previous == Proximity.CLOSE || previous == Proximity.FACE2FACE) {
-                    teaseLib.host.setActorProximity(Proximity.NEAR);
+                    proximity = Proximity.NEAR;
                 } else {
-                    teaseLib.host.setActorProximity(previous);
+                    proximity = previous;
                 }
             }
-            teaseLib.host.show();
+            boolean speechProximity = proximity == Proximity.FACE2FACE;
 
+            logger.info("User Proximity: {}", proximity);
+            teaseLib.host.setActorProximity(proximity);
             teaseLib.globals.get(Shower.class).updateUI(new InputMethod.UiEvent(speechProximity));
+            teaseLib.host.show();
         }
-
     };
 
     private DeviceInteractionImplementations initScriptInteractions() {
@@ -461,7 +460,6 @@ public abstract class Script {
         if (scriptRenderer.isInterTitle()) {
             completeMandatory();
         } else {
-            // queuing implies completing the previous mandatory message
             showAll(5.0);
         }
     }

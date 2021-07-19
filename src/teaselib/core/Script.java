@@ -147,17 +147,44 @@ public abstract class Script {
 
     protected void undefine(HumanPoseDeviceInteraction humanPoseInteraction) {
         humanPoseInteraction.removeEventListener(actor, proximitySensor);
-        // TODO set actor proximity with next image to avoid additional un-zoom of current image
         teaseLib.host.setActorProximity(Proximity.FAR);
     }
 
-    private final HumanPoseDeviceInteraction.EventListener proximitySensor = new HumanPoseDeviceInteraction.EventListener(
-            HumanPose.Interest.Proximity) {
+    private final HumanPoseDeviceInteraction.EventListener proximitySensor = new ProximitySensor(
+            Interest.asSet(Interest.Status, Interest.Proximity));
 
+    private final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
         private Proximity previous = Proximity.FACE2FACE;
+
+        private ProximitySensor(Set<Interest> interests) {
+            super(interests);
+        }
 
         @Override
         public void run(PoseEstimationEventArgs eventArgs) throws Exception {
+            var presence = presence(eventArgs);
+            var proximity = proximity(eventArgs);
+            boolean speechProximity = presence && proximity == Proximity.FACE2FACE;
+            
+            logger.info("User Presence: {}", presence);
+            logger.info("User Proximity: {}", proximity);
+            teaseLib.host.setActorProximity(proximity);
+            teaseLib.globals.get(Shower.class).updateUI(new InputMethod.UiEvent(speechProximity));
+            teaseLib.host.show();
+        }
+
+        private boolean presence(PoseEstimationEventArgs eventArgs) {
+            Optional<HumanPose.Status> aspect = eventArgs.pose.aspect(HumanPose.Status.class);
+            HumanPose.Status presence;
+            if (aspect.isPresent()) {
+                presence = aspect.get();
+            } else {
+                presence = HumanPose.Status.Available;
+            }
+            return presence != HumanPose.Status.None;
+        }
+
+        private Proximity proximity(PoseEstimationEventArgs eventArgs) {
             Optional<Proximity> aspect = eventArgs.pose.aspect(Proximity.class);
             Proximity proximity;
             if (aspect.isPresent()) {
@@ -170,14 +197,9 @@ public abstract class Script {
                     proximity = previous;
                 }
             }
-            boolean speechProximity = proximity == Proximity.FACE2FACE;
-
-            logger.info("User Proximity: {}", proximity);
-            teaseLib.host.setActorProximity(proximity);
-            teaseLib.globals.get(Shower.class).updateUI(new InputMethod.UiEvent(speechProximity));
-            teaseLib.host.show();
+            return proximity;
         }
-    };
+    }
 
     private DeviceInteractionImplementations initScriptInteractions() {
         var scriptInteractionImplementations = new DeviceInteractionImplementations();
@@ -560,20 +582,19 @@ public abstract class Script {
     }
 
     protected Supplier<UiEvent> uiEvents() {
-        // TODO depends on camera input
+        // TODO also depends on camera input - possibly wrong state after camera surprise-removal
         if (teaseLib.globals.has(TeaseLibAI.class)) {
             return () -> new InputMethod.UiEvent(isFace2Face());
         } else {
-            return Prompt.AlwaysEnabledSupplier;
+            return Prompt.AlwaysEnabled;
         }
     }
 
     boolean isFace2Face() {
         HumanPoseDeviceInteraction humanPoseInteraction = deviceInteraction(HumanPoseDeviceInteraction.class);
         if (humanPoseInteraction != null) {
-            // TODO multiple interests
             PoseAspects pose = humanPoseInteraction.getPose(Interest.Proximity);
-            return pose.is(Proximity.FACE2FACE) || !pose.is(HumanPose.Status.Available);
+            return pose.is(Proximity.FACE2FACE);
         } else {
             return true;
         }

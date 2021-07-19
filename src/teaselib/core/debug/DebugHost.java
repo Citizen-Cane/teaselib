@@ -93,6 +93,11 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
+    public void setup() {
+        //
+    }
+
+    @Override
     public void show(AnnotatedImage actorImage, List<String> text) {
         // Ignore
     }

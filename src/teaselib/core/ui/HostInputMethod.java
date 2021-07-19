@@ -10,7 +10,9 @@ import java.util.concurrent.ExecutorService;
  */
 public class HostInputMethod extends AbstractInputMethod {
     public interface Backend {
-        Prompt.Result reply(Choices choices);
+        void setup();
+
+        Prompt.Result reply(Choices choices) throws InterruptedException;
 
         void updateUI(InputMethod.UiEvent event);
 
@@ -26,7 +28,7 @@ public class HostInputMethod extends AbstractInputMethod {
 
     @Override
     public Setup getSetup(Choices choices) {
-        return Unused;
+        return () -> host.setup();
     }
 
     @Override

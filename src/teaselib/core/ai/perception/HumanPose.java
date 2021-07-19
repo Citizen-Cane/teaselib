@@ -6,6 +6,9 @@ import java.awt.geom.Rectangle2D.Double;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,12 +36,22 @@ public class HumanPose extends NativeObject {
         Proximity(2),
         HeadGestures(4),
 
+        Arms(8),
+        Torso(16),
+        Legs(32),
+
         ;
 
         final int bit;
 
         private Interest(int bit) {
             this.bit = bit;
+        }
+
+        public static final Set<Interest> supported = asSet(Interest.Status, Interest.Proximity, Interest.HeadGestures);
+
+        public static Set<Interest> asSet(Interest... interests) {
+            return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(interests)));
         }
     }
 

@@ -6,6 +6,7 @@ import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -122,9 +123,9 @@ public class TeaseLibAI implements Closeable {
 
     private HumanPose cachedModel = null;
 
-    public HumanPose getModel(Interest interest) {
-        if (interest != Interest.Status) {
-            throw new UnsupportedOperationException("TODO Match interests with pose estiamtion model");
+    public HumanPose getModel(Set<Interest> interests) {
+        if (!Interest.supported.containsAll(interests)) {
+            throw new UnsupportedOperationException("No pose estimation model available to match " + interests);
         }
         if (cachedModel == null) {
             cachedModel = new HumanPose();

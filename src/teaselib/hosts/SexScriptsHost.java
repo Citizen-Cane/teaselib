@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
@@ -134,6 +135,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private final InputMethod inputMethod;
     private Set<String> activeChoices;
     private FutureTask<Prompt.Result> showChoices;
+    private CountDownLatch enableUI = null;
     private boolean intertitleActive = false;
 
     Runnable onQuitHandler = null;
@@ -711,6 +713,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         enable(uiComponents, false);
         activeChoices = null;
         showChoices = null;
+        enableUI = null;
         return dismissed;
     }
 
@@ -795,10 +798,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     @Override
-    public Prompt.Result reply(Choices choices) {
-        if (Thread.interrupted()) {
-            throw new ScriptInterruptedException();
-        }
+    public void setup() {
+        enableUI = new CountDownLatch(1);
+    }
+
+    @Override
+    public Prompt.Result reply(Choices choices) throws InterruptedException {
+        enableUI.await();
         this.activeChoices = choices.stream().map(Choice::getDisplay).collect(toSet());
         // open the combo box pop-up if necessary in order to
         // allow the user to read prompts without mouse/touch interaction
@@ -832,7 +838,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
     @Override
     public void updateUI(InputMethod.UiEvent event) {
-        enableButtons(event.enabled);
+        if (showChoices == null) {
+            if (event.enabled) {
+                enableUI.countDown();
+            }
+        } else {
+            enableButtons(event.enabled);
+        }
     }
 
     // TODO UI components are always visible at first:

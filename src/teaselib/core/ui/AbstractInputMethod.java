@@ -61,7 +61,7 @@ public abstract class AbstractInputMethod implements InputMethod {
     public final void show(Prompt prompt) throws InterruptedException {
         Objects.requireNonNull(prompt);
         if (showLock.isLocked()) {
-            throw new ConcurrentModificationException("Show prompt " + this.toString());
+            throw new ConcurrentModificationException("Show prompt " + this);
         }
 
         activePrompt.set(prompt);

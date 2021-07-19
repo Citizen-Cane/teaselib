@@ -24,11 +24,9 @@ import teaselib.core.ui.InputMethod.UiEvent;
 import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
-    public static final UiEvent AlwaysEnabled = new InputMethod.UiEvent(true);
-
     private static final List<Choice> SCRIPTFUNCTION_TIMEOUT = Collections.singletonList(new Choice(Answer.Timeout));
 
-    public static final Supplier<InputMethod.UiEvent> AlwaysEnabledSupplier = () -> AlwaysEnabled;
+    public static final Supplier<InputMethod.UiEvent> AlwaysEnabled = () -> new InputMethod.UiEvent(true);
 
     public static class Result {
         public static final Result UNDEFINED = new Result(Integer.MIN_VALUE) {
@@ -141,7 +139,7 @@ public class Prompt {
 
     public Prompt(Script script, Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction,
             Result.Accept mode) {
-        this(script, choices, inputMethods, scriptFunction, mode, AlwaysEnabledSupplier);
+        this(script, choices, inputMethods, scriptFunction, mode, AlwaysEnabled);
     }
 
     public Prompt(Script script, Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction,

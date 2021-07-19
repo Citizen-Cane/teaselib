@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,22 +59,22 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         this.inferenceThread = submitAndGetResult(Thread::currentThread);
     }
 
-    public PoseAspects getPose(Interest interest) {
-        throwIfUnsupported(interest);
+    public PoseAspects getPose(Set<Interest> interests) {
+        throwIfUnsupported(interests);
+        // TODO check whether the current model/poseAspects matches the requested interests
         return poseAspects.get();
     }
 
-    private static void throwIfUnsupported(Interest interest) {
-        Objects.requireNonNull(interest);
-        if (interest != Interest.Status && interest != Interest.Proximity && interest != Interest.HeadGestures) {
-            // TODO manage multiple models (e.g. mobilenet_thin & CMU)
-            throw new UnsupportedOperationException(
-                    "TODO provide multiple pose estimation models to match all interests");
+    private static void throwIfUnsupported(Set<Interest> interests) {
+        Objects.requireNonNull(interests);
+
+        if (interests.stream().anyMatch(Predicate.not(Interest.supported::contains))) {
+            throw new NoSuchElementException("No pose estimation model available to match " + interests);
         }
     }
 
     // TODO replace the aspects with a condition a l Requires.all(...), Requires.any(...)
-    boolean awaitPose(Interest interests, long duration, TimeUnit unit, PoseAspect... aspects) {
+    boolean awaitPose(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) {
         throwIfUnsupported(interests);
         var pose = poseAspects.get();
         if (pose.containsAll(interests) && pose.is(aspects)) {
@@ -80,7 +82,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         } else {
             try {
                 awaitPose.lockInterruptibly();
-                awaitInterests.set(Collections.singleton(interests));
+                awaitInterests.set(interests);
                 try {
                     logger.info("Awaiting pose {} and {}", interests, aspects);
                     while (poseChanged.await(duration, unit)) {
@@ -101,13 +103,13 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         }
     }
 
-    HumanPose getModel(Interest interest) {
-        throwIfUnsupported(interest);
+    HumanPose getModel(Set<Interest> interests) {
+        throwIfUnsupported(interests);
         if (humanPose == null) {
             if (Thread.currentThread() == this.inferenceThread) {
-                humanPose = teaseLibAI.getModel(interest);
+                humanPose = teaseLibAI.getModel(interests);
             } else {
-                humanPose = submitAndGetResult(() -> teaseLibAI.getModel(interest));
+                humanPose = submitAndGetResult(() -> teaseLibAI.getModel(interests));
             }
         }
         return humanPose;
@@ -139,7 +141,8 @@ class PoseEstimationTask implements Callable<PoseAspects> {
                 device = awaitCaptureDevice();
                 logger.info("Using capture device {}", device.name);
                 device.start();
-                humanPose = getModel(Interest.Status);
+                // TODO select model according to interests of active listeners
+                humanPose = getModel(Interest.supported);
                 estimatePoses();
             } catch (SceneCapture.DeviceLost e) {
                 HumanPoseDeviceInteraction.logger.warn(e.getMessage());

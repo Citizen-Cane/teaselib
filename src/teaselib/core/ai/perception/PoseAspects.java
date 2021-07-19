@@ -23,7 +23,7 @@ public class PoseAspects {
 
     PoseAspects() {
         this.estimation = HumanPose.Estimation.NONE;
-        this.interests = Collections.emptySet();
+        this.interests = Collections.singleton(Interest.Status);
         this.aspects = Collections.singleton(Status.None);
     }
 
@@ -71,7 +71,7 @@ public class PoseAspects {
         return false;
     }
 
-    public boolean containsAll(Interest... values) {
+    public boolean containsAll(Set<Interest> values) {
         for (Interest value : values) {
             if (!interests.contains(value)) {
                 return false;

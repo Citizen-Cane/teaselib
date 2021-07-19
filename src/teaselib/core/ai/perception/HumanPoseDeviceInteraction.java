@@ -4,6 +4,7 @@ import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -35,10 +36,14 @@ public class HumanPoseDeviceInteraction extends
     private Future<PoseAspects> future = null;
 
     public abstract static class EventListener implements Event<PoseEstimationEventArgs> {
-        final Interest interest;
+        final Set<Interest> interests;
 
         protected EventListener(Interest interest) {
-            this.interest = interest;
+            this(Collections.singleton(interest));
+        }
+
+        protected EventListener(Set<Interest> interests) {
+            this.interests = interests;
         }
     }
 
@@ -63,32 +68,36 @@ public class HumanPoseDeviceInteraction extends
         }
     }
 
-    public PoseAspects getPose(Interest interests) {
+    public PoseAspects getPose(Interest interest) {
+        return getPose(Collections.singleton(interest));
+    }
+
+    public PoseAspects getPose(Set<Interest> interests) {
         return poseEstimationTask.getPose(interests);
     }
 
-    public PoseAspects getPose(Interest interest, byte[] image) {
+    public PoseAspects getPose(Set<Interest> interests, byte[] image) {
         Callable<PoseAspects> poseAspects = () -> {
-            HumanPose model = getModel(Interest.Status);
+            HumanPose model = getModel(interests);
             List<Estimation> poses = model.poses(image);
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
             } else {
-                return new PoseAspects(poses.get(0), Collections.singleton(interest));
+                return new PoseAspects(poses.get(0), interests);
             }
         };
         return poseEstimationTask.submitAndGetResult(poseAspects);
     }
 
-    private HumanPose getModel(Interest interest) {
-        return poseEstimationTask.getModel(interest);
+    private HumanPose getModel(Set<Interest> interests) {
+        return poseEstimationTask.getModel(interests);
     }
 
     public void setPause(Runnable task) {
         poseEstimationTask.setPause(task);
     }
 
-    public boolean awaitPose(Interest interests, long duration, TimeUnit unit, PoseAspect... aspects) {
+    public boolean awaitPose(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) {
         return poseEstimationTask.awaitPose(interests, duration, unit, aspects);
     }
 
@@ -103,13 +112,15 @@ public class HumanPoseDeviceInteraction extends
         synchronized (this) {
             DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
                     actor);
-            EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest,
-                    k -> new EventSource<>(k.toString()));
-            eventSource.add(listener);
+            for (Interest interest : listener.interests) {
+                EventSource<PoseEstimationEventArgs> eventSource = definitions.get(interest,
+                        k -> new EventSource<>(k.toString()));
+                eventSource.add(listener);
+            }
         }
 
         try {
-            listener.run(new PoseEstimationEventArgs(actor, poseEstimationTask.getPose(listener.interest),
+            listener.run(new PoseEstimationEventArgs(actor, poseEstimationTask.getPose(listener.interests),
                     System.currentTimeMillis()));
         } catch (Exception e) {
             throw asRuntimeException(e);
@@ -121,17 +132,24 @@ public class HumanPoseDeviceInteraction extends
         synchronized (this) {
             DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
                     actor);
-            eventSource = definitions.get(listener.interest);
-            return eventSource != null && eventSource.contains(listener);
+            for (Interest interest : listener.interests) {
+                eventSource = definitions.get(interest);
+                if (eventSource != null && eventSource.contains(listener)) {
+                    return true;
+                }
+            }
         }
+        return false;
     }
 
     public void removeEventListener(Actor actor, EventListener listener) {
         synchronized (this) {
             DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
                     actor);
-            EventSource<PoseEstimationEventArgs> eventSource = definitions.get(listener.interest);
-            eventSource.remove(listener);
+            for (Interest interest : listener.interests) {
+                EventSource<PoseEstimationEventArgs> eventSource = definitions.get(interest);
+                eventSource.remove(listener);
+            }
         }
     }
 

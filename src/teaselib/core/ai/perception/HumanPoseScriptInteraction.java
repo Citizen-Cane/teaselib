@@ -1,7 +1,9 @@
 package teaselib.core.ai.perception;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -22,19 +24,36 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
                 .get(HumanPoseDeviceInteraction.class);
     }
 
-    public PoseAspects getPose(Interest interests) {
+    public PoseAspects getPose(Interest interest) {
+        return getPose(Collections.singleton(interest));
+    }
+
+    public PoseAspects getPose(Set<Interest> interests) {
         return deviceInteraction.getPose(interests);
     }
 
-    public PoseAspects getPose(Interest interests, byte[] image) {
+    public PoseAspects getPose(Interest interest, byte[] image) {
+        return getPose(Collections.singleton(interest), image);
+    }
+
+    public PoseAspects getPose(Set<Interest> interests, byte[] image) {
         return deviceInteraction.getPose(interests, image);
     }
 
     public ScriptFunction autoConfirm(Interest interest, HumanPose.PoseAspect... aspects) {
+        return autoConfirm(Collections.singleton(interest), aspects);
+    }
+
+    public ScriptFunction autoConfirm(Set<Interest> interest, HumanPose.PoseAspect... aspects) {
         return autoConfirm(interest, Long.MAX_VALUE, TimeUnit.SECONDS, aspects);
     }
 
     public ScriptFunction autoConfirm(Interest interest, long time, TimeUnit unit, HumanPose.PoseAspect... aspects) {
+        return autoConfirm(Collections.singleton(interest), time, unit, aspects);
+    }
+
+    public ScriptFunction autoConfirm(Set<Interest> interest, long time, TimeUnit unit,
+            HumanPose.PoseAspect... aspects) {
         return new ScriptFunction(() -> {
             return deviceInteraction.awaitPose(interest, time, unit, aspects)
                     ? Answer.yes(Arrays.stream(aspects).map(Objects::toString).collect(Collectors.toList()))

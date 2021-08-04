@@ -3,11 +3,14 @@
  */
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.TeaseLib.DefaultDomain;
 
 import org.junit.Test;
 
-import teaselib.core.TeaseLib;
+import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -41,14 +44,12 @@ public class ToyPersistenceTests {
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
 
         gag.setAvailable(true);
-        assertTrue(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "ball_gag")));
+        assertTrue(script.storage.containsKey(QualifiedName.of(DefaultDomain, "Toys.Gag", "ball_gag.Available")));
 
         Items shoes = script.domain(Clothes.Partner).items(Shoes.Feminine);
         Item highHeels = shoes.matching(Shoes.High_Heels).get();
         highHeels.setAvailable(true);
-
-        assertTrue("Domain item storage unsupported",
-                script.storage.containsKey(QualifiedName.of("Partner", "Shoes", "high_heels")));
+        assertTrue(script.storage.containsKey(QualifiedName.of("Partner", "Shoes.High_Heels", "high_heels.Available")));
     }
 
     @Test
@@ -59,12 +60,12 @@ public class ToyPersistenceTests {
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
 
         gag.setAvailable(true);
-        assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Toys.class.getSimpleName(), "ball_gag")));
+        assertTrue(script.storage.containsKey(
+                QualifiedName.of(DefaultDomain, QualifiedItem.of(Toys.Gag).toString(), "ball_gag.Available")));
 
         script.defaultDomain.items(Shoes.Feminine).matching(Shoes.High_Heels).get().setAvailable(true);
-        assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Shoes.class.getSimpleName(), "high_heels")));
+        assertTrue(script.storage.containsKey(QualifiedName.of(DefaultDomain,
+                QualifiedItem.of(Shoes.High_Heels).toString(), "high_heels.Available")));
     }
 
     @Test
@@ -72,10 +73,11 @@ public class ToyPersistenceTests {
         TestScript script = TestScript.getOne();
 
         script.domain(Clothes.Partner).item(Toys.Collar).setAvailable(true);
-        assertTrue(script.storage.containsKey(QualifiedName.of(Clothes.Partner, Toys.class.getSimpleName(), "collar")));
+        assertTrue(script.storage.containsKey(
+                QualifiedName.of(Clothes.Partner, QualifiedItem.of(Toys.Collar).toString(), "collar.Available")));
 
         script.domain(Clothes.Doll).items(Shoes.Feminine).matching(Shoes.High_Heels).get().setAvailable(true);
-        assertTrue(
-                script.storage.containsKey(QualifiedName.of(Clothes.Doll, Shoes.class.getSimpleName(), "high_heels")));
+        assertTrue(script.storage.containsKey(
+                QualifiedName.of(Clothes.Doll, QualifiedItem.of(Shoes.High_Heels).toString(), "high_heels.Available")));
     }
 }

@@ -4,14 +4,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class PersistentConfigurationFile extends ConfigurationFile {
+public class PersistentConfigurationFile extends ConfigurationFileImpl {
     private final Path path;
-    private final PersistentConfigurationFileStoreService fileWriterService;
 
-    PersistentConfigurationFile(Path path,
-            PersistentConfigurationFileStoreService persistentConfigurationFileStoreService) throws IOException {
+    interface ChangeListener {
+        void fileChanged(PersistentConfigurationFile file);
+    }
+
+    private final ChangeListener changeListener;
+
+    PersistentConfigurationFile(Path path, ChangeListener changeListener) throws IOException {
         this.path = path;
-        this.fileWriterService = persistentConfigurationFileStoreService;
+        this.changeListener = changeListener;
 
         if (path.toFile().exists()) {
             try (var inputStream = Files.newInputStream(path)) {
@@ -24,7 +28,9 @@ public class PersistentConfigurationFile extends ConfigurationFile {
         var backupPath = path.resolveSibling(path.getFileName() + ".backup");
         var tempPath = path.resolveSibling(path.getFileName() + ".temp");
         try (var outputStream = Files.newOutputStream(tempPath)) {
-            this.store(outputStream, "Teaselib settings file");
+            synchronized (this) {
+                store(outputStream, "Teaselib settings file");
+            }
         }
 
         if (backupPath.toFile().exists()) {
@@ -38,15 +44,7 @@ public class PersistentConfigurationFile extends ConfigurationFile {
 
     @Override
     public void set(String key, String value) {
-        synchronized (fileWriterService) {
-            super.set(key, value);
-            writeBackLater();
-        }
-    }
-
-    @Override
-    public void set(String key, boolean value) {
-        synchronized (fileWriterService) {
+        synchronized (this) {
             super.set(key, value);
             writeBackLater();
         }
@@ -54,14 +52,14 @@ public class PersistentConfigurationFile extends ConfigurationFile {
 
     @Override
     public void clear(String key) {
-        synchronized (fileWriterService) {
+        synchronized (this) {
             super.clear(key);
             writeBackLater();
         }
     }
 
     private void writeBackLater() {
-        fileWriterService.queue(this);
+        changeListener.fileChanged(this);
     }
 
 }

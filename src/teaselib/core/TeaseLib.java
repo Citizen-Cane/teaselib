@@ -713,7 +713,7 @@ public class TeaseLib implements Closeable {
     public class PersistentEnum<T extends Enum<?>> extends PersistentValue<T> {
 
         public PersistentEnum(String domain, Class<T> enumClass) {
-            super(domain, ReflectionUtils.classParentName(enumClass), ReflectionUtils.classSimpleName(enumClass),
+            super(domain, ReflectionUtils.parent(enumClass), ReflectionUtils.classSimpleName(enumClass),
                     enumClass.getEnumConstants()[0]);
         }
 

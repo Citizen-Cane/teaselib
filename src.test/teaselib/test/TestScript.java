@@ -112,7 +112,6 @@ public class TestScript extends TeaseScript {
         this(debugHost, new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup(), actor);
     }
 
-    @SuppressWarnings("resource")
     TestScript(DebugHost host, ResourceLoader resourceLoader, Setup setup, Actor actor) throws IOException {
         super(new TeaseLib(host, setup), resourceLoader, actor, NAMESPACE);
         this.host = host;
@@ -163,9 +162,9 @@ public class TestScript extends TeaseScript {
     public int storageSize() {
         List<QualifiedName> keys = storage.keySet().stream() //
                 .filter(key -> !key.domain.startsWith("LastUsed")) //
-                .filter(key -> !key.name.startsWith("LastUsed")) //
+                .filter(key -> !key.namespace.startsWith("LastUsed")) //
                 // PersistedDomain values are present since they reference Domain.LastUsed
-                .filter(key -> !key.name.startsWith("PersistedDomains")) //
+                .filter(key -> !key.namespace.startsWith("PersistedDomains")) //
                 .collect(Collectors.toList());
         return keys.size();
     }

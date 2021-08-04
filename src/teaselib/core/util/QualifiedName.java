@@ -1,12 +1,24 @@
 package teaselib.core.util;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 
+ * domain/name.space:name
+ * <p>
+ * domain:name.space/name
+ * <p>
+ * domain:name/space.name
+ * 
+ * @author Citizen-Cane
+ *
+ */
 public class QualifiedName implements Comparable<QualifiedName> {
-    private static final char SEPARATOR = '.';
+    private static final char DOMAIN_SEPARATOR = ':';
+    private static final char NAMESPACE_SEPARATOR = '/';
     public static final String NONE = "";
 
     protected static final String[] StrippedPackageNames = { "teaselib.scripts", "teaselib" };
@@ -17,7 +29,7 @@ public class QualifiedName implements Comparable<QualifiedName> {
 
     public static String strip(String path) {
         for (String packageName : StrippedPackageNames) {
-            String string = packageName + ".";
+            var string = packageName + ".";
             if (path.startsWith(string)) {
                 return path.substring(string.length());
             }
@@ -30,7 +42,7 @@ public class QualifiedName implements Comparable<QualifiedName> {
     }
 
     public static QualifiedName of(String domain, Enum<?> item) {
-        QualifiedItem qualifiedItem = QualifiedItem.of(item);
+        var qualifiedItem = QualifiedItem.of(item);
         return QualifiedName.of(strip(domain), strip(qualifiedItem.namespace()), qualifiedItem.name());
     }
 
@@ -54,13 +66,13 @@ public class QualifiedName implements Comparable<QualifiedName> {
         if (domain.equals(NONE) && namespace.equals(NONE)) {
             return name;
         } else if (domain.equals(NONE)) {
-            return namespace + SEPARATOR + name;
+            return namespace + NAMESPACE_SEPARATOR + name;
         } else if (namespace.equals(NONE)) {
-            return domain + SEPARATOR + name;
+            return domain + DOMAIN_SEPARATOR + NAMESPACE_SEPARATOR + name;
         } else if (name.equals(NONE)) {
-            return domain + SEPARATOR + namespace;
+            return domain + DOMAIN_SEPARATOR + namespace;
         } else {
-            return domain + SEPARATOR + namespace + SEPARATOR + name;
+            return domain + DOMAIN_SEPARATOR + namespace + NAMESPACE_SEPARATOR + name;
         }
     }
 
@@ -131,13 +143,13 @@ public class QualifiedName implements Comparable<QualifiedName> {
     }
 
     public boolean equals(Enum<?> item) {
-        QualifiedItem qualifiedItem = QualifiedItem.of(item);
+        var qualifiedItem = QualifiedItem.of(item);
         return this.namespace.equalsIgnoreCase(strip(qualifiedItem.namespace()))
                 && this.name.equalsIgnoreCase(qualifiedItem.name());
     }
 
     public boolean equalsClass(Class<?> clazz) {
-        QualifiedItem qualifiedItem = QualifiedItem.of(ReflectionUtils.normalizedClassName(clazz));
+        var qualifiedItem = QualifiedItem.of(ReflectionUtils.qualified(clazz));
         return this.namespace.equalsIgnoreCase(strip(qualifiedItem.namespace()))
                 && this.name.equalsIgnoreCase(qualifiedItem.name());
     }

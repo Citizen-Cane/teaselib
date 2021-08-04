@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static teaselib.core.TeaseLib.DefaultDomain;
 
 import java.util.concurrent.TimeUnit;
 
@@ -66,16 +67,12 @@ public class StateTests {
         assertFalse(somethingOnNipples.applied());
         assertEquals(0, script.storage.size());
 
-        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
+        // Assert that when a state is applied then
+        // the namespace of the script is applied to that state
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember(Until.Removed);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
-
-        assertEquals(0, script.storageSize());
-        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember(Until.Removed);
-
-        // Assert that when a state is applied then
-        // the namespace of the script is applied to that state
         assertTrue(somethingOnNipples.is(script.namespace));
         assertTrue(somethingOnNipples.is(Toys.Nipple_Clamps));
         assertTrue(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
@@ -86,19 +83,15 @@ public class StateTests {
         // because thats the state our test script applied,
         // and empty attribute lists aren't persisted
 
-        assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.duration")));
-        assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.peers")));
-        assertFalse(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.attributes")));
+        assertTrue(script.storage.containsKey(QualifiedName.of(DefaultDomain, "Toys.Nipple_Clamps", "state.duration")));
+        assertTrue(script.storage.containsKey(QualifiedName.of(DefaultDomain, "Toys.Nipple_Clamps", "state.peers")));
+        assertFalse(
+                script.storage.containsKey(QualifiedName.of(DefaultDomain, "Toys.Nipple_Clamps", "state.attributes")));
 
-        assertTrue(
-                script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.peers")));
+        assertTrue(script.storage.containsKey(QualifiedName.of(DefaultDomain, "Body.OnNipples", "state.peers")));
+        assertTrue(script.storage.containsKey(QualifiedName.of(DefaultDomain, "Body.OnNipples", "state.duration")));
         assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.duration")));
-        assertTrue(script.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.attributes")));
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body.OnNipples", "state.attributes")));
 
         assertEquals(0, ((StateProxy) script.state(script.namespace)).peers().size());
 

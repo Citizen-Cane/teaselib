@@ -49,19 +49,22 @@ public class ItemImplTest {
 
     @Test
     public void testAvailable() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
         QualifiedItem fooBar = QualifiedItem.of("Foo.Bar");
-        String storageName = fooBar.name();
+        String guid = fooBar.name();
         TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
-                fooBar.namespace(), storageName);
-        Item item = new ItemImpl(script.teaseLib, fooBar, TeaseLib.DefaultDomain, new ItemGuid(storageName),
+                fooBar.toString(), guid + ".Available");
+        Item item = new ItemImpl(script.teaseLib, fooBar, TeaseLib.DefaultDomain, new ItemGuid(guid),
                 ItemImpl.createDisplayName(fooBar.name()));
 
+        assertEquals(0, script.storage.size());
         item.setAvailable(false);
+        assertEquals(1, script.storage.size());
         assertEquals(false, item.isAvailable());
         assertEquals(false, value.value());
 
         item.setAvailable(true);
+        assertEquals(1, script.storage.size());
         assertEquals(true, item.isAvailable());
         assertEquals(true, value.value());
     }

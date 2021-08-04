@@ -328,12 +328,12 @@ public class StateMapsPersistenceTest extends StateMaps {
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
             Map<QualifiedName, String> storage = script.storage;
-            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Toys", "Chastity_Device.state.duration")));
-            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Toys", "Chastity_Device.state.peers")));
-            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body", "SomethingOnPenis.state.duration")));
-            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body", "SomethingOnPenis.state.peers")));
-            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body", "CannotJerkOff.state.duration")));
-            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body", "CannotJerkOff.state.peers")));
+            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Toys.Chastity_Device", "state.duration")));
+            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Toys.Chastity_Device", "state.peers")));
+            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body.SomethingOnPenis", "state.duration")));
+            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body.SomethingOnPenis", "state.peers")));
+            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body.CannotJerkOff", "state.duration")));
+            assertTrue(storage.containsKey(QualifiedName.of(TEST_DOMAIN, "Body.CannotJerkOff", "state.peers")));
         }
 
         state(TEST_DOMAIN, Toys_Chastity_Device).remove();
@@ -352,14 +352,12 @@ public class StateMapsPersistenceTest extends StateMaps {
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
             Map<QualifiedName, String> storage = script.storage;
-            assertFalse(
-                    storage.containsKey(QualifiedName.of(TEST_DOMAIN, Toys_Chastity_Device + ".state", "duration")));
-            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Toys_Chastity_Device + ".state", "peers")));
-            assertFalse(
-                    storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_SomethingOnPenis + ".state", "duration")));
-            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_SomethingOnPenis + ".state", "peers")));
-            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_CannotJerkOff + ".state", "duration")));
-            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_CannotJerkOff + ".state", "peers")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Toys_Chastity_Device, "state.duration")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Toys_Chastity_Device, "state.peers")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_SomethingOnPenis, "state.duration")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_SomethingOnPenis, "state.peers")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_CannotJerkOff, "state.duration")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_CannotJerkOff, "state.peers")));
         }
 
         state(TEST_DOMAIN, Toys_Wrist_Restraints).remove();

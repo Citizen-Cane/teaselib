@@ -1,14 +1,13 @@
 package teaselib.core.util;
 
+import java.util.Objects;
 import java.util.Optional;
 
 abstract class AbstractQualifiedItem<T> implements QualifiedItem {
     public final T value;
 
     public AbstractQualifiedItem(T value) {
-        if (value == null) {
-            throw new IllegalArgumentException("null");
-        }
+        Objects.requireNonNull(value);
         this.value = value;
     }
 

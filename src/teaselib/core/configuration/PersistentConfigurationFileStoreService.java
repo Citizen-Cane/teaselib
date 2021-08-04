@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -14,7 +15,8 @@ import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
 public class PersistentConfigurationFileStoreService implements Closeable {
-    private final Set<PersistentConfigurationFile> elements = new HashSet<>();
+
+    private final Set<PersistentConfigurationFile> elements = new CopyOnWriteArraySet<>();
     private final NamedExecutorService fileWriterService = NamedExecutorService.newFixedThreadPool(1,
             "Configuration file writer service");
     private final Thread fileWriterShutdownHook;
@@ -45,18 +47,18 @@ public class PersistentConfigurationFileStoreService implements Closeable {
         }
     };
 
-    private Future<Void> job = Done;
+    private Future<Void> writeAll = Done;
 
     PersistentConfigurationFileStoreService() {
         fileWriterShutdownHook = new Thread(this::shutdown);
         Runtime.getRuntime().addShutdownHook(fileWriterShutdownHook);
     }
 
-    PersistentConfigurationFile openFile(Path path) throws IOException {
-        return new PersistentConfigurationFile(path, this);
+    ConfigurationFile open(Path path) throws IOException {
+        return new PersistentConfigurationFile(path, this::queue);
     }
 
-    void queue(PersistentConfigurationFile file) {
+    private void queue(PersistentConfigurationFile file) {
         synchronized (this) {
             elements.add(file);
         }
@@ -65,9 +67,9 @@ public class PersistentConfigurationFileStoreService implements Closeable {
     Future<Void> write() throws IOException {
         synchronized (this) {
             if (!elements.isEmpty()) {
-                if (!job.isDone() && !job.isCancelled()) {
+                if (!writeAll.isDone() && !writeAll.isCancelled()) {
                     try {
-                        job.get();
+                        writeAll.get();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     } catch (ExecutionException e) {
@@ -81,7 +83,7 @@ public class PersistentConfigurationFileStoreService implements Closeable {
                 }
                 var pending = new HashSet<>(elements);
                 elements.clear();
-                job = fileWriterService.submit(() -> {
+                writeAll = fileWriterService.submit(() -> {
                     for (PersistentConfigurationFile file : pending) {
                         synchronized (this) {
                             file.store();
@@ -89,7 +91,7 @@ public class PersistentConfigurationFileStoreService implements Closeable {
                     }
                     return null;
                 });
-                return job;
+                return writeAll;
             } else {
                 return Done;
             }

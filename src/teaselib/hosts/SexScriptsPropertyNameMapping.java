@@ -12,6 +12,8 @@ import teaselib.Toys;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedName;
+import teaselib.core.util.ReflectionUtils;
+import teaselib.util.ItemImpl;
 
 /**
  * Map TeaseLib enumerations to SexSripts state, and correct a few naming issues, precisely the use of british vs us
@@ -24,6 +26,7 @@ import teaselib.core.util.QualifiedName;
  *
  */
 public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
+    private static final String _Available = "." + ItemImpl.Available;
     public static final QualifiedName SEXUALITY_SEX = new QualifiedName("", "Sexuality", "Sex");
     public static final QualifiedName INTRO_FEMALE = new QualifiedName("", "intro", "female");
 
@@ -43,6 +46,12 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
             return QualifiedName.of(name.domain, INTRO_FEMALE.namespace, INTRO_FEMALE.name);
         } else if (name.namespaceEquals(Household.class.getSimpleName())) {
             return name.withNamespace("toys");
+        } else if (name.name.endsWith(_Available)) {
+            var newNamespace = ReflectionUtils.parent(name.namespace);
+            var newName = name.name.substring(0, name.name.length() - _Available.length());
+            return mapDomainsAndPaths(new QualifiedName(name.domain, //
+                    "", //
+                    ReflectionUtils.qualified(newNamespace, newName).toLowerCase()));
         } else if (lowerCaseRequired(name.namespace)) {
             return name.withNamespace(name.namespace.toLowerCase());
         } else {

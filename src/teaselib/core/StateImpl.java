@@ -61,37 +61,35 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         final PersistentString peerStorage;
         final PersistentString attributeStorage;
 
-        StateStorage(TeaseLib teaseLib, String domain, Object item) {
+        StateStorage(TeaseLib teaseLib, String domain, String item) {
             this.appliedStorage = persistentApplied(teaseLib, domain, item);
             this.durationStorage = persistentDuration(teaseLib, domain, item);
             this.peerStorage = persistentPeers(teaseLib, domain, item);
             this.attributeStorage = persistentAttributes(teaseLib, domain, item);
         }
 
-        TeaseLib.PersistentBoolean persistentApplied(TeaseLib teaseLib, String domain, Object item) {
+        TeaseLib.PersistentBoolean persistentApplied(TeaseLib teaseLib, String domain, String item) {
             return persistentBoolean(teaseLib, domain, item, "applied");
         }
 
-        TeaseLib.PersistentString persistentDuration(TeaseLib teaseLib, String domain, Object item) {
+        TeaseLib.PersistentString persistentDuration(TeaseLib teaseLib, String domain, String item) {
             return persistentString(teaseLib, domain, item, "duration");
         }
 
-        PersistentString persistentPeers(TeaseLib teaseLib, String domain, Object item) {
+        PersistentString persistentPeers(TeaseLib teaseLib, String domain, String item) {
             return persistentString(teaseLib, domain, item, "peers");
         }
 
-        PersistentString persistentAttributes(TeaseLib teaseLib, String domain, Object item) {
+        PersistentString persistentAttributes(TeaseLib teaseLib, String domain, String item) {
             return persistentString(teaseLib, domain, item, "attributes");
         }
 
-        private static PersistentBoolean persistentBoolean(TeaseLib teaseLib, String domain, Object item, String name) {
-            return teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item),
-                    QualifiedItem.nameOf(item) + ".state." + name);
+        private static PersistentBoolean persistentBoolean(TeaseLib teaseLib, String domain, String item, String name) {
+            return teaseLib.new PersistentBoolean(domain, item, "state." + name);
         }
 
-        private static PersistentString persistentString(TeaseLib teaseLib, String domain, Object item, String name) {
-            return teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
-                    QualifiedItem.nameOf(item) + ".state." + name);
+        private static PersistentString persistentString(TeaseLib teaseLib, String domain, String item, String name) {
+            return teaseLib.new PersistentString(domain, item, "state." + name);
         }
 
         void deletePersistence() {
@@ -102,7 +100,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
 
         public static void delete(TeaseLib teaseLib, String domain, Object item) {
-            new StateImpl.StateStorage(teaseLib, domain, item).deletePersistence();
+            new StateImpl.StateStorage(teaseLib, domain, QualifiedItem.of(item).toString()).deletePersistence();
         }
 
         @Override
@@ -195,7 +193,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
         this.domain = domain;
         this.item = item;
-        this.storage = new StateStorage(this.stateMaps.teaseLib, domain, item);
+        this.storage = new StateStorage(this.stateMaps.teaseLib, domain, QualifiedItem.of(item).toString());
 
         restoreApplied();
         restoreDuration();
@@ -282,7 +280,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             if (state(peer).applied()) {
                 peers.add(peer);
             }
-        } else if (storage.persistentDuration(stateMaps.teaseLib, domain, peer).available()) {
+        } else if (storage.persistentDuration(stateMaps.teaseLib, domain, qualifiedPeer.toString()).available()) {
             peers.add(peer);
         } else if (qualifiedPeer.value() instanceof Item) {
             peers.add(peer);

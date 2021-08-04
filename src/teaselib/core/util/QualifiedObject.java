@@ -1,10 +1,11 @@
 package teaselib.core.util;
 
 class QualifiedObject extends AbstractQualifiedItem<Object> {
+
     public QualifiedObject(Object value) {
         super(value);
         if (value instanceof Enum<?>) {
-            throw new IllegalArgumentException(value.toString());
+            throw new IllegalArgumentException("Enum arg requires QualifiedEnum" + value);
         }
     }
 

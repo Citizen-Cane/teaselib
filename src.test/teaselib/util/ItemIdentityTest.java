@@ -547,7 +547,7 @@ public class ItemIdentityTest {
         State gagState = script.state(Toys.Gag);
 
         TeaseLib.PersistentString persistentString = script.teaseLib.new PersistentString(TeaseLib.DefaultDomain,
-                "Toys", "Gag.state.peers");
+                "Toys.Gag", "state.peers");
         String persisted = persistentString.value();
         assertNotEquals("", persisted);
         List<String> peers = new PersistedObject(ArrayList.class, persisted).toValues();

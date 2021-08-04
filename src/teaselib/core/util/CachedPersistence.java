@@ -1,8 +1,8 @@
 package teaselib.core.util;
 
 import teaselib.core.Persistence;
-import teaselib.core.configuration.PersistentConfigurationFile;
+import teaselib.core.configuration.ConfigurationFile;
 
 public interface CachedPersistence extends Persistence {
-    PersistentConfigurationFile file();
+    ConfigurationFile file();
 }

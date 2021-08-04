@@ -45,9 +45,9 @@ public class Configuration implements Closeable {
     private final Map<String, ConfigurationFile> userPropertiesNamespaceMapping = new HashMap<>();
     final PersistentConfigurationFileStoreService persistentConfigurationFiles = new PersistentConfigurationFileStoreService();
 
-    private final List<ConfigurationFile> defaultProperties = new ArrayList<>();
-    private final ConfigurationFile sessionProperties = new ConfigurationFile();
-    private ConfigurationFile persistentProperties;
+    private final List<ConfigurationFileImpl> defaultProperties = new ArrayList<>();
+    private final ConfigurationFileImpl sessionProperties = new ConfigurationFileImpl();
+    private ConfigurationFileImpl persistentProperties;
 
     private Optional<File> scriptSettingsFolder = Optional.empty();
 
@@ -60,8 +60,8 @@ public class Configuration implements Closeable {
         setup.applyTo(this);
     }
 
-    public PersistentConfigurationFile addPersistentConfigurationFile(Path path) throws IOException {
-        return persistentConfigurationFiles.openFile(path);
+    public ConfigurationFile addPersistentConfigurationFile(Path path) throws IOException {
+        return new LowerCaseNames(persistentConfigurationFiles.open(path));
     }
 
     public void add(String defaults, String properties, File userPath) throws IOException {
@@ -99,7 +99,7 @@ public class Configuration implements Closeable {
         if (namespaceAlreadyRegistered(namespaces)) {
             throw new IllegalArgumentException("Namespace already registered: " + namespaces);
         } else {
-            var configurationFile = new ConfigurationFile();
+            var configurationFile = new ConfigurationFileImpl();
             if (defaults.isPresent()) {
                 try (InputStream stream = getClass().getResourceAsStream(defaults.get() + resource)) {
                     configurationFile.load(stream);
@@ -125,8 +125,7 @@ public class Configuration implements Closeable {
             if (defaultResource.isPresent()) {
                 initUserFileWithDefaults(defaultResource.get() + filename, userFile);
             }
-            ConfigurationFile configurationFile = persistentConfigurationFiles
-                    .openFile(Paths.get(folder.getAbsolutePath(), filename));
+            var configurationFile = addPersistentConfigurationFile(Paths.get(folder.getAbsolutePath(), filename));
             registerNamespaces(namespaces, configurationFile);
         }
 
@@ -144,7 +143,7 @@ public class Configuration implements Closeable {
 
     public Optional<ConfigurationFile> getUserSettings(String namespace) {
         return userPropertiesNamespaceMapping.entrySet().stream().filter(e -> namespace.startsWith(e.getKey()))
-                .map(Entry<String, ConfigurationFile>::getValue).findFirst();
+                .map(Entry::getValue).findFirst();
     }
 
     public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {
@@ -159,32 +158,32 @@ public class Configuration implements Closeable {
     }
 
     public void add(File file) throws IOException {
-        ConfigurationFile configurationFile;
+        ConfigurationFileImpl configurationFileImpl;
         if (defaultProperties.isEmpty()) {
-            configurationFile = new ConfigurationFile();
+            configurationFileImpl = new ConfigurationFileImpl();
         } else {
-            configurationFile = new ConfigurationFile(defaultProperties.get(defaultProperties.size() - 1));
+            configurationFileImpl = new ConfigurationFileImpl(defaultProperties.get(defaultProperties.size() - 1));
         }
         try (var fileInputStream = new FileInputStream(file)) {
-            configurationFile.load(fileInputStream);
+            configurationFileImpl.load(fileInputStream);
         }
-        defaultProperties.add(configurationFile);
-        persistentProperties = configurationFile;
+        defaultProperties.add(configurationFileImpl);
+        persistentProperties = configurationFileImpl;
     }
 
     public void add(String configResource) throws IOException {
-        ConfigurationFile configurationFile;
+        ConfigurationFileImpl configurationFileImpl;
         if (defaultProperties.isEmpty()) {
-            configurationFile = new ConfigurationFile();
+            configurationFileImpl = new ConfigurationFileImpl();
         } else {
-            configurationFile = new ConfigurationFile(defaultProperties.get(defaultProperties.size() - 1));
+            configurationFileImpl = new ConfigurationFileImpl(defaultProperties.get(defaultProperties.size() - 1));
         }
         try (var fileInputStream = getClass().getResourceAsStream(configResource)) {
             Objects.requireNonNull(fileInputStream, "Configuration file not found:" + configResource);
-            configurationFile.load(fileInputStream);
+            configurationFileImpl.load(fileInputStream);
         }
-        defaultProperties.add(configurationFile);
-        persistentProperties = configurationFile;
+        defaultProperties.add(configurationFileImpl);
+        persistentProperties = configurationFileImpl;
     }
 
     public boolean has(String property) {

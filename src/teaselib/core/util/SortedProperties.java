@@ -29,4 +29,14 @@ public class SortedProperties extends Properties {
         return new LinkedHashSet<>(entries);
     }
 
+    @Override
+    public synchronized boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
+    public synchronized int hashCode() {
+        return super.hashCode();
+    }
+
 }

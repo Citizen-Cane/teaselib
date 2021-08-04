@@ -2,7 +2,7 @@ package teaselib.core.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.Test;
 
@@ -12,29 +12,27 @@ public class AbstractQualifiedItemTest {
 
     @Test
     public void testEquals() {
-        assertEquals(new QualifiedEnum(Toys.Dildo), new QualifiedEnum(Toys.Dildo));
-        assertEquals(new QualifiedEnum(Toys.Dildo), new QualifiedObject("teaselib.Toys.Dildo"));
-        assertEquals(new QualifiedEnum(Toys.Dildo), Toys.Dildo);
-        assertEquals(new QualifiedEnum(Toys.Dildo), "teaselib.Toys.Dildo");
+        QualifiedItem dildoAsEnum = new QualifiedEnum(Toys.Dildo);
+        assertEquals(dildoAsEnum, dildoAsEnum);
+        QualifiedObject dildoAsString = new QualifiedObject("teaselib.Toys.Dildo");
+        assertEquals(dildoAsEnum, dildoAsString);
+        assertEquals(dildoAsEnum, Toys.Dildo);
+        assertEquals(dildoAsEnum, "teaselib.Toys.Dildo");
 
-        assertNotEquals(new QualifiedEnum(Toys.Dildo), new QualifiedEnum(Toys.Buttplug));
-        assertNotEquals(new QualifiedEnum(Toys.Dildo),
-                new QualifiedObject("teaselib.Toys.Buttplug"));
-        assertNotEquals(new QualifiedEnum(Toys.Dildo), Toys.Buttplug);
-        assertNotEquals(new QualifiedEnum(Toys.Dildo), "teaselib.Toys.Buttplug");
+        assertNotEquals(dildoAsEnum, new QualifiedEnum(Toys.Buttplug));
+        assertNotEquals(dildoAsEnum, new QualifiedObject("teaselib.Toys.Buttplug"));
+        assertNotEquals(dildoAsEnum, Toys.Buttplug);
+        assertNotEquals(dildoAsEnum, "teaselib.Toys.Buttplug");
 
-        assertEquals(new QualifiedObject("teaselib.Toys.Dildo"),
-                new QualifiedObject("teaselib.Toys.Dildo"));
-        assertEquals(new QualifiedObject("teaselib.Toys.Dildo"), new QualifiedEnum(Toys.Dildo));
-        assertEquals(new QualifiedObject("teaselib.Toys.Dildo"), Toys.Dildo);
-        assertEquals(new QualifiedObject("teaselib.Toys.Dildo"), "teaselib.Toys.Dildo");
+        assertEquals(dildoAsString, dildoAsString);
+        assertEquals(dildoAsString, dildoAsEnum);
+        assertEquals(dildoAsString, Toys.Dildo);
+        assertEquals(dildoAsString, "teaselib.Toys.Dildo");
 
-        assertNotEquals(new QualifiedObject("teaselib.Toys.Dildo"),
-                new QualifiedObject("teaselib.Toys.Buttplug"));
-        assertNotEquals(new QualifiedObject("teaselib.Toys.Dildo"),
-                new QualifiedEnum(Toys.Buttplug));
-        assertNotEquals(new QualifiedObject("teaselib.Toys.Dildo"), "teaselib.Toys.Buttplug");
-        assertNotEquals(new QualifiedObject("teaselib.Toys.Dildo"), Toys.Buttplug);
+        assertNotEquals(dildoAsString, new QualifiedObject("teaselib.Toys.Buttplug"));
+        assertNotEquals(dildoAsString, new QualifiedEnum(Toys.Buttplug));
+        assertNotEquals(dildoAsString, "teaselib.Toys.Buttplug");
+        assertNotEquals(dildoAsString, Toys.Buttplug);
     }
 
     @Test
@@ -42,23 +40,23 @@ public class AbstractQualifiedItemTest {
         assertNotEquals(new QualifiedEnum(Toys.Dildo).toString(), "Dildo");
         assertNotEquals(new QualifiedEnum(Toys.Dildo).toString(), "Toys.Dildo");
 
-        assertEquals(new QualifiedEnum(Toys.Dildo).toString(), "teaselib.Toys.Dildo");
-
-        assertEquals(new QualifiedObject("teaselib.Toys.Dildo").toString(), "teaselib.Toys.Dildo");
+        assertEquals("teaselib.Toys.Dildo", new QualifiedEnum(Toys.Dildo).toString());
+        assertEquals("teaselib.Toys.Dildo", new QualifiedObject("teaselib.Toys.Dildo").toString());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testQualifiedEnumNullConstructorArgument() throws Exception {
-        assertNotNull(new QualifiedEnum(null));
+        assertThrows(NullPointerException.class, () -> new QualifiedEnum(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testQualifiedObjectNullConstructorArgument() throws Exception {
-        assertNotNull(new QualifiedObject(null));
+        assertThrows(NullPointerException.class, () -> new QualifiedObject(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testQualifiedObjectEnumlConstructorArgument() throws Exception {
-        assertNotNull(new QualifiedObject(Toys.Dildo));
+    @Test
+    public void testQualifiedObjectEnumConstructorArgument() throws Exception {
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedObject(Toys.Dildo));
     }
+
 }

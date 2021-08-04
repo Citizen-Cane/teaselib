@@ -23,9 +23,9 @@ public interface QualifiedItem {
 
     public static String namespaceOf(Object item) {
         if (item instanceof Enum<?>) {
-            return ReflectionUtils.normalizedClassName(item.getClass());
+            return ReflectionUtils.qualified(item.getClass());
         } else if (item instanceof Class) {
-            return ReflectionUtils.normalizedClassName((Class<?>) item);
+            return ReflectionUtils.qualified((Class<?>) item);
         } else if (item instanceof String) {
             String string = (String) item;
             if (string.contains(".")) {
@@ -45,7 +45,7 @@ public interface QualifiedItem {
         if (item instanceof Enum<?>) {
             name = ((Enum<?>) item).name();
         } else if (item instanceof String) {
-            String string = (String) item;
+            var string = (String) item;
             if (string.contains(".")) {
                 return string.substring(string.lastIndexOf('.') + 1);
             } else {

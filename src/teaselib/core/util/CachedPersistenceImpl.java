@@ -12,21 +12,21 @@ import teaselib.Sexuality.Gender;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.UserItemsImpl;
-import teaselib.core.configuration.PersistentConfigurationFile;
+import teaselib.core.configuration.ConfigurationFile;
 import teaselib.util.TextVariables;
 
 public class CachedPersistenceImpl implements CachedPersistence {
 
     private static final Logger logger = LoggerFactory.getLogger(CachedPersistenceImpl.class);
 
-    private final PersistentConfigurationFile file;
+    private final ConfigurationFile file;
 
-    public CachedPersistenceImpl(PersistentConfigurationFile file) {
+    public CachedPersistenceImpl(ConfigurationFile file) {
         this.file = file;
     }
 
     @Override
-    public PersistentConfigurationFile file() {
+    public ConfigurationFile file() {
         return file;
     }
 

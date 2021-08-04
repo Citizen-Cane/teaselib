@@ -27,6 +27,9 @@ import teaselib.core.util.Storage;
  *
  */
 public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Persistable {
+
+    public static final String Available = "Available";
+
     final TeaseLib teaseLib;
 
     public final String domain;
@@ -52,7 +55,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         this.domain = domain;
         this.guid = guid;
         this.displayName = displayName;
-        this.available = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid.name());
+        this.available = teaseLib.new PersistentBoolean(domain, QualifiedItem.of(item).toString(),
+                guid.name() + "." + Available);
         this.defaultPeers = defaultPeers;
         this.attributes = attributes(item, attributes);
     }

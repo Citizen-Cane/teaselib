@@ -8,36 +8,31 @@ public final class ReflectionUtils {
     private ReflectionUtils() {
     }
 
-    public static String classParentName(Class<?> clazz) {
-        String path = normalizedClassName(clazz);
+    public static String parent(Class<?> clazz) {
+        String path = qualified(clazz);
+        return parent(path);
+    }
+
+    public static String parent(String path) {
         return path.substring(0, path.lastIndexOf('.'));
     }
 
     public static String classSimpleName(Class<?> clazz) {
-        String path = normalizedClassName(clazz);
+        String path = qualified(clazz);
         return path.substring(path.lastIndexOf('.') + 1);
     }
 
     public static String classParentName(Object object) {
-        String path = normalizedClassName(object.getClass());
-        return path.substring(0, path.lastIndexOf('.'));
+        String path = qualified(object.getClass());
+        return parent(path);
     }
 
-    public static String classSimpleName(Object object) {
-        String path = normalizedClassName(object.getClass());
-        return path.substring(path.lastIndexOf('.') + 1);
-    }
-
-    public static String normalizedClassName(Class<?> clazz) {
+    public static String qualified(Class<?> clazz) {
         return clazz.getName().replace('$', '.');
     }
 
     public static String qualified(Class<?> clazz, String name) {
-        return normalizedClassName(clazz) + "." + name;
-    }
-
-    public static String qualified(String namespace, Class<?> clazz, String name) {
-        return namespace + "." + clazz.getSimpleName() + "." + name;
+        return qualified(clazz) + "." + name;
     }
 
     public static String qualified(Enum<?> namespace, String name) {
@@ -58,10 +53,6 @@ public final class ReflectionUtils {
 
     public static String packagePath(Class<?> clazz) {
         return clazz.getPackage().getName().replace(".", "/") + "/";
-    }
-
-    public static String asClassLoaderCompatiblePath(Class<?> clazz) {
-        return clazz.getName().replace('.', '/') + '/';
     }
 
     public static <T extends Enum<?>> T getEnum(QualifiedItem qualifiedItem) {
@@ -99,10 +90,6 @@ public final class ReflectionUtils {
         }
     }
 
-    public static <T extends Enum<?>> T getEnum(Class<T> enumClass, String qualifiedName) {
-        return getEnum(enumClass, QualifiedItem.nameOf(qualifiedName));
-    }
-
     public static <T extends Enum<?>> T getEnum(Class<T> enumClass, QualifiedItem qualifiedItem) {
         for (T value : enumClass.getEnumConstants()) {
             if (value.name().equalsIgnoreCase(qualifiedItem.name())) {
@@ -113,7 +100,7 @@ public final class ReflectionUtils {
     }
 
     public static String qualifiedName(Enum<?> value) {
-        return ReflectionUtils.normalizedClassName(value.getClass()) + '.' + value.name();
+        return ReflectionUtils.qualified(value.getClass()) + '.' + value.name();
     }
 
     // Project path - blunt copy from ResourceLoader but with paths

@@ -25,8 +25,8 @@ public class StateScopeTests {
         script = TestScript.getOne();
         script.teaseLib.freezeTime();
         somethingOnNipples = script.state(Body.OnNipples);
-        peerStorage = script.teaseLib.new PersistentString(TeaseLib.DefaultDomain, Body.class.getName(),
-                Body.OnNipples.name() + ".state.peers");
+        peerStorage = script.teaseLib.new PersistentString(TeaseLib.DefaultDomain,
+                Body.class.getName() + "." + Body.OnNipples.name(), "state.peers");
     }
 
     @Test

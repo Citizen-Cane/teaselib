@@ -44,6 +44,13 @@ public class SexScriptsPropertyNameMappingTest {
     }
 
     @Test
+    public void testInventoryMapping() throws Exception {
+        PropertyNameMapping m = new SexScriptsPropertyNameMapping();
+        assertEquals("toys.ring_gag",
+                m.map(QualifiedName.of(TeaseLib.DefaultDomain, "Toys.Gag", "ring_gag.Available")).toString());
+    }
+
+    @Test
     public void testSexScriptsSexMapping_Read() {
         TestScript script = TestScript.getOne(new SexScriptsPropertyNameMapping());
 

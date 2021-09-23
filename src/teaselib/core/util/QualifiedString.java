@@ -9,15 +9,20 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
     public QualifiedString(String value) {
         super(valueWithoutGuid(value));
         if (this.value != value) {
-            guid = Optional.of(value.substring(this.value.length() + 1));
+            this.guid = Optional.of(value.substring(this.value.length() + 1));
         } else {
-            guid = Optional.empty();
+            this.guid = Optional.empty();
         }
     }
 
     public QualifiedString(String namespace, String name) {
         super(ReflectionUtils.qualified(namespace, name));
-        guid = Optional.empty();
+        this.guid = Optional.empty();
+    }
+
+    public QualifiedString(String namespace, String name, String guid) {
+        super(ReflectionUtils.qualified(namespace, name));
+        this.guid = Optional.of(guid);
     }
 
     private static String valueWithoutGuid(String value) {

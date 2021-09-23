@@ -5,6 +5,8 @@ import java.util.List;
 
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
+import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.Storage;
 
 /**
@@ -14,41 +16,58 @@ import teaselib.core.util.Storage;
 public class ItemGuid implements Persistable {
     private static final String HEADER = "guid:";
 
-    private final String name;
+    private final QualifiedItem item;
 
-    public static ItemGuid fromGuid(Object guid) {
-        if (guid instanceof ItemGuid) {
-            return (ItemGuid) guid;
+    public static ItemGuid fromGuid(String item) {
+        return new ItemGuid(item);
+    }
+
+    public static ItemGuid from(QualifiedItem item) {
+        return new ItemGuid(item);
+    }
+
+    public static ItemGuid from(QualifiedItem kind, String name) {
+        return new ItemGuid(new QualifiedString(kind.namespace(), kind.name(), name));
+    }
+
+    public static ItemGuid from(String namespace, String kind, String name) {
+        return new ItemGuid(new QualifiedString(namespace, kind, name));
+    }
+
+    private ItemGuid(String item) {
+        if (isGuid(item)) {
+            var qualifiedItem = item.substring(HEADER.length());
+            this.item = new QualifiedString(qualifiedItem);
         } else {
-            return fromGuid(guid.toString());
+            this.item = new QualifiedString(item);
+        }
+        if (!this.item.guid().isPresent()) {
+            throw new IllegalArgumentException("Qualified item without guid: " + item);
         }
     }
 
-    public static ItemGuid fromGuid(String guid) {
-        if (isGuid(guid)) {
-            return new ItemGuid(guid.substring(HEADER.length()));
+    private ItemGuid(QualifiedItem item) {
+        if (item.guid().isPresent()) {
+            this.item = item;
         } else {
-            throw new IllegalArgumentException("not a formatted guid string:" + guid);
+            throw new IllegalArgumentException("Qualified item without guid: " + item);
         }
     }
 
-    public ItemGuid(String name) {
-        if (isGuid(name)) {
-            throw new IllegalArgumentException("Already a formatted guid:" + name);
-        } else {
-            this.name = name;
-        }
+    private ItemGuid(Storage storage) throws ReflectiveOperationException {
+        this(new QualifiedString(storage.next()));
     }
 
-    public ItemGuid(Storage storage) throws ReflectiveOperationException {
-        this.name = storage.next();
-        if (isGuid(name)) {
-            throw new IllegalArgumentException("Already a formatted guid:" + name);
-        }
+    public QualifiedItem item() {
+        return item;
+    }
+
+    public QualifiedItem kind() {
+        return new QualifiedString(item.namespace(), item.name());
     }
 
     public String name() {
-        return name;
+        return item.guid().orElseThrow();
     }
 
     public static boolean isGuid(String name) {
@@ -61,19 +80,19 @@ public class ItemGuid implements Persistable {
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(name));
+        return Arrays.asList(Persist.persist(item.toString()));
     }
 
     @Override
     public String toString() {
-        return HEADER + name;
+        return HEADER + item;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((item == null) ? 0 : item.hashCode());
         return result;
     }
 
@@ -86,10 +105,10 @@ public class ItemGuid implements Persistable {
         if (getClass() != obj.getClass())
             return false;
         ItemGuid other = (ItemGuid) obj;
-        if (name == null) {
-            if (other.name != null)
+        if (item == null) {
+            if (other.item != null)
                 return false;
-        } else if (!name.equals(other.name))
+        } else if (!item.equals(other.item))
             return false;
         return true;
     }

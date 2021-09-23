@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -149,7 +149,8 @@ public class UserItemsImpl implements UserItems {
         String guid = attributes.getNamedItem("guid").getNodeValue();
         String displayName = attributes.getNamedItem("displayName").getNodeValue();
 
-        String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
+        String namespace = "teaselib." + itemClass.getNodeName();
+        String enumName = namespace + "." + itemName;
         Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedItem.of(enumName));
         List<Enum<?>> defaultPeers = new ArrayList<>(Arrays.asList(defaults(new QualifiedEnum(enumValue))));
         List<Enum<?>> itemAttributes = new ArrayList<>();
@@ -169,14 +170,15 @@ public class UserItemsImpl implements UserItems {
             }
         }
 
-        return new ItemImpl(teaseLib, enumValue, domain, new ItemGuid(guid), //
+        QualifiedItem kind = new QualifiedEnum(enumValue);
+        return new ItemImpl(teaseLib, enumValue, domain, ItemGuid.from(kind, guid), //
                 displayName, defaultPeers.toArray(new Enum<?>[defaultPeers.size()]), //
                 itemAttributes.toArray(new Enum<?>[itemAttributes.size()]));
     }
 
-    private ItemImpl[] getDefaultItem(String domain, QualifiedItem item) {
-        return new ItemImpl[] { new ItemImpl(teaseLib, item.value(), domain, new ItemGuid(item.name()),
-                ItemImpl.createDisplayName(item)) };
+    private ItemImpl getDefaultItem(String domain, QualifiedItem kind) {
+        return new ItemImpl(teaseLib, kind.value(), domain, ItemGuid.from(kind, kind.name()),
+                ItemImpl.createDisplayName(kind));
     }
 
     @Override
@@ -260,8 +262,8 @@ public class UserItemsImpl implements UserItems {
                 .collect(toList());
     }
 
-    private void addDefaultItem(String domain, QualifiedItem item, ItemMap itemMap, List<Item> all) {
-        List<ItemImpl> defaultItems = Arrays.asList(getDefaultItem(domain, item));
+    private void addDefaultItem(String domain, QualifiedItem kind, ItemMap itemMap, List<Item> all) {
+        List<ItemImpl> defaultItems = Collections.singletonList(getDefaultItem(domain, kind));
         addItems(itemMap, defaultItems);
         all.addAll(defaultItems);
     }

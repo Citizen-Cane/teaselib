@@ -1,8 +1,6 @@
 package teaselib.core.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -99,7 +97,8 @@ public class QualifiedItemTest {
     }
 
     private static ItemImpl createOne(Script script, String name) {
-        return new ItemImpl(script.teaseLib, TestEnum.One, TeaseLib.DefaultDomain, new ItemGuid(name), "A_Number");
+        return new ItemImpl(script.teaseLib, TestEnum.One, TeaseLib.DefaultDomain,
+                ItemGuid.from(new QualifiedEnum(TestEnum.One), name), "A_Number");
     }
 
 }

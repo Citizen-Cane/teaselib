@@ -3,13 +3,7 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +21,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
+import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.Storage;
 import teaselib.test.TestScript;
@@ -267,8 +262,9 @@ public class ItemIdentityTest {
 
     private static ItemImpl createPeg(TestScript script, String name) {
         // TODO Improve serialization to allow for white space
-        return new ItemImpl(script.teaseLib, Household.Clothes_Pegs, TeaseLib.DefaultDomain, new ItemGuid(name),
-                "A_Clothes_Peg");
+        QualifiedEnum kind = new QualifiedEnum(Household.Clothes_Pegs);
+        return new ItemImpl(script.teaseLib, kind.value(), TeaseLib.DefaultDomain,
+                ItemGuid.from(kind, name), "A_Clothes_Peg");
     }
 
     private static void verifyAllPegsRemoved(TestScript script, State nipples, ArrayList<Item> clothesPegsOnNipples) {

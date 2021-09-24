@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -262,7 +262,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         } catch (NoSuchElementException e) {
             logger.warn("Item {} does not exist anymore: {}", persisted, e.getMessage());
         } catch (ReflectiveOperationException e) {
-            logger.warn("Peer {} not restored: {}", persisted, e.getMessage());
+            throw new IllegalStateException("Peer " + persisted + " not restored: " + e.getMessage(), e);
         }
     }
 
@@ -275,17 +275,15 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void addPeerThatHasBeenPersistedWithMe(Object peer) {
-        QualifiedItem qualifiedPeer = QualifiedItem.of(peer);
-        if (isCached(qualifiedPeer)) {
-            if (state(peer).applied()) {
-                peers.add(peer);
-            }
-        } else if (storage.persistentDuration(stateMaps.teaseLib, domain, qualifiedPeer.toString()).available()) {
+        var qualifiedPeer = QualifiedItem.of(peer);
+        if (storage.persistentDuration(stateMaps.teaseLib, domain, qualifiedPeer.toString()).available()) {
             peers.add(peer);
         } else if (qualifiedPeer.value() instanceof Item) {
             peers.add(peer);
         } else if (ItemGuid.isGuid(peer)) {
             peers.add(ItemGuid.fromGuid(peer.toString()));
+        } else if (isCached(qualifiedPeer) && state(peer).applied()) {
+            peers.add(peer);
         }
     }
 

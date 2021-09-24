@@ -54,7 +54,7 @@ public class ItemGuid implements Persistable {
         }
     }
 
-    private ItemGuid(Storage storage) throws ReflectiveOperationException {
+    public ItemGuid(Storage storage) throws ReflectiveOperationException {
         this(new QualifiedString(storage.next()));
     }
 

@@ -1,16 +1,9 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.CannotJerkOff;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.SomethingOnPenis;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.WristsTiedBehindBack;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.Chastity_Device;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.Wrist_Restraints;
+import static java.util.concurrent.TimeUnit.*;
+import static org.junit.Assert.*;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.*;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -196,6 +189,8 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());

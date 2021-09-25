@@ -1,7 +1,7 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
+import static java.util.concurrent.TimeUnit.*;
+import static java.util.stream.Collectors.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -988,7 +988,7 @@ public class TeaseLib implements Closeable {
     }
 
     public Item getItem(String domain, ItemImpl item) {
-        return getItem(domain, item.value, item.guid.name());
+        return getItem(domain, item.value(), item.guid.name());
     }
 
     public Item getItem(String domain, Object item, String guid) {

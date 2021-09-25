@@ -1,9 +1,7 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static teaselib.core.state.AbstractProxy.removeProxies;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.state.AbstractProxy.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -440,7 +438,7 @@ public class Items implements Iterable<Item> {
         }
 
         private static QualifiedItem qualifiedValue(Item item) {
-            return QualifiedItem.of(AbstractProxy.itemImpl(item).value);
+            return QualifiedItem.of(AbstractProxy.itemImpl(item).value());
         }
 
         public List<Item> toList() {
@@ -478,14 +476,14 @@ public class Items implements Iterable<Item> {
     }
 
     private boolean isVariety(List<Item> combination) {
-        return Varieties.isVariety(combination.stream().map(AbstractProxy::itemImpl).map(itemImpl -> itemImpl.value)
+        return Varieties.isVariety(combination.stream().map(AbstractProxy::itemImpl).map(itemImpl -> itemImpl.value())
                 .map(QualifiedItem::of).map(QualifiedItem::toString).collect(Collectors.toList()));
     }
 
     private int getVariety() {
         Set<String> types = new HashSet<>();
         for (Item item : elements) {
-            types.add(QualifiedItem.of(AbstractProxy.itemImpl(item).value).toString());
+            types.add(QualifiedItem.of(AbstractProxy.itemImpl(item).value()).toString());
         }
 
         return types.size();
@@ -656,7 +654,7 @@ public class Items implements Iterable<Item> {
      * @return
      */
     Set<Object> valueSet() {
-        return elements.stream().map(item -> itemImpl(item).value).collect(Collectors.toCollection(LinkedHashSet::new));
+        return elements.stream().map(item -> itemImpl(item).value()).collect(toCollection(LinkedHashSet::new));
     }
 
     private static ItemImpl itemImpl(Item item) {
@@ -664,7 +662,7 @@ public class Items implements Iterable<Item> {
     }
 
     static QualifiedItem itemValue(Item item) {
-        return QualifiedItem.of(itemImpl(item).value);
+        return QualifiedItem.of(itemImpl(item).value());
     }
 
     @Override

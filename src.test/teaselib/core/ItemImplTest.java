@@ -53,7 +53,7 @@ public class ItemImplTest {
         String guid = fooBar.name();
         TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
                 fooBar.toString(), guid + ".Available");
-        Item item = new ItemImpl(script.teaseLib, fooBar, TeaseLib.DefaultDomain, ItemGuid.from(fooBar, guid),
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, ItemGuid.from(fooBar, guid),
                 ItemImpl.createDisplayName(fooBar.name()));
 
         assertEquals(0, script.storage.size());
@@ -76,7 +76,7 @@ public class ItemImplTest {
     public void testIs() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain,
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
                 ItemGuid.from(new QualifiedEnum(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
@@ -100,7 +100,7 @@ public class ItemImplTest {
     public void testIs_EmptyArg() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain,
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
                 ItemGuid.from(new QualifiedEnum(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
@@ -111,7 +111,7 @@ public class ItemImplTest {
     public void testIsHandlesArrays() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain,
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
                 ItemGuid.from(new QualifiedEnum(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 

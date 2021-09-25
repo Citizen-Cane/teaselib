@@ -1,11 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -280,9 +275,9 @@ public class ItemsTest {
         Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Bondage.Chains);
 
         Item chains = chainedUp.get(Bondage.Chains);
-        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
+        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value()));
         chainedUp.get(Toys.Wrist_Restraints).applyTo(Bondage.Chains);
-        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
+        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value()));
     }
 
     @Test
@@ -454,8 +449,8 @@ public class ItemsTest {
 
         List<Object> values = new ArrayList<>(restraints.valueSet());
         assertEquals(2, values.size());
-        assertEquals(Toys.Wrist_Restraints, values.get(0));
-        assertEquals(Toys.Ankle_Restraints, values.get(1));
+        assertEquals(QualifiedItem.of(Toys.Wrist_Restraints), values.get(0));
+        assertEquals(QualifiedItem.of(Toys.Ankle_Restraints), values.get(1));
     }
 
     @Test

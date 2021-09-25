@@ -97,7 +97,7 @@ public class QualifiedItemTest {
     }
 
     private static ItemImpl createOne(Script script, String name) {
-        return new ItemImpl(script.teaseLib, TestEnum.One, TeaseLib.DefaultDomain,
+        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
                 ItemGuid.from(new QualifiedEnum(TestEnum.One), name), "A_Number");
     }
 

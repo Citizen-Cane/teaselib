@@ -224,7 +224,7 @@ public class ItemIdentityTest {
     public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnce() {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
-        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+        List<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
         assertTrue(script.state(Body.OnNipples).applied());
         script.state(Body.OnNipples).removeFrom(Household.Clothes_Pegs);
@@ -263,11 +263,10 @@ public class ItemIdentityTest {
     private static ItemImpl createPeg(TestScript script, String name) {
         // TODO Improve serialization to allow for white space
         QualifiedEnum kind = new QualifiedEnum(Household.Clothes_Pegs);
-        return new ItemImpl(script.teaseLib, kind.value(), TeaseLib.DefaultDomain,
-                ItemGuid.from(kind, name), "A_Clothes_Peg");
+        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, ItemGuid.from(kind, name), "A_Clothes_Peg");
     }
 
-    private static void verifyAllPegsRemoved(TestScript script, State nipples, ArrayList<Item> clothesPegsOnNipples) {
+    private static void verifyAllPegsRemoved(TestScript script, State nipples, List<Item> clothesPegsOnNipples) {
         State pegs = script.state(Household.Clothes_Pegs);
         assertFalse(pegs.applied());
 

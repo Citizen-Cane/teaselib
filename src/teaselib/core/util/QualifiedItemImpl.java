@@ -62,6 +62,6 @@ class QualifiedItemImpl extends AbstractQualifiedItem<Item> {
     }
 
     private static Object item(Item item) {
-        return AbstractProxy.itemImpl(item).value;
+        return AbstractProxy.itemImpl(item).value();
     }
 }

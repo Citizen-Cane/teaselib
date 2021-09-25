@@ -155,7 +155,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (item instanceof AbstractProxy<?>) {
             return state(((AbstractProxy<?>) item).state);
         } else if (item instanceof ItemImpl) {
-            return state(((ItemImpl) item).value);
+            return state(((ItemImpl) item).value());
         } else if (item instanceof StateImpl) {
             return (StateImpl) item;
         } else {
@@ -167,7 +167,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (item instanceof AbstractProxy<?>) {
             return state(domain, ((AbstractProxy<?>) item).state);
         } else if (item instanceof ItemImpl) {
-            return state(domain, ((ItemImpl) item).value);
+            return state(domain, ((ItemImpl) item).value());
         } else if (item instanceof StateImpl) {
             StateImpl state = (StateImpl) item;
             if (state.domain.equals(domain)) {
@@ -366,7 +366,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
 
         for (Object attribute : AbstractProxy.removeProxies(attributes)) {
-            if (!peers.contains(attribute)) {
+            if (!peersContain(attribute)) {
                 peers.add(attribute);
                 if (!(attribute instanceof ItemGuid)) {
                     StateImpl state = state(attribute);
@@ -579,7 +579,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 throw new IllegalArgumentException();
             }
 
-            if (peers.contains(peer)) {
+            if (peersContain(peer)) {
                 peers.remove(peer);
 
                 if (!(peer instanceof ItemGuid)) {
@@ -607,22 +607,31 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
+    private boolean peersContain(Object peer) {
+        // TODO remove ItemImpl since ItemGuid and ItemImpl mean the same - ItemImpl is not necessary
+        if (peer instanceof Item) {
+            return peers.stream().filter(Item.class::isInstance).anyMatch(peer::equals);
+        } else {
+            var qualifiedPeer = QualifiedItem.of(peer);
+            return peers.stream().anyMatch(qualifiedPeer::equals);
+        }
+    }
+
     public boolean anyMoreItemInstanceOfSameKind(Object value) {
         return instancesOfSameKind(value) > 0;
     }
 
     public long instancesOfSameKind(Object value) {
-        Object requested = value instanceof Item ? ((ItemImpl) value).value : value;
-        return peers.stream().filter(peer -> {
-            return (peer instanceof ItemImpl && ((ItemImpl) peer).value == requested);
-        }).count();
+        Object requested = value instanceof Item ? ((ItemImpl) value).value() : value;
+        return peers.stream().filter(peer -> peer instanceof ItemImpl && ((ItemImpl) peer).value().equals(requested))
+                .count();
     }
 
     private void removeRepresentingItems(Object value) {
         for (Object peer : new HashSet<>(peers)) {
             if (peer instanceof ItemImpl) {
                 ItemImpl itemImpl = (ItemImpl) peer;
-                if (QualifiedItem.of(itemImpl.value).equals(QualifiedItem.of(value))) {
+                if (QualifiedItem.of(itemImpl.value()).equals(QualifiedItem.of(value))) {
                     peers.remove(itemImpl);
                     itemImpl.releaseInstanceGuid();
                 }

@@ -16,7 +16,6 @@ import teaselib.core.StateImpl;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
-import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
@@ -34,7 +33,6 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     public final String domain;
     public final ItemGuid guid;
-    public final Object value;
     public final String displayName;
     private final TeaseLib.PersistentBoolean available;
     public final Object[] defaultPeers;
@@ -44,33 +42,38 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         return item.toString().replace("_", " ");
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, ItemGuid guid, String displayName) {
-        this(teaseLib, item, domain, guid, displayName, new Object[] {}, new Object[] {});
+    public ItemImpl(TeaseLib teaseLib, String domain, ItemGuid guid, String displayName) {
+        this(teaseLib, domain, guid, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, ItemGuid guid, String displayName,
-            Object[] defaultPeers, Object[] attributes) {
+    public ItemImpl(TeaseLib teaseLib, String domain, ItemGuid guid, String displayName, Object[] defaultPeers,
+            Object[] attributes) {
         this.teaseLib = teaseLib;
-        this.value = item;
         this.domain = domain;
         this.guid = guid;
         this.displayName = displayName;
-        this.available = teaseLib.new PersistentBoolean(domain, QualifiedItem.of(item).toString(),
-                guid.name() + "." + Available);
+        this.available = teaseLib.new PersistentBoolean(domain, value().toString(), guid.name() + "." + Available);
         this.defaultPeers = defaultPeers;
-        this.attributes = attributes(item, attributes);
+        this.attributes = attributes(guid.kind(), attributes);
+    }
+
+    public Object value() {
+        return guid.kind();
+    }
+
+    private StateImpl state() {
+        return state(value());
     }
 
     public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
             throws ReflectiveOperationException {
-        String item = storage.next();
-        ItemGuid guid = storage.next();
-        return (ItemImpl) teaseLib.getItem(domain, item, guid.name());
+        var guid = new ItemGuid(storage);
+        return (ItemImpl) teaseLib.getItem(domain, guid.kind(), guid.name());
     }
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(QualifiedItem.of(value).toString()), Persist.persist(guid));
+        return guid.persisted();
     }
 
     private static Set<Object> attributes(Object item, Object[] attributes) {
@@ -97,7 +100,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public String toString() {
-        return guid.name() + " " + attributes + " " + teaseLib.state(domain, value).toString();
+        return guid.name() + " " + attributes + " " + teaseLib.state(domain, value()).toString();
     }
 
     boolean has(Object... desired) {
@@ -123,11 +126,11 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             // TODO Remove these special cases:
             // attributes2[0] == this -> ItemIdentityTest.testThatItemIsNotOtherItem
             // state(value).is(attributes2[0]) -> ItemsTest.testItemAppliedToItems
-            return attributes2[0] == this || state(value).is(attributes2[0]);
+            return attributes2[0] == this || state().is(attributes2[0]);
         } else if (has(this.attributes.stream(), attributes2))
             return true;
         else {
-            if (StateMaps.hasAllAttributes((state(value)).getAttributes(), attributes2)) {
+            if (StateMaps.hasAllAttributes((state()).getAttributes(), attributes2)) {
                 return applied();
             } else if (state(this).appliedToClassValues(attributes, attributes2)) {
                 return true;
@@ -146,7 +149,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private boolean stateContainsAll(Object... attributes) {
-        return state(value).is(attributes);
+        return state().is(attributes);
     }
 
     @Override
@@ -154,13 +157,13 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         if (defaultPeers.length > 0) {
             return defaultStates().allMatch(state -> !state.applied());
         } else {
-            return !state(value).is(this);
+            return !state().is(this);
         }
     }
 
     @Override
     public boolean applied() {
-        StateImpl state = state(value);
+        StateImpl state = state();
         if (state.applied()) {
             if (defaultPeers.length > 0) {
                 return defaultStates().anyMatch(this::containsMe);
@@ -174,17 +177,17 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public boolean expired() {
-        return state(value).expired();
+        return state().expired();
     }
 
     @Override
     public Duration duration() {
-        return state(value).duration();
+        return state().duration();
     }
 
     @Override
     public State.Options apply() {
-        StateImpl state = state(value);
+        StateImpl state = state();
 
         if (defaultPeers.length == 0) {
             state.apply();
@@ -211,7 +214,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         applyInstanceTo(defaultPeers);
         applyInstanceTo(flattenedPeers);
 
-        StateImpl state = state(value);
+        StateImpl state = state();
         applyMyAttributesTo(state);
         state.applyTo(this.guid);
         state.applyTo(flattenedPeers);
@@ -232,21 +235,21 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public Persistence over(long duration, TimeUnit unit) {
-        StateImpl state = state(value);
+        StateImpl state = state();
         state.over(duration, unit);
         return this;
     }
 
     @Override
     public Persistence over(Duration duration) {
-        StateImpl state = state(value);
+        StateImpl state = state();
         state.over(duration);
         return this;
     }
 
     @Override
     public void remember(Until forget) {
-        StateImpl state = state(value);
+        StateImpl state = state();
         state.remember(forget);
         state(forget).applyTo(this).remember(forget);
     }
@@ -260,7 +263,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public void remove() {
-        StateImpl state = state(value);
+        StateImpl state = state();
         if (containsMyGuid(state)) {
             for (Object peer : new ArrayList<>(state.peers())) {
                 if (!(peer instanceof ItemGuid)) {
@@ -286,7 +289,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private void removeInternal(Object... peers) {
-        StateImpl state = state(value);
+        StateImpl state = state();
         if (containsMyGuid(state)) {
             for (Object peer : peers) {
                 if (!(peer instanceof ItemGuid)) {
@@ -306,7 +309,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     public boolean releaseInstanceGuid() {
-        StateImpl state = state(value);
+        StateImpl state = state();
         if (peersReferenceMe(state)) {
             return false;
         }
@@ -328,7 +331,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private StateImpl lastUsed() {
-        var itemGuid = ReflectionUtils.qualified(QualifiedItem.of(value).toString(), guid.name());
+        var itemGuid = ReflectionUtils.qualified(QualifiedItem.of(value()).toString(), guid.name());
         var lastUsed = (StateImpl) teaseLib.state(TeaseLib.DefaultDomain, itemGuid);
         return lastUsed;
     }
@@ -359,13 +362,13 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     private static boolean peersReferenceMe(StateImpl state) {
         Set<Object> peers = state.peers();
-        return peers.stream().filter(ItemImpl::isItemImpl).map(peer -> (ItemImpl) peer).map(itemImpl -> itemImpl.guid)
+        return peers.stream().filter(ItemImpl::isItemImpl).map(ItemImpl.class::cast).map(itemImpl -> itemImpl.guid)
                 .filter(peers::contains).count() > 0;
     }
 
     @Override
     public void applyAttributes(Object... attributes) {
-        state(value).applyAttributes(attributes);
+        state().applyAttributes(attributes);
     }
 
     @Override
@@ -389,7 +392,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
         result = prime * result + ((displayName == null) ? 0 : displayName.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-        result = prime * result + ((value == null) ? 0 : value.hashCode());
+        result = prime * result + ((guid == null) ? 0 : guid.hashCode());
         result = prime * result + Arrays.hashCode(defaultPeers);
         result = prime * result + ((teaseLib == null) ? 0 : teaseLib.hashCode());
         result = prime * result + ((available == null) ? 0 : available.hashCode());
@@ -428,10 +431,10 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
                 return false;
         } else if (!domain.equals(other.domain))
             return false;
-        if (value == null) {
-            if (other.value != null)
+        if (guid == null) {
+            if (other.guid != null)
                 return false;
-        } else if (!value.equals(other.value))
+        } else if (!guid.equals(other.guid))
             return false;
         if (!Arrays.equals(defaultPeers, other.defaultPeers))
             return false;

@@ -171,14 +171,13 @@ public class UserItemsImpl implements UserItems {
         }
 
         QualifiedItem kind = new QualifiedEnum(enumValue);
-        return new ItemImpl(teaseLib, enumValue, domain, ItemGuid.from(kind, guid), //
+        return new ItemImpl(teaseLib, domain, ItemGuid.from(kind, guid), //
                 displayName, defaultPeers.toArray(new Enum<?>[defaultPeers.size()]), //
                 itemAttributes.toArray(new Enum<?>[itemAttributes.size()]));
     }
 
     private ItemImpl getDefaultItem(String domain, QualifiedItem kind) {
-        return new ItemImpl(teaseLib, kind.value(), domain, ItemGuid.from(kind, kind.name()),
-                ItemImpl.createDisplayName(kind));
+        return new ItemImpl(teaseLib, domain, ItemGuid.from(kind, kind.name()), ItemImpl.createDisplayName(kind));
     }
 
     @Override
@@ -223,7 +222,7 @@ public class UserItemsImpl implements UserItems {
 
     private static void addItems(ItemMap itemMap, List<ItemImpl> items) {
         for (ItemImpl item : items) {
-            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.value, LinkedHashMap<String, Item>::new);
+            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.value(), LinkedHashMap<String, Item>::new);
             allItemsOfThisType.put(item.guid.name(), item);
         }
     }

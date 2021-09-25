@@ -3,8 +3,8 @@
  */
 package teaselib;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toList;
+import static java.util.Arrays.*;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,7 +69,7 @@ public abstract class TeaseScriptPersistence extends Script {
         }
 
         private Item getItemByGuid(ItemImpl item) {
-            return teaseLib.getItem(name, item.value, item.guid.name());
+            return teaseLib.getItem(name, item.value(), item.guid.name());
         }
 
         public Items items(Enum<?>... values) {
@@ -264,7 +264,8 @@ public abstract class TeaseScriptPersistence extends Script {
 
     public Items.Query select(Select.AbstractStatement... statements) {
         return () -> {
-            Function<? super Select.AbstractStatement, Items.Query> mapper = statement -> statement.get(query(statement.values));
+            Function<? super Select.AbstractStatement, Items.Query> mapper = statement -> statement
+                    .get(query(statement.values));
             return new Items(
                     stream(statements).map(mapper).map(Items.Query::get).flatMap(Items::stream).collect(toList()));
         };

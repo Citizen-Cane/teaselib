@@ -7,13 +7,13 @@ import java.util.List;
 import org.junit.Test;
 
 import teaselib.core.util.Persist;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 
 public class ItemGuidTest {
 
     @Test
     public void testPersisted() throws Exception {
-        QualifiedItem fooBar = QualifiedItem.of("Foo.Bar#foo_bar");
+        QualifiedString fooBar = QualifiedString.of("Foo.Bar#foo_bar");
         ItemGuid itemGuid = ItemGuid.from(fooBar);
         assertEquals(ItemGuid.from("foo", "bar", "foo_bar"), itemGuid);
 

@@ -43,10 +43,10 @@ public class StateMaps {
     }
 
     static String toStringWithoutRecursion(Set<Object> peers) {
-        StringBuilder toString = new StringBuilder();
+        var toString = new StringBuilder();
         toString.append("[");
         for (Object object : peers) {
-            if (toString.length() > 0) {
+            if (toString.length() > 1) {
                 toString.append(", ");
             }
             if (object instanceof StateImpl) {
@@ -130,19 +130,23 @@ public class StateMaps {
         }
     }
 
-    public static boolean hasAllAttributes(Set<Object> availableAttributes, Object[] desiredAttributes) {
-        return Arrays.stream(desiredAttributes).map(desiredAttribute -> QualifiedItem.of(stripState(desiredAttribute)))
+    public static boolean hasAllAttributes(Set<Object> availableAttributes, List<Object> desiredAttributes) {
+        return desiredAttributes.stream().map(desiredAttribute -> QualifiedItem.of(stripState(desiredAttribute)))
                 .filter(desiredQualifiedAttribute -> availableAttributes.stream()
                         .map(availableAttribute -> QualifiedItem.of(stripState(availableAttribute)))
                         .anyMatch(desiredQualifiedAttribute::equals))
-                .count() == desiredAttributes.length;
+                .count() == desiredAttributes.size();
     }
 
-    public static Object[] flatten(Object[] peers) {
-        List<Object> flattenedPeers = new ArrayList<>(peers.length);
+    public static List<Object> flatten(Object[] peers) {
+        return flatten(Arrays.asList(peers));
+    }
+
+    public static List<Object> flatten(List<Object> peers) {
+        List<Object> flattenedPeers = new ArrayList<>(peers.size());
         for (Object peer : peers) {
             if (peer instanceof Items) {
-                Items items = (Items) peer;
+                var items = (Items) peer;
                 flattenedPeers.addAll(items.firstOfEachKind());
             } else if (peer instanceof Collection) {
                 Collection<?> collection = (Collection<?>) peer;
@@ -154,7 +158,7 @@ public class StateMaps {
                 flattenedPeers.add(peer);
             }
         }
-        return flattenedPeers.toArray(new Object[flattenedPeers.size()]);
+        return flattenedPeers;
     }
 
     private static Object stripState(Object value) {

@@ -249,7 +249,7 @@ public class PersistedObject {
         } else if (persistable instanceof Collection) {
             throw new UnsupportedOperationException("Collections aren't supported intrinsicly");
         } else {
-            String persisted = persistable.toString();
+            var persisted = persistable.toString();
             if (canPersistObject(persisted)) {
                 return persisted;
             } else {

@@ -4,6 +4,20 @@ import java.util.Optional;
 
 public class QualifiedString extends AbstractQualifiedItem<String> {
 
+    public static QualifiedString of(Class<?> clazz) {
+        return new QualifiedString(ReflectionUtils.qualified(clazz), "*");
+    }
+
+    public static QualifiedString of(Object object) {
+        if (object instanceof QualifiedString) {
+            return (QualifiedString) object;
+        } else if (object instanceof Class<?>) {
+            return QualifiedString.of((Class<?>) object);
+        } else {
+            return new QualifiedString(QualifiedItem.of(object).toString());
+        }
+    }
+
     private final Optional<String> guid;
 
     public QualifiedString(String value) {

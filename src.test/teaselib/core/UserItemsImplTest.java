@@ -1,11 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.Iterator;
 import java.util.List;
@@ -22,7 +17,7 @@ import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
@@ -66,7 +61,7 @@ public class UserItemsImplTest {
     }
 
     private static void testItem(UserItems items, Enum<?> item) {
-        List<Item> predefined = items.get(TeaseLib.DefaultDomain, new QualifiedEnum(item));
+        List<Item> predefined = items.get(TeaseLib.DefaultDomain, QualifiedString.of(item));
         assertNotNull(predefined);
         assertFalse(predefined.isEmpty());
     }
@@ -77,7 +72,7 @@ public class UserItemsImplTest {
         UserItems items = configureUserItems(script);
 
         for (Toys item : Toys.values()) {
-            List<Item> predefined = items.get(TeaseLib.DefaultDomain, new QualifiedEnum(item));
+            List<Item> predefined = items.get(TeaseLib.DefaultDomain, QualifiedString.of(item));
             assertNotNull(predefined);
             assertFalse(predefined.isEmpty());
             assertNotEquals("Expected defined item for " + item.name(), Item.NotFound, predefined.get(0));
@@ -129,7 +124,7 @@ public class UserItemsImplTest {
     }
 
     private static void testToys(UserItems userItems, String displayName) {
-        List<Item> humblers = userItems.get(TeaseLib.DefaultDomain, QualifiedItem.of(Toys.Humbler));
+        List<Item> humblers = userItems.get(TeaseLib.DefaultDomain, QualifiedString.of(Toys.Humbler));
         assertEquals(1, humblers.size());
 
         for (Item humbler : humblers) {
@@ -144,7 +139,7 @@ public class UserItemsImplTest {
     }
 
     private static void testHousehold(UserItems userItems) {
-        List<Item> spoons = userItems.get(TeaseLib.DefaultDomain, QualifiedItem.of(Household.Wooden_Spoon));
+        List<Item> spoons = userItems.get(TeaseLib.DefaultDomain, QualifiedString.of(Household.Wooden_Spoon));
         assertEquals(1, spoons.size());
 
         for (Item spoon : spoons) {
@@ -158,7 +153,7 @@ public class UserItemsImplTest {
     }
 
     private static void testClothes(UserItems userItems) {
-        List<Item> catsuits = userItems.get(TeaseLib.DefaultDomain, QualifiedItem.of(Clothes.Catsuit));
+        List<Item> catsuits = userItems.get(TeaseLib.DefaultDomain, QualifiedString.of(Clothes.Catsuit));
         assertEquals(1, catsuits.size());
 
         for (Item catsuit : catsuits) {
@@ -172,7 +167,8 @@ public class UserItemsImplTest {
     }
 
     private static void testGadgets(UserItems userItems) {
-        List<Item> estimController = userItems.get(TeaseLib.DefaultDomain, QualifiedItem.of(Gadgets.EStim_Controller));
+        List<Item> estimController = userItems.get(TeaseLib.DefaultDomain,
+                QualifiedString.of(Gadgets.EStim_Controller));
         assertEquals(1, estimController.size());
 
         for (Item estim : estimController) {
@@ -194,7 +190,7 @@ public class UserItemsImplTest {
         testRemoveUserItem(Until.Removed);
     }
 
-    private void testRemoveUserItem(Until until) {
+    private static void testRemoveUserItem(Until until) {
         TestScript script = TestScript.getOne();
 
         // Default

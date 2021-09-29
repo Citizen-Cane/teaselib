@@ -20,8 +20,7 @@ import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.TeaseScript;
 import teaselib.Toys;
-import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.ItemGuid;
@@ -49,7 +48,7 @@ public class ItemImplTest {
     @Test
     public void testAvailable() {
         TestScript script = TestScript.getOne();
-        QualifiedItem fooBar = QualifiedItem.of("Foo.Bar");
+        QualifiedString fooBar = QualifiedString.of("Foo.Bar");
         String guid = fooBar.name();
         TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
                 fooBar.toString(), guid + ".Available");
@@ -77,7 +76,7 @@ public class ItemImplTest {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
-                ItemGuid.from(new QualifiedEnum(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
+                ItemGuid.from(QualifiedString.of(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
@@ -101,7 +100,7 @@ public class ItemImplTest {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
-                ItemGuid.from(new QualifiedEnum(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
+                ItemGuid.from(QualifiedString.of(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertFalse(item.is());
@@ -112,7 +111,7 @@ public class ItemImplTest {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
-                ItemGuid.from(new QualifiedEnum(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
+                ItemGuid.from(QualifiedString.of(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));

@@ -225,8 +225,8 @@ public abstract class Script {
                 continue;
             } else
                 domain = domain.equals(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain : domain;
-            if (!handleUntilRemoved((String) domain, startupTimeSeconds).applied()
-                    && !handleUntilExpired((String) domain, startupTimeSeconds).applied()) {
+            if (!handleUntilRemoved(domain.toString(), startupTimeSeconds).applied()
+                    && !handleUntilExpired(domain.toString(), startupTimeSeconds).applied()) {
                 persistedDomains.removeFrom(domain);
             }
         }

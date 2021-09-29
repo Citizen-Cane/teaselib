@@ -170,18 +170,18 @@ public class UserItemsImpl implements UserItems {
             }
         }
 
-        QualifiedItem kind = new QualifiedEnum(enumValue);
+        QualifiedString kind = QualifiedString.of(enumValue);
         return new ItemImpl(teaseLib, domain, ItemGuid.from(kind, guid), //
                 displayName, defaultPeers.toArray(new Enum<?>[defaultPeers.size()]), //
                 itemAttributes.toArray(new Enum<?>[itemAttributes.size()]));
     }
 
-    private ItemImpl getDefaultItem(String domain, QualifiedItem kind) {
+    private ItemImpl getDefaultItem(String domain, QualifiedString kind) {
         return new ItemImpl(teaseLib, domain, ItemGuid.from(kind, kind.name()), ItemImpl.createDisplayName(kind));
     }
 
     @Override
-    public List<Item> get(String domain, QualifiedItem item) {
+    public List<Item> get(String domain, QualifiedString item) {
         var itemMap = getItemMap(domain);
         List<Item> all = collectItems(item, itemMap);
 
@@ -261,7 +261,7 @@ public class UserItemsImpl implements UserItems {
                 .collect(toList());
     }
 
-    private void addDefaultItem(String domain, QualifiedItem kind, ItemMap itemMap, List<Item> all) {
+    private void addDefaultItem(String domain, QualifiedString kind, ItemMap itemMap, List<Item> all) {
         List<ItemImpl> defaultItems = Collections.singletonList(getDefaultItem(domain, kind));
         addItems(itemMap, defaultItems);
         all.addAll(defaultItems);

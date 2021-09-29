@@ -35,7 +35,7 @@ public class AbstractProxy<T> {
     }
 
     public static Object[] removeProxies(Object... peers) {
-        Object[] proxiesRemoved = new Object[peers.length];
+        var proxiesRemoved = new Object[peers.length];
         for (int i = 0; i < peers.length; i++) {
             proxiesRemoved[i] = removeProxy(peers[i]);
         }

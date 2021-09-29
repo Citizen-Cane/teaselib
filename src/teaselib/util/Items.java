@@ -276,16 +276,16 @@ public class Items implements Iterable<Item> {
      * @return Items that match all of the attributes.
      */
     public final Items matching(Enum<?>... attributes) {
-        return matching((Object[]) attributes);
+        return matching(Arrays.asList(attributes));
     }
 
     public final Items matching(String... attributes) {
-        return matching((Object[]) attributes);
+        return matching(Arrays.asList(attributes));
     }
 
-    private Items matching(Object[] attributes) {
+    private Items matching(List<? extends Object> attributes) {
         Items matchingItems;
-        if (attributes.length == 0) {
+        if (attributes.isEmpty()) {
             matchingItems = new Items(this);
         } else {
             List<Item> matching = elements.stream()
@@ -538,7 +538,7 @@ public class Items implements Iterable<Item> {
         return applyToImpl(item -> item.applyTo(removeProxies(peers)));
     }
 
-    public State.Options applyToImpl(Function<Item, State.Options> applyFunction) {
+    private State.Options applyToImpl(Function<Item, State.Options> applyFunction) {
         List<State.Options> options = firstOfEachKind().stream().map(applyFunction::apply).collect(toList());
         return new State.Options() {
             @Override

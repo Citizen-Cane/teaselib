@@ -18,8 +18,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
-import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
@@ -178,10 +177,10 @@ public abstract class TeaseScriptPersistence extends Script {
     public final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain, this);
 
     public Domain domain(Enum<?> domain) {
-        return domain(new QualifiedEnum(domain));
+        return domain(QualifiedString.of(domain));
     }
 
-    public Domain domain(QualifiedItem domain) {
+    public Domain domain(QualifiedString domain) {
         return domain(domain.toString());
     }
 

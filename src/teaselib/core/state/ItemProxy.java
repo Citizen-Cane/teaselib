@@ -1,7 +1,7 @@
 package teaselib.core.state;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.joining;
+import static java.util.Arrays.*;
+import static java.util.stream.Collectors.*;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -67,14 +67,14 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
 
         @Override
         public Persistence over(long duration, TimeUnit unit) {
-            Persistence persistence = options.over(duration, unit);
+            var persistence = options.over(duration, unit);
             events.itemDuration.fire(new ItemChangedEventArgs(item));
             return persistence;
         }
 
         @Override
         public Persistence over(Duration duration) {
-            Persistence persistence = options.over(duration);
+            var persistence = options.over(duration);
             events.itemDuration.fire(new ItemChangedEventArgs(item));
             return persistence;
         }

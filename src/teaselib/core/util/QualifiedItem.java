@@ -27,7 +27,7 @@ public interface QualifiedItem {
         } else if (item instanceof Class) {
             return ReflectionUtils.qualified((Class<?>) item);
         } else if (item instanceof String) {
-            String string = (String) item;
+            var string = (String) item;
             if (string.contains(".")) {
                 return string.substring(0, string.lastIndexOf('.'));
             } else {

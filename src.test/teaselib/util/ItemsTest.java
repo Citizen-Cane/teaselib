@@ -24,7 +24,7 @@ import teaselib.TeaseScriptPersistence.Domain;
 import teaselib.Toys;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.math.Varieties;
 
@@ -275,9 +275,9 @@ public class ItemsTest {
         Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Bondage.Chains);
 
         Item chains = chainedUp.get(Bondage.Chains);
-        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value()));
+        assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).value()));
         chainedUp.get(Toys.Wrist_Restraints).applyTo(Bondage.Chains);
-        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value()));
+        assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).value()));
     }
 
     @Test
@@ -449,8 +449,8 @@ public class ItemsTest {
 
         List<Object> values = new ArrayList<>(restraints.valueSet());
         assertEquals(2, values.size());
-        assertEquals(QualifiedItem.of(Toys.Wrist_Restraints), values.get(0));
-        assertEquals(QualifiedItem.of(Toys.Ankle_Restraints), values.get(1));
+        assertEquals(QualifiedString.of(Toys.Wrist_Restraints), values.get(0));
+        assertEquals(QualifiedString.of(Toys.Ankle_Restraints), values.get(1));
     }
 
     @Test

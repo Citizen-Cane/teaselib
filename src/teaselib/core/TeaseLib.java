@@ -53,9 +53,8 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.ConfigFileMapping;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
-import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
 import teaselib.util.Daytime;
@@ -930,16 +929,16 @@ public class TeaseLib implements Closeable {
         // TODO provide a set of default item set by the script or user interface to select items for a session
         List<Item> items = new ArrayList<>();
         for (Object item : values) {
-            items.addAll(userItems.get(domain, QualifiedItem.of(item)));
+            items.addAll(userItems.get(domain, QualifiedString.of(item)));
         }
         return new Items(items);
     }
 
     public Items relatedItems(Enum<?> domain, Items items) {
-        return relatedItems(new QualifiedEnum(domain), items);
+        return relatedItems(QualifiedString.of(domain), items);
     }
 
-    public Items relatedItems(QualifiedItem domain, Items items) {
+    public Items relatedItems(QualifiedString domain, Items items) {
         return relatedItems(domain.toString(), items);
     }
 

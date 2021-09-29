@@ -144,12 +144,13 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
 
+        State chastityDevice = state(TEST_DOMAIN, NestedTestToys.Chastity_Device);
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).remove();
 
         assertFalse(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
-        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
+        assertTrue(chastityDevice.applied());
+        assertTrue(chastityDevice.expired());
 
         state(TEST_DOMAIN, NestedTestToys.Chastity_Device).remove();
 
@@ -411,9 +412,12 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         teaseLib.advanceTime(1, TimeUnit.HOURS);
         state(TEST_DOMAIN, Toys.Ball_Stretcher).removeFrom(Body.OnBalls);
+        State ballStretcher = state(TEST_DOMAIN, Toys.Ball_Stretcher);
+        State onBalls = state(TEST_DOMAIN, Body.OnBalls);
+        assertFalse(onBalls.applied());
         assertEquals("State not completely cleared (excluding auto-removal book-keeping)", isRemembered() ? 3 : 0,
                 script.storageSize());
-        assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
+        assertFalse(ballStretcher.applied());
 
         // False because we removed the item early
         assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).expired());

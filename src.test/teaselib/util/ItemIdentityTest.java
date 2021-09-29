@@ -21,8 +21,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
-import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.Storage;
 import teaselib.test.TestScript;
 
@@ -262,7 +261,7 @@ public class ItemIdentityTest {
 
     private static ItemImpl createPeg(TestScript script, String name) {
         // TODO Improve serialization to allow for white space
-        QualifiedEnum kind = new QualifiedEnum(Household.Clothes_Pegs);
+        QualifiedString kind = QualifiedString.of(Household.Clothes_Pegs);
         return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, ItemGuid.from(kind, name), "A_Clothes_Peg");
     }
 
@@ -646,8 +645,8 @@ public class ItemIdentityTest {
         Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
 
-        QualifiedItem ringGagRef = QualifiedItem.of(ringGag);
-        QualifiedItem bitGagRef = QualifiedItem.of(bitGag);
+        QualifiedString ringGagRef = QualifiedString.of(ringGag);
+        QualifiedString bitGagRef = QualifiedString.of(bitGag);
         assertNotEquals(ringGagRef, bitGagRef);
         assertNotEquals(ringGagRef.toString(), bitGagRef.toString());
 

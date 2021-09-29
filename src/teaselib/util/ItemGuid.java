@@ -16,17 +16,17 @@ import teaselib.core.util.Storage;
 public class ItemGuid implements Persistable {
     private static final String HEADER = "guid:";
 
-    private final QualifiedItem item;
+    private final QualifiedString item;
 
     public static ItemGuid fromGuid(String item) {
         return new ItemGuid(item);
     }
 
-    public static ItemGuid from(QualifiedItem item) {
+    public static ItemGuid from(QualifiedString item) {
         return new ItemGuid(item);
     }
 
-    public static ItemGuid from(QualifiedItem kind, String name) {
+    public static ItemGuid from(QualifiedString kind, String name) {
         return new ItemGuid(new QualifiedString(kind.namespace(), kind.name(), name));
     }
 
@@ -46,7 +46,7 @@ public class ItemGuid implements Persistable {
         }
     }
 
-    private ItemGuid(QualifiedItem item) {
+    private ItemGuid(QualifiedString item) {
         if (item.guid().isPresent()) {
             this.item = item;
         } else {
@@ -62,7 +62,7 @@ public class ItemGuid implements Persistable {
         return item;
     }
 
-    public QualifiedItem kind() {
+    public QualifiedString kind() {
         return new QualifiedString(item.namespace(), item.name());
     }
 

@@ -315,7 +315,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             return false;
         }
 
-        if (state.peerStatesCopy().stream().anyMatch(this::containsMe)) {
+        if (state.peerStates().stream().anyMatch(this::containsMe)) {
             return false;
         }
 

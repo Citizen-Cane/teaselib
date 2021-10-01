@@ -4,8 +4,13 @@ import java.util.Optional;
 
 public class QualifiedString extends AbstractQualifiedItem<String> {
 
+    /**
+     * Denotes the name of any item or state of the given name space, enumeration or class.
+     */
+    public static final String ANY = "*";
+
     public static QualifiedString of(Class<?> clazz) {
-        return new QualifiedString(ReflectionUtils.qualified(clazz), "*");
+        return new QualifiedString(ReflectionUtils.qualified(clazz), ANY);
     }
 
     public static QualifiedString of(Object object) {

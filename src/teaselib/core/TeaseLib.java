@@ -957,11 +957,11 @@ public class TeaseLib implements Closeable {
             for (Entry<String, StateMap> namespace : new ArrayList<>(domains.getValue().entrySet())) {
                 for (Entry<Object, State> entries : new ArrayList<>(namespace.getValue().states.entrySet())) {
                     StateImpl state = (StateImpl) entries.getValue();
-                    if (!ItemGuid.isGuid(state.item.toString())
-                            && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        temporaryItems.addAll(state.peers().stream().filter(ItemGuid.class::isInstance)
-                                .map(ItemGuid.class::cast).map(guid -> getItem(domain, state.item, guid.name()))
-                                .collect(Collectors.toList()));
+                    QualifiedString item = state.item;
+                    if (!item.guid().isPresent() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
+                        temporaryItems.addAll(
+                                state.peers().stream().filter(ItemGuid.class::isInstance).map(ItemGuid.class::cast)
+                                        .map(guid -> getItem(domain, item, guid.name())).collect(Collectors.toList()));
                     }
                 }
             }

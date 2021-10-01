@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -59,9 +60,9 @@ import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Action;
 import teaselib.core.ui.Shower;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.WildcardPattern;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 import teaselib.util.math.Random;
@@ -254,8 +255,14 @@ public abstract class Script {
 
     private boolean cleanupRemovedUserItemReferences(State state) {
         var stateImpl = AbstractProxy.stateImpl(state);
-        if (stateImpl.peers().stream().filter(ItemGuid::isGuid).anyMatch(
-                guid -> teaseLib.findItem(stateImpl.domain, stateImpl.item, (ItemGuid) guid) == Item.NotFound)) {
+        if (stateImpl.peers().stream().filter(Predicate.not(Item.class::isInstance)).map(peer -> {
+            if (peer instanceof QualifiedString) {
+                return (QualifiedString) peer;
+            } else {
+                return QualifiedString.of(peer);
+            }
+        }).filter(peer -> peer.guid().isPresent()).anyMatch(
+                peer -> teaseLib.findItem(stateImpl.domain, stateImpl.item, peer.guid().get()) == Item.NotFound)) {
             state.remove();
             return true;
         } else {

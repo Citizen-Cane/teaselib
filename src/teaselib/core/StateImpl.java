@@ -14,7 +14,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -285,9 +284,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             } else {
                 throw new IllegalStateException(peer.toString());
             }
-        } else if (qualifiedPeer.value() instanceof Item) {
+        } else if (peer instanceof Item) {
             peers.add(peer);
-        } else if (ItemGuid.isGuid(peer)) {
+        } else if (peer instanceof ItemGuid) {
+            peers.add(peer);
+        } else if (qualifiedPeer.guid().isPresent()) {
             peers.add(ItemGuid.fromGuid(peer.toString()));
         } else if (isCached(qualifiedPeer) && state(peer).applied()) {
             if (peer instanceof QualifiedString) {
@@ -317,11 +318,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void persistDuration() {
-        String start = Long.toString(duration.start(TimeUnit.SECONDS));
+        var start = Long.toString(duration.start(TimeUnit.SECONDS));
         long limitValue = duration.limit(TimeUnit.SECONDS);
-        String limit = timespan2String(limitValue);
+        var limit = timespan2String(limitValue);
         if (duration instanceof FrozenDuration) {
-            String elapsed = timespan2String(duration.elapsed(TimeUnit.SECONDS));
+            var elapsed = timespan2String(duration.elapsed(TimeUnit.SECONDS));
             storage.durationStorage.set(start + " " + limit + " " + elapsed);
         } else {
             if (limitValue != 0) {
@@ -409,6 +410,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             if (!peersContain(attribute)) {
                 if (attribute instanceof List || attribute.getClass().isArray()) {
                     throw new IllegalStateException(attribute.toString());
+                } else if (attribute instanceof Class<?>) {
+                    throw new IllegalStateException("Class items cannot be applied: " + attribute);
+                } else if (attribute instanceof QualifiedString
+                        && ((QualifiedString) attribute).name().equals(QualifiedString.ANY)) {
+                    throw new IllegalStateException("Class selectors cannot be applied: " + attribute);
                 }
                 peers.add(attribute);
                 if (!(attribute instanceof ItemGuid)) {
@@ -423,12 +429,13 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return this;
     }
 
-    public List<StateImpl> peerStatesCopy() {
+    public List<StateImpl> peerStates() {
         return states(new HashSet<>(peers));
     }
 
     private List<StateImpl> states(Collection<? extends Object> list) {
-        return list.stream().filter(Predicate.not(ItemGuid::isGuid)).map(this::state).collect(Collectors.toList());
+        return list.stream().filter(peer -> QualifiedString.of(peer).guid().isEmpty()).map(this::state)
+                .collect(Collectors.toList());
     }
 
     private void setTemporary() {
@@ -508,7 +515,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private Set<Object> attributesAndPeers() {
         Stream<Object> myAttributeAndPeers = Stream.concat(peers.stream(), attributes.stream());
-        Stream<Object> attributesOfDirectPeers = peerStatesCopy().stream().map(state -> state.attributes)
+        Stream<Object> attributesOfDirectPeers = peerStates().stream().map(state -> state.attributes)
                 .flatMap(Set::stream);
         return Stream.concat(myAttributeAndPeers, attributesOfDirectPeers).collect(Collectors.toSet());
     }
@@ -528,7 +535,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     @Override
     public Duration duration() {
         if (applied || Domain.LAST_USED.equals(domain)) {
-            Stream<Duration> durations = peerStatesCopy().stream().map(state -> state.duration);
+            Stream<Duration> durations = peerStates().stream().map(state -> state.duration);
             Optional<Duration> maximum = Stream.concat(Stream.of(this.duration), durations)
                     .max((a, b) -> Long.compare(a.remaining(TimeUnit.SECONDS), b.remaining(TimeUnit.SECONDS)));
             if (maximum.isPresent()) {

@@ -14,7 +14,6 @@ import teaselib.core.util.Storage;
  *
  */
 public class ItemGuid implements Persistable {
-    private static final String HEADER = "guid:";
 
     private final QualifiedString item;
 
@@ -35,12 +34,7 @@ public class ItemGuid implements Persistable {
     }
 
     private ItemGuid(String item) {
-        if (isGuid(item)) {
-            var qualifiedItem = item.substring(HEADER.length());
-            this.item = new QualifiedString(qualifiedItem);
-        } else {
-            this.item = new QualifiedString(item);
-        }
+        this.item = new QualifiedString(item);
         if (!this.item.guid().isPresent()) {
             throw new IllegalArgumentException("Qualified item without guid: " + item);
         }
@@ -70,14 +64,6 @@ public class ItemGuid implements Persistable {
         return item.guid().orElseThrow();
     }
 
-    public static boolean isGuid(String name) {
-        return name.startsWith(HEADER);
-    }
-
-    public static boolean isGuid(Object object) {
-        return object instanceof ItemGuid || isGuid(object.toString());
-    }
-
     @Override
     public List<String> persisted() {
         return Arrays.asList(Persist.persist(item.toString()));
@@ -85,7 +71,7 @@ public class ItemGuid implements Persistable {
 
     @Override
     public String toString() {
-        return HEADER + item;
+        return item.toString();
     }
 
     @Override

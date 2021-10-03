@@ -16,7 +16,6 @@ import teaselib.Material;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
-import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -30,15 +29,15 @@ public class UserItemsImplTest {
         UserItems items = new UserItemsImpl(script.teaseLib);
 
         for (Clothes item : Clothes.values()) {
-            assertNotNull(items.defaults(new QualifiedEnum(item)));
+            assertNotNull(items.defaults(QualifiedString.of(item)));
         }
 
         for (Household item : Household.values()) {
-            assertNotNull(items.defaults(new QualifiedEnum(item)));
+            assertNotNull(items.defaults(QualifiedString.of(item)));
         }
 
         for (Toys item : Toys.values()) {
-            assertNotNull(items.defaults(new QualifiedEnum(item)));
+            assertNotNull(items.defaults(QualifiedString.of(item)));
         }
     }
 

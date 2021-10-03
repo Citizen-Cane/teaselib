@@ -5,7 +5,6 @@ import java.util.List;
 
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.Storage;
 
@@ -52,7 +51,7 @@ public class ItemGuid implements Persistable {
         this(new QualifiedString(storage.next()));
     }
 
-    public QualifiedItem item() {
+    public QualifiedString item() {
         return item;
     }
 

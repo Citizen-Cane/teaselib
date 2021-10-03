@@ -6,12 +6,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import teaselib.State;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
@@ -56,10 +58,9 @@ public class StateMaps {
                 ItemImpl item = (ItemImpl) object;
                 toString.append("item:" + item.guid.name());
             } else if (object instanceof ItemGuid) {
-                ItemGuid itemGuid = (ItemGuid) object;
-                toString.append(itemGuid.toString());
+                toString.append(object.toString());
             } else {
-                toString.append(QualifiedItem.of(object).toString());
+                toString.append(QualifiedString.of(object).toString());
             }
         }
         toString.append("]");
@@ -99,7 +100,7 @@ public class StateMaps {
                 }
                 stateMapForPersistedKey.put(persistedKey, state);
 
-                var qualifiedItem = QualifiedItem.of(((StateImpl) state).item);
+                var qualifiedItem = ((StateImpl) state).item;
                 var stateMapForQualifiedKey = stateMap(domain, qualifiedItem);
                 String qualifiedKey = qualifiedItem.name().toLowerCase();
                 stateMapForQualifiedKey.put(qualifiedKey, state);
@@ -107,7 +108,7 @@ public class StateMaps {
             }
         } else if (item.value() instanceof StateImpl) {
             var state = (StateImpl) item.value();
-            var stateMap = stateMap(domain, QualifiedItem.of(state.item));
+            var stateMap = stateMap(domain, state.item);
             String key = item.name().toLowerCase();
             var existing = stateMap.get(key);
             if (existing == null) {
@@ -130,12 +131,10 @@ public class StateMaps {
         }
     }
 
-    public static boolean hasAllAttributes(Set<Object> availableAttributes, List<Object> desiredAttributes) {
-        return desiredAttributes.stream().map(desiredAttribute -> QualifiedItem.of(stripState(desiredAttribute)))
-                .filter(desiredQualifiedAttribute -> availableAttributes.stream()
-                        .map(availableAttribute -> QualifiedItem.of(stripState(availableAttribute)))
-                        .anyMatch(desiredQualifiedAttribute::equals))
-                .count() == desiredAttributes.size();
+    public static boolean hasAllAttributes(Set<Object> available, List<Object> desired) {
+        Predicate<? super QualifiedString> predicate = attribute -> available.stream().map(StateMaps::stripState)
+                .anyMatch(attribute::equals);
+        return desired.stream().map(StateMaps::stripState).filter(predicate).count() == desired.size();
     }
 
     public static List<Object> flatten(Object[] peers) {
@@ -161,17 +160,19 @@ public class StateMaps {
         return flattenedPeers;
     }
 
-    private static Object stripState(Object value) {
+    private static QualifiedString stripState(Object value) {
         if (value instanceof StateImpl) {
             return stripState((StateImpl) value);
         } else if (value instanceof StateProxy) {
             return stripState(((StateProxy) value).state);
+        } else if (value instanceof QualifiedString) {
+            return (QualifiedString) value;
         } else {
-            return value;
+            return QualifiedString.of(value);
         }
     }
 
-    private static Object stripState(StateImpl state) {
+    private static QualifiedString stripState(StateImpl state) {
         return state.item;
     }
 

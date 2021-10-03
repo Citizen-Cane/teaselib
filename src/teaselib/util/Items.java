@@ -27,6 +27,7 @@ import teaselib.State.Persistence;
 import teaselib.TeaseScriptPersistence;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.util.math.Combinations;
 import teaselib.util.math.Varieties;
 
@@ -297,11 +298,11 @@ public class Items implements Iterable<Item> {
     }
 
     public boolean contains(Enum<?> item) {
-        return containsImpl(item);
+        return containsImpl(QualifiedString.of(item));
     }
 
     public boolean contains(String item) {
-        return containsImpl(item);
+        return containsImpl(QualifiedString.of(item));
     }
 
     public boolean contains(Item item) {
@@ -320,13 +321,9 @@ public class Items implements Iterable<Item> {
         return new Items(elements.stream().distinct().filter(items::contains).collect(toList()));
     }
 
-    private <S> boolean containsImpl(S item) {
-        for (Item i : elements) {
-            if (QualifiedItem.of(i).equals(item)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean containsImpl(QualifiedString item) {
+        return elements.stream().map(AbstractProxy::removeProxy).filter(ItemImpl.class::isInstance)
+                .map(ItemImpl.class::cast).map(ItemImpl::value).anyMatch(item::equals);
     }
 
     /**
@@ -517,8 +514,8 @@ public class Items implements Iterable<Item> {
         return a >= b ? itemsA : itemsB;
     }
 
-    private static Map<QualifiedItem, Long> attributesOfAvailable(List<Item> items) {
-        return items.stream().filter(Item::isAvailable).collect(groupingBy(QualifiedItem::of, counting()));
+    private static Map<QualifiedString, Long> attributesOfAvailable(List<Item> items) {
+        return items.stream().filter(Item::isAvailable).collect(groupingBy(QualifiedString::of, counting()));
     }
 
     /**

@@ -34,7 +34,8 @@ public class AbstractProxy<T> {
         return state.hashCode();
     }
 
-    public static Object[] removeProxies(Object... peers) {
+    @SafeVarargs
+    public static <T> Object[] removeProxies(T... peers) {
         var proxiesRemoved = new Object[peers.length];
         for (int i = 0; i < peers.length; i++) {
             proxiesRemoved[i] = removeProxy(peers[i]);
@@ -42,7 +43,7 @@ public class AbstractProxy<T> {
         return proxiesRemoved;
     }
 
-    public static Object removeProxy(Object item) {
+    public static <T> Object removeProxy(T item) {
         if (item instanceof Item) {
             return itemImpl((Item) item);
         } else if (item instanceof State) {

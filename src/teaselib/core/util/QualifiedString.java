@@ -88,6 +88,10 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
         return QualifiedItem.nameOf(value);
     }
 
+    public QualifiedString kind() {
+        return new QualifiedString(namespace(), name());
+    }
+
     @Override
     public Optional<String> guid() {
         return guid;

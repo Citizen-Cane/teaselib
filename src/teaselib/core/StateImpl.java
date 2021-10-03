@@ -27,7 +27,6 @@ import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.Storage;
@@ -99,10 +98,6 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             durationStorage.clear();
             peerStorage.clear();
             attributeStorage.clear();
-        }
-
-        public static void delete(TeaseLib teaseLib, String domain, Object item) {
-            new StateImpl.StateStorage(teaseLib, domain, QualifiedItem.of(item).toString()).deletePersistence();
         }
 
         @Override
@@ -195,7 +190,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
         this.domain = domain;
         this.item = QualifiedString.of(item);
-        this.storage = new StateStorage(this.stateMaps.teaseLib, domain, QualifiedItem.of(item).toString());
+        this.storage = new StateStorage(this.stateMaps.teaseLib, domain, this.item.toString());
 
         restoreApplied();
         restoreDuration();
@@ -277,7 +272,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void addPeerThatHasBeenPersistedWithMe(Object peer) {
-        var qualifiedPeer = QualifiedItem.of(peer);
+        var qualifiedPeer = QualifiedString.of(peer);
         if (storage.persistentDuration(stateMaps.teaseLib, domain, qualifiedPeer.toString()).available()) {
             if (peer instanceof QualifiedString) {
                 peers.add(peer);
@@ -299,7 +294,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    private boolean isCached(QualifiedItem qualifiedPeer) {
+    private boolean isCached(QualifiedString qualifiedPeer) {
         return this.stateMaps.stateMap(domain, qualifiedPeer).contains(qualifiedPeer.name().toLowerCase());
     }
 
@@ -379,8 +374,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                     || value instanceof QualifiedString) {
                 mapped.add(value);
             } else {
-                var s = QualifiedItem.of(value).toString();
-                mapped.add(new QualifiedString(s));
+                var s = QualifiedString.of(value);
+                mapped.add(s);
             }
         }
         return mapped;
@@ -394,8 +389,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             } else if (value instanceof QualifiedString) {
                 mapped.add((QualifiedString) value);
             } else {
-                var s = QualifiedItem.of(value).toString();
-                mapped.add(new QualifiedString(s));
+                var s = QualifiedString.of(value);
+                mapped.add(s);
             }
         }
         return mapped;
@@ -632,6 +627,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void updateLastUsed(FrozenDuration frozenDuration) {
+        // TODO apply with domain name
         state(Domain.LAST_USED, item).apply().over(frozenDuration).remember(Until.Removed);
     }
 
@@ -656,7 +652,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
                 if (!(peer instanceof ItemGuid)) {
                     if (!(peer instanceof ItemImpl)) {
-                        removeRepresentingItems(peer);
+                        removeRepresentingItems((QualifiedString) peer);
                     }
 
                     if (!anyMoreItemInstanceOfSameKind(peer)) {
@@ -690,9 +686,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private boolean peersContain(Object peer) {
         if (peer instanceof Item) {
             return peers.stream().filter(Item.class::isInstance).anyMatch(peer::equals);
-        } else {
-            var qualifiedPeer = QualifiedItem.of(peer);
+        } else if (peer instanceof ItemGuid) {
+            var qualifiedPeer = QualifiedString.of(peer);
             return peers.stream().anyMatch(qualifiedPeer::equals);
+        } else if (peer instanceof QualifiedString) {
+            var qualifiedPeer = (QualifiedString) peer;
+            return peers.stream().anyMatch(qualifiedPeer::equals);
+        } else {
+            throw new IllegalArgumentException(peer.toString());
         }
     }
 
@@ -712,11 +713,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 .count();
     }
 
-    private void removeRepresentingItems(Object value) {
+    private void removeRepresentingItems(QualifiedString value) {
         for (Object peer : new HashSet<>(peers)) {
             if (peer instanceof ItemImpl) {
                 var itemImpl = (ItemImpl) peer;
-                if (QualifiedItem.of(itemImpl.value()).equals(QualifiedItem.of(value))) {
+                if (itemImpl.value().equals(value)) {
                     peers.remove(itemImpl);
                     itemImpl.releaseInstanceGuid();
                 }
@@ -770,7 +771,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public String toString() {
-        String name = "name=" + (domain.isEmpty() ? "" : domain + ".") + QualifiedItem.nameOf(item);
+        String name = "name=" + (domain.isEmpty() ? "" : domain + ".") + item.name();
         return name + " " + duration + " peers=" + StateMaps.toStringWithoutRecursion(peers);
     }
 

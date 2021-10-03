@@ -17,7 +17,6 @@ import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist.Persistable;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.Storage;
@@ -59,7 +58,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
                 StateImpl.mapToQualifiedStringTyped(attributes(guid.kind(), Arrays.asList(attributes))));
     }
 
-    public Object value() {
+    public QualifiedString value() {
         return guid.kind();
     }
 
@@ -81,7 +80,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     private static Set<Object> attributes(QualifiedString item, List<Object> attributes) {
         Set<Object> all = new HashSet<>();
         all.add(item);
-        all.addAll(StateImpl.mapToQualifiedStringTyped(attributes));
+        all.addAll(attributes);
         return all;
     }
 
@@ -111,11 +110,11 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private static boolean has(Stream<? extends Object> available, List<? extends Object> desired) {
-        return available.filter(element -> contains(desired, QualifiedItem.of(element))).count() == desired.size();
+        return available.filter(element -> contains(desired, QualifiedString.of(element))).count() == desired.size();
     }
 
-    static boolean contains(List<? extends Object> attributes2, QualifiedItem item) {
-        return attributes2.stream().map(QualifiedItem::of).anyMatch(i -> i.equals(item));
+    static boolean contains(List<? extends Object> attributes2, QualifiedString item) {
+        return attributes2.stream().anyMatch(item::equals);
     }
 
     @Override
@@ -332,9 +331,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private StateImpl lastUsed() {
-        var itemGuid = ReflectionUtils.qualified(QualifiedItem.of(value()).toString(), guid.name());
-        var lastUsed = (StateImpl) teaseLib.state(TeaseLib.DefaultDomain, itemGuid);
-        return lastUsed;
+        var lastUsedStateName = ReflectionUtils.qualified(guid.kind().toString(), guid.name());
+        return (StateImpl) teaseLib.state(domain, lastUsedStateName);
     }
 
     private Stream<StateImpl> defaultStates() {

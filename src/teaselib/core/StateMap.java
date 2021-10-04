@@ -13,15 +13,11 @@ public class StateMap {
         this.domain = domain;
     }
 
-    public State get(Object item) {
-        if (states.containsKey(item)) {
-            return states.get(item);
-        } else {
-            return null;
-        }
+    public State get(String item) {
+        return states.getOrDefault(item.toLowerCase(), null);
     }
 
-    public void put(Object item, State state) {
+    public void put(String item, State state) {
         states.put(item, state);
     }
 
@@ -29,7 +25,7 @@ public class StateMap {
         states.clear();
     }
 
-    public boolean contains(Object item) {
+    public boolean contains(String item) {
         return states.containsKey(item);
     }
 

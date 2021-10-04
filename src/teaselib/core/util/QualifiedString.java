@@ -2,6 +2,13 @@ package teaselib.core.util;
 
 import java.util.Optional;
 
+import teaselib.core.StateImpl;
+import teaselib.core.state.AbstractProxy;
+import teaselib.core.state.ItemProxy;
+import teaselib.util.ItemGuid;
+import teaselib.util.ItemImpl;
+
+// TODO remove all occurrences of QualifiedItem sub-classes, then remove super class
 public class QualifiedString extends AbstractQualifiedItem<String> {
 
     /**
@@ -14,19 +21,36 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
     }
 
     public static QualifiedString of(Object object) {
-        if (object instanceof QualifiedString) {
+        if (object instanceof String) {
+            return new QualifiedString((String) object);
+        } else if (object instanceof Enum<?>) {
+            Enum<?> item = (Enum<?>) object;
+            return new QualifiedString(ReflectionUtils.qualifiedName(item));
+        } else if (object instanceof QualifiedString) {
             return (QualifiedString) object;
         } else if (object instanceof Class<?>) {
             return QualifiedString.of((Class<?>) object);
+        } else if (object instanceof StateImpl) {
+            StateImpl state = (StateImpl) object;
+            return state.item;
+        } else if (object instanceof ItemProxy) {
+            return of(AbstractProxy.removeProxy((ItemProxy) object));
+        } else if (object instanceof ItemImpl) {
+            ItemImpl item = (ItemImpl) object;
+            return item.guid.item();
+        } else if (object instanceof ItemGuid) {
+            return ((ItemGuid) object).item();
         } else {
-            return new QualifiedString(QualifiedItem.of(object).toString());
+            throw new UnsupportedOperationException(object.toString());
         }
     }
 
+    private final String value;
     private final Optional<String> guid;
 
     public QualifiedString(String value) {
-        super(valueWithoutGuid(value));
+        super(value);
+        this.value = valueWithoutGuid(value);
         if (this.value != value) {
             this.guid = Optional.of(value.substring(this.value.length() + 1));
         } else {
@@ -35,12 +59,14 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
     }
 
     public QualifiedString(String namespace, String name) {
-        super(ReflectionUtils.qualified(namespace, name));
+        super("x");
+        this.value = ReflectionUtils.qualified(namespace, name);
         this.guid = Optional.empty();
     }
 
     public QualifiedString(String namespace, String name, String guid) {
-        super(ReflectionUtils.qualified(namespace, name));
+        super("x");
+        this.value = ReflectionUtils.qualified(namespace, name);
         this.guid = Optional.of(guid);
     }
 
@@ -78,21 +104,34 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
         return super.hashCode();
     }
 
-    @Override
     public String namespace() {
-        return QualifiedItem.namespaceOf(value);
+        if (value.contains(".")) {
+            return value.substring(0, value.lastIndexOf('.'));
+        } else {
+            return value;
+        }
     }
 
-    @Override
     public String name() {
-        return QualifiedItem.nameOf(value);
+        if (value.contains(".")) {
+            return value.substring(value.lastIndexOf('.') + 1);
+        } else {
+            return value;
+        }
     }
 
     public QualifiedString kind() {
         return new QualifiedString(namespace(), name());
     }
 
-    @Override
+    public boolean is(Object obj) {
+        return equals(obj);
+    }
+
+    public String value() {
+        return value;
+    }
+
     public Optional<String> guid() {
         return guid;
     }
@@ -100,9 +139,17 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
     @Override
     public String toString() {
         if (guid.isPresent()) {
-            return toString(value, guid);
+            return toString_(value, guid);
         } else {
             return value;
+        }
+    }
+
+    static String toString_(String path, Optional<String> guid) {
+        if (guid.isPresent()) {
+            return path + "#" + guid.get();
+        } else {
+            return path;
         }
     }
 

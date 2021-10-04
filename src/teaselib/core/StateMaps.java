@@ -12,7 +12,6 @@ import teaselib.State;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
@@ -35,7 +34,7 @@ public class StateMaps {
     final TeaseLib teaseLib;
     final Domains cache = new Domains();
 
-    public StateMaps(TeaseLib teaseLib) {
+    StateMaps(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
         clear();
     }
@@ -74,17 +73,12 @@ public class StateMaps {
      *            The enumeration member to return the state for
      * @return The item state.
      */
-
-    public State state(String domain, Object item) {
-        return state(domain, QualifiedItem.of(item));
+    @Deprecated
+    State state(String domain, Object item) {
+        return state(domain, QualifiedString.of(item));
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends State> T state(String domain, T state) {
-        return (T) state(domain, QualifiedItem.of(state));
-    }
-
-    private State state(String domain, QualifiedItem item) {
+    State state(String domain, QualifiedString item) {
         if (PersistedObject.isPersistedString(item.toString())) {
             var stateMapForPersistedKey = stateMap(domain, item);
             var existing = stateMapForPersistedKey.get(item.toString());
@@ -106,19 +100,6 @@ public class StateMaps {
                 stateMapForQualifiedKey.put(qualifiedKey, state);
                 return state;
             }
-        } else if (item.value() instanceof StateImpl) {
-            var state = (StateImpl) item.value();
-            var stateMap = stateMap(domain, state.item);
-            String key = item.name().toLowerCase();
-            var existing = stateMap.get(key);
-            if (existing == null) {
-                stateMap.put(key, state);
-                return state;
-            } else if (!existing.equals(item.value())) {
-                throw new IllegalArgumentException("States cannot be replaced: " + state + " -> " + existing);
-            } else {
-                return existing;
-            }
         } else {
             var stateMap = stateMap(domain, item);
             String key = item.name().toLowerCase();
@@ -128,6 +109,25 @@ public class StateMaps {
                 stateMap.put(key, state);
             }
             return state;
+        }
+    }
+
+    State state(String domain, State item) {
+        if (item instanceof StateImpl) {
+            var state = (StateImpl) item;
+            var stateMap = stateMap(domain, state.item);
+            String key = state.item.name();
+            var existing = stateMap.get(key);
+            if (existing == null) {
+                stateMap.put(key, state);
+                return state;
+            } else if (!existing.equals(state)) {
+                throw new IllegalArgumentException("States cannot be replaced: " + state + " -> " + existing);
+            } else {
+                return existing;
+            }
+        } else {
+            throw new UnsupportedOperationException(item.toString());
         }
     }
 
@@ -160,7 +160,7 @@ public class StateMaps {
         return flattenedPeers;
     }
 
-    private static QualifiedString stripState(Object value) {
+    static QualifiedString stripState(Object value) {
         if (value instanceof StateImpl) {
             return stripState((StateImpl) value);
         } else if (value instanceof StateProxy) {
@@ -176,30 +176,17 @@ public class StateMaps {
         return state.item;
     }
 
-    StateMap stateMap(String domain, QualifiedItem item) {
-        return stateMap(domain.toLowerCase(), item.namespace().toLowerCase());
+    StateMap stateMap(String domain, QualifiedString item) {
+        return stateMap(domain, item.namespace());
     }
 
-    private StateMap stateMap(String domain, String namespaceKey) {
+    private StateMap stateMap(String domain, String namespace) {
         StateMapCache domainCache = getDomainCache(domain);
-        final StateMap stateMap;
-        if (domainCache.containsKey(namespaceKey)) {
-            stateMap = domainCache.get(namespaceKey);
-        } else {
-            stateMap = new StateMap(domain);
-            domainCache.put(namespaceKey, stateMap);
-        }
-        return stateMap;
+        return domainCache.computeIfAbsent(namespace.toLowerCase(), key -> new StateMap(domain));
     }
 
-    private StateMapCache getDomainCache(String domainKey) {
-        final StateMapCache domainCache;
-        if (cache.containsKey(domainKey)) {
-            domainCache = cache.get(domainKey);
-        } else {
-            domainCache = new StateMapCache();
-            cache.put(domainKey, domainCache);
-        }
-        return domainCache;
+    private StateMapCache getDomainCache(String name) {
+        return cache.computeIfAbsent(name.toLowerCase(), key -> new StateMapCache());
     }
+
 }

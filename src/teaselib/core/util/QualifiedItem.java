@@ -68,8 +68,8 @@ public interface QualifiedItem {
             return new QualifiedItemImpl((Item) value);
         } else if (value instanceof State) {
             return new QualifiedStateImpl((State) value);
-        } else if (value instanceof String) {
-            return new QualifiedString((String) value);
+            // } else if (value instanceof String) {
+            // return new QualifiedString((String) value);
         } else {
             return new QualifiedObject(value);
         }

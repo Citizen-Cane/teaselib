@@ -26,7 +26,6 @@ import teaselib.State;
 import teaselib.State.Persistence;
 import teaselib.TeaseScriptPersistence;
 import teaselib.core.state.AbstractProxy;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.math.Combinations;
 import teaselib.util.math.Varieties;
@@ -237,20 +236,21 @@ public class Items implements Iterable<Item> {
      * @return First item or {@link Item#NotFound}
      */
     public final Item item(Enum<?> item) {
-        return item(QualifiedItem.of(item));
+        return item(QualifiedString.of(item));
     }
 
     public final Item item(String item) {
-        return item(QualifiedItem.of(item));
+        return item(QualifiedString.of(item));
     }
 
-    private final Item item(QualifiedItem item) {
-        for (Item mine : this.firstOfEachKind()) {
-            if (QualifiedItem.of(mine).equals(item)) {
-                return mine;
-            }
+    private final Item item(QualifiedString item) {
+        if (item.guid().isPresent()) {
+            throw new UnsupportedOperationException("Support named items");
         }
-        return Item.NotFound;
+
+        return firstOfEachKind().stream().filter(element -> {
+            return item.equals(AbstractProxy.removeProxy(element).value());
+        }).findFirst().orElse(Item.NotFound);
     }
 
     private Item getAppliedOrFirstAvailableOrNotFound() {
@@ -375,7 +375,7 @@ public class Items implements Iterable<Item> {
     static class Preferred {
         private final List<Item> elements;
         private final Object[] attributes;
-        private final Set<QualifiedItem> found = new HashSet<>();
+        private final Set<QualifiedString> found = new HashSet<>();
         private final List<Item> items = new ArrayList<>();
 
         public Preferred(List<Item> elements, Object[] attributes) {
@@ -386,7 +386,7 @@ public class Items implements Iterable<Item> {
         public void addApplied() {
             for (Item item : elements) {
                 if (item.applied() && missing(item)) {
-                    found.add(QualifiedItem.of(itemValue(item)));
+                    found.add(QualifiedString.of(itemValue(item)));
                     items.add(item);
                 }
             }
@@ -397,7 +397,7 @@ public class Items implements Iterable<Item> {
         public void addAvailableMatching() {
             for (Item item : elements) {
                 if (missing(item) && item.is(attributes) && item.isAvailable()) {
-                    found.add(QualifiedItem.of(itemValue(item)));
+                    found.add(QualifiedString.of(itemValue(item)));
                     items.add(item);
                 }
             }
@@ -406,7 +406,7 @@ public class Items implements Iterable<Item> {
         public void addAvailableNonMatching() {
             for (Item item : elements) {
                 if (missing(item) && item.isAvailable()) {
-                    found.add(QualifiedItem.of(itemValue(item)));
+                    found.add(QualifiedString.of(itemValue(item)));
                     items.add(item);
                 }
             }
@@ -415,7 +415,7 @@ public class Items implements Iterable<Item> {
         public void addMissingMatching() {
             for (Item item : elements) {
                 if (missing(item) && item.is(attributes)) {
-                    found.add(QualifiedItem.of(itemValue(item)));
+                    found.add(QualifiedString.of(itemValue(item)));
                     items.add(item);
                 }
             }
@@ -424,7 +424,7 @@ public class Items implements Iterable<Item> {
         public void addMissing() {
             for (Item item : elements) {
                 if (missing(item)) {
-                    found.add(QualifiedItem.of(itemValue(item)));
+                    found.add(QualifiedString.of(itemValue(item)));
                     items.add(item);
                 }
             }
@@ -434,8 +434,8 @@ public class Items implements Iterable<Item> {
             return !found.contains(qualifiedValue(item));
         }
 
-        private static QualifiedItem qualifiedValue(Item item) {
-            return QualifiedItem.of(AbstractProxy.itemImpl(item).value());
+        private static QualifiedString qualifiedValue(Item item) {
+            return AbstractProxy.itemImpl(item).value();
         }
 
         public List<Item> toList() {
@@ -474,13 +474,13 @@ public class Items implements Iterable<Item> {
 
     private boolean isVariety(List<Item> combination) {
         return Varieties.isVariety(combination.stream().map(AbstractProxy::itemImpl).map(itemImpl -> itemImpl.value())
-                .map(QualifiedItem::of).map(QualifiedItem::toString).collect(Collectors.toList()));
+                .map(QualifiedString::toString).collect(toList()));
     }
 
     private int getVariety() {
         Set<String> types = new HashSet<>();
         for (Item item : elements) {
-            types.add(QualifiedItem.of(AbstractProxy.itemImpl(item).value()).toString());
+            types.add(AbstractProxy.itemImpl(item).value().toString());
         }
 
         return types.size();
@@ -571,10 +571,10 @@ public class Items implements Iterable<Item> {
 
     public Collection<Item> firstOfEachKind() {
         List<Item> firstOfEachKind = new ArrayList<>();
-        Set<QualifiedItem> kinds = new HashSet<>();
+        Set<QualifiedString> kinds = new HashSet<>();
 
         for (Object item : this.valueSet()) {
-            var kind = QualifiedItem.of(item);
+            var kind = QualifiedString.of(item);
             if (!kinds.contains(kind)) {
                 kinds.add(kind);
                 firstOfEachKind.add(getAppliedOrFirstAvailableOrNotFound(item));
@@ -658,8 +658,8 @@ public class Items implements Iterable<Item> {
         return AbstractProxy.itemImpl(item);
     }
 
-    static QualifiedItem itemValue(Item item) {
-        return QualifiedItem.of(itemImpl(item).value());
+    static QualifiedString itemValue(Item item) {
+        return itemImpl(item).value();
     }
 
     @Override

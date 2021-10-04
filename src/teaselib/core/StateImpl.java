@@ -428,9 +428,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return states(new HashSet<>(peers));
     }
 
-    private List<StateImpl> states(Collection<? extends Object> list) {
-        return list.stream().filter(peer -> QualifiedString.of(peer).guid().isEmpty()).map(this::state)
-                .collect(Collectors.toList());
+    private List<StateImpl> states(Collection<? extends Object> elements) {
+        return elements.stream().filter(peer -> QualifiedString.of(peer).guid().isEmpty()).map(this::state)
+                .collect(toList());
     }
 
     private void setTemporary() {

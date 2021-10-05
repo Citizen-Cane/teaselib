@@ -688,10 +688,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             return peers.stream().filter(Item.class::isInstance).anyMatch(peer::equals);
         } else if (peer instanceof ItemGuid) {
             var qualifiedPeer = QualifiedString.of(peer);
-            return peers.stream().anyMatch(qualifiedPeer::equals);
+            return peers.stream().anyMatch(qualifiedPeer::is);
         } else if (peer instanceof QualifiedString) {
             var qualifiedPeer = (QualifiedString) peer;
-            return peers.stream().anyMatch(qualifiedPeer::equals);
+            return peers.stream().anyMatch(qualifiedPeer::is);
         } else {
             throw new IllegalArgumentException(peer.toString());
         }
@@ -717,7 +717,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         for (Object peer : new HashSet<>(peers)) {
             if (peer instanceof ItemImpl) {
                 var itemImpl = (ItemImpl) peer;
-                if (itemImpl.value().equals(value)) {
+                if (itemImpl.value().is(value)) {
                     peers.remove(itemImpl);
                     itemImpl.releaseInstanceGuid();
                 }

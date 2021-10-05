@@ -1,6 +1,6 @@
 package teaselib.core.util;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -42,7 +42,7 @@ public class QualifiedName implements Comparable<QualifiedName> {
     }
 
     public static QualifiedName of(String domain, Enum<?> item) {
-        var qualifiedItem = QualifiedItem.of(item);
+        var qualifiedItem = QualifiedString.of(item);
         return QualifiedName.of(strip(domain), strip(qualifiedItem.namespace()), qualifiedItem.name());
     }
 
@@ -143,15 +143,15 @@ public class QualifiedName implements Comparable<QualifiedName> {
     }
 
     public boolean equals(Enum<?> item) {
-        var qualifiedItem = QualifiedItem.of(item);
-        return this.namespace.equalsIgnoreCase(strip(qualifiedItem.namespace()))
-                && this.name.equalsIgnoreCase(qualifiedItem.name());
+        var qualifiedString = QualifiedString.of(item);
+        return this.namespace.equalsIgnoreCase(strip(qualifiedString.namespace()))
+                && this.name.equalsIgnoreCase(qualifiedString.name());
     }
 
     public boolean equalsClass(Class<?> clazz) {
-        var qualifiedItem = QualifiedItem.of(ReflectionUtils.qualified(clazz));
-        return this.namespace.equalsIgnoreCase(strip(qualifiedItem.namespace()))
-                && this.name.equalsIgnoreCase(qualifiedItem.name());
+        var qualifiedString = QualifiedString.of(ReflectionUtils.qualified(clazz));
+        return this.namespace.equalsIgnoreCase(strip(qualifiedString.namespace()))
+                && this.name.equalsIgnoreCase(qualifiedString.name());
     }
 
 }

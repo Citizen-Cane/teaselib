@@ -323,7 +323,7 @@ public class Items implements Iterable<Item> {
 
     private boolean containsImpl(QualifiedString item) {
         return elements.stream().map(AbstractProxy::removeProxy).filter(ItemImpl.class::isInstance)
-                .map(ItemImpl.class::cast).map(ItemImpl::value).anyMatch(item::equals);
+                .map(ItemImpl.class::cast).map(ItemImpl::value).anyMatch(item::is);
     }
 
     /**

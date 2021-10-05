@@ -9,7 +9,7 @@ import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 // TODO remove all occurrences of QualifiedItem sub-classes, then remove super class
-public class QualifiedString extends AbstractQualifiedItem<String> {
+public class QualifiedString {
 
     /**
      * Denotes the name of any item or state of the given name space, enumeration or class.
@@ -46,28 +46,25 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
     }
 
     private final String value;
-    private final Optional<String> guid;
+    private final String guid;
 
     public QualifiedString(String value) {
-        super(value);
         this.value = valueWithoutGuid(value);
         if (this.value != value) {
-            this.guid = Optional.of(value.substring(this.value.length() + 1));
+            this.guid = value.substring(this.value.length() + 1);
         } else {
-            this.guid = Optional.empty();
+            this.guid = null;
         }
     }
 
     public QualifiedString(String namespace, String name) {
-        super("x");
         this.value = ReflectionUtils.qualified(namespace, name);
-        this.guid = Optional.empty();
+        this.guid = null;
     }
 
     public QualifiedString(String namespace, String name, String guid) {
-        super("x");
         this.value = ReflectionUtils.qualified(namespace, name);
-        this.guid = Optional.of(guid);
+        this.guid = guid;
     }
 
     private static String valueWithoutGuid(String value) {
@@ -80,28 +77,34 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null)
-            return false;
-        if (obj instanceof QualifiedObject) {
-            if (this == obj)
-                return true;
-            QualifiedObject other = (QualifiedObject) obj;
-            if (value == null) {
-                return other.value == null;
-            } else {
-                return value.equalsIgnoreCase(other.value.toString());
-            }
-        } else if (obj instanceof Enum<?>) {
-            return toString().equalsIgnoreCase(ReflectionUtils.qualifiedName((Enum<?>) obj));
-        } else {
-            return this.toString().equalsIgnoreCase(obj.toString());
-        }
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((guid == null) ? 0 : guid.toLowerCase().hashCode());
+        result = prime * result + ((value == null) ? 0 : value.toLowerCase().hashCode());
+        return result;
     }
 
     @Override
-    public int hashCode() {
-        return super.hashCode();
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        QualifiedString other = (QualifiedString) obj;
+        if (guid == null) {
+            if (other.guid != null)
+                return false;
+        } else if (!guid.equalsIgnoreCase(other.guid))
+            return false;
+        if (value == null) {
+            if (other.value != null)
+                return false;
+        } else if (!value.equalsIgnoreCase(other.value))
+            return false;
+        return true;
     }
 
     public String namespace() {
@@ -124,8 +127,8 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
         return new QualifiedString(namespace(), name());
     }
 
-    public boolean is(Object obj) {
-        return equals(obj);
+    public boolean is(Object object) {
+        return equals(QualifiedString.of(object));
     }
 
     public String value() {
@@ -133,24 +136,20 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
     }
 
     public Optional<String> guid() {
-        return guid;
+        return guid != null ? Optional.of(guid) : Optional.empty();
     }
 
     @Override
     public String toString() {
-        if (guid.isPresent()) {
-            return toString_(value, guid);
+        if (guid != null) {
+            return toString(value, guid);
         } else {
             return value;
         }
     }
 
-    static String toString_(String path, Optional<String> guid) {
-        if (guid.isPresent()) {
-            return path + "#" + guid.get();
-        } else {
-            return path;
-        }
+    static String toString(String path, String guid) {
+        return path + "#" + guid;
     }
 
 }

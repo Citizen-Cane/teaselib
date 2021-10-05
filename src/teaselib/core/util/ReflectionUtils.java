@@ -36,7 +36,7 @@ public final class ReflectionUtils {
     }
 
     public static String qualified(Enum<?> namespace, String name) {
-        return new QualifiedEnum(namespace) + "." + name;
+        return QualifiedString.of(namespace) + "." + name;
     }
 
     public static String qualified(String namespace, String name) {

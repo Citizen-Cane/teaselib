@@ -114,7 +114,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     static boolean contains(List<? extends Object> attributes2, QualifiedString item) {
-        return attributes2.stream().anyMatch(item::equals);
+        return attributes2.stream().anyMatch(item::is);
     }
 
     @Override

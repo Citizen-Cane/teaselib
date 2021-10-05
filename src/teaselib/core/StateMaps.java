@@ -133,7 +133,7 @@ public class StateMaps {
 
     public static boolean hasAllAttributes(Set<Object> available, List<Object> desired) {
         Predicate<? super QualifiedString> predicate = attribute -> available.stream().map(StateMaps::stripState)
-                .anyMatch(attribute::equals);
+                .anyMatch(attribute::is);
         return desired.stream().map(StateMaps::stripState).filter(predicate).count() == desired.size();
     }
 

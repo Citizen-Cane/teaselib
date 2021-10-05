@@ -222,13 +222,16 @@ public abstract class Script {
         var persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.Internal.PERSISTED_DOMAINS_STATE);
         Collection<Object> domains = new ArrayList<>(((StateImpl) persistedDomains).peers());
         for (Object domain : domains) {
-            if (domain.equals(StateImpl.Domain.LAST_USED)) {
+            if (domain.equals(QualifiedString.of(StateImpl.Domain.LAST_USED))) {
                 continue;
-            } else
-                domain = domain.equals(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain : domain;
-            if (!handleUntilRemoved(domain.toString(), startupTimeSeconds).applied()
-                    && !handleUntilExpired(domain.toString(), startupTimeSeconds).applied()) {
-                persistedDomains.removeFrom(domain);
+            } else {
+                domain = domain.equals(QualifiedString.of(StateImpl.Internal.DEFAULT_DOMAIN_NAME))
+                        ? TeaseLib.DefaultDomain
+                        : domain;
+                if (!handleUntilRemoved(domain.toString(), startupTimeSeconds).applied()
+                        && !handleUntilExpired(domain.toString(), startupTimeSeconds).applied()) {
+                    persistedDomains.removeFrom(domain);
+                }
             }
         }
     }

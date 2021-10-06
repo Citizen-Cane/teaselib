@@ -262,7 +262,7 @@ public class ItemIdentityTest {
     private static ItemImpl createPeg(TestScript script, String name) {
         // TODO Improve serialization to allow for white space
         QualifiedString kind = QualifiedString.of(Household.Clothes_Pegs);
-        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, ItemGuid.from(kind, name), "A_Clothes_Peg");
+        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(kind, name), "A_Clothes_Peg");
     }
 
     private static void verifyAllPegsRemoved(TestScript script, State nipples, List<Item> clothesPegsOnNipples) {
@@ -284,7 +284,7 @@ public class ItemIdentityTest {
         Items gags = script.items(Toys.Gag);
 
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-        Item sameRingGag = script.teaseLib.getItem(TeaseLib.DefaultDomain, Toys.Gag, "ring_gag");
+        Item sameRingGag = script.teaseLib.getItem(TeaseLib.DefaultDomain, QualifiedString.of(Toys.Gag), "ring_gag");
         assertEquals(ringGag, sameRingGag);
         assertEquals(sameRingGag, ringGag);
         assertNotSame(ringGag, sameRingGag);

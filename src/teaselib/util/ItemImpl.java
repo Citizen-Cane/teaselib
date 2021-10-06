@@ -16,6 +16,7 @@ import teaselib.core.StateImpl;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
+import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
@@ -32,27 +33,28 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     final TeaseLib teaseLib;
 
     public final String domain;
-    public final ItemGuid guid;
+    public final QualifiedString guid;
     public final String displayName;
     private final TeaseLib.PersistentBoolean available;
     public final List<Object> defaultPeers;
     public final Set<QualifiedString> attributes;
 
-    public static String createDisplayName(Object item) {
-        return item.toString().replace("_", " ");
+    public static String createDisplayName(QualifiedString item) {
+        return item.guid().orElseThrow().replace("_", " ");
     }
 
-    public ItemImpl(TeaseLib teaseLib, String domain, ItemGuid guid, String displayName) {
+    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString guid, String displayName) {
         this(teaseLib, domain, guid, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, String domain, ItemGuid guid, String displayName, Object[] defaultPeers,
+    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString guid, String displayName, Object[] defaultPeers,
             Object[] attributes) {
         this.teaseLib = teaseLib;
         this.domain = domain;
         this.guid = guid;
         this.displayName = displayName;
-        this.available = teaseLib.new PersistentBoolean(domain, value().toString(), guid.name() + "." + Available);
+        this.available = teaseLib.new PersistentBoolean(domain, value().toString(),
+                guid.guid().orElseThrow() + "." + Available);
         this.defaultPeers = Collections.unmodifiableList(StateImpl.mapToQualifiedString(Arrays.asList(defaultPeers)));
         this.attributes = Collections.unmodifiableSet(
                 StateImpl.mapToQualifiedStringTyped(attributes(guid.kind(), Arrays.asList(attributes))));
@@ -68,13 +70,13 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
             throws ReflectiveOperationException {
-        var guid = new ItemGuid(storage);
-        return (ItemImpl) teaseLib.getItem(domain, guid.kind(), guid.name());
+        var item = new QualifiedString(storage.next());
+        return (ItemImpl) teaseLib.getItem(domain, item.kind(), item.guid().orElseThrow());
     }
 
     @Override
     public List<String> persisted() {
-        return guid.persisted();
+        return Arrays.asList(Persist.persist(guid.toString()));
     }
 
     private static Set<Object> attributes(QualifiedString item, List<Object> attributes) {
@@ -101,20 +103,20 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public String toString() {
-        return guid.name() + " " + attributes + " " + teaseLib.state(domain, value()).toString();
+        return guid.guid().orElseThrow() + " " + attributes + " " + teaseLib.state(domain, value()).toString();
     }
 
     boolean has(List<? extends Object> desired) {
-        Stream<Object> attributesAndPeers = Stream.concat(attributes.stream(), defaultPeers.stream());
-        return has(attributesAndPeers, desired);
+        Stream<Object> available = Stream.concat(attributes.stream(), defaultPeers.stream());
+        return has(available, desired);
     }
 
     private static boolean has(Stream<? extends Object> available, List<? extends Object> desired) {
         return available.filter(element -> contains(desired, QualifiedString.of(element))).count() == desired.size();
     }
 
-    static boolean contains(List<? extends Object> attributes2, QualifiedString item) {
-        return attributes2.stream().anyMatch(item::is);
+    static boolean contains(List<? extends Object> elements, QualifiedString value) {
+        return elements.stream().anyMatch(value::is);
     }
 
     @Override
@@ -266,7 +268,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         StateImpl state = state();
         if (containsMyGuid(state)) {
             for (Object peer : new ArrayList<>(state.peers())) {
-                if (!(peer instanceof ItemGuid)) {
+                if (!QualifiedString.isItemGuid(peer)) {
                     StateImpl peerState = state(peer);
                     peerState.removeFrom(this);
                     state.removeFrom(this.guid);
@@ -292,7 +294,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         StateImpl state = state();
         if (containsMyGuid(state)) {
             for (Object peer : peers) {
-                if (!(peer instanceof ItemGuid)) {
+                if (!QualifiedString.isItemGuid(peer)) {
                     StateImpl peerState = state(peer);
                     peerState.removeFrom(this);
                 }
@@ -331,7 +333,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private StateImpl lastUsed() {
-        var lastUsedStateName = ReflectionUtils.qualified(guid.kind().toString(), guid.name());
+        var lastUsedStateName = ReflectionUtils.qualified(guid.kind().toString(), guid.guid().orElseThrow());
         return (StateImpl) teaseLib.state(domain, lastUsedStateName);
     }
 

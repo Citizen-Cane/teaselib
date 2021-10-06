@@ -10,7 +10,6 @@ import teaselib.core.Script;
 import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 public class QualifiedItemTest {
@@ -149,8 +148,8 @@ public class QualifiedItemTest {
     }
 
     private static ItemImpl createOne(Script script, String name) {
-        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
-                ItemGuid.from(QualifiedString.of(TestEnum.One), name), "A_Number");
+        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(TestEnum.One, name),
+                "A_Number");
     }
 
 }

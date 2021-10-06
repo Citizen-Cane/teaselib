@@ -23,7 +23,6 @@ import teaselib.Toys;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 
@@ -52,8 +51,8 @@ public class ItemImplTest {
         String guid = fooBar.name();
         TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
                 fooBar.toString(), guid + ".Available");
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, ItemGuid.from(fooBar, guid),
-                ItemImpl.createDisplayName(fooBar.name()));
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(fooBar, guid),
+                ItemImpl.createDisplayName(QualifiedString.from(fooBar, guid)));
 
         assertEquals(0, script.storage.size());
         item.setAvailable(false);
@@ -75,9 +74,8 @@ public class ItemImplTest {
     public void testIs() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
-                ItemGuid.from(QualifiedString.of(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
+                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
         assertFalse(item.is(Size.Small));
@@ -99,9 +97,8 @@ public class ItemImplTest {
     public void testIs_EmptyArg() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
-                ItemGuid.from(QualifiedString.of(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
+                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
         assertFalse(item.is());
     }
@@ -110,9 +107,8 @@ public class ItemImplTest {
     public void testIsHandlesArrays() {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain,
-                ItemGuid.from(QualifiedString.of(Foo.Bar), "Foo_Bar"), "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
+                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
         assertFalse(item.is(Size.Small));
@@ -305,7 +301,7 @@ public class ItemImplTest {
         assertFalse(script.state(Toys.Gag).applied());
 
         Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
-
+        assertNotEquals(Item.NotFound, gag);
         assertFalse(gag.applied());
         assertTrue(gag.canApply());
         assertTrue(gag.is(gag));

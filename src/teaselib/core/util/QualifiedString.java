@@ -5,16 +5,22 @@ import java.util.Optional;
 import teaselib.core.StateImpl;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
-// TODO remove all occurrences of QualifiedItem sub-classes, then remove super class
 public class QualifiedString {
 
     /**
      * Denotes the name of any item or state of the given name space, enumeration or class.
      */
     public static final String ANY = "*";
+
+    public static QualifiedString from(QualifiedString kind, String guid) {
+        return new QualifiedString(kind.namespace(), kind.name(), guid);
+    }
+
+    public static QualifiedString from(Enum<?> kind, String guid) {
+        return QualifiedString.from(QualifiedString.of(kind), guid);
+    }
 
     public static QualifiedString of(Class<?> clazz) {
         return new QualifiedString(ReflectionUtils.qualified(clazz), ANY);
@@ -37,9 +43,7 @@ public class QualifiedString {
             return of(AbstractProxy.removeProxy((ItemProxy) object));
         } else if (object instanceof ItemImpl) {
             ItemImpl item = (ItemImpl) object;
-            return item.guid.item();
-        } else if (object instanceof ItemGuid) {
-            return ((ItemGuid) object).item();
+            return item.guid;
         } else {
             throw new UnsupportedOperationException(object.toString());
         }
@@ -137,6 +141,14 @@ public class QualifiedString {
 
     public Optional<String> guid() {
         return guid != null ? Optional.of(guid) : Optional.empty();
+    }
+
+    public static boolean isItemGuid(QualifiedString obj) {
+        return obj.guid().isPresent();
+    }
+
+    public static boolean isItemGuid(Object obj) {
+        return obj instanceof QualifiedString && ((QualifiedString) obj).guid().isPresent();
     }
 
     @Override

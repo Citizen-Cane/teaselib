@@ -13,7 +13,6 @@ import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedString;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 
@@ -55,8 +54,8 @@ public class StateMaps {
                 toString.append("state:" + state.item.toString());
             } else if (object instanceof ItemImpl) {
                 ItemImpl item = (ItemImpl) object;
-                toString.append("item:" + item.guid.name());
-            } else if (object instanceof ItemGuid) {
+                toString.append("item:" + item.guid.name() + "#" + item.guid.guid().orElseThrow());
+            } else if (object instanceof QualifiedString) {
                 toString.append(object.toString());
             } else {
                 toString.append(QualifiedString.of(object).toString());

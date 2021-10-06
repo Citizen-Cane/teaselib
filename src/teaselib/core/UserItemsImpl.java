@@ -43,7 +43,6 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 public class UserItemsImpl implements UserItems {
@@ -169,13 +168,14 @@ public class UserItemsImpl implements UserItems {
         }
 
         var kind = QualifiedString.of(enumValue);
-        return new ItemImpl(teaseLib, domain, ItemGuid.from(kind, guid), //
+        return new ItemImpl(teaseLib, domain, QualifiedString.from(kind, guid), //
                 displayName, defaultPeers.toArray(new Enum<?>[defaultPeers.size()]), //
                 itemAttributes.toArray(new Enum<?>[itemAttributes.size()]));
     }
 
     private ItemImpl getDefaultItem(String domain, QualifiedString kind) {
-        return new ItemImpl(teaseLib, domain, ItemGuid.from(kind, kind.name()), ItemImpl.createDisplayName(kind));
+        QualifiedString item = QualifiedString.from(kind, kind.name());
+        return new ItemImpl(teaseLib, domain, item, ItemImpl.createDisplayName(item));
     }
 
     @Override
@@ -221,7 +221,7 @@ public class UserItemsImpl implements UserItems {
     private static void addItems(ItemMap itemMap, List<ItemImpl> items) {
         for (ItemImpl item : items) {
             Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.value(), LinkedHashMap<String, Item>::new);
-            allItemsOfThisType.put(item.guid.name(), item);
+            allItemsOfThisType.put(item.guid.guid().orElseThrow(), item);
         }
     }
 
@@ -255,8 +255,8 @@ public class UserItemsImpl implements UserItems {
     }
 
     private static List<Item> itemsMatchingGuid(Map<String, Item> items, String guid) {
-        return items.values().stream().map(ItemImpl.class::cast).filter(item -> item.guid.name().equals(guid))
-                .collect(toList());
+        return items.values().stream().map(ItemImpl.class::cast)
+                .filter(item -> item.guid.guid().orElseThrow().equals(guid)).collect(toList());
     }
 
     private void addDefaultItem(String domain, QualifiedString kind, ItemMap itemMap, List<Item> all) {

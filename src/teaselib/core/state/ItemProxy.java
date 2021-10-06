@@ -91,7 +91,8 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     @Override
     public Options apply() {
         if (applied()) {
-            String humanReadableItem = item.displayName() + "(id=" + AbstractProxy.itemImpl(item).guid.name() + ")";
+            String humanReadableItem = item.displayName() + "(id="
+                    + AbstractProxy.itemImpl(item).guid.guid().orElseThrow() + ")";
             if (is(namespace)) {
                 String message = humanReadableItem + " already applied";
                 report(message);

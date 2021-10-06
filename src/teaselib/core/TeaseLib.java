@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +58,6 @@ import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
 import teaselib.util.Daytime;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 import teaselib.util.TeaseLibLogger;
@@ -959,9 +957,11 @@ public class TeaseLib implements Closeable {
                     StateImpl state = (StateImpl) entries.getValue();
                     QualifiedString item = state.item;
                     if (!item.guid().isPresent() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        temporaryItems.addAll(
-                                state.peers().stream().filter(ItemGuid.class::isInstance).map(ItemGuid.class::cast)
-                                        .map(guid -> getItem(domain, item, guid.name())).collect(Collectors.toList()));
+                        temporaryItems.addAll(state.peers().stream().filter(QualifiedString.class::isInstance)
+                                .map(QualifiedString.class::cast).filter(QualifiedString::isItemGuid)
+                                // TODO review why "item" is used as the second param, and not guid
+                                // -> because a state is checked, and we want to retrieve items applied to this state
+                                .map(guid -> getItem(domain, item, guid.guid().orElseThrow())).collect(toList()));
                     }
                 }
             }
@@ -987,10 +987,10 @@ public class TeaseLib implements Closeable {
     }
 
     public Item getItem(String domain, ItemImpl item) {
-        return getItem(domain, item.value(), item.guid.name());
+        return getItem(domain, item.value(), item.guid.guid().orElseThrow());
     }
 
-    public Item getItem(String domain, Object item, String guid) {
+    public Item getItem(String domain, QualifiedString item, String guid) {
         var match = findItem(domain, item, guid);
         if (match == Item.NotFound) {
             throw new NoSuchElementException(
@@ -1000,13 +1000,9 @@ public class TeaseLib implements Closeable {
         }
     }
 
-    public Item findItem(String domain, Object item, ItemGuid guid) {
-        return findItem(domain, item, guid.name());
-    }
-
-    public Item findItem(String domain, Object item, String guid) {
-        return items(domain, item).stream().filter(i -> ((ItemImpl) i).guid.name().equals(guid)).findFirst()
-                .orElse(Item.NotFound);
+    public Item findItem(String domain, QualifiedString item, String guid) {
+        return items(domain, item).stream().filter(i -> ((ItemImpl) i).guid.guid().orElseThrow().equals(guid))
+                .findFirst().orElse(Item.NotFound);
     }
 
     public Actor getDominant(Gender gender, Locale locale) {

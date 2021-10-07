@@ -27,6 +27,7 @@ import teaselib.Message;
 import teaselib.MessagePart;
 import teaselib.Mood;
 import teaselib.core.AbstractMessage;
+import teaselib.core.Closeable;
 import teaselib.core.CommandLineHost;
 import teaselib.core.ResourceLoader;
 import teaselib.core.configuration.Configuration;
@@ -34,7 +35,7 @@ import teaselib.core.configuration.TeaseLibConfigSetup;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.TextVariables;
 
-public class TextToSpeechRecorder {
+public class TextToSpeechRecorder implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(TextToSpeechRecorder.class);
 
     public static final String MessageFilename = "message.txt";
@@ -141,6 +142,11 @@ public class TextToSpeechRecorder {
         ttsPlayer.loadActorVoiceProperties(resources);
     }
 
+    @Override
+    public void close() {
+        ttsPlayer.close();
+    }
+
     // TODO Add text variables to preparePass
     public void startPass(String key, String value) {
         pass = new Pass(key, value);
@@ -207,15 +213,14 @@ public class TextToSpeechRecorder {
         throw new IllegalStateException("Collision");
     }
 
-    private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash)
-            throws InterruptedException {
+    private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash) {
         log(actor, voice, hash, "has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
         pass.changedEntries++;
     }
 
-    private void createNewMessage(Actor actor, Voice voice, Message message, String hash) throws InterruptedException {
+    private void createNewMessage(Actor actor, Voice voice, Message message, String hash) {
         log(actor, voice, hash, "is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         pass.newEntries++;
@@ -308,15 +313,14 @@ public class TextToSpeechRecorder {
         return message.toString();
     }
 
-    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash)
-            throws InterruptedException {
+    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash) {
         List<String> soundFiles = writeSpeechResources(actor, voice, message, hash, messageHash);
         writeMessageHash(actor, voice, hash, messageHash);
         writeInventory(actor, voice, hash, soundFiles);
     }
 
     private List<String> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
-            String messageHash) throws InterruptedException {
+            String messageHash) {
         logger.info("Recording message:\n{}", messageHash);
         List<String> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
@@ -338,7 +342,7 @@ public class TextToSpeechRecorder {
     }
 
     private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, String storageSoundFile,
-            String mood, String text) throws InterruptedException {
+            String mood, String text) {
         String recordedSoundFile = recordMultithreadingIncompatible(actor, mood, text);
         return storage.encode(() -> {
             if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
@@ -362,7 +366,7 @@ public class TextToSpeechRecorder {
         });
     }
 
-    private String recordMultithreadingIncompatible(Actor actor, String mood, String text) throws InterruptedException {
+    private String recordMultithreadingIncompatible(Actor actor, String mood, String text) {
         var filename = createTempFileName(SpeechResourceTempFilePrefix + "_", SpeechResourceFileUncompressedFormat);
         return ttsPlayer.speak(actor, text, mood, filename);
     }

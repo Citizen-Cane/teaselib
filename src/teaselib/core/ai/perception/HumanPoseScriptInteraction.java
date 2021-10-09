@@ -40,6 +40,10 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
         return deviceInteraction.getPose(interests, image);
     }
 
+    public void setPause(Runnable task) {
+        deviceInteraction.setPause(task);
+    }
+
     public ScriptFunction autoConfirm(Interest interest, HumanPose.PoseAspect... aspects) {
         return autoConfirm(Collections.singleton(interest), aspects);
     }

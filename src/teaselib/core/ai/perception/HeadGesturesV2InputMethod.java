@@ -62,9 +62,9 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
     private final Condition gestureDetected = gestureDetectionLock.newCondition();
     private final AtomicReference<Gesture> detectedGesture = new AtomicReference<>(Gesture.None);
 
-    public HeadGesturesV2InputMethod(HumanPoseDeviceInteraction humanPoseInteraction, ExecutorService executor) {
+    public HeadGesturesV2InputMethod(HumanPoseScriptInteraction humanPoseInteraction, ExecutorService executor) {
         super(executor);
-        this.humanPoseInteraction = humanPoseInteraction;
+        this.humanPoseInteraction = humanPoseInteraction.deviceInteraction;
     }
 
     public final HumanPoseDeviceInteraction.EventListener trackProximity = new HumanPoseDeviceInteraction.EventListener(

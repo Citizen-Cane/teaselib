@@ -68,15 +68,15 @@ public class HumanPoseDeviceInteraction extends
         }
     }
 
-    public PoseAspects getPose(Interest interest) {
+    PoseAspects getPose(Interest interest) {
         return getPose(Collections.singleton(interest));
     }
 
-    public PoseAspects getPose(Set<Interest> interests) {
+    PoseAspects getPose(Set<Interest> interests) {
         return poseEstimationTask.getPose(interests);
     }
 
-    public PoseAspects getPose(Set<Interest> interests, byte[] image) {
+    PoseAspects getPose(Set<Interest> interests, byte[] image) {
         Callable<PoseAspects> poseAspects = () -> {
             HumanPose model = getModel(interests);
             List<Estimation> poses = model.poses(image);

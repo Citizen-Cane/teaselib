@@ -49,7 +49,6 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     private final AtomicReference<PoseAspects> poseAspects = new AtomicReference<>(PoseAspects.Unavailable);
     private final ReentrantLock estimatePoses = new ReentrantLock();
     private final AtomicReference<Runnable> pause = new AtomicReference<>(Noop);
-    private SceneCapture device = null;
     private HumanPose humanPose = null;
 
     PoseEstimationTask(TeaseLibAI teaseLibAI, HumanPoseDeviceInteraction humanPoseDeviceInteraction) {
@@ -138,19 +137,11 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     public PoseAspects call() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                device = awaitCaptureDevice();
-                logger.info("Using capture device {}", device.name);
-                device.start();
-                // TODO select model according to interests of active listeners
-                humanPose = getModel(Interest.supported);
-                estimatePoses();
-            } catch (SceneCapture.DeviceLost e) {
-                HumanPoseDeviceInteraction.logger.warn(e.getMessage());
-                device.stop();
+                try (SceneCapture device = awaitCaptureDevice()) {
+                    estimatePoses(device);
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } catch (Throwable e) {
-                logger.error(e.getMessage(), e);
             }
         }
 
@@ -158,11 +149,24 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             submit(humanPose::close);
             humanPose = null;
         }
-        if (device != null) {
-            device.stop();
-            device = null;
-        }
         return PoseAspects.Unavailable;
+    }
+
+    private void estimatePoses(SceneCapture device) {
+        logger.info("Using capture device {}", device.name);
+        try {
+            device.start();
+            // TODO select model according to interests of active listeners
+            humanPose = getModel(Interest.supported);
+            while (!Thread.currentThread().isInterrupted()) {
+                estimatePose(device);
+            }
+        } catch (SceneCapture.DeviceLost e) {
+            HumanPoseDeviceInteraction.logger.warn(e.getMessage());
+            device.stop();
+        } catch (Throwable e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 
     private SceneCapture awaitCaptureDevice() throws InterruptedException {
@@ -176,17 +180,11 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         return newDevice;
     }
 
-    private void estimatePoses() throws InterruptedException {
-        while (!Thread.currentThread().isInterrupted()) {
-            estimatePose();
-        }
-    }
-
     public void setPause(Runnable task) {
         pause.set(task);
     }
 
-    public void estimatePose() throws InterruptedException {
+    public void estimatePose(SceneCapture device) throws InterruptedException {
         pause.updateAndGet(task -> {
             task.run();
             return Noop;
@@ -213,11 +211,12 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             estimatePoses.unlock();
         }
 
-        estimatePose(actor, previous, interests);
+        estimatePose(actor, previous, interests, device);
     }
 
-    private void estimatePose(Actor actor, PoseAspects previous, Set<Interest> interests) throws InterruptedException {
-        PoseAspects update = submitAndGetResult(() -> getPoseAspects(interests, previous));
+    private void estimatePose(Actor actor, PoseAspects previous, Set<Interest> interests, SceneCapture device)
+            throws InterruptedException {
+        PoseAspects update = submitAndGetResult(() -> getPoseAspects(previous, interests, device));
         poseAspects.set(update);
         signal(actor, update, previous);
         if (update.is(HumanPose.Status.Stream)) {
@@ -251,10 +250,10 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         }
     }
 
-    private PoseAspects getPoseAspects(Set<Interest> interests, PoseAspects previous) {
+    private PoseAspects getPoseAspects(PoseAspects previous, Set<Interest> interests, SceneCapture device) {
         // TODO Select the human pose model that matches the interests
         humanPose.setInterests(interests);
-        wakeUpFromHibernate();
+        wakeUpFromHibernate(device);
         List<HumanPose.Estimation> poses = humanPose.poses(device);
         if (poses.isEmpty()) {
             return PoseAspects.Unavailable;
@@ -263,7 +262,7 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         }
     }
 
-    private void wakeUpFromHibernate() {
+    private void wakeUpFromHibernate(SceneCapture device) {
         if (!device.isStarted()) {
             device.start();
         }

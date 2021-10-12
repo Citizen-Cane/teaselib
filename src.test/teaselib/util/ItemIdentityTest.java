@@ -192,10 +192,10 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
         State clothesPinsState = script.state(Household.Clothes_Pegs);
+        Item notApplied = script.item(Household.Clothes_Pegs);
 
         assertFalse(clothesPinsState.applied());
         placeClothesPegs(script, nipples);
-        Item notApplied = script.item(Household.Clothes_Pegs);
         assertFalse(notApplied.applied());
 
         assertTrue(clothesPinsState.applied());
@@ -226,7 +226,7 @@ public class ItemIdentityTest {
         List<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
         assertTrue(script.state(Body.OnNipples).applied());
-        script.state(Body.OnNipples).removeFrom(Household.Clothes_Pegs);
+        nipples.removeFrom(Household.Clothes_Pegs);
 
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
@@ -234,6 +234,8 @@ public class ItemIdentityTest {
     private static ArrayList<Item> placeClothesPegs(TestScript script, State nipples) {
         int numberOfPegs = 10;
         ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, numberOfPegs);
+
+        script.teaseLib.addUserItems(clothesPegsOnNipples);
 
         for (Item peg : clothesPegsOnNipples) {
             assertFalse(peg.applied());

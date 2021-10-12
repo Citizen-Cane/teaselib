@@ -275,9 +275,9 @@ public class ItemsTest {
         Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Bondage.Chains);
 
         Item chains = chainedUp.get(Bondage.Chains);
-        assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).value()));
+        assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).kind()));
         chainedUp.get(Toys.Wrist_Restraints).applyTo(Bondage.Chains);
-        assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).value()));
+        assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).kind()));
     }
 
     @Test

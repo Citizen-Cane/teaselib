@@ -53,19 +53,19 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         this.domain = domain;
         this.guid = guid;
         this.displayName = displayName;
-        this.available = teaseLib.new PersistentBoolean(domain, value().toString(),
+        this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
                 guid.guid().orElseThrow() + "." + Available);
         this.defaultPeers = Collections.unmodifiableList(StateImpl.mapToQualifiedString(Arrays.asList(defaultPeers)));
         this.attributes = Collections.unmodifiableSet(
                 StateImpl.mapToQualifiedStringTyped(attributes(guid.kind(), Arrays.asList(attributes))));
     }
 
-    public QualifiedString value() {
+    public QualifiedString kind() {
         return guid.kind();
     }
 
     private StateImpl state() {
-        return state(value());
+        return state(kind());
     }
 
     public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
@@ -103,7 +103,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public String toString() {
-        return guid.guid().orElseThrow() + " " + attributes + " " + teaseLib.state(domain, value()).toString();
+        return guid.guid().orElseThrow() + " " + attributes + " " + teaseLib.state(domain, kind()).toString();
     }
 
     boolean has(List<? extends Object> desired) {
@@ -141,8 +141,12 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
                 return applied();
             } else if (state(this).appliedToClassValues(attributes, flattenedAttributes)) {
                 return true;
-            } else if (state(this).appliedToClassState(state(this).peers(), flattenedAttributes)) {
+            } else if (state(this).appliedToClassValues(state(this).peers(), flattenedAttributes)) {
                 return true;
+            } else if (state(this).appliedToClassState(state(this).peers(), flattenedAttributes)) {
+                // TODO remove
+                throw new IllegalStateException();
+                // return true;
             } else if (!stateAppliesToMe(flattenedAttributes)) {
                 return false;
             } else {
@@ -202,8 +206,9 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             applyInstanceTo(defaultPeers);
         }
 
-        state.applyTo(this.guid);
         state.applyAttributes(this.attributes);
+        state.applyTo(this.guid);
+
         updateLastUsedGuidState();
         return this;
     }
@@ -231,7 +236,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     private void applyInstanceTo(Collection<Object> items) {
         for (Object peer : items) {
-            state(peer).applyTo(this);
+            state(peer).applyTo(this.guid);
+            state(peer).applyTo(this.guid.kind());
         }
     }
 
@@ -270,10 +276,15 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             for (Object peer : new ArrayList<>(state.peers())) {
                 if (!QualifiedString.isItemGuid(peer)) {
                     StateImpl peerState = state(peer);
-                    peerState.removeFrom(this);
+                    peerState.removeFrom(this.guid);
+                    // TODO Down to 3 failures -> remove
+                    // peerState.removeFrom(this.guid.kind());
                     state.removeFrom(this.guid);
+                    // state.removeFrom(this.guid.kind());
                 }
             }
+
+            // TODO better: remove only peers of this instances that are not peered by any other item
 
             releaseInstanceGuid();
             if (state.peers().isEmpty()) {
@@ -296,7 +307,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             for (Object peer : peers) {
                 if (!QualifiedString.isItemGuid(peer)) {
                     StateImpl peerState = state(peer);
-                    peerState.removeFrom(this);
+                    peerState.removeFrom(this.guid);
                 }
             }
 
@@ -312,9 +323,10 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     public boolean releaseInstanceGuid() {
         StateImpl state = state();
-        if (peersReferenceMe(state)) {
-            return false;
-        }
+        // useless because just againat the guid that should be removed
+        // if (peersReferenceMe(state)) {
+        // return false;
+        // }
 
         if (state.peerStates().stream().anyMatch(this::containsMe)) {
             return false;
@@ -346,7 +358,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private boolean containsMe(StateImpl state) {
-        return state.peers().contains(this);
+        // return state.peers().contains(this);
+        return state.peers().contains(this.guid);
     }
 
     private boolean containsMyGuid(StateImpl state) {
@@ -361,10 +374,20 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         return state.is(this);
     }
 
-    private static boolean peersReferenceMe(StateImpl state) {
+    private static boolean peersReferenceMe__(StateImpl state) {
         Set<Object> peers = state.peers();
-        return peers.stream().filter(ItemImpl::isItemImpl).map(ItemImpl.class::cast).map(itemImpl -> itemImpl.guid)
-                .filter(peers::contains).count() > 0;
+        // return peers.stream().filter(ItemImpl::isItemImpl).map(ItemImpl.class::cast).map(itemImpl -> itemImpl.guid)
+        // .filter(peers::contains).count() > 0;
+        return peers.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
+                .filter(QualifiedString::isItemGuid).filter(peers::contains).count() > 0;
+    }
+
+    private boolean peersReferenceMe(StateImpl me) {
+        Set<Object> peers = me.peers();
+        // return peers.stream().filter(ItemImpl::isItemImpl).map(ItemImpl.class::cast).map(itemImpl -> itemImpl.guid)
+        // .filter(peers::contains).count() > 0;
+        return peers.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
+                .filter(QualifiedString::isItemGuid).filter(peers::contains).count() > 0;
     }
 
     @Override

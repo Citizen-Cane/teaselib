@@ -231,20 +231,25 @@ public class ItemImplTest {
         restraints = restraints.prefer(Material.Metal);
 
         restraints.apply();
-        assertTrue(script.state(Body.WristsTied).applied());
-        assertTrue(script.state(Toys.Wrist_Restraints).is(script.namespace));
-        assertTrue(script.state(Body.WristsTied).is(script.namespace));
+
+        State wristRestraints = script.state(Toys.Wrist_Restraints);
+        State wristsCuffed = script.state(Body.WristsCuffed);
+        State wristTied = script.state(Body.WristsTied);
+
+        assertTrue(wristTied.applied());
+        assertTrue(wristRestraints.is(script.namespace));
+        assertTrue(wristTied.is(script.namespace));
         assertTrue(script.state(Body.AnklesTied).applied());
         assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
         assertTrue(script.state(Body.AnklesTied).is(script.namespace));
 
-        script.state(Body.WristsTied).remove();
-        script.state(Body.WristsCuffed).remove();
-        assertFalse(script.state(Body.WristsTied).applied());
+        wristTied.remove();
+        wristsCuffed.remove();
+        assertFalse(wristTied.applied());
 
-        assertFalse(script.state(Body.WristsTied).is(script.namespace));
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
-        assertFalse(script.state(Toys.Wrist_Restraints).is(script.namespace));
+        assertFalse(wristTied.is(script.namespace));
+        assertFalse(wristRestraints.applied());
+        assertFalse(wristRestraints.is(script.namespace));
 
         assertTrue(script.state(Body.AnklesTied).applied());
         assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
@@ -435,32 +440,48 @@ public class ItemImplTest {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
 
-        script.teaseLib.temporaryItems().remove();
-
-        assertFalse(script.state(Bondage.Chains).applied());
-        script.teaseLib.temporaryItems().remove();
+        assertFalse(script.state(Toys.Gag).applied());
+        assertEquals(0, script.teaseLib.temporaryItems().size());
 
         Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
         gag.apply();
+        assertEquals(1, script.teaseLib.temporaryItems().size());
         gag.remove();
-        script.teaseLib.temporaryItems().remove();
+        assertEquals(0, script.teaseLib.temporaryItems().size());
+    }
 
-        Item glansRing = script.item(Toys.Glans_Ring);
-        glansRing.apply().over(0, TimeUnit.HOURS);
-        glansRing.remove();
-        script.teaseLib.temporaryItems().remove();
+    @Test
+    public void testTemporaryItemsRemember() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
 
-        Item ankleRestraints = script.items(Toys.Ankle_Restraints).matching(Material.Leather).get();
-        ankleRestraints.apply();
-        script.teaseLib.temporaryItems().remove();
+        assertFalse(script.state(Toys.Gag).applied());
+        assertEquals(0, script.teaseLib.temporaryItems().size());
+
+        Item gag = script.item(Toys.Gag);
+        gag.apply().over(0, TimeUnit.HOURS).remember(Until.Removed);
+        assertTrue(gag.is(Until.Removed));
+        // TODO fails because StateImpl.appliedToClass() fails
+        assertTrue(gag.is(Until.class));
+        assertEquals(0, script.teaseLib.temporaryItems().size());
+        gag.remove();
+        assertEquals(0, script.teaseLib.temporaryItems().size());
+    }
+
+    @Test
+    public void testTemporaryItemsIdentity() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
 
         Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
         wristRestraints.applyTo(Posture.WristsTiedBehindBack);
         Items temporaryItems = script.teaseLib.temporaryItems();
         Item temporaryWristRestraints = temporaryItems.matching(Toys.Wrist_Restraints).get();
         assertEquals(wristRestraints, temporaryWristRestraints);
-        assertTrue(temporaryItems.contains(Toys.Wrist_Restraints));
-        temporaryItems.remove();
+        assertEquals(1, script.teaseLib.temporaryItems().size());
+
+        wristRestraints.remove();
+        assertEquals(0, script.teaseLib.temporaryItems().size());
     }
 
     @Test
@@ -507,6 +528,17 @@ public class ItemImplTest {
         Item woodenSpoon = script.item(Household.Wooden_Spoon);
         assertTrue(woodenSpoon.is(Material.Wood));
         assertTrue(woodenSpoon.is(Material.class));
+    }
+
+    @Test
+    public void testIsNestedClass() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Item woodenSpoon = script.item(Household.Wooden_Spoon);
+        woodenSpoon.apply().over(0, TimeUnit.HOURS).remember(Until.Removed);
+        assertTrue(woodenSpoon.is(Until.Removed));
+        assertTrue(woodenSpoon.is(Until.class));
     }
 
     @Test

@@ -16,6 +16,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -38,6 +39,7 @@ import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Sexuality.Gender;
 import teaselib.State;
+import teaselib.State.Persistence.Until;
 import teaselib.core.Host.Location;
 import teaselib.core.StateMaps.StateMapCache;
 import teaselib.core.configuration.Configuration;
@@ -949,19 +951,23 @@ public class TeaseLib implements Closeable {
      * @return All temporary items
      */
     Items temporaryItems() {
-        List<Item> temporaryItems = new ArrayList<>();
+        Set<Item> temporaryItems = new HashSet<>();
         for (Entry<String, StateMapCache> domains : stateMaps.cache.entrySet()) {
             String domain = domains.getKey();
-            for (Entry<String, StateMap> namespace : new ArrayList<>(domains.getValue().entrySet())) {
-                for (Entry<Object, State> entries : new ArrayList<>(namespace.getValue().states.entrySet())) {
-                    StateImpl state = (StateImpl) entries.getValue();
-                    QualifiedString item = state.item;
-                    if (!item.guid().isPresent() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        temporaryItems.addAll(state.peers().stream().filter(QualifiedString.class::isInstance)
+            ArrayList<Entry<String, StateMap>> namespaces = new ArrayList<>(domains.getValue().entrySet());
+            for (Entry<String, StateMap> namespace : namespaces) {
+                ArrayList<Entry<Object, State>> entries = new ArrayList<>(namespace.getValue().states.entrySet());
+                for (Entry<Object, State> entry : entries) {
+                    StateImpl state = (StateImpl) entry.getValue();
+                    if (state.item.guid().isEmpty() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
+                        List<Item> temporaryPeers = state.peers().stream().filter(QualifiedString.class::isInstance)
                                 .map(QualifiedString.class::cast).filter(QualifiedString::isItemGuid)
-                                // TODO review why "item" is used as the second param, and not guid
-                                // -> because a state is checked, and we want to retrieve items applied to this state
-                                .map(guid -> getItem(domain, item, guid.guid().orElseThrow())).collect(toList()));
+                                .map(peer -> getItem(domain, peer)).filter(item -> !item.is(Until.class))
+                                .collect(toList());
+                        if (!temporaryPeers.isEmpty()) {
+                            // TODO Too many entries - use Set or contains()
+                            temporaryItems.addAll(temporaryPeers);
+                        }
                     }
                 }
             }
@@ -987,7 +993,11 @@ public class TeaseLib implements Closeable {
     }
 
     public Item getItem(String domain, ItemImpl item) {
-        return getItem(domain, item.value(), item.guid.guid().orElseThrow());
+        return getItem(domain, item.kind(), item.guid.guid().orElseThrow());
+    }
+
+    public Item getItem(String domain, QualifiedString guid) {
+        return getItem(domain, guid.kind(), guid.guid().orElseThrow());
     }
 
     public Item getItem(String domain, QualifiedString item, String guid) {
@@ -1010,6 +1020,10 @@ public class TeaseLib implements Closeable {
     }
 
     public void addUserItems(URL items) {
+        userItems.addItems(items);
+    }
+
+    public void addUserItems(Collection<Item> items) {
         userItems.addItems(items);
     }
 

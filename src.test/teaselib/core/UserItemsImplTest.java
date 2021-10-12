@@ -239,6 +239,7 @@ public class UserItemsImplTest {
         {
             Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
             Item notMyHumbler = humblers.next();
+            // assertEquals("Humbler", notMyHumbler.displayName());
             assertFalse("User items not reset", humblers.hasNext());
 
             // With the persisted item removed the state is still applied

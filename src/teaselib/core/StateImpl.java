@@ -151,7 +151,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (item instanceof AbstractProxy<?>) {
             return state(((AbstractProxy<?>) item).state);
         } else if (item instanceof ItemImpl) {
-            return state(((ItemImpl) item).value());
+            return state(((ItemImpl) item).kind());
         } else if (item instanceof StateImpl) {
             return (StateImpl) item;
         } else {
@@ -163,7 +163,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (item instanceof AbstractProxy<?>) {
             return state(domain, ((AbstractProxy<?>) item).state);
         } else if (item instanceof ItemImpl) {
-            return state(domain, ((ItemImpl) item).value());
+            return state(domain, ((ItemImpl) item).kind());
         } else if (item instanceof StateImpl) {
             StateImpl state = (StateImpl) item;
             if (state.domain.equals(domain)) {
@@ -185,6 +185,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
         this.domain = domain;
         this.item = QualifiedString.of(item);
+        if (this.item.guid().isPresent()) {
+            throw new IllegalArgumentException(item.getClass() + ":" + item.toString());
+        }
         this.storage = new StateStorage(this.stateMaps.teaseLib, domain, this.item.toString());
 
         restoreApplied();
@@ -465,7 +468,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             return true;
         } else if (appliedToClassState(attributesAndPeers, flattenedAttributes)) {
             return true;
-        } else if (!allItemInstancesFoundInPeers(flattenedAttributes)) {
+            // } else if (!allItemInstancesFoundInPeers(flattenedAttributes)) {
+        } else if (!allGuidsFoundInPeers(flattenedAttributes)) {
             return false;
         } else if (StateMaps.hasAllAttributes(attributesAndPeers, flattenedAttributes)) {
             return true;
@@ -484,21 +488,30 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private static boolean appliedToClass(Collection<? extends Object> available, List<Object> desired) {
+        // TODO map to QualifiedString in teaselib.core.StateImpl.mapToQualifiedString()
         List<Class<?>> classes = desired.stream().filter(Class.class::isInstance).map(Class.class::cast)
                 .collect(toList());
-        return classes.stream()
-                .filter(desiredAttribute -> available.stream().filter(QualifiedString.class::isInstance)
-                        .map(QualifiedString.class::cast).map(QualifiedString::namespace)
-                        .anyMatch(namespace -> namespace.equalsIgnoreCase(ReflectionUtils.qualified(desiredAttribute))))
-                .count() == desired.size();
+        // TODO fails for nested class, e.g. Until.Removed
+        return classes.stream().filter(clazz -> {
+            var qualifiedClass = ReflectionUtils.qualified(clazz);
+            return available.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
+                    .map(QualifiedString::namespace).anyMatch(namespace -> namespace.equalsIgnoreCase(qualifiedClass));
+        }).count() == desired.size();
 
     }
 
+    @Deprecated
     private boolean allItemInstancesFoundInPeers(List<Object> attributes) {
         List<ItemImpl> instances = attributes.stream().filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
                 .collect(toList());
         List<QualifiedString> guids = instances.stream().map(instance -> instance.guid).collect(toList());
         return peers.containsAll(instances) || peers.containsAll(guids);
+    }
+
+    private boolean allGuidsFoundInPeers(List<Object> attributes) {
+        List<QualifiedString> guids = attributes.stream().filter(QualifiedString.class::isInstance)
+                .map(QualifiedString.class::cast).filter(QualifiedString::isItemGuid).collect(toList());
+        return peers.containsAll(guids);
     }
 
     private Set<Object> attributesAndPeers() {
@@ -586,7 +599,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             var copyOfPeers = new Object[peers.size()];
             for (Object peer : peers.toArray(copyOfPeers)) {
                 if (QualifiedString.isItemGuid(peer)) {
-                    peers.remove(peer);
+                    // before the item was removed via else branach
+                    // peers.remove(peer);
+                    state(peer).removeFrom(Collections.singletonList(item));
                 } else {
                     state(peer).removeFrom(Collections.singletonList(item));
                 }
@@ -643,14 +658,21 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             if (peersContain(peer)) {
                 removePeer(peer);
 
-                if (!QualifiedString.isItemGuid(peer)) {
+                if (!QualifiedString.isItemGuid(peer) /* && peer instanceof QualifiedString */) {
                     if (!(peer instanceof ItemImpl)) {
-                        removeRepresentingItems((QualifiedString) peer);
+                        // removeRepresentingItems((QualifiedString) peer);
+                        removeRepresentingGuids((QualifiedString) peer);
                     }
 
-                    if (!anyMoreItemInstanceOfSameKind(peer)) {
+                    // TODO reverse callback necessary to resolve peering
+                    // TODO assumes all items have the same set of default peers -> remove disjunct set
+                    // if (!anyMoreItemInstanceOfSameKind(peer)) {
+                    if (guidsOfSameKind((QualifiedString) peer) == 0) {
                         state(peer).removeFrom(Collections.singletonList(item));
                     }
+                } else if (guidsOfSameKind(((QualifiedString) peer).kind()) == 0) {
+                    // removePeer(((QualifiedString) peer).kind());
+                    state(((QualifiedString) peer).kind()).removeFrom(Collections.singletonList(item));
                 }
             }
 
@@ -692,10 +714,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             if (p instanceof QualifiedString) {
                 return peer.equals(p);
             } else if (p instanceof ItemImpl) {
-                // because of custom equals method in ItemGuid
                 return peer.equals(p);
             } else if (p instanceof ItemProxy) {
-                // because of custom equals method in ItemGuid
                 return peer.equals(p);
             } else {
                 throw new IllegalArgumentException(
@@ -705,26 +725,64 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         });
     }
 
-    public boolean anyMoreItemInstanceOfSameKind(Object value) {
-        return instancesOfSameKind(value) > 0;
+    @Deprecated
+    public boolean anyMoreItemInstanceOfSameKind(Object peer) {
+        if (peer instanceof ItemImpl) {
+            throw new UnsupportedOperationException(peer.toString());
+            // return instancesOfSameKind((ItemImpl) peer) > 0;
+            /// return guidsOfSameKind(((ItemImpl) peer).guid) > 0;
+        } else if (peer instanceof QualifiedString) {
+            return guidsOfSameKind((QualifiedString) peer) > 0;
+        } else {
+            throw new UnsupportedOperationException(peer.toString());
+        }
     }
 
-    public long instancesOfSameKind(Object value) {
-        Object requested = value instanceof Item ? ((ItemImpl) value).value() : value;
-        return peers.stream().filter(peer -> peer instanceof ItemImpl && ((ItemImpl) peer).value().equals(requested))
-                .count();
+    public long guidsOfSameKind(QualifiedString item) {
+        return peers.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
+                .filter(QualifiedString::isItemGuid).map(QualifiedString::kind).filter(item.kind()::equals).count();
+    }
+
+    @Deprecated
+    public long instancesOfSameKind(ItemImpl item) {
+        return peers.stream().filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast).map(ItemImpl::kind)
+                .filter(item.kind()::equals).count();
     }
 
     private void removeRepresentingItems(QualifiedString value) {
         for (Object peer : new HashSet<>(peers)) {
             if (peer instanceof ItemImpl) {
                 var itemImpl = (ItemImpl) peer;
-                if (itemImpl.value().is(value)) {
+                if (itemImpl.kind().is(value)) {
                     peers.remove(itemImpl);
                     itemImpl.releaseInstanceGuid();
                 }
             }
         }
+    }
+
+    private void removeRepresentingGuids(QualifiedString value) {
+        for (Object peer : new HashSet<>(peers)) {
+            if (peer instanceof QualifiedString) {
+                if (QualifiedString.isItemGuid(peer)) {
+                    var guid = (QualifiedString) peer;
+                    if (guid.kind().is(value)) {
+                        peers.remove(guid);
+                        ItemImpl peerItem;
+                        try {
+                            peerItem = getItem(guid);
+                            peerItem.releaseInstanceGuid();
+                        } catch (NoSuchElementException e) {
+                            logger.warn("Item {} does not exist anymore: {}", peer, e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private ItemImpl getItem(QualifiedString guid) {
+        return (ItemImpl) stateMaps.teaseLib.getItem(domain, guid);
     }
 
     private void updatePersistence() {

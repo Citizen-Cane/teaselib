@@ -9,6 +9,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -18,6 +19,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -91,6 +93,13 @@ public class UserItemsImpl implements UserItems {
 
         loadOrder.add(url);
         clearCachedItems();
+    }
+
+    @Override
+    public void addItems(Collection<Item> items) {
+        ItemMap itemMap = domainMap.get(TeaseLib.DefaultDomain);
+        List<ItemImpl> instances = items.stream().map(ItemImpl.class::cast).collect(Collectors.toList());
+        addItems(itemMap, instances);
     }
 
     public void clearCachedItems() {
@@ -220,7 +229,7 @@ public class UserItemsImpl implements UserItems {
 
     private static void addItems(ItemMap itemMap, List<ItemImpl> items) {
         for (ItemImpl item : items) {
-            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.value(), LinkedHashMap<String, Item>::new);
+            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.kind(), LinkedHashMap<String, Item>::new);
             allItemsOfThisType.put(item.guid.guid().orElseThrow(), item);
         }
     }

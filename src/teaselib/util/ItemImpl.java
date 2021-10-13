@@ -123,39 +123,40 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     public boolean is(Object... attributes3) {
         List<Object> flattenedAttributes = StateImpl
                 .mapToQualifiedString(StateMaps.flatten(AbstractProxy.removeProxies(attributes3)));
-        return is(flattenedAttributes);
+        return isImpl(flattenedAttributes);
     }
 
-    private boolean is(List<Object> flattenedAttributes) {
+    private boolean isImpl(List<Object> flattenedAttributes) {
         if (flattenedAttributes.isEmpty()) {
             return false;
         } else {
-            StateImpl state = state();
-            if (flattenedAttributes.size() == 1 && flattenedAttributes.get(0) instanceof Item) {
-                // TODO Remove these special cases:
-                // attributes2[0] == this -> ItemIdentityTest.testThatItemIsNotOtherItem
-                // state(value).is(attributes2[0]) -> ItemsTest.testItemAppliedToItems
-                return flattenedAttributes.get(0) == this || state.is(flattenedAttributes.get(0));
-                // throw new IllegalStateException();
-            } else if (has(this.attributes.stream(), flattenedAttributes))
+            if (has(this.attributes.stream(), flattenedAttributes)) {
                 return true;
-            else {
-                Set<Object> attributesAndPeers = state.attributesAndPeers();
+            } else if (attributeIsMe(flattenedAttributes)) {
+                return true;
+            } else {
+                StateImpl state = state();
                 if (StateMaps.hasAllAttributes(state.getAttributes(), flattenedAttributes)) {
                     return applied();
-                    // using attributesAndPeers breaks ItemImplTest.testIsClass()
-                } else if (state(this).appliedToClassValues(attributes, flattenedAttributes)) {
+                } else if (state.appliedToClassValues(attributes, flattenedAttributes)) {
                     return true;
-                    // ignoring state peers class values breaks ItemImplTest.testIsNestedClass() and others
-                } else if (state(this).appliedToClassValues(state(this).peers(), flattenedAttributes)) {
+                } else if (state.appliedToClassValues(state.peers(), flattenedAttributes)) {
                     return true;
                 } else if (!stateAppliesToMe(flattenedAttributes)) {
                     return false;
+                } else if (stateContainsAll(flattenedAttributes)) {
+                    return true;
                 } else {
-                    return stateContainsAll(flattenedAttributes);
+                    return false;
                 }
             }
         }
+
+    }
+
+    private boolean attributeIsMe(List<Object> flattenedAttributes) {
+        return flattenedAttributes.stream().filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
+                .map(item -> item.guid).anyMatch(this.guid::equals);
     }
 
     private boolean stateAppliesToMe(List<Object> attributes2) {
@@ -169,7 +170,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     @Override
     public boolean canApply() {
         if (defaultPeers.isEmpty()) {
-            return !state().is(this);
+            return !state().is(this.guid);
         } else {
             return defaultStates().allMatch(state -> !state.applied());
         }
@@ -182,7 +183,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             if (defaultPeers.isEmpty()) {
                 return containsMyGuid(state);
             } else {
-                return defaultStates().anyMatch(this::containsMe);
+                return defaultStates().anyMatch(this::containsMyGuid);
             }
         } else {
             return false;
@@ -323,7 +324,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     public boolean releaseInstanceGuid() {
         StateImpl state = state();
-        if (state.peerStates().stream().anyMatch(this::containsMe)) {
+        if (state.peerStates().stream().anyMatch(this::containsMyGuid)) {
             return false;
         }
         state.removeFrom(this.guid);
@@ -351,16 +352,12 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         return (StateImpl) teaseLib.state(domain, peer);
     }
 
-    private boolean containsMe(StateImpl state) {
-        return state.peers().contains(this.guid);
-    }
-
     private boolean containsMyGuid(StateImpl state) {
         return state.peers().contains(this.guid);
     }
 
     private boolean stateIsThis(StateImpl state) {
-        return state.is(this);
+        return state.is(this.guid);
     }
 
     @Override

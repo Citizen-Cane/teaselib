@@ -46,7 +46,7 @@ public class AbstractProxy<T> {
         return proxiesRemoved;
     }
 
-    public static List<Item> removeProxies(List<Item> peers) {
+    public static List<Object> removeProxies(List<Object> peers) {
         return peers.stream().map(AbstractProxy::removeProxy).collect(Collectors.toList());
     }
 

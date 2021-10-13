@@ -6,7 +6,6 @@ import static teaselib.core.StateImpl.Internal.*;
 import static teaselib.core.TeaseLib.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -15,6 +14,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -54,6 +54,44 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private final Set<Object> peers = new HashSet<>();
     private final Set<QualifiedString> attributes = new HashSet<>();
     private boolean applied = false;
+
+    public static class Preconditions {
+
+        public static Set<QualifiedString> check(UnaryOperator<Collection<Object>> typeCheck, Object... attributes) {
+            return mapToQualifiedStringTyped(
+                    typeCheck.apply(AbstractProxy.removeProxies(StateMaps.flatten(attributes))));
+        }
+
+        public static Collection<Object> apply(Collection<Object> values) {
+            for (Object value : values) {
+                if (value instanceof String || value instanceof Enum<?> || value instanceof Item
+                        || value instanceof QualifiedString) {
+                    continue;
+                } else if (value instanceof Class<?>) {
+                    throw new IllegalStateException("Class items cannot be applied: " + value);
+                } else {
+                    throw new IllegalArgumentException(value.toString());
+                }
+            }
+            return values;
+        }
+
+        public static Collection<Object> remove(Collection<Object> values) {
+            return apply(values);
+        }
+
+        public static Collection<Object> is(Collection<Object> values) {
+            for (Object value : values) {
+                if (value instanceof String || value instanceof Enum<?> || value instanceof Item
+                        || value instanceof Class<?> || value instanceof QualifiedString) {
+                    continue;
+                } else {
+                    throw new IllegalArgumentException(value.toString());
+                }
+            }
+            return values;
+        }
+    }
 
     static class StateStorage {
         final PersistentBoolean appliedStorage;
@@ -149,13 +187,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     protected StateImpl state(Object item) {
         if (item instanceof AbstractProxy<?>) {
-            return state(((AbstractProxy<?>) item).state);
-            // throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         } else if (item instanceof ItemImpl) {
-            return state(((ItemImpl) item).kind());
-            // throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         } else if (item instanceof StateImpl) {
-            // return (StateImpl) item;
             throw new UnsupportedOperationException();
         } else {
             return (StateImpl) this.stateMaps.state(domain, item);
@@ -344,22 +379,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public Options apply() {
-        return applyTo();
+        applyImpl(Collections.emptySet());
+        return this;
     }
 
     @Override
     public State.Options applyTo(Object... attributes) {
-        applyInternal(mapToQualifiedString(StateMaps.flatten(StateImpl.removeProxies(attributes))));
+        applyImpl(Preconditions.check(Preconditions::apply, attributes));
         return this;
-    }
-
-    @SafeVarargs
-    public static <T> Object[] removeProxies(T... peers) {
-        if (Arrays.stream(peers).anyMatch(Item.class::isInstance)) {
-            throw new UnsupportedOperationException();
-        } else {
-            return peers;
-        }
     }
 
     public static List<Object> mapToQualifiedString(List<Object> values) {
@@ -379,19 +406,12 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     public static Set<QualifiedString> mapToQualifiedStringTyped(Collection<Object> values) {
         Set<QualifiedString> mapped = new HashSet<>(values.size());
         for (Object value : values) {
-            if (value instanceof Class || QualifiedString.isItemGuid(value) || value instanceof Item) {
-                throw new IllegalArgumentException(value.toString());
-            } else if (value instanceof QualifiedString) {
-                mapped.add((QualifiedString) value);
-            } else {
-                var s = QualifiedString.of(value);
-                mapped.add(s);
-            }
+            mapped.add(QualifiedString.of(value));
         }
         return mapped;
     }
 
-    private State applyInternal(List<Object> attributes) {
+    private State applyImpl(Set<QualifiedString> attributes) {
         if (!applied()) {
             setTemporary();
         }
@@ -409,7 +429,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 peers.add(attribute);
                 if (!QualifiedString.isItemGuid(attribute)) {
                     StateImpl state = state(attribute);
-                    state.applyInternal(Collections.singletonList(item));
+                    state.applyImpl(Collections.singleton(item));
                 }
             }
         }
@@ -621,11 +641,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             throw new IllegalArgumentException("removeFrom requires at least one peer");
         }
 
-        List<Object> flattenedPeers = mapToQualifiedString(StateMaps.flatten(AbstractProxy.removeProxies(peers2)));
-        removeFrom(flattenedPeers);
+        Set<QualifiedString> flattenedPeers = Preconditions.check(Preconditions::remove, peers2);
+        removeFroImpl(flattenedPeers);
     }
 
-    private void removeFrom(List<Object> flattenedPeers) {
+    private void removeFroImpl(Set<QualifiedString> flattenedPeers) {
         for (Object peer : flattenedPeers) {
             if (peer instanceof Collection<?> || peer instanceof Object[]) {
                 throw new IllegalArgumentException();

@@ -306,18 +306,20 @@ public class Prompt {
     public void dismiss() {
         throwIfNotLocked();
 
-        try {
-            for (InputMethod inputMethod : realized) {
-                inputMethod.dismiss(this);
+        if (realized != null) {
+            try {
+                for (InputMethod inputMethod : realized) {
+                    inputMethod.dismiss(this);
+                }
+                realized = null;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw ExceptionUtil.asRuntimeException(e);
             }
-            realized = null;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 

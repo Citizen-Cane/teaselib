@@ -1,14 +1,13 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -162,6 +162,7 @@ public class SpeechRecognitionTestUtils {
         };
         inputMethod.events.recognitionCompleted.add(completedHandler);
 
+        var speechRejected = new AtomicBoolean(false);
         Event<SpeechRecognizedEventArgs> rejectedHandler = eventArgs -> {
             results.addAll(eventArgs.result);
             Optional<Rule> result = eventArgs.result.isEmpty() ? Optional.empty()
@@ -172,7 +173,14 @@ public class SpeechRecognitionTestUtils {
             } else {
                 logger.info("Rejected without result");
             }
+            prompt.lock.tryLock();
+            try {
+                prompt.click.signalAll();
+            } finally {
+                prompt.lock.unlock();
+            }
         };
+        speechRejected.set(true);
         inputMethod.events.recognitionRejected.add(rejectedHandler);
 
         try {
@@ -195,7 +203,11 @@ public class SpeechRecognitionTestUtils {
 
                 result = prompt.result();
                 if (dismissed) {
-                    assertNotEquals("Result expected" + prompt, Result.UNDEFINED, result);
+                    if (expectedRules != null) {
+                        assertNotEquals("Result expected" + prompt, Result.UNDEFINED, result);
+                    } else {
+                        assertEquals("Result unexpected" + prompt, Result.UNDEFINED, result);
+                    }
                 } else {
                     assertEquals("Rejected prompt expected" + prompt, Result.UNDEFINED, result);
                 }
@@ -216,11 +228,15 @@ public class SpeechRecognitionTestUtils {
                 } else {
                     assertAllTheSameChoices(expectedRules, result);
                 }
+            } else if (speechRejected.get()) {
+                assertTrue("Expected rejected and dismissed: \"" + phrase + "\" but got " + result, dismissed);
             } else {
                 assertFalse("Expected rejected: \"" + phrase + "\" but got " + result, dismissed);
-                assertEquals("Undefined result", Result.UNDEFINED, result);
+                assertNotEquals("Undefined result", Result.UNDEFINED, result);
             }
-        } finally {
+        } finally
+
+        {
             inputMethod.events.recognitionRejected.remove(rejectedHandler);
             inputMethod.events.recognitionCompleted.remove(completedHandler);
             inputMethod.events.speechDetected.remove(detectedHandler);
@@ -264,6 +280,13 @@ public class SpeechRecognitionTestUtils {
         };
         events.recognitionCompleted.add(speechCompleted);
 
+        var recognitionRejected = new AtomicBoolean(false);
+        Event<SpeechRecognizedEventArgs> speechRejected = e -> {
+            recognitionRejected.set(true);
+            signal.countDown();
+        };
+        events.recognitionRejected.add(speechRejected);
+
         try {
             int speechDetectedCount;
             boolean dismissed = false;
@@ -272,7 +295,10 @@ public class SpeechRecognitionTestUtils {
                 dismissed = signal.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
             } while (!dismissed && speechDetectedCount < speechDetected.get());
 
-            if (dismissed) {
+            if (recognitionRejected.get()) {
+                assertNull("Speech rejected but got result: " + speechRecognized.get(), speechRecognized.get());
+                return Rule.Nothing;
+            } else if (dismissed) {
                 assertNotNull(speechRecognized.get());
                 List<Rule> rules = speechRecognized.get().result;
                 assertFalse("Audio file result expected - path correct?", rules.isEmpty());
@@ -292,6 +318,7 @@ public class SpeechRecognitionTestUtils {
         } finally {
             events.speechDetected.remove(detectedHandler);
             events.recognitionCompleted.remove(speechCompleted);
+            events.recognitionRejected.remove(speechRejected);
         }
     }
 

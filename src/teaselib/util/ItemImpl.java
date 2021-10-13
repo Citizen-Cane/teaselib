@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.StateImpl;
+import teaselib.core.StateImpl.Preconditions;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
@@ -36,7 +37,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     public final QualifiedString guid;
     public final String displayName;
     private final TeaseLib.PersistentBoolean available;
-    public final List<Object> defaultPeers;
+    public final Set<QualifiedString> defaultPeers;
     public final Set<QualifiedString> attributes;
 
     public static String createDisplayName(QualifiedString item) {
@@ -55,7 +56,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         this.displayName = displayName;
         this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
                 guid.guid().orElseThrow() + "." + Available);
-        this.defaultPeers = Collections.unmodifiableList(StateImpl.mapToQualifiedString(Arrays.asList(defaultPeers)));
+        this.defaultPeers = Collections
+                .unmodifiableSet(StateImpl.mapToQualifiedStringTyped(Arrays.asList(defaultPeers)));
         this.attributes = Collections.unmodifiableSet(
                 StateImpl.mapToQualifiedStringTyped(attributes(guid.kind(), Arrays.asList(attributes))));
     }
@@ -107,11 +109,11 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     boolean has(List<? extends Object> desired) {
-        Stream<Object> available = Stream.concat(attributes.stream(), defaultPeers.stream());
+        Stream<QualifiedString> available = Stream.concat(attributes.stream(), defaultPeers.stream());
         return has(available, desired);
     }
 
-    private static boolean has(Stream<? extends Object> available, List<? extends Object> desired) {
+    private static boolean has(Stream<? extends QualifiedString> available, List<? extends Object> desired) {
         return available.filter(element -> contains(desired, QualifiedString.of(element))).count() == desired.size();
     }
 
@@ -223,10 +225,10 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
-        return applyToFlattenedPeers(StateImpl.mapToQualifiedString(StateMaps.flatten(peers)));
+        return applyToImpl(Preconditions.check(Preconditions::apply, peers));
     }
 
-    private State.Options applyToFlattenedPeers(Collection<Object> flattenedPeers) {
+    private State.Options applyToImpl(Set<QualifiedString> flattenedPeers) {
         applyInstanceTo(defaultPeers);
         applyInstanceTo(flattenedPeers);
 
@@ -238,8 +240,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         return this;
     }
 
-    private void applyInstanceTo(Collection<Object> items) {
-        for (Object peer : items) {
+    private void applyInstanceTo(Collection<QualifiedString> items) {
+        for (QualifiedString peer : items) {
             state(peer).applyTo(this.guid);
             state(peer).applyTo(this.guid.kind());
         }
@@ -266,8 +268,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         state(forget).applyTo(this.guid).remember(forget);
     }
 
-    public Collection<Object> attributesAndPeers() {
-        Collection<Object> attributesAndPeers = new HashSet<>();
+    public Collection<QualifiedString> attributesAndPeers() {
+        Collection<QualifiedString> attributesAndPeers = new HashSet<>();
         attributesAndPeers.addAll(attributes);
         attributesAndPeers.addAll(defaultPeers);
         return attributesAndPeers;
@@ -299,10 +301,10 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public void removeFrom(Object... peers) {
-        removeInternal(StateImpl.mapToQualifiedString(StateMaps.flatten(AbstractProxy.removeProxies(peers))));
+        removeInternal(Preconditions.check(Preconditions::remove, peers));
     }
 
-    private void removeInternal(List<Object> peers) {
+    private void removeInternal(Set<QualifiedString> peers) {
         StateImpl state = state();
         if (containsMyGuid(state)) {
             for (Object peer : peers) {

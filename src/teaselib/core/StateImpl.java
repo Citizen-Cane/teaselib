@@ -57,9 +57,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     public static class Preconditions {
 
-        public static Set<QualifiedString> check(UnaryOperator<Collection<Object>> typeCheck, Object... attributes) {
-            return mapToQualifiedStringTyped(
-                    typeCheck.apply(AbstractProxy.removeProxies(StateMaps.flatten(attributes))));
+        public static Set<QualifiedString> check(UnaryOperator<Collection<Object>> typeCheck, Object... peers) {
+            return mapToQualifiedStringTyped(typeCheck.apply(AbstractProxy.removeProxies(StateMaps.flatten(peers))));
         }
 
         public static Collection<Object> apply(Collection<Object> values) {
@@ -68,7 +67,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                         || value instanceof QualifiedString) {
                     continue;
                 } else if (value instanceof Class<?>) {
-                    throw new IllegalStateException("Class items cannot be applied: " + value);
+                    throw new IllegalArgumentException("Class items cannot be applied: " + value);
                 } else {
                     throw new IllegalArgumentException(value.toString());
                 }

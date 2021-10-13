@@ -34,7 +34,6 @@ abstract class DeepSpeechRecognizerAbstractTest {
     @AfterAll
     @After
     public void cleanup() {
-        deepSpeechRecognizer.stopEventLoop();
         deepSpeechRecognizer.close();
         teaseLibAI.close();
     }

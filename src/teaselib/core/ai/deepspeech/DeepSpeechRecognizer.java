@@ -1,7 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -101,7 +100,8 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             try {
                 status = Status.of(decode());
                 process(events, status);
-                if (status == Status.Cancelled && Thread.currentThread().isInterrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
+                    status = finishStream(status);
                     break;
                 }
             } catch (Throwable t) {
@@ -111,6 +111,20 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             }
         }
 
+    }
+
+    private Status finishStream(Status status) {
+        Status newStatus = status;
+        while (newStatus != Status.Cancelled && newStatus != Status.Done && newStatus != Status.Idle) {
+            newStatus = Status.of(decode());
+        }
+        return newStatus;
+    }
+
+    private void freeDeepSpeechStreamOnError(Status status) {
+        if (status == Status.Running) {
+            decode();
+        }
     }
 
     private void process(SpeechRecognitionEvents events, Status status) {
@@ -180,12 +194,6 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rules));
         }
         recognitionStartedEventFired = false;
-    }
-
-    private void freeDeepSpeechStreamOnError(Status status) {
-        if (status == Status.Running) {
-            decode();
-        }
     }
 
     private List<Rule> rules() {

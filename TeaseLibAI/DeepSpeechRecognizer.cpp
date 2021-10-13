@@ -409,7 +409,6 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 void DeepSpeechRecognizer::stopEventLoop()
 {
 	stop();
-	audioStream.cancel();
 }
 
 aifx::speech::SpeechAudioStream::Status DeepSpeechRecognizer::decode()

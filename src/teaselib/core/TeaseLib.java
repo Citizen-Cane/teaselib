@@ -1011,8 +1011,9 @@ public class TeaseLib implements Closeable {
     }
 
     public Item findItem(String domain, QualifiedString item, String guid) {
-        return items(domain, item).stream().filter(i -> ((ItemImpl) i).guid.guid().orElseThrow().equals(guid))
-                .findFirst().orElse(Item.NotFound);
+        return items(domain, item).stream().filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
+                .filter(i -> i.guid.guid().orElseThrow().equalsIgnoreCase(guid)).map(Item.class::cast).findFirst()
+                .orElse(Item.NotFound);
     }
 
     public Actor getDominant(Gender gender, Locale locale) {

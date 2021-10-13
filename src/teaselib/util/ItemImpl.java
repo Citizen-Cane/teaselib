@@ -129,28 +129,31 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     private boolean is(List<Object> flattenedAttributes) {
         if (flattenedAttributes.isEmpty()) {
             return false;
-        } else if (flattenedAttributes.size() == 1 && flattenedAttributes.get(0) instanceof Item) {
-            // TODO Remove these special cases:
-            // attributes2[0] == this -> ItemIdentityTest.testThatItemIsNotOtherItem
-            // state(value).is(attributes2[0]) -> ItemsTest.testItemAppliedToItems
-            return flattenedAttributes.get(0) == this || state().is(flattenedAttributes.get(0));
-        } else if (has(this.attributes.stream(), flattenedAttributes))
-            return true;
-        else {
-            if (StateMaps.hasAllAttributes((state()).getAttributes(), flattenedAttributes)) {
-                return applied();
-            } else if (state(this).appliedToClassValues(attributes, flattenedAttributes)) {
+        } else {
+            StateImpl state = state();
+            if (flattenedAttributes.size() == 1 && flattenedAttributes.get(0) instanceof Item) {
+                // TODO Remove these special cases:
+                // attributes2[0] == this -> ItemIdentityTest.testThatItemIsNotOtherItem
+                // state(value).is(attributes2[0]) -> ItemsTest.testItemAppliedToItems
+                return flattenedAttributes.get(0) == this || state.is(flattenedAttributes.get(0));
+                // throw new IllegalStateException();
+            } else if (has(this.attributes.stream(), flattenedAttributes))
                 return true;
-            } else if (state(this).appliedToClassValues(state(this).peers(), flattenedAttributes)) {
-                return true;
-            } else if (state(this).appliedToClassState(state(this).peers(), flattenedAttributes)) {
-                // TODO remove
-                throw new IllegalStateException();
-                // return true;
-            } else if (!stateAppliesToMe(flattenedAttributes)) {
-                return false;
-            } else {
-                return stateContainsAll(flattenedAttributes);
+            else {
+                Set<Object> attributesAndPeers = state.attributesAndPeers();
+                if (StateMaps.hasAllAttributes(state.getAttributes(), flattenedAttributes)) {
+                    return applied();
+                    // using attributesAndPeers breaks ItemImplTest.testIsClass()
+                } else if (state(this).appliedToClassValues(attributes, flattenedAttributes)) {
+                    return true;
+                    // ignoring state peers class values breaks ItemImplTest.testIsNestedClass() and others
+                } else if (state(this).appliedToClassValues(state(this).peers(), flattenedAttributes)) {
+                    return true;
+                } else if (!stateAppliesToMe(flattenedAttributes)) {
+                    return false;
+                } else {
+                    return stateContainsAll(flattenedAttributes);
+                }
             }
         }
     }
@@ -259,7 +262,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     public void remember(Until forget) {
         StateImpl state = state();
         state.remember(forget);
-        state(forget).applyTo(this).remember(forget);
+        state(forget).applyTo(this.guid).remember(forget);
     }
 
     public Collection<Object> attributesAndPeers() {
@@ -277,10 +280,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
                 if (!QualifiedString.isItemGuid(peer)) {
                     StateImpl peerState = state(peer);
                     peerState.removeFrom(this.guid);
-                    // TODO Down to 3 failures -> remove
-                    // peerState.removeFrom(this.guid.kind());
                     state.removeFrom(this.guid);
-                    // state.removeFrom(this.guid.kind());
                 }
             }
 
@@ -323,15 +323,9 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     public boolean releaseInstanceGuid() {
         StateImpl state = state();
-        // useless because just againat the guid that should be removed
-        // if (peersReferenceMe(state)) {
-        // return false;
-        // }
-
         if (state.peerStates().stream().anyMatch(this::containsMe)) {
             return false;
         }
-
         state.removeFrom(this.guid);
         return true;
     }
@@ -358,7 +352,6 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private boolean containsMe(StateImpl state) {
-        // return state.peers().contains(this);
         return state.peers().contains(this.guid);
     }
 
@@ -366,28 +359,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         return state.peers().contains(this.guid);
     }
 
-    private static boolean isItemImpl(Object peer) {
-        return peer instanceof ItemImpl;
-    }
-
     private boolean stateIsThis(StateImpl state) {
         return state.is(this);
-    }
-
-    private static boolean peersReferenceMe__(StateImpl state) {
-        Set<Object> peers = state.peers();
-        // return peers.stream().filter(ItemImpl::isItemImpl).map(ItemImpl.class::cast).map(itemImpl -> itemImpl.guid)
-        // .filter(peers::contains).count() > 0;
-        return peers.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
-                .filter(QualifiedString::isItemGuid).filter(peers::contains).count() > 0;
-    }
-
-    private boolean peersReferenceMe(StateImpl me) {
-        Set<Object> peers = me.peers();
-        // return peers.stream().filter(ItemImpl::isItemImpl).map(ItemImpl.class::cast).map(itemImpl -> itemImpl.guid)
-        // .filter(peers::contains).count() > 0;
-        return peers.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
-                .filter(QualifiedString::isItemGuid).filter(peers::contains).count() > 0;
     }
 
     @Override

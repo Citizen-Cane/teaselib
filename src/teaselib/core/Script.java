@@ -47,7 +47,6 @@ import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethodEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.state.AbstractProxy;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -245,10 +244,10 @@ public abstract class Script {
     }
 
     private State handle(String domain, State.Persistence.Until until, long startupTimeSeconds, float limitFactor) {
-        var untilState = teaseLib.state(domain, until);
-        Set<Object> peers = ((StateImpl) untilState).peers();
+        var untilState = (StateImpl) teaseLib.state(domain, until);
+        Set<Object> peers = untilState.peers();
         for (Object peer : new ArrayList<>(peers)) {
-            var state = teaseLib.state(domain, peer);
+            var state = (StateImpl) teaseLib.state(domain, peer);
             if (!cleanupRemovedUserItemReferences(state)) {
                 remove(state, startupTimeSeconds, limitFactor);
             }
@@ -256,16 +255,20 @@ public abstract class Script {
         return untilState;
     }
 
-    private boolean cleanupRemovedUserItemReferences(State state) {
-        var stateImpl = AbstractProxy.stateImpl(state);
-        if (stateImpl.peers().stream().filter(Predicate.not(Item.class::isInstance)).map(peer -> {
+    private boolean cleanupRemovedUserItemReferences(StateImpl state) {
+        List<QualifiedString> peers = state.peers().stream().map(peer -> {
             if (peer instanceof QualifiedString) {
                 return (QualifiedString) peer;
             } else {
                 return QualifiedString.of(peer);
             }
-        }).filter(peer -> peer.guid().isPresent()).anyMatch(
-                peer -> teaseLib.findItem(stateImpl.domain, stateImpl.item, peer.guid().get()) == Item.NotFound)) {
+        }).filter(peer -> peer.guid().isPresent()).toList();
+
+        List<Item> items = peers.stream().map(peer -> {
+            return teaseLib.findItem(state.domain, peer.kind(), peer.guid().get());
+        }).filter(Predicate.not(Item.NotFound::equals)).toList();
+
+        if (items.isEmpty()) {
             state.remove();
             return true;
         } else {

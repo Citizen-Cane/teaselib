@@ -123,11 +123,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public boolean is(Object... attributes3) {
-        Collection<? extends Object> flattenedAttributes = //
-                StateImpl.mapToQualifiedString(
-                        AbstractProxy.removeProxies(StateMaps.flatten(Arrays.asList(attributes3))));
-
-        // Preconditions.check(Preconditions::is, attributes3);
+        Collection<? extends Object> flattenedAttributes = Preconditions.check(Preconditions::is, attributes3);
 
         return isImpl(flattenedAttributes);
     }
@@ -161,8 +157,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private boolean attributeIsMe(Collection<? extends Object> flattenedAttributes) {
-        return flattenedAttributes.stream().filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
-                .map(item -> item.guid).anyMatch(this.guid::equals);
+        return flattenedAttributes.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
+                .anyMatch(this.guid::equals);
     }
 
     private boolean stateAppliesToMe(Collection<? extends Object> attributes2) {

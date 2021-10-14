@@ -394,19 +394,6 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return this;
     }
 
-    public static List<Object> mapToQualifiedString(Collection<Object> values) {
-        List<Object> mapped = new ArrayList<>(values.size());
-        for (Object value : values) {
-            if (value instanceof Class || value instanceof Item || value instanceof QualifiedString) {
-                mapped.add(value);
-            } else {
-                var s = QualifiedString.of(value);
-                mapped.add(s);
-            }
-        }
-        return mapped;
-    }
-
     public static Set<QualifiedString> mapToQualifiedStringTyped(Collection<Object> values) {
         Set<QualifiedString> mapped = new HashSet<>(values.size());
         for (Object value : values) {
@@ -497,13 +484,13 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private static boolean appliedToClass(Collection<? extends Object> available,
             Collection<? extends Object> desired) {
-        // TODO map to QualifiedString in teaselib.core.StateImpl.mapToQualifiedString()
-        List<Class<?>> classes = desired.stream().filter(Class.class::isInstance).map(Class.class::cast)
+        List<QualifiedString> classes = desired.stream().filter(QualifiedString.class::isInstance)
+                .map(QualifiedString.class::cast).filter(element -> element.name().equals(QualifiedString.ANY))
                 .collect(toList());
         return classes.stream().filter(clazz -> {
-            var qualifiedClass = ReflectionUtils.qualified(clazz);
+            var className = clazz.namespace();
             return available.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
-                    .map(QualifiedString::namespace).anyMatch(namespace -> namespace.equalsIgnoreCase(qualifiedClass));
+                    .map(QualifiedString::namespace).anyMatch(namespace -> namespace.equalsIgnoreCase(className));
         }).count() == desired.size();
 
     }

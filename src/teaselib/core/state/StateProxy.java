@@ -11,6 +11,7 @@ import teaselib.State;
 import teaselib.core.ScriptEvents;
 import teaselib.core.StateImpl;
 import teaselib.core.StateMaps;
+import teaselib.core.util.QualifiedString;
 
 /**
  * @author Citizen-Cane
@@ -45,7 +46,7 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
 
     }
 
-    public Set<Object> peers() {
+    public Set<QualifiedString> peers() {
         return ((StateImpl) state).peers();
     }
 

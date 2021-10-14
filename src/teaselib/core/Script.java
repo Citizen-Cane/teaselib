@@ -245,7 +245,7 @@ public abstract class Script {
 
     private State handle(String domain, State.Persistence.Until until, long startupTimeSeconds, float limitFactor) {
         var untilState = (StateImpl) teaseLib.state(domain, until);
-        Set<Object> peers = untilState.peers();
+        Set<QualifiedString> peers = untilState.peers();
         for (Object peer : new ArrayList<>(peers)) {
             var state = (StateImpl) teaseLib.state(domain, peer);
             if (!cleanupRemovedUserItemReferences(state)) {
@@ -256,13 +256,7 @@ public abstract class Script {
     }
 
     private boolean cleanupRemovedUserItemReferences(StateImpl state) {
-        List<QualifiedString> peers = state.peers().stream().map(peer -> {
-            if (peer instanceof QualifiedString) {
-                return (QualifiedString) peer;
-            } else {
-                return QualifiedString.of(peer);
-            }
-        }).filter(peer -> peer.guid().isPresent()).toList();
+        List<QualifiedString> peers = state.peers().stream().filter(peer -> peer.guid().isPresent()).toList();
 
         List<Item> items = peers.stream().map(peer -> {
             return teaseLib.findItem(state.domain, peer.kind(), peer.guid().get());

@@ -294,9 +294,10 @@ public class Items implements Iterable<Item> {
         if (attributes.isEmpty()) {
             matchingItems = new Items(this);
         } else {
-            List<Item> matching = elements.stream()
-                    .filter(item -> (item instanceof ItemImpl) || (item instanceof AbstractProxy))
-                    .filter(item -> itemImpl(item).has(attributes)).collect(toList());
+            // List<Item> matching = elements.stream()
+            // .filter(item -> (item instanceof ItemImpl) || (item instanceof AbstractProxy))
+            // .filter(item -> itemImpl(item).is(attributes)).collect(toList());
+            List<Item> matching = elements.stream().filter(item -> item.is(attributes)).toList();
             matchingItems = new Items(matching, inventory);
         }
         return matchingItems;
@@ -326,14 +327,8 @@ public class Items implements Iterable<Item> {
         return new Items(elements.stream().distinct().filter(items::contains).collect(toList()));
     }
 
-    private boolean containsImplOld(QualifiedString item) {
-        return elements.stream().map(AbstractProxy::removeProxy).filter(ItemImpl.class::isInstance)
-                .map(ItemImpl.class::cast).map(ItemImpl::kind).anyMatch(item::is);
-    }
-
     private boolean containsImpl(QualifiedString kind) {
-        return elements.stream().map(AbstractProxy::removeProxy).map(ItemImpl::kind).map(QualifiedString::kind)
-                .anyMatch(kind::is);
+        return elements.stream().map(AbstractProxy::removeProxy).map(ItemImpl::kind).anyMatch(kind::is);
     }
 
     /**
@@ -396,7 +391,7 @@ public class Items implements Iterable<Item> {
         public void addApplied() {
             for (Item item : elements) {
                 if (item.applied() && missing(item)) {
-                    found.add(QualifiedString.of(itemValue(item)));
+                    found.add(itemValue(item));
                     items.add(item);
                 }
             }
@@ -407,7 +402,7 @@ public class Items implements Iterable<Item> {
         public void addAvailableMatching() {
             for (Item item : elements) {
                 if (missing(item) && item.is(attributes) && item.isAvailable()) {
-                    found.add(QualifiedString.of(itemValue(item)));
+                    found.add(itemValue(item));
                     items.add(item);
                 }
             }
@@ -416,7 +411,7 @@ public class Items implements Iterable<Item> {
         public void addAvailableNonMatching() {
             for (Item item : elements) {
                 if (missing(item) && item.isAvailable()) {
-                    found.add(QualifiedString.of(itemValue(item)));
+                    found.add(itemValue(item));
                     items.add(item);
                 }
             }
@@ -425,7 +420,7 @@ public class Items implements Iterable<Item> {
         public void addMissingMatching() {
             for (Item item : elements) {
                 if (missing(item) && item.is(attributes)) {
-                    found.add(QualifiedString.of(itemValue(item)));
+                    found.add(itemValue(item));
                     items.add(item);
                 }
             }
@@ -434,18 +429,14 @@ public class Items implements Iterable<Item> {
         public void addMissing() {
             for (Item item : elements) {
                 if (missing(item)) {
-                    found.add(QualifiedString.of(itemValue(item)));
+                    found.add(itemValue(item));
                     items.add(item);
                 }
             }
         }
 
         private boolean missing(Item item) {
-            return !found.contains(qualifiedValue(item));
-        }
-
-        private static QualifiedString qualifiedValue(Item item) {
-            return AbstractProxy.itemImpl(item).kind();
+            return !found.contains(itemValue(item));
         }
 
         public List<Item> toList() {

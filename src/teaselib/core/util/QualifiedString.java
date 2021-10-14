@@ -1,8 +1,14 @@
 package teaselib.core.util;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import teaselib.core.StateImpl;
+import teaselib.core.StateMaps;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
@@ -52,6 +58,18 @@ public class QualifiedString {
         } else {
             throw new UnsupportedOperationException(object.toString());
         }
+    }
+
+    public static Set<QualifiedString> map(UnaryOperator<Collection<Object>> typeCheck, Object... peers) {
+        return map(typeCheck.apply(AbstractProxy.removeProxies(StateMaps.flatten(Arrays.asList(peers)))));
+    }
+
+    public static Set<QualifiedString> map(Collection<Object> values) {
+        Set<QualifiedString> mapped = new HashSet<>(values.size());
+        for (Object value : values) {
+            mapped.add(QualifiedString.of(value));
+        }
+        return mapped;
     }
 
     private final String value;

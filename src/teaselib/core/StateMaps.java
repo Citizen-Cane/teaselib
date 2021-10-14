@@ -13,7 +13,6 @@ import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedString;
-import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 
 public class StateMaps {
@@ -42,24 +41,14 @@ public class StateMaps {
         cache.clear();
     }
 
-    static String toStringWithoutRecursion(Set<Object> peers) {
+    static String toStringWithoutRecursion(Set<QualifiedString> peers) {
         var toString = new StringBuilder();
         toString.append("[");
-        for (Object object : peers) {
+        for (QualifiedString peer : peers) {
             if (toString.length() > 1) {
                 toString.append(", ");
             }
-            if (object instanceof StateImpl) {
-                StateImpl state = (StateImpl) object;
-                toString.append("state:" + state.item.toString());
-            } else if (object instanceof ItemImpl) {
-                ItemImpl item = (ItemImpl) object;
-                toString.append("item:" + item.guid.name() + "#" + item.guid.guid().orElseThrow());
-            } else if (object instanceof QualifiedString) {
-                toString.append(object.toString());
-            } else {
-                toString.append(QualifiedString.of(object).toString());
-            }
+            toString.append(peer.toString());
         }
         toString.append("]");
         return toString.toString();

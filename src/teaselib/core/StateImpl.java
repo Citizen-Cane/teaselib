@@ -6,6 +6,7 @@ import static teaselib.core.StateImpl.Internal.*;
 import static teaselib.core.TeaseLib.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,18 +59,19 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     public static class Preconditions {
 
         public static Set<QualifiedString> check(UnaryOperator<Collection<Object>> typeCheck, Object... peers) {
-            return mapToQualifiedStringTyped(typeCheck.apply(AbstractProxy.removeProxies(StateMaps.flatten(peers))));
+            return mapToQualifiedStringTyped(
+                    typeCheck.apply(AbstractProxy.removeProxies(StateMaps.flatten(Arrays.asList(peers)))));
         }
 
         public static Collection<Object> apply(Collection<Object> values) {
             for (Object value : values) {
                 if (value instanceof String || value instanceof Enum<?> || value instanceof Item
-                        || value instanceof QualifiedString) {
+                        || value instanceof State || value instanceof QualifiedString) {
                     continue;
                 } else if (value instanceof Class<?>) {
                     throw new IllegalArgumentException("Class items cannot be applied: " + value);
                 } else {
-                    throw new IllegalArgumentException(value.toString());
+                    handleIllegalArgument(value);
                 }
             }
             return values;
@@ -82,14 +84,18 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         public static Collection<Object> is(Collection<Object> values) {
             for (Object value : values) {
                 if (value instanceof String || value instanceof Enum<?> || value instanceof Item
-                        || value instanceof Class<?> || value instanceof QualifiedString) {
+                        || value instanceof State || value instanceof Class<?> || value instanceof QualifiedString) {
                     continue;
                 } else {
-                    throw new IllegalArgumentException(value.toString());
+                    handleIllegalArgument(value);
                 }
             }
             return values;
         }
+    }
+
+    private static void handleIllegalArgument(Object value) {
+        throw new IllegalArgumentException(value.getClass().getSimpleName() + ":" + value);
     }
 
     static class StateStorage {
@@ -303,7 +309,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             }
         } else if (peer instanceof Item) {
             throw new UnsupportedOperationException();
-        } else if (QualifiedString.isItemGuid(peer)) {
+        } else if (qualifiedPeer.isItem()) {
             peers.add(peer);
         } else if (isCached(qualifiedPeer) && state(peer).applied()) {
             if (peer instanceof QualifiedString) {
@@ -388,11 +394,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return this;
     }
 
-    public static List<Object> mapToQualifiedString(List<Object> values) {
+    public static List<Object> mapToQualifiedString(Collection<Object> values) {
         List<Object> mapped = new ArrayList<>(values.size());
         for (Object value : values) {
-            if (value instanceof Class || QualifiedString.isItemGuid(value) || value instanceof Item
-                    || value instanceof QualifiedString) {
+            if (value instanceof Class || value instanceof Item || value instanceof QualifiedString) {
                 mapped.add(value);
             } else {
                 var s = QualifiedString.of(value);
@@ -415,18 +420,13 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             setTemporary();
         }
 
-        for (Object attribute : attributes) {
+        for (QualifiedString attribute : attributes) {
             if (!peersContain(attribute)) {
-                if (attribute instanceof List || attribute.getClass().isArray()) {
-                    throw new IllegalStateException(attribute.toString());
-                } else if (attribute instanceof Class<?>) {
-                    throw new IllegalStateException("Class items cannot be applied: " + attribute);
-                } else if (attribute instanceof QualifiedString
-                        && ((QualifiedString) attribute).name().equals(QualifiedString.ANY)) {
+                if (attribute.name().equals(QualifiedString.ANY)) {
                     throw new IllegalStateException("Class selectors cannot be applied: " + attribute);
                 }
                 peers.add(attribute);
-                if (!QualifiedString.isItemGuid(attribute)) {
+                if (!attribute.isItem()) {
                     StateImpl state = state(attribute);
                     state.applyImpl(Collections.singleton(item));
                 }
@@ -457,7 +457,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public void applyAttributes(Object... attributes) {
-        applyAttributesImpl(mapToQualifiedStringTyped(StateMaps.flatten(attributes)));
+        applyAttributesImpl(mapToQualifiedStringTyped(StateMaps.flatten(Arrays.asList(attributes))));
     }
 
     void applyAttributesImpl(Set<QualifiedString> attributes) {
@@ -469,19 +469,16 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    // TODO classes and instances in a single query
     public boolean is(Object... attributes) {
-        List<Object> flattenedAttributes = mapToQualifiedString(
-                StateMaps.flatten(AbstractProxy.removeProxies(attributes)));
-        return isImpl(flattenedAttributes);
+        return isImpl(Preconditions.check(Preconditions::apply, attributes));
     }
 
-    public boolean isImpl(List<Object> flattenedAttributes) {
-        Set<Object> attributesAndPeers = attributesAndPeers();
+    public boolean isImpl(Collection<? extends Object> flattenedAttributes) {
+        Set<? extends Object> attributesAndPeers = attributesAndPeers();
         return isImpl(flattenedAttributes, attributesAndPeers);
     }
 
-    private boolean isImpl(List<Object> flattenedAttributes, Set<Object> attributesAndPeers) {
+    private boolean isImpl(Collection<? extends Object> flattenedAttributes, Set<? extends Object> attributesAndPeers) {
         if (appliedToClassValues(attributesAndPeers, flattenedAttributes)) {
             return true;
         } else if (!allGuidsFoundInPeers(flattenedAttributes)) {
@@ -493,11 +490,13 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    public boolean appliedToClassValues(Set<? extends Object> availableAttributes, List<Object> desiredAttributes) {
+    public boolean appliedToClassValues(Set<? extends Object> availableAttributes,
+            Collection<? extends Object> desiredAttributes) {
         return appliedToClass(availableAttributes, desiredAttributes);
     }
 
-    private static boolean appliedToClass(Collection<? extends Object> available, List<Object> desired) {
+    private static boolean appliedToClass(Collection<? extends Object> available,
+            Collection<? extends Object> desired) {
         // TODO map to QualifiedString in teaselib.core.StateImpl.mapToQualifiedString()
         List<Class<?>> classes = desired.stream().filter(Class.class::isInstance).map(Class.class::cast)
                 .collect(toList());
@@ -509,7 +508,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     }
 
-    private boolean allGuidsFoundInPeers(List<Object> attributes) {
+    private boolean allGuidsFoundInPeers(Collection<? extends Object> attributes) {
         List<QualifiedString> guids = attributes.stream().filter(QualifiedString.class::isInstance)
                 .map(QualifiedString.class::cast).filter(QualifiedString::isItemGuid).collect(toList());
         return peers.containsAll(guids);
@@ -724,7 +723,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private void removeRepresentingGuids(QualifiedString value) {
         for (Object peer : new HashSet<>(peers)) {
             if (peer instanceof QualifiedString) {
-                if (QualifiedString.isItemGuid(peer)) {
+                if (((QualifiedString) peer).isItem()) {
                     var guid = (QualifiedString) peer;
                     if (guid.kind().is(value)) {
                         peers.remove(guid);

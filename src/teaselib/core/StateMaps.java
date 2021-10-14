@@ -130,17 +130,17 @@ public class StateMaps {
         }
     }
 
-    public static boolean hasAllAttributes(Set<Object> available, List<Object> desired) {
+    public static boolean hasAllAttributes(Set<? extends Object> available, Collection<? extends Object> desired) {
         Predicate<? super QualifiedString> predicate = attribute -> available.stream().map(StateMaps::stripState)
                 .anyMatch(attribute::is);
         return desired.stream().map(StateMaps::stripState).filter(predicate).count() == desired.size();
     }
 
-    public static List<Object> flatten(Object[] peers) {
+    public static Collection<Object> flatten(Object[] peers) {
         return flatten(Arrays.asList(peers));
     }
 
-    public static List<Object> flatten(List<Object> peers) {
+    public static Collection<Object> flatten(Collection<? extends Object> peers) {
         List<Object> flattenedPeers = new ArrayList<>(peers.size());
         for (Object peer : peers) {
             if (peer instanceof Items) {

@@ -1,5 +1,6 @@
 package teaselib.core.state;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,7 +47,7 @@ public class AbstractProxy<T> {
         return proxiesRemoved;
     }
 
-    public static List<Object> removeProxies(List<Object> peers) {
+    public static List<Object> removeProxies(Collection<Object> peers) {
         return peers.stream().map(AbstractProxy::removeProxy).collect(Collectors.toList());
     }
 

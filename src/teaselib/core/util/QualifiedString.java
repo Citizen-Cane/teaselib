@@ -5,6 +5,7 @@ import java.util.Optional;
 import teaselib.core.StateImpl;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
+import teaselib.core.state.StateProxy;
 import teaselib.util.ItemImpl;
 
 public class QualifiedString {
@@ -36,11 +37,15 @@ public class QualifiedString {
             return (QualifiedString) object;
         } else if (object instanceof Class<?>) {
             return QualifiedString.of((Class<?>) object);
+        } else if (object instanceof StateProxy) {
+            StateProxy state = (StateProxy) object;
+            return of(AbstractProxy.removeProxy(state));
         } else if (object instanceof StateImpl) {
             StateImpl state = (StateImpl) object;
             return state.item;
         } else if (object instanceof ItemProxy) {
-            return of(AbstractProxy.removeProxy((ItemProxy) object));
+            ItemProxy item = (ItemProxy) object;
+            return of(AbstractProxy.removeProxy(item));
         } else if (object instanceof ItemImpl) {
             ItemImpl item = (ItemImpl) object;
             return item.guid;
@@ -143,8 +148,8 @@ public class QualifiedString {
         return guid != null ? Optional.of(guid) : Optional.empty();
     }
 
-    public static boolean isItemGuid(QualifiedString obj) {
-        return obj.guid().isPresent();
+    public boolean isItem() {
+        return guid != null;
     }
 
     public static boolean isItemGuid(Object obj) {

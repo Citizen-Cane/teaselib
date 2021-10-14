@@ -113,22 +113,29 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         return has(available, desired);
     }
 
-    private static boolean has(Stream<? extends QualifiedString> available, List<? extends Object> desired) {
+    private static boolean has(Stream<? extends QualifiedString> available, Collection<? extends Object> desired) {
         return available.filter(element -> contains(desired, QualifiedString.of(element))).count() == desired.size();
     }
 
-    static boolean contains(List<? extends Object> elements, QualifiedString value) {
+    static boolean contains(Collection<? extends Object> elements, QualifiedString value) {
         return elements.stream().anyMatch(value::is);
     }
 
     @Override
     public boolean is(Object... attributes3) {
-        List<Object> flattenedAttributes = StateImpl
-                .mapToQualifiedString(StateMaps.flatten(AbstractProxy.removeProxies(attributes3)));
+        Collection<? extends Object> flattenedAttributes = //
+                StateImpl.mapToQualifiedString(
+                        StateMaps.flatten(AbstractProxy.removeProxies(Arrays.asList(attributes3))));
+
+        // StateImpl.mapToQualifiedString(
+        // AbstractProxy.removeProxies(StateMaps.flatten(Arrays.asList(attributes3))));
+
+        // Preconditions.check(Preconditions::is, attributes3);
+
         return isImpl(flattenedAttributes);
     }
 
-    private boolean isImpl(List<Object> flattenedAttributes) {
+    private boolean isImpl(Collection<? extends Object> flattenedAttributes) {
         if (flattenedAttributes.isEmpty()) {
             return false;
         } else {
@@ -156,16 +163,16 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     }
 
-    private boolean attributeIsMe(List<Object> flattenedAttributes) {
+    private boolean attributeIsMe(Collection<? extends Object> flattenedAttributes) {
         return flattenedAttributes.stream().filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
                 .map(item -> item.guid).anyMatch(this.guid::equals);
     }
 
-    private boolean stateAppliesToMe(List<Object> attributes2) {
+    private boolean stateAppliesToMe(Collection<? extends Object> attributes2) {
         return StateMaps.flatten(attributes2).stream().map(this::state).allMatch(this::stateIsThis);
     }
 
-    private boolean stateContainsAll(List<Object> attributes) {
+    private boolean stateContainsAll(Collection<? extends Object> attributes) {
         return state().isImpl(attributes);
     }
 

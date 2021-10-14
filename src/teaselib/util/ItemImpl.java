@@ -125,10 +125,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     public boolean is(Object... attributes3) {
         Collection<? extends Object> flattenedAttributes = //
                 StateImpl.mapToQualifiedString(
-                        StateMaps.flatten(AbstractProxy.removeProxies(Arrays.asList(attributes3))));
-
-        // StateImpl.mapToQualifiedString(
-        // AbstractProxy.removeProxies(StateMaps.flatten(Arrays.asList(attributes3))));
+                        AbstractProxy.removeProxies(StateMaps.flatten(Arrays.asList(attributes3))));
 
         // Preconditions.check(Preconditions::is, attributes3);
 

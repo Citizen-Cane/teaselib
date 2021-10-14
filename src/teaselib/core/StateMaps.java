@@ -147,10 +147,10 @@ public class StateMaps {
                 var items = (Items) peer;
                 flattenedPeers.addAll(items.firstOfEachKind());
             } else if (peer instanceof Collection) {
-                Collection<?> collection = (Collection<?>) peer;
+                var collection = (Collection<?>) peer;
                 flattenedPeers.addAll(collection);
             } else if (peer instanceof Object[]) {
-                List<Object> list = Arrays.asList(peer);
+                var list = Arrays.asList(peer);
                 flattenedPeers.addAll(list);
             } else {
                 flattenedPeers.add(peer);

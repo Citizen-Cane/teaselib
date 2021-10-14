@@ -961,7 +961,12 @@ public class ItemsTest {
 
         assertFalse(bells.is(singleChainItem));
         assertFalse(singleChainItem.is(bells));
-        assertFalse(bells.is(chains));
+
+        assertFalse(bells.is(chains.get(0)));
+        assertTrue(bells.is(chains.get(1)));
+
+        // chains contains bells as an item
+        assertTrue(bells.is(chains));
         assertTrue(chains.anyAre(bells));
         assertFalse(chains.allAre(bells));
 

@@ -1,7 +1,6 @@
 package teaselib.util;
 
 import static java.util.stream.Collectors.*;
-import static teaselib.core.state.AbstractProxy.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -543,7 +542,7 @@ public class Items implements Iterable<Item> {
      * 
      */
     public State.Options applyTo(Object... peers) {
-        return applyToImpl(item -> item.applyTo(removeProxies(peers)));
+        return applyToImpl(item -> item.applyTo(peers));
     }
 
     private State.Options applyToImpl(Function<Item, State.Options> applyFunction) {

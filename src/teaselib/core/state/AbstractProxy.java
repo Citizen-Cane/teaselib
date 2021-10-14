@@ -2,7 +2,6 @@ package teaselib.core.state;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import teaselib.State;
 import teaselib.core.StateImpl;
@@ -38,17 +37,8 @@ public class AbstractProxy<T> {
         return state.hashCode();
     }
 
-    @SafeVarargs
-    public static <T> Object[] removeProxies(T... peers) {
-        var proxiesRemoved = new Object[peers.length];
-        for (int i = 0; i < peers.length; i++) {
-            proxiesRemoved[i] = removeProxy(peers[i]);
-        }
-        return proxiesRemoved;
-    }
-
     public static List<Object> removeProxies(Collection<Object> peers) {
-        return peers.stream().map(AbstractProxy::removeProxy).collect(Collectors.toList());
+        return peers.stream().map(AbstractProxy::removeProxy).toList();
     }
 
     public static ItemImpl removeProxy(Item item) {

@@ -31,7 +31,7 @@ import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 
-public class StateImpl implements State, State.Options, StateMaps.Attributes {
+public class StateImpl implements State, State.Options, State.Attributes {
     private static final Logger logger = LoggerFactory.getLogger(StateImpl.class);
 
     private static final String FOREVER_KEYWORD = "FOREVER";
@@ -53,7 +53,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private final Set<QualifiedString> attributes = new HashSet<>();
     private boolean applied = false;
 
-    public static class Preconditions {
+    public static class Precondition {
 
         public static Collection<Object> apply(Collection<Object> values) {
             for (Object value : values) {
@@ -294,8 +294,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    private boolean isCached(QualifiedString qualifiedPeer) {
-        return this.stateMaps.stateMap(domain, qualifiedPeer).contains(qualifiedPeer.name().toLowerCase());
+    private boolean isCached(QualifiedString peer) {
+        return this.stateMaps.stateMap(domain, peer).contains(peer);
     }
 
     private void restoreAttributes() {
@@ -364,7 +364,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public State.Options applyTo(Object... attributes) {
-        applyImpl(QualifiedString.map(Preconditions::apply, attributes));
+        applyImpl(QualifiedString.map(Precondition::apply, attributes));
         return this;
     }
 
@@ -410,7 +410,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public void applyAttributes(Object... attributes) {
-        applyAttributesImpl(QualifiedString.map(Preconditions::apply, attributes));
+        applyAttributesImpl(QualifiedString.map(Precondition::apply, attributes));
     }
 
     void applyAttributesImpl(Set<QualifiedString> attributes) {
@@ -423,7 +423,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public boolean is(Object... attributes) {
-        return isImpl(QualifiedString.map(Preconditions::apply, attributes));
+        return isImpl(QualifiedString.map(Precondition::apply, attributes));
     }
 
     public boolean isImpl(Set<QualifiedString> flattenedAttributes) {
@@ -449,19 +449,17 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private static boolean appliedToClass(Set<QualifiedString> available, Set<QualifiedString> desired) {
-        List<QualifiedString> classes = desired.stream().filter(QualifiedString.class::isInstance)
-                .map(QualifiedString.class::cast).filter(element -> element.name().equals(QualifiedString.ANY))
-                .collect(toList());
+        var classes = desired.stream().filter(element -> element.name().equals(QualifiedString.ANY)).toList();
         return classes.stream().filter(clazz -> {
             var className = clazz.namespace();
-            return available.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
-                    .map(QualifiedString::namespace).anyMatch(namespace -> namespace.equalsIgnoreCase(className));
+            return available.stream().map(QualifiedString::namespace)
+                    .anyMatch(namespace -> namespace.equalsIgnoreCase(className));
         }).count() == desired.size();
 
     }
 
     private boolean allGuidsFoundInPeers(Set<QualifiedString> attributes) {
-        List<QualifiedString> guids = attributes.stream().filter(QualifiedString::isItemGuid).toList();
+        List<QualifiedString> guids = attributes.stream().filter(QualifiedString::isItem).toList();
         return peers.containsAll(guids);
     }
 
@@ -590,7 +588,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             throw new IllegalArgumentException("removeFrom requires at least one peer");
         }
 
-        Set<QualifiedString> flattenedPeers = QualifiedString.map(Preconditions::remove, peers2);
+        Set<QualifiedString> flattenedPeers = QualifiedString.map(Precondition::remove, peers2);
         removeFroImpl(flattenedPeers);
     }
 
@@ -641,8 +639,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     public long guidsOfSameKind(QualifiedString item) {
-        return peers.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
-                .filter(QualifiedString::isItemGuid).map(QualifiedString::kind).filter(item.kind()::equals).count();
+        return peers.stream().filter(QualifiedString::isItem).map(QualifiedString::kind).filter(item.kind()::equals)
+                .count();
     }
 
     private void removeRepresentingGuids(QualifiedString value) {
@@ -713,7 +711,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     @Override
     public String toString() {
         String name = "name=" + (domain.isEmpty() ? "" : domain + ".") + item.name();
-        return name + " " + duration + " peers=" + StateMaps.toStringWithoutRecursion(peers);
+        return name + " " + duration + " peers=" + peers;
     }
 
     @Override

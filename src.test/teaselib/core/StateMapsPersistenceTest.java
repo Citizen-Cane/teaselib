@@ -27,7 +27,7 @@ import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 
 @RunWith(Parameterized.class)
-public class StateMapsPersistenceTest extends StateMaps {
+public class StateMapsPersistenceTest extends TestableStateMaps {
     private static final Logger logger = LoggerFactory.getLogger(StateMapsPersistenceTest.class);
 
     public static final String TEST_DOMAIN = "test";

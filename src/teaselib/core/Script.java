@@ -2,7 +2,6 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -219,16 +218,15 @@ public abstract class Script {
     protected void handleAutoRemove() {
         long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
         var persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.Internal.PERSISTED_DOMAINS_STATE);
-        Collection<Object> domains = new ArrayList<>(((StateImpl) persistedDomains).peers());
-        for (Object domain : domains) {
-            if (domain.equals(QualifiedString.of(StateImpl.Domain.LAST_USED))) {
+        List<String> domains = ((StateImpl) persistedDomains).peers().stream().map(QualifiedString::toString).toList();
+        for (String domain : domains) {
+            if (domain.equalsIgnoreCase(StateImpl.Domain.LAST_USED)) {
                 continue;
             } else {
-                domain = domain.equals(QualifiedString.of(StateImpl.Internal.DEFAULT_DOMAIN_NAME))
-                        ? TeaseLib.DefaultDomain
+                domain = domain.equalsIgnoreCase(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain
                         : domain;
-                if (!handleUntilRemoved(domain.toString(), startupTimeSeconds).applied()
-                        && !handleUntilExpired(domain.toString(), startupTimeSeconds).applied()) {
+                if (!handleUntilRemoved(domain, startupTimeSeconds).applied()
+                        && !handleUntilExpired(domain, startupTimeSeconds).applied()) {
                     persistedDomains.removeFrom(domain);
                 }
             }
@@ -246,7 +244,7 @@ public abstract class Script {
     private State handle(String domain, State.Persistence.Until until, long startupTimeSeconds, float limitFactor) {
         var untilState = (StateImpl) teaseLib.state(domain, until);
         Set<QualifiedString> peers = untilState.peers();
-        for (Object peer : new ArrayList<>(peers)) {
+        for (QualifiedString peer : new ArrayList<>(peers)) {
             var state = (StateImpl) teaseLib.state(domain, peer);
             if (!cleanupRemovedUserItemReferences(state)) {
                 remove(state, startupTimeSeconds, limitFactor);

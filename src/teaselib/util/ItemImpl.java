@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.StateImpl;
-import teaselib.core.StateImpl.Preconditions;
+import teaselib.core.StateImpl.Precondition;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
@@ -30,7 +30,7 @@ import teaselib.core.util.Storage;
  * @author Citizen-Cane
  *
  */
-public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Persistable {
+public class ItemImpl implements Item, State.Options, State.Attributes, Persistable {
 
     public static final String Available = "Available";
 
@@ -59,9 +59,9 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         this.displayName = displayName;
         this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
                 guid.guid().orElseThrow() + "." + Available);
-        this.defaultPeers = Collections.unmodifiableSet(map(Preconditions::apply, defaultPeers));
+        this.defaultPeers = Collections.unmodifiableSet(map(Precondition::apply, defaultPeers));
         this.attributes = Collections
-                .unmodifiableSet(map(Preconditions::apply, attributes(guid.kind(), asList(attributes))));
+                .unmodifiableSet(map(Precondition::apply, attributes(guid.kind(), asList(attributes))));
     }
 
     public QualifiedString kind() {
@@ -120,7 +120,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public boolean is(Object... attributes3) {
-        return isImpl(QualifiedString.map(Preconditions::is, attributes3));
+        return isImpl(QualifiedString.map(Precondition::is, attributes3));
     }
 
     private boolean isImpl(Set<QualifiedString> flattenedAttributes) {
@@ -151,8 +151,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private boolean attributeIsMe(Collection<QualifiedString> flattenedAttributes) {
-        return flattenedAttributes.stream().filter(QualifiedString.class::isInstance).map(QualifiedString.class::cast)
-                .anyMatch(this.guid::equals);
+        return flattenedAttributes.stream().anyMatch(this.guid::equals);
     }
 
     private boolean stateAppliesToMe(Collection<QualifiedString> attributes2) {
@@ -219,7 +218,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
-        return applyToImpl(QualifiedString.map(Preconditions::apply, peers));
+        return applyToImpl(QualifiedString.map(Precondition::apply, peers));
     }
 
     private State.Options applyToImpl(Set<QualifiedString> flattenedPeers) {
@@ -295,7 +294,7 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public void removeFrom(Object... peers) {
-        removeInternal(QualifiedString.map(Preconditions::remove, peers));
+        removeInternal(QualifiedString.map(Precondition::remove, peers));
     }
 
     private void removeInternal(Set<QualifiedString> peers) {

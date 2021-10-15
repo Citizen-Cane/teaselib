@@ -1,18 +1,20 @@
 package teaselib.core.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import teaselib.core.StateImpl;
-import teaselib.core.StateMaps;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
 import teaselib.util.ItemImpl;
+import teaselib.util.Items;
 
 public class QualifiedString {
 
@@ -60,11 +62,30 @@ public class QualifiedString {
         }
     }
 
-    public static Set<QualifiedString> map(UnaryOperator<Collection<Object>> typeCheck, Object... peers) {
-        return map(typeCheck.apply(AbstractProxy.removeProxies(StateMaps.flatten(Arrays.asList(peers)))));
+    public static Set<QualifiedString> map(UnaryOperator<Collection<Object>> precondition, Object... peers) {
+        return map(precondition.apply(AbstractProxy.removeProxies(flatten(Arrays.asList(peers)))));
     }
 
-    public static Set<QualifiedString> map(Collection<Object> values) {
+    private static Collection<Object> flatten(Collection<? extends Object> peers) {
+        List<Object> flattenedPeers = new ArrayList<>(peers.size());
+        for (Object peer : peers) {
+            if (peer instanceof Items) {
+                var items = (Items) peer;
+                flattenedPeers.addAll(items.firstOfEachKind());
+            } else if (peer instanceof Collection) {
+                var collection = (Collection<?>) peer;
+                flattenedPeers.addAll(collection);
+            } else if (peer instanceof Object[]) {
+                var list = Arrays.asList(peer);
+                flattenedPeers.addAll(list);
+            } else {
+                flattenedPeers.add(peer);
+            }
+        }
+        return flattenedPeers;
+    }
+
+    private static Set<QualifiedString> map(Collection<Object> values) {
         Set<QualifiedString> mapped = new HashSet<>(values.size());
         for (Object value : values) {
             mapped.add(QualifiedString.of(value));

@@ -902,12 +902,20 @@ public class TeaseLib implements Closeable {
     /**
      * Return the state of an enumeration member
      * 
-     * @param item
+     * @param name
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    public State state(String domain, Object item) {
-        return stateMaps.state(domain, item);
+    public State state(String domain, Enum<?> qualifiedName) {
+        return stateMaps.state(domain, QualifiedString.of(qualifiedName));
+    }
+
+    public State state(String domain, String qualifiedName) {
+        return stateMaps.state(domain, QualifiedString.of(qualifiedName));
+    }
+
+    public State state(String domain, QualifiedString qualifiedName) {
+        return stateMaps.state(domain, qualifiedName);
     }
 
     public State state(String domain, State state) {
@@ -956,14 +964,12 @@ public class TeaseLib implements Closeable {
             String domain = domains.getKey();
             ArrayList<Entry<String, StateMap>> namespaces = new ArrayList<>(domains.getValue().entrySet());
             for (Entry<String, StateMap> namespace : namespaces) {
-                ArrayList<Entry<Object, State>> entries = new ArrayList<>(namespace.getValue().states.entrySet());
-                for (Entry<Object, State> entry : entries) {
+                ArrayList<Entry<String, State>> entries = new ArrayList<>(namespace.getValue().states.entrySet());
+                for (Entry<String, State> entry : entries) {
                     StateImpl state = (StateImpl) entry.getValue();
                     if (state.item.guid().isEmpty() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        List<Item> temporaryPeers = state.peers().stream().filter(QualifiedString.class::isInstance)
-                                .map(QualifiedString.class::cast).filter(QualifiedString::isItemGuid)
-                                .map(peer -> getItem(domain, peer)).filter(item -> !item.is(Until.class))
-                                .collect(toList());
+                        List<Item> temporaryPeers = state.peers().stream().filter(QualifiedString::isItem)
+                                .map(peer -> getItem(domain, peer)).filter(item -> !item.is(Until.class)).toList();
                         if (!temporaryPeers.isEmpty()) {
                             // TODO Too many entries - use Set or contains()
                             temporaryItems.addAll(temporaryPeers);

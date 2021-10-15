@@ -13,10 +13,9 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.ScriptEvents;
 import teaselib.core.ScriptEvents.ItemChangedEventArgs;
-import teaselib.core.StateMaps;
 import teaselib.util.Item;
 
-public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.Attributes {
+public class ItemProxy extends AbstractProxy<Item> implements Item, State.Attributes {
     private static final Logger logger = LoggerFactory.getLogger(ItemProxy.class);
 
     public final Item item;
@@ -108,7 +107,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     }
 
     private void injectNamespace() {
-        ((StateMaps.Attributes) item).applyAttributes(namespace);
+        ((State.Attributes) item).applyAttributes(namespace);
     }
 
     @Override
@@ -168,7 +167,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
 
     @Override
     public void applyAttributes(Object... attributes) {
-        ((StateMaps.Attributes) item).applyAttributes(attributes);
+        ((State.Attributes) item).applyAttributes(attributes);
     }
 
 }

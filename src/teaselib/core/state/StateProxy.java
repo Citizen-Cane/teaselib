@@ -10,14 +10,13 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.ScriptEvents;
 import teaselib.core.StateImpl;
-import teaselib.core.StateMaps;
 import teaselib.core.util.QualifiedString;
 
 /**
  * @author Citizen-Cane
  *
  */
-public class StateProxy extends AbstractProxy<State> implements State, StateMaps.Attributes {
+public class StateProxy extends AbstractProxy<State> implements State, State.Attributes {
     final ScriptEvents events;
 
     public StateProxy(String namespace, State state, ScriptEvents events) {
@@ -42,7 +41,7 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     }
 
     private void injectNamespace() {
-        ((StateMaps.Attributes) state).applyAttributes(namespace);
+        ((State.Attributes) state).applyAttributes(namespace);
 
     }
 
@@ -94,6 +93,6 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
 
     @Override
     public void applyAttributes(Object... attributes) {
-        ((StateMaps.Attributes) state).applyAttributes(attributes);
+        ((State.Attributes) state).applyAttributes(attributes);
     }
 }

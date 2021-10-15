@@ -1,7 +1,6 @@
 package teaselib.core;
 
 import static java.util.concurrent.TimeUnit.*;
-import static java.util.stream.Collectors.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -951,8 +950,7 @@ public class TeaseLib implements Closeable {
     }
 
     public Items relatedItems(String domain, Items items) {
-        return new Items(items.stream().map(AbstractProxy::itemImpl).map(itemImpl -> getItem(domain, itemImpl))
-                .collect(toList()));
+        return new Items(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
     }
 
     /**
@@ -967,7 +965,7 @@ public class TeaseLib implements Closeable {
                 ArrayList<Entry<String, State>> entries = new ArrayList<>(namespace.getValue().states.entrySet());
                 for (Entry<String, State> entry : entries) {
                     StateImpl state = (StateImpl) entry.getValue();
-                    if (state.item.guid().isEmpty() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
+                    if (state.name.guid().isEmpty() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
                         List<Item> temporaryPeers = state.peers().stream().filter(QualifiedString::isItem)
                                 .map(peer -> getItem(domain, peer)).filter(item -> !item.is(Until.class)).toList();
                         if (!temporaryPeers.isEmpty()) {
@@ -985,7 +983,7 @@ public class TeaseLib implements Closeable {
      * Get the item for any object.
      * 
      * @param namespace
-     *            The namespace of the item.
+     *            The name space of the item.
      * @param item
      *            The value to get the item for.
      * @return The item that corresponds to the value.
@@ -998,8 +996,8 @@ public class TeaseLib implements Closeable {
         }
     }
 
-    public Item getItem(String domain, ItemImpl item) {
-        return getItem(domain, item.kind(), item.guid.guid().orElseThrow());
+    private Item getItem(String domain, ItemImpl item) {
+        return getItem(domain, item.kind(), item.name.guid().orElseThrow());
     }
 
     public Item getItem(String domain, QualifiedString guid) {
@@ -1018,7 +1016,7 @@ public class TeaseLib implements Closeable {
 
     public Item findItem(String domain, QualifiedString item, String guid) {
         return items(domain, item).stream().filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
-                .filter(i -> i.guid.guid().orElseThrow().equalsIgnoreCase(guid)).map(Item.class::cast).findFirst()
+                .filter(i -> i.name.guid().orElseThrow().equalsIgnoreCase(guid)).map(Item.class::cast).findFirst()
                 .orElse(Item.NotFound);
     }
 

@@ -228,7 +228,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * dialog messages, which allows for greater flexibility in script dialogs - its just more natural to show the item
      * instead of describing it in every detail.
      * 
-     * @param item
+     * @param name
      *            The items to hint / display.
      */
     public void show(Item... items) {

@@ -24,7 +24,6 @@ import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
-import teaselib.core.util.Storage;
 
 /**
  * @author Citizen-Cane
@@ -37,7 +36,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     final TeaseLib teaseLib;
 
     public final String domain;
-    public final QualifiedString guid;
+    public final QualifiedString name;
     public final String displayName;
     private final TeaseLib.PersistentBoolean available;
     public final Set<QualifiedString> defaultPeers;
@@ -51,36 +50,30 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         this(teaseLib, domain, guid, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString guid, String displayName, Object[] defaultPeers,
+    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString name, String displayName, Object[] defaultPeers,
             Object[] attributes) {
         this.teaseLib = teaseLib;
         this.domain = domain;
-        this.guid = guid;
+        this.name = name;
         this.displayName = displayName;
         this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
-                guid.guid().orElseThrow() + "." + Available);
+                name.guid().orElseThrow() + "." + Available);
         this.defaultPeers = Collections.unmodifiableSet(map(Precondition::apply, defaultPeers));
         this.attributes = Collections
-                .unmodifiableSet(map(Precondition::apply, attributes(guid.kind(), asList(attributes))));
+                .unmodifiableSet(map(Precondition::apply, attributes(name.kind(), asList(attributes))));
     }
 
     public QualifiedString kind() {
-        return guid.kind();
+        return name.kind();
     }
 
     private StateImpl state() {
         return state(kind());
     }
 
-    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
-            throws ReflectiveOperationException {
-        var item = new QualifiedString(storage.next());
-        return (ItemImpl) teaseLib.getItem(domain, item.kind(), item.guid().orElseThrow());
-    }
-
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(guid.toString()));
+        return Arrays.asList(Persist.persist(name.toString()));
     }
 
     private static Set<Object> attributes(QualifiedString kind, List<Object> attributes) {
@@ -107,7 +100,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     @Override
     public String toString() {
-        return guid.guid().orElseThrow() + " " + attributes + " " + teaseLib.state(domain, kind());
+        return name.guid().orElseThrow() + " " + attributes + " " + teaseLib.state(domain, kind());
     }
 
     private static boolean has(Stream<? extends QualifiedString> available, Collection<QualifiedString> desired) {
@@ -151,7 +144,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     }
 
     private boolean attributeIsMe(Collection<QualifiedString> flattenedAttributes) {
-        return flattenedAttributes.stream().anyMatch(this.guid::equals);
+        return flattenedAttributes.stream().anyMatch(this.name::equals);
     }
 
     private boolean stateAppliesToMe(Collection<QualifiedString> attributes2) {
@@ -165,7 +158,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     @Override
     public boolean canApply() {
         if (defaultPeers.isEmpty()) {
-            return !state().is(this.guid);
+            return !state().is(this.name);
         } else {
             return defaultStates().allMatch(state -> !state.applied());
         }
@@ -206,7 +199,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         }
 
         state.applyAttributes(this.attributes);
-        state.applyTo(this.guid);
+        state.applyTo(this.name);
 
         updateLastUsedGuidState();
         return this;
@@ -227,7 +220,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
         StateImpl state = state();
         state.applyAttributes(this.attributes);
-        state.applyTo(this.guid);
+        state.applyTo(this.name);
         state.applyTo(flattenedPeers);
         updateLastUsedGuidState();
         return this;
@@ -235,8 +228,8 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     private void applyInstanceTo(Collection<QualifiedString> items) {
         for (QualifiedString peer : items) {
-            state(peer).applyTo(this.guid);
-            state(peer).applyTo(this.guid.kind());
+            state(peer).applyTo(this.name);
+            state(peer).applyTo(this.name.kind());
         }
     }
 
@@ -258,7 +251,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     public void remember(Until forget) {
         StateImpl state = state();
         state.remember(forget);
-        state(QualifiedString.of(forget)).applyTo(this.guid).remember(forget);
+        state(QualifiedString.of(forget)).applyTo(this.name).remember(forget);
     }
 
     public Collection<QualifiedString> attributesAndPeers() {
@@ -275,8 +268,8 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             for (QualifiedString peer : new ArrayList<>(state.peers())) {
                 if (!peer.isItem()) {
                     StateImpl peerState = state(peer);
-                    peerState.removeFrom(this.guid);
-                    state.removeFrom(this.guid);
+                    peerState.removeFrom(this.name);
+                    state.removeFrom(this.name);
                 }
             }
 
@@ -288,7 +281,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             }
             updateLastUsedGuidState(duration());
         } else {
-            throw new IllegalStateException("This item is not applied: " + guid);
+            throw new IllegalStateException("This item is not applied: " + name);
         }
     }
 
@@ -303,7 +296,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             for (QualifiedString peer : peers) {
                 if (!peer.isItem()) {
                     StateImpl peerState = state(peer);
-                    peerState.removeFrom(this.guid);
+                    peerState.removeFrom(this.name);
                 }
             }
 
@@ -313,7 +306,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             }
             updateLastUsedGuidState(duration());
         } else {
-            throw new IllegalStateException("This item is not applied: " + guid);
+            throw new IllegalStateException("This item is not applied: " + name);
         }
     }
 
@@ -322,7 +315,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         if (state.peerStates().stream().anyMatch(this::containsMyGuid)) {
             return false;
         }
-        state.removeFrom(this.guid);
+        state.removeFrom(this.name);
         return true;
     }
 
@@ -335,7 +328,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     }
 
     private StateImpl lastUsed() {
-        var lastUsedStateName = ReflectionUtils.qualified(guid.kind().toString(), guid.guid().orElseThrow());
+        var lastUsedStateName = ReflectionUtils.qualified(name.kind().toString(), name.guid().orElseThrow());
         return (StateImpl) teaseLib.state(domain, lastUsedStateName);
     }
 
@@ -348,11 +341,11 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     }
 
     private boolean containsMyGuid(StateImpl state) {
-        return state.peers().contains(this.guid);
+        return state.peers().contains(this.name);
     }
 
     private boolean stateIsThis(StateImpl state) {
-        return state.is(this.guid);
+        return state.is(this.name);
     }
 
     @Override
@@ -381,7 +374,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
         result = prime * result + ((displayName == null) ? 0 : displayName.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-        result = prime * result + ((guid == null) ? 0 : guid.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
         result = prime * result + defaultPeers.hashCode();
         result = prime * result + ((teaseLib == null) ? 0 : teaseLib.hashCode());
         result = prime * result + ((available == null) ? 0 : available.hashCode());
@@ -420,10 +413,10 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
                 return false;
         } else if (!domain.equals(other.domain))
             return false;
-        if (guid == null) {
-            if (other.guid != null)
+        if (name == null) {
+            if (other.name != null)
                 return false;
-        } else if (!guid.equals(other.guid))
+        } else if (!name.equals(other.name))
             return false;
         if (!defaultPeers.equals(other.defaultPeers))
             return false;

@@ -47,7 +47,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
     private final StateMaps stateMaps;
     public final String domain;
-    public final QualifiedString item;
+    public final QualifiedString name;
 
     private final Set<QualifiedString> peers = new HashSet<>();
     private final Set<QualifiedString> attributes = new HashSet<>();
@@ -198,11 +198,11 @@ public class StateImpl implements State, State.Options, State.Attributes {
         }
 
         this.domain = domain;
-        this.item = QualifiedString.of(item);
-        if (this.item.guid().isPresent()) {
+        this.name = QualifiedString.of(item);
+        if (this.name.guid().isPresent()) {
             throw new IllegalArgumentException(item.getClass() + ":" + item.toString());
         }
-        this.storage = new StateStorage(this.stateMaps.teaseLib, domain, this.item.toString());
+        this.storage = new StateStorage(this.stateMaps.teaseLib, domain, this.name.toString());
 
         restoreApplied();
         restoreDuration();
@@ -264,22 +264,13 @@ public class StateImpl implements State, State.Options, State.Attributes {
     }
 
     private void restorePersistedPeer(String persisted) {
-        QualifiedString peer;
         try {
-            peer = getPersistedPeer(persisted);
+            QualifiedString peer = Persist.from(persisted);
             addPeerThatHasBeenPersistedWithMe(peer);
         } catch (NoSuchElementException e) {
             logger.warn("Item {} does not exist anymore: {}", persisted, e.getMessage());
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Peer " + persisted + " not restored: " + e.getMessage(), e);
-        }
-    }
-
-    private static QualifiedString getPersistedPeer(String peer) throws ReflectiveOperationException {
-        if (PersistedObject.className(peer).equals(ItemImpl.class.getName())) {
-            throw new UnsupportedOperationException();
-        } else {
-            return Persist.from(peer);
         }
     }
 
@@ -303,7 +294,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
             try {
                 attributes.addAll(Persist.from(ArrayList.class, storage.attributeStorage.value()));
             } catch (ReflectiveOperationException e) {
-                throw new IllegalArgumentException("Cannot restore attributes for state " + this.item + ": ", e);
+                throw new IllegalArgumentException("Cannot restore attributes for state " + this.name + ": ", e);
             }
         }
     }
@@ -381,7 +372,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
                 peers.add(attribute);
                 if (!attribute.isItem()) {
                     StateImpl state = state(attribute);
-                    state.applyImpl(Collections.singleton(item));
+                    state.applyImpl(Collections.singleton(name));
                 }
             }
         }
@@ -494,13 +485,13 @@ public class StateImpl implements State, State.Options, State.Attributes {
                 return duration;
             }
         } else {
-            return state(Domain.LAST_USED, item).duration();
+            return state(Domain.LAST_USED, name).duration();
         }
     }
 
     @Override
     public void remember(Until forget) {
-        if (!item.toString().equalsIgnoreCase(PERSISTED_DOMAINS_STATE)) {
+        if (!name.toString().equalsIgnoreCase(PERSISTED_DOMAINS_STATE)) {
             applyTo(forget);
             var state = stateMaps.teaseLib.state(DefaultDomain, PERSISTED_DOMAINS_STATE);
             String peer = domain.equals(DefaultDomain) ? DEFAULT_DOMAIN_NAME : domain;
@@ -547,7 +538,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
         if (!peers.isEmpty()) {
             var copyOfPeers = new QualifiedString[peers.size()];
             for (QualifiedString peer : peers.toArray(copyOfPeers)) {
-                state(peer).removeFrom(Collections.singletonList(item));
+                state(peer).removeFrom(Collections.singletonList(name));
             }
             peers.clear();
         }
@@ -579,7 +570,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
     private void updateLastUsed(FrozenDuration frozenDuration) {
         // TODO apply with domain name
-        state(Domain.LAST_USED, item).apply().over(frozenDuration).remember(Until.Removed);
+        state(Domain.LAST_USED, name).apply().over(frozenDuration).remember(Until.Removed);
     }
 
     @Override
@@ -604,7 +595,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
                 // TODO assumes all items have the same set of default peers -> remove only disjunct set
                 if (guidsOfSameKind(peer.kind()) == 0) {
                     // reverse callback states to resolve peering
-                    state(peer.kind()).removeFrom(Collections.singletonList(item));
+                    state(peer.kind()).removeFrom(Collections.singletonList(name));
                 }
             }
 
@@ -710,8 +701,8 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
     @Override
     public String toString() {
-        String name = "name=" + (domain.isEmpty() ? "" : domain + ".") + item.name();
-        return name + " " + duration + " peers=" + peers;
+        var toString = "name=" + (domain.isEmpty() ? "" : domain + ".") + name.name();
+        return toString + " " + duration + " peers=" + peers;
     }
 
     @Override
@@ -722,7 +713,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
         result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
         result = prime * result + ((duration == null) ? 0 : duration.hashCode());
-        result = prime * result + ((item == null) ? 0 : item.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
         result = prime * result + ((peers == null) ? 0 : peers.hashCode());
         return result;
     }
@@ -761,10 +752,10 @@ public class StateImpl implements State, State.Options, State.Attributes {
                 return false;
         } else if (!duration.equals(other.duration))
             return false;
-        if (item == null) {
-            if (other.item != null)
+        if (name == null) {
+            if (other.name != null)
                 return false;
-        } else if (!item.equals(other.item))
+        } else if (!name.equals(other.name))
             return false;
         if (peers == null) {
             if (other.peers != null)

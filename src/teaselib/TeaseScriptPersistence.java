@@ -68,7 +68,7 @@ public abstract class TeaseScriptPersistence extends Script {
         }
 
         private Item getItemByGuid(ItemImpl item) {
-            return teaseLib.getItem(name, item.kind(), item.guid.guid().orElseThrow());
+            return teaseLib.getItem(name, item.kind(), item.name.guid().orElseThrow());
         }
 
         public Items items(Enum<?>... values) {

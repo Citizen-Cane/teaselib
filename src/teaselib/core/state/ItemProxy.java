@@ -91,7 +91,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, State.Attrib
     public Options apply() {
         if (applied()) {
             String humanReadableItem = item.displayName() + "(id="
-                    + AbstractProxy.itemImpl(item).guid.guid().orElseThrow() + ")";
+                    + AbstractProxy.itemImpl(item).name.guid().orElseThrow() + ")";
             if (is(namespace)) {
                 String message = humanReadableItem + " already applied";
                 report(message);
@@ -113,7 +113,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, State.Attrib
     @Override
     public void remove() {
         if (!applied()) {
-            String message = AbstractProxy.itemImpl(item).guid + " is not applied";
+            String message = AbstractProxy.itemImpl(item).name + " is not applied";
             report(message);
         }
 

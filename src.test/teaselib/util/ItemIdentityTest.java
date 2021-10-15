@@ -300,16 +300,22 @@ public class ItemIdentityTest {
 
         String persisted = Persist.persist(gag);
         Storage storage = Storage.from(persisted);
-        Item restored = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
+        Item restored = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
 
         assertSame(gag, restored);
 
         script.debugger.clearStateMaps();
         Storage storage2 = Storage.from(persisted);
-        Item restored2 = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
+        Item restored2 = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
 
         assertNotSame(gag, restored2);
         assertEquals(gag, restored2);
+    }
+
+    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
+            throws ReflectiveOperationException {
+        var name = new QualifiedString(storage.next());
+        return (ItemImpl) teaseLib.getItem(domain, name);
     }
 
     @Test

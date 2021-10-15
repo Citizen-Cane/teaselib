@@ -230,7 +230,7 @@ public class UserItemsImpl implements UserItems {
     private static void addItems(ItemMap itemMap, List<ItemImpl> items) {
         for (ItemImpl item : items) {
             Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.kind(), LinkedHashMap<String, Item>::new);
-            allItemsOfThisType.put(item.guid.guid().orElseThrow(), item);
+            allItemsOfThisType.put(item.name.guid().orElseThrow(), item);
         }
     }
 
@@ -265,7 +265,7 @@ public class UserItemsImpl implements UserItems {
 
     private static List<Item> itemsMatchingGuid(Map<String, Item> items, String guid) {
         return items.values().stream().map(ItemImpl.class::cast)
-                .filter(item -> item.guid.guid().orElseThrow().equals(guid)).collect(toList());
+                .filter(item -> item.name.guid().orElseThrow().equals(guid)).collect(toList());
     }
 
     private void addDefaultItem(String domain, QualifiedString kind, ItemMap itemMap, List<Item> all) {

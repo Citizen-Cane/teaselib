@@ -6,8 +6,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import teaselib.State;
-import teaselib.core.util.Persist;
-import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedString;
 
 public class StateMaps {
@@ -42,36 +40,22 @@ public class StateMaps {
      * @return The state.
      */
     State state(String domain, QualifiedString name) {
-        if (PersistedObject.isPersistedString(name.toString())) {
-            var stateMap = stateMap(domain, name);
-            var state = stateMap.get(name);
-            if (state == null) {
-                try {
-                    state = Persist.from(name.toString(), clazz -> teaseLib);
-                } catch (ReflectiveOperationException e) {
-                    throw new IllegalArgumentException("Cannot restore state " + name + ": ", e);
-                }
-                stateMap.put(name, state);
-            }
-            return state;
-        } else {
-            var stateMap = stateMap(domain, name);
-            var state = stateMap.get(name);
-            if (state == null) {
-                state = new StateImpl(this, domain, name.value());
-                stateMap.put(name.kind(), state);
-            }
-            return state;
+        var stateMap = stateMap(domain, name);
+        var state = stateMap.get(name);
+        if (state == null) {
+            state = new StateImpl(this, domain, name);
+            stateMap.put(name.kind(), state);
         }
+        return state;
     }
 
-    State state(String domain, State item) {
-        if (item instanceof StateImpl) {
-            var state = (StateImpl) item;
-            var stateMap = stateMap(domain, state.item);
-            var existing = stateMap.get(state.item);
+    State state(String domain, State state) {
+        if (state instanceof StateImpl) {
+            QualifiedString name = ((StateImpl) state).name;
+            var stateMap = stateMap(domain, name);
+            var existing = stateMap.get(name);
             if (existing == null) {
-                stateMap.put(state.item, state);
+                stateMap.put(name, state);
                 return state;
             } else if (existing == state) {
                 throw new IllegalArgumentException("States cannot be replaced: " + state + " -> " + existing);
@@ -79,7 +63,7 @@ public class StateMaps {
                 return existing;
             }
         } else {
-            throw new UnsupportedOperationException(item.toString());
+            throw new UnsupportedOperationException(state.toString());
         }
     }
 

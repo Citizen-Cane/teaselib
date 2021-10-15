@@ -50,13 +50,13 @@ public class QualifiedString {
             return of(AbstractProxy.removeProxy(state));
         } else if (object instanceof StateImpl) {
             StateImpl state = (StateImpl) object;
-            return state.item;
+            return state.name;
         } else if (object instanceof ItemProxy) {
             ItemProxy item = (ItemProxy) object;
             return of(AbstractProxy.removeProxy(item));
         } else if (object instanceof ItemImpl) {
             ItemImpl item = (ItemImpl) object;
-            return item.guid;
+            return item.name;
         } else {
             throw new UnsupportedOperationException(object.toString());
         }
@@ -177,10 +177,6 @@ public class QualifiedString {
 
     public boolean is(Object object) {
         return equals(QualifiedString.of(object));
-    }
-
-    public String value() {
-        return value;
     }
 
     public Optional<String> guid() {

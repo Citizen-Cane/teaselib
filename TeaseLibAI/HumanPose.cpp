@@ -41,19 +41,15 @@ extern "C"
 		try {
 			HumanPose* humanPose = new HumanPose();
 			return reinterpret_cast<jlong>(humanPose);
-		}
-		catch (invalid_argument& e) {
+		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return 0;
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return 0;
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 		}
 		return 0;
@@ -82,20 +78,16 @@ extern "C"
 			//Objects::requireNonNull(L"device", jrotation);
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 			return humanPose->acquire(env, jdevice, jrotation);
-		}
-		catch (invalid_argument& e) {
+		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return false;
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return false;
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
 			return false;
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 			return false;
 		}
@@ -112,20 +104,16 @@ extern "C"
 			Objects::requireNonNull(L"image", jimage);
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 			return humanPose->acquire(env, jimage);
-		}
-		catch (invalid_argument& e) {
+		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return false;
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return false;
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
 			return false;
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 			return false;
 		}
@@ -144,17 +132,13 @@ extern "C"
 			set<NativeObject*> aspects;
 
 			humanPose->estimate();
-		}
-		catch (invalid_argument& e) {
+		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 		}
 	}
@@ -218,20 +202,16 @@ JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
 		});
 
 		return JNIUtilities::asList(env, results);
-	}
-	catch (invalid_argument& e) {
+	} catch (invalid_argument& e) {
 		JNIException::rethrow(env, e);
 		return nullptr;
-	}
-	catch (exception& e) {
+	} catch (exception& e) {
 		JNIException::rethrow(env, e);
 		return nullptr;
-	}
-	catch (NativeException& e) {
+	} catch (NativeException& e) {
 		JNIException::rethrow(env, e);
 		return nullptr;
-	}
-	catch (JNIException& e) {
+	} catch (JNIException& e) {
 		e.rethrow();
 		return nullptr;
 	}
@@ -249,17 +229,13 @@ JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_dispose
 	try {
 		HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 		delete humanPose;
-	}
-	catch (invalid_argument& e) {
+	} catch (invalid_argument& e) {
 		JNIException::rethrow(env, e);
-	}
-	catch (exception& e) {
+	} catch (exception& e) {
 		JNIException::rethrow(env, e);
-	}
-	catch (NativeException& e) {
+	} catch (NativeException& e) {
 		JNIException::rethrow(env, e);
-	}
-	catch (JNIException& e) {
+	} catch (JNIException& e) {
 		e.rethrow();
 	}
 }

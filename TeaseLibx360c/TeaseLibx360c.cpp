@@ -3,8 +3,12 @@
 
 #include "stdafx.h"
 
+#include <JNIException.h>
+#include <NativeException.h>
+
 #include "teaselib_core_devices_xinput_XInputDevice.h"
 
+using namespace std;
 
 /*
 XInput1_3.dll unnamed ordinals: https://gist.github.com/robindegen/9446175
@@ -60,50 +64,92 @@ void initExtendedFunctions() {
 
 JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_pollDevice
 (JNIEnv *env, jclass cls, jint dwUserIndex, jobject byteBuffer) {
-    // the byte buffer must be allocatedDirect(16)'d in Java...
-    void *bbuf = env->GetDirectBufferAddress(byteBuffer);
-    // ... because we're going to write straight into it
-    XINPUT_STATE *state = (XINPUT_STATE *)bbuf;
-    ZeroMemory(state, sizeof(XINPUT_STATE));
-	initExtendedFunctions();
-	if (XInputGetStateEx) {
-		return XInputGetStateEx(dwUserIndex, state);
-	}
-	else {
-		return XInputGetState(dwUserIndex, state);
+	try {
+		// the byte buffer must be allocatedDirect(16)'d in Java...
+		void *bbuf = env->GetDirectBufferAddress(byteBuffer);
+		// ... because we're going to write straight into it
+		XINPUT_STATE *state = (XINPUT_STATE *)bbuf;
+		ZeroMemory(state, sizeof(XINPUT_STATE));
+		initExtendedFunctions();
+		if (XInputGetStateEx) {
+			return XInputGetStateEx(dwUserIndex, state);
+		} else {
+			return XInputGetState(dwUserIndex, state);
+		}
+	} catch (exception& e) {
+		JNIException::rethrow(env, e);
+		return 0;
+	} catch (NativeException& e) {
+		JNIException::rethrow(env, e);
+		return 0;
+	} catch (JNIException& e) {
+		e.rethrow();
+		return 0;
 	}
 }
 
 JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_getBatteryInformation
 (JNIEnv * env, jclass cls, jint dwUserIndex, jobject byteBuffer) {
-	// the byte buffer must be allocatedDirect(2)'d in Java...
-	void *bbuf = env->GetDirectBufferAddress(byteBuffer);
-	// ... because we're going to write straight into it
-	XINPUT_BATTERY_INFORMATION *batteryInfo = (XINPUT_BATTERY_INFORMATION *)bbuf;
-	ZeroMemory(batteryInfo, sizeof(XINPUT_BATTERY_INFORMATION));
-	return XInputGetBatteryInformation(dwUserIndex, BATTERY_DEVTYPE_GAMEPAD, batteryInfo);
+	try {
+		// the byte buffer must be allocatedDirect(2)'d in Java...
+		void *bbuf = env->GetDirectBufferAddress(byteBuffer);
+		// ... because we're going to write straight into it
+		XINPUT_BATTERY_INFORMATION *batteryInfo = (XINPUT_BATTERY_INFORMATION *)bbuf;
+		ZeroMemory(batteryInfo, sizeof(XINPUT_BATTERY_INFORMATION));
+		return XInputGetBatteryInformation(dwUserIndex, BATTERY_DEVTYPE_GAMEPAD, batteryInfo);
+	} catch (exception& e) {
+		JNIException::rethrow(env, e);
+		return 0;
+	} catch (NativeException& e) {
+		JNIException::rethrow(env, e);
+		return 0;
+	} catch (JNIException& e) {
+		e.rethrow();
+		return 0;
+	}
 }
 
 JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_setVibration
 (JNIEnv *env, jclass cls, jint dwUserIndex, jint leftMotor, jint rightMotor) {
-    XINPUT_VIBRATION vib;
-	vib.wLeftMotorSpeed = static_cast<WORD>(leftMotor);
-    vib.wRightMotorSpeed = static_cast<WORD>(rightMotor);
-    return XInputSetState(dwUserIndex, &vib);
+	try {
+		XINPUT_VIBRATION vib;
+		vib.wLeftMotorSpeed = static_cast<WORD>(leftMotor);
+		vib.wRightMotorSpeed = static_cast<WORD>(rightMotor);
+		return XInputSetState(dwUserIndex, &vib);
+	} catch (exception& e) {
+		JNIException::rethrow(env, e);
+		return 0;
+	} catch (NativeException& e) {
+		JNIException::rethrow(env, e);
+		return 0;
+	} catch (JNIException& e) {
+		e.rethrow();
+		return 0;
+	}
 }
 
 JNIEXPORT jboolean JNICALL Java_teaselib_core_devices_xinput_XInputDevice_shutdownDevice
-(JNIEnv *, jclass, jint dwUserIndex) {
-	XINPUT_VIBRATION vib;
-	vib.wLeftMotorSpeed = static_cast<WORD>(0);
-	vib.wRightMotorSpeed = static_cast<WORD>(0);
-	XInputSetState(dwUserIndex, &vib);
-	initExtendedFunctions();
-	if (XInputShutdownController) {
-		XInputShutdownController(dwUserIndex);
-		return true;
-	}
-	else {
+(JNIEnv *env, jclass, jint dwUserIndex) {
+	try {
+		XINPUT_VIBRATION vib;
+		vib.wLeftMotorSpeed = static_cast<WORD>(0);
+		vib.wRightMotorSpeed = static_cast<WORD>(0);
+		XInputSetState(dwUserIndex, &vib);
+		initExtendedFunctions();
+		if (XInputShutdownController) {
+			XInputShutdownController(dwUserIndex);
+			return true;
+		} else {
+			return false;
+		}
+	} catch (exception& e) {
+		JNIException::rethrow(env, e);
+		return false;
+	} catch (NativeException& e) {
+		JNIException::rethrow(env, e);
+		return false;
+	} catch (JNIException& e) {
+		e.rethrow();
 		return false;
 	}
 }

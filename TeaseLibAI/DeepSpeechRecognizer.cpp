@@ -86,7 +86,7 @@ extern "C"
 			return JNIStringUTF8(env, speechRecognizer->languageCode());
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-			return 0;
+			return nullptr;
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
 			return nullptr;
@@ -107,14 +107,11 @@ extern "C"
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			speechRecognizer->setMaxAlternates(maxAlternates);
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 		}
 	}
@@ -183,14 +180,11 @@ extern "C"
 				all.insert(words.begin(), words.end());
 			});
 			speechRecognizer->setHotWords(all);
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 		}
 	}
@@ -273,8 +267,7 @@ extern "C"
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			speechRecognizer->stopEventLoop();
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);

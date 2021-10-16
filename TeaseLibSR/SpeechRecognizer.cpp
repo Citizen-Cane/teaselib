@@ -138,6 +138,8 @@ void SpeechRecognizer::EventHandler::stopEventLoop()
 {
 	if (hExitEvent != NULL) {
 		unique_lock<mutex> lock(thread, std::defer_lock);
+		// TODO throws with device or resource busy
+		// - without lock, java throws NoSuchELementException and the test thread blocks
 		if (!lock.try_lock()) {
 			SetEvent(hExitEvent);
 			lock.lock();

@@ -233,9 +233,17 @@ extern "C"
     JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_dispose
     (JNIEnv *env, jobject jthis)
 	{
-		SpeechSynthesizer* speechSynthesizer = NativeInstance::get<SpeechSynthesizer>(env, jthis);
+		try {
+			SpeechSynthesizer* speechSynthesizer = NativeInstance::get<SpeechSynthesizer>(env, jthis);
         delete speechSynthesizer;
-    }
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
+		} catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		} catch (JNIException& e) {
+			e.rethrow();
+		}
+	}
 
 
 	////////
@@ -249,8 +257,16 @@ extern "C"
 	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_NativeVoice_dispose
 	(JNIEnv* env, jobject jthis)
 	{
-		Voice* voice = NativeInstance::get<Voice>(env, jthis);
-		delete voice;
+		try {
+			Voice* voice = NativeInstance::get<Voice>(env, jthis);
+			delete voice;
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
+		} catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		} catch (JNIException& e) {
+			e.rethrow();
+		}
 	}
 
 }

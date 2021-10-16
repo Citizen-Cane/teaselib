@@ -30,6 +30,8 @@ extern "C"
 			Objects::requireNonNull(L"path", jpath);
 			VideoCapture* capture = new VideoCapture(JNIStringUTF8(env, jpath));
 			return reinterpret_cast<jlong>(capture);
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
@@ -48,6 +50,8 @@ extern "C"
 		try {
 			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jthis);
 			capture->start();
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
@@ -65,6 +69,8 @@ extern "C"
 		try {
 			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jthis);
 			return capture->started();
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
@@ -83,6 +89,8 @@ extern "C"
 		try {
 			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jthis);
 			capture->stop();
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
@@ -101,8 +109,7 @@ extern "C"
 		try {
 			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jthis);
 			delete capture;
-		}
-		catch (invalid_argument& e) {
+		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);

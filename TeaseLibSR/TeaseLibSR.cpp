@@ -39,6 +39,9 @@ extern "C"
             SpeechRecognizer* speechRecognizer = new SpeechRecognizer(languageCode);
             if (speechRecognizer == nullptr) throw COMException(E_OUTOFMEMORY);
             return reinterpret_cast<jlong>(speechRecognizer);
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
+            return 0;
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
             return 0;
@@ -63,6 +66,8 @@ extern "C"
 				env->CallVoidMethod(jSignalInitialized, env->GetMethodID(env->GetObjectClass(jSignalInitialized), "countDown", "()V"));
 			};
 			speechRecognizer->startEventHandler(env,  jthis, jevents, signalInitialized);
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
         } catch (JNIException& e) {
@@ -80,12 +85,13 @@ extern "C"
         try {
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
             return JNIString(env, speechRecognizer->locale);
-        }
-        catch (NativeException& e) {
+        } catch (exception& e) {
             JNIException::rethrow(env, e);
             return nullptr;
-        }
-        catch (JNIException& e) {
+        } catch (NativeException& e) {
+            JNIException::rethrow(env, e);
+            return nullptr;
+        } catch (JNIException& e) {
             e.rethrow();
             return nullptr;
         }
@@ -103,6 +109,8 @@ extern "C"
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
             const SpeechRecognizer::Choices choices = JNIUtilities::wstrings(env, jchoices);
             speechRecognizer->setChoices(choices);
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
@@ -117,7 +125,7 @@ extern "C"
 */
 	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setChoices___3B
 	(JNIEnv* env , jobject jthis , jbyteArray jsrgs) {
-	try {
+	    try {
             Objects::requireNonNull(L"srgs", jsrgs);
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
 			jboolean isCopy;
@@ -126,11 +134,11 @@ extern "C"
 			if (!stream) throw COMException(E_OUTOFMEMORY);
 
 			speechRecognizer->setChoices(stream);
-		}
-		catch (NativeException& e) {
-			JNIException::rethrow(env, e);
-		}
-		catch (JNIException& e) {
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
+        } catch (NativeException& e) {
+			    JNIException::rethrow(env, e);
+		} catch (JNIException& e) {
 			e.rethrow();
 		}
 	}
@@ -146,6 +154,8 @@ extern "C"
         try {
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->setMaxAlternates(maxAlternates);
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
@@ -163,6 +173,8 @@ extern "C"
         try {
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->startRecognition();
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
@@ -181,8 +193,9 @@ extern "C"
             Objects::requireNonNull(L"emulatedRecognitionResult", emulatedRecognitionResult);
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->emulateRecognition(JNIString(env,emulatedRecognitionResult));
-		}
-		catch (NativeException& e) {
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
+        } catch (NativeException& e) {
 			JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
 			e.rethrow();
@@ -199,6 +212,8 @@ extern "C"
         try {
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->stopRecognition();
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
         } catch (NativeException& e) {
             JNIException::rethrow(env, e);
 		} catch (JNIException& e) {
@@ -217,11 +232,11 @@ extern "C"
         try {
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
             speechRecognizer->stopEventLoop();
-        }
-        catch (NativeException& e) {
+        } catch (exception& e) {
             JNIException::rethrow(env, e);
-        }
-        catch (JNIException& e) {
+        } catch (NativeException& e) {
+            JNIException::rethrow(env, e);
+        } catch (JNIException& e) {
             e.rethrow();
         }
     }
@@ -232,9 +247,17 @@ extern "C"
     * Signature: ()V
     */
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_dispose
-    (JNIEnv *env, jobject jthis) {
-        SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
-        delete speechRecognizer;
+    (JNIEnv* env, jobject jthis) {
+        try {
+            SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
+            delete speechRecognizer;
+        } catch (exception& e) {
+            JNIException::rethrow(env, e);
+        } catch (NativeException& e) {
+            JNIException::rethrow(env, e);
+        } catch (JNIException& e) {
+            e.rethrow();
+        }
     }
 
 }

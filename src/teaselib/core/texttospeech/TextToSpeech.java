@@ -88,7 +88,7 @@ public class TextToSpeech implements Closeable {
     }
 
     private static List<Class<? extends TextToSpeechImplementation>> operatingSpecificSDKs() {
-        return Arrays.asList(TeaseLibTTS.Loquendo.class , TeaseLibTTS.Microsoft.class );
+        return Arrays.asList(TeaseLibTTS.Loquendo.class, TeaseLibTTS.Microsoft.class);
     }
 
     private void addImplementation(Class<? extends TextToSpeechImplementation> ttsClass) {
@@ -278,11 +278,16 @@ public class TextToSpeech implements Closeable {
     @Override
     public void close() {
         for (Entry<String, DelegateExecutor> entry : ttsExecutors.entrySet()) {
-            String key = entry.getKey();
             DelegateExecutor executorService = entry.getValue();
+            String key = entry.getKey();
             executorService.run(ttsSDKs.remove(key)::close);
+        }
+
+        for (Entry<String, DelegateExecutor> entry : ttsExecutors.entrySet()) {
+            DelegateExecutor executorService = entry.getValue();
             executorService.shutdown();
         }
+
         ttsExecutors.clear();
         voices.clear();
     }

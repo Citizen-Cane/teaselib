@@ -21,7 +21,7 @@ const char* SpSpeechSynthesizer::Sdk = "SAPI";
 const wchar_t* SPCAT_VOICES_ONECORE = L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech_OneCore\\Voices";
 const wchar_t* SPCAT_VOICES_SPEECH_SERVER = L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech Server\\v11.0\\Voices";
 
-const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_SERVER,  SPCAT_VOICES };
+const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_SERVER, SPCAT_VOICES };
 
 // The debug version speaks very fast without a mood hint, in order to be able to distinguish mood hints from neutral
 // The release version values are chosen to be barely noticable, they're supposed to be subtile
@@ -40,17 +40,15 @@ const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_S
 
 SpSpeechSynthesizer::SpSpeechSynthesizer(JNIEnv* env)
     : SpeechSynthesizer(env), pVoice(nullptr) {
-    HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
+	HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
     assert(SUCCEEDED(hr));
-    if (FAILED(hr)) {
-        throw COMException(hr);
-    }
-
+	if (FAILED(hr)) throw COMException(hr);
 }
 
 SpSpeechSynthesizer::~SpSpeechSynthesizer() {
-    pVoice->Release();
-    pVoice = nullptr;
+	if (pVoice) {
+		pVoice->Release();
+	}
 }
 
 void SpSpeechSynthesizer::enumerate_voices(jobject jthis, vector<NativeObject*>& voices) {
@@ -190,11 +188,9 @@ void SpSpeechSynthesizer::speak(const wchar_t *prompt) {
 wstring SpSpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path) {
     HRESULT hr = S_OK;
     HRESULT hr2 = S_OK;
-    //Set the audio format
     CSpStreamFormat cAudioFmt;
     hr = cAudioFmt.AssignFormat(SPSF_32kHz16BitMono);
     assert(SUCCEEDED(hr));
-    //Call SPBindToFile, a SAPI helper method, to bind the audio stream to the file
     if (SUCCEEDED(hr)) {
         CComPtr <ISpStream> cpStream;
         hr = SPBindToFile(
@@ -203,11 +199,9 @@ wstring SpSpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path) {
 			&cpStream, &cAudioFmt.FormatId(),
 			cAudioFmt.WaveFormatExPtr(), SPEI_UNDEFINED);
         assert(SUCCEEDED(hr));
-        //set the output to cpStream so that the output audio data will be stored in cpStream
         if (SUCCEEDED(hr)) {
-            hr = pVoice->SetOutput(cpStream, TRUE);
+           hr = pVoice->SetOutput(cpStream, TRUE);
             assert(SUCCEEDED(hr));
-            //Speak the text "hello world" synchronously
             if (SUCCEEDED(hr)) {
 				hr = pVoice->Speak(createPromptWitthHints(prompt).c_str(), SPF_DEFAULT | SPF_PARSE_SAPI | SPF_IS_XML, NULL);
                 assert(SUCCEEDED(hr));
@@ -216,16 +210,10 @@ wstring SpSpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path) {
             hr2 = pVoice->SetOutput(NULL, TRUE);
             assert(SUCCEEDED(hr2));
         }
-        //Release the stream object
         cpStream.Release();
     }
-    assert(SUCCEEDED(hr));
-    if (FAILED(hr)) {
-        throw COMException(hr);
-    }
-    if (FAILED(hr2)) {
-        throw COMException(hr2);
-    }
+    if (FAILED(hr)) throw COMException(hr);
+    if (FAILED(hr2)) throw COMException(hr2);
     return path;
 }
 

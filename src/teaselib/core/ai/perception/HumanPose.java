@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.jni.NativeObject;
 
-public class HumanPose extends NativeObject {
+public class HumanPose extends NativeObject.Disposible {
 
     private long timestamp = 0;
 

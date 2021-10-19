@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -151,9 +152,9 @@ public class TextToSpeechPlayer implements Closeable {
         voices.putAll(sortedVoicesAccordingToSettings(allVoices, preferredVoiceGuids, ignoredVoiceGuids));
 
         if (logger.isInfoEnabled()) {
-            logPreferredVoices(voices, preferredVoiceGuids);
-            logOtherVoices(voices, preferredVoiceGuids, ignoredVoiceGuids);
+            logAvailableVoices(voices);
             logIgnoredVoices(allVoices, ignoredVoiceGuids);
+            logPreferredVoices(voices, preferredVoiceGuids);
         }
     }
 
@@ -169,13 +170,12 @@ public class TextToSpeechPlayer implements Closeable {
         }
     }
 
-    public static void logOtherVoices(Map<String, Voice> voices, Map<String, String> preferredVoiceGuids,
-            Set<String> ignoredVoiceGuids) {
+    public static void logAvailableVoices(Map<String, Voice> voices) {
+        logger.info("Available voices:");
         for (Entry<String, Voice> entry : voices.entrySet()) {
             String key = entry.getKey();
-            if (!preferredVoiceGuids.containsKey(key) && !ignoredVoiceGuids.contains(key)) {
-                logger.info("Using voice {}", voices.get(key));
-            }
+            Voice voice = voices.get(key);
+            logger.info("{}", voice);
         }
     }
 
@@ -268,8 +268,8 @@ public class TextToSpeechPlayer implements Closeable {
             actorKey2TTSVoice.put(actorKey, voice);
             usedVoices.add(voiceGuid);
         } else {
-            logger.info("Actor key={}: assigned voice '{}' not available", actorKey, voiceGuid);
-            throw new IllegalArgumentException(actorKey + "->" + voiceGuid);
+            logger.error("Actor key={}: assigned voice '{}' not available", actorKey, voiceGuid);
+            throw new NoSuchElementException("Unavailable mapping from actor " + actorKey + " to voice " + voiceGuid);
         }
     }
 

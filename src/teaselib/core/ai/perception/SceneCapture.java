@@ -5,7 +5,7 @@ import java.awt.Toolkit;
 
 import teaselib.core.jni.NativeObject;
 
-public class SceneCapture extends NativeObject {
+public class SceneCapture extends NativeObject.Disposible {
     public static final int NoImage = -1;
 
     public final String name;

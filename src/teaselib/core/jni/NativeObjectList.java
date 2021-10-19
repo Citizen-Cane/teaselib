@@ -6,7 +6,8 @@ import java.util.ArrayList;
  * @author Citizen-Cane
  *
  */
-public class NativeObjectList<T extends NativeObject> extends ArrayList<T> implements teaselib.core.Closeable {
+public class NativeObjectList<T extends NativeObject.Disposible> extends ArrayList<T>
+        implements teaselib.core.Closeable {
 
     private static final long serialVersionUID = 1L;
 
@@ -16,7 +17,7 @@ public class NativeObjectList<T extends NativeObject> extends ArrayList<T> imple
 
     @Override
     public void close() {
-        stream().forEach(NativeObject::close);
+        stream().forEach(T::close);
     }
 
 }

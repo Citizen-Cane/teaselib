@@ -8,7 +8,7 @@ import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebug
  * @author Citizen-Cane
  * 
  */
-public class NativeVoice extends NativeObject implements Voice {
+public class NativeVoice extends NativeObject.Aggregated implements Voice {
 
     private final TextToSpeechImplementation ttsImpl;
     /**

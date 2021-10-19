@@ -9,7 +9,7 @@ import java.io.Closeable;
  * @author Citizen-Cane
  *
  */
-public abstract class NativeObject implements Closeable {
+public abstract class NativeObject {
 
     @SuppressWarnings("unused") // used by the native code to store data, e.g. a native object instance
     private final long nativeObject;
@@ -20,9 +20,28 @@ public abstract class NativeObject implements Closeable {
 
     protected abstract void dispose();
 
-    @Override
-    public void close() {
-        dispose();
+    public static abstract class Aggregated extends NativeObject {
+
+        public Aggregated(long nativeObject) {
+            super(nativeObject);
+        }
+
+        @Override
+        protected void dispose() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    public static abstract class Disposible extends NativeObject implements Closeable {
+
+        public Disposible(long nativeObject) {
+            super(nativeObject);
+        }
+
+        @Override
+        public void close() {
+            dispose();
+        }
     }
 
 }

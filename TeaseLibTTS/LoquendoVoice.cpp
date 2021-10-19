@@ -21,8 +21,7 @@ LoquendoVoice::LoquendoVoice(JNIEnv* env, jobject ttsImpl, ttsHandleType hVoice,
 
 LoquendoVoice::~LoquendoVoice()
 {
-	if (hLanguage) ttsDeleteLanguage(hLanguage);
-	if (hVoice) ttsDeleteVoice(hVoice);
+	// hVoice and hLanguage are implicitely deleted in ttsDeleteSEssion() in LoquendoSpeechSynthesizer::dispose()
 }
 
 ttsResultType LoquendoVoice::applyTo(ttsHandleType hReader) const

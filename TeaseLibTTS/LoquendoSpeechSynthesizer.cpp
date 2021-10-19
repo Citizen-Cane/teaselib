@@ -46,6 +46,14 @@ LoquendoSpeechSynthesizer::~LoquendoSpeechSynthesizer()
     dispose();
 }
 
+
+void LoquendoSpeechSynthesizer::dispose()
+{
+    if (hReader) ttsDeleteReader(hReader);
+    if (hSession) ttsDeleteSession(hSession);
+    if (loquendoLibrary) FreeLibrary(loquendoLibrary);
+}
+
 void LoquendoSpeechSynthesizer::enumerate_voices(jobject jttsImpl, vector<NativeObject*>& voices)
 {
     char* id = 0;
@@ -201,11 +209,4 @@ void LoquendoSpeechSynthesizer::checkResult(ttsResultType r)
     if (r != tts_OK) {
         throw runtime_error(ttsGetErrorMessage(r));
     }
-}
-
-void LoquendoSpeechSynthesizer::dispose()
-{
-    if (hReader) ttsDeleteReader(hReader);
-    if (hSession) ttsDeleteSession(hSession);
-    if (loquendoLibrary) FreeLibrary(loquendoLibrary);
 }

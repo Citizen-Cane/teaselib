@@ -88,7 +88,7 @@ public class TextToSpeech implements Closeable {
     }
 
     private static List<Class<? extends TextToSpeechImplementation>> operatingSpecificSDKs() {
-        return Arrays.asList(TeaseLibTTS.Loquendo.class, TeaseLibTTS.Microsoft.class);
+        return Arrays.asList(TeaseLibTTS.Loquendo.class , TeaseLibTTS.Microsoft.class );
     }
 
     private void addImplementation(Class<? extends TextToSpeechImplementation> ttsClass) {

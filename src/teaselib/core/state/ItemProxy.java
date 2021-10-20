@@ -1,7 +1,7 @@
 package teaselib.core.state;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.joining;
+import static java.util.Arrays.*;
+import static java.util.stream.Collectors.*;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -13,10 +13,9 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.ScriptEvents;
 import teaselib.core.ScriptEvents.ItemChangedEventArgs;
-import teaselib.core.StateMaps;
 import teaselib.util.Item;
 
-public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.Attributes {
+public class ItemProxy extends AbstractProxy<Item> implements Item, State.Attributes {
     private static final Logger logger = LoggerFactory.getLogger(ItemProxy.class);
 
     public final Item item;
@@ -67,14 +66,14 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
 
         @Override
         public Persistence over(long duration, TimeUnit unit) {
-            Persistence persistence = options.over(duration, unit);
+            var persistence = options.over(duration, unit);
             events.itemDuration.fire(new ItemChangedEventArgs(item));
             return persistence;
         }
 
         @Override
         public Persistence over(Duration duration) {
-            Persistence persistence = options.over(duration);
+            var persistence = options.over(duration);
             events.itemDuration.fire(new ItemChangedEventArgs(item));
             return persistence;
         }
@@ -91,7 +90,8 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     @Override
     public Options apply() {
         if (applied()) {
-            String humanReadableItem = item.displayName() + "(id=" + AbstractProxy.itemImpl(item).guid.name() + ")";
+            String humanReadableItem = item.displayName() + "(id="
+                    + AbstractProxy.itemImpl(item).name.guid().orElseThrow() + ")";
             if (is(namespace)) {
                 String message = humanReadableItem + " already applied";
                 report(message);
@@ -107,13 +107,13 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     }
 
     private void injectNamespace() {
-        ((StateMaps.Attributes) item).applyAttributes(namespace);
+        ((State.Attributes) item).applyAttributes(namespace);
     }
 
     @Override
     public void remove() {
         if (!applied()) {
-            String message = AbstractProxy.itemImpl(item).guid + " is not applied";
+            String message = AbstractProxy.itemImpl(item).name + " is not applied";
             report(message);
         }
 
@@ -167,7 +167,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
 
     @Override
     public void applyAttributes(Object... attributes) {
-        ((StateMaps.Attributes) item).applyAttributes(attributes);
+        ((State.Attributes) item).applyAttributes(attributes);
     }
 
 }

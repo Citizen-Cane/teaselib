@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Config;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.WildcardPattern;
 import teaselib.core.util.resource.ResourceCache;
@@ -62,7 +62,7 @@ public class ResourceLoader {
     }
 
     private static File getBasePath(File mainScript) {
-        String string = QualifiedItem.of(Config.Assets).toString();
+        String string = QualifiedString.of(Config.Assets).toString();
         String overiddenAssetPath = System.getProperty(string, "");
         if (classLoaderCompatibleResourcePath(overiddenAssetPath).isEmpty()) {
             return mainScript;

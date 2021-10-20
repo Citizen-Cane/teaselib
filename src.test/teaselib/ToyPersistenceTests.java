@@ -3,15 +3,13 @@
  */
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.TeaseLib.DefaultDomain;
+import static org.junit.Assert.*;
+import static teaselib.core.TeaseLib.*;
 
 import org.junit.Test;
 
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
+import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
@@ -61,11 +59,11 @@ public class ToyPersistenceTests {
 
         gag.setAvailable(true);
         assertTrue(script.storage.containsKey(
-                QualifiedName.of(DefaultDomain, QualifiedItem.of(Toys.Gag).toString(), "ball_gag.Available")));
+                QualifiedName.of(DefaultDomain, QualifiedString.of(Toys.Gag).toString(), "ball_gag.Available")));
 
         script.defaultDomain.items(Shoes.Feminine).matching(Shoes.High_Heels).get().setAvailable(true);
         assertTrue(script.storage.containsKey(QualifiedName.of(DefaultDomain,
-                QualifiedItem.of(Shoes.High_Heels).toString(), "high_heels.Available")));
+                QualifiedString.of(Shoes.High_Heels).toString(), "high_heels.Available")));
     }
 
     @Test
@@ -74,10 +72,12 @@ public class ToyPersistenceTests {
 
         script.domain(Clothes.Partner).item(Toys.Collar).setAvailable(true);
         assertTrue(script.storage.containsKey(
-                QualifiedName.of(Clothes.Partner, QualifiedItem.of(Toys.Collar).toString(), "collar.Available")));
+                QualifiedName.of(Clothes.Partner, QualifiedString.of(Toys.Collar).toString(), "collar.Available")));
 
-        script.domain(Clothes.Doll).items(Shoes.Feminine).matching(Shoes.High_Heels).get().setAvailable(true);
-        assertTrue(script.storage.containsKey(
-                QualifiedName.of(Clothes.Doll, QualifiedItem.of(Shoes.High_Heels).toString(), "high_heels.Available")));
+        Item item = script.domain(Clothes.Doll).items(Shoes.Feminine).matching(Shoes.High_Heels).get();
+        assertNotEquals(Item.NotFound, item);
+        item.setAvailable(true);
+        assertTrue(script.storage.containsKey(QualifiedName.of(Clothes.Doll,
+                QualifiedString.of(Shoes.High_Heels).toString(), "high_heels.Available")));
     }
 }

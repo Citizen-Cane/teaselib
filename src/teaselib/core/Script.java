@@ -2,13 +2,13 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -46,7 +46,6 @@ import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethodEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.state.AbstractProxy;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -59,9 +58,9 @@ import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Prompt.Action;
 import teaselib.core.ui.Shower;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.WildcardPattern;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 import teaselib.util.math.Random;
@@ -219,15 +218,17 @@ public abstract class Script {
     protected void handleAutoRemove() {
         long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
         var persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.Internal.PERSISTED_DOMAINS_STATE);
-        Collection<Object> domains = new ArrayList<>(((StateImpl) persistedDomains).peers());
-        for (Object domain : domains) {
-            if (domain.equals(StateImpl.Domain.LAST_USED)) {
+        List<String> domains = ((StateImpl) persistedDomains).peers().stream().map(QualifiedString::toString).toList();
+        for (String domain : domains) {
+            if (domain.equalsIgnoreCase(StateImpl.Domain.LAST_USED)) {
                 continue;
-            } else
-                domain = domain.equals(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain : domain;
-            if (!handleUntilRemoved((String) domain, startupTimeSeconds).applied()
-                    && !handleUntilExpired((String) domain, startupTimeSeconds).applied()) {
-                persistedDomains.removeFrom(domain);
+            } else {
+                domain = domain.equalsIgnoreCase(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain
+                        : domain;
+                if (!handleUntilRemoved(domain, startupTimeSeconds).applied()
+                        && !handleUntilExpired(domain, startupTimeSeconds).applied()) {
+                    persistedDomains.removeFrom(domain);
+                }
             }
         }
     }
@@ -241,10 +242,10 @@ public abstract class Script {
     }
 
     private State handle(String domain, State.Persistence.Until until, long startupTimeSeconds, float limitFactor) {
-        var untilState = teaseLib.state(domain, until);
-        Set<Object> peers = ((StateImpl) untilState).peers();
-        for (Object peer : new ArrayList<>(peers)) {
-            var state = teaseLib.state(domain, peer);
+        var untilState = (StateImpl) teaseLib.state(domain, until);
+        Set<QualifiedString> peers = untilState.peers();
+        for (QualifiedString peer : new ArrayList<>(peers)) {
+            var state = (StateImpl) teaseLib.state(domain, peer);
             if (!cleanupRemovedUserItemReferences(state)) {
                 remove(state, startupTimeSeconds, limitFactor);
             }
@@ -252,10 +253,14 @@ public abstract class Script {
         return untilState;
     }
 
-    private boolean cleanupRemovedUserItemReferences(State state) {
-        var stateImpl = AbstractProxy.stateImpl(state);
-        if (stateImpl.peers().stream().filter(ItemGuid::isGuid).anyMatch(
-                guid -> teaseLib.findItem(stateImpl.domain, stateImpl.item, (ItemGuid) guid) == Item.NotFound)) {
+    private boolean cleanupRemovedUserItemReferences(StateImpl state) {
+        List<QualifiedString> peers = state.peers().stream().filter(peer -> peer.guid().isPresent()).toList();
+
+        List<Item> items = peers.stream().map(peer -> {
+            return teaseLib.findItem(state.domain, peer.kind(), peer.guid().get());
+        }).filter(Predicate.not(Item.NotFound::equals)).toList();
+
+        if (items.isEmpty()) {
             state.remove();
             return true;
         } else {

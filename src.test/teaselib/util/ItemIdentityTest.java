@@ -3,13 +3,7 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +21,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.Storage;
 import teaselib.test.TestScript;
 
@@ -198,10 +192,10 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
         State clothesPinsState = script.state(Household.Clothes_Pegs);
+        Item notApplied = script.item(Household.Clothes_Pegs);
 
         assertFalse(clothesPinsState.applied());
         placeClothesPegs(script, nipples);
-        Item notApplied = script.item(Household.Clothes_Pegs);
         assertFalse(notApplied.applied());
 
         assertTrue(clothesPinsState.applied());
@@ -229,10 +223,10 @@ public class ItemIdentityTest {
     public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnce() {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
-        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+        List<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
         assertTrue(script.state(Body.OnNipples).applied());
-        script.state(Body.OnNipples).removeFrom(Household.Clothes_Pegs);
+        nipples.removeFrom(Household.Clothes_Pegs);
 
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
@@ -240,6 +234,8 @@ public class ItemIdentityTest {
     private static ArrayList<Item> placeClothesPegs(TestScript script, State nipples) {
         int numberOfPegs = 10;
         ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, numberOfPegs);
+
+        script.teaseLib.addUserItems(clothesPegsOnNipples);
 
         for (Item peg : clothesPegsOnNipples) {
             assertFalse(peg.applied());
@@ -267,11 +263,11 @@ public class ItemIdentityTest {
 
     private static ItemImpl createPeg(TestScript script, String name) {
         // TODO Improve serialization to allow for white space
-        return new ItemImpl(script.teaseLib, Household.Clothes_Pegs, TeaseLib.DefaultDomain, new ItemGuid(name),
-                "A_Clothes_Peg");
+        QualifiedString kind = QualifiedString.of(Household.Clothes_Pegs);
+        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(kind, name), "A_Clothes_Peg");
     }
 
-    private static void verifyAllPegsRemoved(TestScript script, State nipples, ArrayList<Item> clothesPegsOnNipples) {
+    private static void verifyAllPegsRemoved(TestScript script, State nipples, List<Item> clothesPegsOnNipples) {
         State pegs = script.state(Household.Clothes_Pegs);
         assertFalse(pegs.applied());
 
@@ -290,7 +286,7 @@ public class ItemIdentityTest {
         Items gags = script.items(Toys.Gag);
 
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-        Item sameRingGag = script.teaseLib.getItem(TeaseLib.DefaultDomain, Toys.Gag, "ring_gag");
+        Item sameRingGag = script.teaseLib.getItem(TeaseLib.DefaultDomain, QualifiedString.of(Toys.Gag), "ring_gag");
         assertEquals(ringGag, sameRingGag);
         assertEquals(sameRingGag, ringGag);
         assertNotSame(ringGag, sameRingGag);
@@ -304,16 +300,22 @@ public class ItemIdentityTest {
 
         String persisted = Persist.persist(gag);
         Storage storage = Storage.from(persisted);
-        Item restored = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
+        Item restored = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
 
         assertSame(gag, restored);
 
         script.debugger.clearStateMaps();
         Storage storage2 = Storage.from(persisted);
-        Item restored2 = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
+        Item restored2 = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
 
         assertNotSame(gag, restored2);
         assertEquals(gag, restored2);
+    }
+
+    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
+            throws ReflectiveOperationException {
+        var name = new QualifiedString(storage.next());
+        return (ItemImpl) teaseLib.getItem(domain, name);
     }
 
     @Test
@@ -651,8 +653,8 @@ public class ItemIdentityTest {
         Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
 
-        QualifiedItem ringGagRef = QualifiedItem.of(ringGag);
-        QualifiedItem bitGagRef = QualifiedItem.of(bitGag);
+        QualifiedString ringGagRef = QualifiedString.of(ringGag);
+        QualifiedString bitGagRef = QualifiedString.of(bitGag);
         assertNotEquals(ringGagRef, bitGagRef);
         assertNotEquals(ringGagRef.toString(), bitGagRef.toString());
 

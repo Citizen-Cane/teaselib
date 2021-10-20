@@ -36,7 +36,7 @@ public final class ReflectionUtils {
     }
 
     public static String qualified(Enum<?> namespace, String name) {
-        return new QualifiedEnum(namespace) + "." + name;
+        return QualifiedString.of(namespace) + "." + name;
     }
 
     public static String qualified(String namespace, String name) {
@@ -55,7 +55,7 @@ public final class ReflectionUtils {
         return clazz.getPackage().getName().replace(".", "/") + "/";
     }
 
-    public static <T extends Enum<?>> T getEnum(QualifiedItem qualifiedItem) {
+    public static <T extends Enum<?>> T getEnum(QualifiedString qualifiedItem) {
         String className = qualifiedItem.namespace();
         try {
             @SuppressWarnings("unchecked")
@@ -90,7 +90,7 @@ public final class ReflectionUtils {
         }
     }
 
-    public static <T extends Enum<?>> T getEnum(Class<T> enumClass, QualifiedItem qualifiedItem) {
+    public static <T extends Enum<?>> T getEnum(Class<T> enumClass, QualifiedString qualifiedItem) {
         for (T value : enumClass.getEnumConstants()) {
             if (value.name().equalsIgnoreCase(qualifiedItem.name())) {
                 return value;

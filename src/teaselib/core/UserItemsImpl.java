@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +9,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -18,6 +19,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -40,12 +42,9 @@ import teaselib.Posture;
 import teaselib.Shoes;
 import teaselib.Toys;
 import teaselib.core.util.ExceptionUtil;
-import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 public class UserItemsImpl implements UserItems {
@@ -94,6 +93,13 @@ public class UserItemsImpl implements UserItems {
 
         loadOrder.add(url);
         clearCachedItems();
+    }
+
+    @Override
+    public void addItems(Collection<Item> items) {
+        ItemMap itemMap = domainMap.get(TeaseLib.DefaultDomain);
+        List<ItemImpl> instances = items.stream().map(ItemImpl.class::cast).collect(Collectors.toList());
+        addItems(itemMap, instances);
     }
 
     public void clearCachedItems() {
@@ -149,9 +155,10 @@ public class UserItemsImpl implements UserItems {
         String guid = attributes.getNamedItem("guid").getNodeValue();
         String displayName = attributes.getNamedItem("displayName").getNodeValue();
 
-        String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
-        Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedItem.of(enumName));
-        List<Enum<?>> defaultPeers = new ArrayList<>(Arrays.asList(defaults(new QualifiedEnum(enumValue))));
+        String namespace = "teaselib." + itemClass.getNodeName();
+        String enumName = namespace + "." + itemName;
+        Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedString.of(enumName));
+        List<Enum<?>> defaultPeers = new ArrayList<>(Arrays.asList(defaults(QualifiedString.of(enumValue))));
         List<Enum<?>> itemAttributes = new ArrayList<>();
 
         NodeList childNodes = itemNode.getChildNodes();
@@ -160,27 +167,28 @@ public class UserItemsImpl implements UserItems {
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 if ("Attribute".equalsIgnoreCase(node.getNodeName())) {
                     String enumClassName = "teaselib." + node.getTextContent().trim();
-                    itemAttributes.add(ReflectionUtils.getEnum(QualifiedItem.of(enumClassName)));
+                    itemAttributes.add(ReflectionUtils.getEnum(QualifiedString.of(enumClassName)));
                 }
                 if ("DefaultPeer".equalsIgnoreCase(node.getNodeName())) {
                     String enumClassName = "teaselib." + node.getTextContent().trim();
-                    defaultPeers.add(ReflectionUtils.getEnum(QualifiedItem.of(enumClassName)));
+                    defaultPeers.add(ReflectionUtils.getEnum(QualifiedString.of(enumClassName)));
                 }
             }
         }
 
-        return new ItemImpl(teaseLib, enumValue, domain, new ItemGuid(guid), //
+        var kind = QualifiedString.of(enumValue);
+        return new ItemImpl(teaseLib, domain, QualifiedString.from(kind, guid), //
                 displayName, defaultPeers.toArray(new Enum<?>[defaultPeers.size()]), //
                 itemAttributes.toArray(new Enum<?>[itemAttributes.size()]));
     }
 
-    private ItemImpl[] getDefaultItem(String domain, QualifiedItem item) {
-        return new ItemImpl[] { new ItemImpl(teaseLib, item.value(), domain, new ItemGuid(item.name()),
-                ItemImpl.createDisplayName(item)) };
+    private ItemImpl getDefaultItem(String domain, QualifiedString kind) {
+        QualifiedString item = QualifiedString.from(kind, kind.name());
+        return new ItemImpl(teaseLib, domain, item, ItemImpl.createDisplayName(item));
     }
 
     @Override
-    public List<Item> get(String domain, QualifiedItem item) {
+    public List<Item> get(String domain, QualifiedString item) {
         var itemMap = getItemMap(domain);
         List<Item> all = collectItems(item, itemMap);
 
@@ -221,12 +229,12 @@ public class UserItemsImpl implements UserItems {
 
     private static void addItems(ItemMap itemMap, List<ItemImpl> items) {
         for (ItemImpl item : items) {
-            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.value, LinkedHashMap<String, Item>::new);
-            allItemsOfThisType.put(item.guid.name(), item);
+            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.kind(), LinkedHashMap<String, Item>::new);
+            allItemsOfThisType.put(item.name.guid().orElseThrow(), item);
         }
     }
 
-    private static List<Item> collectItems(QualifiedItem qualifiedItem, ItemMap itemMap) {
+    private static List<Item> collectItems(QualifiedString qualifiedItem, ItemMap itemMap) {
         List<Item> all = new ArrayList<>();
 
         // // TODO use QualifiedItem as key for item map - requires ItemMap to use QualifiedItem
@@ -240,8 +248,8 @@ public class UserItemsImpl implements UserItems {
         // }
         // }
 
+        var key = qualifiedItem.kind();
         for (Entry<Object, Map<String, Item>> entry : itemMap.entrySet()) {
-            var key = new QualifiedString(qualifiedItem.namespace(), qualifiedItem.name());
             if (key.equals(entry.getKey())) {
                 Optional<String> guid = qualifiedItem.guid();
                 if (guid.isPresent()) {
@@ -256,18 +264,18 @@ public class UserItemsImpl implements UserItems {
     }
 
     private static List<Item> itemsMatchingGuid(Map<String, Item> items, String guid) {
-        return items.values().stream().map(ItemImpl.class::cast).filter(item -> item.guid.name().equals(guid))
-                .collect(toList());
+        return items.values().stream().map(ItemImpl.class::cast)
+                .filter(item -> item.name.guid().orElseThrow().equals(guid)).collect(toList());
     }
 
-    private void addDefaultItem(String domain, QualifiedItem item, ItemMap itemMap, List<Item> all) {
-        List<ItemImpl> defaultItems = Arrays.asList(getDefaultItem(domain, item));
+    private void addDefaultItem(String domain, QualifiedString kind, ItemMap itemMap, List<Item> all) {
+        List<ItemImpl> defaultItems = Collections.singletonList(getDefaultItem(domain, kind));
         addItems(itemMap, defaultItems);
         all.addAll(defaultItems);
     }
 
     @Override
-    public Enum<?>[] defaults(QualifiedItem item) {
+    public Enum<?>[] defaults(QualifiedString item) {
         if (item.namespace().equalsIgnoreCase(Accessoires.class.getName())) {
             return getAccessoiresDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Bondage.class.getName())) {
@@ -287,7 +295,7 @@ public class UserItemsImpl implements UserItems {
         }
     }
 
-    private static Enum<?>[] getAccessoiresDefaults(QualifiedItem item) {
+    private static Enum<?>[] getAccessoiresDefaults(QualifiedString item) {
         if (item.is(Accessoires.Breast_Forms)) {
             return new Body[] { Body.OnNipples };
         } else {
@@ -295,7 +303,7 @@ public class UserItemsImpl implements UserItems {
         }
     }
 
-    private static Enum<?>[] getBondageDefaults(QualifiedItem item) {
+    private static Enum<?>[] getBondageDefaults(QualifiedString item) {
         if (item.is(Bondage.Chains)) {
             return new Body[] {};
         } else if (item.is(Bondage.Rope)) {
@@ -311,19 +319,19 @@ public class UserItemsImpl implements UserItems {
         }
     }
 
-    private static Enum<?>[] getClothesDefaults(@SuppressWarnings("unused") QualifiedItem item) {
+    private static Enum<?>[] getClothesDefaults(@SuppressWarnings("unused") QualifiedString item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getGadgetsDefaults(@SuppressWarnings("unused") QualifiedItem item) {
+    private static Enum<?>[] getGadgetsDefaults(@SuppressWarnings("unused") QualifiedString item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getHouseholdDefaults(@SuppressWarnings("unused") QualifiedItem item) {
+    private static Enum<?>[] getHouseholdDefaults(@SuppressWarnings("unused") QualifiedString item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getShoesDefaults(@SuppressWarnings("unused") QualifiedItem item) {
+    private static Enum<?>[] getShoesDefaults(@SuppressWarnings("unused") QualifiedString item) {
         return new Body[] {};
     }
 
@@ -338,7 +346,7 @@ public class UserItemsImpl implements UserItems {
      *            The item to get defaults for.
      * @return The defaults for the item. An item may not have defaults, in this case the returned array is empty.
      */
-    private static Enum<?>[] getToyDefaults(QualifiedItem item) {
+    private static Enum<?>[] getToyDefaults(QualifiedString item) {
         if (item.is(Toys.Buttplug)) {
             return new Body[] { Body.InButt };
         } else if (item.is(Toys.Ankle_Restraints)) {

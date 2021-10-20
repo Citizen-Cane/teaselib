@@ -1,16 +1,9 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.CannotJerkOff;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.SomethingOnPenis;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.WristsTiedBehindBack;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.Chastity_Device;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.Wrist_Restraints;
+import static java.util.concurrent.TimeUnit.*;
+import static org.junit.Assert.*;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.*;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +27,7 @@ import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 
 @RunWith(Parameterized.class)
-public class StateMapsPersistenceTest extends StateMaps {
+public class StateMapsPersistenceTest extends TestableStateMaps {
     private static final Logger logger = LoggerFactory.getLogger(StateMapsPersistenceTest.class);
 
     public static final String TEST_DOMAIN = "test";
@@ -151,12 +144,13 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
 
+        State chastityDevice = state(TEST_DOMAIN, NestedTestToys.Chastity_Device);
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).remove();
 
         assertFalse(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
-        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
+        assertTrue(chastityDevice.applied());
+        assertTrue(chastityDevice.expired());
 
         state(TEST_DOMAIN, NestedTestToys.Chastity_Device).remove();
 
@@ -196,6 +190,8 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
@@ -416,9 +412,12 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         teaseLib.advanceTime(1, TimeUnit.HOURS);
         state(TEST_DOMAIN, Toys.Ball_Stretcher).removeFrom(Body.OnBalls);
+        State ballStretcher = state(TEST_DOMAIN, Toys.Ball_Stretcher);
+        State onBalls = state(TEST_DOMAIN, Body.OnBalls);
+        assertFalse(onBalls.applied());
         assertEquals("State not completely cleared (excluding auto-removal book-keeping)", isRemembered() ? 3 : 0,
                 script.storageSize());
-        assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
+        assertFalse(ballStretcher.applied());
 
         // False because we removed the item early
         assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).expired());

@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
+import static java.util.concurrent.TimeUnit.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,6 +15,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +38,7 @@ import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Sexuality.Gender;
 import teaselib.State;
+import teaselib.State.Persistence.Until;
 import teaselib.core.Host.Location;
 import teaselib.core.StateMaps.StateMapCache;
 import teaselib.core.configuration.Configuration;
@@ -53,14 +53,12 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.ConfigFileMapping;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
-import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
 import teaselib.util.Daytime;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 import teaselib.util.TeaseLibLogger;
@@ -903,12 +901,20 @@ public class TeaseLib implements Closeable {
     /**
      * Return the state of an enumeration member
      * 
-     * @param item
+     * @param name
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    public State state(String domain, Object item) {
-        return stateMaps.state(domain, item);
+    public State state(String domain, Enum<?> qualifiedName) {
+        return stateMaps.state(domain, QualifiedString.of(qualifiedName));
+    }
+
+    public State state(String domain, String qualifiedName) {
+        return stateMaps.state(domain, QualifiedString.of(qualifiedName));
+    }
+
+    public State state(String domain, QualifiedString qualifiedName) {
+        return stateMaps.state(domain, qualifiedName);
     }
 
     public State state(String domain, State state) {
@@ -930,39 +936,42 @@ public class TeaseLib implements Closeable {
         // TODO provide a set of default item set by the script or user interface to select items for a session
         List<Item> items = new ArrayList<>();
         for (Object item : values) {
-            items.addAll(userItems.get(domain, QualifiedItem.of(item)));
+            items.addAll(userItems.get(domain, QualifiedString.of(item)));
         }
         return new Items(items);
     }
 
     public Items relatedItems(Enum<?> domain, Items items) {
-        return relatedItems(new QualifiedEnum(domain), items);
+        return relatedItems(QualifiedString.of(domain), items);
     }
 
-    public Items relatedItems(QualifiedItem domain, Items items) {
+    public Items relatedItems(QualifiedString domain, Items items) {
         return relatedItems(domain.toString(), items);
     }
 
     public Items relatedItems(String domain, Items items) {
-        return new Items(items.stream().map(AbstractProxy::itemImpl).map(itemImpl -> getItem(domain, itemImpl))
-                .collect(toList()));
+        return new Items(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
     }
 
     /**
      * @return All temporary items
      */
     Items temporaryItems() {
-        List<Item> temporaryItems = new ArrayList<>();
+        Set<Item> temporaryItems = new HashSet<>();
         for (Entry<String, StateMapCache> domains : stateMaps.cache.entrySet()) {
             String domain = domains.getKey();
-            for (Entry<String, StateMap> namespace : new ArrayList<>(domains.getValue().entrySet())) {
-                for (Entry<Object, State> entries : new ArrayList<>(namespace.getValue().states.entrySet())) {
-                    StateImpl state = (StateImpl) entries.getValue();
-                    if (!ItemGuid.isGuid(state.item.toString())
-                            && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        temporaryItems.addAll(state.peers().stream().filter(ItemGuid.class::isInstance)
-                                .map(ItemGuid.class::cast).map(guid -> getItem(domain, state.item, guid.name()))
-                                .collect(Collectors.toList()));
+            ArrayList<Entry<String, StateMap>> namespaces = new ArrayList<>(domains.getValue().entrySet());
+            for (Entry<String, StateMap> namespace : namespaces) {
+                ArrayList<Entry<String, State>> entries = new ArrayList<>(namespace.getValue().states.entrySet());
+                for (Entry<String, State> entry : entries) {
+                    StateImpl state = (StateImpl) entry.getValue();
+                    if (state.name.guid().isEmpty() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
+                        List<Item> temporaryPeers = state.peers().stream().filter(QualifiedString::isItem)
+                                .map(peer -> getItem(domain, peer)).filter(item -> !item.is(Until.class)).toList();
+                        if (!temporaryPeers.isEmpty()) {
+                            // TODO Too many entries - use Set or contains()
+                            temporaryItems.addAll(temporaryPeers);
+                        }
                     }
                 }
             }
@@ -974,7 +983,7 @@ public class TeaseLib implements Closeable {
      * Get the item for any object.
      * 
      * @param namespace
-     *            The namespace of the item.
+     *            The name space of the item.
      * @param item
      *            The value to get the item for.
      * @return The item that corresponds to the value.
@@ -987,11 +996,15 @@ public class TeaseLib implements Closeable {
         }
     }
 
-    public Item getItem(String domain, ItemImpl item) {
-        return getItem(domain, item.value, item.guid.name());
+    private Item getItem(String domain, ItemImpl item) {
+        return getItem(domain, item.kind(), item.name.guid().orElseThrow());
     }
 
-    public Item getItem(String domain, Object item, String guid) {
+    public Item getItem(String domain, QualifiedString guid) {
+        return getItem(domain, guid.kind(), guid.guid().orElseThrow());
+    }
+
+    public Item getItem(String domain, QualifiedString item, String guid) {
         var match = findItem(domain, item, guid);
         if (match == Item.NotFound) {
             throw new NoSuchElementException(
@@ -1001,12 +1014,9 @@ public class TeaseLib implements Closeable {
         }
     }
 
-    public Item findItem(String domain, Object item, ItemGuid guid) {
-        return findItem(domain, item, guid.name());
-    }
-
-    public Item findItem(String domain, Object item, String guid) {
-        return items(domain, item).stream().filter(i -> ((ItemImpl) i).guid.name().equals(guid)).findFirst()
+    public Item findItem(String domain, QualifiedString item, String guid) {
+        return items(domain, item).stream().filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
+                .filter(i -> i.name.guid().orElseThrow().equalsIgnoreCase(guid)).map(Item.class::cast).findFirst()
                 .orElse(Item.NotFound);
     }
 
@@ -1015,6 +1025,10 @@ public class TeaseLib implements Closeable {
     }
 
     public void addUserItems(URL items) {
+        userItems.addItems(items);
+    }
+
+    public void addUserItems(Collection<Item> items) {
         userItems.addItems(items);
     }
 

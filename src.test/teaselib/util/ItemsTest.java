@@ -1,11 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,7 +24,7 @@ import teaselib.TeaseScriptPersistence.Domain;
 import teaselib.Toys;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.math.Varieties;
 
@@ -280,9 +275,9 @@ public class ItemsTest {
         Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Bondage.Chains);
 
         Item chains = chainedUp.get(Bondage.Chains);
-        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
+        assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).kind()));
         chainedUp.get(Toys.Wrist_Restraints).applyTo(Bondage.Chains);
-        assertEquals(QualifiedItem.of(Bondage.Chains), QualifiedItem.of(AbstractProxy.itemImpl(chains).value));
+        assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).kind()));
     }
 
     @Test
@@ -454,8 +449,8 @@ public class ItemsTest {
 
         List<Object> values = new ArrayList<>(restraints.valueSet());
         assertEquals(2, values.size());
-        assertEquals(Toys.Wrist_Restraints, values.get(0));
-        assertEquals(Toys.Ankle_Restraints, values.get(1));
+        assertEquals(QualifiedString.of(Toys.Wrist_Restraints), values.get(0));
+        assertEquals(QualifiedString.of(Toys.Ankle_Restraints), values.get(1));
     }
 
     @Test
@@ -966,7 +961,12 @@ public class ItemsTest {
 
         assertFalse(bells.is(singleChainItem));
         assertFalse(singleChainItem.is(bells));
-        assertFalse(bells.is(chains));
+
+        assertFalse(bells.is(chains.get(0)));
+        assertTrue(bells.is(chains.get(1)));
+
+        // chains contains bells as an item
+        assertTrue(bells.is(chains));
         assertTrue(chains.anyAre(bells));
         assertFalse(chains.allAre(bells));
 

@@ -1,8 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -15,7 +13,7 @@ import teaselib.State;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
-public class StateMapsDurationTest extends StateMaps {
+public class StateMapsDurationTest extends TestableStateMaps {
     public static final String TEST_DOMAIN = "test";
 
     enum Locks {

@@ -1,5 +1,8 @@
 package teaselib.core.state;
 
+import java.util.Collection;
+import java.util.List;
+
 import teaselib.State;
 import teaselib.core.StateImpl;
 import teaselib.util.Item;
@@ -34,15 +37,19 @@ public class AbstractProxy<T> {
         return state.hashCode();
     }
 
-    public static Object[] removeProxies(Object... peers) {
-        Object[] proxiesRemoved = new Object[peers.length];
-        for (int i = 0; i < peers.length; i++) {
-            proxiesRemoved[i] = removeProxy(peers[i]);
-        }
-        return proxiesRemoved;
+    public static List<Object> removeProxies(Collection<Object> peers) {
+        return peers.stream().map(AbstractProxy::removeProxy).toList();
     }
 
-    public static Object removeProxy(Object item) {
+    public static ItemImpl removeProxy(Item item) {
+        return itemImpl(item);
+    }
+
+    public static StateImpl removeProxy(State item) {
+        return stateImpl(item);
+    }
+
+    private static <T> Object removeProxy(T item) {
         if (item instanceof Item) {
             return itemImpl((Item) item);
         } else if (item instanceof State) {

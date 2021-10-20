@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.Devices;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 
 public class LocalNetworkDeviceTests {
     private static final Logger logger = LoggerFactory.getLogger(LocalNetworkDeviceTests.class);
@@ -39,8 +39,8 @@ public class LocalNetworkDeviceTests {
     @Test
     public void ensureConfigSettingNameChangeIsDetected() {
         assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.Settings.EnableDeviceDiscovery",
-                QualifiedItem.of(LocalNetworkDevice.Settings.EnableDeviceDiscovery).toString());
+                QualifiedString.of(LocalNetworkDevice.Settings.EnableDeviceDiscovery).toString());
         assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.Settings.EnableDeviceStatusListener",
-                QualifiedItem.of(LocalNetworkDevice.Settings.EnableDeviceStatusListener).toString());
+                QualifiedString.of(LocalNetworkDevice.Settings.EnableDeviceStatusListener).toString());
     }
 }

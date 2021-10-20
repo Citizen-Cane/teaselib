@@ -3,8 +3,8 @@
  */
 package teaselib;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toList;
+import static java.util.Arrays.*;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,8 +18,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
-import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
@@ -69,7 +68,7 @@ public abstract class TeaseScriptPersistence extends Script {
         }
 
         private Item getItemByGuid(ItemImpl item) {
-            return teaseLib.getItem(name, item.value, item.guid.name());
+            return teaseLib.getItem(name, item.kind(), item.name.guid().orElseThrow());
         }
 
         public Items items(Enum<?>... values) {
@@ -178,10 +177,10 @@ public abstract class TeaseScriptPersistence extends Script {
     public final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain, this);
 
     public Domain domain(Enum<?> domain) {
-        return domain(new QualifiedEnum(domain));
+        return domain(QualifiedString.of(domain));
     }
 
-    public Domain domain(QualifiedItem domain) {
+    public Domain domain(QualifiedString domain) {
         return domain(domain.toString());
     }
 
@@ -264,7 +263,8 @@ public abstract class TeaseScriptPersistence extends Script {
 
     public Items.Query select(Select.AbstractStatement... statements) {
         return () -> {
-            Function<? super Select.AbstractStatement, Items.Query> mapper = statement -> statement.get(query(statement.values));
+            Function<? super Select.AbstractStatement, Items.Query> mapper = statement -> statement
+                    .get(query(statement.values));
             return new Items(
                     stream(statements).map(mapper).map(Items.Query::get).flatMap(Items::stream).collect(toList()));
         };

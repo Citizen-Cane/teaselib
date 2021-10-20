@@ -1,20 +1,74 @@
 package teaselib.core.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
 import teaselib.Material;
+import teaselib.Toys;
 import teaselib.core.Script;
 import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
-import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 public class QualifiedItemTest {
+
+    @Test
+    public void testEquals() {
+        QualifiedString itemFromEnum = QualifiedString.of(Toys.Dildo);
+        assertEquals(itemFromEnum, itemFromEnum);
+
+        QualifiedString itemFromString = QualifiedString.of("teaselib.Toys.Dildo");
+        assertEquals(itemFromEnum, itemFromString);
+        assertEquals(itemFromEnum, QualifiedString.of(Toys.Dildo));
+        assertEquals(itemFromEnum, QualifiedString.of("teaselib.Toys.Dildo"));
+
+        assertNotEquals(itemFromEnum, QualifiedString.of(Toys.Buttplug));
+        assertNotEquals(itemFromEnum, QualifiedString.of("teaselib.Toys.Buttplug"));
+
+        assertEquals(itemFromString, itemFromString);
+        assertEquals(itemFromString, itemFromEnum);
+        assertEquals(itemFromString, QualifiedString.of(Toys.Dildo));
+        assertEquals(itemFromString, QualifiedString.of("teaselib.Toys.Dildo"));
+
+        assertNotEquals(itemFromString, QualifiedString.of("teaselib.Toys.Buttplug"));
+        assertNotEquals(itemFromString, QualifiedString.of(Toys.Buttplug));
+    }
+
+    @Test
+    public void testIs() {
+        QualifiedString itemFromEnum = QualifiedString.of(Toys.Dildo);
+        assertEquals(itemFromEnum, itemFromEnum);
+
+        QualifiedString itemFromString = QualifiedString.of("teaselib.Toys.Dildo");
+        assertEquals(itemFromEnum, itemFromString);
+        assertTrue(itemFromEnum.is(Toys.Dildo));
+        assertTrue(itemFromEnum.is("teaselib.Toys.Dildo"));
+
+        assertFalse(itemFromEnum.is(Toys.Buttplug));
+        assertFalse(itemFromEnum.is("teaselib.Toys.Buttplug"));
+
+        assertEquals(itemFromString, itemFromString);
+        assertEquals(itemFromString, itemFromEnum);
+        assertTrue(itemFromEnum.is(Toys.Dildo));
+        assertTrue(itemFromEnum.is("teaselib.Toys.Dildo"));
+
+        assertFalse(itemFromString.is("teaselib.Toys.Buttplug"));
+        assertFalse(itemFromString.is(Toys.Buttplug));
+    }
+
+    @Test
+    public void testToString() throws Exception {
+        assertEquals("teaselib.Toys.Dildo", QualifiedString.of(Toys.Dildo).toString());
+        assertEquals("teaselib.Toys.Dildo", QualifiedString.of("teaselib.Toys.Dildo").toString());
+    }
+
+    @Test
+    public void testQualifiedEnumNullConstructorArgument() throws Exception {
+        assertThrows(NullPointerException.class, () -> new QualifiedString(null));
+    }
+
     enum TestEnum {
         One;
     }
@@ -22,8 +76,7 @@ public class QualifiedItemTest {
     @Test
     public void testEnum() {
         TestEnum testEnum = TestEnum.One;
-        QualifiedItem one = QualifiedItem.of(testEnum);
-        assertTrue(one instanceof QualifiedEnum);
+        QualifiedString one = QualifiedString.of(testEnum);
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum", one.namespace());
         assertEquals("One", one.name());
     }
@@ -31,8 +84,7 @@ public class QualifiedItemTest {
     @Test
     public void testString() {
         String testString = "teaselib.core.util.QualifiedItemTest.TestEnum.One";
-        QualifiedItem one = QualifiedItem.of(testString);
-        assertTrue(one instanceof QualifiedString);
+        QualifiedString one = QualifiedString.of(testString);
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum", one.namespace());
         assertEquals("One", one.name());
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum.One", one.toString());
@@ -41,8 +93,7 @@ public class QualifiedItemTest {
     @Test
     public void testStringGuid() {
         String testString = "teaselib.core.util.QualifiedItemTest.TestEnum.One#myGuid";
-        QualifiedItem one = QualifiedItem.of(testString);
-        assertTrue(one instanceof QualifiedString);
+        QualifiedString one = QualifiedString.of(testString);
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum", one.namespace());
         assertEquals("One", one.name());
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum.One#myGuid", one.toString());
@@ -52,9 +103,8 @@ public class QualifiedItemTest {
     public void testItem() {
         TestScript testScript = TestScript.getOne();
         Item testItem = testScript.item("teaselib.core.util.QualifiedItemTest.TestEnum.One");
-        QualifiedItem one = QualifiedItem.of(testItem);
+        QualifiedString one = QualifiedString.of(testItem);
 
-        assertTrue(one instanceof QualifiedItemImpl);
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum", one.namespace());
         assertEquals("One", one.name());
         assertEquals("teaselib.core.util.QualifiedItemTest.TestEnum.One#One", one.toString());
@@ -67,9 +117,8 @@ public class QualifiedItemTest {
         assertEquals(Item.NotFound, notFound);
 
         Item testItem = testScript.item("teaselib.Toys.Gag#ring_gag");
-        QualifiedItem gag = QualifiedItem.of(testItem);
+        QualifiedString gag = QualifiedString.of(testItem);
 
-        assertTrue(gag instanceof QualifiedItemImpl);
         assertEquals("teaselib.Toys", gag.namespace());
         assertEquals("Gag", gag.name());
         assertEquals("teaselib.Toys.Gag#ring_gag", gag.toString());
@@ -95,11 +144,12 @@ public class QualifiedItemTest {
         assertNotEquals(one1, one);
         assertNotEquals(one1, oneString);
         assertNotEquals(one1, one2);
-        assertNotEquals(QualifiedItem.of(one1), QualifiedItem.of(one2));
+        assertNotEquals(QualifiedString.of(one1), QualifiedString.of(one2));
     }
 
     private static ItemImpl createOne(Script script, String name) {
-        return new ItemImpl(script.teaseLib, TestEnum.One, TeaseLib.DefaultDomain, new ItemGuid(name), "A_Number");
+        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(TestEnum.One, name),
+                "A_Number");
     }
 
 }

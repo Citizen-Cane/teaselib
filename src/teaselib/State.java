@@ -39,4 +39,8 @@ public interface State {
 
         void remember(Until forget);
     }
+
+    public interface Attributes {
+        void applyAttributes(Object... attributes);
+    }
 }

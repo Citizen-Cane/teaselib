@@ -1,26 +1,14 @@
 package teaselib.core;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import teaselib.State;
-import teaselib.core.state.StateProxy;
-import teaselib.core.util.Persist;
-import teaselib.core.util.PersistedObject;
-import teaselib.core.util.QualifiedItem;
-import teaselib.util.ItemGuid;
-import teaselib.util.ItemImpl;
-import teaselib.util.Items;
+import teaselib.core.util.QualifiedString;
 
 public class StateMaps {
-
-    public interface Attributes {
-        void applyAttributes(Object... attributes);
-    }
 
     class StateMapCache extends HashMap<String, StateMap> {
         private static final long serialVersionUID = 1L;
@@ -33,7 +21,7 @@ public class StateMaps {
     final TeaseLib teaseLib;
     final Domains cache = new Domains();
 
-    public StateMaps(TeaseLib teaseLib) {
+    StateMaps(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
         clear();
     }
@@ -42,159 +30,59 @@ public class StateMaps {
         cache.clear();
     }
 
-    static String toStringWithoutRecursion(Set<Object> peers) {
-        StringBuilder toString = new StringBuilder();
-        toString.append("[");
-        for (Object object : peers) {
-            if (toString.length() > 0) {
-                toString.append(", ");
-            }
-            if (object instanceof StateImpl) {
-                StateImpl state = (StateImpl) object;
-                toString.append("state:" + state.item.toString());
-            } else if (object instanceof ItemImpl) {
-                ItemImpl item = (ItemImpl) object;
-                toString.append("item:" + item.guid.name());
-            } else if (object instanceof ItemGuid) {
-                ItemGuid itemGuid = (ItemGuid) object;
-                toString.append(itemGuid.toString());
-            } else {
-                toString.append(QualifiedItem.of(object).toString());
-            }
-        }
-        toString.append("]");
-        return toString.toString();
-    }
-
     /**
      * Return the state of an enumeration member
      * 
-     * @param item
+     * @param domain
+     *            The domain name
+     * @param name
      *            The enumeration member to return the state for
-     * @return The item state.
+     * @return The state.
      */
-
-    public State state(String domain, Object item) {
-        return state(domain, QualifiedItem.of(item));
+    State state(String domain, QualifiedString name) {
+        var stateMap = stateMap(domain, name);
+        var state = stateMap.get(name);
+        if (state == null) {
+            state = new StateImpl(this, domain, name);
+            stateMap.put(name.kind(), state);
+        }
+        return state;
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends State> T state(String domain, T state) {
-        return (T) state(domain, QualifiedItem.of(state));
-    }
-
-    private State state(String domain, QualifiedItem item) {
-        if (PersistedObject.isPersistedString(item.toString())) {
-            var stateMapForPersistedKey = stateMap(domain, item);
-            var existing = stateMapForPersistedKey.get(item.toString());
-            if (existing != null) {
-                return existing;
-            } else {
-                var persistedKey = item.toString();
-                State state;
-                try {
-                    state = Persist.from(persistedKey, clazz -> teaseLib);
-                } catch (ReflectiveOperationException e) {
-                    throw new IllegalArgumentException("Cannot restore state " + item + ": ", e);
-                }
-                stateMapForPersistedKey.put(persistedKey, state);
-
-                var qualifiedItem = QualifiedItem.of(((StateImpl) state).item);
-                var stateMapForQualifiedKey = stateMap(domain, qualifiedItem);
-                String qualifiedKey = qualifiedItem.name().toLowerCase();
-                stateMapForQualifiedKey.put(qualifiedKey, state);
-                return state;
-            }
-        } else if (item.value() instanceof StateImpl) {
-            var state = (StateImpl) item.value();
-            var stateMap = stateMap(domain, QualifiedItem.of(state.item));
-            String key = item.name().toLowerCase();
-            var existing = stateMap.get(key);
+    State state(String domain, State state) {
+        if (state instanceof StateImpl) {
+            QualifiedString name = ((StateImpl) state).name;
+            var stateMap = stateMap(domain, name);
+            var existing = stateMap.get(name);
             if (existing == null) {
-                stateMap.put(key, state);
+                stateMap.put(name, state);
                 return state;
-            } else if (!existing.equals(item.value())) {
+            } else if (existing == state) {
                 throw new IllegalArgumentException("States cannot be replaced: " + state + " -> " + existing);
             } else {
                 return existing;
             }
         } else {
-            var stateMap = stateMap(domain, item);
-            String key = item.name().toLowerCase();
-            var state = stateMap.get(key);
-            if (state == null) {
-                state = new StateImpl(this, domain, item.value());
-                stateMap.put(key, state);
-            }
-            return state;
+            throw new UnsupportedOperationException(state.toString());
         }
     }
 
-    public static boolean hasAllAttributes(Set<Object> availableAttributes, Object[] desiredAttributes) {
-        return Arrays.stream(desiredAttributes).map(desiredAttribute -> QualifiedItem.of(stripState(desiredAttribute)))
-                .filter(desiredQualifiedAttribute -> availableAttributes.stream()
-                        .map(availableAttribute -> QualifiedItem.of(stripState(availableAttribute)))
-                        .anyMatch(desiredQualifiedAttribute::equals))
-                .count() == desiredAttributes.length;
+    public static boolean hasAllAttributes(Set<QualifiedString> available, Collection<QualifiedString> desired) {
+        Predicate<? super QualifiedString> predicate = attribute -> available.stream().anyMatch(attribute::is);
+        return desired.stream().filter(predicate).count() == desired.size();
     }
 
-    public static Object[] flatten(Object[] peers) {
-        List<Object> flattenedPeers = new ArrayList<>(peers.length);
-        for (Object peer : peers) {
-            if (peer instanceof Items) {
-                Items items = (Items) peer;
-                flattenedPeers.addAll(items.firstOfEachKind());
-            } else if (peer instanceof Collection) {
-                Collection<?> collection = (Collection<?>) peer;
-                flattenedPeers.addAll(collection);
-            } else if (peer instanceof Object[]) {
-                List<Object> list = Arrays.asList(peer);
-                flattenedPeers.addAll(list);
-            } else {
-                flattenedPeers.add(peer);
-            }
-        }
-        return flattenedPeers.toArray(new Object[flattenedPeers.size()]);
+    StateMap stateMap(String domain, QualifiedString item) {
+        return stateMap(domain, item.namespace());
     }
 
-    private static Object stripState(Object value) {
-        if (value instanceof StateImpl) {
-            return stripState((StateImpl) value);
-        } else if (value instanceof StateProxy) {
-            return stripState(((StateProxy) value).state);
-        } else {
-            return value;
-        }
-    }
-
-    private static Object stripState(StateImpl state) {
-        return state.item;
-    }
-
-    StateMap stateMap(String domain, QualifiedItem item) {
-        return stateMap(domain.toLowerCase(), item.namespace().toLowerCase());
-    }
-
-    private StateMap stateMap(String domain, String namespaceKey) {
+    private StateMap stateMap(String domain, String namespace) {
         StateMapCache domainCache = getDomainCache(domain);
-        final StateMap stateMap;
-        if (domainCache.containsKey(namespaceKey)) {
-            stateMap = domainCache.get(namespaceKey);
-        } else {
-            stateMap = new StateMap(domain);
-            domainCache.put(namespaceKey, stateMap);
-        }
-        return stateMap;
+        return domainCache.computeIfAbsent(namespace.toLowerCase(), key -> new StateMap(domain));
     }
 
-    private StateMapCache getDomainCache(String domainKey) {
-        final StateMapCache domainCache;
-        if (cache.containsKey(domainKey)) {
-            domainCache = cache.get(domainKey);
-        } else {
-            domainCache = new StateMapCache();
-            cache.put(domainKey, domainCache);
-        }
-        return domainCache;
+    private StateMapCache getDomainCache(String name) {
+        return cache.computeIfAbsent(name.toLowerCase(), key -> new StateMapCache());
     }
+
 }

@@ -13,7 +13,7 @@ import teaselib.State;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
-public class StateMapsApplyTest extends StateMaps {
+public class StateMapsApplyTest extends TestableStateMaps {
     public static final String TEST_DOMAIN = "test";
 
     enum Locks {

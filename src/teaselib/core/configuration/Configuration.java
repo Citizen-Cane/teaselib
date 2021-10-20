@@ -1,7 +1,7 @@
 package teaselib.core.configuration;
 
-import static java.util.Collections.singletonList;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static java.util.Collections.*;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,8 +22,8 @@ import java.util.Optional;
 import teaselib.core.Closeable;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
-import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 
 /**
@@ -187,14 +187,14 @@ public class Configuration implements Closeable {
     }
 
     public boolean has(String property) {
-        return has(QualifiedItem.of(property));
+        return has(QualifiedString.of(property));
     }
 
     public boolean has(Enum<?> property) {
-        return has(QualifiedItem.of(property));
+        return has(QualifiedString.of(property));
     }
 
-    public boolean has(QualifiedItem property) {
+    public boolean has(QualifiedString property) {
         var item = property.toString();
 
         return sessionProperties.has(item) || //
@@ -203,14 +203,14 @@ public class Configuration implements Closeable {
     }
 
     public String get(String property) {
-        return get(QualifiedItem.of(property));
+        return get(QualifiedString.of(property));
     }
 
     public String get(Enum<?> property) {
-        return get(QualifiedItem.of(property));
+        return get(QualifiedString.of(property));
     }
 
-    public String get(QualifiedItem property) {
+    public String get(QualifiedString property) {
         var item = property.toString();
 
         String value = sessionProperties.get(item);
@@ -232,23 +232,23 @@ public class Configuration implements Closeable {
     }
 
     public Configuration set(String property, String value) {
-        return set(QualifiedItem.of(property), value);
+        return set(QualifiedString.of(property), value);
     }
 
     public Configuration set(Enum<?> property, String value) {
-        return set(QualifiedItem.of(property), value);
+        return set(QualifiedString.of(property), value);
     }
 
     public Configuration set(Enum<?> property, Enum<?> value) {
-        return set(QualifiedItem.of(property), ReflectionUtils.qualifiedName(value));
+        return set(QualifiedString.of(property), ReflectionUtils.qualifiedName(value));
     }
 
-    public Configuration set(QualifiedItem property, String value) {
+    public Configuration set(QualifiedString property, String value) {
         sessionProperties.set(property.toString(), value);
         return this;
     }
 
-    public Configuration setSystemProperty(QualifiedItem property, String value) {
+    public Configuration setSystemProperty(QualifiedString property, String value) {
         System.getProperties().setProperty(property.toString(), value);
         return this;
     }

@@ -40,7 +40,7 @@ import teaselib.core.events.Event;
 import teaselib.core.events.EventArgs;
 import teaselib.core.events.EventSource;
 import teaselib.core.state.AbstractProxy;
-import teaselib.core.util.QualifiedEnum;
+import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
@@ -127,8 +127,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     private void restore(Actuator actuator) {
-        StateImpl actuatorState = (StateImpl) AbstractProxy
-                .removeProxy(teaseLib.state(new QualifiedEnum(Gadgets.Key_Release).toString(), actuatorName(actuator)));
+        StateImpl actuatorState = AbstractProxy.removeProxy(
+                teaseLib.state(QualifiedString.of(Gadgets.Key_Release).toString(), actuatorName(actuator)));
         Items handled = new Items(actuatorState.peers().stream().filter(peer -> peer instanceof Item)
                 .map(item -> (Item) item).collect(Collectors.toList()));
 
@@ -587,7 +587,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         }));
     }
 
-    private Duration duration(Items items) {
+    private static Duration duration(Items items) {
         return items.stream().map(Item::duration).max(Duration::compare).orElse(Duration.Expired);
     }
 

@@ -1,5 +1,8 @@
 package teaselib.util;
 
+import static java.util.Arrays.*;
+import static teaselib.core.util.QualifiedString.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -13,71 +16,71 @@ import java.util.stream.Stream;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.StateImpl;
+import teaselib.core.StateImpl.Precondition;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
-import teaselib.core.util.Storage;
 
 /**
  * @author Citizen-Cane
  *
  */
-public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Persistable {
+public class ItemImpl implements Item, State.Options, State.Attributes, Persistable {
 
     public static final String Available = "Available";
 
     final TeaseLib teaseLib;
 
     public final String domain;
-    public final ItemGuid guid;
-    public final Object value;
+    public final QualifiedString name;
     public final String displayName;
     private final TeaseLib.PersistentBoolean available;
-    public final Object[] defaultPeers;
-    public final Set<Object> attributes;
+    public final Set<QualifiedString> defaultPeers;
+    public final Set<QualifiedString> attributes;
 
-    public static String createDisplayName(Object item) {
-        return item.toString().replace("_", " ");
+    public static String createDisplayName(QualifiedString item) {
+        return item.guid().orElseThrow().replace("_", " ");
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, ItemGuid guid, String displayName) {
-        this(teaseLib, item, domain, guid, displayName, new Object[] {}, new Object[] {});
+    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString guid, String displayName) {
+        this(teaseLib, domain, guid, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, ItemGuid guid, String displayName,
-            Object[] defaultPeers, Object[] attributes) {
+    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString name, String displayName, Object[] defaultPeers,
+            Object[] attributes) {
         this.teaseLib = teaseLib;
-        this.value = item;
         this.domain = domain;
-        this.guid = guid;
+        this.name = name;
         this.displayName = displayName;
-        this.available = teaseLib.new PersistentBoolean(domain, QualifiedItem.of(item).toString(),
-                guid.name() + "." + Available);
-        this.defaultPeers = defaultPeers;
-        this.attributes = attributes(item, attributes);
+        this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
+                name.guid().orElseThrow() + "." + Available);
+        this.defaultPeers = Collections.unmodifiableSet(map(Precondition::apply, defaultPeers));
+        this.attributes = Collections
+                .unmodifiableSet(map(Precondition::apply, attributes(name.kind(), asList(attributes))));
     }
 
-    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
-            throws ReflectiveOperationException {
-        String item = storage.next();
-        ItemGuid guid = storage.next();
-        return (ItemImpl) teaseLib.getItem(domain, item, guid.name());
+    public QualifiedString kind() {
+        return name.kind();
+    }
+
+    private StateImpl state() {
+        return state(kind());
     }
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(QualifiedItem.of(value).toString()), Persist.persist(guid));
+        return Arrays.asList(Persist.persist(name.toString()));
     }
 
-    private static Set<Object> attributes(Object item, Object[] attributes) {
+    private static Set<Object> attributes(QualifiedString kind, List<Object> attributes) {
         Set<Object> all = new HashSet<>();
-        all.add(item);
-        all.addAll(Arrays.asList(attributes));
-        return Collections.unmodifiableSet(all);
+        all.add(kind);
+        all.addAll(attributes);
+        return all;
     }
 
     @Override
@@ -97,75 +100,78 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public String toString() {
-        return guid.name() + " " + attributes + " " + teaseLib.state(domain, value).toString();
+        return name.guid().orElseThrow() + " " + attributes + " " + teaseLib.state(domain, kind());
     }
 
-    boolean has(Object... desired) {
-        Stream<Object> attributesAndPeers = Stream.concat(attributes.stream(), Arrays.stream(defaultPeers));
-        return has(attributesAndPeers, desired);
+    private static boolean has(Stream<? extends QualifiedString> available, Collection<QualifiedString> desired) {
+        return available.filter(element -> contains(desired, QualifiedString.of(element))).count() == desired.size();
     }
 
-    private static boolean has(Stream<Object> available, Object... desired) {
-        return available.filter(element -> contains(desired, QualifiedItem.of(element))).count() == desired.length;
-    }
-
-    static boolean contains(Object[] attributes2, QualifiedItem item) {
-        return Arrays.stream(attributes2).map(QualifiedItem::of).anyMatch(i -> i.equals(item));
+    private static boolean contains(Collection<QualifiedString> elements, QualifiedString value) {
+        return elements.stream().anyMatch(value::is);
     }
 
     @Override
-    // TODO Doesn't work on mixed queries item.is(class, value, state);
     public boolean is(Object... attributes3) {
-        Object[] attributes2 = AbstractProxy.removeProxies(attributes3);
-        if (attributes2.length == 0) {
+        return isImpl(QualifiedString.map(Precondition::is, attributes3));
+    }
+
+    private boolean isImpl(Set<QualifiedString> flattenedAttributes) {
+        if (flattenedAttributes.isEmpty()) {
             return false;
-        } else if (attributes2.length == 1 && attributes2[0] instanceof Item) {
-            // TODO Remove these special cases:
-            // attributes2[0] == this -> ItemIdentityTest.testThatItemIsNotOtherItem
-            // state(value).is(attributes2[0]) -> ItemsTest.testItemAppliedToItems
-            return attributes2[0] == this || state(value).is(attributes2[0]);
-        } else if (has(this.attributes.stream(), attributes2))
-            return true;
-        else {
-            if (StateMaps.hasAllAttributes((state(value)).getAttributes(), attributes2)) {
-                return applied();
-            } else if (state(this).appliedToClassValues(attributes, attributes2)) {
+        } else {
+            if (has(this.attributes.stream(), flattenedAttributes)) {
                 return true;
-            } else if (state(this).appliedToClassState(state(this).peers(), attributes2)) {
+            } else if (attributeIsMe(flattenedAttributes)) {
                 return true;
-            } else if (!stateAppliesToMe(attributes2)) {
-                return false;
             } else {
-                return stateContainsAll(attributes2);
+                StateImpl state = state();
+                if (StateMaps.hasAllAttributes(state.getAttributes(), flattenedAttributes)) {
+                    return applied();
+                } else if (state.appliedToClassValues(attributes, flattenedAttributes)) {
+                    return true;
+                } else if (state.appliedToClassValues(state.peers(), flattenedAttributes)) {
+                    return true;
+                } else if (!stateAppliesToMe(flattenedAttributes)) {
+                    return false;
+                } else if (stateContainsAll(flattenedAttributes)) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
         }
     }
 
-    private boolean stateAppliesToMe(Object[] attributes2) {
-        return Arrays.stream(StateMaps.flatten(attributes2)).map(this::state).allMatch(this::stateIsThis);
+    private boolean attributeIsMe(Collection<QualifiedString> flattenedAttributes) {
+        return flattenedAttributes.stream().anyMatch(this.name::equals);
     }
 
-    private boolean stateContainsAll(Object... attributes) {
-        return state(value).is(attributes);
+    private boolean stateAppliesToMe(Collection<QualifiedString> attributes2) {
+        return attributes2.stream().map(this::state).allMatch(this::stateIsThis);
+    }
+
+    private boolean stateContainsAll(Set<QualifiedString> attributes) {
+        return state().isImpl(attributes);
     }
 
     @Override
     public boolean canApply() {
-        if (defaultPeers.length > 0) {
-            return defaultStates().allMatch(state -> !state.applied());
+        if (defaultPeers.isEmpty()) {
+            return !state().is(this.name);
         } else {
-            return !state(value).is(this);
+            return defaultStates().allMatch(state -> !state.applied());
         }
     }
 
     @Override
     public boolean applied() {
-        StateImpl state = state(value);
+        StateImpl state = state();
         if (state.applied()) {
-            if (defaultPeers.length > 0) {
-                return defaultStates().anyMatch(this::containsMe);
-            } else {
+            if (defaultPeers.isEmpty()) {
                 return containsMyGuid(state);
+            } else {
+                return defaultStates().anyMatch(this::containsMyGuid);
             }
         } else {
             return false;
@@ -174,101 +180,100 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
 
     @Override
     public boolean expired() {
-        return state(value).expired();
+        return state().expired();
     }
 
     @Override
     public Duration duration() {
-        return state(value).duration();
+        return state().duration();
     }
 
     @Override
     public State.Options apply() {
-        StateImpl state = state(value);
+        StateImpl state = state();
 
-        if (defaultPeers.length == 0) {
+        if (defaultPeers.isEmpty()) {
             state.apply();
         } else {
             applyInstanceTo(defaultPeers);
         }
 
-        state.applyTo(this.guid);
-        applyMyAttributesTo(state);
+        state.applyAttributes(this.attributes);
+        state.applyTo(this.name);
+
         updateLastUsedGuidState();
         return this;
     }
 
     @Override
     public State.Options applyTo(Object... peers) {
-        if (peers.length == 0 && defaultPeers.length == 0) {
+        if (peers.length == 0 && defaultPeers.isEmpty()) {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
-        return applyToFlattenedPeers(StateMaps.flatten(peers));
+        return applyToImpl(QualifiedString.map(Precondition::apply, peers));
     }
 
-    private State.Options applyToFlattenedPeers(Object[] flattenedPeers) {
+    private State.Options applyToImpl(Set<QualifiedString> flattenedPeers) {
         applyInstanceTo(defaultPeers);
         applyInstanceTo(flattenedPeers);
 
-        StateImpl state = state(value);
-        applyMyAttributesTo(state);
-        state.applyTo(this.guid);
+        StateImpl state = state();
+        state.applyAttributes(this.attributes);
+        state.applyTo(this.name);
         state.applyTo(flattenedPeers);
         updateLastUsedGuidState();
         return this;
     }
 
-    private void applyMyAttributesTo(StateImpl state) {
-        Object[] array = new Object[attributes.size()];
-        state.applyAttributes(attributes.toArray(array));
-    }
-
-    private void applyInstanceTo(Object... items) {
-        for (Object peer : items) {
-            state(peer).applyTo(this);
+    private void applyInstanceTo(Collection<QualifiedString> items) {
+        for (QualifiedString peer : items) {
+            state(peer).applyTo(this.name);
+            state(peer).applyTo(this.name.kind());
         }
     }
 
     @Override
     public Persistence over(long duration, TimeUnit unit) {
-        StateImpl state = state(value);
+        StateImpl state = state();
         state.over(duration, unit);
         return this;
     }
 
     @Override
     public Persistence over(Duration duration) {
-        StateImpl state = state(value);
+        StateImpl state = state();
         state.over(duration);
         return this;
     }
 
     @Override
     public void remember(Until forget) {
-        StateImpl state = state(value);
+        StateImpl state = state();
         state.remember(forget);
-        state(forget).applyTo(this).remember(forget);
+        state(QualifiedString.of(forget)).applyTo(this.name).remember(forget);
     }
 
-    public Collection<Object> attributesAndPeers() {
-        Collection<Object> attributesAndPeers = new HashSet<>();
+    public Collection<QualifiedString> attributesAndPeers() {
+        Collection<QualifiedString> attributesAndPeers = new HashSet<>();
         attributesAndPeers.addAll(attributes);
-        attributesAndPeers.addAll(Arrays.asList(defaultPeers));
+        attributesAndPeers.addAll(defaultPeers);
         return attributesAndPeers;
     }
 
     @Override
     public void remove() {
-        StateImpl state = state(value);
+        StateImpl state = state();
         if (containsMyGuid(state)) {
-            for (Object peer : new ArrayList<>(state.peers())) {
-                if (!(peer instanceof ItemGuid)) {
+            for (QualifiedString peer : new ArrayList<>(state.peers())) {
+                if (!peer.isItem()) {
                     StateImpl peerState = state(peer);
-                    peerState.removeFrom(this);
-                    state.removeFrom(this.guid);
+                    peerState.removeFrom(this.name);
+                    state.removeFrom(this.name);
                 }
             }
+
+            // TODO better: remove only peers of this instances that are not peered by any other item
 
             releaseInstanceGuid();
             if (state.peers().isEmpty()) {
@@ -276,22 +281,22 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             }
             updateLastUsedGuidState(duration());
         } else {
-            throw new IllegalStateException("This item is not applied: " + guid);
+            throw new IllegalStateException("This item is not applied: " + name);
         }
     }
 
     @Override
     public void removeFrom(Object... peers) {
-        removeInternal(StateMaps.flatten(peers));
+        removeInternal(QualifiedString.map(Precondition::remove, peers));
     }
 
-    private void removeInternal(Object... peers) {
-        StateImpl state = state(value);
+    private void removeInternal(Set<QualifiedString> peers) {
+        StateImpl state = state();
         if (containsMyGuid(state)) {
-            for (Object peer : peers) {
-                if (!(peer instanceof ItemGuid)) {
+            for (QualifiedString peer : peers) {
+                if (!peer.isItem()) {
                     StateImpl peerState = state(peer);
-                    peerState.removeFrom(this);
+                    peerState.removeFrom(this.name);
                 }
             }
 
@@ -301,21 +306,16 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
             }
             updateLastUsedGuidState(duration());
         } else {
-            throw new IllegalStateException("This item is not applied: " + guid);
+            throw new IllegalStateException("This item is not applied: " + name);
         }
     }
 
     public boolean releaseInstanceGuid() {
-        StateImpl state = state(value);
-        if (peersReferenceMe(state)) {
+        StateImpl state = state();
+        if (state.peerStates().stream().anyMatch(this::containsMyGuid)) {
             return false;
         }
-
-        if (state.peerStates().anyMatch(this::containsMe)) {
-            return false;
-        }
-
-        state.removeFrom(this.guid);
+        state.removeFrom(this.name);
         return true;
     }
 
@@ -328,44 +328,29 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
     }
 
     private StateImpl lastUsed() {
-        var itemGuid = ReflectionUtils.qualified(QualifiedItem.of(value).toString(), guid.name());
-        var lastUsed = (StateImpl) teaseLib.state(TeaseLib.DefaultDomain, itemGuid);
-        return lastUsed;
+        var lastUsedStateName = ReflectionUtils.qualified(name.kind().toString(), name.guid().orElseThrow());
+        return (StateImpl) teaseLib.state(domain, lastUsedStateName);
     }
 
     private Stream<StateImpl> defaultStates() {
-        return Arrays.stream(defaultPeers).map(this::state);
+        return defaultPeers.stream().map(this::state);
     }
 
-    private StateImpl state(Object peer) {
+    private StateImpl state(QualifiedString peer) {
         return (StateImpl) teaseLib.state(domain, peer);
     }
 
-    private boolean containsMe(StateImpl state) {
-        return state.peers().contains(this);
-    }
-
     private boolean containsMyGuid(StateImpl state) {
-        return state.peers().contains(this.guid);
-    }
-
-    private static boolean isItemImpl(Object peer) {
-        return peer instanceof ItemImpl;
+        return state.peers().contains(this.name);
     }
 
     private boolean stateIsThis(StateImpl state) {
-        return state.is(this);
-    }
-
-    private static boolean peersReferenceMe(StateImpl state) {
-        Set<Object> peers = state.peers();
-        return peers.stream().filter(ItemImpl::isItemImpl).map(peer -> (ItemImpl) peer).map(itemImpl -> itemImpl.guid)
-                .filter(peers::contains).count() > 0;
+        return state.is(this.name);
     }
 
     @Override
     public void applyAttributes(Object... attributes) {
-        state(value).applyAttributes(attributes);
+        state().applyAttributes(attributes);
     }
 
     @Override
@@ -389,8 +374,8 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
         result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
         result = prime * result + ((displayName == null) ? 0 : displayName.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-        result = prime * result + ((value == null) ? 0 : value.hashCode());
-        result = prime * result + Arrays.hashCode(defaultPeers);
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + defaultPeers.hashCode();
         result = prime * result + ((teaseLib == null) ? 0 : teaseLib.hashCode());
         result = prime * result + ((available == null) ? 0 : available.hashCode());
         return result;
@@ -428,12 +413,12 @@ public class ItemImpl implements Item, State.Options, StateMaps.Attributes, Pers
                 return false;
         } else if (!domain.equals(other.domain))
             return false;
-        if (value == null) {
-            if (other.value != null)
+        if (name == null) {
+            if (other.name != null)
                 return false;
-        } else if (!value.equals(other.value))
+        } else if (!name.equals(other.name))
             return false;
-        if (!Arrays.equals(defaultPeers, other.defaultPeers))
+        if (!defaultPeers.equals(other.defaultPeers))
             return false;
         if (teaseLib == null) {
             if (other.teaseLib != null)

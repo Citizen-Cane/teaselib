@@ -1,23 +1,118 @@
 package teaselib.core.util;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.UnaryOperator;
 
-public class QualifiedString extends AbstractQualifiedItem<String> {
+import teaselib.core.StateImpl;
+import teaselib.core.state.AbstractProxy;
+import teaselib.core.state.ItemProxy;
+import teaselib.core.state.StateProxy;
+import teaselib.util.ItemImpl;
+import teaselib.util.Items;
 
-    private final Optional<String> guid;
+public class QualifiedString {
+
+    /**
+     * Denotes the name of any item or state of the given name space, enumeration or class.
+     */
+    public static final String ANY = "*";
+
+    public static QualifiedString from(QualifiedString kind, String guid) {
+        return new QualifiedString(kind.namespace(), kind.name(), guid);
+    }
+
+    public static QualifiedString from(Enum<?> kind, String guid) {
+        return QualifiedString.from(QualifiedString.of(kind), guid);
+    }
+
+    public static QualifiedString of(Class<?> clazz) {
+        return new QualifiedString(ReflectionUtils.qualified(clazz), ANY);
+    }
+
+    public static QualifiedString of(Object object) {
+        if (object instanceof String) {
+            return new QualifiedString((String) object);
+        } else if (object instanceof Enum<?>) {
+            Enum<?> item = (Enum<?>) object;
+            return new QualifiedString(ReflectionUtils.qualifiedName(item));
+        } else if (object instanceof QualifiedString) {
+            return (QualifiedString) object;
+        } else if (object instanceof Class<?>) {
+            return QualifiedString.of((Class<?>) object);
+        } else if (object instanceof StateProxy) {
+            StateProxy state = (StateProxy) object;
+            return of(AbstractProxy.removeProxy(state));
+        } else if (object instanceof StateImpl) {
+            StateImpl state = (StateImpl) object;
+            return state.name;
+        } else if (object instanceof ItemProxy) {
+            ItemProxy item = (ItemProxy) object;
+            return of(AbstractProxy.removeProxy(item));
+        } else if (object instanceof ItemImpl) {
+            ItemImpl item = (ItemImpl) object;
+            return item.name;
+        } else {
+            throw new UnsupportedOperationException(object.toString());
+        }
+    }
+
+    public static Set<QualifiedString> map(UnaryOperator<Collection<Object>> precondition, Object... peers) {
+        return map(precondition.apply(AbstractProxy.removeProxies(flatten(Arrays.asList(peers)))));
+    }
+
+    private static Collection<Object> flatten(Collection<? extends Object> peers) {
+        List<Object> flattenedPeers = new ArrayList<>(peers.size());
+        for (Object peer : peers) {
+            if (peer instanceof Items) {
+                var items = (Items) peer;
+                flattenedPeers.addAll(items.firstOfEachKind());
+            } else if (peer instanceof Collection) {
+                var collection = (Collection<?>) peer;
+                flattenedPeers.addAll(collection);
+            } else if (peer instanceof Object[]) {
+                var list = Arrays.asList(peer);
+                flattenedPeers.addAll(list);
+            } else {
+                flattenedPeers.add(peer);
+            }
+        }
+        return flattenedPeers;
+    }
+
+    private static Set<QualifiedString> map(Collection<Object> values) {
+        Set<QualifiedString> mapped = new HashSet<>(values.size());
+        for (Object value : values) {
+            mapped.add(QualifiedString.of(value));
+        }
+        return mapped;
+    }
+
+    private final String value;
+    private final String guid;
 
     public QualifiedString(String value) {
-        super(valueWithoutGuid(value));
+        this.value = valueWithoutGuid(value);
         if (this.value != value) {
-            guid = Optional.of(value.substring(this.value.length() + 1));
+            this.guid = value.substring(this.value.length() + 1);
         } else {
-            guid = Optional.empty();
+            this.guid = null;
         }
     }
 
     public QualifiedString(String namespace, String name) {
-        super(ReflectionUtils.qualified(namespace, name));
-        guid = Optional.empty();
+        this.value = ReflectionUtils.qualified(namespace, name);
+        this.guid = null;
+    }
+
+    public QualifiedString(String namespace, String name, String guid) {
+        this.value = ReflectionUtils.qualified(namespace, name);
+        this.guid = guid;
     }
 
     private static String valueWithoutGuid(String value) {
@@ -30,52 +125,83 @@ public class QualifiedString extends AbstractQualifiedItem<String> {
     }
 
     @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((guid == null) ? 0 : guid.toLowerCase().hashCode());
+        result = prime * result + ((value == null) ? 0 : value.toLowerCase().hashCode());
+        return result;
+    }
+
+    @Override
     public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
         if (obj == null)
             return false;
-        if (obj instanceof QualifiedObject) {
-            if (this == obj)
-                return true;
-            QualifiedObject other = (QualifiedObject) obj;
-            if (value == null) {
-                return other.value == null;
-            } else {
-                return value.equalsIgnoreCase(other.value.toString());
-            }
-        } else if (obj instanceof Enum<?>) {
-            return toString().equalsIgnoreCase(ReflectionUtils.qualifiedName((Enum<?>) obj));
+        if (getClass() != obj.getClass())
+            return false;
+        QualifiedString other = (QualifiedString) obj;
+        if (guid == null) {
+            if (other.guid != null)
+                return false;
+        } else if (!guid.equalsIgnoreCase(other.guid))
+            return false;
+        if (value == null) {
+            if (other.value != null)
+                return false;
+        } else if (!value.equalsIgnoreCase(other.value))
+            return false;
+        return true;
+    }
+
+    public String namespace() {
+        if (value.contains(".")) {
+            return value.substring(0, value.lastIndexOf('.'));
         } else {
-            return this.toString().equalsIgnoreCase(obj.toString());
+            return value;
         }
     }
 
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    @Override
-    public String namespace() {
-        return QualifiedItem.namespaceOf(value);
-    }
-
-    @Override
     public String name() {
-        return QualifiedItem.nameOf(value);
+        if (value.contains(".")) {
+            return value.substring(value.lastIndexOf('.') + 1);
+        } else {
+            return value;
+        }
     }
 
-    @Override
+    public QualifiedString kind() {
+        return new QualifiedString(namespace(), name());
+    }
+
+    public boolean is(Object object) {
+        return equals(QualifiedString.of(object));
+    }
+
     public Optional<String> guid() {
-        return guid;
+        return guid != null ? Optional.of(guid) : Optional.empty();
+    }
+
+    public boolean isItem() {
+        return guid != null;
+    }
+
+    public static boolean isItemGuid(Object obj) {
+        return obj instanceof QualifiedString && ((QualifiedString) obj).guid().isPresent();
     }
 
     @Override
     public String toString() {
-        if (guid.isPresent()) {
+        if (guid != null) {
             return toString(value, guid);
         } else {
             return value;
         }
+    }
+
+    static String toString(String path, String guid) {
+        return path + "#" + guid;
     }
 
 }

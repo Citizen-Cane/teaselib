@@ -3,12 +3,10 @@ package teaselib.core;
 import static java.util.concurrent.TimeUnit.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -157,25 +155,8 @@ public class TeaseLib implements Closeable {
         return transcriptLogger;
     }
 
-    public static void run(Host host, File scriptClassPath, String script)
-            throws IOException, ReflectiveOperationException {
-        run(host, scriptClassPath, new TeaseLibConfigSetup(host), script);
-    }
-
-    public static void run(Host host, File scriptClassPath, Setup setup, String script)
-            throws ReflectiveOperationException, IOException {
-        if (!scriptClassPath.exists()) {
-            throw new FileNotFoundException(scriptClassPath.getAbsolutePath());
-        }
-
-        try (URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();) {
-            Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
-            var method = classLoaderClass.getDeclaredMethod("addURL", URL.class);
-            method.setAccessible(true);
-            method.invoke(classLoader, scriptClassPath.toURI().toURL());
-            logger.info("Added class path {}", scriptClassPath.getAbsolutePath());
-            run(host, setup, script);
-        }
+    public static void run(Host host, String script) throws IOException {
+        run(host, new TeaseLibConfigSetup(host), script);
     }
 
     public static void run(Host host, Setup setup, String script) throws IOException {

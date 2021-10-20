@@ -173,7 +173,7 @@ public class SpeechRecognitionTestUtils {
             } else {
                 logger.info("Rejected without result");
             }
-            prompt.lock.tryLock();
+            prompt.lock.lockInterruptibly();
             try {
                 prompt.click.signalAll();
             } finally {

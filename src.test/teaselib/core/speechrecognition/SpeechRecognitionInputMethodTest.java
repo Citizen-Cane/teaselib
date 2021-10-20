@@ -1,9 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.getInputMethod;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -216,17 +214,18 @@ public class SpeechRecognitionInputMethodTest {
         TestScript script = TestScript.getOne(new DebugSetup().withInput());
         script.debugger.detach();
 
-        InputMethods inputMethods = script.teaseLib.globals.get(InputMethods.class);
-        SpeechRecognitionInputMethod speechRecognition = inputMethods.get(SpeechRecognitionInputMethod.class);
+        try (InputMethods inputMethods = script.teaseLib.globals.get(InputMethods.class);) {
+            SpeechRecognitionInputMethod speechRecognition = inputMethods.get(SpeechRecognitionInputMethod.class);
 
-        assertEquals("Foo", script.reply(() -> {
-            assertEquals("Bar", script.reply(() -> {
-                speechRecognition.emulateRecogntion("Bar");
+            assertEquals("Foo", script.reply(() -> {
+                assertEquals("Bar", script.reply(() -> {
+                    speechRecognition.emulateRecogntion("Bar");
+                    script.sleep(4, TimeUnit.SECONDS);
+                }, "Bar"));
+                speechRecognition.emulateRecogntion("Foo");
                 script.sleep(4, TimeUnit.SECONDS);
-            }, "Bar"));
-            speechRecognition.emulateRecogntion("Foo");
-            script.sleep(4, TimeUnit.SECONDS);
-        }, "Foo"));
+            }, "Foo"));
+        }
     }
 
 }

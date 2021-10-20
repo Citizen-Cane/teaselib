@@ -1,8 +1,7 @@
 package teaselib.core.ai;
 
-import static teaselib.core.jni.NativeLibraries.TEASELIB;
-import static teaselib.core.jni.NativeLibraries.TEASELIB_AI;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.jni.NativeLibraries.*;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -58,9 +57,15 @@ public class TeaseLibAI implements Closeable {
 
     @Override
     public void close() {
+        // TOOD replace simplified caching with executor->List<Model> map
         if (cachedModel != null) {
-            cachedModel.close();
+            if (cl != null) {
+                cl.submit(cachedModel::close);
+            } else {
+                cpu.submit(cachedModel::close);
+            }
         }
+
         if (cl != null)
             cl.shutdown();
         if (cpu != null)

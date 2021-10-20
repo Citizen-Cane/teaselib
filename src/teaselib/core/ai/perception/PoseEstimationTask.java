@@ -1,7 +1,6 @@
 package teaselib.core.ai.perception;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
-import static teaselib.core.util.ExceptionUtil.reduce;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -25,12 +24,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.core.Closeable;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
+import teaselib.core.concurrency.NamedExecutorService;
 
-class PoseEstimationTask implements Callable<PoseAspects> {
+class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     private static final int PROXIMITY_SENSOR_FRAMERATE_MILLIS = 500;
     private static final int HEAD_GESTURE_FRAME_RATE_MILLIS = 125;
 
@@ -41,6 +42,10 @@ class PoseEstimationTask implements Callable<PoseAspects> {
 
     private final TeaseLibAI teaseLibAI;
     private final HumanPoseDeviceInteraction interaction;
+
+    private final NamedExecutorService taskExecutor;
+    private Future<PoseAspects> future = null;
+
     private final ExecutorService inferenceExecutor;
     private final Thread inferenceThread;
     private final Lock awaitPose = new ReentrantLock();
@@ -49,13 +54,34 @@ class PoseEstimationTask implements Callable<PoseAspects> {
     private final AtomicReference<PoseAspects> poseAspects = new AtomicReference<>(PoseAspects.Unavailable);
     private final ReentrantLock estimatePoses = new ReentrantLock();
     private final AtomicReference<Runnable> pause = new AtomicReference<>(Noop);
+
     private HumanPose humanPose = null;
 
     PoseEstimationTask(TeaseLibAI teaseLibAI, HumanPoseDeviceInteraction humanPoseDeviceInteraction) {
         this.teaseLibAI = teaseLibAI;
+
         this.interaction = humanPoseDeviceInteraction;
+        this.taskExecutor = NamedExecutorService.sameThread("Pose Estimation");
+
         this.inferenceExecutor = teaseLibAI.getExecutor(TeaseLibAI.ExecutionType.Accelerated);
         this.inferenceThread = submitAndGetResult(Thread::currentThread);
+
+        this.future = taskExecutor.submit(this);
+    }
+
+    @Override
+    public void close() {
+        taskExecutor.shutdown();
+
+        if (future != null && !future.isDone() && !future.isCancelled()) {
+            future.cancel(true);
+        }
+
+        try {
+            taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public PoseAspects getPose(Set<Interest> interests) {
@@ -125,10 +151,6 @@ class PoseEstimationTask implements Callable<PoseAspects> {
         }
     }
 
-    private Future<?> submit(Runnable task) {
-        return inferenceExecutor.submit(task::run);
-    }
-
     private <T> Future<T> submit(Callable<T> task) {
         return inferenceExecutor.submit(task::call);
     }
@@ -143,11 +165,6 @@ class PoseEstimationTask implements Callable<PoseAspects> {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-        }
-
-        if (humanPose != null) {
-            submit(humanPose::close);
-            humanPose = null;
         }
         return PoseAspects.Unavailable;
     }

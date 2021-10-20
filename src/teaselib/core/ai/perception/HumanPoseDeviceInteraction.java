@@ -1,12 +1,11 @@
 package teaselib.core.ai.perception;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -21,7 +20,6 @@ import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
-import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 
@@ -29,11 +27,9 @@ public class HumanPoseDeviceInteraction extends
         DeviceInteractionImplementation<HumanPose.Interest, EventSource<PoseEstimationEventArgs>> implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(HumanPoseDeviceInteraction.class);
 
-    private final NamedExecutorService taskExecutor;
     final ScriptRenderer scriptRenderer;
 
     private final PoseEstimationTask poseEstimationTask;
-    private Future<PoseAspects> future = null;
 
     public abstract static class EventListener implements Event<PoseEstimationEventArgs> {
         final Set<Interest> interests;
@@ -50,22 +46,13 @@ public class HumanPoseDeviceInteraction extends
     public HumanPoseDeviceInteraction(TeaseLibAI teaseLibAI, ScriptRenderer scriptRenderer) {
         super(Object::equals);
         this.scriptRenderer = scriptRenderer;
-        this.taskExecutor = NamedExecutorService.sameThread("Pose Estimation");
         this.poseEstimationTask = new PoseEstimationTask(teaseLibAI, this);
-        future = taskExecutor.submit(poseEstimationTask);
     }
 
     @Override
     public void close() {
-        if (future != null && !future.isDone() && !future.isCancelled()) {
-            future.cancel(true);
-        }
-        taskExecutor.shutdown();
-        try {
-            taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        poseEstimationTask.close();
+
     }
 
     PoseAspects getPose(Interest interest) {

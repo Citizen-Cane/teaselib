@@ -47,7 +47,11 @@ public final class DebugSetup implements Setup {
     protected void applyInput(Configuration config) {
         config.set(Config.InputMethod.SpeechRecognition, Boolean.toString(enableInput));
         config.set(Config.InputMethod.GameController, Boolean.toString(enableInput));
-        config.set(Config.InputMethod.HeadGestures, Boolean.toString(enableInput));
+        disableInputMethodsWithoutEmulation(config);
+    }
+
+    private static void disableInputMethodsWithoutEmulation(Configuration config) {
+        config.set(Config.InputMethod.HeadGestures, Boolean.toString(false));
     }
 
     protected void applyOutput(Configuration config) {

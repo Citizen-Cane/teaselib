@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.ScriptFunction;
 import teaselib.core.AudioSync;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
@@ -145,8 +146,9 @@ public class SpeechRecognitionInputMethodTest {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 choice("Yes, Miss"), choice("No, Miss"));
         DebugSetup setup = new DebugSetup().withInput();
-        Configuration config = new Configuration(setup);
-        try (InputMethods inputMethods = new InputMethods(new SpeechRecognitionInputMethod(config, new AudioSync()));) {
+        try (Configuration config = new Configuration(setup);
+                InputMethods inputMethods = new InputMethods(
+                        new SpeechRecognitionInputMethod(config, new AudioSync()));) {
             SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
             Prompt prompt = new Prompt(choices, inputMethods);
 
@@ -206,25 +208,55 @@ public class SpeechRecognitionInputMethodTest {
                 prompt1.lock.unlock();
             }
         }
-
     }
 
     @Test
-    public void testSpeechRecognitionInputMethodStackedScript() {
+    public void testSpeechRecognitionStackedScriptFucntions() {
         TestScript script = TestScript.getOne(new DebugSetup().withInput());
-        script.debugger.detach();
+        try {
+            script.debugger.detach();
 
-        try (InputMethods inputMethods = script.teaseLib.globals.get(InputMethods.class);) {
+            InputMethods inputMethods = script.teaseLib.globals.get(InputMethods.class);
             SpeechRecognitionInputMethod speechRecognition = inputMethods.get(SpeechRecognitionInputMethod.class);
 
             assertEquals("Foo", script.reply(() -> {
+
                 assertEquals("Bar", script.reply(() -> {
                     speechRecognition.emulateRecogntion("Bar");
-                    script.sleep(4, TimeUnit.SECONDS);
+                    script.sleep(2, TimeUnit.SECONDS);
                 }, "Bar"));
+
                 speechRecognition.emulateRecogntion("Foo");
-                script.sleep(4, TimeUnit.SECONDS);
+                script.sleep(2, TimeUnit.SECONDS);
             }, "Foo"));
+        } finally {
+            // TODO Closeable test script
+            script.teaseLib.close();
+        }
+    }
+
+    @Test
+    public void testSpeechRecognitionTimeoutStackedScriptFucntions() {
+        TestScript script = TestScript.getOne(new DebugSetup().withInput());
+        try {
+            script.debugger.detach();
+
+            InputMethods inputMethods = script.teaseLib.globals.get(InputMethods.class);
+            SpeechRecognitionInputMethod speechRecognition = inputMethods.get(SpeechRecognitionInputMethod.class);
+
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+
+                assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+                    speechRecognition.emulateRecogntion("Blub");
+                    script.sleep(2, TimeUnit.SECONDS);
+                }, "Bar"));
+
+                speechRecognition.emulateRecogntion("Blub");
+                script.sleep(2, TimeUnit.SECONDS);
+            }, "Foo"));
+        } finally {
+            // TODO Closeable test script
+            script.teaseLib.close();
         }
     }
 

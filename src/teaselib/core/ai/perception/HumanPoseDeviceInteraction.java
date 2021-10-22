@@ -16,6 +16,7 @@ import teaselib.core.Closeable;
 import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptRenderer;
+import teaselib.core.TeaseLib;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interest;
@@ -29,6 +30,7 @@ public class HumanPoseDeviceInteraction extends
 
     final ScriptRenderer scriptRenderer;
 
+    public final HumanPoseDeviceInteraction.EventListener proximitySensor;
     private final PoseEstimationTask poseEstimationTask;
 
     public abstract static class EventListener implements Event<PoseEstimationEventArgs> {
@@ -43,10 +45,11 @@ public class HumanPoseDeviceInteraction extends
         }
     }
 
-    public HumanPoseDeviceInteraction(TeaseLibAI teaseLibAI, ScriptRenderer scriptRenderer) {
+    public HumanPoseDeviceInteraction(TeaseLib teaseLib, TeaseLibAI teaseLibAI, ScriptRenderer scriptRenderer) {
         super(Object::equals);
         this.scriptRenderer = scriptRenderer;
         this.poseEstimationTask = new PoseEstimationTask(teaseLibAI, this);
+        this.proximitySensor = new ProximitySensor(teaseLib, Interest.asSet(Interest.Status, Interest.Proximity));
     }
 
     @Override

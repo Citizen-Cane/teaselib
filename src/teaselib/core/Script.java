@@ -30,13 +30,11 @@ import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HeadGesturesV2InputMethod;
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
 import teaselib.core.ai.perception.PoseAspects;
-import teaselib.core.ai.perception.PoseEstimationEventArgs;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
@@ -67,7 +65,7 @@ import teaselib.util.math.Random;
 
 public abstract class Script {
 
-    private static final Logger logger = LoggerFactory.getLogger(Script.class);
+    static final Logger logger = LoggerFactory.getLogger(Script.class);
 
     public final TeaseLib teaseLib;
     public final ResourceLoader resources;
@@ -118,7 +116,9 @@ public abstract class Script {
             inputMethods.add(teaseLib.host.inputMethod());
             inputMethods.add(scriptRenderer.scriptEventInputMethod);
 
-            if (teaseLib.globals.has(TeaseLibAI.class)) {
+            if (teaseLib.globals.has(TeaseLibAI.class)
+                    && Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))) {
+                // TODO humanPoseInteraction should be zero
                 HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
                 if (humanPoseInteraction != null) {
                     var speechRecognitionInputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
@@ -127,8 +127,8 @@ public abstract class Script {
                     // TODO Generalize - HeadGestures -> Perception
                     if (Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))) {
                         inputMethods.add(new HeadGesturesV2InputMethod( //
-                                interaction(HumanPoseScriptInteraction.class),
-                                scriptRenderer.getInputMethodExecutorService()), () -> !canSpeak.getAsBoolean());
+                                humanPoseInteraction, scriptRenderer.getInputMethodExecutorService()),
+                                () -> !canSpeak.getAsBoolean());
                     }
                 }
 
@@ -142,72 +142,24 @@ public abstract class Script {
     // TODO move speech recognition-related part to sr input method, find out how to deal with absent camera
 
     protected void define(HumanPoseScriptInteraction humanPoseInteraction) {
-        humanPoseInteraction.deviceInteraction.addEventListener(actor, proximitySensor);
+        humanPoseInteraction.deviceInteraction.addEventListener(actor,
+                humanPoseInteraction.deviceInteraction.proximitySensor);
     }
 
     protected void undefine(HumanPoseScriptInteraction humanPoseInteraction) {
-        humanPoseInteraction.deviceInteraction.removeEventListener(actor, proximitySensor);
+        humanPoseInteraction.deviceInteraction.removeEventListener(actor,
+                humanPoseInteraction.deviceInteraction.proximitySensor);
         teaseLib.host.setActorProximity(Proximity.FAR);
-    }
-
-    private final HumanPoseDeviceInteraction.EventListener proximitySensor = new ProximitySensor(
-            Interest.asSet(Interest.Status, Interest.Proximity));
-
-    private final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
-        private Proximity previous = Proximity.FACE2FACE;
-
-        private ProximitySensor(Set<Interest> interests) {
-            super(interests);
-        }
-
-        @Override
-        public void run(PoseEstimationEventArgs eventArgs) throws Exception {
-            var presence = presence(eventArgs);
-            var proximity = proximity(eventArgs);
-            boolean speechProximity = presence && proximity == Proximity.FACE2FACE;
-
-            logger.info("User Presence: {}", presence);
-            logger.info("User Proximity: {}", proximity);
-            teaseLib.host.setActorProximity(proximity);
-            teaseLib.globals.get(Shower.class).updateUI(new InputMethod.UiEvent(speechProximity));
-            teaseLib.host.show();
-        }
-
-        private boolean presence(PoseEstimationEventArgs eventArgs) {
-            Optional<HumanPose.Status> aspect = eventArgs.pose.aspect(HumanPose.Status.class);
-            HumanPose.Status presence;
-            if (aspect.isPresent()) {
-                presence = aspect.get();
-            } else {
-                presence = HumanPose.Status.Available;
-            }
-            return presence != HumanPose.Status.None;
-        }
-
-        private Proximity proximity(PoseEstimationEventArgs eventArgs) {
-            Optional<Proximity> aspect = eventArgs.pose.aspect(Proximity.class);
-            Proximity proximity;
-            if (aspect.isPresent()) {
-                proximity = aspect.get();
-                previous = proximity;
-            } else {
-                if (previous == Proximity.CLOSE || previous == Proximity.FACE2FACE) {
-                    proximity = Proximity.NEAR;
-                } else {
-                    proximity = previous;
-                }
-            }
-            return proximity;
-        }
     }
 
     private DeviceInteractionImplementations initDeviceInteractions() {
         var deviceInteractionImplementations = new DeviceInteractionImplementations();
         deviceInteractionImplementations.add(KeyReleaseDeviceInteraction.class,
                 () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer));
-        if (teaseLib.globals.has(TeaseLibAI.class)) {
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
             deviceInteractionImplementations.add(HumanPoseDeviceInteraction.class,
-                    () -> new HumanPoseDeviceInteraction(teaseLib.globals.get(TeaseLibAI.class), scriptRenderer));
+                    () -> new HumanPoseDeviceInteraction(teaseLib, teaseLib.globals.get(TeaseLibAI.class),
+                            scriptRenderer));
         }
         return deviceInteractionImplementations;
     }
@@ -508,7 +460,7 @@ public abstract class Script {
 
     private Answer anwser(Prompt prompt) {
         Choice choice;
-        if (teaseLib.globals.has(TeaseLibAI.class)) {
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
             HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
             if (humanPoseInteraction != null) {
                 try {
@@ -589,7 +541,7 @@ public abstract class Script {
 
     protected Supplier<UiEvent> uiEvents() {
         // TODO also depends on camera input - possibly wrong state after camera surprise-removal
-        if (teaseLib.globals.has(TeaseLibAI.class)) {
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
             return () -> new InputMethod.UiEvent(isFace2Face());
         } else {
             return Prompt.AlwaysEnabled;

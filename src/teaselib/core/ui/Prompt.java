@@ -382,7 +382,7 @@ public class Prompt {
 
     private void throwIfNotLocked() {
         if (!lock.isHeldByCurrentThread()) {
-            throw new IllegalStateException("Prompt must be locked before changing state: " + this);
+            throw new IllegalStateException("Prompt must be locked by current script function thread: " + this);
         }
     }
 

@@ -1,8 +1,7 @@
 package teaselib;
 
-import static teaselib.core.ai.perception.HumanPose.Interest.Proximity;
-import static teaselib.core.ai.perception.HumanPose.Interest.Status;
-import static teaselib.core.ai.perception.HumanPose.Status.Available;
+import static teaselib.core.ai.perception.HumanPose.Interest.*;
+import static teaselib.core.ai.perception.HumanPose.Status.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -338,7 +337,6 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Answers.of(text, more), new ScriptFunction(stringAdapter)).text.get(0);
     }
 
-    @SuppressWarnings("resource")
     protected Answer awaitTimeout(long seconds, TimeoutBehavior timeoutBehavior) {
         SpeechRecognitionInputMethod inputMethod = teaseLib.globals.get(InputMethods.class)
                 .get(SpeechRecognitionInputMethod.class);

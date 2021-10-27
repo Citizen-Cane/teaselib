@@ -1,8 +1,6 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -207,13 +205,12 @@ public class TextToSpeechRecorderTest {
 
     private void testAssets(TextToSpeechRecorder recorder, ResourceLoader resources, List<Message> messages) {
         resources.addAssets(recorder.assetPath().getAbsolutePath());
-
         Configuration config = new Configuration();
         new DebugSetup().withInput().withOutput().applyTo(config);
-        TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
-        tts.acquireVoice(actor, resources);
-
-        testAssets(tts, resources, messages);
+        try (TextToSpeechPlayer tts = new TextToSpeechPlayer(config)) {
+            tts.acquireVoice(actor, resources);
+            testAssets(tts, resources, messages);
+        }
     }
 
     private static void testAssets(TextToSpeechPlayer tts, ResourceLoader resources, List<Message> messages) {

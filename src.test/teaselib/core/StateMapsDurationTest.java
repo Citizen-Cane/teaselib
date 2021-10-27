@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Test;
 
 import teaselib.Body;
@@ -21,8 +22,13 @@ public class StateMapsDurationTest extends TestableStateMaps {
     }
 
     public StateMapsDurationTest() {
-        super(TestScript.getOne().teaseLib);
+        super(TestScript.newTeaseLib());
         teaseLib.freezeTime();
+    }
+
+    @After
+    public void cleanup() {
+        teaseLib.close();
     }
 
     @Test

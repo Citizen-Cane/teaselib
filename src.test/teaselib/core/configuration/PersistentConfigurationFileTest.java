@@ -1,9 +1,6 @@
 package teaselib.core.configuration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,30 +24,32 @@ public class PersistentConfigurationFileTest {
     @Test
     public void testIO() throws IOException {
         DebugSetup setup = new DebugSetup().withUserPath(folder.getRoot());
-        TestScript script = TestScript.getOne(setup);
-        File settingsFolder = new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS);
-        File file = new File(settingsFolder, script.namespace + Configuration.PROPERTIES_EXTENSION);
+        try (TestScript script = new TestScript(setup)) {
+            File settingsFolder = new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS);
+            File file = new File(settingsFolder, script.namespace + Configuration.PROPERTIES_EXTENSION);
 
-        script.persistentBoolean("testVariableName").set(true);
-        assertFalse(file.exists());
-        script.teaseLib.config.close(); // flush files
-        assertTrue(file.exists());
+            script.persistentBoolean("testVariableName").set(true);
+            assertFalse(file.exists());
+            script.teaseLib.config.close(); // flush files
+            assertTrue(file.exists());
 
-        Properties test = new Properties();
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            test.load(fileInputStream);
+            Properties test = new Properties();
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                test.load(fileInputStream);
+            }
+
+            assertEquals("true", test
+                    .getProperty(new QualifiedName("", script.namespace, "testVariableName").toString().toLowerCase()));
         }
-
-        assertEquals("true",
-                test.getProperty(new QualifiedName("", script.namespace, "testVariableName").toString().toLowerCase()));
     }
 
     @Test
-    public void testRegisterAgain() {
-        TestScript script = TestScript.getOne(new DebugSetup().withUserPath(folder.getRoot()));
-        Configuration config = script.teaseLib.config;
-        File settingsFolder = new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS);
-        assertThrows(IllegalArgumentException.class, changeStorageLocation(script, config, settingsFolder));
+    public void testRegisterAgain() throws IOException {
+        try (TestScript script = new TestScript(new DebugSetup().withUserPath(folder.getRoot()))) {
+            Configuration config = script.teaseLib.config;
+            File settingsFolder = new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS);
+            assertThrows(IllegalArgumentException.class, changeStorageLocation(script, config, settingsFolder));
+        }
     }
 
     private static ThrowingRunnable changeStorageLocation(TestScript script, Configuration config,
@@ -59,11 +58,10 @@ public class PersistentConfigurationFileTest {
     }
 
     @Test
-    public void testPersistentSettings() {
-        DebugSetup setup = new DebugSetup().withUserPath(folder.getRoot());
+    public void testPersistentSettings() throws IOException {
+        DebugSetup setupWithUerPath = new DebugSetup().withUserPath(folder.getRoot());
 
-        {
-            TestScript script = TestScript.getOne(setup);
+        try (TestScript script = new TestScript(setupWithUerPath)) {
             File file = new File(new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS),
                     script.namespace + ".properties");
 
@@ -74,13 +72,11 @@ public class PersistentConfigurationFileTest {
             assertTrue(file.exists());
         }
 
-        {
-            TestScript script = TestScript.getOne(new DebugSetup());
+        try (TestScript script = new TestScript(new DebugSetup())) {
             assertFalse(script.persistentBoolean("testVariableName").value());
         }
 
-        {
-            TestScript script = TestScript.getOne(setup);
+        try (TestScript script = new TestScript(setupWithUerPath)) {
             assertTrue(script.persistentBoolean("testVariableName").value());
         }
     }
@@ -105,11 +101,10 @@ public class PersistentConfigurationFileTest {
     }
 
     @Test
-    public void testCaseIgnoredForScriptSettings() {
+    public void testCaseIgnoredForScriptSettings() throws IOException {
         DebugSetup setup = new DebugSetup().withUserPath(folder.getRoot());
 
-        {
-            TestScript script = TestScript.getOne(setup);
+        try (TestScript script = new TestScript(setup)) {
             script.persistentBoolean("testVariableName").set(true);
             assertTrue(script.persistentBoolean("testVariableName").value());
             assertTrue(script.persistentBoolean("TESTVARIABLENAME").value());
@@ -117,13 +112,11 @@ public class PersistentConfigurationFileTest {
             script.teaseLib.config.close(); // flush files
         }
 
-        {
-            TestScript script = TestScript.getOne(new DebugSetup());
+        try (TestScript script = new TestScript(new DebugSetup())) {
             assertFalse(script.persistentBoolean("testVariableName").value());
         }
 
-        {
-            TestScript script = TestScript.getOne(setup);
+        try (TestScript script = new TestScript(setup)) {
             assertTrue(script.persistentBoolean("testVariableName").value());
             assertTrue(script.persistentBoolean("TESTVARIABLENAME").value());
             assertTrue(script.persistentBoolean("testvariablename").value());

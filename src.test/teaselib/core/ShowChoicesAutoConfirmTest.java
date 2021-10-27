@@ -2,6 +2,8 @@ package teaselib.core;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+
 import org.junit.Test;
 
 import teaselib.ScriptFunction;
@@ -14,25 +16,27 @@ import teaselib.test.TestScript;
  */
 public class ShowChoicesAutoConfirmTest {
     @Test
-    public void testDismissScriptFunction() {
-        TestScript script = TestScript.getOne();
-        String choice = "Dismiss";
-        script.debugger.addResponse(choice, Debugger.Response.Choose);
+    public void testDismissScriptFunction() throws IOException {
+        try (TestScript script = new TestScript()) {
+            String choice = "Dismiss";
+            script.debugger.addResponse(choice, Debugger.Response.Choose);
 
-        script.say("Foobar");
-        assertEquals(choice,
-                script.reply(script.timeoutWithAutoConfirmation(1, TimeoutBehavior.InDubioContraReum), choice));
+            script.say("Foobar");
+            assertEquals(choice,
+                    script.reply(script.timeoutWithAutoConfirmation(1, TimeoutBehavior.InDubioContraReum), choice));
+        }
     }
 
     @Test
-    public void testAwaitScriptFunctionTimeout() {
-        TestScript script = TestScript.getOne();
-        String choice = "Dismiss";
+    public void testAwaitScriptFunctionTimeout() throws IOException {
+        try (TestScript script = new TestScript()) {
+            String choice = "Dismiss";
 
-        script.debugger.addResponse(choice, Debugger.Response.Ignore);
+            script.debugger.addResponse(choice, Debugger.Response.Ignore);
 
-        script.say("Foobar");
-        assertEquals(ScriptFunction.TimeoutString,
-                script.reply(script.timeoutWithAutoConfirmation(1, TimeoutBehavior.InDubioContraReum), choice));
+            script.say("Foobar");
+            assertEquals(ScriptFunction.TimeoutString,
+                    script.reply(script.timeoutWithAutoConfirmation(1, TimeoutBehavior.InDubioContraReum), choice));
+        }
     }
 }

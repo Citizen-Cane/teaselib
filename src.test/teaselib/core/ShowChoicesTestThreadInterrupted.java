@@ -2,6 +2,7 @@ package teaselib.core;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class ShowChoicesTestThreadInterrupted extends ShowChoicesAbstractTest {
     }
 
     @Before
-    public void initTestScript() {
+    public void initTestScript() throws IOException {
         init();
     }
 

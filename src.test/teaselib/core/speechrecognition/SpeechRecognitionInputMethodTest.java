@@ -211,9 +211,8 @@ public class SpeechRecognitionInputMethodTest {
     }
 
     @Test
-    public void testSpeechRecognitionStackedScriptFucntions() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput());
-        try {
+    public void testSpeechRecognitionStackedScriptFucntions() throws IOException {
+        try (TestScript script = new TestScript(new DebugSetup().withInput())) {
             script.debugger.detach();
 
             InputMethods inputMethods = script.teaseLib.globals.get(InputMethods.class);
@@ -229,16 +228,12 @@ public class SpeechRecognitionInputMethodTest {
                 speechRecognition.emulateRecogntion("Foo");
                 script.sleep(2, TimeUnit.SECONDS);
             }, "Foo"));
-        } finally {
-            // TODO Closeable test script
-            script.teaseLib.close();
         }
     }
 
     @Test
-    public void testSpeechRecognitionTimeoutStackedScriptFucntions() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput());
-        try {
+    public void testSpeechRecognitionTimeoutStackedScriptFucntions() throws IOException {
+        try (TestScript script = new TestScript(new DebugSetup().withInput())) {
             script.debugger.detach();
 
             InputMethods inputMethods = script.teaseLib.globals.get(InputMethods.class);
@@ -254,9 +249,6 @@ public class SpeechRecognitionInputMethodTest {
                 speechRecognition.emulateRecogntion("Blub");
                 script.sleep(2, TimeUnit.SECONDS);
             }, "Foo"));
-        } finally {
-            // TODO Closeable test script
-            script.teaseLib.close();
         }
     }
 

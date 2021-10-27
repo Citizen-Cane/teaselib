@@ -1,10 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,12 +22,17 @@ public class StateScopeTests {
     private TeaseLib.PersistentString peerStorage;
 
     @Before
-    public void before() {
-        script = TestScript.getOne();
+    public void before() throws IOException {
+        script = new TestScript();
         script.teaseLib.freezeTime();
         somethingOnNipples = script.state(Body.OnNipples);
         peerStorage = script.teaseLib.new PersistentString(TeaseLib.DefaultDomain,
                 Body.class.getName() + "." + Body.OnNipples.name(), "state.peers");
+    }
+
+    @After
+    public void cleanup() {
+        script.close();
     }
 
     @Test

@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import teaselib.core.configuration.DebugSetup;
+import java.io.IOException;
+
 import teaselib.test.TestScript;
 
 /**
@@ -8,7 +9,6 @@ import teaselib.test.TestScript;
  *
  */
 public class ShowChoicesAbstractTest {
-    protected static final DebugSetup DEBUG_SETUP = new DebugSetup();// .withOutput().withInput();
     protected static final int ITERATIONS = 1;
 
     protected TestScript script;
@@ -18,9 +18,14 @@ public class ShowChoicesAbstractTest {
         super();
     }
 
-    protected void init() {
-        script = TestScript.getOne(DEBUG_SETUP);
+    protected void init() throws IOException {
+        script = new TestScript();
         debugger = script.debugger;
         debugger.freezeTime();
     }
+
+    public void cleanup() {
+        script.close();
+    }
+
 }

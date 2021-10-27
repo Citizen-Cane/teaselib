@@ -2,6 +2,7 @@ package teaselib.core;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
@@ -18,7 +19,6 @@ import teaselib.Posture;
 import teaselib.Size;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
-import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
@@ -33,37 +33,39 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testPeerlessApply() {
-        TestScript script = TestScript.getOne();
-        assertFalse(script.item(PeerlessItem.Test1).applied());
+    public void testPeerlessApply() throws IOException {
+        try (TestScript script = new TestScript()) {
+            assertFalse(script.item(PeerlessItem.Test1).applied());
 
-        script.item(PeerlessItem.Test1).apply();
-        assertTrue(script.item(PeerlessItem.Test1).applied());
+            script.item(PeerlessItem.Test1).apply();
+            assertTrue(script.item(PeerlessItem.Test1).applied());
 
-        script.item(PeerlessItem.Test1).remove();
-        assertFalse(script.item(PeerlessItem.Test1).applied());
+            script.item(PeerlessItem.Test1).remove();
+            assertFalse(script.item(PeerlessItem.Test1).applied());
+        }
     }
 
     @Test
-    public void testAvailable() {
-        TestScript script = TestScript.getOne();
-        QualifiedString fooBar = QualifiedString.of("Foo.Bar");
-        String guid = fooBar.name();
-        TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
-                fooBar.toString(), guid + ".Available");
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(fooBar, guid),
-                ItemImpl.createDisplayName(QualifiedString.from(fooBar, guid)));
+    public void testAvailable() throws IOException {
+        try (TestScript script = new TestScript()) {
+            QualifiedString fooBar = QualifiedString.of("Foo.Bar");
+            String guid = fooBar.name();
+            TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
+                    fooBar.toString(), guid + ".Available");
+            Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(fooBar, guid),
+                    ItemImpl.createDisplayName(QualifiedString.from(fooBar, guid)));
 
-        assertEquals(0, script.storage.size());
-        item.setAvailable(false);
-        assertEquals(1, script.storage.size());
-        assertEquals(false, item.isAvailable());
-        assertEquals(false, value.value());
+            assertEquals(0, script.storage.size());
+            item.setAvailable(false);
+            assertEquals(1, script.storage.size());
+            assertEquals(false, item.isAvailable());
+            assertEquals(false, value.value());
 
-        item.setAvailable(true);
-        assertEquals(1, script.storage.size());
-        assertEquals(true, item.isAvailable());
-        assertEquals(true, value.value());
+            item.setAvailable(true);
+            assertEquals(1, script.storage.size());
+            assertEquals(true, item.isAvailable());
+            assertEquals(true, value.value());
+        }
     }
 
     enum Foo {
@@ -71,133 +73,137 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIs() {
-        TeaseScript script = TestScript.getOne();
-        Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
-                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+    public void testIs() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Foo[] peers = new Foo[] {};
+            Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
+                    "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
-        assertTrue(item.is(Size.Large));
-        assertFalse(item.is(Size.Small));
+            assertTrue(item.is(Size.Large));
+            assertFalse(item.is(Size.Small));
 
-        assertTrue(item.is(Size.Large, Length.Long));
-        assertFalse(item.is(Size.Large, Length.Short));
+            assertTrue(item.is(Size.Large, Length.Long));
+            assertFalse(item.is(Size.Large, Length.Short));
 
-        assertFalse(item.is(Size.Small, Length.Short));
+            assertFalse(item.is(Size.Small, Length.Short));
 
-        Body inButt = Body.InButt;
-        item.applyTo(inButt);
-        assertTrue(script.state(inButt).is(Size.Large));
-        assertTrue(script.state(inButt).is(Length.Long));
-        assertFalse(script.state(inButt).is(Size.Small));
-        assertFalse(script.state(inButt).is(Length.Short));
+            Body inButt = Body.InButt;
+            item.applyTo(inButt);
+            assertTrue(script.state(inButt).is(Size.Large));
+            assertTrue(script.state(inButt).is(Length.Long));
+            assertFalse(script.state(inButt).is(Size.Small));
+            assertFalse(script.state(inButt).is(Length.Short));
+        }
     }
 
     @Test
-    public void testIs_EmptyArg() {
-        TeaseScript script = TestScript.getOne();
-        Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
-                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+    public void testIs_EmptyArg() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Foo[] peers = new Foo[] {};
+            Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
+                    "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
-        assertFalse(item.is());
+            assertFalse(item.is());
+        }
     }
 
     @Test
-    public void testIsHandlesArrays() {
-        TeaseScript script = TestScript.getOne();
-        Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
-                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+    public void testIsHandlesArrays() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Foo[] peers = new Foo[] {};
+            Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
+                    "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
-        assertTrue(item.is(Size.Large));
-        assertFalse(item.is(Size.Small));
+            assertTrue(item.is(Size.Large));
+            assertFalse(item.is(Size.Small));
 
-        assertTrue(item.is(Size.Large, Length.Long));
-        assertFalse(item.is(Size.Large, Length.Short));
+            assertTrue(item.is(Size.Large, Length.Long));
+            assertFalse(item.is(Size.Large, Length.Short));
 
-        assertFalse(item.is(Size.Small, Length.Short));
+            assertFalse(item.is(Size.Small, Length.Short));
+        }
     }
 
     @Test
-    public void testIsWithMixedPeersAndAttributes() {
-        TeaseScript script = TestScript.getOne();
+    public void testIsWithMixedPeersAndAttributes() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item nippleClamps = script.item(Toys.Nipple_Clamps);
+            nippleClamps.apply();
 
-        Item nippleClamps = script.item(Toys.Nipple_Clamps);
-        nippleClamps.apply();
-
-        nippleClamps.is(Body.OnNipples);
-        nippleClamps.is(Material.Metal);
-        nippleClamps.is(Body.OnNipples, Material.Metal);
+            nippleClamps.is(Body.OnNipples);
+            nippleClamps.is(Material.Metal);
+            nippleClamps.is(Body.OnNipples, Material.Metal);
+        }
     }
 
     @Test
-    public void testApplyToAutomaticDefaultsAndAttributes() {
-        TestScript script = TestScript.getOne();
+    public void testApplyToAutomaticDefaultsAndAttributes() throws IOException {
+        try (TestScript script = new TestScript()) {
+            assertFalse(script.state(Toys.Buttplug).applied());
+            assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+            assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
+            assertFalse(script.state(Body.InButt).is(Body.Orifice.Anal));
 
-        assertFalse(script.state(Toys.Buttplug).applied());
-        assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.InButt).is(Body.Orifice.Anal));
+            Item analBeads1 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
+            analBeads1.apply();
 
-        Item analBeads1 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
-        analBeads1.apply();
+            assertTrue(script.state(Toys.Buttplug).applied());
+            assertTrue(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+            assertTrue(script.state(Toys.Buttplug).is(Body.Orifice.Anal));
 
-        assertTrue(script.state(Toys.Buttplug).applied());
-        assertTrue(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
-        assertTrue(script.state(Toys.Buttplug).is(Body.Orifice.Anal));
+            assertTrue(script.state(Body.InButt).applied());
+            assertTrue(script.state(Body.InButt).is(Toys.Buttplug));
 
-        assertTrue(script.state(Body.InButt).applied());
-        assertTrue(script.state(Body.InButt).is(Toys.Buttplug));
+            assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
+            assertTrue(script.state(Body.InButt).is(Body.Orifice.Anal));
 
-        assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertTrue(script.state(Body.InButt).is(Body.Orifice.Anal));
+            Item analBeads2 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
+            assertTrue(analBeads2.is(Toys.Anal.Beads));
+            analBeads2.remove();
 
-        Item analBeads2 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
-        assertTrue(analBeads2.is(Toys.Anal.Beads));
-        analBeads2.remove();
+            assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+            assertFalse(script.state(Toys.Buttplug).is(Body.Orifice.Anal));
+            assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
+            assertFalse(script.state(Body.InButt).is(Body.Orifice.Anal));
 
-        assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
-        assertFalse(script.state(Toys.Buttplug).is(Body.Orifice.Anal));
-        assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.InButt).is(Body.Orifice.Anal));
+            Item buttPlug = script.item(Toys.Buttplug);
+            assertFalse(buttPlug.applied());
+            State inButt = script.state(Body.InButt);
+            assertFalse(inButt.applied());
 
-        Item buttPlug = script.item(Toys.Buttplug);
-        assertFalse(buttPlug.applied());
-        State inButt = script.state(Body.InButt);
-        assertFalse(inButt.applied());
-
-        // This is how to comment a certain item in a certain body location
-        if (script.state(Body.InButt).is(Toys.Buttplug)) {
-            if (script.item(Toys.Buttplug).is(Toys.Anal.Beads)) {
-                say("You're wearing anal beads", script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+            // This is how to comment a certain item in a certain body location
+            if (script.state(Body.InButt).is(Toys.Buttplug)) {
+                if (script.item(Toys.Buttplug).is(Toys.Anal.Beads)) {
+                    say("You're wearing anal beads", script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+                }
             }
         }
     }
 
     @Test
-    public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeers() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
+    public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeers() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
 
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+            assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
-        // Wrists are not only tied, but also tied behind back
-        script.items(Toys.Wrist_Restraints).matching(Material.Leather).get().applyTo(Posture.WristsTiedBehindBack);
+            // Wrists are not only tied, but also tied behind back
+            script.items(Toys.Wrist_Restraints).matching(Material.Leather).get().applyTo(Posture.WristsTiedBehindBack);
 
-        assertTrue(script.state(Toys.Wrist_Restraints).applied());
-        assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
+            assertTrue(script.state(Toys.Wrist_Restraints).applied());
+            assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
 
-        assertTrue(script.state(Body.WristsTied).applied());
-        assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
+            assertTrue(script.state(Body.WristsTied).applied());
+            assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
 
-        assertTrue(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
-        assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+            assertTrue(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
+            assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
 
-        script.item(Toys.Wrist_Restraints).remove();
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
-        assertFalse(script.state(Body.WristsTied).applied());
-        assertFalse(script.state(Posture.WristsTiedBehindBack).applied());
+            script.item(Toys.Wrist_Restraints).remove();
+            assertFalse(script.state(Toys.Wrist_Restraints).applied());
+            assertFalse(script.state(Body.WristsTied).applied());
+            assertFalse(script.state(Posture.WristsTiedBehindBack).applied());
+        }
     }
 
     private static void say(String message, boolean assertion) {
@@ -205,368 +211,387 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testApply1to1AndRemoveTheOtherWayAround() {
-        TeaseScript script = TestScript.getOne();
+    public void testApply1to1AndRemoveTheOtherWayAround() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.item(Toys.Wrist_Restraints).apply();
+            assertTrue(script.state(Body.WristsTied).applied());
+            assertTrue(script.state(Toys.Wrist_Restraints).is(script.namespace));
+            assertTrue(script.state(Body.WristsTied).is(script.namespace));
 
-        script.item(Toys.Wrist_Restraints).apply();
-        assertTrue(script.state(Body.WristsTied).applied());
-        assertTrue(script.state(Toys.Wrist_Restraints).is(script.namespace));
-        assertTrue(script.state(Body.WristsTied).is(script.namespace));
+            script.state(Body.WristsTied).remove();
+            script.state(Body.WristsCuffed).remove();
+            assertFalse(script.state(Body.WristsTied).applied());
 
-        script.state(Body.WristsTied).remove();
-        script.state(Body.WristsCuffed).remove();
-        assertFalse(script.state(Body.WristsTied).applied());
-
-        assertFalse(script.state(Body.WristsTied).is(script.namespace));
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
-        assertFalse(script.state(Toys.Wrist_Restraints).is(script.namespace));
+            assertFalse(script.state(Body.WristsTied).is(script.namespace));
+            assertFalse(script.state(Toys.Wrist_Restraints).applied());
+            assertFalse(script.state(Toys.Wrist_Restraints).is(script.namespace));
+        }
     }
 
     @Test
-    public void testApply1toNAndRemoveTheOtherWayAround() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
-        restraints.stream().forEach(item -> item.setAvailable(true));
-        restraints = restraints.prefer(Material.Metal);
+    public void testApply1toNAndRemoveTheOtherWayAround() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            restraints.stream().forEach(item -> item.setAvailable(true));
+            restraints = restraints.prefer(Material.Metal);
 
-        restraints.apply();
+            restraints.apply();
 
-        State wristRestraints = script.state(Toys.Wrist_Restraints);
-        State wristsCuffed = script.state(Body.WristsCuffed);
-        State wristTied = script.state(Body.WristsTied);
+            State wristRestraints = script.state(Toys.Wrist_Restraints);
+            State wristsCuffed = script.state(Body.WristsCuffed);
+            State wristTied = script.state(Body.WristsTied);
 
-        assertTrue(wristTied.applied());
-        assertTrue(wristRestraints.is(script.namespace));
-        assertTrue(wristTied.is(script.namespace));
-        assertTrue(script.state(Body.AnklesTied).applied());
-        assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
-        assertTrue(script.state(Body.AnklesTied).is(script.namespace));
+            assertTrue(wristTied.applied());
+            assertTrue(wristRestraints.is(script.namespace));
+            assertTrue(wristTied.is(script.namespace));
+            assertTrue(script.state(Body.AnklesTied).applied());
+            assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
+            assertTrue(script.state(Body.AnklesTied).is(script.namespace));
 
-        wristTied.remove();
-        wristsCuffed.remove();
-        assertFalse(wristTied.applied());
+            wristTied.remove();
+            wristsCuffed.remove();
+            assertFalse(wristTied.applied());
 
-        assertFalse(wristTied.is(script.namespace));
-        assertFalse(wristRestraints.applied());
-        assertFalse(wristRestraints.is(script.namespace));
+            assertFalse(wristTied.is(script.namespace));
+            assertFalse(wristRestraints.applied());
+            assertFalse(wristRestraints.is(script.namespace));
 
-        assertTrue(script.state(Body.AnklesTied).applied());
-        assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
-        assertTrue(script.state(Body.AnklesTied).is(script.namespace));
+            assertTrue(script.state(Body.AnklesTied).applied());
+            assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
+            assertTrue(script.state(Body.AnklesTied).is(script.namespace));
+        }
     }
 
     @Test
-    public void testCanApplyWithoutDefaultsSimulation() {
-        TeaseScript script = TestScript.getOne();
-        State wristRestraints = script.state(Toys.Wrist_Restraints);
+    public void testCanApplyWithoutDefaultsSimulation() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State wristRestraints = script.state(Toys.Wrist_Restraints);
 
-        wristRestraints.apply();
+            wristRestraints.apply();
 
-        assertTrue(wristRestraints.applied());
-        assertFalse(wristRestraints.is(Toys.Wrist_Restraints));
+            assertTrue(wristRestraints.applied());
+            assertFalse(wristRestraints.is(Toys.Wrist_Restraints));
+        }
     }
 
     @Test
-    public void testCanApplyWithDefaultsSimulation() {
-        TeaseScript script = TestScript.getOne();
-        State gag = script.state(Toys.Gag);
+    public void testCanApplyWithDefaultsSimulation() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State gag = script.state(Toys.Gag);
 
-        gag.applyTo(Body.InMouth);
+            gag.applyTo(Body.InMouth);
 
-        assertTrue(gag.applied());
-        assertFalse(gag.is(Toys.Gag));
+            assertTrue(gag.applied());
+            assertFalse(gag.is(Toys.Gag));
+        }
     }
 
     @Test
-    public void testCanApplyWithoutDefaults() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
+    public void testCanApplyWithoutDefaults() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
 
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+            assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
-        Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
+            Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
 
-        assertFalse(wristRestraints.applied());
-        assertTrue(wristRestraints.canApply());
-        assertTrue(wristRestraints.is(wristRestraints));
+            assertFalse(wristRestraints.applied());
+            assertTrue(wristRestraints.canApply());
+            assertTrue(wristRestraints.is(wristRestraints));
 
-        // Perfectly legal for detachable restraints
-        wristRestraints.apply();
+            // Perfectly legal for detachable restraints
+            wristRestraints.apply();
 
-        assertTrue(wristRestraints.applied());
-        assertFalse(wristRestraints.canApply());
-        assertTrue(wristRestraints.is(wristRestraints));
+            assertTrue(wristRestraints.applied());
+            assertFalse(wristRestraints.canApply());
+            assertTrue(wristRestraints.is(wristRestraints));
+        }
     }
 
     @Test
-    public void testCanApplyWithDefaults() {
-        TestScript script = TestScript.getOne();
+    public void testCanApplyWithDefaults() throws IOException {
+        try (TestScript script = new TestScript()) {
+            assertFalse(script.state(Toys.Gag).applied());
 
-        assertFalse(script.state(Toys.Gag).applied());
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
+            assertNotEquals(Item.NotFound, gag);
+            assertFalse(gag.applied());
+            assertTrue(gag.canApply());
+            assertTrue(gag.is(gag));
 
-        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
-        assertNotEquals(Item.NotFound, gag);
-        assertFalse(gag.applied());
-        assertTrue(gag.canApply());
-        assertTrue(gag.is(gag));
+            gag.apply();
 
-        gag.apply();
-
-        assertTrue(gag.applied());
-        assertFalse(gag.canApply());
-        assertTrue(gag.is(gag));
+            assertTrue(gag.applied());
+            assertFalse(gag.canApply());
+            assertTrue(gag.is(gag));
+        }
     }
 
     @Disabled("decide when to throw - possible in dev mode")
     // @Test(expected = IllegalStateException.class)
-    public void applyingTwiceRuinsPlausibilityOfActor() {
-        TestScript script = TestScript.getOne();
-        assertFalse(script.state(Toys.Gag).applied());
+    public void applyingTwiceRuinsPlausibilityOfActor() throws IOException {
+        try (TestScript script = new TestScript()) {
+            assertFalse(script.state(Toys.Gag).applied());
 
-        script.item(Toys.Gag).apply();
-        assertTrue(script.state(Toys.Gag).applied());
+            script.item(Toys.Gag).apply();
+            assertTrue(script.state(Toys.Gag).applied());
 
-        script.item(Toys.Gag).apply();
-        assertTrue(script.state(Toys.Gag).applied());
+            script.item(Toys.Gag).apply();
+            assertTrue(script.state(Toys.Gag).applied());
+        }
     }
 
     @Test
-    public void applyingTwiceWorks() {
-        TestScript script = TestScript.getOne();
-        assertFalse(script.state(Toys.Gag).applied());
+    public void applyingTwiceWorks() throws IOException {
+        try (TestScript script = new TestScript()) {
+            assertFalse(script.state(Toys.Gag).applied());
 
-        script.item(Toys.Gag).apply();
-        assertTrue(script.state(Toys.Gag).applied());
+            script.item(Toys.Gag).apply();
+            assertTrue(script.state(Toys.Gag).applied());
 
-        script.item(Toys.Gag).apply();
-        assertTrue(script.state(Toys.Gag).applied());
+            script.item(Toys.Gag).apply();
+            assertTrue(script.state(Toys.Gag).applied());
+        }
     }
 
     @Test
-    public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
+    public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
 
-        String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
-        String Body_WristsTied = "teaselib.Body.WristsTied";
-        String Body_WristsTiedBehindBack = "teaselib.Body.WristsTiedBehindBack";
-        String leather = "teaselib.Material.Leather";
+            String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
+            String Body_WristsTied = "teaselib.Body.WristsTied";
+            String Body_WristsTiedBehindBack = "teaselib.Body.WristsTiedBehindBack";
+            String leather = "teaselib.Material.Leather";
 
-        assertFalse(script.state(Toys_Wrist_Restraints).applied());
+            assertFalse(script.state(Toys_Wrist_Restraints).applied());
 
-        // Wrists are not only tied, but also tied behind back
+            // Wrists are not only tied, but also tied behind back
 
-        script.items(Toys_Wrist_Restraints).matching(leather).get().applyTo(Body_WristsTiedBehindBack);
+            script.items(Toys_Wrist_Restraints).matching(leather).get().applyTo(Body_WristsTiedBehindBack);
 
-        assertTrue(script.state(Toys_Wrist_Restraints).applied());
-        assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
+            assertTrue(script.state(Toys_Wrist_Restraints).applied());
+            assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
 
-        assertTrue(script.state(Body_WristsTied).applied());
-        assertTrue(script.state(Body_WristsTiedBehindBack).applied());
+            assertTrue(script.state(Body_WristsTied).applied());
+            assertTrue(script.state(Body_WristsTiedBehindBack).applied());
 
-        assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
+            assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
+            assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
 
-        // This is how to comment a certain item in a certain body location
-        if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
-            if (script.item(Toys_Wrist_Restraints).is(leather)) {
-                say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
+            // This is how to comment a certain item in a certain body location
+            if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
+                if (script.item(Toys_Wrist_Restraints).is(leather)) {
+                    say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
+                }
             }
         }
     }
 
     @Test
-    public void testStringsAndEnumsMixed() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
+    public void testStringsAndEnumsMixed() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
 
-        String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
-        String Body_WristsTied = "teaselib.Body.WristsTied";
-        String Posture_WristsTiedBehindBack = "teaselib.Posture.WristsTiedBehindBack";
-        String leather = "teaselib.Material.Leather";
+            String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
+            String Body_WristsTied = "teaselib.Body.WristsTied";
+            String Posture_WristsTiedBehindBack = "teaselib.Posture.WristsTiedBehindBack";
+            String leather = "teaselib.Material.Leather";
 
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
-        assertFalse(script.state(Toys_Wrist_Restraints).applied());
+            assertFalse(script.state(Toys.Wrist_Restraints).applied());
+            assertFalse(script.state(Toys_Wrist_Restraints).applied());
 
-        // Wrists are not only tied, but also tied behind back
+            // Wrists are not only tied, but also tied behind back
 
-        script.items(Toys_Wrist_Restraints).matching(leather).get().applyTo(Posture_WristsTiedBehindBack);
+            script.items(Toys_Wrist_Restraints).matching(leather).get().applyTo(Posture_WristsTiedBehindBack);
 
-        assertTrue(script.state(Toys.Wrist_Restraints).applied());
-        assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
-        assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
-        assertTrue(script.state(Toys.Wrist_Restraints).applied());
-        assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
-        assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
+            assertTrue(script.state(Toys.Wrist_Restraints).applied());
+            assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
+            assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
+            assertTrue(script.state(Toys.Wrist_Restraints).applied());
+            assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
+            assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
 
-        assertTrue(script.state(Body_WristsTied).applied());
-        assertTrue(script.state(Posture_WristsTiedBehindBack).applied());
-        assertTrue(script.state(Body.WristsTied).applied());
-        assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
+            assertTrue(script.state(Body_WristsTied).applied());
+            assertTrue(script.state(Posture_WristsTiedBehindBack).applied());
+            assertTrue(script.state(Body.WristsTied).applied());
+            assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
 
-        assertTrue(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
-        assertTrue(script.state(Body_WristsTied).is(Toys.Wrist_Restraints));
-        assertTrue(script.state(Posture_WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+            assertTrue(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
+            assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+            assertTrue(script.state(Body_WristsTied).is(Toys.Wrist_Restraints));
+            assertTrue(script.state(Posture_WristsTiedBehindBack).is(Toys.Wrist_Restraints));
 
-        assertTrue(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Posture_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
+            assertTrue(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
+            assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys_Wrist_Restraints));
+            assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
+            assertTrue(script.state(Posture_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
 
-        // This is how to comment an item in a certain body location
-        if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
-            if (script.item(Toys_Wrist_Restraints).is(leather)) {
-                say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
+            // This is how to comment an item in a certain body location
+            if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
+                if (script.item(Toys_Wrist_Restraints).is(leather)) {
+                    say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
+                }
+            }
+
+            // Better
+            if (script.state(Toys_Wrist_Restraints).is(Body.WristsTied)) {
+                if (script.state(Toys_Wrist_Restraints).is(leather)) {
+                    say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
+                }
+            }
+
+            // Even better
+            if (script.item(Toys_Wrist_Restraints).is(Body.WristsTied, leather)) {
+                say("You're wearing leather restraints",
+                        script.state(Toys_Wrist_Restraints).is(Body.WristsTied, leather));
             }
         }
+    }
 
-        // Better
-        if (script.state(Toys_Wrist_Restraints).is(Body.WristsTied)) {
-            if (script.state(Toys_Wrist_Restraints).is(leather)) {
-                say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
-            }
+    @Test
+    public void testTemporaryItems() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+
+            assertFalse(script.state(Toys.Gag).applied());
+            assertEquals(0, script.teaseLib.temporaryItems().size());
+
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
+            gag.apply();
+            assertEquals(1, script.teaseLib.temporaryItems().size());
+            gag.remove();
+            assertEquals(0, script.teaseLib.temporaryItems().size());
         }
+    }
 
-        // Even better
-        if (script.item(Toys_Wrist_Restraints).is(Body.WristsTied, leather)) {
-            say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(Body.WristsTied, leather));
+    @Test
+    public void testTemporaryItemsRemember() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+
+            assertFalse(script.state(Toys.Gag).applied());
+            assertEquals(0, script.teaseLib.temporaryItems().size());
+
+            Item gag = script.item(Toys.Gag);
+            gag.apply().over(0, TimeUnit.HOURS).remember(Until.Removed);
+            assertTrue(gag.is(Until.Removed));
+            // TODO fails because StateImpl.appliedToClass() fails
+            assertTrue(gag.is(Until.class));
+            assertEquals(0, script.teaseLib.temporaryItems().size());
+            gag.remove();
+            assertEquals(0, script.teaseLib.temporaryItems().size());
         }
     }
 
     @Test
-    public void testTemporaryItems() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
+    public void testTemporaryItemsIdentity() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
 
-        assertFalse(script.state(Toys.Gag).applied());
-        assertEquals(0, script.teaseLib.temporaryItems().size());
+            Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
+            wristRestraints.applyTo(Posture.WristsTiedBehindBack);
+            Items temporaryItems = script.teaseLib.temporaryItems();
+            Item temporaryWristRestraints = temporaryItems.matching(Toys.Wrist_Restraints).get();
+            assertEquals(wristRestraints, temporaryWristRestraints);
+            assertEquals(1, script.teaseLib.temporaryItems().size());
 
-        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
-        gag.apply();
-        assertEquals(1, script.teaseLib.temporaryItems().size());
-        gag.remove();
-        assertEquals(0, script.teaseLib.temporaryItems().size());
+            wristRestraints.remove();
+            assertEquals(0, script.teaseLib.temporaryItems().size());
+        }
     }
 
     @Test
-    public void testTemporaryItemsRemember() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
+    public void testRemoveOneOfMultipleItemsToSamePeer() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
+                    .prefer(Material.Leather);
+            restraints.apply();
 
-        assertFalse(script.state(Toys.Gag).applied());
-        assertEquals(0, script.teaseLib.temporaryItems().size());
+            Items chains = script.items(Bondage.Chains, Accessoires.Bells);
+            chains.applyTo(restraints);
+            assertTrue(chains.allApplied());
+            assertTrue(restraints.allApplied());
 
-        Item gag = script.item(Toys.Gag);
-        gag.apply().over(0, TimeUnit.HOURS).remember(Until.Removed);
-        assertTrue(gag.is(Until.Removed));
-        // TODO fails because StateImpl.appliedToClass() fails
-        assertTrue(gag.is(Until.class));
-        assertEquals(0, script.teaseLib.temporaryItems().size());
-        gag.remove();
-        assertEquals(0, script.teaseLib.temporaryItems().size());
+            Item singleChainItem = chains.get(Bondage.Chains);
+            Item bell = script.item(Accessoires.Bells);
+            assertTrue(bell.applied());
+            singleChainItem.remove();
+            assertTrue(bell.applied());
+
+            assertTrue(chains.anyApplied());
+            assertFalse(chains.allApplied());
+            assertTrue(restraints.allApplied());
+
+            Item wristRestraints = restraints.get(Toys.Wrist_Restraints);
+            // TODO remove immediately removes the bell guid,
+            // but the bell is still attached to ankles and collar
+            wristRestraints.remove();
+            assertTrue(chains.anyApplied());
+            assertFalse(restraints.allApplied());
+
+            bell.remove();
+            assertFalse(chains.anyApplied());
+
+            script.items(Toys.Ankle_Restraints, Toys.Collar).remove();
+            assertFalse(restraints.anyApplied());
+        }
     }
 
     @Test
-    public void testTemporaryItemsIdentity() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
-
-        Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
-        wristRestraints.applyTo(Posture.WristsTiedBehindBack);
-        Items temporaryItems = script.teaseLib.temporaryItems();
-        Item temporaryWristRestraints = temporaryItems.matching(Toys.Wrist_Restraints).get();
-        assertEquals(wristRestraints, temporaryWristRestraints);
-        assertEquals(1, script.teaseLib.temporaryItems().size());
-
-        wristRestraints.remove();
-        assertEquals(0, script.teaseLib.temporaryItems().size());
+    public void testIsClass() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item woodenSpoon = script.item(Household.Wooden_Spoon);
+            assertTrue(woodenSpoon.is(Material.Wood));
+            assertTrue(woodenSpoon.is(Material.class));
+        }
     }
 
     @Test
-    public void testRemoveOneOfMultipleItemsToSamePeer() {
-        TestScript script = TestScript.getOne();
+    public void testIsNestedClass() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
 
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
-                .prefer(Material.Leather);
-        restraints.apply();
-
-        Items chains = script.items(Bondage.Chains, Accessoires.Bells);
-        chains.applyTo(restraints);
-        assertTrue(chains.allApplied());
-        assertTrue(restraints.allApplied());
-
-        Item singleChainItem = chains.get(Bondage.Chains);
-        Item bell = script.item(Accessoires.Bells);
-        assertTrue(bell.applied());
-        singleChainItem.remove();
-        assertTrue(bell.applied());
-
-        assertTrue(chains.anyApplied());
-        assertFalse(chains.allApplied());
-        assertTrue(restraints.allApplied());
-
-        Item wristRestraints = restraints.get(Toys.Wrist_Restraints);
-        // TODO remove immediately removes the bell guid,
-        // but the bell is still attached to ankles and collar
-        wristRestraints.remove();
-        assertTrue(chains.anyApplied());
-        assertFalse(restraints.allApplied());
-
-        bell.remove();
-        assertFalse(chains.anyApplied());
-
-        script.items(Toys.Ankle_Restraints, Toys.Collar).remove();
-        assertFalse(restraints.anyApplied());
-    }
-
-    @Test
-    public void testIsClass() {
-        TestScript script = TestScript.getOne();
-
-        Item woodenSpoon = script.item(Household.Wooden_Spoon);
-        assertTrue(woodenSpoon.is(Material.Wood));
-        assertTrue(woodenSpoon.is(Material.class));
-    }
-
-    @Test
-    public void testIsNestedClass() {
-        TestScript script = TestScript.getOne();
-        script.addTestUserItems();
-
-        Item woodenSpoon = script.item(Household.Wooden_Spoon);
-        woodenSpoon.apply().over(0, TimeUnit.HOURS).remember(Until.Removed);
-        assertTrue(woodenSpoon.is(Until.Removed));
-        assertTrue(woodenSpoon.is(Until.class));
+            Item woodenSpoon = script.item(Household.Wooden_Spoon);
+            woodenSpoon.apply().over(0, TimeUnit.HOURS).remember(Until.Removed);
+            assertTrue(woodenSpoon.is(Until.Removed));
+            assertTrue(woodenSpoon.is(Until.class));
+        }
     }
 
     @Test
     public void testUntilAppliedToStateAndItem() {
-        TestScript script = TestScript.getOne();
-
-        Item woodenSpoon = script.item(Household.Wooden_Spoon);
-        woodenSpoon.apply().remember(Until.Expired);
-        assertTrue(script.state(Household.Wooden_Spoon).is(Until.Expired));
-        assertTrue(woodenSpoon.is(Until.Expired));
+        try (TestScript script = new TestScript()) {
+            Item woodenSpoon = script.item(Household.Wooden_Spoon);
+            woodenSpoon.apply().remember(Until.Expired);
+            assertTrue(script.state(Household.Wooden_Spoon).is(Until.Expired));
+            assertTrue(woodenSpoon.is(Until.Expired));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @Test
     public void testRemoveUserItem() {
-        TestScript script = TestScript.getOne();
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems2();
+            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+            Item item1 = humblers.next();
+            assertEquals("Humbler", item1.displayName());
+            Item item2 = humblers.next();
+            assertEquals("My Humbler", item2.displayName());
+            assertFalse(humblers.hasNext());
 
-        script.addTestUserItems2();
-        Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-        Item item1 = humblers.next();
-        assertEquals("Humbler", item1.displayName());
-        Item item2 = humblers.next();
-        assertEquals("My Humbler", item2.displayName());
-        assertFalse(humblers.hasNext());
-
-        item2.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-        assertTrue(script.state(Toys.Humbler).is(Until.Removed));
-        assertTrue(item2.is(Until.Removed));
-        assertFalse(item1.is(Until.Removed));
+            item2.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+            assertTrue(script.state(Toys.Humbler).is(Until.Removed));
+            assertTrue(item2.is(Until.Removed));
+            assertFalse(item1.is(Until.Removed));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 }

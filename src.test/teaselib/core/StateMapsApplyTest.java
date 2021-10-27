@@ -5,6 +5,7 @@ import static teaselib.Household.*;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Test;
 
 import teaselib.Body;
@@ -21,7 +22,12 @@ public class StateMapsApplyTest extends TestableStateMaps {
     }
 
     public StateMapsApplyTest() {
-        super(TestScript.getOne().teaseLib);
+        super(TestScript.newTeaseLib());
+    }
+
+    @After
+    public void cleanup() {
+        teaseLib.close();
     }
 
     @Test

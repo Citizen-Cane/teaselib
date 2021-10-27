@@ -2,6 +2,7 @@ package teaselib.core;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -23,39 +24,40 @@ import teaselib.util.Item;
 public class UserItemsImplTest {
 
     @Test
-    public void testToyDefaults() throws Exception {
-        TestScript script = TestScript.getOne();
+    public void testToyDefaults() throws IOException {
+        try (TestScript script = new TestScript()) {
+            UserItems items = new UserItemsImpl(script.teaseLib);
 
-        UserItems items = new UserItemsImpl(script.teaseLib);
+            for (Clothes item : Clothes.values()) {
+                assertNotNull(items.defaults(QualifiedString.of(item)));
+            }
 
-        for (Clothes item : Clothes.values()) {
-            assertNotNull(items.defaults(QualifiedString.of(item)));
-        }
+            for (Household item : Household.values()) {
+                assertNotNull(items.defaults(QualifiedString.of(item)));
+            }
 
-        for (Household item : Household.values()) {
-            assertNotNull(items.defaults(QualifiedString.of(item)));
-        }
-
-        for (Toys item : Toys.values()) {
-            assertNotNull(items.defaults(QualifiedString.of(item)));
+            for (Toys item : Toys.values()) {
+                assertNotNull(items.defaults(QualifiedString.of(item)));
+            }
         }
     }
 
     @Test
-    public void testToyItems() throws Exception {
-        TestScript script = TestScript.getOne();
-        UserItems items = new UserItemsImpl(script.teaseLib);
+    public void testToyItems() throws IOException {
+        try (TestScript script = new TestScript()) {
+            UserItems items = new UserItemsImpl(script.teaseLib);
 
-        for (Household item : Household.values()) {
-            testItem(items, item);
-        }
+            for (Household item : Household.values()) {
+                testItem(items, item);
+            }
 
-        for (Clothes item : Clothes.values()) {
-            testItem(items, item);
-        }
+            for (Clothes item : Clothes.values()) {
+                testItem(items, item);
+            }
 
-        for (Toys item : Toys.values()) {
-            testItem(items, item);
+            for (Toys item : Toys.values()) {
+                testItem(items, item);
+            }
         }
     }
 
@@ -67,26 +69,28 @@ public class UserItemsImplTest {
 
     @Test
     public void testDefaultItems() throws Exception {
-        TestScript script = TestScript.getOne();
-        UserItems items = configureUserItems(script);
+        try (TestScript script = new TestScript()) {
+            UserItems items = configureUserItems(script);
 
-        for (Toys item : Toys.values()) {
-            List<Item> predefined = items.get(TeaseLib.DefaultDomain, QualifiedString.of(item));
-            assertNotNull(predefined);
-            assertFalse(predefined.isEmpty());
-            assertNotEquals("Expected defined item for " + item.name(), Item.NotFound, predefined.get(0));
+            for (Toys item : Toys.values()) {
+                List<Item> predefined = items.get(TeaseLib.DefaultDomain, QualifiedString.of(item));
+                assertNotNull(predefined);
+                assertFalse(predefined.isEmpty());
+                assertNotEquals("Expected defined item for " + item.name(), Item.NotFound, predefined.get(0));
+            }
         }
     }
 
     @Test
-    public void testUserItems() {
-        TestScript script = TestScript.getOne();
-        UserItems userItems = configureUserItems(script);
+    public void testUserItems() throws IOException {
+        try (TestScript script = new TestScript()) {
+            UserItems userItems = configureUserItems(script);
 
-        testToys(userItems);
-        testHousehold(userItems);
-        testClothes(userItems);
-        testGadgets(userItems);
+            testToys(userItems);
+            testHousehold(userItems);
+            testClothes(userItems);
+            testGadgets(userItems);
+        }
     }
 
     private static UserItems configureUserItems(TestScript script) {
@@ -96,26 +100,26 @@ public class UserItemsImplTest {
     }
 
     @Test
-    public void testUserItemsOverwriteEntry() {
-        TestScript script = TestScript.getOne();
+    public void testUserItemsOverwriteEntry() throws IOException {
+        try (TestScript script = new TestScript()) {
+            // Default
+            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+            assertFalse(humblers.next().is(Material.Wood));
+            assertFalse(humblers.hasNext());
 
-        // Default
-        Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-        assertFalse(humblers.next().is(Material.Wood));
-        assertFalse(humblers.hasNext());
+            // Overwrite by user items
+            script.addTestUserItems();
+            Iterator<Item> humblers1 = script.items(Toys.Humbler).iterator();
+            assertTrue(humblers1.next().is(Material.Wood));
+            assertFalse(humblers1.hasNext());
 
-        // Overwrite by user items
-        script.addTestUserItems();
-        Iterator<Item> humblers1 = script.items(Toys.Humbler).iterator();
-        assertTrue(humblers1.next().is(Material.Wood));
-        assertFalse(humblers1.hasNext());
-
-        // additional items via custom user items
-        script.addTestUserItems2();
-        Iterator<Item> humblers2 = script.items(Toys.Humbler).iterator();
-        assertTrue(humblers2.next().is(Material.Wood));
-        assertTrue(humblers2.next().is(Material.Metal));
-        assertFalse(humblers2.hasNext());
+            // additional items via custom user items
+            script.addTestUserItems2();
+            Iterator<Item> humblers2 = script.items(Toys.Humbler).iterator();
+            assertTrue(humblers2.next().is(Material.Wood));
+            assertTrue(humblers2.next().is(Material.Metal));
+            assertFalse(humblers2.hasNext());
+        }
     }
 
     private static void testToys(UserItems userItems) {
@@ -180,83 +184,83 @@ public class UserItemsImplTest {
     }
 
     @Test
-    public void testRemoveUserItemUntilExpired() {
+    public void testRemoveUserItemUntilExpired() throws IOException {
         testRemoveUserItem(Until.Expired);
     }
 
     @Test
-    public void testRemoveUserItemUntilRemoved() {
+    public void testRemoveUserItemUntilRemoved() throws IOException {
         testRemoveUserItem(Until.Removed);
     }
 
-    private static void testRemoveUserItem(Until until) {
-        TestScript script = TestScript.getOne();
+    private static void testRemoveUserItem(Until until) throws IOException {
+        try (TestScript script = new TestScript()) {
+            // Default
+            {
+                Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+                assertEquals("Humbler", humblers.next().displayName());
+                assertFalse(humblers.hasNext());
+            }
 
-        // Default
-        {
-            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-            assertEquals("Humbler", humblers.next().displayName());
-            assertFalse(humblers.hasNext());
-        }
+            // additional items via custom user items
+            {
+                script.addTestUserItems2();
+                Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+                Item notMyHumbler = humblers.next();
+                assertEquals("Humbler", notMyHumbler.displayName());
 
-        // additional items via custom user items
-        {
-            script.addTestUserItems2();
-            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-            Item notMyHumbler = humblers.next();
-            assertEquals("Humbler", notMyHumbler.displayName());
+                Item myHumbler = humblers.next();
+                assertEquals("My Humbler", myHumbler.displayName());
+                assertFalse(humblers.hasNext());
 
-            Item myHumbler = humblers.next();
-            assertEquals("My Humbler", myHumbler.displayName());
-            assertFalse(humblers.hasNext());
+                myHumbler.apply().over(1, TimeUnit.HOURS).remember(until);
+                assertTrue(script.state(Toys.Humbler).is(until));
+                assertTrue(myHumbler.is(until));
+                assertFalse(notMyHumbler.is(until));
+            }
 
-            myHumbler.apply().over(1, TimeUnit.HOURS).remember(until);
-            assertTrue(script.state(Toys.Humbler).is(until));
-            assertTrue(myHumbler.is(until));
-            assertFalse(notMyHumbler.is(until));
-        }
+            script.debugger.clearStateMaps();
+            {
+                Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+                Item notMyHumbler = humblers.next();
+                assertFalse(notMyHumbler.applied());
 
-        script.debugger.clearStateMaps();
-        {
-            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-            Item notMyHumbler = humblers.next();
-            assertFalse(notMyHumbler.applied());
+                Item myHumbler = humblers.next();
+                assertEquals("My Humbler", myHumbler.displayName());
+                assertTrue(myHumbler.applied());
+                assertTrue(script.state(Toys.Humbler).is(until));
+                assertTrue(myHumbler.is(until));
+                assertFalse(humblers.hasNext());
 
-            Item myHumbler = humblers.next();
-            assertEquals("My Humbler", myHumbler.displayName());
-            assertTrue(myHumbler.applied());
-            assertTrue(script.state(Toys.Humbler).is(until));
-            assertTrue(myHumbler.is(until));
-            assertFalse(humblers.hasNext());
+                assertTrue(script.state(Toys.Humbler).is(until));
+                assertFalse(notMyHumbler.is(until));
+            }
 
-            assertTrue(script.state(Toys.Humbler).is(until));
-            assertFalse(notMyHumbler.is(until));
-        }
+            script.debugger.resetUserItems();
+            script.debugger.clearStateMaps();
+            script.addTestUserItems();
+            {
+                Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+                Item notMyHumbler = humblers.next();
+                // assertEquals("Humbler", notMyHumbler.displayName());
+                assertFalse("User items not reset", humblers.hasNext());
 
-        script.debugger.resetUserItems();
-        script.debugger.clearStateMaps();
-        script.addTestUserItems();
-        {
-            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
-            Item notMyHumbler = humblers.next();
-            // assertEquals("Humbler", notMyHumbler.displayName());
-            assertFalse("User items not reset", humblers.hasNext());
+                // With the persisted item removed the state is still applied
+                State state = script.state(Toys.Humbler);
+                assertTrue(state.applied());
+                assertTrue(state.is(until));
+                assertFalse(notMyHumbler.applied());
+                assertFalse(notMyHumbler.is(until));
 
-            // With the persisted item removed the state is still applied
-            State state = script.state(Toys.Humbler);
-            assertTrue(state.applied());
-            assertTrue(state.is(until));
-            assertFalse(notMyHumbler.applied());
-            assertFalse(notMyHumbler.is(until));
+                // remove state with reference to unavailable guid
+                script.handleAutoRemove();
+                assertFalse(state.is(until));
+                assertFalse(state.applied());
 
-            // remove state with reference to unavailable guid
-            script.handleAutoRemove();
-            assertFalse(state.is(until));
-            assertFalse(state.applied());
-
-            Item item = script.item(Toys.Humbler);
-            assertFalse(item.applied());
-            assertFalse(item.is(until));
+                Item item = script.item(Toys.Humbler);
+                assertFalse(item.applied());
+                assertFalse(item.is(until));
+            }
         }
     }
 

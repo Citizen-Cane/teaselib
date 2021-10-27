@@ -1,9 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +18,6 @@ import teaselib.State;
 import teaselib.State.Options;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
-import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.release.KeyReleaseBaseTest;
@@ -39,8 +37,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     private KeyRelease keyRelease;
 
     @Before
-    public void setupActuators() {
-        script = TestScript.getOne(new DebugSetup());
+    public void setupActuators() throws IOException {
+        script = new TestScript();
         script.debugger.freezeTime();
         keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
         keyRelease = new KeyReleaseMock(actuatorMocks);
@@ -57,6 +55,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void detachDevice() {
         actuatorMocks.stream().forEach(Actuator::release);
         keyReleaseSetup.deviceInteraction.deviceDisconnected(new DeviceEventMock(keyRelease));
+        script.close();
     }
 
     @Test

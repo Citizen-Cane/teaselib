@@ -1,13 +1,12 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static java.util.concurrent.TimeUnit.*;
+import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,9 +21,14 @@ public class DurationTest {
     private TestScript script;
 
     @Before
-    public void setup() {
-        script = TestScript.getOne();
+    public void setup() throws IOException {
+        script = new TestScript();
         script.teaseLib.freezeTime();
+    }
+
+    @After
+    public void cleanup() {
+        script.close();
     }
 
     @Test

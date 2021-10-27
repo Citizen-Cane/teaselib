@@ -1,10 +1,12 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static teaselib.util.Select.items;
-import static teaselib.util.Select.select;
+import static org.junit.Assert.*;
+import static teaselib.util.Select.*;
 
+import java.io.IOException;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.Clothes;
@@ -13,7 +15,17 @@ import teaselib.Toys;
 import teaselib.test.TestScript;
 
 public class SelectTest {
-    TestScript test = TestScript.getOne();
+    TestScript test;
+
+    @Before
+    public void setup() throws IOException {
+        test = new TestScript();
+    }
+
+    @After
+    public void cleanup() {
+        test.close();
+    }
 
     @Test
     public void testItemQuery() {

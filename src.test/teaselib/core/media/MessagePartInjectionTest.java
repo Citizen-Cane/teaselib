@@ -1,6 +1,6 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -20,20 +20,18 @@ import teaselib.Mood;
 import teaselib.Resources;
 import teaselib.Sexuality.Gender;
 import teaselib.core.AbstractMessage;
-import teaselib.core.Closeable;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
-import teaselib.core.debug.DebugHost;
 import teaselib.test.TestScript;
 import teaselib.util.AnnotatedImage;
 import teaselib.util.RandomImages;
 
 public class MessagePartInjectionTest {
 
-    private final class DecoratingTestScript extends TestScript implements Closeable {
+    private final class DecoratingTestScript extends TestScript {
 
         public DecoratingTestScript(Setup setup) throws IOException {
-            super(new DebugHost(), setup);
+            super(setup);
             actor.images = new ActorTestImage("Actor.jpg");
             debugger.freezeTime();
             // debugger.advanceTimeAllThreads();
@@ -51,11 +49,6 @@ public class MessagePartInjectionTest {
 
         public void renderMessage(Message message) {
             super.renderMessage(message, false);
-        }
-
-        @Override
-        public void close() {
-            teaseLib.close();
         }
 
         RenderedMessage decorate(Message message) {
@@ -81,7 +74,7 @@ public class MessagePartInjectionTest {
         }
 
         @Override
-        public void hint(String... hint) {
+        public void hint(String... hint) { // ignore
         }
 
         @Override
@@ -102,10 +95,8 @@ public class MessagePartInjectionTest {
             script.setImage("foobar.jpg");
             RenderedMessage parsed = script.decorate(message);
             int n = 0;
-
-            assertEquals(new MessagePart(Type.Image, "foobar.jpg"), parsed.get(n++));
-
             assertEquals(1, parsed.size());
+            assertEquals(new MessagePart(Type.Image, "foobar.jpg"), parsed.get(n++));
         }
     }
 

@@ -1,10 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import org.junit.Test;
@@ -18,69 +16,72 @@ import teaselib.util.TextVariables;
 
 public class ScriptTest {
     @Test
-    public void testScriptVariableDefault() {
-        Script script = TestScript.getOne();
-        Message message = new Message(script.actor, "Listen #slave:");
+    public void testScriptVariableDefault() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Message message = new Message(script.actor, "Listen #slave:");
 
-        assertEquals("Listen slave:", text(script, message));
+            assertEquals("Listen slave:", text(script, message));
+        }
     }
 
     @Test
-    public void testScriptVariableOverride() {
-        Script script = TestScript.getOne();
+    public void testScriptVariableOverride() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
+            Message message = new Message(script.actor, "Listen #slave:");
 
-        script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
-        Message message = new Message(script.actor, "Listen #slave:");
-
-        assertEquals("Listen Anne:", text(script, message));
+            assertEquals("Listen Anne:", text(script, message));
+        }
     }
 
     @Test
-    public void testScriptVariableOverrideAliasKey() {
-        Script script = TestScript.getOne();
+    public void testScriptVariableOverrideAliasKey() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.actor.textVariables.set(TextVariables.Identity.Alias.Slave, "Anne");
+            Message message = new Message(script.actor, "Listen #slave:");
 
-        script.actor.textVariables.set(TextVariables.Identity.Alias.Slave, "Anne");
-        Message message = new Message(script.actor, "Listen #slave:");
-
-        assertEquals("Listen Anne:", text(script, message));
+            assertEquals("Listen Anne:", text(script, message));
+        }
     }
 
     @Test
-    public void testScriptVariableOverrideUpdatesAlias() {
-        Script script = TestScript.getOne();
+    public void testScriptVariableOverrideUpdatesAlias() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
+            Message message = new Message(script.actor, "Listen #slave:");
 
-        script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
-        Message message = new Message(script.actor, "Listen #slave:");
-
-        assertEquals("Listen Anne:", text(script, message));
+            assertEquals("Listen Anne:", text(script, message));
+        }
     }
 
     @Test
-    public void testScriptVariableOverrideAndUndo() {
-        Script script = TestScript.getOne();
-        Message message = new Message(script.actor, "Listen #slave:");
+    public void testScriptVariableOverrideAndUndo() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Message message = new Message(script.actor, "Listen #slave:");
 
-        assertEquals("Listen slave:", text(script, message));
+            assertEquals("Listen slave:", text(script, message));
 
-        script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
-        assertEquals("Listen Anne:", text(script, message));
+            script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
+            assertEquals("Listen Anne:", text(script, message));
 
-        script.actor.textVariables.remove(TextVariables.Identity.Slave_Name);
-        assertEquals("Listen slave:", text(script, message));
+            script.actor.textVariables.remove(TextVariables.Identity.Slave_Name);
+            assertEquals("Listen slave:", text(script, message));
+        }
     }
 
     @Test
-    public void testScriptVariableOverrideAndUndoAlias() {
-        Script script = TestScript.getOne();
-        Message message = new Message(script.actor, "Listen #slave:");
+    public void testScriptVariableOverrideAndUndoAlias() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Message message = new Message(script.actor, "Listen #slave:");
 
-        assertEquals("Listen slave:", text(script, message));
+            assertEquals("Listen slave:", text(script, message));
 
-        script.actor.textVariables.set(TextVariables.Identity.Alias.Slave, "Anne");
-        assertEquals("Listen Anne:", text(script, message));
+            script.actor.textVariables.set(TextVariables.Identity.Alias.Slave, "Anne");
+            assertEquals("Listen Anne:", text(script, message));
 
-        script.actor.textVariables.remove(TextVariables.Identity.Alias.Slave);
-        assertEquals("Listen slave:", text(script, message));
+            script.actor.textVariables.remove(TextVariables.Identity.Alias.Slave);
+            assertEquals("Listen slave:", text(script, message));
+        }
     }
 
     public static class FoobarScript extends Script {
@@ -90,16 +91,15 @@ public class ScriptTest {
     }
 
     @Test
-    public void testScriptsAreCachedByActor() {
-        Script one = TestScript.getOne();
-        Script another = TestScript.getOne();
+    public void testScriptsAreCachedByActor() throws IOException {
+        try (TestScript one = new TestScript(); TestScript another = new TestScript()) {
+            FoobarScript foo = one.script(FoobarScript.class);
+            FoobarScript fooAsWell = one.script(FoobarScript.class);
+            assertSame(foo, fooAsWell);
 
-        FoobarScript foo = one.script(FoobarScript.class);
-        FoobarScript fooAsWell = one.script(FoobarScript.class);
-        assertSame(foo, fooAsWell);
-
-        FoobarScript bar = another.script(FoobarScript.class);
-        assertNotSame(foo, bar);
+            FoobarScript bar = another.script(FoobarScript.class);
+            assertNotSame(foo, bar);
+        }
     }
 
     public class NotAStaticClassScript extends Script {
@@ -109,14 +109,18 @@ public class ScriptTest {
     }
 
     @Test(expected = NoSuchMethodException.class)
-    public void testScriptClassNestedInNonScriptClassFails() throws Throwable {
-        Script one = TestScript.getOne();
-
-        NotAStaticClassScript foo;
-        try {
-            foo = one.script(NotAStaticClassScript.class);
-        } catch (RuntimeException e) {
-            throw e.getCause();
+    public void testScriptClassNestedInNonScriptClassFails() throws IOException, NoSuchMethodException {
+        try (TestScript one = new TestScript()) {
+            NotAStaticClassScript foo;
+            try {
+                foo = one.script(NotAStaticClassScript.class);
+            } catch (RuntimeException e) {
+                if (e.getCause() instanceof NoSuchMethodException)
+                    throw (NoSuchMethodException) e.getCause();
+                else
+                    throw e;
+            }
+            assertNull(foo);
         }
     }
 
@@ -133,8 +137,8 @@ public class ScriptTest {
     }
 
     @Test
-    public void testNestedScriptClass() {
-        TestScript main = TestScript.getOne();
+    public void testNestedScriptClass() throws IOException {
+        TestScript main = new TestScript();
         Script script = new StaticTestScript(main);
 
         StaticTestScript.NestedScriptClass foo = script.script(StaticTestScript.NestedScriptClass.class);
@@ -169,11 +173,12 @@ public class ScriptTest {
     }
 
     @Test
-    public void testNestedScriptCaching() {
-        TestScript test = TestScript.getOne();
-        Script script = test.script(NestedScriptCaching.FooScript.class);
+    public void testNestedScriptCaching() throws IOException {
+        try (TestScript test = new TestScript()) {
+            Script script = test.script(NestedScriptCaching.FooScript.class);
 
-        assertNotNull(script);
+            assertNotNull(script);
+        }
     }
 
 }

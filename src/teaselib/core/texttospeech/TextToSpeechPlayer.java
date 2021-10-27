@@ -93,11 +93,11 @@ public class TextToSpeechPlayer implements Closeable {
         this(config, new TextToSpeech(textToSpeechImplementation));
     }
 
-    public TextToSpeechPlayer(Configuration config, TextToSpeech textToSpeech) {
+    private TextToSpeechPlayer(Configuration config, TextToSpeech textToSpeech) {
         this(config, textToSpeech, loadPronunciationDictionary(config));
     }
 
-    public TextToSpeechPlayer(Configuration config, TextToSpeech textToSpeech,
+    private TextToSpeechPlayer(Configuration config, TextToSpeech textToSpeech,
             PronunciationDictionary pronunciationDictionary) {
         this.config = config;
         this.textToSpeech = textToSpeech;

@@ -2,8 +2,10 @@ package teaselib.core;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Test;
 
 import teaselib.Body;
@@ -22,14 +24,19 @@ public class StateMapsTestRemember extends TestableStateMaps {
 
     private final TestScript script;
 
-    public StateMapsTestRemember() {
-        this(TestScript.getOne());
+    public StateMapsTestRemember() throws IOException {
+        this(new TestScript());
     }
 
     private StateMapsTestRemember(TestScript script) {
         super(script.teaseLib);
         this.script = script;
         teaseLib.freezeTime();
+    }
+
+    @After
+    public void cleanup() {
+        script.close();
     }
 
     @Test

@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
+import teaselib.core.Closeable;
 import teaselib.core.Debugger;
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
@@ -22,7 +23,7 @@ import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.PropertyNameMappingPersistence;
 import teaselib.core.util.QualifiedName;
 
-public class TestScript extends TeaseScript {
+public class TestScript extends TeaseScript implements Closeable {
     public final DebugHost host;
     public final DebugStorage storage;
     public final Debugger debugger;
@@ -41,53 +42,12 @@ public class TestScript extends TeaseScript {
         return new Actor("Test", gender, locale);
     }
 
-    public static TestScript getOne() {
-        try {
-            return new TestScript(new DebugHost());
-        } catch (IOException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
+    public TestScript() throws IOException {
+        this(new DebugHost());
     }
 
-    public static TestScript getOne(Actor actor) {
-        try {
-            return new TestScript(new DebugHost(), new DebugSetup(), actor);
-        } catch (IOException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
-    }
-
-    public static TestScript getOne(Setup setup) {
-        try {
-            return new TestScript(new DebugHost(), setup, newActor());
-        } catch (IOException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
-    }
-
-    public static TestScript getOne(Class<?> resourceRoot) {
-        try {
-            return new TestScript(new DebugHost(), resourceRoot);
-        } catch (IOException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
-    }
-
-    public static TestScript getOne(String resourceRoot) {
-        try {
-            return new TestScript(new DebugHost(), resourceRoot, newActor());
-        } catch (IOException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
-    }
-
-    public static TestScript getOne(PropertyNameMapping propertyNameMapping) {
-        try {
-            DebugHost debugHost = new DebugHost(p -> new PropertyNameMappingPersistence(p, propertyNameMapping));
-            return new TestScript(debugHost);
-        } catch (IOException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
+    public TestScript(PropertyNameMapping propertyNameMapping) throws IOException {
+        this(new DebugHost(p -> new PropertyNameMappingPersistence(p, propertyNameMapping)));
     }
 
     public TestScript(DebugHost debugHost) throws IOException {
@@ -95,21 +55,22 @@ public class TestScript extends TeaseScript {
                 newActor());
     }
 
-    public TestScript(DebugHost debugHost, Setup setup) throws IOException {
-        this(debugHost, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder), setup,
+    public TestScript(Setup setup) throws IOException {
+        this(new DebugHost(), new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder), setup,
                 newActor());
     }
 
-    TestScript(DebugHost debugHost, Setup setup, Actor actor) throws IOException {
-        this(debugHost, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder), setup, actor);
+    public TestScript(Actor actor) throws IOException {
+        this(new DebugHost(), new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
+                new DebugSetup(), actor);
     }
 
-    TestScript(DebugHost debugHost, Class<?> resourceRoot) throws IOException {
-        this(debugHost, new ResourceLoader(resourceRoot), new DebugSetup(), newActor());
+    public TestScript(Class<?> resourceRoot) throws IOException {
+        this(new DebugHost(), new ResourceLoader(resourceRoot), new DebugSetup(), newActor());
     }
 
-    public TestScript(DebugHost debugHost, String resourceRoot, Actor actor) throws IOException {
-        this(debugHost, new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup(), actor);
+    public TestScript(String resourceRoot) throws IOException {
+        this(new DebugHost(), new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup(), newActor());
     }
 
     TestScript(DebugHost host, ResourceLoader resourceLoader, Setup setup, Actor actor) throws IOException {
@@ -119,7 +80,12 @@ public class TestScript extends TeaseScript {
         this.debugger = new Debugger(teaseLib);
     }
 
-    public static TeaseLib teaseLib() {
+    @Override
+    public void close() {
+        teaseLib.close();
+    }
+
+    public static TeaseLib newTeaseLib() {
         try {
             return new TeaseLib(new DebugHost(), new DebugSetup());
         } catch (IOException e) {

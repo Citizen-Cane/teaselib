@@ -1,7 +1,8 @@
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+
+import java.io.IOException;
 
 import org.junit.Test;
 
@@ -15,19 +16,19 @@ import teaselib.test.TestScript;
 public class GenderAndSexTest {
 
     @Test
-    public void testSexualityEnum() {
-        TestScript script = TestScript.getOne();
+    public void testSexualityEnum() throws IOException {
+        try (TestScript script = new TestScript()) {
+            PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
+            assertEquals(Sex.Male, sex.value());
+            sex.set(Sex.Female);
+            assertEquals(Sex.Female, sex.value());
+            assertTrue(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Sexuality", "Sex")));
+            assertEquals(Sex.Female.name(),
+                    script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "Sexuality", "Sex")));
 
-        PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
-        assertEquals(Sex.Male, sex.value());
-        sex.set(Sex.Female);
-        assertEquals(Sex.Female, sex.value());
-        assertTrue(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Sexuality", "Sex")));
-        assertEquals(Sex.Female.name(),
-                script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "Sexuality", "Sex")));
-
-        PersistentEnum<Gender> gender = script.persistentEnum(Gender.class).defaultValue(Gender.Feminine);
-        assertEquals(Gender.Feminine, gender.value());
+            PersistentEnum<Gender> gender = script.persistentEnum(Gender.class).defaultValue(Gender.Feminine);
+            assertEquals(Gender.Feminine, gender.value());
+        }
     }
 
 }

@@ -1,8 +1,8 @@
 package teaselib.hosts;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+
+import java.io.IOException;
 
 import org.junit.Test;
 
@@ -51,85 +51,85 @@ public class SexScriptsPropertyNameMappingTest {
     }
 
     @Test
-    public void testSexScriptsSexMapping_Read() {
-        TestScript script = TestScript.getOne(new SexScriptsPropertyNameMapping());
+    public void testSexScriptsSexMapping_Read() throws IOException {
+        try (TestScript script = new TestScript(new SexScriptsPropertyNameMapping())) {
+            PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
+            assertFalse(sex.available());
 
-        PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
-        assertFalse(sex.available());
+            script.storage.put(SexScriptsPropertyNameMapping.INTRO_FEMALE, "true");
 
-        script.storage.put(SexScriptsPropertyNameMapping.INTRO_FEMALE, "true");
+            assertEquals(Sex.Female, sex.value());
+            assertTrue(sex.available());
 
-        assertEquals(Sex.Female, sex.value());
-        assertTrue(sex.available());
+            script.storage.put(SexScriptsPropertyNameMapping.INTRO_FEMALE, "false");
+            assertEquals(Sex.Male, sex.value());
+            assertTrue(sex.available());
 
-        script.storage.put(SexScriptsPropertyNameMapping.INTRO_FEMALE, "false");
-        assertEquals(Sex.Male, sex.value());
-        assertTrue(sex.available());
-
-        script.storage.remove(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "female"));
-        assertFalse(sex.available());
+            script.storage.remove(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "female"));
+            assertFalse(sex.available());
+        }
     }
 
     @Test
-    public void testSexScriptsSexMapping_Write() {
-        TestScript script = TestScript.getOne(new SexScriptsPropertyNameMapping());
+    public void testSexScriptsSexMapping_Write() throws IOException {
+        try (TestScript script = new TestScript(new SexScriptsPropertyNameMapping())) {
+            PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
+            assertFalse(sex.available());
+            assertFalse(script.storage.containsKey(SexScriptsPropertyNameMapping.INTRO_FEMALE));
 
-        PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
-        assertFalse(sex.available());
-        assertFalse(script.storage.containsKey(SexScriptsPropertyNameMapping.INTRO_FEMALE));
+            sex.set(Sex.Female);
+            assertEquals("true", script.storage.get(SexScriptsPropertyNameMapping.INTRO_FEMALE));
+            assertTrue(script.storage.containsKey(SexScriptsPropertyNameMapping.INTRO_FEMALE));
 
-        sex.set(Sex.Female);
-        assertEquals("true", script.storage.get(SexScriptsPropertyNameMapping.INTRO_FEMALE));
-        assertTrue(script.storage.containsKey(SexScriptsPropertyNameMapping.INTRO_FEMALE));
+            sex.set(Sex.Male);
+            assertEquals("false", script.storage.get(SexScriptsPropertyNameMapping.INTRO_FEMALE));
 
-        sex.set(Sex.Male);
-        assertEquals("false", script.storage.get(SexScriptsPropertyNameMapping.INTRO_FEMALE));
-
-        sex.clear();
-        assertFalse(script.storage.containsKey(SexScriptsPropertyNameMapping.INTRO_FEMALE));
+            sex.clear();
+            assertFalse(script.storage.containsKey(SexScriptsPropertyNameMapping.INTRO_FEMALE));
+        }
     }
 
     @Test
-    public void testSexScriptsSexualOrientationMappingAndMappingOfNestedEnums_Read() {
-        TestScript script = TestScript.getOne(new SexScriptsPropertyNameMapping());
+    public void testSexScriptsSexualOrientationMappingAndMappingOfNestedEnums_Read() throws IOException {
+        try (TestScript script = new TestScript(new SexScriptsPropertyNameMapping())) {
+            PersistentBoolean likesMales = script.persistentBoolean(Sexuality.Orientation.LikesMales);
+            assertFalse(likesMales.available());
+            assertEquals(false, likesMales.value());
 
-        PersistentBoolean likesMales = script.persistentBoolean(Sexuality.Orientation.LikesMales);
-        assertFalse(likesMales.available());
-        assertEquals(false, likesMales.value());
+            script.storage.put(new QualifiedName("", "intro", "likemale"), "true");
+            assertTrue(likesMales.available());
+            assertEquals(true, likesMales.value());
 
-        script.storage.put(new QualifiedName("", "intro", "likemale"), "true");
-        assertTrue(likesMales.available());
-        assertEquals(true, likesMales.value());
+            likesMales.set(false);
+            assertEquals("false", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "likemale")));
 
-        likesMales.set(false);
-        assertEquals("false", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "likemale")));
+            PersistentBoolean likesFemales = script.persistentBoolean(Sexuality.Orientation.LikesFemales);
+            assertFalse(likesFemales.available());
+            assertEquals(false, likesFemales.value());
 
-        PersistentBoolean likesFemales = script.persistentBoolean(Sexuality.Orientation.LikesFemales);
-        assertFalse(likesFemales.available());
-        assertEquals(false, likesFemales.value());
-
-        script.storage.put(new QualifiedName("", "intro", "likefemale"), "true");
-        assertTrue(likesFemales.available());
-        assertEquals(true, likesFemales.value());
+            script.storage.put(new QualifiedName("", "intro", "likefemale"), "true");
+            assertTrue(likesFemales.available());
+            assertEquals(true, likesFemales.value());
+        }
     }
 
     @Test
-    public void testSexScriptsSexualOrientationMappingAndMappingOfNestedEnums_Write() {
-        TestScript script = TestScript.getOne(new SexScriptsPropertyNameMapping());
+    public void testSexScriptsSexualOrientationMappingAndMappingOfNestedEnums_Write() throws IOException {
+        try (TestScript script = new TestScript(new SexScriptsPropertyNameMapping())) {
+            PersistentBoolean likesMales = script.persistentBoolean(Sexuality.Orientation.LikesMales);
+            likesMales.set(true);
+            assertEquals("true", script.storage.get(new QualifiedName("", "intro", "likemale")));
 
-        PersistentBoolean likesMales = script.persistentBoolean(Sexuality.Orientation.LikesMales);
-        likesMales.set(true);
-        assertEquals("true", script.storage.get(new QualifiedName("", "intro", "likemale")));
+            PersistentBoolean likesFemales = script.persistentBoolean(Sexuality.Orientation.LikesFemales);
+            likesFemales.set(true);
+            assertEquals("true", script.storage.get(new QualifiedName("", "intro", "likefemale")));
 
-        PersistentBoolean likesFemales = script.persistentBoolean(Sexuality.Orientation.LikesFemales);
-        likesFemales.set(true);
-        assertEquals("true", script.storage.get(new QualifiedName("", "intro", "likefemale")));
+            likesFemales.set(false);
+            assertEquals("false", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "likefemale")));
 
-        likesFemales.set(false);
-        assertEquals("false", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "likefemale")));
-
-        likesFemales.clear();
-        assertFalse(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "likefemale")));
+            likesFemales.clear();
+            assertFalse(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "likefemale")));
+        }
 
     }
 }

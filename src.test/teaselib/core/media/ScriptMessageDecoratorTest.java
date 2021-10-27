@@ -1,6 +1,8 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
+
+import java.io.IOException;
 
 import org.junit.Test;
 
@@ -32,39 +34,41 @@ public class ScriptMessageDecoratorTest {
     }
 
     @Test
-    public void testStandardMessage() {
-        TestScript script = TestScript.getOne();
-        script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
+    public void testStandardMessage() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
 
-        Message m = new Message(script.actor);
-        m.add(Type.Image, Message.ActorImage);
-        m.add(Type.Text, "FooBar");
-        m.add(Type.Delay, "30.0");
+            Message m = new Message(script.actor);
+            m.add(Type.Image, Message.ActorImage);
+            m.add(Type.Text, "FooBar");
+            m.add(Type.Delay, "30.0");
 
-        ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
-                Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
-        RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
-        assertEquals(r.toString(), 4, r.size());
+            ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
+                    Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
+            RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
+            assertEquals(r.toString(), 4, r.size());
 
-        assertEquals(r.toString(), Type.Mood, r.get(0).type);
-        assertEquals(r.toString(), Type.Image, r.get(1).type);
-        assertEquals(r.toString(), Type.Text, r.get(2).type);
-        assertEquals(r.toString(), Type.Delay, r.get(3).type);
+            assertEquals(r.toString(), Type.Mood, r.get(0).type);
+            assertEquals(r.toString(), Type.Image, r.get(1).type);
+            assertEquals(r.toString(), Type.Text, r.get(2).type);
+            assertEquals(r.toString(), Type.Delay, r.get(3).type);
+        }
     }
 
     @Test
-    public void testImageAfterDelay() {
-        TestScript script = TestScript.getOne();
-        script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
+    public void testImageAfterDelay() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
 
-        Message m = new Message(script.actor);
-        m.add(Type.Delay, "30.0");
-        m.add(Type.Image, Message.ActorImage);
+            Message m = new Message(script.actor);
+            m.add(Type.Delay, "30.0");
+            m.add(Type.Image, Message.ActorImage);
 
-        ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
-                Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
-        RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
-        assertEquals("Actor image", 2, r.size());
+            ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
+                    Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
+            RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
+            assertEquals("Actor image", 2, r.size());
+        }
     }
 
 }

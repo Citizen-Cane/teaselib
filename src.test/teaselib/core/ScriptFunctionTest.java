@@ -2,6 +2,7 @@ package teaselib.core;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -20,23 +21,25 @@ public class ScriptFunctionTest {
     private static final String TEST = "test";
 
     @Test
-    public void testThatScriptFunctionWithoutDelayReturnsCorrectValue() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-        String choice = "false";
-        script.debugger.addResponse(choice, Debugger.Response.Ignore);
+    public void testThatScriptFunctionWithoutDelayReturnsCorrectValue() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            String choice = "false";
+            script.debugger.addResponse(choice, Debugger.Response.Ignore);
 
-        assertEquals(TEST, script.reply(this::returnImmediately, choice));
+            assertEquals(TEST, script.reply(this::returnImmediately, choice));
+        }
     }
 
     @Test
-    public void testThatScriptFunctionWithDelayReturnsCorrectValue() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-        String choice = "false";
-        script.debugger.addResponse(choice, Debugger.Response.Ignore);
+    public void testThatScriptFunctionWithDelayReturnsCorrectValue() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            String choice = "false";
+            script.debugger.addResponse(choice, Debugger.Response.Ignore);
 
-        assertEquals(TEST, script.reply(() -> returnAfterDelay(script), choice));
+            assertEquals(TEST, script.reply(() -> returnAfterDelay(script), choice));
+        }
     }
 
     private String returnImmediately() {
@@ -60,9 +63,8 @@ public class ScriptFunctionTest {
 
     }
 
-    @SuppressWarnings("resource")
     private static RunnableTestScript getMainScript() {
-        return new RunnableTestScript(TestScript.teaseLib()) {
+        return new RunnableTestScript(TestScript.newTeaseLib()) {
             @Override
             public void run() {
                 // Empty

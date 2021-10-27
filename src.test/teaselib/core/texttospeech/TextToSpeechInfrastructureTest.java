@@ -56,8 +56,8 @@ public class TextToSpeechInfrastructureTest {
 
     @Test
     public void testBlacklistedVoicesAreIgnored() {
-        try (var tts1 = TextToSpeech.allSystemVoices(); TextToSpeech tts2 = TextToSpeech.allSystemVoices()) {
-            var voices = TextToSpeech.allSystemVoices().getVoices();
+        try (var tts1 = TextToSpeech.allSystemVoices()) {
+            var voices = tts1.getVoices();
             assertFalse(voices.isEmpty());
             log(voices);
             for (Entry<String, Voice> voice : voices.entrySet()) {

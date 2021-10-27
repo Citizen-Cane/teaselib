@@ -5,6 +5,7 @@ package teaselib.util;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -31,204 +32,212 @@ import teaselib.test.TestScript;
  */
 public class ItemIdentityTest {
     @Test
-    public void testRetrievingTheIdenticalItem() {
-        TestScript script = TestScript.getOne();
-        Items gags = script.items(Toys.Gag);
+    public void testRetrievingTheIdenticalItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Items gags = script.items(Toys.Gag);
 
-        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-        assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+            assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
-        Item sameRingGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        assertEquals(ringGag, sameRingGag);
+            Item sameRingGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            assertEquals(ringGag, sameRingGag);
 
-        assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
-        assertTrue(sameRingGag.is(Toys.Gags.Ring_Gag));
+            assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
+            assertTrue(sameRingGag.is(Toys.Gags.Ring_Gag));
+        }
     }
 
     @Test
-    public void testApplyingTheIdenticalItem() {
-        TestScript script = TestScript.getOne();
-        Items gags = script.items(Toys.Gag);
+    public void testApplyingTheIdenticalItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Items gags = script.items(Toys.Gag);
 
-        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-        assertFalse(ringGag.is(Body.InMouth));
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+            assertFalse(ringGag.is(Body.InMouth));
 
-        ringGag.apply();
-        assertTrue(ringGag.is(Body.InMouth));
-        assertTrue(script.state(Body.InMouth).is(Toys.Gag));
-        assertTrue(script.state(Body.InMouth).is(Toys.Gags.Ring_Gag));
+            ringGag.apply();
+            assertTrue(ringGag.is(Body.InMouth));
+            assertTrue(script.state(Body.InMouth).is(Toys.Gag));
+            assertTrue(script.state(Body.InMouth).is(Toys.Gags.Ring_Gag));
 
-        State mouth = script.state(Body.InMouth);
-        assertTrue(mouth.is(Toys.Gag));
-        assertTrue(mouth.is(Toys.Gags.Ring_Gag));
-        assertTrue(mouth.is(ringGag));
+            State mouth = script.state(Body.InMouth);
+            assertTrue(mouth.is(Toys.Gag));
+            assertTrue(mouth.is(Toys.Gags.Ring_Gag));
+            assertTrue(mouth.is(ringGag));
+        }
     }
 
     @Test
-    public void testComparingItemsAndStateWorks() {
-        TestScript script = TestScript.getOne();
-        Items gags = script.items(Toys.Gag);
+    public void testComparingItemsAndStateWorks() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Items gags = script.items(Toys.Gag);
 
-        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-        assertFalse(ringGag.is(Body.InMouth));
-        ringGag.apply();
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+            assertFalse(ringGag.is(Body.InMouth));
+            ringGag.apply();
 
-        assertTrue(ringGag.is(Body.InMouth));
-        assertTrue(ringGag.is(script.state(Body.InMouth)));
+            assertTrue(ringGag.is(Body.InMouth));
+            assertTrue(ringGag.is(script.state(Body.InMouth)));
+        }
     }
 
     @Test
-    public void testItemInstanceRemoveSameInstance() {
-        TestScript script = TestScript.getOne();
+    public void testItemInstanceRemoveSameInstance() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item chastityDevice = script.item(Toys.Chastity_Device);
+            State onPenis = script.state(Body.OnPenis);
 
-        Item chastityDevice = script.item(Toys.Chastity_Device);
-        State onPenis = script.state(Body.OnPenis);
+            chastityDevice.apply();
 
-        chastityDevice.apply();
-
-        assertTrue(chastityDevice.applied());
-        assertTrue(onPenis.applied());
-
-        chastityDevice.remove();
-
-        assertFalse(chastityDevice.applied());
-        assertFalse(onPenis.applied());
-    }
-
-    @Test
-    public void testItemInstanceRemoveAnyInstance() {
-        TestScript script = TestScript.getOne();
-
-        Item chastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).get();
-        State onPenis = script.state(Body.OnPenis);
-
-        chastityDevice.apply();
-
-        assertTrue(chastityDevice.applied());
-        assertTrue(onPenis.applied());
-
-        Item otherChastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Belt).get();
-
-        // Removing the wrong item doesn't work
-        try {
-            otherChastityDevice.remove();
-            fail("Removing un-applied item must throw");
-        } catch (IllegalStateException e) {
             assertTrue(chastityDevice.applied());
             assertTrue(onPenis.applied());
+
+            chastityDevice.remove();
+
+            assertFalse(chastityDevice.applied());
+            assertFalse(onPenis.applied());
         }
-
-        assertTrue(chastityDevice.applied());
-        assertTrue(onPenis.applied());
-
-        // Instead just remove the default item
-        script.item(Toys.Chastity_Device).remove();
-        assertFalse(chastityDevice.applied());
-        assertFalse(onPenis.applied());
     }
 
     @Test
-    public void testItemInstanceRemoveAnyInstanceStringBased() {
-        TestScript script = TestScript.getOne();
+    public void testItemInstanceRemoveAnyInstance() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item chastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell)
+                    .get();
+            State onPenis = script.state(Body.OnPenis);
 
-        Item chastityDevice = script.items("teaselib.Toys.Chastity_Device")
-                .matching("teaselib.Toys.Chastity_Devices.Gates_of_Hell").get();
-        State onPenis = script.state("teaselib.Body.OnPenis");
+            chastityDevice.apply();
 
-        chastityDevice.apply();
-
-        assertTrue(chastityDevice.applied());
-        assertTrue(onPenis.applied());
-
-        Item otherChastityDevice = script.items("teaselib.Toys.Chastity_Device")
-                .matching("teaselib.Toys.Chastity_Devices.Belt").get();
-
-        // Removing the wrong item doesn't work
-        try {
-            otherChastityDevice.remove();
-            fail("Removing un-applied item must throw");
-        } catch (IllegalStateException e) {
             assertTrue(chastityDevice.applied());
             assertTrue(onPenis.applied());
+
+            Item otherChastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Belt).get();
+
+            // Removing the wrong item doesn't work
+            try {
+                otherChastityDevice.remove();
+                fail("Removing un-applied item must throw");
+            } catch (IllegalStateException e) {
+                assertTrue(chastityDevice.applied());
+                assertTrue(onPenis.applied());
+            }
+
+            assertTrue(chastityDevice.applied());
+            assertTrue(onPenis.applied());
+
+            // Instead just remove the default item
+            script.item(Toys.Chastity_Device).remove();
+            assertFalse(chastityDevice.applied());
+            assertFalse(onPenis.applied());
         }
-
-        // Instead just remove the default item
-        script.item("teaselib.Toys.Chastity_Device").remove();
-        assertFalse(chastityDevice.applied());
-        assertFalse(onPenis.applied());
     }
 
     @Test
-    public void testApplyLotsOfItemInstancesAndRemoveOneAfterAnother() {
-        TestScript script = TestScript.getOne();
-        State nipples = script.state(Body.OnNipples);
-        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+    public void testItemInstanceRemoveAnyInstanceStringBased() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item chastityDevice = script.items("teaselib.Toys.Chastity_Device")
+                    .matching("teaselib.Toys.Chastity_Devices.Gates_of_Hell").get();
+            State onPenis = script.state("teaselib.Body.OnPenis");
 
-        for (Item peg : clothesPegsOnNipples) {
-            peg.remove();
+            chastityDevice.apply();
+
+            assertTrue(chastityDevice.applied());
+            assertTrue(onPenis.applied());
+
+            Item otherChastityDevice = script.items("teaselib.Toys.Chastity_Device")
+                    .matching("teaselib.Toys.Chastity_Devices.Belt").get();
+
+            // Removing the wrong item doesn't work
+            try {
+                otherChastityDevice.remove();
+                fail("Removing un-applied item must throw");
+            } catch (IllegalStateException e) {
+                assertTrue(chastityDevice.applied());
+                assertTrue(onPenis.applied());
+            }
+
+            // Instead just remove the default item
+            script.item("teaselib.Toys.Chastity_Device").remove();
+            assertFalse(chastityDevice.applied());
+            assertFalse(onPenis.applied());
         }
-
-        verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
     @Test
-    public void testApplyLotsOfItemInstancesAndRemoveAtOnce() {
-        TestScript script = TestScript.getOne();
-        State nipples = script.state(Body.OnNipples);
-        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+    public void testApplyLotsOfItemInstancesAndRemoveOneAfterAnother() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State nipples = script.state(Body.OnNipples);
+            ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
-        // remove just on item instance
-        clothesPegsOnNipples.remove(0).remove();
-        assertTrue(script.state(Household.Clothes_Pegs).applied());
-        // Testing script default item doesn'twork here,
-        // since we've created a lot of temporary items ourselves
-        script.state(Household.Clothes_Pegs).remove();
+            for (Item peg : clothesPegsOnNipples) {
+                peg.remove();
+            }
 
-        verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+            verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+        }
     }
 
     @Test
-    public void testApplyLotsOfItemInstancesAndRemovingAlreadyRemovedDoesntRemoveAll() {
-        TestScript script = TestScript.getOne();
-        State nipples = script.state(Body.OnNipples);
-        State clothesPinsState = script.state(Household.Clothes_Pegs);
-        Item notApplied = script.item(Household.Clothes_Pegs);
+    public void testApplyLotsOfItemInstancesAndRemoveAtOnce() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State nipples = script.state(Body.OnNipples);
+            ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
-        assertFalse(clothesPinsState.applied());
-        placeClothesPegs(script, nipples);
-        assertFalse(notApplied.applied());
+            // remove just on item instance
+            clothesPegsOnNipples.remove(0).remove();
+            assertTrue(script.state(Household.Clothes_Pegs).applied());
+            // Testing script default item doesn'twork here,
+            // since we've created a lot of temporary items ourselves
+            script.state(Household.Clothes_Pegs).remove();
 
-        assertTrue(clothesPinsState.applied());
-        notApplied.apply();
-        assertTrue(notApplied.applied());
-        notApplied.remove();
-        assertFalse(notApplied.applied());
-        assertTrue(clothesPinsState.applied());
+            verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+        }
     }
 
     @Test
-    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnce() {
-        TestScript script = TestScript.getOne();
+    public void testApplyLotsOfItemInstancesAndRemovingAlreadyRemovedDoesntRemoveAll() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State nipples = script.state(Body.OnNipples);
+            State clothesPinsState = script.state(Household.Clothes_Pegs);
+            Item notApplied = script.item(Household.Clothes_Pegs);
 
-        State clothesPegs = script.state(Household.Clothes_Pegs);
-        State nipples = script.state(Body.OnNipples);
+            assertFalse(clothesPinsState.applied());
+            placeClothesPegs(script, nipples);
+            assertFalse(notApplied.applied());
 
-        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
-        clothesPegs.removeFrom(Body.OnNipples);
-
-        verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+            assertTrue(clothesPinsState.applied());
+            notApplied.apply();
+            assertTrue(notApplied.applied());
+            notApplied.remove();
+            assertFalse(notApplied.applied());
+            assertTrue(clothesPinsState.applied());
+        }
     }
 
     @Test
-    public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnce() {
-        TestScript script = TestScript.getOne();
-        State nipples = script.state(Body.OnNipples);
-        List<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnce() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State clothesPegs = script.state(Household.Clothes_Pegs);
+            State nipples = script.state(Body.OnNipples);
 
-        assertTrue(script.state(Body.OnNipples).applied());
-        nipples.removeFrom(Household.Clothes_Pegs);
+            ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+            clothesPegs.removeFrom(Body.OnNipples);
 
-        verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+            verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+        }
+    }
+
+    @Test
+    public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnce() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State nipples = script.state(Body.OnNipples);
+            List<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+
+            assertTrue(script.state(Body.OnNipples).applied());
+            nipples.removeFrom(Household.Clothes_Pegs);
+
+            verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+        }
     }
 
     private static ArrayList<Item> placeClothesPegs(TestScript script, State nipples) {
@@ -281,35 +290,38 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testUserItemsInstanciatingAndCaching() {
-        TestScript script = TestScript.getOne();
-        Items gags = script.items(Toys.Gag);
+    public void testUserItemsInstanciatingAndCaching() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Items gags = script.items(Toys.Gag);
 
-        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-        Item sameRingGag = script.teaseLib.getItem(TeaseLib.DefaultDomain, QualifiedString.of(Toys.Gag), "ring_gag");
-        assertEquals(ringGag, sameRingGag);
-        assertEquals(sameRingGag, ringGag);
-        assertNotSame(ringGag, sameRingGag);
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+            Item sameRingGag = script.teaseLib.getItem(TeaseLib.DefaultDomain, QualifiedString.of(Toys.Gag),
+                    "ring_gag");
+            assertEquals(ringGag, sameRingGag);
+            assertEquals(sameRingGag, ringGag);
+            assertNotSame(ringGag, sameRingGag);
+        }
     }
 
     @Test
-    public void testItemImplPersistance() throws ReflectiveOperationException {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-        ItemImpl gag = (ItemImpl) ((ItemProxy) script.item(Toys.Gag)).item;
+    public void testItemImplPersistance() throws ReflectiveOperationException, IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            ItemImpl gag = (ItemImpl) ((ItemProxy) script.item(Toys.Gag)).item;
 
-        String persisted = Persist.persist(gag);
-        Storage storage = Storage.from(persisted);
-        Item restored = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
+            String persisted = Persist.persist(gag);
+            Storage storage = Storage.from(persisted);
+            Item restored = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
 
-        assertSame(gag, restored);
+            assertSame(gag, restored);
 
-        script.debugger.clearStateMaps();
-        Storage storage2 = Storage.from(persisted);
-        Item restored2 = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
+            script.debugger.clearStateMaps();
+            Storage storage2 = Storage.from(persisted);
+            Item restored2 = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
 
-        assertNotSame(gag, restored2);
-        assertEquals(gag, restored2);
+            assertNotSame(gag, restored2);
+            assertEquals(gag, restored2);
+        }
     }
 
     public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage)
@@ -319,97 +331,99 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testItemPersistanceAndRestoreSimple() {
-        TestScript script = TestScript.getOne();
+    public void testItemPersistanceAndRestoreSimple() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item gag = script.item(Toys.Gag);
+            gag.apply().remember(Until.Removed);
+            assertTrue(gag.applied());
 
-        Item gag = script.item(Toys.Gag);
-        gag.apply().remember(Until.Removed);
-        assertTrue(gag.applied());
+            script.debugger.clearStateMaps();
 
-        script.debugger.clearStateMaps();
-
-        Item restored = script.item(Toys.Gag);
-        assertTrue(restored.applied());
-        assertEquals(gag, restored);
+            Item restored = script.item(Toys.Gag);
+            assertTrue(restored.applied());
+            assertEquals(gag, restored);
+        }
     }
 
     @Test
-    public void testItemInstancePersistAndRestoreWithAttributesSmallTest() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
+    public void testItemInstancePersistAndRestoreWithAttributesSmallTest() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
 
-        Items gags1 = script.items(Toys.Gag);
-        Item persisted = gags1.matching(Toys.Gags.Ring_Gag).get();
-        persisted.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+            Items gags1 = script.items(Toys.Gag);
+            Item persisted = gags1.matching(Toys.Gags.Ring_Gag).get();
+            persisted.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
 
-        script.debugger.clearStateMaps();
+            script.debugger.clearStateMaps();
 
-        Items gags = script.items(Toys.Gag);
-        Item restored = gags.matching(Toys.Gags.Ring_Gag).get();
+            Items gags = script.items(Toys.Gag);
+            Item restored = gags.matching(Toys.Gags.Ring_Gag).get();
 
-        State inMouth = script.state(Body.InMouth);
-        assertTrue(inMouth.is(restored));
-        assertTrue(restored.applied());
+            State inMouth = script.state(Body.InMouth);
+            assertTrue(inMouth.is(restored));
+            assertTrue(restored.applied());
+        }
     }
 
     @Test
-    public void testItemNamespace() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
+    public void testItemNamespace() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
 
-        Items gags = script.items(Toys.Gag);
-        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-        ringGag.apply();
+            Items gags = script.items(Toys.Gag);
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+            ringGag.apply();
 
-        Item muzzleGag = gags.matching(Toys.Gags.Muzzle_Gag).get();
+            Item muzzleGag = gags.matching(Toys.Gags.Muzzle_Gag).get();
 
-        assertTrue(ringGag.applied());
-        assertFalse(muzzleGag.applied());
+            assertTrue(ringGag.applied());
+            assertFalse(muzzleGag.applied());
 
-        State inMouth = script.state(Body.InMouth);
-        assertTrue(inMouth.is(ringGag));
-        assertFalse(inMouth.is(muzzleGag));
+            State inMouth = script.state(Body.InMouth);
+            assertTrue(inMouth.is(ringGag));
+            assertFalse(inMouth.is(muzzleGag));
 
-        assertTrue(inMouth.is(script.namespace));
-        assertFalse(script.item(Body.InMouth).is(script.namespace));
+            assertTrue(inMouth.is(script.namespace));
+            assertFalse(script.item(Body.InMouth).is(script.namespace));
 
-        assertTrue(ringGag.is(script.namespace));
-        assertFalse(muzzleGag.is(script.namespace));
+            assertTrue(ringGag.is(script.namespace));
+            assertFalse(muzzleGag.is(script.namespace));
+        }
     }
 
     @Test
-    public void testItemInstancePersistAndRestoreWithAttributes() {
-        TestScript script = TestScript.getOne();
+    public void testItemInstancePersistAndRestoreWithAttributes() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item ringGag = applyRingGagAndRemember(script);
+            verifyInMouth(script);
+            verifyGagApplied(script, ringGag);
 
-        Item ringGag = applyRingGagAndRemember(script);
-        verifyInMouth(script);
-        verifyGagApplied(script, ringGag);
+            script.debugger.clearStateMaps();
 
-        script.debugger.clearStateMaps();
+            Items gags = script.items(Toys.Gag);
+            Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).get();
+            assertNotSame(ringGag, ringGag2);
 
-        Items gags = script.items(Toys.Gag);
-        Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).get();
-        assertNotSame(ringGag, ringGag2);
-
-        verifyInMouth(script);
-        verifyGagApplied(script, ringGag2);
+            verifyInMouth(script);
+            verifyGagApplied(script, ringGag2);
+        }
     }
 
     @Test
-    public void testItemRestoreSequenceWhenReferencedToysHaveBeenRealizedFirst() {
-        TestScript script = TestScript.getOne();
+    public void testItemRestoreSequenceWhenReferencedToysHaveBeenRealizedFirst() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item ringGag = applyRingGagAndRemember(script);
+            verifyInMouth(script);
+            verifyGagApplied(script, ringGag);
 
-        Item ringGag = applyRingGagAndRemember(script);
-        verifyInMouth(script);
-        verifyGagApplied(script, ringGag);
+            script.debugger.clearStateMaps();
 
-        script.debugger.clearStateMaps();
+            verifyInMouth(script);
 
-        verifyInMouth(script);
-
-        Items gags = script.items(Toys.Gag);
-        Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).get();
-        verifyGagApplied(script, ringGag2);
+            Items gags = script.items(Toys.Gag);
+            Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).get();
+            verifyGagApplied(script, ringGag2);
+        }
     }
 
     private static Item applyRingGagAndRemember(TestScript script) {
@@ -437,230 +451,240 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testCanApplyMultipleInstancesWithoutDefaultPeers() {
-        TestScript script = TestScript.getOne();
+    public void testCanApplyMultipleInstancesWithoutDefaultPeers() throws IOException {
+        try (TestScript script = new TestScript()) {
+            ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, 10);
 
-        ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, 10);
+            for (Item peg : clothesPegsOnNipples) {
+                assertTrue(peg.canApply());
+                assertFalse(peg.applied());
+                peg.applyTo(Body.OnNipples);
 
-        for (Item peg : clothesPegsOnNipples) {
-            assertTrue(peg.canApply());
-            assertFalse(peg.applied());
-            peg.applyTo(Body.OnNipples);
+                State pegs = script.state(Household.Clothes_Pegs);
+                assertTrue(pegs.applied());
+                assertTrue(peg.applied());
+                assertTrue(peg.is(peg));
 
-            State pegs = script.state(Household.Clothes_Pegs);
-            assertTrue(pegs.applied());
-            assertTrue(peg.applied());
-            assertTrue(peg.is(peg));
-
-            assertFalse(peg.canApply());
+                assertFalse(peg.canApply());
+            }
         }
     }
 
     @Test
-    public void testCanApplySingleInstancesWithDefaultPeers() {
-        TestScript script = TestScript.getOne();
+    public void testCanApplySingleInstancesWithDefaultPeers() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item nippleClamps = script.item(Toys.Nipple_Clamps);
+            assertTrue(nippleClamps.canApply());
+            nippleClamps.apply();
+            assertTrue(nippleClamps.applied());
+            assertTrue(nippleClamps.is(nippleClamps));
 
-        Item nippleClamps = script.item(Toys.Nipple_Clamps);
-        assertTrue(nippleClamps.canApply());
-        nippleClamps.apply();
-        assertTrue(nippleClamps.applied());
-        assertTrue(nippleClamps.is(nippleClamps));
-
-        assertFalse(nippleClamps.canApply());
-    }
-
-    @Test
-    public void testItemIdentityEnumVsString() {
-        TestScript script = TestScript.getOne();
-
-        Item clothesPegsByEnum = script.item(Household.Clothes_Pegs);
-        Item clothesPegsByString = script.item("teaselib.household.clothes_pegs");
-
-        assertEquals(clothesPegsByEnum, clothesPegsByString);
-        assertTrue(((ItemProxy) clothesPegsByEnum).state == ((ItemProxy) clothesPegsByString).state);
-    }
-
-    @Test
-    public void testThatItemAppliesStateAsWell() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-
-        script.item(Toys.Gag).apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-        assertTrue(script.item(Toys.Gag).applied());
-        assertTrue(script.state(Toys.Gag).applied());
-
-        script.debugger.clearStateMaps();
-
-        assertTrue(script.item(Toys.Gag).applied());
-        assertTrue(script.state(Toys.Gag).applied());
-    }
-
-    @Test
-    public void testThatQueriedItemAppliesStateAsWell2() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-
-        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-        assertTrue(gag.applied());
-        assertTrue(script.state(Toys.Gag).applied());
-
-        script.debugger.clearStateMaps();
-
-        Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        assertTrue(restored.applied());
-        assertTrue(script.state(Toys.Gag).applied());
-    }
-
-    @Test
-    public void testThatRestoredItemCanBeRemoved() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-
-        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-        assertTrue(gag.applied());
-        assertTrue(script.state(Toys.Gag).applied());
-
-        gag.remove();
-        assertFalse(gag.applied());
-        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-
-        script.debugger.clearStateMaps();
-
-        Item restored = script.item(Toys.Gag);
-        assertTrue(restored.applied());
-        assertTrue(script.state(Toys.Gag).applied());
-
-        restored.remove();
-        assertFalse(restored.applied());
-    }
-
-    @Test
-    public void testThatItemGuidIsRestoredProperly() throws ReflectiveOperationException {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-
-        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-
-        script.debugger.clearStateMaps();
-
-        State gagState = script.state(Toys.Gag);
-
-        TeaseLib.PersistentString persistentString = script.teaseLib.new PersistentString(TeaseLib.DefaultDomain,
-                "Toys.Gag", "state.peers");
-        String persisted = persistentString.value();
-        assertNotEquals("", persisted);
-        List<String> peers = new PersistedObject(ArrayList.class, persisted).toValues();
-        assertEquals(3, peers.size());
-
-        for (String persistedPeer : peers) {
-            Object peer = Persist.from(persistedPeer);
-            assertTrue("State is missing persisted " + peer, gagState.is(peer));
+            assertFalse(nippleClamps.canApply());
         }
     }
 
     @Test
-    public void testThatAppliedItemCanBeTestedWithGenericQuery() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
+    public void testItemIdentityEnumVsString() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item clothesPegsByEnum = script.item(Household.Clothes_Pegs);
+            Item clothesPegsByString = script.item("teaselib.household.clothes_pegs");
 
-        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-        assertTrue(gag.applied());
-        assertTrue(script.item(Toys.Gag).applied());
-        assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
-
-        script.debugger.clearStateMaps();
-
-        Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        assertTrue(restored.applied());
-        assertTrue(script.item(Toys.Gag).applied());
-        assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
+            assertEquals(clothesPegsByEnum, clothesPegsByString);
+            assertTrue(((ItemProxy) clothesPegsByEnum).state == ((ItemProxy) clothesPegsByString).state);
+        }
     }
 
     @Test
-    public void testThatItemIsNotOtherItemOfSameKind() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
+    public void testThatItemAppliesStateAsWell() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
 
-        Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        ringGag.apply();
-        assertTrue(ringGag.is(ringGag));
+            script.item(Toys.Gag).apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+            assertTrue(script.item(Toys.Gag).applied());
+            assertTrue(script.state(Toys.Gag).applied());
 
-        Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
-        assertNotEquals(ringGag, bitGag);
-        assertFalse(ringGag.is(bitGag));
-        // TODO comparing items works via has(all attributes) but should check peers for item instance
+            script.debugger.clearStateMaps();
 
-        assertTrue(ringGag.applied());
-        assertFalse(bitGag.applied());
+            assertTrue(script.item(Toys.Gag).applied());
+            assertTrue(script.state(Toys.Gag).applied());
+        }
     }
 
     @Test
-    public void testThatItemIsNotOtherItem() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
+    public void testThatQueriedItemAppliesStateAsWell2() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
 
-        Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        ringGag.apply();
-        assertTrue(ringGag.is(ringGag));
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+            assertTrue(gag.applied());
+            assertTrue(script.state(Toys.Gag).applied());
 
-        Item analBeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
-        assertNotEquals(ringGag, analBeads);
-        assertFalse(ringGag.is(analBeads));
-        // TODO comparing items works via has(all attributes) but should check peers for item instance
+            script.debugger.clearStateMaps();
+
+            Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            assertTrue(restored.applied());
+            assertTrue(script.state(Toys.Gag).applied());
+        }
     }
 
     @Test
-    public void testThatStateIsItem() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
+    public void testThatRestoredItemCanBeRemoved() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
 
-        Item item = script.item(Toys.Gag);
-        item.apply();
-        assertTrue(script.item(Toys.Gag).applied());
-        assertTrue(script.state(Toys.Gag).applied());
-        assertTrue(script.state(Body.InMouth).is(item));
-        // TODO Requires item instance applied to item state but we decided against this
-        // - value is only applied to peers, not to itself
-        // -> can be resolved via peers
-        assertTrue(script.state(Toys.Gag).is(item));
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+            assertTrue(gag.applied());
+            assertTrue(script.state(Toys.Gag).applied());
+
+            gag.remove();
+            assertFalse(gag.applied());
+            gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+
+            script.debugger.clearStateMaps();
+
+            Item restored = script.item(Toys.Gag);
+            assertTrue(restored.applied());
+            assertTrue(script.state(Toys.Gag).applied());
+
+            restored.remove();
+            assertFalse(restored.applied());
+        }
+    }
+
+    @Test
+    public void testThatItemGuidIsRestoredProperly() throws ReflectiveOperationException, IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+
+            script.debugger.clearStateMaps();
+
+            State gagState = script.state(Toys.Gag);
+
+            TeaseLib.PersistentString persistentString = script.teaseLib.new PersistentString(TeaseLib.DefaultDomain,
+                    "Toys.Gag", "state.peers");
+            String persisted = persistentString.value();
+            assertNotEquals("", persisted);
+            List<String> peers = new PersistedObject(ArrayList.class, persisted).toValues();
+            assertEquals(3, peers.size());
+
+            for (String persistedPeer : peers) {
+                Object peer = Persist.from(persistedPeer);
+                assertTrue("State is missing persisted " + peer, gagState.is(peer));
+            }
+        }
+    }
+
+    @Test
+    public void testThatAppliedItemCanBeTestedWithGenericQuery() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
+            assertTrue(gag.applied());
+            assertTrue(script.item(Toys.Gag).applied());
+            assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
+
+            script.debugger.clearStateMaps();
+
+            Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            assertTrue(restored.applied());
+            assertTrue(script.item(Toys.Gag).applied());
+            assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
+        }
+    }
+
+    @Test
+    public void testThatItemIsNotOtherItemOfSameKind() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+
+            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            ringGag.apply();
+            assertTrue(ringGag.is(ringGag));
+
+            Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
+            assertNotEquals(ringGag, bitGag);
+            assertFalse(ringGag.is(bitGag));
+            // TODO comparing items works via has(all attributes) but should check peers for item instance
+
+            assertTrue(ringGag.applied());
+            assertFalse(bitGag.applied());
+        }
+    }
+
+    @Test
+    public void testThatItemIsNotOtherItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+
+            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            ringGag.apply();
+            assertTrue(ringGag.is(ringGag));
+
+            Item analBeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
+            assertNotEquals(ringGag, analBeads);
+            assertFalse(ringGag.is(analBeads));
+            // TODO comparing items works via has(all attributes) but should check peers for item instance
+        }
+    }
+
+    @Test
+    public void testThatStateIsItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+
+            Item item = script.item(Toys.Gag);
+            item.apply();
+            assertTrue(script.item(Toys.Gag).applied());
+            assertTrue(script.state(Toys.Gag).applied());
+            assertTrue(script.state(Body.InMouth).is(item));
+            // TODO Requires item instance applied to item state but we decided against this
+            // - value is only applied to peers, not to itself
+            // -> can be resolved via peers
+            assertTrue(script.state(Toys.Gag).is(item));
+        }
     }
 
     @Test
     // TODO This should work as well, but without adding item instance to item state
-    public void testThatStateIsItemWhenAppliedExplicitely() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
+    public void testThatStateIsItemWhenAppliedExplicitely() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
 
-        Item item = script.item(Household.Clothes_Pegs);
-        item.apply();
-        assertTrue(script.item(Household.Clothes_Pegs).applied());
-        assertTrue(script.state(Household.Clothes_Pegs).applied());
-        // TODO Requires item instance applied to item state but we decided against this
-        // - value is only applied to peers, not to itself
-        // -> can be resolved via "peers must be added to item state itself"
-        assertTrue(script.state(Household.Clothes_Pegs).is(item));
+            Item item = script.item(Household.Clothes_Pegs);
+            item.apply();
+            assertTrue(script.item(Household.Clothes_Pegs).applied());
+            assertTrue(script.state(Household.Clothes_Pegs).applied());
+            // TODO Requires item instance applied to item state but we decided against this
+            // - value is only applied to peers, not to itself
+            // -> can be resolved via "peers must be added to item state itself"
+            assertTrue(script.state(Household.Clothes_Pegs).is(item));
+        }
     }
 
     @Test
-    public void testRetrievingItemViaString() {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
+    public void testRetrievingItemViaString() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
 
-        Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
+            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
 
-        QualifiedString ringGagRef = QualifiedString.of(ringGag);
-        QualifiedString bitGagRef = QualifiedString.of(bitGag);
-        assertNotEquals(ringGagRef, bitGagRef);
-        assertNotEquals(ringGagRef.toString(), bitGagRef.toString());
+            QualifiedString ringGagRef = QualifiedString.of(ringGag);
+            QualifiedString bitGagRef = QualifiedString.of(bitGag);
+            assertNotEquals(ringGagRef, bitGagRef);
+            assertNotEquals(ringGagRef.toString(), bitGagRef.toString());
 
-        assertTrue(script.item(Toys.Gag).is(Gags.Ball_Gag));
-        assertEquals(ringGag, script.item(ringGagRef.toString()));
-        assertEquals(bitGag, script.item(bitGagRef.toString()));
+            assertTrue(script.item(Toys.Gag).is(Gags.Ball_Gag));
+            assertEquals(ringGag, script.item(ringGagRef.toString()));
+            assertEquals(bitGag, script.item(bitGagRef.toString()));
+        }
     }
 
 }

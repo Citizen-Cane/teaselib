@@ -23,13 +23,11 @@ public abstract class RenderSpeech extends MediaRendererThread {
         // Suspend speech recognition while speaking, to avoid wrong
         // recognitions - and the mistress speech isn't to be interrupted anyway
 
-        @SuppressWarnings("resource")
         ScriptRenderer scriptRenderer = teaseLib.globals.get(ScriptRenderer.class);
         scriptRenderer.audioSync.completeSpeechRecognition();
         startCompleted();
 
         InputMethods inputMethods = teaseLib.globals.get(InputMethods.class);
-        @SuppressWarnings("resource")
         SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
         try (SpeechRecognitionInputMethod.ResumeRecognition closeable = inputMethod.pauseRecognition()) {
             renderSpeech();

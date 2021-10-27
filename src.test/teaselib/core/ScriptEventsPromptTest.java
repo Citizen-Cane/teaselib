@@ -1,8 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.Bondage;
-import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.release.KeyReleaseBaseTest;
@@ -32,14 +31,15 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
     private KeyRelease keyRelease;
 
     @Before
-    public void setup() {
-        script = TestScript.getOne(new DebugSetup());
+    public void setup() throws IOException {
+        script = new TestScript();
         keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
     }
 
     @After
     public void detachDevice() {
         keyReleaseSetup.deviceInteraction.deviceDisconnected(new DeviceEventMock(keyRelease));
+        script.close();
     }
 
     @Test

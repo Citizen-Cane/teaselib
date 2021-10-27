@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -46,15 +46,16 @@ public class CheckPointTest {
 
     @Test
     public void testCheckPointNewMeessage() throws Exception {
-        TestScript script = TestScript.getOne();
-        CheckPointTester checkPoints = genericSequential();
+        try (TestScript script = new TestScript()) {
+            CheckPointTester checkPoints = genericSequential();
 
-        script.teaseLib.addCheckPointListener(checkPoints);
-        script.say("test");
-        script.teaseLib.removeCheckPointListener(checkPoints);
+            script.teaseLib.addCheckPointListener(checkPoints);
+            script.say("test");
+            script.teaseLib.removeCheckPointListener(checkPoints);
 
-        checkPoints.throwCatchedException();
-        assertEquals(1, checkPoints.actual.get());
+            checkPoints.throwCatchedException();
+            assertEquals(1, checkPoints.actual.get());
+        }
     }
 
     private static CheckPointTester genericSequential() {
@@ -72,52 +73,55 @@ public class CheckPointTest {
 
     @Test
     public void testCheckPointScriptFunction() throws Exception {
-        TestScript script = TestScript.getOne();
-        CheckPointTester checkPoints = genericScriptFunction(false);
+        try (TestScript script = new TestScript()) {
+            CheckPointTester checkPoints = genericScriptFunction(false);
 
-        script.debugger.addResponse("Finished", Response.Ignore);
-        script.teaseLib.addCheckPointListener(checkPoints);
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
-        script.teaseLib.removeCheckPointListener(checkPoints);
+            script.debugger.addResponse("Finished", Response.Ignore);
+            script.teaseLib.addCheckPointListener(checkPoints);
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
+            script.teaseLib.removeCheckPointListener(checkPoints);
 
-        checkPoints.throwCatchedException();
-        assertEquals(3, checkPoints.actual.get());
+            checkPoints.throwCatchedException();
+            assertEquals(3, checkPoints.actual.get());
+        }
     }
 
     @Test
     public void testCheckPointScriptFunctionWithoutTimeAdvanceInThreads() throws Exception {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-        CheckPointTester checkPoints = genericScriptFunction(false);
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            CheckPointTester checkPoints = genericScriptFunction(false);
 
-        script.debugger.addResponse("Finished", Response.Ignore);
-        script.teaseLib.addCheckPointListener(checkPoints);
+            script.debugger.addResponse("Finished", Response.Ignore);
+            script.teaseLib.addCheckPointListener(checkPoints);
 
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
-        script.teaseLib.removeCheckPointListener(checkPoints);
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
+            script.teaseLib.removeCheckPointListener(checkPoints);
 
-        checkPoints.throwCatchedException();
-        assertEquals(3, checkPoints.actual.get());
+            checkPoints.throwCatchedException();
+            assertEquals(3, checkPoints.actual.get());
+        }
     }
 
     @Test
     public void testCheckPointScriptFunctionAndTimeListener() throws Exception {
-        TestScript script = TestScript.getOne();
-        script.debugger.freezeTime();
-        script.debugger.advanceTimeAllThreads();
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            script.debugger.advanceTimeAllThreads();
 
-        CheckPointTester checkPoints = genericScriptFunction(true);
-        TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
+            CheckPointTester checkPoints = genericScriptFunction(true);
+            TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
 
-        script.debugger.addResponse("Finished", Response.Ignore);
-        script.teaseLib.addCheckPointListener(checkPoints);
-        script.teaseLib.addTimeAdvancedListener(tal);
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
-        script.teaseLib.removeCheckPointListener(checkPoints);
-        script.teaseLib.removeTimeAdvancedListener(tal);
+            script.debugger.addResponse("Finished", Response.Ignore);
+            script.teaseLib.addCheckPointListener(checkPoints);
+            script.teaseLib.addTimeAdvancedListener(tal);
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
+            script.teaseLib.removeCheckPointListener(checkPoints);
+            script.teaseLib.removeTimeAdvancedListener(tal);
 
-        checkPoints.throwCatchedException();
-        assertEquals(4, checkPoints.actual.get());
+            checkPoints.throwCatchedException();
+            assertEquals(4, checkPoints.actual.get());
+        }
     }
 
     @Test
@@ -125,37 +129,38 @@ public class CheckPointTest {
     // TODO Test requires DebugResponse.ChooseWhenScriptFunctionFinsished
     // -> otherwise CheckPoint.StartScriptFunction and CheckPoint.NewMessage may not be reacched
     public void testCheckPointScriptFunctionAndTimeListenerWithResponse() throws Exception {
-        TestScript script = TestScript.getOne();
-        CheckPointTester checkPoints = genericScriptFunction(true);
-        TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
+        try (TestScript script = new TestScript()) {
+            CheckPointTester checkPoints = genericScriptFunction(true);
+            TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
 
-        CyclicBarrier inScriptFunction = new CyclicBarrier(2);
-        String answer = "Finished";
-        script.debugger.addResponse(answer, () -> {
-            inScriptFunction.await();
-            return Response.Choose;
-        });
-        script.teaseLib.addCheckPointListener(checkPoints);
-        script.teaseLib.addTimeAdvancedListener(tal);
-
-        assertEquals(answer, script.reply(() -> {
-            script.say("test");
-            try {
+            CyclicBarrier inScriptFunction = new CyclicBarrier(2);
+            String answer = "Finished";
+            script.debugger.addResponse(answer, () -> {
                 inScriptFunction.await();
-                waitForResponse();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            } catch (BrokenBarrierException e) {
-                throw new AssertionError(e.getMessage());
-            }
-        }, answer));
+                return Response.Choose;
+            });
+            script.teaseLib.addCheckPointListener(checkPoints);
+            script.teaseLib.addTimeAdvancedListener(tal);
 
-        script.teaseLib.removeCheckPointListener(checkPoints);
-        script.teaseLib.removeTimeAdvancedListener(tal);
+            assertEquals(answer, script.reply(() -> {
+                script.say("test");
+                try {
+                    inScriptFunction.await();
+                    waitForResponse();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new ScriptInterruptedException(e);
+                } catch (BrokenBarrierException e) {
+                    throw new AssertionError(e.getMessage());
+                }
+            }, answer));
 
-        checkPoints.throwCatchedException();
-        assertEquals("Passing all checkpoints", 2, checkPoints.actual.get());
+            script.teaseLib.removeCheckPointListener(checkPoints);
+            script.teaseLib.removeTimeAdvancedListener(tal);
+
+            checkPoints.throwCatchedException();
+            assertEquals("Passing all checkpoints", 2, checkPoints.actual.get());
+        }
     }
 
     private void waitForResponse() throws InterruptedException {

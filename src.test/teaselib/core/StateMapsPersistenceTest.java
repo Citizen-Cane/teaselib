@@ -5,11 +5,13 @@ import static org.junit.Assert.*;
 import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.*;
 import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.*;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,8 +63,8 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
                 .asList(new Object[][] { { TestParameter.DontTestPersistence }, { TestParameter.TestPersistence } });
     }
 
-    public StateMapsPersistenceTest(TestParameter remember) {
-        this(TestScript.getOne(), remember);
+    public StateMapsPersistenceTest(TestParameter remember) throws IOException {
+        this(new TestScript(), remember);
     }
 
     StateMapsPersistenceTest(TestScript script, TestParameter remember) {
@@ -84,6 +86,11 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
 
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
+    }
+
+    @After
+    public void cleanup() {
+        script.close();
     }
 
     void rememberOrNot(State.Persistence state) {

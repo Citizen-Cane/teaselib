@@ -16,4 +16,5 @@ import teaselib.core.ShowChoicesTestThrowScriptInterruptedException;
 @Suite.SuiteClasses({ ShowChoicesTest.class, ShowChoicesTestErrorHandling.class,
         ShowChoicesTestScriptFunctionReply.class, ShowChoicesTestThrowScriptInterruptedException.class })
 public final class IntegrationTests {
+    //
 }

@@ -52,7 +52,7 @@ public class TeaseLibLogger {
                     try {
                         log.flush();
                         log.close();
-                    } catch (IOException ignored) {
+                    } catch (IOException ignored) { // during shutdown
                     }
                 }
             }

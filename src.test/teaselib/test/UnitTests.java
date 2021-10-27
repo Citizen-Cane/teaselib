@@ -11,4 +11,5 @@ import org.junit.runners.Suite;
 @Categories.ExcludeCategory({ IntegrationTests.class })
 @Suite.SuiteClasses({ AllTests.class })
 public final class UnitTests {
+    //
 }

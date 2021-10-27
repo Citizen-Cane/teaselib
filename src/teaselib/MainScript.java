@@ -9,4 +9,5 @@ import teaselib.functional.RunnableScript;
  */
 @FunctionalInterface
 public interface MainScript extends RunnableScript {
+    // tag interface
 }

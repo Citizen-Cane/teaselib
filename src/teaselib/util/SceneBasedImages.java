@@ -1,6 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,6 +56,10 @@ public class SceneBasedImages extends AbstractImages {
         }
     }
 
+    /**
+     * @param e
+     *            Not used
+     */
     void handleAfterChoices(EventArgs e) {
         remainingPoseViews--;
         if (remainingPoseViews <= 0) {
@@ -69,6 +73,10 @@ public class SceneBasedImages extends AbstractImages {
     // TODO too late to change the image set, because the images are needed when the message is built,
     // but the BeforeMessage event happens when the message is ready and about to be rendered
 
+    /**
+     * @param e
+     *            Not used
+     */
     void handleBeforeMessage(EventArgs e) {
         if (remainingSetScenes <= 0) {
             chooseSet();

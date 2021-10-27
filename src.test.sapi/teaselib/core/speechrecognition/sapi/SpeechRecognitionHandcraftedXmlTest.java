@@ -14,7 +14,6 @@ import java.util.Locale;
 import java.util.function.IntUnaryOperator;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -127,8 +126,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
                             preparedChoices = ((TestableTeaseLibSRGS) sr.implementation).new PreparedChoicesImplementation(
                                     choices, builder.slices, xml, mapper);
                             sr.apply(preparedChoices);
-
-                        } catch (ParserConfigurationException | TransformerException e) {
+                        } catch (ParserConfigurationException e) {
                             throw asRuntimeException(e);
                         }
 

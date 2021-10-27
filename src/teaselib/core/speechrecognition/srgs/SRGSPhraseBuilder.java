@@ -1,8 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,7 +14,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.w3c.dom.Element;
@@ -33,7 +30,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     int guid = 0;
 
     public SRGSPhraseBuilder(Choices choices, String languageCode)
-            throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+            throws ParserConfigurationException, TransformerFactoryConfigurationError {
         this(choices, languageCode, new PhraseMapping.Relaxed(choices));
     }
 

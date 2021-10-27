@@ -279,7 +279,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         }
     }
 
-    private void wakeUpFromHibernate(SceneCapture device) {
+    private static void wakeUpFromHibernate(SceneCapture device) {
         if (!device.isStarted()) {
             device.start();
         }

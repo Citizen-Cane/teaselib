@@ -5,20 +5,22 @@ package teaselib.core.devices.xinput;
  *
  * @author Ivan "StrikerX3" Oliveira
  */
-public class SimpleXInputDeviceListener implements XInputDeviceListener {
+public class XInputDeviceAdapter implements XInputDeviceListener {
+
     @Override
-    public void connected() {
+    public void connected() { //
     }
 
     @Override
-    public void disconnected() {
+    public void disconnected() { //
     }
 
     @Override
-    public void buttonChanged(final XInputButton button, final boolean pressed) {
+    public void buttonChanged(XInputButton button, boolean pressed) { //
     }
 
     @Override
-    public void axisChanged(final XInputAxis axis, final float value, final float delta) {
+    public void axisChanged(XInputAxis axis, float value, float delta) { //
     }
+
 }

@@ -1,9 +1,10 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static teaselib.core.speechrecognition.srgs.StringSequence.Traits;
+import static teaselib.core.speechrecognition.srgs.StringSequence.*;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.BiPredicate;
 
 public class StringSequences extends Sequences<String> {
     private static final long serialVersionUID = 1L;
@@ -20,8 +21,6 @@ public class StringSequences extends Sequences<String> {
         return String.join(" ", elements);
     }
 
-    protected static boolean joinableSequences(List<String> elements1, List<String> elements2) {
-        return true;
-    }
+    protected static final BiPredicate<List<String>, List<String>> joinableSequences = (a, b) -> true;
 
 }

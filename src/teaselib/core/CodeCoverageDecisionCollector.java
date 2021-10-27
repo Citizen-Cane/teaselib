@@ -66,7 +66,7 @@ public class CodeCoverageDecisionCollector implements Iterable<DecisionList> {
 
     @Override
     public Iterator<DecisionList> iterator() {
-        return new Iterator<DecisionList>() {
+        return new Iterator<>() {
             int index = 0;
 
             @Override

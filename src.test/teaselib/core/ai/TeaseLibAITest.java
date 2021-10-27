@@ -167,7 +167,7 @@ public class TeaseLibAITest {
         }
     }
 
-    private String getOpenCVImageSequence(String name, String pattern) {
+    private static String getOpenCVImageSequence(String name, String pattern) {
         File folder = new File(TeaseLibAITest.class.getResource(name).getFile()).getParentFile();
         return new File(folder, pattern).getAbsolutePath();
     }

@@ -36,7 +36,7 @@ class ReducingList<T> implements List<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return new Iterator<T>() {
+        return new Iterator<>() {
             boolean hasNext = getResult() != null;
 
             @Override
@@ -92,7 +92,6 @@ class ReducingList<T> implements List<T> {
         }
     }
 
-    @SuppressWarnings("unlikely-arg-type")
     @Override
     public boolean containsAll(Collection<?> c) {
         return c.stream().allMatch(this::contains);
@@ -112,7 +111,6 @@ class ReducingList<T> implements List<T> {
         return addAll(c);
     }
 
-    @SuppressWarnings("unlikely-arg-type")
     @Override
     public boolean removeAll(Collection<?> c) {
         T old = element;
@@ -121,7 +119,6 @@ class ReducingList<T> implements List<T> {
     }
 
     @Override
-    @SuppressWarnings("unlikely-arg-type")
     public boolean retainAll(Collection<?> c) {
         if (c.contains(element))
             return false;

@@ -14,12 +14,10 @@ import teaselib.core.util.ExceptionUtil;
  * 
  */
 public class RenderDesktopItem extends MediaRendererThread {
-    private final TeaseLib teaseLib;
     private final File file;
 
     public RenderDesktopItem(TeaseLib teaseLib, ResourceLoader resources, String resource) throws IOException {
         super(teaseLib);
-        this.teaseLib = teaseLib;
         this.file = resources.unpackEnclosingFolder(resource);
     }
 

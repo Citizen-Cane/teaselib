@@ -32,7 +32,7 @@ public abstract class RemoteDevice implements Device.Creatable {
         }
 
         @Override
-        public void close() {
+        public void close() { // Nothing to do when just waiting for connection
         }
 
         @Override
@@ -71,7 +71,7 @@ public abstract class RemoteDevice implements Device.Creatable {
         }
 
         @Override
-        public void send(RemoteDeviceMessage message) {
+        public void send(RemoteDeviceMessage message) { // Nothing to do when just waiting for connection
         }
 
         @Override

@@ -39,7 +39,7 @@ public class Unsupported extends TextToSpeechImplementation {
     }
 
     @Override
-    public void dispose() {
+    public void dispose() { // Nothing to do
     }
 
     @Override

@@ -1,9 +1,8 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.stream.Collectors.toList;
-import static teaselib.core.concurrency.NamedExecutorService.newUnlimitedThreadPool;
-import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
+import static java.util.concurrent.TimeUnit.*;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.concurrency.NamedExecutorService.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -130,7 +129,7 @@ public class ScriptRenderer implements Closeable {
         }
 
         var interTitle = new RenderInterTitle(RenderedMessage.of(composed, decorators), teaseLib);
-        renderMessage(teaseLib, message.actor, interTitle, OutlineType.NewSection);
+        renderMessage(teaseLib, interTitle, OutlineType.NewSection);
     }
 
     class ReplayImpl implements Replay {
@@ -227,7 +226,7 @@ public class ScriptRenderer implements Closeable {
         fireNewMessageEvent(teaseLib, actor, outlineType);
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
         MediaRenderer replaced = concatFunction.apply(actor, renderedMessages, resources);
-        renderMessage(teaseLib, actor, replaced, outlineType);
+        renderMessage(teaseLib, replaced, outlineType);
         currentMessage = messages.get(messages.size() - 1);
     }
 
@@ -257,7 +256,7 @@ public class ScriptRenderer implements Closeable {
         return renderedMessages;
     }
 
-    private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer renderMessage, OutlineType outlineType) {
+    private void renderMessage(TeaseLib teaseLib, MediaRenderer renderMessage, OutlineType outlineType) {
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
                 queueRenderer(renderMessage);

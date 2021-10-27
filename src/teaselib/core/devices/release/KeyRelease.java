@@ -19,7 +19,7 @@ import teaselib.core.devices.remote.RemoteDeviceMessage;
 
 public class KeyRelease implements Device.Creatable {
     private static final class MyDeviceFactory extends DeviceFactory<KeyRelease> {
-        DeviceListener<LocalNetworkDevice> forwardEvents = new DeviceListener<LocalNetworkDevice>() {
+        DeviceListener<LocalNetworkDevice> forwardEvents = new DeviceListener<>() {
             @Override
             public void deviceConnected(DeviceEvent<LocalNetworkDevice> e) {
                 MyDeviceFactory.this.fireDeviceConnected(

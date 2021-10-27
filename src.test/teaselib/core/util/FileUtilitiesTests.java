@@ -8,7 +8,6 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -18,15 +17,7 @@ import org.junit.rules.TemporaryFolder;
  *
  */
 public class FileUtilitiesTests {
-    File currentDir = new File(getClass().getResource(
-            getClass().getSimpleName() + ".class").getPath()).getParentFile();
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-    }
+    File currentDir = new File(getClass().getResource(getClass().getSimpleName() + ".class").getPath()).getParentFile();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();

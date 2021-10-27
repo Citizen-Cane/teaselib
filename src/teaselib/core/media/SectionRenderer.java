@@ -1,6 +1,6 @@
 package teaselib.core.media;
 
-import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
+import static teaselib.core.concurrency.NamedExecutorService.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -200,11 +200,11 @@ public class SectionRenderer implements Closeable {
         return next.renderer;
     }
 
-    private void prefetchImages(MessageRenderer messageRenderer) {
+    private static void prefetchImages(MessageRenderer messageRenderer) {
         prefetchImages(messageRenderer.actor, messageRenderer.messages);
     }
 
-    private void prefetchImages(Actor actor, List<RenderedMessage> messages) {
+    private static void prefetchImages(Actor actor, List<RenderedMessage> messages) {
         if (actor.images != Images.None) {
             for (RenderedMessage message : messages) {
                 prefetchImages(actor, message);
@@ -215,7 +215,7 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    private void prefetchImages(Actor actor, RenderedMessage message) {
+    private static void prefetchImages(Actor actor, RenderedMessage message) {
         for (MessagePart part : message) {
             if (part.type == Message.Type.Image) {
                 String resource = part.value;
@@ -341,7 +341,7 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    private boolean haveMoreMessages(MessageRenderer messageRenderer) {
+    private static boolean haveMoreMessages(MessageRenderer messageRenderer) {
         return messageRenderer.currentMessage < messageRenderer.messages.size();
     }
 

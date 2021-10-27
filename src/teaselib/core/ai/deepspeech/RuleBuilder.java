@@ -1,7 +1,7 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.Collections.singleton;
-import static teaselib.core.speechrecognition.Confidence.valueOf;
+import static java.util.Collections.*;
+import static teaselib.core.speechrecognition.Confidence.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -171,7 +171,7 @@ public class RuleBuilder {
                 if ((ratedWord == null && r != null && r.probability > 0.0f)
                         || (ratedWord != null && r != null && r.probability > ratedWord.probability)) {
                     ratedWord = r;
-                    if (ratedWord.probability >= 1.0) {
+                    if (ratedWord != null && ratedWord.probability >= 1.0) {
                         break;
                     }
                 }

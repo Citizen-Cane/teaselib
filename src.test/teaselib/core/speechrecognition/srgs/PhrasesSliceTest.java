@@ -1,13 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
-import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.prettyPrint;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.srgs.PhraseString.*;
+import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -825,7 +821,7 @@ public class PhrasesSliceTest {
         assertEquals(4, optimal.rating.maxCommonness);
     }
 
-    private PhraseStringSequences choices(String... answers) {
+    private static PhraseStringSequences choices(String... answers) {
         List<Sequence<PhraseString>> choices = new ArrayList<>();
         for (var answer : answers) {
             choices.add(choice(answer, choices.size()));

@@ -11,7 +11,7 @@ import teaselib.core.util.ExceptionUtil;
 public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
-    public void show(Prompt prompt) throws InterruptedException {
+    void show(Prompt prompt) throws InterruptedException {
         Prompt activePrompt = active.get();
 
         if (prompt == activePrompt) {
@@ -36,14 +36,14 @@ public class PromptQueue {
         awaitResult(prompt);
     }
 
-    public void awaitResult(Prompt prompt) throws InterruptedException {
+    void awaitResult(Prompt prompt) throws InterruptedException {
         if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
             prompt.click.await();
         }
         dismiss(prompt);
     }
 
-    public void resume(Prompt prompt) throws InterruptedException {
+    void resume(Prompt prompt) throws InterruptedException {
         Prompt activePrompt = active.get();
 
         if (activePrompt != null) {
@@ -66,7 +66,7 @@ public class PromptQueue {
         active.set(prompt);
     }
 
-    public void pause(Prompt prompt) {
+    void pause(Prompt prompt) {
         prompt.pause();
         if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
             dismiss(prompt);
@@ -75,7 +75,7 @@ public class PromptQueue {
         }
     }
 
-    private void dismiss(Prompt prompt) {
+    void dismiss(Prompt prompt) {
         Prompt activePrompt = active.get();
 
         if (activePrompt == null) {
@@ -92,7 +92,11 @@ public class PromptQueue {
         }
     }
 
-    public Prompt getActive() {
+    void setActive(Prompt prompt) {
+        active.set(prompt);
+    }
+
+    Prompt getActive() {
         return active.get();
     }
 

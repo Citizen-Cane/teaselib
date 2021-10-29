@@ -26,7 +26,7 @@ final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
     }
 
     @Override
-    public void run(PoseEstimationEventArgs eventArgs) throws Exception {
+    public void run(PoseEstimationEventArgs eventArgs) throws InterruptedException {
         var presence = presence(eventArgs);
         var proximity = proximity(eventArgs);
         boolean speechProximity = presence && proximity == Proximity.FACE2FACE;

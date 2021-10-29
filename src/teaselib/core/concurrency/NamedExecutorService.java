@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class NamedExecutorService extends ThreadPoolExecutor {
 
-    private static final String MULTITHREADED_NAME_PATTERN = "%s-%d";
+    private static final String MULTITHREADED_NAME_PATTERN = "%s %d";
     private static final String SINGLETHREADED_NAME_PATTERN = "%s";
 
     private NamedExecutorService(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, String name,
@@ -23,7 +23,12 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     }
 
     static ThreadFactory newThreadFactory(int maximumPoolSize, String name) {
-        return maximumPoolSize == 1 ? r -> newSingleThread(name, r) : r -> newThread(name, r);
+        if (maximumPoolSize == 1) {
+            return r -> newSingleThread(name, r);
+        } else {
+            AtomicInteger counter = new AtomicInteger();
+            return r -> newThread(name, r, counter.incrementAndGet());
+        }
     }
 
     private static Thread newSingleThread(String name, Runnable r) {
@@ -31,9 +36,8 @@ public class NamedExecutorService extends ThreadPoolExecutor {
         return new Thread(r, threadName);
     }
 
-    private static Thread newThread(String name, Runnable r) {
-        AtomicInteger counter = new AtomicInteger();
-        String threadName = String.format(MULTITHREADED_NAME_PATTERN, name, counter.incrementAndGet());
+    private static Thread newThread(String name, Runnable r, int n) {
+        String threadName = String.format(MULTITHREADED_NAME_PATTERN, name, n);
         return new Thread(r, threadName);
     }
 

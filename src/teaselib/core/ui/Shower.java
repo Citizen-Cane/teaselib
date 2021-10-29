@@ -33,58 +33,50 @@ public class Shower {
         prompt.lock.lockInterruptibly();
         try {
             pauseCurrent();
-
-            try {
-                choice = showNew(prompt);
-            } catch (Exception e) {
-                resumePreviousAfterException();
-                throwScriptTaskException(prompt);
-                throw e;
-            }
-
+            choice = showNew(prompt);
             resumePrevious();
 
-            ScriptFutureTask scriptTask = prompt.scriptTask;
-            if (scriptTask != null) {
-                try {
-                    var answer = scriptTask.get();
-                    if (answer != null) {
-                        return Collections.singletonList(new Choice(answer));
-                    } else if (prompt.result().equals(Prompt.Result.UNDEFINED)
-                            || prompt.result().equals(Prompt.Result.DISMISSED)) {
-                        return Collections.singletonList(new Choice(Answer.Timeout));
-                    } else {
-                        return choice;
-                    }
-                } catch (CancellationException | ExecutionException e) {
-                    Throwable exception = scriptTask.getException();
-                    if (exception == null) {
-                        return choice;
-                    } else if (exception instanceof AnswerOverride) {
-                        AnswerOverride override = (AnswerOverride) exception;
-                        return Collections.singletonList(new Choice(override.answer));
-                    } else {
-                        throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-                    }
-                }
-            } else {
-                return choice;
-            }
+            return answer(prompt, choice);
         } finally {
             prompt.lock.unlock();
+        }
+    }
+
+    private static List<Choice> answer(Prompt prompt, List<Choice> choice) throws InterruptedException {
+        var scriptTask = prompt.scriptTask;
+        if (scriptTask != null) {
+            try {
+                var answer = scriptTask.get();
+                if (answer != null) {
+                    return Collections.singletonList(new Choice(answer));
+                } else if (prompt.result().equals(Prompt.Result.UNDEFINED)
+                        || prompt.result().equals(Prompt.Result.DISMISSED)) {
+                    return Collections.singletonList(new Choice(Answer.Timeout));
+                } else {
+                    return choice;
+                }
+            } catch (CancellationException | ExecutionException e) {
+                Throwable exception = scriptTask.getException();
+                if (exception == null) {
+                    return choice;
+                } else if (exception instanceof AnswerOverride) {
+                    AnswerOverride override = (AnswerOverride) exception;
+                    return Collections.singletonList(new Choice(override.answer));
+                } else {
+                    throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+                }
+            }
+        } else {
+            return choice;
         }
     }
 
     private static void throwScriptTaskException(Prompt prompt) throws InterruptedException {
         ScriptFutureTask scriptTask = prompt.scriptTask;
         if (scriptTask != null && !scriptTask.isCancelled()) {
-            boolean isInterrupted = Thread.interrupted(); // clear flag to be able to call get() on the future task
+            boolean isInterrupted = Thread.interrupted(); // clear to be able to wait
             try {
-                scriptTask.get();
-            } catch (CancellationException ignore) {
-                // ignore
-            } catch (ExecutionException e) {
-                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+                scriptTask.awaitCompleted();
             } finally {
                 if (isInterrupted) {
                     Thread.currentThread().interrupt();
@@ -93,22 +85,58 @@ public class Shower {
         }
     }
 
-    private void resumePreviousAfterException() {
+    private void resumePreviousPromptAfterException(Prompt prompt, Exception e) {
         try {
-            resumePrevious();
+            if (stack.isEmpty()) {
+                throw new IllegalStateException("Unexpected empty stack: " + prompt, e);
+            }
+
+            if (prompt.hasScriptTask()) {
+                prompt.scriptTask.cancel(true);
+                prompt.scriptTask.awaitCompleted();
+            }
+
+            if (!stack.isEmpty() && stack.peek() != prompt) {
+                throw new IllegalStateException("Nested prompts not dismissed: " + prompt, e);
+            }
+
+            // active prompt UI must be unrealized explicitly
+            if (prompt == promptQueue.getActive()) {
+                if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
+                    promptQueue.dismiss(prompt);
+                }
+            }
+            stack.remove(prompt);
+            if (!stack.isEmpty()) {
+                promptQueue.setActive(stack.peek());
+            }
+
+            if (prompt.isActive()) {
+                throw new IllegalStateException("Input methods not dismissed: " + prompt);
+            }
+
         } catch (RuntimeException ignore) {
-            logger.warn(ignore.getMessage(), "");
-        } catch (InterruptedException ignore) {
+            if (e instanceof InterruptedException) {
+                logger.warn(ignore.getMessage(), ignore);
+            } else {
+                throw ExceptionUtil.asRuntimeException(e);
+            }
+        } catch (InterruptedException e1) {
             Thread.currentThread().interrupt();
-            logger.warn(ignore.getMessage(), "");
+            logger.warn(e1.getMessage(), "");
         }
     }
 
     private List<Choice> showNew(Prompt prompt) throws InterruptedException {
-        stack.push(prompt);
-
-        promptQueue.show(prompt);
-        return result(prompt);
+        try {
+            stack.push(prompt);
+            promptQueue.show(prompt);
+            return result(prompt);
+        } catch (Exception e) {
+            resumePreviousPromptAfterException(prompt, e);
+            throwScriptTaskException(prompt);
+            throw e;
+        }
     }
 
     private List<Choice> result(Prompt prompt) throws InterruptedException {
@@ -209,10 +237,15 @@ public class Shower {
         }
     }
 
-    public void updateUI(InputMethod.UiEvent event) {
+    public void updateUI(InputMethod.UiEvent event) throws InterruptedException {
         if (!stack.isEmpty()) {
             var prompt = stack.peek();
-            prompt.updateUI(event);
+            prompt.lock.lockInterruptibly();
+            try {
+                prompt.updateUI(event);
+            } finally {
+                prompt.lock.unlock();
+            }
         }
     }
 

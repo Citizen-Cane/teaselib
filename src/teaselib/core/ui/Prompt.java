@@ -124,7 +124,7 @@ public class Prompt {
     final Map<InputMethod.Notification, Action> inputMethodEventActions = new HashMap<>();
     final AtomicReference<InputMethodEventArgs> inputMethodEventArgs = new AtomicReference<>();
 
-    private List<InputMethod> realized = null;
+    private List<InputMethod> realized = Collections.emptyList();
     private Result result;
     private Throwable exception;
     private InputMethod resultInputMethod;
@@ -214,6 +214,10 @@ public class Prompt {
         }
     }
 
+    boolean isActive() {
+        return !realized.isEmpty();
+    }
+
     public Result result() {
         throwIfNotLocked();
 
@@ -253,7 +257,7 @@ public class Prompt {
 
     public void setTimedOut() {
         throwIfNotLocked();
-        throwIfPaused("Trying to set timeout");
+        throwIfPaused("Trying to timeout");
 
         if (result.equals(Prompt.Result.UNDEFINED)) {
             result = Prompt.Result.DISMISSED;
@@ -306,20 +310,18 @@ public class Prompt {
     public void dismiss() {
         throwIfNotLocked();
 
-        if (realized != null) {
-            try {
-                for (InputMethod inputMethod : realized) {
-                    inputMethod.dismiss(this);
-                }
-                realized = null;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw ExceptionUtil.asRuntimeException(e);
+        try {
+            for (InputMethod inputMethod : realized) {
+                inputMethod.dismiss(this);
             }
+            realized = Collections.emptyList();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 

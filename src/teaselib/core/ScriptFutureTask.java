@@ -53,23 +53,11 @@ public class ScriptFutureTask extends FutureTask<Answer> {
     public void run() {
         try {
             super.run();
-
             logger.info("Script task {} is finishing", prompt);
             if (!isCancelled()) {
-                prompt.lock.lockInterruptibly();
-                try {
-                    if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
-                        prompt.setTimedOut();
-                        prompt.click.signalAll();
-                    }
-                } finally {
-                    prompt.lock.unlock();
-                }
+                dismissPromptWithTimeout();
             }
-        } catch (InterruptedException | ScriptInterruptedException e) {
-            Thread.currentThread().interrupt();
-            handleScriptTaskInterrupted();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             handleException(e);
         } finally {
             cancellationCompletion.countDown();
@@ -77,12 +65,20 @@ public class ScriptFutureTask extends FutureTask<Answer> {
         logger.info("Script task {} finished", prompt);
     }
 
-    private void handleScriptTaskInterrupted() {
-        logger.info("Script task {} interrupted", prompt);
-        Thread.interrupted();
+    private void dismissPromptWithTimeout() {
+        prompt.lock.lock();
+        try {
+            if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
+                prompt.resume();
+                prompt.setTimedOut();
+                prompt.click.signalAll();
+            }
+        } finally {
+            prompt.lock.unlock();
+        }
     }
 
-    private void handleException(Exception e) {
+    private void handleException(Throwable e) {
         if (throwable == null) {
             setException(e);
         } else {
@@ -140,13 +136,31 @@ public class ScriptFutureTask extends FutureTask<Answer> {
             forwardErrorsAsRuntimeException();
             return result;
         } catch (CancellationException e) {
-            cancellationCompletion.await();
+            awaitCancellationCompleted();
             throw e;
         } catch (ExecutionException e) {
             throw e;
         } finally {
             logger.info("Joined script task {}", prompt);
         }
+    }
+
+    public void awaitCompleted() throws InterruptedException {
+        try {
+            logger.info("Waiting for script task {} to complete", prompt);
+            super.get();
+            forwardErrorsAsRuntimeException();
+        } catch (CancellationException e) {
+            awaitCancellationCompleted();
+        } catch (ExecutionException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        } finally {
+            logger.info("Completed script task {}", prompt);
+        }
+    }
+
+    private void awaitCancellationCompleted() throws InterruptedException {
+        cancellationCompletion.await();
     }
 
     private void forwardErrorsAsRuntimeException() {

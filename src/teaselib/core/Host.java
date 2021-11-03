@@ -4,6 +4,7 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
@@ -65,6 +66,12 @@ public interface Host {
 
     InputMethod inputMethod();
 
+    public record ScriptInterruptedEvent(ScriptInterruptedEvent.Reason reason) {
+        public enum Reason {
+            WindowClosing
+        }
+    }
+
     /**
      * Install a handler being executed when the user quits the application or the main script is otherwise interrupted.
      * The quit handler should be short, as the closing process cannot be cancelled. A final message and setting a flag
@@ -76,7 +83,7 @@ public interface Host {
      * @param onQuitHandler
      *            The script to execute when the slave quits the application.
      */
-    void setQuitHandler(Runnable onQuitHandler);
+    void setQuitHandler(Consumer<ScriptInterruptedEvent> onQuitHandler);
 
     enum Location {
         TeaseLib,

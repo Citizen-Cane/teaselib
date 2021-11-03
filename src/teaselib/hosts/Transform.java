@@ -158,8 +158,7 @@ public class Transform {
         return zoomed;
     }
 
-    public static void avoidFocusAreaBehindText(AffineTransform surface, Rectangle bounds, Rectangle2D.Double focusArea,
-            int textAreaX) {
+    public static void avoidFocusAreaBehindText(AffineTransform surface, Rectangle2D.Double focusArea, int textAreaX) {
         Point2D focusRight = surface.transform(new Point2D.Double(focusArea.getMaxX(), focusArea.getCenterY()),
                 new Point2D.Double());
         double overlap = focusRight.getX() - textAreaX;

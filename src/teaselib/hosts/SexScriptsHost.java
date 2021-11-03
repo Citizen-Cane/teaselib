@@ -1,7 +1,7 @@
 package teaselib.hosts;
 
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toSet;
+import static java.util.function.Predicate.*;
+import static java.util.stream.Collectors.*;
 
 import java.awt.Color;
 import java.awt.Container;
@@ -37,6 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
@@ -54,6 +55,7 @@ import org.slf4j.LoggerFactory;
 import ss.IScript;
 import ss.desktop.MainFrame;
 import teaselib.core.Audio;
+import teaselib.core.Closeable;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
@@ -109,7 +111,7 @@ import teaselib.util.Interval;
  * @author admin
  *
  */
-public class SexScriptsHost implements Host, HostInputMethod.Backend {
+public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable {
     static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
     private final IScript ss;
@@ -137,8 +139,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private FutureTask<Prompt.Result> showChoices;
     private CountDownLatch enableUI = null;
     private boolean intertitleActive = false;
+    private HumanPose.Proximity actorProximity = Proximity.FAR;
 
-    Runnable onQuitHandler = null;
+    private final int originalDefaultCloseoperation;
+    Consumer<ScriptInterruptedEvent> onQuitHandler = null;
+
 
     public static Host from(IScript script) {
         return new SexScriptsHost(script);
@@ -177,7 +182,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             backgroundImage = null;
         }
 
-        int originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
+        this.originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {
             @Override
             public void windowOpened(WindowEvent e) {
@@ -201,24 +206,18 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
 
             @Override
             public void windowClosing(WindowEvent event) {
-                try {
-                    if (onQuitHandler != null) {
-                        mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-                        var runnable = onQuitHandler;
-                        // Execute each quit handler just once
-                        onQuitHandler = null;
-                        logger.info("Running quit handler {}", runnable.getClass().getName());
-                        runnable.run();
-                    } else {
-                        mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
-                    }
-                } finally {
-                    mainThread.interrupt();
+                if (onQuitHandler != null) {
                     try {
-                        mainThread.join();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+                        mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+                        logger.info("Running quit handler {}", onQuitHandler.getClass().getName());
+                        ScriptInterruptedEvent reason = new ScriptInterruptedEvent(ScriptInterruptedEvent.Reason.WindowClosing);
+                        onQuitHandler.accept(reason);
+                    } finally {
+                        onQuitHandler = null;
                     }
+                } else {
+                    mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
+                    mainThread.interrupt();
                 }
             }
 
@@ -234,6 +233,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         });
 
         inputMethod = new HostInputMethod(NamedExecutorService.singleThreadedQueue(getClass().getSimpleName()), this);
+    }
+
+    @Override
+    public void setQuitHandler(Consumer<ScriptInterruptedEvent> onQuitHandler) {
+        this.onQuitHandler = onQuitHandler;
+    }
+
+    @Override
+    public void close() {
+        mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
     }
 
     @Override
@@ -338,7 +347,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         return bi;
     }
 
-    private AffineTransform surfaceTransform(BufferedImage image, Rectangle bounds,
+    private static AffineTransform surfaceTransform(BufferedImage image, Rectangle bounds,
             Optional<Rectangle2D.Double> focusArea, double zoom, int textAreaX) {
         var surface = Transform.maxImage(image, bounds, focusArea);
 
@@ -349,7 +358,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 surface = Transform.zoom(surface, r, zoom);
             }
 
-            Transform.avoidFocusAreaBehindText(surface, bounds, r, textAreaX);
+            Transform.avoidFocusAreaBehindText(surface, r, textAreaX);
         }
 
         return surface;
@@ -482,8 +491,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         this.gaze = gaze;
         repaintImage = true;
     }
-
-    HumanPose.Proximity actorProximity = Proximity.FAR;
 
     @Override
     public void setActorProximity(HumanPose.Proximity proximity) {
@@ -892,13 +899,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         return components;
     }
 
-    private void enable(Set<? extends JComponent> elements, boolean enabled) {
+    private static void enable(Set<? extends JComponent> elements, boolean enabled) {
         elements.stream().forEach(c -> c.setVisible(enabled));
-    }
-
-    @Override
-    public void setQuitHandler(Runnable onQuitHandler) {
-        this.onQuitHandler = onQuitHandler;
     }
 
     @Override

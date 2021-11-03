@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
@@ -83,7 +84,7 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public void setQuitHandler(Runnable onQuit) {
+    public void setQuitHandler(Consumer<Host.ScriptInterruptedEvent> onQuit) {
         // Ignore
     }
 

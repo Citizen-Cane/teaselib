@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
@@ -221,7 +222,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void setQuitHandler(Runnable onQuit) {
+    public void setQuitHandler(Consumer<Host.ScriptInterruptedEvent> onQuit) {
         // Ignore
     }
 

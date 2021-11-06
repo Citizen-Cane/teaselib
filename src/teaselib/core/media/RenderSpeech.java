@@ -31,13 +31,13 @@ public abstract class RenderSpeech extends MediaRendererThread {
         SpeechRecognitionInputMethod inputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
         try (SpeechRecognitionInputMethod.ResumeRecognition closeable = inputMethod.pauseRecognition()) {
             renderSpeech();
+            logger.info("{} completed", this);
         } catch (IOException e) {
             handleIOException(e);
         } finally {
             mandatoryCompleted();
         }
 
-        logger.info("{} completed", this);
     }
 
     protected abstract void renderSpeech() throws IOException, InterruptedException;

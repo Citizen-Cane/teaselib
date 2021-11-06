@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Citizen-Cane
  * 
- *         Negotiator class for synchronization for speech and speech recognition.
+ *         Synchronization class for synchronization between text-to-speech and speech recognition.
  *
  */
 public final class AudioSync {
@@ -16,59 +16,46 @@ public final class AudioSync {
 
     private ReentrantLock sync = new ReentrantLock();
 
-    public void completeSpeechRecognition() {
-        if (sync.isLocked()) {
-            logger.info("Waiting for speech recognition to complete");
-            try {
-                sync.lockInterruptibly();
-                sync.unlock();
-                logger.info("Speech recognition in progress completed");
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
+    public void startSpeechRecognition() {
+        sync.lock();
     }
 
     public boolean speechRecognitionInProgress() {
         return sync.isLocked();
     }
 
-    public void produceSpeech(Runnable runnable) {
-        if (sync.isLocked()) {
-            try {
-                sync.lockInterruptibly();
-                try {
-                    runnable.run();
-                } finally {
-                    sync.unlock();
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        } else {
-            runnable.run();
-        }
-    }
-
-    public void startSpeechRecognition() {
-        sync.lock();
-    }
-
     public void endSpeechRecognition() {
         sync.unlock();
     }
 
-    public void whenSpeechCompleted(Runnable runnable) {
+    public void completeSpeechRecognition() {
+        runSynchronized(() -> { //
+        }, "Waiting for speech recognition to complete", "Speech recognition in progress completed");
+    }
+
+    public void runSynchronizedSpeech(Runnable runnable) {
+        String logStart = "Waiting for speech recognition to finish";
+        String logSuccess = "Speech recognition finished";
+        runSynchronized(runnable, logStart, logSuccess);
+    }
+
+    public void runSynchronizedSpeechRecognition(Runnable runnable) {
+        String logStart = "Waiting for speech to complete";
+        String logSuccess = "Speech completed";
+        runSynchronized(runnable, logStart, logSuccess);
+    }
+
+    private void runSynchronized(Runnable runnable, String logStart, String logSuccess) {
         if (sync.isLocked()) {
-            logger.info("Waiting for speech to complete");
+            logger.info(logStart);
             try {
                 sync.lockInterruptibly();
                 try {
                     runnable.run();
                 } finally {
                     sync.unlock();
-                    logger.info("Speech completed");
                 }
+                logger.info(logSuccess);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -76,4 +63,5 @@ public final class AudioSync {
             runnable.run();
         }
     }
+
 }

@@ -58,6 +58,10 @@ public class HumanPoseDeviceInteraction extends
 
     }
 
+    public boolean isActive() {
+        return poseEstimationTask.isActive();
+    }
+
     PoseAspects getPose(Interest interest) {
         return getPose(Collections.singleton(interest));
     }

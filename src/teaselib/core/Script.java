@@ -462,7 +462,7 @@ public abstract class Script {
         Choice choice;
         if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
             HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
-            if (humanPoseInteraction != null) {
+            if (humanPoseInteraction != null && humanPoseInteraction.deviceInteraction.isActive()) {
                 try {
                     define(humanPoseInteraction);
                     choice = showPrompt(prompt).get(0);
@@ -550,7 +550,7 @@ public abstract class Script {
 
     boolean isFace2Face() {
         HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
-        if (humanPoseInteraction != null) {
+        if (humanPoseInteraction != null && humanPoseInteraction.deviceInteraction.isActive()) {
             PoseAspects pose = humanPoseInteraction.getPose(Interest.Proximity);
             return pose.is(Proximity.FACE2FACE);
         } else {

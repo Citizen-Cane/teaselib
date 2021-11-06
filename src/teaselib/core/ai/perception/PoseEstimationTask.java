@@ -88,6 +88,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         throwIfUnsupported(interests);
         // TODO check whether the current model/poseAspects matches the requested interests
         return poseAspects.get();
+        // TODO signal when waiting and scene capture device lost - exception or special pose, probably PoseAspects.None
     }
 
     private static void throwIfUnsupported(Set<Interest> interests) {
@@ -126,6 +127,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
                 throw new ScriptInterruptedException();
             }
         }
+        // TODO signal when waiting and scene capture device lost - exception or special pose, probably PoseAspects.None
     }
 
     HumanPose getModel(Set<Interest> interests) {
@@ -183,7 +185,13 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
             device.stop();
         } catch (Throwable e) {
             logger.error(e.getMessage(), e);
+        } finally {
+            humanPose = null;
         }
+    }
+
+    public boolean isActive() {
+        return humanPose != null;
     }
 
     private SceneCapture awaitCaptureDevice() throws InterruptedException {

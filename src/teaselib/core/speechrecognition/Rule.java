@@ -7,8 +7,6 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static teaselib.core.speechrecognition.Confidence.High;
-import static teaselib.core.speechrecognition.Confidence.valueOf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,11 +35,12 @@ public class Rule {
     public static final String WITHOUT_IGNOREABLE_TRAILING_NULL_RULE = "Trailing Null rule removed";
     public static final String CHOICE_NODE_NAME = "r";
 
-    public static final Rule Timeout = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0, 1.0f, High);
-    public static final Rule Nothing = new Rule("Nothing", "", Integer.MIN_VALUE, emptyList(), 0, 0, 0.0f,
-            Confidence.Noise);
-    public static final Rule Noise = new Rule("Noise", "", Integer.MIN_VALUE, emptyList(), 0, 0, 0.0f,
-            Confidence.Noise);
+    public static final Rule Timeout = new Rule("Timeout", "", Integer.MIN_VALUE, emptyList(), 0, 0,
+            Confidence.Definite.probability);
+    public static final Rule Nothing = new Rule("Nothing", "", Integer.MIN_VALUE, emptyList(), 0, 0,
+            Confidence.Noise.probability);
+    public static final Rule Noise = new Rule("Noise", "", Integer.MIN_VALUE, emptyList(), 0, 0,
+            Confidence.Noise.probability);
 
     public static final Set<Integer> NoIndices = emptySet();
 
@@ -54,7 +53,6 @@ public class Rule {
 
     public final List<Rule> children;
     public final float probability;
-    public final Confidence confidence;
 
     public static Rule mainRule(List<Rule> children) {
         if (children.isEmpty()) {
@@ -69,8 +67,7 @@ public class Rule {
         String text = text(children);
         int fromElement = children.get(0).fromElement;
         int toElement = children.get(children.size() - 1).toElement;
-        var confidence = Confidence.valueOf(probability);
-        return new Rule(name, text, MAIN_RULE_INDEX, children, fromElement, toElement, probability, confidence);
+        return new Rule(name, text, MAIN_RULE_INDEX, children, fromElement, toElement, probability);
     }
 
     public static Rule placeholder(int index, int position, int choice, float probability) {
@@ -78,8 +75,7 @@ public class Rule {
     }
 
     public static Rule placeholder(int index, int position, Set<Integer> choices, float probability) {
-        return new Rule(name(CHOICE_NODE_NAME, index, choices), "", position, choices, position, position, probability,
-                valueOf(probability));
+        return new Rule(name(CHOICE_NODE_NAME, index, choices), "", position, choices, position, position, probability);
     }
 
     public static String name(String name, int index, List<Rule> children) {
@@ -105,48 +101,45 @@ public class Rule {
 
     public Rule(Rule rule, float probability) {
         this(rule.name, rule.text, rule.ruleIndex, rule.indices, rule.children, rule.fromElement, rule.toElement,
-                probability, Confidence.valueOf(probability));
+                probability);
     }
 
-    public Rule(Rule rule, String name, float probability, Confidence confidence) {
+    public Rule(Rule rule, String name, float probability) {
         this(name, rule.text, rule.ruleIndex, rule.indices, rule.children, rule.fromElement, rule.toElement,
-                probability, confidence);
+                probability);
     }
 
     public Rule(String name, String text, int ruleIndex, Set<Integer> indices, int fromElement, int toElement,
-            float probability, Confidence confidence) {
-        this(name, text, ruleIndex, indices, new ArrayList<>(), fromElement, toElement, probability, confidence);
+            float probability) {
+        this(name, text, ruleIndex, indices, new ArrayList<>(), fromElement, toElement, probability);
     }
 
     public Rule(String name, List<Rule> children) {
         this(name, text(children), -1, children, children.get(0).fromElement,
-                children.get(children.size() - 1).toElement, probability(children),
-                Confidence.valueOf(probability(children)));
+                children.get(children.size() - 1).toElement, probability(children));
     }
 
     public Rule(String name, String text, int ruleIndex, List<Rule> children, int fromElement, int toElement,
-            float probability, Confidence confidence) {
-        this(name, text, ruleIndex, indicesIntersection(children), children, fromElement, toElement, probability,
-                confidence);
+            float probability) {
+        this(name, text, ruleIndex, indicesIntersection(children), children, fromElement, toElement, probability);
     }
 
     public Rule(String name, List<String> children, int choice, float probability) {
         this(name, children.stream().collect(joining(" ")), -1, singleton(choice),
-                childRules(children, choice, probability), 0, children.size(), probability,
-                Confidence.valueOf(probability));
+                childRules(children, choice, probability), 0, children.size(), probability);
     }
 
     private static List<Rule> childRules(List<String> children, int choice, float probability) {
         List<Rule> rules = new ArrayList<>(children.size());
         for (int i = 0; i < children.size(); ++i) {
             rules.add(new Rule(Rule.CHOICE_NODE_NAME + "_" + i + "_" + choice, children.get(i), i, singleton(choice), i,
-                    i + 1, probability, Confidence.valueOf(probability)));
+                    i + 1, probability));
         }
         return rules;
     }
 
     private Rule(String name, String text, int ruleIndex, Set<Integer> indices, List<Rule> children, int fromElement,
-            int toElement, float probability, Confidence confidence) {
+            int toElement, float probability) {
         this.name = name;
         this.text = text;
         this.ruleIndex = ruleIndex;
@@ -155,7 +148,6 @@ public class Rule {
         this.toElement = toElement;
         this.children = unmodifiableList(children);
         this.probability = probability;
-        this.confidence = confidence;
     }
 
     public static Rule maxProbability(Rule a, Rule b) {
@@ -178,7 +170,8 @@ public class Rule {
     public String toString() {
         String displayedRuleIndex = ruleIndex == Integer.MIN_VALUE ? "" : " ruleIndex=" + ruleIndex;
         return "Name=" + name + displayedRuleIndex + " choices=" + indices + " [" + fromElement + "," + toElement
-                + "[ C=" + probability + "~" + confidence + " children=" + children.size() + " \"" + text + "\"";
+                + "[ C=" + probability + "~" + Confidence.valueOf(probability) + " children=" + children.size() + " \""
+                + text + "\"";
     }
 
     public String prettyPrint() {
@@ -251,7 +244,7 @@ public class Rule {
         List<Rule> childrenWithoutTrailingNullRule = children.stream()
                 .filter(child -> child.fromElement <= PhraseString.words(text).length).collect(toList());
         return new Rule(WITHOUT_IGNOREABLE_TRAILING_NULL_RULE, text, ruleIndex, childrenWithoutTrailingNullRule,
-                fromElement, toElement, probability, confidence);
+                fromElement, toElement, probability);
     }
 
     public boolean hasTrailingNullRule() {
@@ -281,7 +274,7 @@ public class Rule {
         }
 
         return new Rule(WITHOUT_IGNOREABLE_TRAILING_NULL_RULE, text, ruleIndex, childrenWithoutTrailingNullRule,
-                fromElement, toElement - lastChild.fromElement, probability, confidence);
+                fromElement, toElement - lastChild.fromElement, probability);
     }
 
     public Set<Integer> intersectionWithoutNullRules() {
@@ -342,16 +335,16 @@ public class Rule {
 
         List<Rule> repairedChildren = new ArrayList<>(children.subList(0, index.intValue()));
         repairedChildren.add(new Rule(nullRule.name, replacement.phrase, nullRule.ruleIndex, replacement.indices,
-                nullRule.fromElement, nullRule.toElement + elementOffset, probability, confidence));
+                nullRule.fromElement, nullRule.toElement + elementOffset, probability));
 
         for (int k = index.intValue() + 1; k < children.size(); k++) {
             Rule r = children.get(k);
             repairedChildren.add(new Rule(r.name, r.text, r.ruleIndex, r.indices, r.fromElement + elementOffset,
-                    r.toElement + elementOffset, r.probability, r.confidence));
+                    r.toElement + elementOffset, r.probability));
         }
 
         return new Rule(REPAIRED_MAIN_RULE_NAME, text(repairedChildren), ruleIndex, repairedChildren, fromElement,
-                toElement + elementOffset, probability, confidence);
+                toElement + elementOffset, probability);
     }
 
     public static float probability(List<Rule> children) {

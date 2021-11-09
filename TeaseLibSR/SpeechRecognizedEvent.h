@@ -39,18 +39,16 @@ public:
 	
 	void fire(ISpRecoResult* pResult);
 private:
-	const jclass confidenceClass;
-	jobject getConfidenceField(signed char confidence) const;
 	const jclass ruleClass;
 	jobject getRule(ISpRecoResult* pResult, const SPPHRASERULE* rule, const SemanticResults& semanticResults) const;
 	jobject newRule(
 		const wchar_t* name, const wchar_t* text, int rule_index,
 		jobject choiceIndices, ULONG fromElement, ULONG toElement,
-		float probability, jobject confidence) const;
+		float probability) const;
 	jobject newRule(
 		const wchar_t* name, const wchar_t* text, int rule_index,
 		const std::vector<jobject>& children,
-		ULONG fromElement, ULONG toElement, float probability, jobject confidence) const;
+		ULONG fromElement, ULONG toElement, float probability) const;
 	jobject choiceIndices(const RuleName& ruleName) const;
 
 	jobject repair(jobject jrules);

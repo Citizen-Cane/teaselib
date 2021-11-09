@@ -31,10 +31,10 @@ public class TestableTeaseLibSR extends TeaseLibSRGS.Relaxed {
 
     @Override
     public List<Rule> repair(List<Rule> result) {
-        return super.repair(result).stream().map(this::correctEmulatedConfidence).collect(Collectors.toList());
+        return super.repair(result).stream().map(this::convertEmulatedToRealworldConfidence).collect(Collectors.toList());
     }
 
-    private Rule correctEmulatedConfidence(Rule rule) {
+    private Rule convertEmulatedToRealworldConfidence(Rule rule) {
         float probabilityFirstWord;
         Set<Integer> result = SpeechRecognitionInputMethod.choices(
                 rule.hasTrailingNullRule() ? rule.withoutDisjunctTrailingNullRules(preparedChoices.mapper) : rule,

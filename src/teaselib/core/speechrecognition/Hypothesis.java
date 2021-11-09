@@ -9,7 +9,7 @@ public class Hypothesis extends Rule {
     }
 
     public Hypothesis(Rule rule, float probability) {
-        super(rule, Name, probability, Confidence.valueOf(probability));
+        super(rule, Name, probability);
     }
 
 }

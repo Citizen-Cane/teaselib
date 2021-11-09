@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ConfidenceTest {
-    private static final Logger logger = LoggerFactory.getLogger(Confidence.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConfidenceTest.class);
 
     @BeforeClass
     public static void showValues() {

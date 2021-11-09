@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,7 +70,7 @@ public class TeaseLibSRSimple extends TeaseLibSR.SAPI {
                 repaired.add(rule);
             } else {
                 repaired.add(new Rule(Rule.REPAIRED_MAIN_RULE_NAME, rule.text, rule.ruleIndex, indices,
-                        rule.fromElement, rule.toElement, rule.probability, rule.confidence));
+                        rule.fromElement, rule.toElement, rule.probability));
             }
         }
         return repaired;

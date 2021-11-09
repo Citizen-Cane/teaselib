@@ -1,7 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.Collections.*;
-import static teaselib.core.speechrecognition.Confidence.*;
+import static java.util.Collections.singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -250,7 +249,7 @@ public class RuleBuilder {
                 float probability) {
             Set<Integer> choices = singleton(choice);
             return new Rule(Rule.name(Rule.CHOICE_NODE_NAME, index, choices) + "_" + name, text, index, choices, from,
-                    to, probability, valueOf(probability));
+                    to, probability);
         }
 
         private void addPlaceholders(int n, int phraseIndex) {

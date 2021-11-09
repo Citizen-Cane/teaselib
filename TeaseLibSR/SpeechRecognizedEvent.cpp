@@ -21,18 +21,8 @@ using namespace std;
 SpeechRecognizedEvent::SpeechRecognizedEvent(JNIEnv *env,  jobject jevent, const char* name, jobject jteaselibsr)
     : Event(env, jevent, name)
 	, ruleClass(JNIClass::getClass(env, "teaselib/core/speechrecognition/Rule"))
-	, confidenceClass(JNIClass::getClass(env, "teaselib/core/speechrecognition/Confidence"))
 	, jteaselibsr(jteaselibsr)
 {}
-
-const char* getConfidenceFieldName(signed char confidence) {
-	switch (confidence) {
-		case SP_HIGH_CONFIDENCE: return "High";
-		case SP_NORMAL_CONFIDENCE: return "Normal";
-		case SP_LOW_CONFIDENCE:	return "Low";
-		default: return "Low";
-	}
-}
 
 float getProbability(const SPPHRASERULE* rule)
 {
@@ -47,17 +37,6 @@ float getProbability(const SPPHRASERULE* rule)
 		return rule->SREngineConfidence;
 	}
 }
-
-jobject SpeechRecognizedEvent::getConfidenceField(signed char confidence) const {
-    const char* confidenceFieldName = getConfidenceFieldName(confidence);
-    jobject confidenceValue = env->GetStaticObjectField(
-		confidenceClass,
-		JNIClass::getStaticFieldID(env, confidenceClass, confidenceFieldName, "Lteaselib/core/speechrecognition/Confidence;"));
-	if (env->ExceptionCheck()) throw JNIException(env);
-
-	return confidenceValue;
-}
-
 
 void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 	SPPHRASE* pPhrase = nullptr;
@@ -121,7 +100,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	wchar_t* text;
 	HRESULT hr = pResult->GetText(rule->ulFirstElement, rule->ulCountOfElements, false, &text, nullptr);
 	if (FAILED(hr)) {
-		jRule = newRule(L"Invalid", nullptr, -1, JNIUtilities::newSet(env), 0, 0, 0.0f, getConfidenceField(rule->Confidence));
+		jRule = newRule(L"Invalid", nullptr, -1, JNIUtilities::newSet(env), 0, 0, 0.0f);
 		if (env->ExceptionCheck()) throw JNIException(env);
 	} else {
 		std::vector<jobject> children;
@@ -141,8 +120,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 				choiceIndices(ruleName),
 				rule->ulFirstElement,
 				rule->ulFirstElement + rule->ulCountOfElements,
-				getProbability(rule),
-				getConfidenceField(rule->Confidence));
+				getProbability(rule));
 		} else {
 			jRule = newRule(
 				ruleName.name.c_str(),
@@ -151,8 +129,7 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 				children,
 				rule->ulFirstElement,
 				rule->ulFirstElement + rule->ulCountOfElements,
-				getProbability(rule),
-				getConfidenceField(rule->Confidence));
+				getProbability(rule));
 		}
 
 		if (text) {
@@ -166,19 +143,18 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 jobject SpeechRecognizedEvent::newRule(
 	const wchar_t* ruleName, const wchar_t* text, int rule_index,
 	jobject choiceIndices,  ULONG fromElement, ULONG toElement,
-	float probability, jobject confidence) const
+	float probability) const
 {
 	jobject jrule = env->NewObject(
 		ruleClass,
-		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/Set;IIFLteaselib/core/speechrecognition/Confidence;)V"),
+		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/Set;IIF)V"),
 		static_cast<jstring>(JNIString(env, ruleName)),
 		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
 		rule_index,
 		choiceIndices,
 		fromElement,
 		toElement,
-		probability,
-		confidence);
+		probability);
 	if (env->ExceptionCheck()) throw JNIException(env);
 	return jrule;
 }
@@ -186,19 +162,18 @@ jobject SpeechRecognizedEvent::newRule(
 jobject SpeechRecognizedEvent::newRule(
 	const wchar_t* ruleName, const wchar_t* text, int rule_index,
 	const std::vector<jobject>& children,
-	ULONG fromElement, ULONG toElement, float probability, jobject confidence) const 
+	ULONG fromElement, ULONG toElement, float probability) const 
 {
 	jobject jrule = env->NewObject(
 		ruleClass,
-		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/List;IIFLteaselib/core/speechrecognition/Confidence;)V"),
+		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ILjava/util/List;IIF)V"),
 		static_cast<jstring>(JNIString(env, ruleName)),
 		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
 		rule_index,
 		JNIUtilities::asList(env, children),
 		fromElement,
 		toElement,
-		probability,
-		confidence);
+		probability);
 	if (env->ExceptionCheck()) throw JNIException(env);
 	return jrule;
 }

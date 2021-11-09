@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.ui.Prompt.Action;
 import teaselib.core.util.ExceptionUtil;
 
 /**
@@ -136,10 +137,19 @@ public abstract class AbstractInputMethod implements InputMethod {
     }
 
     public static <T extends InputMethodEventArgs> boolean signal(Prompt prompt, Runnable action, T eventArgs) {
-        prompt.when(eventArgs.source).run(e -> {
-            prompt.remove(e.source);
-            action.run();
-        });
+        Action runOnceAndRemove = new Action() {
+            @Override
+            public boolean canRun(InputMethodEventArgs eventArgs) {
+                return true;
+            }
+
+            @Override
+            public void run(InputMethodEventArgs e) {
+                prompt.remove(e.source);
+                action.run();
+            }
+        };
+        prompt.when(eventArgs.source).run(runOnceAndRemove);
 
         prompt.lock.lock();
         try {

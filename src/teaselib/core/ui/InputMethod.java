@@ -20,6 +20,11 @@ public interface InputMethod extends teaselib.core.Closeable {
         public UiEvent(boolean enabled) {
             this.enabled = enabled;
         }
+
+        @Override
+        public String toString() {
+            return "enabled=" + enabled;
+        }
     }
 
     Setup getSetup(Choices choices);

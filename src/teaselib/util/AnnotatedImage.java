@@ -8,7 +8,7 @@ public class AnnotatedImage {
 
     public static final AnnotatedImage NoImage = new AnnotatedImage(Message.NoImage, new byte[] {});
 
-    final String resource;
+    public final String resource;
     public final byte[] bytes;
     public final HumanPose.Estimation pose;
 

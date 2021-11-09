@@ -340,6 +340,8 @@ public class Prompt {
     }
 
     public interface Action {
+        boolean canRun(InputMethodEventArgs eventArgs);
+
         void run(InputMethodEventArgs eventArgs);
     }
 
@@ -371,12 +373,12 @@ public class Prompt {
         throwIfNotLocked();
         throwIfPaused(eventArgs + " tried to signal handler invocation");
 
-        boolean actionAvailable;
+        Action action;
         synchronized (inputMethodEventActions) {
-            actionAvailable = inputMethodEventActions.containsKey(eventArgs.source);
+            action = inputMethodEventActions.get(eventArgs.source);
         }
 
-        if (actionAvailable) {
+        if (action != null && action.canRun(eventArgs)) {
             inputMethodEventArgs.set(eventArgs);
             click.signalAll();
         }

@@ -144,7 +144,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private final int originalDefaultCloseoperation;
     Consumer<ScriptInterruptedEvent> onQuitHandler = null;
 
-
     public static Host from(IScript script) {
         return new SexScriptsHost(script);
     }
@@ -210,7 +209,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                     try {
                         mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
                         logger.info("Running quit handler {}", onQuitHandler.getClass().getName());
-                        ScriptInterruptedEvent reason = new ScriptInterruptedEvent(ScriptInterruptedEvent.Reason.WindowClosing);
+                        ScriptInterruptedEvent reason = new ScriptInterruptedEvent(
+                                ScriptInterruptedEvent.Reason.WindowClosing);
                         onQuitHandler.accept(reason);
                     } finally {
                         onQuitHandler = null;
@@ -417,6 +417,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     private void show(String message) {
+        // New text causes the UI to flicker, namely the UI buttons to move up and down
+        // - this is the case in script functions where text is displayed while buttons are active
         ss.show(message);
     }
 
@@ -431,24 +433,34 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     boolean repaintImage = true;
     boolean repaintText = true;
 
+    String displayImageResource;
+
     @Override
-    public void show(AnnotatedImage actorImage, List<String> text) {
-        if (actorImage != null) {
-            try {
-                currentImage = ImageIO.read(new ByteArrayInputStream(actorImage.bytes));
-                currentPose = actorImage.pose;
-            } catch (IOException e) {
-                currentImage = null;
-                currentPose = HumanPose.Estimation.NONE;
-                logger.error(e.getMessage(), e);
+    public void show(AnnotatedImage displayImage, List<String> text) {
+        if (displayImage != null) {
+            if (!displayImage.resource.equals(this.displayImageResource)) {
+                try {
+                    currentImage = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
+                    currentPose = displayImage.pose;
+                } catch (IOException e) {
+                    currentImage = null;
+                    currentPose = HumanPose.Estimation.NONE;
+                    logger.error(e.getMessage(), e);
+                }
+                repaintImage = true;
+                displayImageResource = displayImage.resource;
             }
-        } else {
+        } else if (displayImageResource != null) {
             currentImage = null;
             currentPose = HumanPose.Estimation.NONE;
+            repaintImage = true;
+            displayImageResource = null;
         }
 
         // keep text at the right
-        if (currentImage != null) {
+        if (currentImage != null)
+
+        {
             alignTextRight();
         } else {
             centerText();
@@ -460,7 +472,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         currentText = newText;
         slightlyLargerText = text.size() == 1;
 
-        repaintImage = true;
         repaintText = true;
         intertitleActive = false;
     }

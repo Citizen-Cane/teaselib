@@ -485,18 +485,19 @@ public abstract class Script {
 
     private static void addRecognitionRejectedAction(Prompt prompt, SpeechRecognitionRejectedScript script) {
         prompt.when(SpeechRecognitionInputMethod.Notification.RecognitionRejected).run(new Action() {
-            boolean speechRecognitionRejectedHandlerSignaled = false;
+            boolean speechRecognitionRejectedHandlerRunOnce = false;
+
+            @Override
+            public boolean canRun(InputMethodEventArgs e) {
+                SpeechRecognizedEventArgs eventArgs = ((SpeechRecognitionInputMethodEventArgs) e).eventArgs;
+                return eventArgs.result.size() == 1 && !speechRecognitionRejectedHandlerRunOnce && script.canRun();
+            }
 
             @Override
             public void run(InputMethodEventArgs e) {
-                SpeechRecognizedEventArgs eventArgs = ((SpeechRecognitionInputMethodEventArgs) e).eventArgs;
-                if (eventArgs.result != null && eventArgs.result.size() == 1) {
-                    if (!speechRecognitionRejectedHandlerSignaled && script.canRun()) {
-                        // TODO generalize this -> invoke action once for this prompt, once for whole prompt stack
-                        speechRecognitionRejectedHandlerSignaled = true;
-                        script.run();
-                    }
-                }
+                // TODO generalize this -> invoke action once for this prompt, once for whole prompt stack
+                speechRecognitionRejectedHandlerRunOnce = true;
+                script.run();
             }
         });
     }

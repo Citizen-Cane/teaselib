@@ -71,7 +71,7 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
 
     public void startEventLoop(SpeechRecognitionEvents events) {
         var awaitInitialized = new CountDownLatch(1);
-        Runnable speechRecognitionService = () -> {
+        Runnable speechRecognition = () -> {
             try {
                 process(events, awaitInitialized);
             } catch (Exception e) {
@@ -83,7 +83,7 @@ public abstract class SpeechRecognitionNativeImplementation extends NativeObject
             }
         };
 
-        eventLoopThread = new EventLoopThread(speechRecognitionService);
+        eventLoopThread = new EventLoopThread(speechRecognition);
         eventLoopThread.setName("Speech Recognition event thread");
         eventLoopThread.start();
         try {

@@ -51,9 +51,9 @@ public class SpeechRecognition {
         delegateThread.run(() -> {
             // RenetrantLock is ref-counted,
             // and startRecognition events can occur more than once
-            if (!audioSync.speechRecognitionInProgress()) {
+            if (!audioSync.inProgress()) {
                 logger.debug("Locking speech recognition sync object");
-                audioSync.startSpeechRecognition();
+                audioSync.start();
             }
         });
     }
@@ -66,9 +66,9 @@ public class SpeechRecognition {
         // Check because this is called as a completion event by the
         // event source, and might be called twice when the
         // hypothesis event handler generates a Completion event
-        if (audioSync.speechRecognitionInProgress()) {
+        if (audioSync.inProgress()) {
             logger.debug("Unlocking speech recognition sync object");
-            audioSync.endSpeechRecognition();
+            audioSync.stop();
         }
     }
 
@@ -211,19 +211,22 @@ public class SpeechRecognition {
     }
 
     private void enableSR() {
-        Optional<Throwable> exception = implementation.getException();
-        if (exception.isPresent())
-            throw ExceptionUtil.asRuntimeException(exception.get());
-
-        audioSync.runSynchronizedSpeechRecognition(implementation::startRecognition);
+        handleEventLoopException();
+        audioSync.synchronizeSpeechRecognition(implementation::startRecognition);
         active = true;
     }
 
     private void disableSR() {
-        implementation.stopRecognition();
-        active = false;
-        unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
+        try {
+            implementation.stopRecognition();
+        } finally {
+            active = false;
+            unlockSpeechRecognitionInProgressSyncObjectFromDelegateThread();
+        }
+        handleEventLoopException();
+    }
 
+    private void handleEventLoopException() {
         Optional<Throwable> exception = implementation.getException();
         if (exception.isPresent())
             throw ExceptionUtil.asRuntimeException(exception.get());

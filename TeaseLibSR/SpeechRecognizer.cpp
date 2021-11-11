@@ -433,7 +433,7 @@ void SpeechRecognizer::setMaxAlternates(const int maxAlternates) {
 	if (FAILED(hr)) throw COMException(hr);
 }
 
-void SpeechRecognizer::startRecognition() {
+void SpeechRecognizer::start() {
 	checkRecogizerStatus();
 
 	HRESULT hr = cpContext->SetContextState(SPCS_ENABLED);
@@ -446,7 +446,7 @@ void SpeechRecognizer::startRecognition() {
 	if (FAILED(hr)) throw COMException(hr);
 }
 
-void SpeechRecognizer::stopRecognition() {
+void SpeechRecognizer::stop() {
 	checkRecogizerStatus();
 
 	// Disable audio input - microhpone indicator off
@@ -460,7 +460,7 @@ void SpeechRecognizer::stopRecognition() {
 	if (FAILED(hr)) throw COMException(hr);
 }
 
-void SpeechRecognizer::emulateRecognition(const wchar_t * emulatedRecognitionResult) {
+void SpeechRecognizer::emulate(const wchar_t * emulatedRecognitionResult) {
 	checkRecogizerStatus();
 
 	CComPtr<ISpPhraseBuilder> cpPhrase;

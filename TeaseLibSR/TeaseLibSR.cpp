@@ -172,7 +172,7 @@ extern "C"
     (JNIEnv *env, jobject jthis) {
         try {
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
-            speechRecognizer->startRecognition();
+            speechRecognizer->start();
         } catch (exception& e) {
             JNIException::rethrow(env, e);
         } catch (NativeException& e) {
@@ -192,7 +192,7 @@ extern "C"
 		try {
             Objects::requireNonNull(L"emulatedRecognitionResult", emulatedRecognitionResult);
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
-            speechRecognizer->emulateRecognition(JNIString(env,emulatedRecognitionResult));
+            speechRecognizer->emulate(JNIString(env,emulatedRecognitionResult));
         } catch (exception& e) {
             JNIException::rethrow(env, e);
         } catch (NativeException& e) {
@@ -211,7 +211,7 @@ extern "C"
     (JNIEnv *env, jobject jthis) {
         try {
             SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
-            speechRecognizer->stopRecognition();
+            speechRecognizer->stop();
         } catch (exception& e) {
             JNIException::rethrow(env, e);
         } catch (NativeException& e) {

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
@@ -19,7 +20,6 @@ import teaselib.Answer;
 import teaselib.ScriptFunction;
 import teaselib.core.Script;
 import teaselib.core.ScriptFutureTask;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ui.InputMethod.UiEvent;
 import teaselib.core.util.ExceptionUtil;
 
@@ -309,20 +309,27 @@ public class Prompt {
 
     public void dismiss() {
         throwIfNotLocked();
+        dismissInputMethods().ifPresent(this::throwInputMethodException);
+    }
 
+    private Optional<RuntimeException> dismissInputMethods() {
+        Optional<RuntimeException> catched = Optional.empty();
         try {
             for (InputMethod inputMethod : realized) {
-                inputMethod.dismiss(this);
+                try {
+                    inputMethod.dismiss(this);
+                } catch (Exception e) {
+                    catched = Optional.of(new RuntimeException(e));
+                }
             }
+        } finally {
             realized = Collections.emptyList();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw ExceptionUtil.asRuntimeException(e);
         }
+        return catched;
+    }
+
+    private void throwInputMethodException(RuntimeException e) {
+        throw e;
     }
 
     public void setException(Throwable throwable) {

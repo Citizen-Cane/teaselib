@@ -179,7 +179,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             } else {
                 SpeechRecognition recognizer = getRecognizer(prompt);
                 try {
-                    if (audioSignalProblems.exceedLimits() && recognizer.audioSync.speechRecognitionInProgress()) {
+                    if (audioSignalProblems.exceedLimits() && recognizer.audioSync.inProgress()) {
                         logTooManyAudioSignalProblems();
                         recognizer.restartRecognition();
                     } else {
@@ -578,7 +578,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     @Override
-    public void dismiss(Prompt prompt) throws InterruptedException {
+    public void dismiss(Prompt prompt) {
         Objects.requireNonNull(prompt);
 
         try {

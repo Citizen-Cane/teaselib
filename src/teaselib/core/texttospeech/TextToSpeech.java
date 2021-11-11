@@ -177,7 +177,7 @@ public class TextToSpeech implements Closeable {
         TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
-            run(tts, () -> audioSync.runSynchronizedSpeech(() -> speak(voice, prompt, hints, tts)));
+            run(tts, () -> audioSync.synchronizeTextToSpeech(() -> speak(voice, prompt, hints, tts)));
         } else {
             ttsEngineNotInitialized();
         }

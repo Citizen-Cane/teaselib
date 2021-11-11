@@ -30,9 +30,9 @@ public:
 	void setChoices(CComPtr<IStream>& srgs);
 
 	void setMaxAlternates(const int maxAlternates);
-	void startRecognition();
-	void stopRecognition();
-	void emulateRecognition(const wchar_t * emulatedRecognitionResult);
+	void start();
+	void stop();
+	void emulate(const wchar_t * emulatedRecognitionResult);
 
 	void stopEventLoop();
 

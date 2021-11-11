@@ -165,7 +165,7 @@ public abstract class AbstractInputMethod implements InputMethod {
     public abstract void updateUI(UiEvent event);
 
     @Override
-    public final void dismiss(Prompt prompt) throws InterruptedException {
+    public final void dismiss(Prompt prompt) {
         activePrompt.updateAndGet(active -> {
             if (active != null && active != prompt) {
                 throw new IllegalStateException("Trying to dismiss wrong prompt");

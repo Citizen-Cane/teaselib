@@ -16,36 +16,36 @@ public final class AudioSync {
 
     private ReentrantLock sync = new ReentrantLock();
 
-    public void startSpeechRecognition() {
+    public void start() {
         sync.lock();
     }
 
-    public boolean speechRecognitionInProgress() {
+    public boolean inProgress() {
         return sync.isLocked();
     }
 
-    public void endSpeechRecognition() {
+    public void stop() {
         sync.unlock();
     }
 
     public void completeSpeechRecognition() {
-        runSynchronized(() -> { //
+        synchronize(() -> { //
         }, "Waiting for speech recognition to complete", "Speech recognition in progress completed");
     }
 
-    public void runSynchronizedSpeech(Runnable runnable) {
+    public void synchronizeTextToSpeech(Runnable runnable) {
         String logStart = "Waiting for speech recognition to finish";
         String logSuccess = "Speech recognition finished";
-        runSynchronized(runnable, logStart, logSuccess);
+        synchronize(runnable, logStart, logSuccess);
     }
 
-    public void runSynchronizedSpeechRecognition(Runnable runnable) {
+    public void synchronizeSpeechRecognition(Runnable runnable) {
         String logStart = "Waiting for speech to complete";
         String logSuccess = "Speech completed";
-        runSynchronized(runnable, logStart, logSuccess);
+        synchronize(runnable, logStart, logSuccess);
     }
 
-    private void runSynchronized(Runnable runnable, String logStart, String logSuccess) {
+    private void synchronize(Runnable runnable, String logStart, String logSuccess) {
         if (sync.isLocked()) {
             logger.info(logStart);
             try {

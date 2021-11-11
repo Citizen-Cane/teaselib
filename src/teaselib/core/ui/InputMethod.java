@@ -33,7 +33,7 @@ public interface InputMethod extends teaselib.core.Closeable {
 
     void updateUI(UiEvent event);
 
-    void dismiss(Prompt prompt) throws InterruptedException;
+    void dismiss(Prompt prompt);
 
     public interface Listener {
 

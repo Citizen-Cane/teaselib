@@ -10,17 +10,20 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.ai.TeaseLibAI.ExecutionType;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.SceneCapture;
 import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.jni.NativeObjectList;
+import teaselib.core.util.ExceptionUtil;
 
 public class TeaseLibAITest {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibAITest.class);
@@ -38,64 +41,66 @@ public class TeaseLibAITest {
     }
 
     @Test
-    public void accessCamera() {
+    public void accessCamera() throws InterruptedException {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
-                NativeObjectList<SceneCapture> devices = SceneCapture.devices();
-                HumanPose humanPose = new HumanPose()) {
+                NativeObjectList<SceneCapture> devices = SceneCapture.devices()) {
             assertNotNull(devices);
             assumeFalse("No Scene Capture devices found", devices.isEmpty());
-            var sceneCapture = devices.get(0);
+            Runnable test = () -> {
+                try (HumanPose humanPose = new HumanPose()) {
+                    var sceneCapture = devices.get(0);
+                    sceneCapture.start();
+                    List<Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
+                    assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
+                }
+            };
+            runAccelerated(teaseLibAI, test);
+        }
+    }
+
+    @Test
+    public void testImageCapture() throws InterruptedException {
+        String name = "images/p2_320x240_01.jpg";
+        String pattern = "p2_320x240_%02d.jpg";
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI();
+                SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern))) {
             sceneCapture.start();
-            List<Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
-            assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
+            Runnable test = () -> {
+                try (HumanPose humanPose = new HumanPose()) {
+                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
+                    assertEquals(2, poses.size());
+                    assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
+                }
+            };
+            runAccelerated(teaseLibAI, test);
+        }
+    }
+
+    private Object runAccelerated(TeaseLibAI teaseLibAI, Runnable test) throws InterruptedException {
+        try {
+            return teaseLibAI.getExecutor(ExecutionType.Accelerated).submit(test).get();
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (ExecutionException e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
     @Test
-    public void testImageCapture() {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            String name = "images/p2_320x240_01.jpg";
-            String pattern = "p2_320x240_%02d.jpg";
-            try (SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern));
-                    HumanPose humanPose = new HumanPose()) {
-                sceneCapture.start();
-                List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
-                assertEquals(2, poses.size());
-                assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
-            }
-        }
-    }
-
-    @Test
-    public void testImage() throws IOException {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
-            pose1(humnaPose);
-            pose2(humnaPose);
-            pose3(humnaPose);
-        }
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testImageStabilityNullByteArray() {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
-            byte[] nullptr = null;
-            humnaPose.poses(nullptr);
-        }
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testImageStabilityEmptyByteArray() {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
-            byte[] empty = new byte[0];
-            humnaPose.poses(empty);
-        }
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testImageStabilityNotAnImage() {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
-            byte[] garbage = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            humnaPose.poses(garbage);
+    public void testSomeImages() throws InterruptedException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI();) {
+            Runnable test = () -> {
+                try (HumanPose humnaPose = new HumanPose()) {
+                    try {
+                        pose1(humnaPose);
+                        pose2(humnaPose);
+                        pose3(humnaPose);
+                    } catch (IOException e) {
+                        throw ExceptionUtil.asRuntimeException(e);
+                    }
+                }
+            };
+            runAccelerated(teaseLibAI, test);
         }
     }
 
@@ -122,52 +127,103 @@ public class TeaseLibAITest {
         assertEquals(0.41, poses.get(0).head.orElseThrow().getY(), 0.02);
     }
 
-    private InputStream resource(String path) {
-        return getClass().getResourceAsStream(path);
+    @Test(expected = NullPointerException.class)
+    public void testImageStabilityNullByteArray() throws InterruptedException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
+            Runnable test = () -> {
+                try (HumanPose humnaPose = new HumanPose()) {
+                    byte[] nullptr = null;
+                    humnaPose.poses(nullptr);
+                }
+            };
+            runAccelerated(teaseLibAI, test);
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testImageStabilityEmptyByteArray() throws InterruptedException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
+            Runnable test = () -> {
+                try (HumanPose humnaPose = new HumanPose()) {
+                    byte[] empty = new byte[0];
+                    humnaPose.poses(empty);
+                }
+            };
+            runAccelerated(teaseLibAI, test);
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testImageStabilityNotAnImage() throws InterruptedException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
+            Runnable test = () -> {
+                try (HumanPose humnaPose = new HumanPose()) {
+                    byte[] garbage = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+                    humnaPose.poses(garbage);
+                }
+            };
+            runAccelerated(teaseLibAI, test);
+        }
     }
 
     @Test
-    public void testMultipleModelsSharedCapture() {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            assertNotNull(SceneCapture.devices());
-        }
+    public void testMultipleModelsSharedCapture() throws InterruptedException {
         String name = "images/hand1.jpg";
         String pattern = "hand%01d.jpg";
 
-        try (SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern));
-                HumanPose humanPose1 = new HumanPose();
-                HumanPose humanPose2 = new HumanPose()) {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI();
+                SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern));) {
 
-            sceneCapture.start();
-            List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture, Rotation.None);
-            assertEquals(1, poses1.size());
-            assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.71f,
-                    poses1.get(0).distance.orElseThrow(), 0.01f);
-            assertEquals(Proximity.FACE2FACE, poses1.get(0).proximity());
+            Runnable test = () -> {
+                try (HumanPose humanPose1 = new HumanPose(); HumanPose humanPose2 = new HumanPose()) {
+                    sceneCapture.start();
+                    List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture, Rotation.None);
+                    assertEquals(1, poses1.size());
+                    assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.71f,
+                            poses1.get(0).distance.orElseThrow(), 0.01f);
+                    assertEquals(Proximity.FACE2FACE, poses1.get(0).proximity());
 
-            List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture, Rotation.None);
-            assertEquals(1, poses2.size());
-            assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.92,
-                    poses2.get(0).distance.orElseThrow(), 0.1);
-            assertEquals(Proximity.FACE2FACE, poses2.get(0).proximity());
+                    List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture, Rotation.None);
+                    assertEquals(1, poses2.size());
+                    assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.92,
+                            poses2.get(0).distance.orElseThrow(), 0.1);
+                    assertEquals(Proximity.FACE2FACE, poses2.get(0).proximity());
 
-            try {
-                humanPose2.poses(sceneCapture, Rotation.None);
-                fail("Expected device lost since image sequence doesn't contain any more images");
-            } catch (SceneCapture.DeviceLost exception) {
-                return;
-            }
+                    try {
+                        humanPose2.poses(sceneCapture, Rotation.None);
+                        fail("Expected device lost since image sequence doesn't contain any more images");
+                    } catch (SceneCapture.DeviceLost exception) {
+                        return;
+                    }
+
+                }
+            };
+            runAccelerated(teaseLibAI, test);
         }
     }
 
     @Test
-    public void testDistanceNear() throws IOException {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI(); HumanPose humnaPose = new HumanPose()) {
-            List<Estimation> poses = humnaPose.poses(resource("images/p2_320x240_01.jpg"));
-            assertEquals(2, poses.size());
-            assertEquals(Proximity.NEAR, poses.get(0).proximity());
-            assertEquals(Proximity.NEAR, poses.get(1).proximity());
+    public void testDistanceNear() throws InterruptedException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
+            Runnable test = () -> {
+                try (HumanPose humnaPose = new HumanPose()) {
+                    List<Estimation> poses;
+                    try {
+                        poses = humnaPose.poses(resource("images/p2_320x240_01.jpg"));
+                        assertEquals(2, poses.size());
+                        assertEquals(Proximity.NEAR, poses.get(0).proximity());
+                        assertEquals(Proximity.NEAR, poses.get(1).proximity());
+                    } catch (IOException e) {
+                        throw ExceptionUtil.asRuntimeException(e);
+                    }
+                }
+            };
+            runAccelerated(teaseLibAI, test);
         }
+    }
+
+    private InputStream resource(String path) {
+        return getClass().getResourceAsStream(path);
     }
 
     private static String getOpenCVImageSequence(String name, String pattern) {

@@ -53,7 +53,6 @@ public class TeaseLibAI implements Closeable {
     }
 
     private static void awaitTermination(ExecutorService executor) {
-        executor.shutdown();
         try {
             executor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {

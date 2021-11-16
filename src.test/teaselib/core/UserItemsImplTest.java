@@ -1,6 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -251,9 +256,13 @@ public class UserItemsImplTest {
                 assertTrue(state.is(until));
                 assertFalse(notMyHumbler.applied());
                 assertFalse(notMyHumbler.is(until));
+            }
 
-                // remove state with reference to unavailable guid
+            script.debugger.clearStateMaps();
+            {
                 script.handleAutoRemove();
+                // remove state with reference to unavailable guid
+                State state = script.state(Toys.Humbler);
                 assertFalse(state.is(until));
                 assertFalse(state.applied());
 

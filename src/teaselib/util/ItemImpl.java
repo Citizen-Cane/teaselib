@@ -1,7 +1,7 @@
 package teaselib.util;
 
-import static java.util.Arrays.*;
-import static teaselib.core.util.QualifiedString.*;
+import static java.util.Arrays.asList;
+import static teaselib.core.util.QualifiedString.map;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -220,16 +220,18 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
         StateImpl state = state();
         state.applyAttributes(this.attributes);
-        state.applyTo(this.name);
-        state.applyTo(flattenedPeers);
+        state.applyImpl(Collections.singleton(this.name));
+        state.applyImpl(flattenedPeers);
         updateLastUsedGuidState();
         return this;
     }
 
     private void applyInstanceTo(Collection<QualifiedString> items) {
+        Set<QualifiedString> me = new HashSet<>(2);
+        me.add(this.name);
+        me.add(this.name.kind());
         for (QualifiedString peer : items) {
-            state(peer).applyTo(this.name);
-            state(peer).applyTo(this.name.kind());
+            state(peer).applyImpl(me);
         }
     }
 

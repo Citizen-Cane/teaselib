@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.io.File;
 import java.io.IOException;
@@ -896,10 +896,6 @@ public class TeaseLib implements Closeable {
 
     public State state(String domain, QualifiedString qualifiedName) {
         return stateMaps.state(domain, qualifiedName);
-    }
-
-    public State state(String domain, State state) {
-        return stateMaps.state(domain, state);
     }
 
     /**

@@ -49,24 +49,6 @@ public class StateMaps {
         return state;
     }
 
-    State state(String domain, State state) {
-        if (state instanceof StateImpl) {
-            QualifiedString name = ((StateImpl) state).name;
-            var stateMap = stateMap(domain, name);
-            var existing = stateMap.get(name);
-            if (existing == null) {
-                stateMap.put(name, state);
-                return state;
-            } else if (existing == state) {
-                throw new IllegalArgumentException("States cannot be replaced: " + state + " -> " + existing);
-            } else {
-                return existing;
-            }
-        } else {
-            throw new UnsupportedOperationException(state.toString());
-        }
-    }
-
     public static boolean hasAllAttributes(Set<QualifiedString> available, Collection<QualifiedString> desired) {
         Predicate<? super QualifiedString> predicate = attribute -> available.stream().anyMatch(attribute::is);
         return desired.stream().filter(predicate).count() == desired.size();

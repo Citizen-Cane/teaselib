@@ -1,7 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-import static teaselib.core.TeaseLib.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static teaselib.core.TeaseLib.DefaultDomain;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +21,7 @@ import teaselib.Toys;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.QualifiedName;
+import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
@@ -300,13 +305,22 @@ public class StateTests {
     }
 
     @Test
-    public void testThatInjectedStateInstancesArentOverwrittenByEquals() throws IOException {
+    public void testThatCachedStateInstancesAreTheSame() throws IOException {
         try (TestScript script = new TestScript()) {
-            State test1 = script.teaseLib.state(TeaseLib.DefaultDomain,
-                    new StateImpl(script.teaseLib, TeaseLib.DefaultDomain, "test"));
-            State test2 = script.teaseLib.state(TeaseLib.DefaultDomain,
-                    new StateImpl(script.teaseLib, TeaseLib.DefaultDomain, "test"));
+            State test1 = script.teaseLib.state(TeaseLib.DefaultDomain, QualifiedString.of("test"));
+            State test2 = script.teaseLib.state(TeaseLib.DefaultDomain, QualifiedString.of("test"));
             assertSame(test1, test2);
+        }
+    }
+
+    @Test
+    public void testThatPersitedStateInstancesAreEqual() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State test1 = script.teaseLib.state(TeaseLib.DefaultDomain, QualifiedString.of("test"));
+            script.debugger.clearStateMaps();
+            State test2 = script.teaseLib.state(TeaseLib.DefaultDomain, QualifiedString.of("test"));
+            assertNotSame(test1, test2);
+            assertEquals(test1, test2);
         }
     }
 

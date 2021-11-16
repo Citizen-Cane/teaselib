@@ -1,9 +1,12 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.StateImpl.Internal.*;
-import static teaselib.core.TeaseLib.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static teaselib.core.StateImpl.Internal.DEFAULT_DOMAIN_NAME;
+import static teaselib.core.StateImpl.Internal.PERSISTED_DOMAINS_STATE;
+import static teaselib.core.TeaseLib.DefaultDomain;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -96,35 +99,36 @@ public class StateImpl implements State, State.Options, State.Attributes {
         final PersistentString peerStorage;
         final PersistentString attributeStorage;
 
-        StateStorage(TeaseLib teaseLib, String domain, String item) {
-            this.appliedStorage = persistentApplied(teaseLib, domain, item);
-            this.durationStorage = persistentDuration(teaseLib, domain, item);
-            this.peerStorage = persistentPeers(teaseLib, domain, item);
-            this.attributeStorage = persistentAttributes(teaseLib, domain, item);
+        StateStorage(TeaseLib teaseLib, String domain, String state) {
+            this.appliedStorage = persistentApplied(teaseLib, domain, state);
+            this.durationStorage = persistentDuration(teaseLib, domain, state);
+            this.peerStorage = persistentPeers(teaseLib, domain, state);
+            this.attributeStorage = persistentAttributes(teaseLib, domain, state);
         }
 
-        TeaseLib.PersistentBoolean persistentApplied(TeaseLib teaseLib, String domain, String item) {
-            return persistentBoolean(teaseLib, domain, item, "applied");
+        TeaseLib.PersistentBoolean persistentApplied(TeaseLib teaseLib, String domain, String state) {
+            return persistentBoolean(teaseLib, domain, state, "applied");
         }
 
-        TeaseLib.PersistentString persistentDuration(TeaseLib teaseLib, String domain, String item) {
-            return persistentString(teaseLib, domain, item, "duration");
+        TeaseLib.PersistentString persistentDuration(TeaseLib teaseLib, String domain, String state) {
+            return persistentString(teaseLib, domain, state, "duration");
         }
 
-        PersistentString persistentPeers(TeaseLib teaseLib, String domain, String item) {
-            return persistentString(teaseLib, domain, item, "peers");
+        PersistentString persistentPeers(TeaseLib teaseLib, String domain, String state) {
+            return persistentString(teaseLib, domain, state, "peers");
         }
 
-        PersistentString persistentAttributes(TeaseLib teaseLib, String domain, String item) {
-            return persistentString(teaseLib, domain, item, "attributes");
+        PersistentString persistentAttributes(TeaseLib teaseLib, String domain, String state) {
+            return persistentString(teaseLib, domain, state, "attributes");
         }
 
-        private static PersistentBoolean persistentBoolean(TeaseLib teaseLib, String domain, String item, String name) {
-            return teaseLib.new PersistentBoolean(domain, item, "state." + name);
+        private static PersistentBoolean persistentBoolean(TeaseLib teaseLib, String domain, String state,
+                String name) {
+            return teaseLib.new PersistentBoolean(domain, state, "state." + name);
         }
 
-        private static PersistentString persistentString(TeaseLib teaseLib, String domain, String item, String name) {
-            return teaseLib.new PersistentString(domain, item, "state." + name);
+        private static PersistentString persistentString(TeaseLib teaseLib, String domain, String state, String name) {
+            return teaseLib.new PersistentString(domain, state, "state." + name);
         }
 
         void deletePersistence() {
@@ -190,18 +194,10 @@ public class StateImpl implements State, State.Options, State.Attributes {
         return (StateImpl) this.stateMaps.state(domain, item);
     }
 
-    StateImpl(StateMaps stateMaps, String domain, Object item) {
+    StateImpl(StateMaps stateMaps, String domain, QualifiedString name) {
         this.stateMaps = stateMaps;
-
-        if ((item instanceof State) && !(item instanceof Item)) {
-            throw new IllegalArgumentException(item.toString());
-        }
-
         this.domain = domain;
-        this.name = QualifiedString.of(item);
-        if (this.name.guid().isPresent()) {
-            throw new IllegalArgumentException(item.getClass() + ":" + item.toString());
-        }
+        this.name = name;
         this.storage = new StateStorage(this.stateMaps.teaseLib, domain, this.name.toString());
 
         restoreApplied();
@@ -210,8 +206,8 @@ public class StateImpl implements State, State.Options, State.Attributes {
         restorePeers();
     }
 
-    protected StateImpl(TeaseLib teaseLib, String domain, Object item) {
-        this(teaseLib.stateMaps, domain, item);
+    protected StateImpl(TeaseLib teaseLib, String domain, QualifiedString name) {
+        this(teaseLib.stateMaps, domain, name);
     }
 
     private void restoreApplied() {
@@ -359,7 +355,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
         return this;
     }
 
-    private State applyImpl(Set<QualifiedString> attributes) {
+    public State applyImpl(Set<QualifiedString> attributes) {
         if (!applied()) {
             setTemporary();
         }

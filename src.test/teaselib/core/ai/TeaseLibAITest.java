@@ -1,7 +1,10 @@
 package teaselib.core.ai;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,10 +28,10 @@ public class TeaseLibAITest {
     @Test
     public void loadNativeLibrary() {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
-                NativeObjectList<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures()) {
-            assertNotNull(sceneCaptures);
+                NativeObjectList<SceneCapture> devices = SceneCapture.devices()) {
+            assertNotNull(devices);
             int n = 0;
-            for (SceneCapture device : sceneCaptures) {
+            for (SceneCapture device : devices) {
                 logger.info("Device {}: '{}' , enclosure location = {}", n++, device.name, device.location);
             }
         }
@@ -37,11 +40,11 @@ public class TeaseLibAITest {
     @Test
     public void accessCamera() {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
-                NativeObjectList<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures();
+                NativeObjectList<SceneCapture> devices = SceneCapture.devices();
                 HumanPose humanPose = new HumanPose()) {
-            assertNotNull(sceneCaptures);
-            assumeFalse("No Scene Capture devices found", sceneCaptures.isEmpty());
-            var sceneCapture = sceneCaptures.get(0);
+            assertNotNull(devices);
+            assumeFalse("No Scene Capture devices found", devices.isEmpty());
+            var sceneCapture = devices.get(0);
             sceneCapture.start();
             List<Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
             assertFalse(poses.stream().anyMatch(pose -> humanPose.getTimestamp() == 0));
@@ -126,7 +129,7 @@ public class TeaseLibAITest {
     @Test
     public void testMultipleModelsSharedCapture() {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            assertNotNull(teaseLibAI.sceneCaptures());
+            assertNotNull(SceneCapture.devices());
         }
         String name = "images/hand1.jpg";
         String pattern = "hand%01d.jpg";

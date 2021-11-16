@@ -69,7 +69,14 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     }
 
     public static NamedExecutorService sameThread(String namePrefix) {
-        return new NamedExecutorService(namePrefix, Long.MAX_VALUE, TimeUnit.SECONDS);
+        return new SameThread(namePrefix);
+    }
+
+    public static class SameThread extends NamedExecutorService {
+        public SameThread(String namePrefix) {
+            super(namePrefix, Long.MAX_VALUE, TimeUnit.SECONDS);
+        }
+
     }
 
     public static NamedExecutorService singleThreadedQueue(String namePrefix, long keepAliveTime, TimeUnit unit) {

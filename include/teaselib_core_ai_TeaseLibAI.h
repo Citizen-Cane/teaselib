@@ -11,14 +11,6 @@ extern "C" {
 #define teaselib_core_ai_TeaseLibAI_CAPTURE_DEVICE_POLL_DURATION_MILLIS 5000i64
 /*
  * Class:     teaselib_core_ai_TeaseLibAI
- * Method:    initOpenCL
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_TeaseLibAI_initOpenCL
-  (JNIEnv *, jobject);
-
-/*
- * Class:     teaselib_core_ai_TeaseLibAI
  * Method:    sceneCaptures
  * Signature: ()Lteaselib/core/jni/NativeObjectList;
  */

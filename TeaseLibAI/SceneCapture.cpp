@@ -1,5 +1,8 @@
 #include "pch.h"
 
+#include <algorithm>
+#include <vector>
+
 #include <JNIException.h>
 #include <JNIString.h>
 #include <JNIUtilities.h>
@@ -8,7 +11,6 @@
 #include <NativeObject.h>
 
 #include <Video/VideoCapture.h>
-#include <Pose/PoseEstimation.h>
 
 #include <teaselib_core_ai_perception_SceneCapture.h>
 #include "SceneCapture.h"
@@ -18,6 +20,35 @@ using namespace std;
 
 extern "C"
 {
+
+	/*
+	 * Class:     teaselib_core_ai_perception_SceneCapture
+	 * Method:    devices
+	 * Signature: ()Lteaselib/core/jni/NativeObjectList;
+	 */
+	JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_SceneCapture_devices
+	(JNIEnv* env, jclass)
+	{
+		try {
+			auto cameras = VideoCapture::devices();
+			vector<NativeObject*> sceneCaptures;
+
+			for_each(cameras.begin(), cameras.end(), [&sceneCaptures, env](const VideoCapture::Devices::value_type& cameraInfo) {
+				sceneCaptures.push_back(new SceneCapture(env, cameraInfo.second));
+			});
+
+			return JNIUtilities::asList(env, sceneCaptures);
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
+			return nullptr;
+		} catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+			return nullptr;
+		} catch (JNIException& e) {
+			e.rethrow();
+			return nullptr;
+		}
+	}
 
 	/*
 	 * Class:     teaselib_core_ai_perception_SceneCapture
@@ -121,6 +152,7 @@ extern "C"
 	}
 
 }
+
 
 const char* enclosureLocationEnumName[] = { "Front", "Rear", "External" };
 

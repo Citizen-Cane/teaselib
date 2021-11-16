@@ -30,6 +30,9 @@
     <ClInclude Include="DeepSpeechRecognizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ComputeContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -48,6 +51,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DeepSpeechRecognizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

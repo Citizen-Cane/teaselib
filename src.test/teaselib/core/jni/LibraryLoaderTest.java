@@ -1,6 +1,7 @@
 package teaselib.core.jni;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,10 +38,10 @@ public class LibraryLoaderTest {
     @Test
     public void testLoadAI() throws InterruptedException {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
-                NativeObjectList<SceneCapture> sceneCaptures = teaseLibAI.sceneCaptures()) {
-            assertNotNull(sceneCaptures);
+                NativeObjectList<SceneCapture> devices = SceneCapture.devices()) {
+            assertNotNull(devices);
             int n = 0;
-            for (SceneCapture device : sceneCaptures) {
+            for (SceneCapture device : devices) {
                 logger.info("Device {}: '{}' , enclosure location = {}", n++, device.name, device.location);
             }
         }

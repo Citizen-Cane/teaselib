@@ -9,6 +9,16 @@ extern "C" {
 #endif
 #undef teaselib_core_ai_perception_SceneCapture_NoImage
 #define teaselib_core_ai_perception_SceneCapture_NoImage -1L
+#undef teaselib_core_ai_perception_SceneCapture_DEVICE_POLL_DURATION_MILLIS
+#define teaselib_core_ai_perception_SceneCapture_DEVICE_POLL_DURATION_MILLIS 5000i64
+/*
+ * Class:     teaselib_core_ai_perception_SceneCapture
+ * Method:    devices
+ * Signature: ()Lteaselib/core/jni/NativeObjectList;
+ */
+JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_SceneCapture_devices
+  (JNIEnv *, jclass);
+
 /*
  * Class:     teaselib_core_ai_perception_SceneCapture
  * Method:    newNativeInstance

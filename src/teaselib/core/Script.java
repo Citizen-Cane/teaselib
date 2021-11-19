@@ -197,9 +197,11 @@ public abstract class Script {
         var untilState = (StateImpl) teaseLib.state(domain, until);
         Set<QualifiedString> peers = untilState.peers();
         for (QualifiedString peer : new ArrayList<>(peers)) {
-            var state = (StateImpl) teaseLib.state(domain, peer);
-            if (!cleanupRemovedUserItemReferences(state)) {
-                remove(state, startupTimeSeconds, limitFactor);
+            if (!peer.isItem()) {
+                var state = (StateImpl) teaseLib.state(domain, peer);
+                if (!cleanupRemovedUserItemReferences(state)) {
+                    remove(state, startupTimeSeconds, limitFactor);
+                }
             }
         }
         return untilState;

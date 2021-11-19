@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import teaselib.State;
 import teaselib.core.util.QualifiedString;
 
 public class StateMaps {
@@ -39,14 +38,22 @@ public class StateMaps {
      *            The enumeration member to return the state for
      * @return The state.
      */
-    State state(String domain, QualifiedString name) {
+    StateImpl state(String domain, QualifiedString name) {
+        checkNotItem(name);
+
         var stateMap = stateMap(domain, name);
         var state = stateMap.get(name);
         if (state == null) {
             state = new StateImpl(this, domain, name);
-            stateMap.put(name.kind(), state);
+            stateMap.put(name, state);
         }
         return state;
+    }
+
+    static void checkNotItem(QualifiedString name) {
+        if (name.guid().isPresent()) {
+            throw new IllegalArgumentException("Guids cannot be states: " + name);
+        }
     }
 
     public static boolean hasAllAttributes(Set<QualifiedString> available, Collection<QualifiedString> desired) {

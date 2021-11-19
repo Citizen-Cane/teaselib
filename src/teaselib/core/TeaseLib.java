@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -939,14 +939,14 @@ public class TeaseLib implements Closeable {
             String domain = domains.getKey();
             ArrayList<Entry<String, StateMap>> namespaces = new ArrayList<>(domains.getValue().entrySet());
             for (Entry<String, StateMap> namespace : namespaces) {
-                ArrayList<Entry<String, State>> entries = new ArrayList<>(namespace.getValue().states.entrySet());
-                for (Entry<String, State> entry : entries) {
-                    StateImpl state = (StateImpl) entry.getValue();
+                ArrayList<Entry<QualifiedString, StateImpl>> entries = new ArrayList<>(
+                        namespace.getValue().states.entrySet());
+                for (Entry<QualifiedString, StateImpl> entry : entries) {
+                    StateImpl state = entry.getValue();
                     if (state.name.guid().isEmpty() && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
                         List<Item> temporaryPeers = state.peers().stream().filter(QualifiedString::isItem)
                                 .map(peer -> getItem(domain, peer)).filter(item -> !item.is(Until.class)).toList();
                         if (!temporaryPeers.isEmpty()) {
-                            // TODO Too many entries - use Set or contains()
                             temporaryItems.addAll(temporaryPeers);
                         }
                     }

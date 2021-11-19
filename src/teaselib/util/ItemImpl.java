@@ -1,7 +1,8 @@
 package teaselib.util;
 
-import static java.util.Arrays.asList;
-import static teaselib.core.util.QualifiedString.map;
+import static java.util.Arrays.*;
+import static java.util.Collections.*;
+import static teaselib.core.util.QualifiedStringMapping.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import teaselib.Duration;
@@ -58,9 +60,8 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         this.displayName = displayName;
         this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
                 name.guid().orElseThrow() + "." + Available);
-        this.defaultPeers = Collections.unmodifiableSet(map(Precondition::apply, defaultPeers));
-        this.attributes = Collections
-                .unmodifiableSet(map(Precondition::apply, attributes(name.kind(), asList(attributes))));
+        this.defaultPeers = unmodifiableSet(map(Precondition::apply, defaultPeers));
+        this.attributes = unmodifiableSet(map(Precondition::apply, attributes(name.kind(), asList(attributes))));
     }
 
     public QualifiedString kind() {
@@ -113,8 +114,10 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     @Override
     public boolean is(Object... attributes3) {
-        return isImpl(QualifiedString.map(Precondition::is, attributes3));
+        return isImpl(map(Precondition::is, attributes3));
     }
+
+    // TODO review mixed attributes, since these likely fail to be evaluated correctly
 
     private boolean isImpl(Set<QualifiedString> flattenedAttributes) {
         if (flattenedAttributes.isEmpty()) {
@@ -147,8 +150,23 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         return flattenedAttributes.stream().anyMatch(this.name::equals);
     }
 
-    private boolean stateAppliesToMe(Collection<QualifiedString> attributes2) {
-        return attributes2.stream().map(this::state).allMatch(this::stateIsThis);
+    private boolean stateAppliesToMe(Collection<QualifiedString> flattenedAttributes) {
+        return appliedToThose(flattenedAttributes) //
+                && (thoseApplyToMe(flattenedAttributes) || allKinds(flattenedAttributes));
+    }
+
+    private boolean appliedToThose(Collection<QualifiedString> flattenedAttributes) {
+        return flattenedAttributes.stream().filter(Predicate.not(QualifiedString::isItem)).map(this::state)
+                .allMatch(this::stateIsThis);
+    }
+
+    private boolean thoseApplyToMe(Collection<QualifiedString> flattenedAttributes) {
+        return flattenedAttributes.stream().filter(QualifiedString::isItem) //
+                .map(QualifiedString::kind).map(this::state).anyMatch(peer -> peer.is(name));
+    }
+
+    private static boolean allKinds(Collection<QualifiedString> flattenedAttributes) {
+        return flattenedAttributes.stream().noneMatch(QualifiedString::isItem);
     }
 
     private boolean stateContainsAll(Set<QualifiedString> attributes) {
@@ -211,7 +229,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
-        return applyToImpl(QualifiedString.map(Precondition::apply, peers));
+        return applyToImpl(map(Precondition::apply, peers));
     }
 
     private State.Options applyToImpl(Set<QualifiedString> flattenedPeers) {
@@ -231,7 +249,11 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         me.add(this.name);
         me.add(this.name.kind());
         for (QualifiedString peer : items) {
-            state(peer).applyImpl(me);
+            if (peer.isItem()) {
+                state(peer.kind()).applyImpl(me);
+            } else {
+                state(peer).applyImpl(me);
+            }
         }
     }
 
@@ -289,7 +311,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     @Override
     public void removeFrom(Object... peers) {
-        removeInternal(QualifiedString.map(Precondition::remove, peers));
+        removeInternal(map(Precondition::remove, peers));
     }
 
     private void removeInternal(Set<QualifiedString> peers) {

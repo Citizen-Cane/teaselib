@@ -976,14 +976,15 @@ public class ItemsTest {
             Items chains = script.items(Bondage.Chains, Accessoires.Bells);
             chains.applyTo(restraints);
 
-            Item singleChainItem = chains.get(Bondage.Chains);
             Item bells = chains.get(Accessoires.Bells);
-            State bellsState = script.state(Accessoires.Bells);
             assertTrue(bells.applied());
+
+            Item wristRestraints = restraints.item(Toys.Wrist_Restraints);
+            State wristRestraintsState = script.state(Toys.Wrist_Restraints);
+            assertTrue(bells.is(wristRestraints));
             assertTrue(bells.is(Toys.Wrist_Restraints));
 
-            Item wristRestraints = restraints.get(Toys.Wrist_Restraints);
-            State wristRestraintsState = script.state(Toys.Wrist_Restraints);
+            State bellsState = script.state(Accessoires.Bells);
             assertTrue(bellsState.is(wristRestraintsState));
             assertTrue(wristRestraintsState.is(bellsState));
 
@@ -991,6 +992,7 @@ public class ItemsTest {
             assertTrue(wristRestraints.is(bells));
             assertTrue(bells.is(restraints));
 
+            Item singleChainItem = chains.get(Bondage.Chains);
             assertFalse(bells.is(singleChainItem));
             assertFalse(singleChainItem.is(bells));
 
@@ -1007,6 +1009,26 @@ public class ItemsTest {
             assertTrue(bells.is(Toys.Wrist_Restraints));
             assertTrue(bells.is(wristRestraints));
             assertTrue(bells.is(restraints));
+        }
+    }
+
+    @Test
+    public void testItemNotAppliedToFreeItems() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+            restraints.apply();
+            Items chains = script.items(Bondage.Chains, Accessoires.Bells);
+            chains.applyTo(restraints);
+
+            Item bells = chains.get(Accessoires.Bells);
+            Item handcuffs = restraints.getFree().item(Toys.Wrist_Restraints);
+            assertNotEquals(Item.NotFound, handcuffs);
+
+            assertFalse(handcuffs.is(bells));
+            assertFalse(handcuffs.is(chains));
+
+            assertFalse(bells.is(handcuffs));
+            assertFalse(chains.anyAre(handcuffs));
         }
     }
 

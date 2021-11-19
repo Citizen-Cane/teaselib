@@ -1,11 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static teaselib.core.TeaseLib.DefaultDomain;
+import static org.junit.Assert.*;
+import static teaselib.core.TeaseLib.*;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -309,6 +305,7 @@ public class StateTests {
         try (TestScript script = new TestScript()) {
             State test1 = script.teaseLib.state(TeaseLib.DefaultDomain, QualifiedString.of("test"));
             State test2 = script.teaseLib.state(TeaseLib.DefaultDomain, QualifiedString.of("test"));
+            assertEquals(test1, test2);
             assertSame(test1, test2);
         }
     }
@@ -358,6 +355,15 @@ public class StateTests {
 
             script.debugger.clearStateMaps();
             assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+        }
+    }
+
+    @Test
+    public void assertThatItemsCannotBeStates() throws IOException {
+        try (TestScript script = new TestScript()) {
+            QualifiedString item = new QualifiedString("namespace", "name", "guid");
+            assertNotNull(script.state(item.kind().toString()));
+            assertThrows(IllegalArgumentException.class, () -> script.state(item.toString()));
         }
     }
 

@@ -215,9 +215,9 @@ public class MediaRendererQueue {
             Future<?> future;
             // TODO Batch renderer facade and ThreadedMediaRenderer have duplicated code -> merge
             // TODO encapsulate these instanceof branches into the referenced classes
-            if (mediaRenderer instanceof MessageRenderer.RendererFacade) {
+            if (mediaRenderer instanceof MessageRenderer) {
                 mediaRenderer.run();
-                future = ((MessageRenderer.RendererFacade) mediaRenderer).getTask();
+                future = ((MessageRenderer) mediaRenderer).getTask();
             } else if (mediaRenderer instanceof MediaRendererThread) {
                 Future<?> task = executor.submit(mediaRenderer);
                 future = new MediaFutureTask<>((MediaRendererThread) mediaRenderer, task) {

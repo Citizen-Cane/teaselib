@@ -85,9 +85,9 @@ final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionReje
             // - TimeoutBehavior.TimeoutBehavior.InDubioMitius
             log(speechRecognitionRejectedScript, scriptFunction.relation.toString() + " script functions running");
             return false;
-        } else if (scriptRenderer.hasCompletedMandatory()) {
+        } else if (!scriptRenderer.hasCompletedMandatory()) {
             // must complete all to avoid parallel rendering, see {@link Message#ShowChoices}
-            log(speechRecognitionRejectedScript, "message rendering still in progress");
+            log(speechRecognitionRejectedScript, "Message rendering still in progress");
             return false;
         } else if (!speechRecognitionRejectedScript.canRun()) {
             log(speechRecognitionRejectedScript, "RecognitionRejectedScript.canRun() returned false");

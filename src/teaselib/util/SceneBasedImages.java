@@ -51,7 +51,7 @@ public class SceneBasedImages extends AbstractImages {
             pictureSets = pictureSets(resources);
             chooseSet();
 
-            resources.script.scriptRenderer.events.afterChoices.add(this::handleAfterChoices);
+            resources.script.scriptRenderer.events.afterPrompt.add(this::handleAfterChoices);
             resources.script.scriptRenderer.events.beforeMessage.add(this::handleBeforeMessage);
         }
     }

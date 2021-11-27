@@ -1,44 +1,75 @@
 package teaselib.core.media;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.function.BinaryOperator;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
-import teaselib.Replay;
+import teaselib.Images;
+import teaselib.Message;
+import teaselib.MessagePart;
+import teaselib.core.AbstractImages;
 import teaselib.core.AbstractMessage;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ScriptInterruptedException;
+import teaselib.core.TeaseLib;
 
-public abstract class MessageRenderer implements Runnable {
+public abstract class MessageRenderer extends MediaRendererThread implements Runnable, ReplayableMediaRenderer {
+
+    static final Logger logger = LoggerFactory.getLogger(MessageRenderer.class);
+
+    static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(Arrays.asList(Message.Type.Text,
+            Message.Type.Image, Message.Type.Mood, Message.Type.Sound, Message.Type.Speech, Message.Type.Delay));
+
     final Actor actor;
-    final List<RenderedMessage> messages;
     final ResourceLoader resources;
-    final BinaryOperator<MessageRenderer> operator;
+    final List<RenderedMessage> messages;
 
-    final RendererFacade renderer = new RendererFacade();
-
-    Future<Void> thisTask = null;
-    Replay.Position position = Replay.Position.FromCurrentPosition;
     MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
 
     int currentMessage = 0;
     String displayImage = null;
-    AbstractMessage lastSection;
+    RenderedMessage previousLastParagraph;
+    RenderedMessage lastParagraph;
 
-    protected MessageRenderer(Actor actor, List<RenderedMessage> messages, BinaryOperator<MessageRenderer> operator,
-            ResourceLoader resources) {
+    protected MessageRenderer(TeaseLib teaseLib, Actor actor, ResourceLoader resources,
+            List<RenderedMessage> messages) {
+        super(teaseLib);
         this.actor = actor;
         this.resources = resources;
         this.messages = messages;
-        this.operator = operator;
-
-        this.lastSection = RenderedMessage.getLastSection(getLastMessage());
+        this.lastParagraph = RenderedMessage.getLastParagraph(getLastMessage());
+        prefetchImages();
     }
 
-    public boolean hasActorImage() {
-        return actor.images.contains(displayImage);
+    void prefetchImages() {
+        prefetchImages(actor, messages);
+    }
+
+    private static void prefetchImages(Actor actor, List<RenderedMessage> messages) {
+        if (actor.images != Images.None) {
+            for (RenderedMessage message : messages) {
+                prefetchImages(actor, message);
+            }
+            if (actor.images instanceof AbstractImages) {
+                ((AbstractImages) actor.images).prefetcher().fetch();
+            }
+        }
+    }
+
+    private static void prefetchImages(Actor actor, RenderedMessage message) {
+        for (MessagePart part : message) {
+            if (part.type == Message.Type.Image) {
+                String resource = part.value;
+                if (!Message.NoImage.equals(part.value) && actor.images instanceof AbstractImages) {
+                    ((AbstractImages) actor.images).prefetcher().add(resource);
+                }
+            }
+        }
     }
 
     private RenderedMessage getLastMessage() {
@@ -49,115 +80,20 @@ public abstract class MessageRenderer implements Runnable {
         return messages.get(messages.size() - 1);
     }
 
-    RenderedMessage getMandatory() {
-        return RenderedMessage.getLastSection(getLastMessage());
-    }
-
     RenderedMessage getEnd() {
-        return stripAudio(RenderedMessage.getLastSection(getLastMessage()));
+        return stripAudio(RenderedMessage.getLastParagraph(getLastMessage()));
     }
 
     private static RenderedMessage stripAudio(AbstractMessage message) {
-        return message.stream().filter(part -> !SectionRenderer.SoundTypes.contains(part.type))
+        return message.stream().filter(part -> !Message.Type.AudioTypes.contains(part.type))
                 .collect(RenderedMessage.collector());
     }
 
-    // TODO Contains duplicated code from ThreadedMediaRenderer
-    class RendererFacade implements MediaRenderer.Threaded {
-        final CountDownLatch completedStart = new CountDownLatch(1);
-        final CountDownLatch completedMandatory = new CountDownLatch(1);
-        final CountDownLatch completedAll = new CountDownLatch(1);
+    public abstract void play() throws IOException, InterruptedException;
 
-        private long startMillis = 0;
-
-        @Override
-        public void run() {
-            startMillis = System.currentTimeMillis();
-            MessageRenderer.this.run();
-        }
-
-        @Override
-        public void completeStart() {
-            try {
-                // TODO Blocks in PCM tests because the message renderer task is cancelled,
-                // before startCompleted is reached - executor is idle
-                completedStart.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        }
-
-        @Override
-        public void completeMandatory() {
-            try {
-                completedMandatory.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        }
-
-        @Override
-        public void completeAll() {
-            try {
-                completedAll.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        }
-
-        protected final void startCompleted() {
-            completedStart.countDown();
-            if (SectionRenderer.logger.isDebugEnabled()) {
-                SectionRenderer.logger.debug("{} completed start after {}", getClass().getSimpleName(),
-                        String.format("%.2f seconds", getElapsedSeconds()));
-            }
-        }
-
-        protected final void mandatoryCompleted() {
-            completedMandatory.countDown();
-            if (SectionRenderer.logger.isDebugEnabled()) {
-                SectionRenderer.logger.debug("{} completed mandatory after {}", getClass().getSimpleName(),
-                        String.format("%.2f seconds", getElapsedSeconds()));
-            }
-        }
-
-        protected final void allCompleted() {
-            completedAll.countDown();
-            if (SectionRenderer.logger.isDebugEnabled()) {
-                SectionRenderer.logger.debug("{} completed all after {}", getClass().getSimpleName(),
-                        getElapsedSecondsFormatted());
-            }
-        }
-
-        @Override
-        public boolean hasCompletedStart() {
-            return completedStart.getCount() == 0;
-        }
-
-        @Override
-        public boolean hasCompletedMandatory() {
-            return completedMandatory.getCount() == 0;
-        }
-
-        @Override
-        public boolean hasCompletedAll() {
-            return completedAll.getCount() == 0;
-        }
-
-        public String getElapsedSecondsFormatted() {
-            return String.format("%.2f", getElapsedSeconds());
-        }
-
-        private double getElapsedSeconds() {
-            return (System.currentTimeMillis() - startMillis) / 1000.0;
-        }
-
-        public Future<Void> getTask() {
-            return MessageRenderer.this.thisTask;
-        }
+    @Override
+    public String toString() {
+        return messages.toString();
     }
 
 }

@@ -31,19 +31,10 @@ import teaselib.test.TestScript;
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesInputMethodHandlerTest {
+
     @Parameterized.Parameters
     public static List<Object[]> data() {
         return Arrays.asList(new Object[ShowChoicesAbstractTest.ITERATIONS][0]);
-    }
-
-    private abstract class RunnableTestScript extends TeaseScript implements Runnable {
-        RunnableTestScript(Script script) {
-            super(script);
-        }
-
-        public RunnableTestScript(TeaseLib teaseLib, ResourceLoader resourceLoader, Actor actor, String namespace) {
-            super(teaseLib, resourceLoader, actor, namespace);
-        }
     }
 
     TeaseScript script;
@@ -59,13 +50,14 @@ public class ShowChoicesInputMethodHandlerTest {
         Actor actor = TestScript.newActor(Gender.Masculine);
         ResourceLoader resourceLoader = new ResourceLoader(this.getClass());
 
-        script = new RunnableTestScript(teaseLib, resourceLoader, actor, "foobar") {
+        script = new ShowChoicesAbstractTest.RunnableTestScript(teaseLib, resourceLoader, actor, "foobar") {
             @Override
             public void run() { // Ignore
             }
         };
 
-        RunnableTestScript debugInputMethodHandler = new RunnableTestScript(script) {
+        ShowChoicesAbstractTest.RunnableTestScript debugInputMethodHandler = new ShowChoicesAbstractTest.RunnableTestScript(
+                script) {
             @Override
             public void run() {
                 say("DebugInputMethod Handler called " + count.incrementAndGet() + " times.");

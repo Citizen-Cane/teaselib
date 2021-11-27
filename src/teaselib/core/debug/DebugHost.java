@@ -154,7 +154,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
                 if (replySection.hasWaiters(click)) {
                     throw new IllegalStateException("Trying to dismiss without current choices: " + choices);
                 }
-                logger.info("No current choices");
+                logger.trace("No current choices");
                 return false;
             }
 

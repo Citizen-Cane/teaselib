@@ -359,7 +359,7 @@ public class Prompt {
             this.handler = eventType;
         }
 
-        public void run(Action action) {
+        public void then(Action action) {
             synchronized (Prompt.this.inputMethodEventActions) {
                 Prompt.this.inputMethodEventActions.put(handler, action);
             }

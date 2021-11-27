@@ -1,13 +1,15 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.concurrency.NamedExecutorService.*;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.stream.Collectors.toList;
+import static teaselib.core.concurrency.NamedExecutorService.newUnlimitedThreadPool;
+import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,7 +39,7 @@ import teaselib.core.media.SectionRenderer;
 public class ScriptRenderer implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(ScriptRenderer.class);
 
-    private final MediaRendererQueue renderQueue = new MediaRendererQueue();
+    final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final ExecutorService scriptFunctionExecutor = newUnlimitedThreadPool("Script task", 1, HOURS);
     private final ExecutorService inputMethodExecutor = newUnlimitedThreadPool("Input method", 1, HOURS);
     private final ExecutorService prefetchExecutor = singleThreadedQueue("Image prefetch", 1, HOURS);
@@ -45,7 +47,7 @@ public class ScriptRenderer implements Closeable {
     private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
 
-    private List<MediaRenderer> playedRenderers = null;
+    List<MediaRenderer> playedRenderers = null;
     private final List<Message> prependedMessages = new ArrayList<>();
     private Actor currentActor = null;
     private Message currentMessage = null;
@@ -79,16 +81,17 @@ public class ScriptRenderer implements Closeable {
         }
         scriptFunctionExecutor.shutdown();
         inputMethodExecutor.shutdown();
+        prefetchExecutor.shutdown();
         renderQueue.getExecutorService().shutdown();
         sectionRenderer.close();
     }
 
-    void completeStarts() {
-        renderQueue.completeStarts();
+    void awaitStartCompleted() {
+        renderQueue.awaitStartCompleted();
     }
 
-    void completeMandatory() {
-        renderQueue.completeMandatories();
+    void awaitMandatoryCompleted() {
+        renderQueue.awaitMandatoryCompleted();
     }
 
     /**
@@ -97,9 +100,8 @@ public class ScriptRenderer implements Closeable {
      * <p>
      * This won't display a button, it just waits. Background threads will continue to run.
      */
-    void completeAll() {
-        renderQueue.completeAll();
-        renderQueue.endAll();
+    void awaitAllCompleted() {
+        renderQueue.awaitAllCompleted();
     }
 
     /**
@@ -112,7 +114,7 @@ public class ScriptRenderer implements Closeable {
         stopBackgroundRenderers();
     }
 
-    boolean hasCompletedMandatory() {
+    public boolean hasCompletedMandatory() {
         return renderQueue.hasCompletedMandatory();
     }
 
@@ -132,32 +134,8 @@ public class ScriptRenderer implements Closeable {
         renderMessage(teaseLib, interTitle, OutlineType.NewSection);
     }
 
-    class ReplayImpl implements Replay {
-        final List<MediaRenderer> renderers;
-
-        public ReplayImpl(List<MediaRenderer> renderers) {
-            super();
-            logger.info("Remembering renderers in replay {}", this);
-            this.renderers = new ArrayList<>(renderers);
-        }
-
-        @Override
-        public void replay(Replay.Position replayPosition) {
-            synchronized (queuedRenderers) {
-                logger.info("Replaying renderers from replay {}", this);
-                // Finish current set before replaying
-                completeMandatory();
-                // Restore the prompt that caused running the SR-rejected script
-                // as soon as possible
-                endAll();
-                renderQueue.replay(renderers, replayPosition);
-                playedRenderers = renderers;
-            }
-        }
-    }
-
     Replay getReplay() {
-        return new ReplayImpl(playedRenderers);
+        return new ReplayImpl(this, playedRenderers);
     }
 
     void prependMessage(Message message) {
@@ -271,18 +249,17 @@ public class ScriptRenderer implements Closeable {
                 // to ensure the next set is empty when the current set is cancelled
                 queuedRenderers.clear();
                 sectionRenderer.nextOutlineType = outlineType;
-                completeMandatory();
 
                 // Now the current set can be completed, and canceling the
                 // current set will result in an empty next set
-                completeAll();
+                awaitAllCompleted();
                 // Start a new chapter in the transcript
                 teaseLib.transcript.info("");
 
                 renderQueue.start(nextSet);
             }
             startBackgroundRenderers();
-            renderQueue.completeStarts();
+            renderQueue.awaitStartCompleted();
         }
     }
 
@@ -322,7 +299,7 @@ public class ScriptRenderer implements Closeable {
 
     void stopBackgroundRenderers() {
         synchronized (backgroundRenderers) {
-            backgroundRenderers.stream().filter(t -> !t.hasCompletedAll()).forEach(renderQueue::interruptAndJoin);
+            renderQueue.cancel(backgroundRenderers, Predicate.not(MediaRenderer.Threaded::hasCompletedAll));
             backgroundRenderers.clear();
         }
     }

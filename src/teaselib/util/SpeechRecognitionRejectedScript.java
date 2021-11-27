@@ -9,6 +9,7 @@ import teaselib.functional.RunnableScript;
  *
  */
 public abstract class SpeechRecognitionRejectedScript extends TeaseScript implements RunnableScript {
+
     public SpeechRecognitionRejectedScript(Script script) {
         super(script);
     }
@@ -23,4 +24,5 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript implem
     public boolean canRun() {
         return true;
     }
+
 }

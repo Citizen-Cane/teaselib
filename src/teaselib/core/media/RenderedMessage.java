@@ -40,10 +40,10 @@ public class RenderedMessage extends AbstractMessage {
     }
 
     public RenderedMessage getLastSection() {
-        return getLastSection(this);
+        return getLastParagraph(this);
     }
 
-    public static RenderedMessage getLastSection(AbstractMessage message) {
+    public static RenderedMessage getLastParagraph(AbstractMessage message) {
         int index = findLastTextElement(message);
 
         if (index < 0) {

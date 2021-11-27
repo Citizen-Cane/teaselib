@@ -158,6 +158,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public void close() {
+        stream.close();
         device.close();
     }
 

@@ -19,7 +19,7 @@ public class RenderedMessageTest {
         int findStartOfHeader = RenderedMessage.findStartOfHeader(message, findLastTextElement);
         assertEquals(2, findStartOfHeader);
 
-        assertEquals(2, RenderedMessage.getLastSection(message).size());
+        assertEquals(2, RenderedMessage.getLastParagraph(message).size());
     }
 
     @Test
@@ -37,7 +37,7 @@ public class RenderedMessageTest {
         int findStartOfHeader = RenderedMessage.findStartOfHeader(message, findLastTextElement);
         assertEquals(3, findStartOfHeader);
 
-        assertEquals(3, RenderedMessage.getLastSection(message).size());
+        assertEquals(3, RenderedMessage.getLastParagraph(message).size());
     }
 
 }

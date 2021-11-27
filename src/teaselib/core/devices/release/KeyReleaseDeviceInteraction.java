@@ -581,7 +581,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         return installedCountDownActions.computeIfAbsent(actuatorKey(actuator), key //
         -> events.when(items).remember().thenOnce(() -> {
             if (items.anyAre(Until.Expired) && !duration(items).expired()) {
-                removeEvent(actuatorKey(actuator), events.afterChoices, installedRenewHoldEvents);
+                removeEvent(actuatorKey(actuator), events.afterPrompt, installedRenewHoldEvents);
                 startCountDown(actuator, items);
             }
         }));
@@ -593,7 +593,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
 
     private Event<ScriptEventArgs> singleRenewHoldEvent(Actuator actuator) {
         return installedRenewHoldEvents.computeIfAbsent(actuatorKey(actuator), key //
-        -> events.afterChoices.add(eventArgs -> renewHold(actuator)));
+        -> events.afterPrompt.add(eventArgs -> renewHold(actuator)));
     }
 
     private void installReleaseAction(Actuator actuator, Items items, Items handled) {
@@ -636,7 +636,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
 
     private void removeEvents(Actuator actuator) {
         removeEvent(actuatorKey(actuator), events.itemRemember, installedCountDownActions);
-        removeEvent(actuatorKey(actuator), events.afterChoices, installedRenewHoldEvents);
+        removeEvent(actuatorKey(actuator), events.afterPrompt, installedRenewHoldEvents);
     }
 
     private static <K, S extends EventArgs, T extends Event<S>, E extends EventSource<S>> void removeEvent( //

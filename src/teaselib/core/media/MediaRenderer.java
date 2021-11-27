@@ -5,17 +5,17 @@ public interface MediaRenderer extends Runnable {
         /**
          * Wait for the renderer having completed the introduction phase of its content
          */
-        void completeStart();
+        void awaitStartCompleted();
 
         /**
          * Wait for the renderer having completed the mandatory part of its content
          */
-        void completeMandatory();
+        void awaitMandatoryCompleted();
 
         /**
          * Wait for the renderer to render all its content
          */
-        void completeAll();
+        void awaitAllCompleted();
 
         /**
          * Determine whether the renderer has completed its start.

@@ -62,46 +62,48 @@ public class StimulationSamplerTaskTest {
 
     @Test
     public void testWaveformProcessing() throws Exception {
-        TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask();
-        testSampler.play(constantSignal);
+        try (TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask()) {
+            testSampler.play(constantSignal);
+            testSampler.complete();
 
-        testSampler.complete();
-
-        assertEquals(2, testSampler.sampled.size());
-        assertEquals(1.0, testSampler.sampled.get(0).getValues()[0], 0.0);
-        assertEquals(1.0, testSampler.sampled.get(0).getValues()[1], 0.0);
-        assertEquals(1.0, testSampler.sampled.get(0).getValues()[2], 0.0);
-        assertEquals(0.0, testSampler.sampled.get(1).getValues()[0], 0.0);
-        assertEquals(0.0, testSampler.sampled.get(1).getValues()[1], 0.0);
-        assertEquals(0.0, testSampler.sampled.get(1).getValues()[2], 0.0);
+            assertEquals(2, testSampler.sampled.size());
+            assertEquals(1.0, testSampler.sampled.get(0).getValues()[0], 0.0);
+            assertEquals(1.0, testSampler.sampled.get(0).getValues()[1], 0.0);
+            assertEquals(1.0, testSampler.sampled.get(0).getValues()[2], 0.0);
+            assertEquals(0.0, testSampler.sampled.get(1).getValues()[0], 0.0);
+            assertEquals(0.0, testSampler.sampled.get(1).getValues()[1], 0.0);
+            assertEquals(0.0, testSampler.sampled.get(1).getValues()[2], 0.0);
+        }
     }
 
     @Test(expected = TestException.class)
     public void testErrorHandling() throws TestException {
-        TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask() {
+        try (TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask() {
             @Override
             void playSamples(Samples samples) {
                 throw new TestException();
             }
-        };
-        testSampler.play(constantSignal);
-        testSampler.complete();
+        }) {
+            testSampler.play(constantSignal);
+            testSampler.complete();
+        }
     }
 
     @Test(expected = TestException.class)
     public void testErrorHandlingAfterCancel() throws TestException, InterruptedException {
-        TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask() {
+        try (TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask() {
             @Override
             void playSamples(Samples samples) {
                 throw new TestException();
             }
-        };
-        testSampler.play(constantSignal);
+        }) {
+            testSampler.play(constantSignal);
 
-        // Do something, wait until error occurs
-        Thread.sleep(1000);
-        testSampler.stop();
+            // Do something, wait until error occurs
+            Thread.sleep(1000);
+            testSampler.stop();
 
-        testSampler.complete();
+            testSampler.complete();
+        }
     }
 }

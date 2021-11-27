@@ -1,13 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,6 +21,7 @@ import teaselib.test.IntegrationTests;
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
+
     static final String THROW_RIGHT_AT_START = "throw right at start";
     static final String THROW_AFTER_FIRST_QUESTION = "throw after first question";
 
@@ -38,19 +37,6 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
         return parameters;
     }
 
-    @Before
-    public void initTestScript() throws IOException {
-        init();
-    }
-
-    class TestException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
-        public TestException(String message) {
-            super(message);
-        }
-    }
-
     public ShowChoicesTestErrorHandling(String throwWhen) {
         this.throwWhen = throwWhen;
     }
@@ -64,7 +50,7 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
             if (throwWhen == THROW_RIGHT_AT_START)
                 throwTestException();
             script.say("Inside script function.");
-            script.completeAll();
+            script.awaitAllCompleted();
             if (throwWhen == THROW_AFTER_FIRST_QUESTION)
                 throwTestException();
         }, "Stop"));
@@ -107,7 +93,7 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
                     throwTestException();
                 assertEquals("Wow Level 2", script.reply("Wow Level 2", "Oh Level 2"));
                 script.say("End of script function 2");
-                script.completeAll();
+                script.awaitAllCompleted();
                 if (throwWhen == THROW_AFTER_FIRST_QUESTION)
                     throwTestException();
             }, "Stop script function 2"));

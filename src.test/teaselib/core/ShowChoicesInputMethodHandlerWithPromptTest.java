@@ -18,7 +18,6 @@ import org.junit.runners.Parameterized;
 
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
-import teaselib.TeaseScript;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.debug.DebugHost;
 import teaselib.test.IntegrationTests;
@@ -28,30 +27,13 @@ import teaselib.test.TestScript;
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesInputMethodHandlerWithPromptTest {
+
     @Parameterized.Parameters
     public static List<Object[]> data() {
         return Arrays.asList(new Object[ShowChoicesAbstractTest.ITERATIONS][0]);
     }
 
-    private abstract class RunnableTestScript extends TeaseScript implements Runnable {
-        RunnableTestScript(Script script) {
-            super(script);
-        }
-
-        public RunnableTestScript(TeaseLib teaseLib, ResourceLoader resourceLoader, Actor actor, String namespace) {
-            super(teaseLib, resourceLoader, actor, namespace);
-        }
-    }
-
-    class TestException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
-        public TestException(String message) {
-            super(message);
-        }
-    }
-
-    RunnableTestScript script;
+    ShowChoicesAbstractTest.RunnableTestScript script;
     Debugger debugger;
     AtomicInteger count;
     DebugHost host;
@@ -64,14 +46,15 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         Actor actor = TestScript.newActor(Gender.Masculine);
         ResourceLoader resourceLoader = new ResourceLoader(this.getClass());
 
-        script = new RunnableTestScript(teaseLib, resourceLoader, actor, "foobar") {
+        script = new ShowChoicesAbstractTest.RunnableTestScript(teaseLib, resourceLoader, actor, "foobar") {
             @Override
             public void run() {
                 // Ignore
             }
         };
 
-        RunnableTestScript debugInputMethodHandler = new RunnableTestScript(script) {
+        ShowChoicesAbstractTest.RunnableTestScript debugInputMethodHandler = new ShowChoicesAbstractTest.RunnableTestScript(
+                script) {
             @Override
             public void run() {
                 say("In Debug Handler");

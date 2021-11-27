@@ -1,16 +1,10 @@
 package teaselib;
 
-import java.io.IOException;
-
 /**
  * @author Citizen-Cane
  *
  */
 public interface Replay {
-
-    interface Replayable {
-        void run() throws InterruptedException, IOException;
-    }
 
     enum Position {
         /**

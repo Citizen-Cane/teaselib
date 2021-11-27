@@ -42,8 +42,6 @@ import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
-import teaselib.core.speechrecognition.SpeechRecognitionInputMethodEventArgs;
-import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -286,12 +284,12 @@ public abstract class Script {
         return teaseLib.globals.get(DeviceInteractionImplementations.class).get(deviceInteraction);
     }
 
-    public void completeStarts() {
-        scriptRenderer.completeStarts();
+    public void awaitStartCompleted() {
+        scriptRenderer.awaitStartCompleted();
     }
 
-    public void completeMandatory() {
-        scriptRenderer.completeMandatory();
+    public void awaitMandatoryCompleted() {
+        scriptRenderer.awaitMandatoryCompleted();
     }
 
     /**
@@ -300,8 +298,8 @@ public abstract class Script {
      * <p>
      * This won't display a button, it just waits. Background threads will continue to run.
      */
-    public void completeAll() {
-        scriptRenderer.completeAll();
+    public void awaitAllCompleted() {
+        scriptRenderer.awaitAllCompleted();
     }
 
     /**
@@ -367,6 +365,7 @@ public abstract class Script {
 
     void showAll(double delaySeconds) {
         var message = new Message(actor);
+        message.add(Type.Keyword, Message.ShowChoices);
         message.add(Type.Delay, Double.toString(delaySeconds));
         if (!scriptRenderer.isShowingInstructionalImage()) {
             message.add(Type.Image, displayImage);
@@ -412,6 +411,9 @@ public abstract class Script {
         var prompt = getPrompt(answers, intention, scriptFunction);
 
         if (scriptFunction == null) {
+            // If we don't have a script function,
+            // then the mandatory part of the renderers
+            // must be completed before displaying the ui choices
             completeSection();
         } else {
             completeSectionBeforeStarting(scriptFunction);
@@ -421,26 +423,21 @@ public abstract class Script {
             scriptRenderer.stopBackgroundRenderers();
         }
 
-        Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript = speechRecognitioneRejectedScript(
-                scriptFunction);
-        if (speechRecognitionRejectedScript.isPresent()) {
-            addRecognitionRejectedAction(prompt, speechRecognitionRejectedScript.get());
+        if (scriptFunction == null) {
+            speechRecognitioneRejectedScript().ifPresent(script -> addRecognitionRejectedAction(prompt, script));
         }
 
-        scriptRenderer.events.beforeChoices.fire(new ScriptEventArgs());
+        scriptRenderer.events.beforePrompt.fire(new ScriptEventArgs());
         var answer = anwser(prompt);
         endAll();
         teaseLib.host.endScene();
-        scriptRenderer.events.afterChoices.fire(new ScriptEventArgs());
+        scriptRenderer.events.afterPrompt.fire(new ScriptEventArgs());
         return answer;
     }
 
     private void completeSection() {
-        // If we don't have a script function,
-        // then the mandatory part of the renderers
-        // must be completed before displaying the ui choices
         if (scriptRenderer.isInterTitle()) {
-            completeMandatory();
+            awaitMandatoryCompleted();
         } else {
             showAll(5.0);
         }
@@ -451,13 +448,37 @@ public abstract class Script {
             // A confirmation relates to the current message,
             // and must appears like a normal button,
             // so in a way it is concatenated to the current message
-            completeMandatory();
+            awaitMandatoryCompleted();
         } else {
             // An autonomous script function does not relate to the current
             // message, therefore we'll wait until all of the last message
             // has been completed
-            completeAll();
+            awaitAllCompleted();
         }
+    }
+
+    private Optional<SpeechRecognitionRejectedScript> speechRecognitioneRejectedScript() {
+        return actor.speechRecognitionRejectedScript != null
+                ? Optional.of(new SpeechRecognitionRejectedScriptAdapter(this))
+                : Optional.empty();
+    }
+
+    private static void addRecognitionRejectedAction(Prompt prompt, SpeechRecognitionRejectedScript script) {
+        prompt.when(SpeechRecognitionInputMethod.Notification.RecognitionRejected).then(new Action() {
+            boolean speechRecognitionRejectedHandlerRunOnce = false;
+
+            @Override
+            public boolean canRun(InputMethodEventArgs e) {
+                return !speechRecognitionRejectedHandlerRunOnce && script.canRun();
+            }
+
+            @Override
+            public void run(InputMethodEventArgs e) {
+                // TODO generalize this -> invoke action once for this prompt, once for whole prompt stack
+                speechRecognitionRejectedHandlerRunOnce = true;
+                script.run();
+            }
+        });
     }
 
     private Answer anwser(Prompt prompt) {
@@ -483,25 +504,6 @@ public abstract class Script {
         teaseLib.transcript.info(answer);
 
         return choice.answer;
-    }
-
-    private static void addRecognitionRejectedAction(Prompt prompt, SpeechRecognitionRejectedScript script) {
-        prompt.when(SpeechRecognitionInputMethod.Notification.RecognitionRejected).run(new Action() {
-            boolean speechRecognitionRejectedHandlerRunOnce = false;
-
-            @Override
-            public boolean canRun(InputMethodEventArgs e) {
-                SpeechRecognizedEventArgs eventArgs = ((SpeechRecognitionInputMethodEventArgs) e).eventArgs;
-                return eventArgs.result.size() == 1 && !speechRecognitionRejectedHandlerRunOnce && script.canRun();
-            }
-
-            @Override
-            public void run(InputMethodEventArgs e) {
-                // TODO generalize this -> invoke action once for this prompt, once for whole prompt stack
-                speechRecognitionRejectedHandlerRunOnce = true;
-                script.run();
-            }
-        });
     }
 
     private Choices choices(List<Answer> answers, Intention intention) {
@@ -559,12 +561,6 @@ public abstract class Script {
         } else {
             return true;
         }
-    }
-
-    private Optional<SpeechRecognitionRejectedScript> speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {
-        return actor.speechRecognitionRejectedScript != null
-                ? Optional.of(new SpeechRecognitionRejectedScriptAdapter(this, scriptFunction))
-                : Optional.empty();
     }
 
     public Replay getReplay() {

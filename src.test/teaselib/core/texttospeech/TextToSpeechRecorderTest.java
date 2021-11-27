@@ -1,6 +1,8 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +66,6 @@ public class TextToSpeechRecorderTest {
         Configuration config = new Configuration();
         new DebugSetup().withInput().withOutput().applyTo(config);
         File path = tempFolder.getRoot();
-        int n = 3;
 
         try (TextToSpeechPlayer tts = new TextToSpeechPlayer(config)) {
             ResourceLoader resources = new ResourceLoader(this.getClass(),
@@ -73,28 +74,39 @@ public class TextToSpeechRecorderTest {
             tts.loadActorVoiceProperties(resources);
             tts.acquireVoice(actor, resources);
 
+            int n = 3;
             NamedExecutorService executor = NamedExecutorService.newFixedThreadPool(n, "test speech");
-            List<Future<String>> futures = new ArrayList<>();
-
-            for (int i = 0; i < n; i++) {
-                File testFile = new File(path, Integer.toString(i));
-                futures.add(executor.submit(() -> tts.speak(actor, "This is a test.", Mood.Neutral, testFile)));
+            try {
+                testSpeechGeneration(executor, tts, path);
+            } finally {
+                executor.shutdown();
             }
+        }
+    }
 
-            List<String> fileNames = new ArrayList<>();
+    private void testSpeechGeneration(NamedExecutorService executor, TextToSpeechPlayer tts, File path)
+            throws InterruptedException, ExecutionException, IOException {
+        int n = executor.getMaximumPoolSize();
+        List<Future<String>> futures = new ArrayList<>(n);
 
-            for (Future<String> future : futures) {
-                fileNames.add(future.get());
-            }
+        for (int i = 0; i < n; i++) {
+            File testFile = new File(path, Integer.toString(i));
+            futures.add(executor.submit(() -> tts.speak(actor, "This is a test.", Mood.Neutral, testFile)));
+        }
 
-            for (String fileName : fileNames) {
-                assertTrue(new File(fileName).exists());
-            }
+        List<String> fileNames = new ArrayList<>(n);
 
-            for (int i = 0; i < n - 1; i++) {
-                assertArrayEquals(Files.readAllBytes(Paths.get(fileNames.get(i))),
-                        Files.readAllBytes(Paths.get(fileNames.get(i + 1))));
-            }
+        for (Future<String> future : futures) {
+            fileNames.add(future.get());
+        }
+
+        for (String fileName : fileNames) {
+            assertTrue(new File(fileName).exists());
+        }
+
+        for (int i = 0; i < n - 1; i++) {
+            assertArrayEquals(Files.readAllBytes(Paths.get(fileNames.get(i))),
+                    Files.readAllBytes(Paths.get(fileNames.get(i + 1))));
         }
     }
 

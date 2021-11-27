@@ -679,7 +679,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return
      */
     public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel) {
-        completeMandatory();
+        awaitMandatoryCompleted();
         List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices, values, allowCancel);
         endAll();
         return results;
@@ -772,7 +772,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
         HumanPoseScriptInteraction poseEstimation = interaction(HumanPoseScriptInteraction.class);
-        completeMandatory();
+        awaitMandatoryCompleted();
 
         if (poseEstimation.getPose(Status).is(Available)) {
             BooleanSupplier faceToFace = () -> poseEstimation.getPose(Proximity).is(HumanPose.Proximity.FACE2FACE);
@@ -784,10 +784,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
             append(firstCommand);
             while (true) {
-                completeMandatory();
+                awaitMandatoryCompleted();
                 if (faceToFace.getAsBoolean() && !chat(notFaceToFace, command1stConfirmation)) {
                     append(secondCommand);
-                    completeMandatory();
+                    awaitMandatoryCompleted();
                     if (faceToFace.getAsBoolean()) {
                         chat(notFaceToFaceInfinite, command2ndConfirmation);
                     }
@@ -801,7 +801,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
                 append(Message.Delay5s);
                 // TODO implement progressing instructions message - don't start over but continue where paused
                 append(progressInstructions);
-                completeMandatory();
+                awaitMandatoryCompleted();
                 faceToFaceInfinite.call();
 
                 say(completionQuestion);

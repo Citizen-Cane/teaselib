@@ -1,16 +1,18 @@
 package teaselib.core;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import teaselib.core.CodeCoverageDecisionCollector.DecisionList;
 import teaselib.core.CodeCoverageDecisionCollector.DecisionList.Entry;
-import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.functional.RunnableScript;
@@ -19,11 +21,17 @@ import teaselib.functional.RunnableScript;
  * @author Citizen-Cane
  *
  */
-public class CodeCoverage<T extends Script> {
-    private final CodeCoverageInputMethod debugInputMethod = new CodeCoverageInputMethod(
-            NamedExecutorService.singleThreadedQueue(getClass().getSimpleName(), 10, TimeUnit.SECONDS));
+public class CodeCoverage<T extends Script> implements Closeable {
+    private final ExecutorService executor = singleThreadedQueue(getClass().getSimpleName(), 10, SECONDS);
+    private final CodeCoverageInputMethod debugInputMethod = new CodeCoverageInputMethod(executor);
     final CodeCoverageDecisionCollector decisionVariants = new CodeCoverageDecisionCollector();
     private final Iterator<DecisionList> current = decisionVariants.iterator();
+
+    @Override
+    public void close() {
+        executor.shutdown();
+        debugInputMethod.close();
+    }
 
     public boolean hasNext() {
         return current.hasNext();

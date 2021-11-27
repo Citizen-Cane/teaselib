@@ -1,7 +1,7 @@
 package teaselib.core.configuration;
 
-import static java.util.Collections.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.Collections.singletonList;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import teaselib.core.Closeable;
-import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedName;
 import teaselib.core.util.QualifiedString;
@@ -284,7 +283,7 @@ public class Configuration implements Closeable {
         try {
             persistentConfigurationFiles.write();
         } catch (IOException e) {
-            throw asRuntimeException(ExceptionUtil.reduce(e));
+            throw asRuntimeException(e);
         }
     }
 

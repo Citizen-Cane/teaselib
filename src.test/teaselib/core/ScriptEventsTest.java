@@ -769,7 +769,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     }
 
     private void assertHoldActions(int count) {
-        assertEquals("Expected actuator to be prepared and holding", count, script.events().afterChoices.size());
+        assertEquals("Expected actuator to be prepared and holding", count, script.events().afterPrompt.size());
     }
 
     private void assertCountdownActions(int count) {

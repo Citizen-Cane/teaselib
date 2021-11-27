@@ -37,8 +37,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         try {
             renderMedia();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             // Expected
+            Thread.interrupted();
         } catch (ScriptInterruptedException e) {
             // Expected
         } catch (Exception e) {
@@ -59,20 +59,24 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
      */
     protected abstract void renderMedia() throws InterruptedException, IOException;
 
-    public void replay(Replay.Position replayPosition) {
-        this.position = replayPosition;
-        if (replayPosition == Replay.Position.FromStart) {
+    public void replay(Replay.Position position) {
+        this.position = position;
+        adjustCompletionState();
+        logger.info("Replay from {}", position);
+    }
+
+    private void adjustCompletionState() {
+        if (position == Replay.Position.FromStart) {
             replayFromStart();
-        } else if (replayPosition == Replay.Position.FromCurrentPosition) {
+        } else if (position == Replay.Position.FromCurrentPosition) {
             replayFromCurrent();
-        } else if (replayPosition == Replay.Position.FromMandatory) {
+        } else if (position == Replay.Position.FromMandatory) {
             replayFromCurrent();
-        } else if (replayPosition == Replay.Position.End) {
+        } else if (position == Replay.Position.End) {
             replayEnd();
         } else {
-            throw new IllegalArgumentException(replayPosition.toString());
+            throw new IllegalArgumentException(position.toString());
         }
-        logger.info("Replay {}", replayPosition);
     }
 
     private void replayFromStart() {
@@ -84,15 +88,12 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
 
     private void replayFromCurrent() {
         clearCurrentLatches();
-        completedStart = new CountDownLatch(0);
         completedMandatory = new CountDownLatch(1);
         completedAll = new CountDownLatch(1);
     }
 
     private void replayEnd() {
         clearCurrentLatches();
-        completedStart = new CountDownLatch(0);
-        completedMandatory = new CountDownLatch(0);
         completedAll = new CountDownLatch(1);
     }
 
@@ -129,7 +130,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     }
 
     @Override
-    public void completeStart() {
+    public void awaitStartCompleted() {
         try {
             completedStart.await();
         } catch (InterruptedException e) {
@@ -139,7 +140,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     }
 
     @Override
-    public void completeMandatory() {
+    public void awaitMandatoryCompleted() {
         try {
             completedMandatory.await();
         } catch (InterruptedException e) {
@@ -149,7 +150,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     }
 
     @Override
-    public void completeAll() {
+    public void awaitAllCompleted() {
         try {
             completedAll.await();
         } catch (InterruptedException e) {

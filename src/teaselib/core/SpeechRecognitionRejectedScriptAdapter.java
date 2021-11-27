@@ -1,35 +1,41 @@
 package teaselib.core;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.Answer;
-import teaselib.Message;
 import teaselib.Replay;
-import teaselib.ScriptFunction;
-import teaselib.core.ui.Intention;
+import teaselib.core.ScriptEventArgs.BeforeNewMessage;
+import teaselib.core.ScriptEvents.ScriptEventAction;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
-final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionRejectedScript {
+public final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionRejectedScript {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionRejectedScriptAdapter.class);
 
     private Script script;
-    private final ScriptFunction scriptFunction;
     private boolean finishedWithPrompt = false;
 
-    SpeechRecognitionRejectedScriptAdapter(Script script, ScriptFunction scriptFunction) {
+    SpeechRecognitionRejectedScriptAdapter(Script script) {
         super(script);
         this.script = script;
-        this.scriptFunction = scriptFunction;
     }
 
     @Override
     public void run() {
         script.endAll();
         Replay beforeSpeechRecognitionRejected = script.getReplay();
-        script.actor.speechRecognitionRejectedScript.run();
+
+        ScriptEventAction<BeforeNewMessage> beforeMessage = script.scriptRenderer.events.when().beforeMessage()
+                .then(() -> beforeMessage());
+        ScriptEventAction<ScriptEventArgs> beforePrompt = script.scriptRenderer.events.when().beforePrompt()
+                .then(() -> beforePrompt());
+
+        try {
+            script.actor.speechRecognitionRejectedScript.run();
+        } finally {
+            scriptRenderer.events.beforeMessage.remove(beforeMessage);
+            scriptRenderer.events.beforePrompt.remove(beforePrompt);
+        }
+
         if (finishedWithPrompt) {
             beforeSpeechRecognitionRejected.replay(Replay.Position.FromMandatory);
         } else {
@@ -37,22 +43,12 @@ final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionReje
         }
     }
 
-    @Override
-    protected void renderIntertitle(String... text) {
-        super.renderIntertitle(text);
+    void beforeMessage() {
         finishedWithPrompt = false;
     }
 
-    @Override
-    protected void renderMessage(Message message, boolean useTTS) {
-        super.renderMessage(message, useTTS);
-        finishedWithPrompt = false;
-    }
-
-    @Override
-    protected Answer showChoices(List<Answer> answers, ScriptFunction scriptFunction, Intention intention) {
+    void beforePrompt() {
         finishedWithPrompt = true;
-        return super.showChoices(answers, scriptFunction, intention);
     }
 
     // Handling speech recognition rejected events:
@@ -79,15 +75,9 @@ final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionReje
     @Override
     public boolean canRun() {
         SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
-        if (scriptFunction != null) {
-            // This would work for the built-in confirmative timeout script functions:
-            // - TimeoutBehavior.InDubioMitius and maybe also for
-            // - TimeoutBehavior.TimeoutBehavior.InDubioMitius
-            log(speechRecognitionRejectedScript, scriptFunction.relation.toString() + " script functions running");
-            return false;
-        } else if (scriptRenderer.hasCompletedMandatory()) {
+        if (!scriptRenderer.hasCompletedMandatory()) {
             // must complete all to avoid parallel rendering, see {@link Message#ShowChoices}
-            log(speechRecognitionRejectedScript, "message rendering still in progress");
+            log(speechRecognitionRejectedScript, "Message rendering still in progress");
             return false;
         } else if (!speechRecognitionRejectedScript.canRun()) {
             log(speechRecognitionRejectedScript, "RecognitionRejectedScript.canRun() returned false");

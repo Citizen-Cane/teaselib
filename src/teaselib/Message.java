@@ -57,10 +57,14 @@ public class Message extends AbstractMessage {
         Item
 
         ;
+
+        public static final Set<Message.Type> DisplayTypes = new HashSet<>(
+                Arrays.asList(Message.Type.Text, Message.Type.Item, Message.Type.Image));
+
         public static final Set<Message.Type> AudioTypes = new HashSet<>(
                 Arrays.asList(Message.Type.Sound, Message.Type.BackgroundSound, Message.Type.Speech));
 
-        static final Set<Type> FileTypes = new HashSet<>(
+        public static final Set<Type> FileTypes = new HashSet<>(
                 Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech, Type.Image, Type.DesktopItem));
 
         public static boolean isFile(Type t) {

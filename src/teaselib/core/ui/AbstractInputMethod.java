@@ -149,7 +149,7 @@ public abstract class AbstractInputMethod implements InputMethod {
                 action.run();
             }
         };
-        prompt.when(eventArgs.source).run(runOnceAndRemove);
+        prompt.when(eventArgs.source).then(runOnceAndRemove);
 
         prompt.lock.lock();
         try {

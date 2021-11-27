@@ -48,27 +48,31 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         synchronized (this) {
             var prompt = activePrompt.get();
             if (prompt != null) {
-                Runnable respond = () -> {
-                    prompt.lock.lock();
-                    try {
-                        if (prompt.result() == Prompt.Result.UNDEFINED && !prompt.paused()) {
-                            dismissExpectedPromptOrIgnore(prompt);
-                        } else {
-                            logger.warn("Time advance skipped for {}", prompt);
+                Result debugResponse = responses.getResponse(prompt.choices);
+                if (debugResponse.response == Response.Ignore) {
+                    logger.info("Ignoring {}", result);
+                } else {
+                    Runnable respond = () -> {
+                        prompt.lock.lock();
+                        try {
+                            if (prompt.result() == Prompt.Result.UNDEFINED && !prompt.paused()) {
+                                dismissExpectedPrompt(prompt, debugResponse);
+                            } else {
+                                logger.warn("Time advance skipped for {}", prompt);
+                            }
+                        } finally {
+                            prompt.lock.unlock();
                         }
-                    } finally {
-                        prompt.lock.unlock();
-                    }
-                };
-                Thread t = new Thread(respond);
-                t.setName(ResponseDebugInputMethod.class.getSimpleName() + " " + getClass().getSimpleName());
-                t.start();
+                    };
+                    Thread t = new Thread(respond);
+                    t.setName(ResponseDebugInputMethod.class.getSimpleName() + " " + getClass().getSimpleName());
+                    t.start();
+                }
             }
         }
     }
 
-    private void dismissExpectedPromptOrIgnore(Prompt prompt) {
-        Result debugResponse = responses.getResponse(prompt.choices);
+    private void dismissExpectedPrompt(Prompt prompt, Result debugResponse) {
         if (debugResponse.response == Response.Choose) {
             synchronized (this) {
                 result = new Prompt.Result(debugResponse.index);
@@ -78,8 +82,6 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
         } else if (debugResponse.response == Response.Invoke) {
             logger.info("Signalling handler invocation {} to {}", debugResponse, prompt);
             invokeHandlerOnce(prompt, debugResponse);
-        } else if (debugResponse.response == Response.Ignore) {
-            logger.info("Ignoring {}", result);
         } else {
             throw new UnsupportedOperationException(debugResponse.toString());
         }
@@ -134,7 +136,6 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
             return result;
         }
     }
-
 
     @Override
     public void updateUI(UiEvent event) {

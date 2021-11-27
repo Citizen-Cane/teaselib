@@ -1,5 +1,6 @@
 package teaselib.core.devices.xinput.stimulation;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Objects;
@@ -14,13 +15,14 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import teaselib.core.Closeable;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.stimulation.ext.StimulationTargets;
 import teaselib.stimulation.ext.StimulationTargets.Samples;
 
-public abstract class StimulationSamplerTask {
+public abstract class StimulationSamplerTask implements Closeable {
     private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
     private final BlockingQueue<StimulationTargets> playList = new SynchronousQueue<>();
     private final AtomicReference<StimulationTargets> playing = new AtomicReference<>(null);
@@ -32,6 +34,12 @@ public abstract class StimulationSamplerTask {
 
     public StimulationSamplerTask() {
         runSampleThread();
+    }
+
+    @Override
+    public void close() {
+        executor.shutdown();
+        playList.drainTo(new ArrayList<>());
     }
 
     public void play(StimulationTargets targets) {

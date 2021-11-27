@@ -12,8 +12,8 @@ import teaselib.util.Items;
 
 public class ScriptEvents {
     public final EventSource<ScriptEventArgs.BeforeNewMessage> beforeMessage = new EventSource<>("Before Message");
-    public final EventSource<ScriptEventArgs> beforeChoices = new EventSource<>("Before Choices");
-    public final EventSource<ScriptEventArgs> afterChoices = new EventSource<>("After Choices");
+    public final EventSource<ScriptEventArgs> beforePrompt = new EventSource<>("Before Prompt");
+    public final EventSource<ScriptEventArgs> afterPrompt = new EventSource<>("After Prompt");
     public final EventSource<ScriptEventArgs.ActorChanged> actorChanged = new EventSource<>("Actor changed");
 
     public final EventSource<StateChangedEventArgs> stateApplied = new EventSource<>("State applied");
@@ -59,6 +59,14 @@ public class ScriptEvents {
     public class ScriptEventSource {
         public ScriptEventTarget<ScriptEventArgs.BeforeNewMessage> beforeMessage() {
             return new ScriptEventTarget<>(beforeMessage);
+        }
+
+        public ScriptEventTarget<ScriptEventArgs> beforePrompt() {
+            return new ScriptEventTarget<>(beforePrompt);
+        }
+
+        public ScriptEventTarget<ScriptEventArgs> afterChoices() {
+            return new ScriptEventTarget<>(afterPrompt);
         }
 
         public ScriptEventTarget<ScriptEventArgs.ActorChanged> actorChanged() {

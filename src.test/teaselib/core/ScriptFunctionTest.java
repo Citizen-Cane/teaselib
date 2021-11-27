@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -74,210 +75,210 @@ public class ScriptFunctionTest {
 
     @Test
     public void testSimpleScript() {
-        AtomicReference<String> result = new AtomicReference<>(null);
+        try (CodeCoverage<Script> codeCoverage = new CodeCoverage<>()) {
+            AtomicReference<String> result = new AtomicReference<>(null);
+            Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+                @Override
+                public void run() {
+                    say("In main script.");
+                    result.set(reply("Finished"));
+                    say("Still in main script.");
+                }
+            };
 
-        CodeCoverage<Script> codeCoverage = new CodeCoverage<>();
-        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
-            @Override
-            public void run() {
-                say("In main script.");
-                result.set(reply("Finished"));
-                say("Still in main script.");
-            }
-        };
-
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished", result.get());
-        assertFalse(codeCoverage.hasNext());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished", result.get());
+            assertFalse(codeCoverage.hasNext());
+        }
     }
 
     @Test
     public void testThatCallableScriptFunctionHasCompletedWhenNextSayStatementIsExecuted() {
-        AtomicReference<String> result = new AtomicReference<>(null);
+        try (CodeCoverage<Script> codeCoverage = new CodeCoverage<>()) {
+            AtomicReference<String> result = new AtomicReference<>(null);
+            Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+                @Override
+                public void run() {
+                    say("In main script.");
+                    result.set(reply(() -> {
+                        say("Inside script function.");
+                        return ScriptFunction.TimeoutString;
+                    }, "Finished"));
+                    say("Resuming main script.");
+                }
+            };
 
-        CodeCoverage<Script> codeCoverage = new CodeCoverage<>();
-        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
-            @Override
-            public void run() {
-                say("In main script.");
-                result.set(reply(() -> {
-                    say("Inside script function.");
-                    return ScriptFunction.TimeoutString;
-                }, "Finished"));
-                say("Resuming main script.");
-            }
-        };
+            codeCoverage.run(scriptSupplier);
+            assertEquals(ScriptFunction.TimeoutString, result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.TimeoutString, result.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished", result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished", result.get());
-
-        assertFalse(codeCoverage.hasNext());
+            assertFalse(codeCoverage.hasNext());
+        }
     }
 
     @Test
     public void testThatRunnableScriptFunctionHasCompletedWhenNextSayStatementIsExecuted() {
-        AtomicReference<String> result = new AtomicReference<>(null);
+        try (CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>()) {
+            AtomicReference<String> result = new AtomicReference<>(null);
+            Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+                @Override
+                public void run() {
+                    say("In main script.");
+                    result.set(reply(() -> {
+                        say("Inside script function.");
+                    }, "Finished"));
+                    say("Resuming main script.");
+                }
+            };
 
-        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
-            @Override
-            public void run() {
-                say("In main script.");
-                result.set(reply(() -> {
-                    say("Inside script function.");
-                }, "Finished"));
-                say("Resuming main script.");
-            }
-        };
+            codeCoverage.run(scriptSupplier);
+            assertEquals(ScriptFunction.TimeoutString, result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.TimeoutString, result.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished", result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished", result.get());
-
-        assertFalse(codeCoverage.hasNext());
+            assertFalse(codeCoverage.hasNext());
+        }
     }
 
     @Test
     public void testEmptyScriptFunctionAlwaysTimesOut() {
-        AtomicReference<String> result = new AtomicReference<>(null);
+        try (CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>()) {
+            AtomicReference<String> result = new AtomicReference<>(null);
+            Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+                @Override
+                public void run() {
+                    say("In main script.");
+                    result.set(reply(() -> {
+                        // Empty
+                    }, "Finished"));
+                    say("Resuming main script.");
+                }
+            };
 
-        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
-            @Override
-            public void run() {
-                say("In main script.");
-                result.set(reply(() -> {
-                    // Empty
-                }, "Finished"));
-                say("Resuming main script.");
-            }
-        };
+            codeCoverage.run(scriptSupplier);
+            assertEquals(ScriptFunction.TimeoutString, result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.TimeoutString, result.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished", result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished", result.get());
-
-        assertFalse(codeCoverage.hasNext());
+            assertFalse(codeCoverage.hasNext());
+        }
     }
 
     @Test
     public void testDefaultScriptFunctionTimeout() {
-        AtomicReference<String> result = new AtomicReference<>(null);
+        try (CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>()) {
+            AtomicReference<String> result = new AtomicReference<>(null);
+            Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+                @Override
+                public void run() {
+                    say("In main script.");
+                    result.set(reply(timeout(5), "Finished"));
+                    say("Resuming main script.");
+                }
+            };
 
-        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
-            @Override
-            public void run() {
-                say("In main script.");
-                result.set(reply(timeout(5), "Finished"));
-                say("Resuming main script.");
-            }
-        };
+            codeCoverage.run(scriptSupplier);
+            assertEquals(ScriptFunction.TimeoutString, result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.TimeoutString, result.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished", result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished", result.get());
-
-        assertFalse(codeCoverage.hasNext());
+            assertFalse(codeCoverage.hasNext());
+        }
     }
 
     @Test
     public void testDefaultScriptFunctionTimeoutConfirm() {
-        AtomicReference<String> result = new AtomicReference<>(null);
+        try (CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>()) {
+            AtomicReference<String> result = new AtomicReference<>(null);
+            Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+                @Override
+                public void run() {
+                    say("In main script.");
+                    result.set(reply(timeoutWithConfirmation(5), "Finished"));
+                    say("Resuming main script.");
+                }
+            };
 
-        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
-            @Override
-            public void run() {
-                say("In main script.");
-                result.set(reply(timeoutWithConfirmation(5), "Finished"));
-                say("Resuming main script.");
-            }
-        };
+            codeCoverage.run(scriptSupplier);
+            assertEquals(ScriptFunction.TimeoutString, result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.TimeoutString, result.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished", result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished", result.get());
-
-        assertFalse(codeCoverage.hasNext());
+            assertFalse(codeCoverage.hasNext());
+        }
     }
 
     @Test
     public void testDefaultScriptFunctionTimeoutAutoConfirm() {
-        AtomicReference<String> result = new AtomicReference<>(null);
+        try (CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>()) {
+            AtomicReference<String> result = new AtomicReference<>(null);
+            Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+                @Override
+                public void run() {
+                    say("In main script.");
+                    result.set(reply(timeoutWithAutoConfirmation(5), "Finished"));
+                    say("Resuming main script.");
+                }
+            };
 
-        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
-            @Override
-            public void run() {
-                say("In main script.");
-                result.set(reply(timeoutWithAutoConfirmation(5), "Finished"));
-                say("Resuming main script.");
-            }
-        };
+            codeCoverage.run(scriptSupplier);
+            assertEquals(ScriptFunction.TimeoutString, result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.TimeoutString, result.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished", result.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished", result.get());
-
-        assertFalse(codeCoverage.hasNext());
+            assertFalse(codeCoverage.hasNext());
+        }
     }
 
     @Test
     public void testThatCodeCoverageCoversTimeout() {
-        AtomicReference<String> result1 = new AtomicReference<>(null);
-        AtomicReference<String> result2 = new AtomicReference<>(null);
+        try (CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>()) {
+            AtomicReference<String> result1 = new AtomicReference<>(null);
+            AtomicReference<String> result2 = new AtomicReference<>(null);
+            Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+                @Override
+                public void run() {
+                    result1.set(null);
+                    say("In main script 1.");
+                    result1.set(reply(() -> {
+                        say("Inside script function 1.");
+                    }, "Finished 1"));
+                    say("Resuming main script 1.");
 
-        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
-            @Override
-            public void run() {
-                result1.set(null);
-                say("In main script 1.");
-                result1.set(reply(() -> {
-                    say("Inside script function 1.");
-                }, "Finished 1"));
-                say("Resuming main script 1.");
+                    result2.set(null);
+                    say("In main script 2.");
+                    result2.set(reply(() -> {
+                        say("Inside script function 2.");
+                    }, "Finished 2"));
+                    say("Resuming main script 2.");
+                }
+            };
 
-                result2.set(null);
-                say("In main script 2.");
-                result2.set(reply(() -> {
-                    say("Inside script function 2.");
-                }, "Finished 2"));
-                say("Resuming main script 2.");
-            }
-        };
+            codeCoverage.run(scriptSupplier);
+            assertEquals(ScriptFunction.TimeoutString, result1.get());
+            assertEquals(ScriptFunction.TimeoutString, result2.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.TimeoutString, result1.get());
-        assertEquals(ScriptFunction.TimeoutString, result2.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished 1", result1.get());
+            assertEquals(ScriptFunction.TimeoutString, result2.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished 1", result1.get());
-        assertEquals(ScriptFunction.TimeoutString, result2.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals(ScriptFunction.TimeoutString, result1.get());
+            assertEquals("Finished 2", result2.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.TimeoutString, result1.get());
-        assertEquals("Finished 2", result2.get());
+            codeCoverage.run(scriptSupplier);
+            assertEquals("Finished 1", result1.get());
+            assertEquals("Finished 2", result2.get());
 
-        codeCoverage.run(scriptSupplier);
-        assertEquals("Finished 1", result1.get());
-        assertEquals("Finished 2", result2.get());
-
-        assertFalse(codeCoverage.hasNext());
+            assertFalse(codeCoverage.hasNext());
+        }
     }
 
 }

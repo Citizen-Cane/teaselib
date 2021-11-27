@@ -209,7 +209,7 @@ public class ScriptMessageDecorator {
     }
 
     private AbstractMessage applyDelayRules(AbstractMessage message) {
-        AbstractMessage lastSection = RenderedMessage.getLastSection(message);
+        AbstractMessage lastSection = RenderedMessage.getLastParagraph(message);
         MessagePart currentDelay = null;
         var messageWithDelays = new AbstractMessage();
 

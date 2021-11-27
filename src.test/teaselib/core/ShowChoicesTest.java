@@ -1,12 +1,10 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -21,22 +19,10 @@ import teaselib.test.IntegrationTests;
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesTest extends ShowChoicesAbstractTest {
+
     @Parameterized.Parameters
     public static List<Object[]> data() {
         return Arrays.asList(new Object[ITERATIONS][0]);
-    }
-
-    class TestException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
-        public TestException(String message) {
-            super(message);
-        }
-    }
-
-    @Before
-    public void initTestScript() throws IOException {
-        init();
     }
 
     @Test

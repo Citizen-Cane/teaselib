@@ -36,7 +36,7 @@ public class ScriptFutureTask extends FutureTask<Answer> {
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
-                script.completeAll();
+                script.awaitAllCompleted();
                 script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Finished);
                 return result;
             } catch (Throwable t) {

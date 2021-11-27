@@ -79,8 +79,6 @@ public class TeaseLibAITest {
     private Object runAccelerated(TeaseLibAI teaseLibAI, Runnable test) throws InterruptedException {
         try {
             return teaseLibAI.getExecutor(ExecutionType.Accelerated).submit(test).get();
-        } catch (InterruptedException e) {
-            throw e;
         } catch (ExecutionException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }

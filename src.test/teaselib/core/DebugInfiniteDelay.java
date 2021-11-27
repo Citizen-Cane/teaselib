@@ -3,6 +3,7 @@ package teaselib.core;
 import teaselib.core.media.MediaRendererThread;
 
 class DebugInfiniteDelay extends MediaRendererThread {
+
     public DebugInfiniteDelay(TeaseLib teaseLib) {
         super(teaseLib);
     }
@@ -10,12 +11,8 @@ class DebugInfiniteDelay extends MediaRendererThread {
     @Override
     protected void renderMedia() throws InterruptedException {
         startCompleted();
+        Thread.sleep(Long.MAX_VALUE);
         mandatoryCompleted();
-
-        synchronized (this) {
-            while (!Thread.currentThread().isInterrupted()) {
-                wait();
-            }
-        }
     }
+
 }

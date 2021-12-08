@@ -64,6 +64,10 @@ public class Sequence<T> extends ArrayList<T> {
         return new Sequence<>(traits.splitter.apply(t), traits);
     }
 
+    public static <T> Sequence<T> of(List<T> t, Traits<T> traits) {
+        return new Sequence<>(t, traits);
+    }
+
     public Sequence(Sequence<T> elements) {
         this(elements, elements.traits);
     }

@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public class StringSequence extends Sequence<String> {
             (a, b) -> true, //
             (a, b) -> false);
 
-    private StringSequence(List<String> elements) {
+    StringSequence(List<String> elements) {
         super(elements, Traits);
     }
 
@@ -32,14 +32,6 @@ public class StringSequence extends Sequence<String> {
 
     public static int commonness(@SuppressWarnings("unused") String element) {
         return 1;
-    }
-
-    public static StringSequence ignoreCase() {
-        return new StringSequence(emptyList());
-    }
-
-    public static StringSequence ignoreCase(String string) {
-        return new StringSequence(splitWords(string));
     }
 
 }

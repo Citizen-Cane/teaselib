@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
 import java.util.Set;
@@ -10,14 +10,18 @@ import teaselib.core.ui.Choices;
 public abstract class PhraseMapping {
 
     final IndexMap<Integer> phrase2choice;
-    final List<PhraseString> phrases;
+    final List<String> phrases;
 
     PhraseMapping(Choices choices) {
         this.phrase2choice = new IndexMap<>();
-        this.phrases = choices.stream()
-                .flatMap(choice -> choice.phrases.stream()
-                        .map(phrase -> new PhraseString(phrase, phrase2choice.add(choices.indexOf(choice)))))
-                .collect(toList());
+        this.phrases = choices.stream().flatMap(choice -> choice.phrases.stream().map(phrase -> {
+            phrase2choice.add(choices.indexOf(choice));
+            return phrase;
+        })).toList();
+    }
+
+    public int size() {
+        return phrases.size();
     }
 
     public abstract int choice(int phrase);

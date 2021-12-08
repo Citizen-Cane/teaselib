@@ -20,6 +20,14 @@ public class PhraseStringSequences extends Sequences<PhraseString> {
         super(choices, Traits);
     }
 
+    public PhraseStringSequences(int capacity) {
+        super(capacity, Traits);
+    }
+
+    public PhraseStringSequences() {
+        super(Traits);
+    }
+
     public static Sequences<PhraseString> of(List<PhraseString> choices) {
         return Sequences.of(choices, Traits);
     }

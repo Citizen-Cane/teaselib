@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +41,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         super(languageCode);
         this.choices = choices;
         this.mapping = mapping;
-        this.slices = SlicedPhrases.of(PhraseStringSequences.of(mapping.phrases), PhraseStringSequences::prettyPrint);
+        this.slices = SlicedPhrases.of(new PhraseStringSymbols(mapping.phrases), PhraseStringSequences::prettyPrint);
         buildXML();
     }
 
@@ -95,7 +97,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     private void createNodes(Element grammar, Element main) {
-        Indices<Element> current = new Indices<>(mapping.phrases.size(), main);
+        Indices<Element> current = new Indices<>(mapping.size(), main);
         Indices<Element> next = new Indices<>(current);
         Set<Integer> all = Collections.unmodifiableSet(allIndices());
         for (int i = 0; i < slices.size(); i++) {
@@ -115,7 +117,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
                     Set<Integer> indices;
                     String ruleName;
 
-                    boolean fullCoverage = phrase.indices.size() == mapping.phrases.size();
+                    boolean fullCoverage = phrase.indices.size() == mapping.size();
                     if (fullCoverage) {
                         indices = mapping.srgs(phrase.indices);
                         ruleName = choiceName(i, indices);
@@ -188,7 +190,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
     }
 
     private Set<Integer> allIndices() {
-        int size = mapping.phrases.size();
+        int size = mapping.size();
         Set<Integer> indices = new HashSet<>(size);
         for (int i = 0; i < size; i++) {
             indices.add(i);

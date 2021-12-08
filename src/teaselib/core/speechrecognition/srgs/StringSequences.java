@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static teaselib.core.speechrecognition.srgs.StringSequence.*;
+import static teaselib.core.speechrecognition.srgs.StringSequence.Traits;
 
 import java.util.Collection;
 import java.util.List;
@@ -8,6 +8,10 @@ import java.util.function.BiPredicate;
 
 public class StringSequences extends Sequences<String> {
     private static final long serialVersionUID = 1L;
+
+    StringSequences(int capacity) {
+        super(capacity, Traits);
+    }
 
     StringSequences(Collection<? extends Sequence<String>> elements) {
         super(elements, Traits);

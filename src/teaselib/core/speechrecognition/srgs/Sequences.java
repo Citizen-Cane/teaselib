@@ -190,7 +190,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public long symbolCount() {
-        return stream().flatMap(Sequence::stream).map(traits.splitter::apply).flatMap(List::stream).count();
+        return stream().flatMap(Sequence::stream).count();
     }
 
     public int maxCommonness() {

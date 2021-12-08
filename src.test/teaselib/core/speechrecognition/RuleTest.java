@@ -4,7 +4,6 @@ import static java.lang.Integer.MIN_VALUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static teaselib.core.speechrecognition.srgs.PhrasesSliceTest.choice;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,7 +14,7 @@ import java.util.Set;
 import org.junit.Test;
 
 import teaselib.core.speechrecognition.srgs.PhraseString;
-import teaselib.core.speechrecognition.srgs.PhraseStringSequences;
+import teaselib.core.speechrecognition.srgs.PhraseStringSymbols;
 import teaselib.core.speechrecognition.srgs.SlicedPhrases;
 
 public class RuleTest {
@@ -26,13 +25,13 @@ public class RuleTest {
 
     private static SlicedPhrases<PhraseString> testSliceMultipleCommon3() {
         // same as teaselib.core.speechrecognition.srgs.PhrasesSliceTest.testSliceMultipleCommon3()
-        PhraseStringSequences choices = new PhraseStringSequences( //
-                choice("A B C, D E F G", 0), //
-                choice("D E F H, B C", 1), //
-                choice("D I J, B C", 2), //
-                choice("A, D I K L, B C", 3), //
-                choice("D I F M, B C", 4), //
-                choice("N B C, O", 5));
+        var choices = new PhraseStringSymbols(Arrays.asList(//
+                "A B C, D E F G", //
+                "D E F H, B C", //
+                "D I J, B C", //
+                "A, D I K L, B C", //
+                "D I F M, B C", //
+                "N B C, O"));
         SlicedPhrases<PhraseString> slicedPhrases = SlicedPhrases.of(choices);
         assertEquals(6, slicedPhrases.size());
         return slicedPhrases;
@@ -117,9 +116,9 @@ public class RuleTest {
 
     @Test
     public void testTrailingNullRule() {
-        PhraseStringSequences choices = new PhraseStringSequences( //
-                choice("D E F, A B C", 0), //
-                choice("G, A B C, H", 1));
+        var choices = new PhraseStringSymbols(Arrays.asList(//
+                "D E F, A B C", //
+                "G, A B C, H"));
 
         Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, Arrays.asList( //
                 new Rule("r_0_1_1", "G", 0, indices(1), 0, 1, 0.82f),
@@ -141,9 +140,9 @@ public class RuleTest {
 
     @Test
     public void testTrailingNullRuleFollowedBySpuriousExtraRule() {
-        PhraseStringSequences choices = new PhraseStringSequences( //
-                choice("D E F, A B C", 0), //
-                choice("G, A B C, H", 1));
+        var choices = new PhraseStringSymbols(Arrays.asList(//
+                "D E F, A B C", //
+                "G, A B C, H"));
 
         Rule speechDetected = new Rule("Main", "G, A B C", MIN_VALUE, Arrays.asList( //
                 new Rule("r_0_0_1", "G", 0, indices(1), 0, 1, 0.82f),
@@ -178,8 +177,7 @@ public class RuleTest {
         String ready2 = "Yes,it's ready, Miss";
         String ready3 = "It's ready, Miss";
 
-        PhraseStringSequences choices = new PhraseStringSequences( //
-                choice(sorry), choice(ready), choice(haveIt), choice(ready2), choice(ready3));
+        var choices = new PhraseStringSymbols(Arrays.asList(sorry, ready, haveIt, ready2, ready3));
 
         Rule speechDetected = new Rule("Main", "it's ready", MIN_VALUE, Arrays.asList( //
                 new Rule("r_0_4", null, 0, indices(4), 0, 1, 1.0f),

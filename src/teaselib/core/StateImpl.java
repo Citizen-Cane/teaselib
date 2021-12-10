@@ -223,33 +223,17 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
     public static boolean haveClass(Set<QualifiedString> attributesAndPeers, QualifiedString element) {
         String clazz = element.namespace();
-        boolean have = attributesAndPeers.stream().map(QualifiedString::namespace)
+        return attributesAndPeers.stream().map(QualifiedString::namespace)
                 .anyMatch(namespace -> namespace.equalsIgnoreCase(clazz));
-        return have;
     }
 
     public static boolean haveItem(Set<QualifiedString> attributesAndPeers, QualifiedString element) {
         List<QualifiedString> guids = attributesAndPeers.stream().filter(QualifiedString::isItem).toList();
-        boolean haveGuid = guids.contains(element);
-        return haveGuid;
+        return guids.contains(element);
     }
 
     public static boolean haveAttribute(Set<QualifiedString> attributesAndPeers, QualifiedString element) {
         return attributesAndPeers.stream().anyMatch(element::is);
-    }
-
-    public boolean appliedToClassValues(Set<QualifiedString> availableAttributes,
-            Set<QualifiedString> desiredAttributes) {
-        return appliedToClass(availableAttributes, desiredAttributes);
-    }
-
-    private static boolean appliedToClass(Set<QualifiedString> available, Set<QualifiedString> desired) {
-        var classes = desired.stream().filter(element -> element.name().equals(QualifiedString.ANY)).toList();
-        return classes.stream().filter(clazz -> {
-            var className = clazz.namespace();
-            return available.stream().map(QualifiedString::namespace)
-                    .anyMatch(namespace -> namespace.equalsIgnoreCase(className));
-        }).count() == desired.size();
     }
 
     public Set<QualifiedString> attributesAndPeers() {

@@ -76,8 +76,6 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     private Set<QualifiedString> attributes(Collection<QualifiedString> attributes) {
         Set<QualifiedString> all = new HashSet<>();
-        // breaks is since attributes are copied to states
-        // all.add(name);
         all.add(name.kind());
         all.addAll(attributes);
         return all;
@@ -247,13 +245,6 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         StateImpl state = state();
         state.remember(forget);
         state(QualifiedString.of(forget)).applyTo(this.name).remember(forget);
-    }
-
-    public Collection<QualifiedString> attributesAndPeers() {
-        Collection<QualifiedString> attributesAndPeers = new HashSet<>();
-        attributesAndPeers.addAll(attributes);
-        attributesAndPeers.addAll(defaultPeers);
-        return attributesAndPeers;
     }
 
     @Override

@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -229,12 +229,15 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 // The legal way to have such results accepted is to provide them as alternative phrases
                 float weightedProbability = WeightNormal.square(preparedChoices.hypothesisWeight(rule))
                         * rule.probability;
+                Rule.Precoditions.checkProbability(weightedProbability);
+
                 if (weightedProbability >= expectedConfidence) {
                     if (currentHypothesis == null) {
                         logger.info("Considering as new hypothesis");
                         return Optional.of(new Hypothesis(rule, weightedProbability));
                     } else if (currentHypothesis.indices.containsAll(rule.indices)) {
                         float hypothesisProbability = preparedChoices.hypothesisWeight(currentHypothesis);
+                        Rule.Precoditions.checkProbability(hypothesisProbability);
                         float h = currentHypothesis.children.size();
                         float r = rule.children.size();
                         float average = (hypothesisProbability * h + rule.probability * r) / (h + r);

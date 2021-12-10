@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.asList;
+import static java.util.Arrays.*;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -92,10 +92,10 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         return SlicedPhrases.of(phrases.joinDuplicates().toPhraseStringSequences());
     }
 
-    static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
+    private static <T> SlicedPhrases<T> of(Sequences<T> phrases) {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         slice(candidates, phrases, Objects::toString);
-        return reduceNullRules(candidates.getResult());
+        return candidates.getResult().reduceNullRules().resymbolize();
     }
 
     public static SlicedPhrases<PhraseString> of(PhraseStringSymbols phrases,
@@ -103,10 +103,10 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         return SlicedPhrases.of(phrases.joinDuplicates().toPhraseStringSequences(), toString);
     }
 
-    static <T> SlicedPhrases<T> of(Sequences<T> phrases, Function<Sequences<T>, String> toString) {
+    private static <T> SlicedPhrases<T> of(Sequences<T> phrases, Function<Sequences<T>, String> toString) {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         slice(candidates, phrases, toString);
-        return reduceNullRules(candidates.getResult());
+        return candidates.getResult().reduceNullRules().resymbolize();
     }
 
     static <T> void slice(List<SlicedPhrases<T>> candidates, Sequences<T> sequences,
@@ -137,8 +137,8 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         }
     }
 
-    static <T> SlicedPhrases<T> reduceNullRules(SlicedPhrases<T> result) {
-        List<Sequences<T>> slices = result.elements;
+    SlicedPhrases<T> reduceNullRules() {
+        List<Sequences<T>> slices = this.elements;
         int size = slices.size();
         for (int i = 0; i < size - 1; i++) {
             Sequences<T> slice = slices.get(i);
@@ -157,10 +157,10 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
                         T remaining = sequence.remove(0);
                         Sequence<T> reduced = new Sequence<>(remaining, sequence.traits);
                         Sequence<T> moved = slice.set(k, reduced);
-                        if (!join(moved, next, result)) {
+                        if (!join(moved, next, rating)) {
                             next.add(moved);
                         }
-                        if (join(reduced, slice, result)) {
+                        if (join(reduced, slice, rating)) {
                             slice.remove(reduced);
                             k--;
                         }
@@ -168,11 +168,10 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
                 }
             }
         }
-        return result;
-
+        return this;
     }
 
-    private static <T> boolean join(Sequence<T> reduced, Sequences<T> slice, SlicedPhrases<T> result) {
+    private static <T> boolean join(Sequence<T> reduced, Sequences<T> slice, Rating<T> rating) {
         boolean joined = false;
         for (int l = 0; l < slice.size(); l++) {
             Sequence<T> s = slice.get(l);
@@ -180,8 +179,8 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
                 for (int m = 0; m < s.size(); m++) {
                     s.set(m, reduced.traits.joinCommonOperator.apply(asList(s.get(m), reduced.get(m))));
                 }
-                result.rating.updateMaxCommonness(s);
-                result.rating.duplicatedSymbols--;
+                rating.updateMaxCommonness(s);
+                rating.duplicatedSymbols--;
                 joined = true;
                 break;
             }
@@ -328,7 +327,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
                 .map(sequences -> sequences.stream()
                         .filter(sequence -> sequences.traits.intersectionPredicate.test(sequence.get(0), text))
                         .reduce(Sequence::maxLength).orElse(new Sequence<>(sequences.traits)))
-                .flatMap(Sequence::stream).collect(Collectors.toList());
+                .flatMap(Sequence::stream).toList();
     }
 
     @Override
@@ -371,6 +370,38 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     @Override
     public Iterator<Sequences<T>> iterator() {
         return elements.iterator();
+    }
+
+    SlicedPhrases<T> resymbolize() {
+        List<Sequences<T>> slices = elements;
+        int size = slices.size();
+        for (int i = 0; i < size; i++) {
+            Sequences<T> slice = slices.get(i);
+            for (int k = 0; k < slice.size(); k++) {
+                Sequence<T> sequence = slice.get(k);
+                if (sequence.size() == 1) {
+                    List<T> words = sequence.traits.splitter.apply(sequence.get(0));
+                    if (words.size() > 1) {
+                        sequence.clear();
+                        sequence.addAll(words);
+                    }
+                } else {
+                    List<T> all = new ArrayList<>();
+                    for (int l = 0; l < sequence.size(); l++) {
+                        T t = sequence.get(l);
+                        List<T> words = sequence.traits.splitter.apply(t);
+                        if (words.size() > 1) {
+                            all.addAll(words);
+                        } else {
+                            all.add(t);
+                        }
+                    }
+                    sequence.clear();
+                    sequence.addAll(all);
+                }
+            }
+        }
+        return this;
     }
 
 }

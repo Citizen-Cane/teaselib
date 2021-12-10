@@ -1,12 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static java.util.Collections.unmodifiableList;
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.Collections.*;
+import static java.util.function.Predicate.*;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,6 +136,8 @@ public class Rule {
 
     private Rule(String name, String text, int ruleIndex, Set<Integer> indices, List<Rule> children, int fromElement,
             int toElement, float probability) {
+        Precoditions.checkProbability(probability);
+
         this.name = name;
         this.text = text;
         this.ruleIndex = ruleIndex;
@@ -194,6 +192,13 @@ public class Rule {
 
     public boolean isValid() {
         return isValid(this);
+    }
+
+    static final class Precoditions {
+        public static void checkProbability(float value) {
+            if (value < 0.0f || value > 1.0)
+                throw new IllegalArgumentException("Probability must be in [0,1]: " + value);
+        }
     }
 
     public class IllegalRuleException extends IllegalStateException {

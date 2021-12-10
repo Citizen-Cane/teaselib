@@ -1,13 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
-import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.prettyPrint;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.srgs.PhraseString.*;
+import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,11 +87,9 @@ public class PhrasesSliceTest {
 
             assertEquals(candidate.toString() + "\t max commonness", candidate.rating.maxCommonness,
                     candidate.maxCommonness());
-
-            assertEquals(candidate.toString() + "\t max commonness", candidate.rating.maxCommonness,
-                    candidate.maxCommonness());
         }
 
+        optimal.resymbolize();
         return optimal;
     }
 
@@ -105,7 +99,7 @@ public class PhrasesSliceTest {
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         results.removeIf(candidate -> candidate.rating.isInvalidated());
         results.stream().forEach(candidates::add);
-        return SlicedPhrases.reduceNullRules(candidates.getResult());
+        return candidates.getResult().reduceNullRules();
     }
 
     static void assertSliced(PhraseStringSequences choices, SlicedPhrases<PhraseString> sliced) {
@@ -278,7 +272,7 @@ public class PhrasesSliceTest {
 
         assertSequence(results(result("Yes", 0, 1)), optimal, 0);
         assertSequence(results(result("Miss", 0)), optimal, 1);
-        assertSequence(results(result("of course", 0, 1, 2)), optimal, 2);
+        assertSequence(results(result("of", "course", 0, 1, 2)), optimal, 2);
         assertSequence(results(result("Miss", 1)), optimal, 3);
         assertEquals(4, optimal.size());
         assertEquals(1, optimal.rating.duplicatedSymbols);
@@ -294,7 +288,7 @@ public class PhrasesSliceTest {
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertSequence(results(result("Miss", 0), result("Yes", 1)), optimal, 0);
-        assertSequence(results(result("of course", 0, 1, 2)), optimal, 1);
+        assertSequence(results(result("of", "course", 0, 1, 2)), optimal, 1);
         assertSequence(results(result("Miss", 1)), optimal, 2);
         assertEquals(3, optimal.size());
         assertEquals(1, optimal.rating.duplicatedSymbols);
@@ -309,8 +303,16 @@ public class PhrasesSliceTest {
                 "Yes, of course", //
                 "No Miss, of course not", //
                 "No, of Course not, Miss", //
-                "No, Of course not");
-        SlicedPhrases<PhraseString> optimal = slice(choices);
+                "No, Of course not").joinDuplicates();
+
+        assertEquals(choice("yes", "Miss", "of course"), choices.get(0));
+        assertEquals(choice("yes", "of course", "Miss"), choices.get(1));
+        assertEquals(choice("yes", "of course"), choices.get(2));
+        assertEquals(choice("No", "Miss", "of course", "not"), choices.get(3));
+        assertEquals(choice("No", "of course", "not", "Miss"), choices.get(4));
+        assertEquals(choice("No", "of course", "not"), choices.get(5));
+
+        SlicedPhrases<PhraseString> optimal = slice(choices.toPhraseStringSequences());
 
         // TODO correctly symbolized, but sliced to slice 2 = "miss of course"=[0, 3] "of course"=[1, 2, 4, 5]
         // assertSequence(results(result("No", 3, 4, 5), result("Yes", 0, 1, 2)), optimal, 0);
@@ -323,7 +325,7 @@ public class PhrasesSliceTest {
         // assertEquals(6, optimal.rating.maxCommonness);
 
         assertSequence(results(result("no", 3, 4, 5), result("yes", 0, 1, 2)), optimal, 0);
-        assertSequence(results(result("miss", "of course", 0, 3), result("of course", 1, 2, 4, 5)), optimal, 1);
+        assertSequence(results(result("miss", "of", "course", 0, 3), result("of", "course", 1, 2, 4, 5)), optimal, 1);
         assertSequence(results(result("not", 3, 4, 5)), optimal, 2);
         assertSequence(results(result("miss", 1, 4)), optimal, 3);
         // TODO should be 5 and max commonness =0 6 but shorter sliced phrases are rated higher
@@ -340,8 +342,16 @@ public class PhrasesSliceTest {
                 "yes, of course", //
                 "no miss, of course not", //
                 "no of course not miss", //
-                "no of course not");
-        SlicedPhrases<PhraseString> optimal = slice(choices);
+                "no of course not").joinDuplicates();
+
+        assertEquals(choice("yes", "miss", "of course"), choices.get(0));
+        assertEquals(choice("yes", "of course", "miss"), choices.get(1));
+        assertEquals(choice("yes", "of course"), choices.get(2));
+        assertEquals(choice("no", "miss", "of course", "not"), choices.get(3));
+        assertEquals(choice("no", "of course", "not", "miss"), choices.get(4));
+        assertEquals(choice("no", "of course", "not"), choices.get(5));
+
+        SlicedPhrases<PhraseString> optimal = slice(choices.toPhraseStringSequences());
 
         // TODO correctly symbolized, but sliced to slice 2 = "miss of course"=[0, 3] "of course"=[1, 2, 4, 5]
         // assertSequence(results(result("no", 3, 4, 5), result("yes", 0, 1, 2)), optimal, 0);
@@ -355,7 +365,7 @@ public class PhrasesSliceTest {
         // assertEquals(6, optimal.rating.maxCommonness);
 
         assertSequence(results(result("no", 3, 4, 5), result("yes", 0, 1, 2)), optimal, 0);
-        assertSequence(results(result("miss", "of course", 0, 3), result("of course", 1, 2, 4, 5)), optimal, 1);
+        assertSequence(results(result("miss", "of", "course", 0, 3), result("of", "course", 1, 2, 4, 5)), optimal, 1);
         assertSequence(results(result("not", 3, 4, 5)), optimal, 2);
         assertSequence(results(result("miss", 1, 4)), optimal, 3);
         // TODO should be 5 and max commonness =0 6 but shorter sliced phrases are rated higher
@@ -380,7 +390,7 @@ public class PhrasesSliceTest {
         SlicedPhrases<PhraseString> optimal = slice(choices.toPhraseStringSequences());
 
         assertSequence(results(result("Miss", 0, 3)), optimal, 0);
-        assertSequence(results(result("of course", 0, 1, 2, 3)), optimal, 1);
+        assertSequence(results(result("of", "course", 0, 1, 2, 3)), optimal, 1);
         assertSequence(results(result("Miss", 1, 3)), optimal, 2);
         assertEquals(3, optimal.size());
         assertEquals(1, optimal.rating.duplicatedSymbols);
@@ -399,7 +409,7 @@ public class PhrasesSliceTest {
         assertEquals(2, optimal.rating.maxCommonness);
 
         assertSequence(results(result("yes", "Miss", 0), result("No", 1)), optimal, 0);
-        assertSequence(results(result("of course", 0, 1)), optimal, 1);
+        assertSequence(results(result("of", "course", 0, 1)), optimal, 1);
         assertSequence(results(result("not", "Miss", 1)), optimal, 2);
     }
 
@@ -419,7 +429,7 @@ public class PhrasesSliceTest {
         assertEquals(2, optimal.rating.maxCommonness);
 
         assertSequence(results(result("No", 0), result("yes", "Miss", 1)), optimal, 0);
-        assertSequence(results(result("of course", 0, 1)), optimal, 1);
+        assertSequence(results(result("of", "course", 0, 1)), optimal, 1);
         assertSequence(results(result("not", "Miss", 0)), optimal, 2);
     }
 
@@ -431,7 +441,7 @@ public class PhrasesSliceTest {
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertSequence(results(result("yes", "Mistress", "Lee", 0), result("No", 1)), optimal, 0);
-        assertSequence(results(result("of course", 0, 1)), optimal, 1);
+        assertSequence(results(result("of", "course", 0, 1)), optimal, 1);
         assertSequence(results(result("not", "Mistress", 1)), optimal, 2);
 
         assertEquals(3, optimal.size());
@@ -447,7 +457,7 @@ public class PhrasesSliceTest {
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertSequence(results(result("No", 0), result("yes", "Mistress", "Lee", 1)), optimal, 0);
-        assertSequence(results(result("of course", 0, 1)), optimal, 1);
+        assertSequence(results(result("of", "course", 0, 1)), optimal, 1);
         assertSequence(results(result("not", "Mistress", 0)), optimal, 2);
 
         assertEquals(3, optimal.size());
@@ -462,8 +472,8 @@ public class PhrasesSliceTest {
                 "No, of Course not, Mistress");
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
-        assertSequence(results(result("yes", "Mistress", "Lee La", 0), result("No", 1)), optimal, 0);
-        assertSequence(results(result("of course", 0, 1)), optimal, 1);
+        assertSequence(results(result("yes", "Mistress", "Lee", "La", 0), result("No", 1)), optimal, 0);
+        assertSequence(results(result("of", "course", 0, 1)), optimal, 1);
         assertSequence(results(result("not", "Mistress", 1)), optimal, 2);
 
         assertEquals(3, optimal.size());
@@ -478,8 +488,8 @@ public class PhrasesSliceTest {
                 "yes Mistress Lee La, of course");
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
-        assertSequence(results(result("No", 0), result("yes", "Mistress", "Lee La", 1)), optimal, 0);
-        assertSequence(results(result("of course", 0, 1)), optimal, 1);
+        assertSequence(results(result("No", 0), result("yes", "Mistress", "Lee", "La", 1)), optimal, 0);
+        assertSequence(results(result("of", "course", 0, 1)), optimal, 1);
         assertSequence(results(result("not", "Mistress", 0)), optimal, 2);
 
         assertEquals(3, optimal.size());
@@ -596,7 +606,7 @@ public class PhrasesSliceTest {
                 "a B,C.");
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
-        assertSequence(results(result("A B C", 0, 1, 2)), optimal, 0);
+        assertSequence(results(result("A", "B", "C", 0, 1, 2)), optimal, 0);
         assertEquals(1, optimal.size());
         assertEquals(0, optimal.rating.duplicatedSymbols);
         assertEquals(3, optimal.rating.maxCommonness);
@@ -615,12 +625,12 @@ public class PhrasesSliceTest {
 
         // K L symbols are joined to a single symbol
         assertSequence(results(result("N", 5), result("A", 0, 3)), optimal, 0);
-        assertSequence(result("B C", 0, 5), optimal, 1);
+        assertSequence(result("B", "C", 0, 5), optimal, 1);
         assertSequence(results(result("O", 5), result("D", 0, 1, 2, 3, 4)), optimal, 2);
         assertSequence(results(result("E", "F", 0, 1), result("I", 2, 3, 4)), optimal, 3);
         assertSequence(results(result("G", 0), result("H", 1), result("J", 2), //
-                result("K L", 3), result("F", "M", 4)), optimal, 4);
-        assertSequence(results(result("B C", 1, 2, 3, 4)), optimal, 5);
+                result("K", "L", 3), result("F", "M", 4)), optimal, 4);
+        assertSequence(results(result("B", "C", 1, 2, 3, 4)), optimal, 5);
         assertEquals(6, optimal.size());
         assertEquals(2, optimal.rating.duplicatedSymbols);
         assertEquals(5, optimal.rating.maxCommonness);
@@ -708,7 +718,7 @@ public class PhrasesSliceTest {
 
         assertSequence(result("A", 0, 1), optimal, 0);
         // TODO B C should be joined but probably ignored because it is a first symbol
-        assertSequence(result("B C", 0, 1, 2, 3), optimal, 1);
+        assertSequence(result("B", "C", 0, 1, 2, 3), optimal, 1);
         assertSequence(results(result("D", 0), result("E", 1), result("F", 2), result("G", 3)), optimal, 2);
         assertEquals(3, optimal.size());
         assertEquals(0, optimal.rating.duplicatedSymbols);
@@ -732,16 +742,16 @@ public class PhrasesSliceTest {
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertSequence(result("A", 0, 1, 8, 10), optimal, 0);
-        assertSequence(result("B C", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), optimal, 1);
+        assertSequence(result("B", "C", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), optimal, 1);
         assertSequence(
-                results(result("D", 0), result("W", 7), result("1", 9), result("II", 2, 6), result("L M", 3, 4, 5)),
+                results(result("D", 0), result("W", 7), result("1", 9), result("II", 2, 6), result("L", "M", 3, 4, 5)),
                 optimal, 2);
         assertSequence(results(result("F", 1, 2, 6, 7, 10), result("Q", 4, 5), result("E", 0), result("2", 9)), optimal,
                 3);
         assertSequence(results(result("G", 1), result("RT", 4), result("ST", 5), result("6", 10), result("J", 2, 6),
                 result("N", 3, 7), result("34", 9)), optimal, 4);
-        assertSequence(results(result("K", 2), result("O", 3), result("UV", 6), result("X Y U", 7, 8), result("H", 1),
-                result("7", 10), result("5", 9)), optimal, 5);
+        assertSequence(results(result("K", 2), result("O", 3), result("UV", 6), result("X", "Y", "U", 7, 8),
+                result("H", 1), result("7", 10), result("5", 9)), optimal, 5);
         assertSequence(results(result("Z", 8), result("P", 3)), optimal, 6);
 
         assertEquals(7, optimal.size());
@@ -766,16 +776,16 @@ public class PhrasesSliceTest {
         SlicedPhrases<PhraseString> optimal = slice(choices);
 
         assertSequence(result("A", 0, 1, 8, 10), optimal, 0);
-        assertSequence(result("B C", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), optimal, 1);
+        assertSequence(result("B", "C", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), optimal, 1);
         assertSequence(
-                results(result("D", 0), result("W", 7), result("1", 9), result("II", 2, 6), result("L M", 3, 4, 5)),
+                results(result("D", 0), result("W", 7), result("1", 9), result("II", 2, 6), result("L", "M", 3, 4, 5)),
                 optimal, 2);
         assertSequence(results(result("F", 1, 2, 6, 7, 10), result("Q", 4, 5), result("E", 0), result("2", 9)), optimal,
                 3);
         assertSequence(results(result("G", 1), result("R", 4), result("S", 5), result("6", 10), result("J", 2, 6),
                 result("N", 3, 7), result("3", 9)), optimal, 4);
-        assertSequence(results(result("T", 4, 5), result("K", 2), result("O", 3), result("U", 6), result("X Y U", 7, 8),
-                result("H", 1), result("7", 10), result("4", 9)), optimal, 5);
+        assertSequence(results(result("T", 4, 5), result("K", 2), result("O", 3), result("U", 6),
+                result("X", "Y", "U", 7, 8), result("H", 1), result("7", 10), result("4", 9)), optimal, 5);
         assertSequence(results(result("Z", 8), result("P", 3), result("V", 6), result("5", 9)), optimal, 6);
 
         assertEquals(7, optimal.size());
@@ -998,11 +1008,11 @@ public class PhrasesSliceTest {
         assertEquals(1, optimal.rating.duplicatedSymbols);
         assertEquals(7, optimal.rating.maxCommonness);
 
-        assertSequence(results(result("U", 7), result("A B", 0, 1, 2, 3), result("C", 4, 5, 6)), optimal, 0);
+        assertSequence(results(result("U", 7), result("A", "B", 0, 1, 2, 3), result("C", 4, 5, 6)), optimal, 0);
         assertSequence(results(result("F", 0, 4), result("V", "W", "X", "Y", "Z", 7)), optimal, 1);
         assertSequence(results(result("G", 0, 1, 2, 4, 5, 6, 7)), optimal, 2);
         assertSequence(results(result("H", 0, 1, 4, 5, 7)), optimal, 3);
-        assertSequence(results(result("A B", 4, 5, 6)), optimal, 4);
+        assertSequence(results(result("A", "B", 4, 5, 6)), optimal, 4);
     }
 
     @Test
@@ -1021,7 +1031,7 @@ public class PhrasesSliceTest {
         assertEquals(2, optimal.rating.maxCommonness);
 
         assertSequence(results(result("A", 0, 1)), optimal, 0);
-        assertSequence(results(result("B D", 0), result("C E", 1)), optimal, 1);
+        assertSequence(results(result("B", "D", 0), result("C", "E", 1)), optimal, 1);
     }
 
     @Test

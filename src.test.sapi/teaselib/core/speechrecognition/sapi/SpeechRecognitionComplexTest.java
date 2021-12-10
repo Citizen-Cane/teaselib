@@ -180,10 +180,11 @@ public class SpeechRecognitionComplexTest {
         Choices confirm = as(choices, Intention.Confirm);
         assertRecognizedAsHypothesis(confirm, withoutPunctation("Yes, of course"), new Prompt.Result(0));
         assertRecognizedAsHypothesis(confirm, withoutPunctation("No, of course"), new Prompt.Result(1));
+        assertRejected(confirm, withoutPunctation("Yes, of"));
 
         Choices chat = as(choices, Intention.Chat);
-        assertRejected(chat, withoutPunctation("Yes, of"));
-        assertRejected(chat, withoutPunctation("No, of"));
+        assertRecognizedAsHypothesis(chat, withoutPunctation("Yes, of"), new Prompt.Result(0));
+        assertRejected(chat, withoutPunctation("No, of")); // because of "not" the phrase is a little longer
     }
 
     private static Choices optionalPhraseToDistiniguishMulitpleChoices() {
@@ -228,14 +229,14 @@ public class SpeechRecognitionComplexTest {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
 
         Choices confirm = as(choices, Intention.Confirm);
-        assertRejected(confirm, "Yes Miss");
-        assertRejected(confirm, "No Miss");
-        assertRejected(confirm, "No Miss of");
+        assertRecognizedAsHypothesis(confirm, "No Miss of", new Prompt.Result(1));
         assertRecognizedAsHypothesis(confirm, "No Miss of course", new Prompt.Result(1));
 
         Choices chat = as(choices, Intention.Chat);
         assertRecognizedAsHypothesis(chat, "Yes Miss of", new Prompt.Result(0));
         assertRecognizedAsHypothesis(chat, "No Miss of", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(chat, "Yes Miss", new Prompt.Result(0));
+        assertRejected(chat, "No Miss"); // Rejected because "not" makes the complete phrase a little longer
     }
 
     private static Choices multipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct() {
@@ -311,18 +312,15 @@ public class SpeechRecognitionComplexTest {
 
         Choices confirmation = as(decide, Intention.Confirm);
         assertRecognizedAsHypothesis(confirmation, "No Miss of course", new Prompt.Result(1));
-        assertRejected(confirmation, "Yes Miss");
-        assertRejected(confirmation, "No Miss");
+        assertRecognizedAsHypothesis(confirmation, "No Miss of", new Prompt.Result(1));
+        assertRecognizedAsHypothesis(confirmation, "Yes Miss", new Prompt.Result(0));
+        assertRecognizedAsHypothesis(confirmation, "No Miss", new Prompt.Result(1));
 
         Choices chat = as(decide, Intention.Chat);
         assertRecognizedAsHypothesis(chat, "Yes Miss of", new Prompt.Result(0));
         assertRecognizedAsHypothesis(chat, "No Miss of", new Prompt.Result(1));
-        assertRecognizedAsHypothesis(chat, "Yes Miss", new Prompt.Result(0));
-        assertRecognizedAsHypothesis(chat, "No Miss of", new Prompt.Result(1));
 
         assertRejected(chat, "Yes");
-        assertRejected(chat, "No Miss");
-
         assertRejected(chat, "Of not");
         assertRejected(chat, "Of course");
         assertRejected(chat, "Of course not");

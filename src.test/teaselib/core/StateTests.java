@@ -76,8 +76,12 @@ public class StateTests {
             assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
             assertTrue(somethingOnNipples.is(script.namespace));
             assertTrue(somethingOnNipples.is(Toys.Nipple_Clamps));
-            assertTrue(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
-            assertTrue(script.state(Toys.Nipple_Clamps).is(script.namespace));
+
+            State nippleClamps = script.state(Toys.Nipple_Clamps);
+            assertTrue(nippleClamps.is(Body.OnNipples));
+            assertTrue(nippleClamps.is(script.namespace));
+
+            assertTrue(nippleClamps.is(Body.OnNipples, script.namespace));
 
             // There's no attribute for nipple clamps, because we didn't set any,
             // the namespace is only added automatically to Body.SomethingOnNipples
@@ -103,8 +107,8 @@ public class StateTests {
 
             assertFalse(somethingOnNipples.is(script.namespace));
             assertFalse(somethingOnNipples.is(Toys.Nipple_Clamps));
-            assertFalse(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
-            assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
+            assertFalse(nippleClamps.is(Body.OnNipples));
+            assertFalse(nippleClamps.is(script.namespace));
 
             assertFalse(somethingOnNipples.expired());
             script.debugger.advanceTime(30, TimeUnit.MINUTES);
@@ -213,21 +217,68 @@ public class StateTests {
         try (TestScript script = new TestScript()) {
             script.teaseLib.freezeTime();
 
-            assertFalse(script.state(Body.OnNipples).applied());
-            assertFalse(script.state(Toys.Nipple_Clamps).applied());
+            State onNipples = script.state(Body.OnNipples);
+            State nippleClamps = script.state(Toys.Nipple_Clamps);
 
-            script.state(Household.Weight).applyTo(Toys.Nipple_Clamps);
-            script.state(Toys.Nipple_Clamps).applyTo(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
+            assertFalse(onNipples.applied());
+            assertFalse(nippleClamps.applied());
 
-            assertTrue(script.state(Body.OnNipples).applied());
-            assertTrue(script.state(Toys.Nipple_Clamps).applied());
+            script.state(Household.Weight).applyTo(nippleClamps);
+            nippleClamps.applyTo(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
 
-            assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal));
-            assertTrue(script.state(Toys.Nipple_Clamps).is(Household.Weight));
-            assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber));
+            assertTrue(onNipples.applied());
+            assertTrue(nippleClamps.applied());
 
-            assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal, Household.Weight));
-            assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber, Household.Weight));
+            assertTrue(nippleClamps.is(Body.OnNipples));
+            assertTrue(nippleClamps.is(onNipples));
+
+            assertTrue(nippleClamps.is(Material.Metal));
+            assertTrue(nippleClamps.is(Household.Weight));
+            assertFalse(nippleClamps.is(Material.Rubber));
+
+            assertTrue(nippleClamps.is(Material.Metal, Household.Weight));
+            assertFalse(nippleClamps.is(Material.Rubber, Household.Weight));
+
+            assertTrue(nippleClamps.is(Material.Metal, Household.Weight, script.namespace));
+            assertTrue(nippleClamps.is(Material.Metal, Household.Weight, script.namespace, Body.OnNipples));
+            assertTrue(nippleClamps.is(Material.Metal, Household.Weight, script.namespace, Body.OnNipples, onNipples));
+        }
+    }
+
+    @Test
+    public void testIsSupportsOnlyEnum() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State state = script.item(Toys.Blindfold);
+            assertTrue(state.is(Toys.class));
+            assertThrows(IllegalArgumentException.class, () -> state.is(Object.class));
+        }
+    }
+
+    @Test
+    public void testIdentity() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State nippleClamps = script.state(Toys.Nipple_Clamps);
+            assertTrue(nippleClamps.is(Toys.Nipple_Clamps));
+            assertTrue(nippleClamps.is(nippleClamps));
+        }
+    }
+
+    @Test
+    public void testIsImplementsLogicalAndDifferentKinds() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.teaseLib.freezeTime();
+
+            State nippleClamps = script.state(Toys.Nipple_Clamps);
+            script.state(Household.Weight).applyTo(nippleClamps);
+            nippleClamps.applyTo(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
+
+            assertTrue(nippleClamps.is(Body.class));
+            assertTrue(nippleClamps.is(Material.Metal, Household.Weight, script.namespace));
+            assertTrue(nippleClamps.is(Material.Metal, Household.Weight, script.namespace, Body.class));
+            assertTrue(nippleClamps.is(Material.Metal, Household.Weight, script.namespace, Body.class,
+                    script.state(Body.OnNipples)));
+            assertTrue(nippleClamps.is(Material.Metal, Household.Weight, script.namespace, Body.class,
+                    script.state(Body.OnNipples), Toys.Nipple_Clamps, script.state(Toys.Nipple_Clamps)));
         }
     }
 
@@ -349,7 +400,7 @@ public class StateTests {
             script.debugger.advanceTime(10, TimeUnit.MINUTES);
             assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
 
-            // TODO Public interface or utility method
+            // TODO Public interface or utility method?
             AbstractProxy.stateImpl(script.state(Body.OnNipples)).remember(Until.Removed);
             assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
 

@@ -1,6 +1,5 @@
 package teaselib.util;
 
-import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static teaselib.core.util.QualifiedStringMapping.*;
 
@@ -12,14 +11,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.StateImpl;
 import teaselib.core.StateImpl.Precondition;
-import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
@@ -61,7 +58,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
                 name.guid().orElseThrow() + "." + Available);
         this.defaultPeers = unmodifiableSet(map(Precondition::apply, defaultPeers));
-        this.attributes = unmodifiableSet(map(Precondition::apply, attributes(name.kind(), asList(attributes))));
+        this.attributes = unmodifiableSet(attributes(map(Precondition::apply, attributes)));
     }
 
     public QualifiedString kind() {
@@ -77,9 +74,11 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         return Arrays.asList(Persist.persist(name.toString()));
     }
 
-    private static Set<Object> attributes(QualifiedString kind, List<Object> attributes) {
-        Set<Object> all = new HashSet<>();
-        all.add(kind);
+    private Set<QualifiedString> attributes(Collection<QualifiedString> attributes) {
+        Set<QualifiedString> all = new HashSet<>();
+        // breaks is since attributes are copied to states
+        // all.add(name);
+        all.add(name.kind());
         all.addAll(attributes);
         return all;
     }
@@ -104,73 +103,45 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         return name.guid().orElseThrow() + " " + attributes + " " + teaseLib.state(domain, kind());
     }
 
-    private static boolean has(Stream<? extends QualifiedString> available, Collection<QualifiedString> desired) {
-        return available.filter(element -> contains(desired, QualifiedString.of(element))).count() == desired.size();
-    }
-
-    private static boolean contains(Collection<QualifiedString> elements, QualifiedString value) {
-        return elements.stream().anyMatch(value::is);
-    }
-
     @Override
     public boolean is(Object... attributes3) {
         return isImpl(map(Precondition::is, attributes3));
     }
 
-    // TODO review mixed attributes, since these likely fail to be evaluated correctly
-
     private boolean isImpl(Set<QualifiedString> flattenedAttributes) {
         if (flattenedAttributes.isEmpty()) {
             return false;
+        }
+
+        StateImpl state = state();
+        boolean isMyState = state(name.kind()).is(name);
+        for (QualifiedString element : flattenedAttributes) {
+            if (!isImpl(element, state, isMyState)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isImpl(QualifiedString element, StateImpl state, boolean isMyState) {
+        if (this.attributes.stream().anyMatch(element::is)) { // Item attributes
+            return true;
+        } else if (element.is(this.name)) {
+            return true;
+        } else if (element.name().equals(QualifiedString.ANY) && // Item class attributes
+                (StateImpl.haveClass(attributes, element))) {
+            return true;
         } else {
-            if (has(this.attributes.stream(), flattenedAttributes)) {
-                return true;
-            } else if (attributeIsMe(flattenedAttributes)) {
-                return true;
-            } else {
-                StateImpl state = state();
-                if (StateMaps.hasAllAttributes(state.getAttributes(), flattenedAttributes)) {
+            if (isMyState) { // Item identity
+                if (state.isImpl(state.getAttributes(), element)) { // State attributes
                     return applied();
-                } else if (state.appliedToClassValues(attributes, flattenedAttributes)) {
-                    return true;
-                } else if (state.appliedToClassValues(state.peers(), flattenedAttributes)) {
-                    return true;
-                } else if (!stateAppliesToMe(flattenedAttributes)) {
-                    return false;
-                } else if (stateContainsAll(flattenedAttributes)) {
-                    return true;
-                } else {
-                    return false;
+                } else if (state.isImpl(state.peers(), element)) { // State peers
+                    return applied();
                 }
             }
         }
-    }
-
-    private boolean attributeIsMe(Collection<QualifiedString> flattenedAttributes) {
-        return flattenedAttributes.stream().anyMatch(this.name::equals);
-    }
-
-    private boolean stateAppliesToMe(Collection<QualifiedString> flattenedAttributes) {
-        return appliedToThose(flattenedAttributes) //
-                && (thoseApplyToMe(flattenedAttributes) || allKinds(flattenedAttributes));
-    }
-
-    private boolean appliedToThose(Collection<QualifiedString> flattenedAttributes) {
-        return flattenedAttributes.stream().filter(Predicate.not(QualifiedString::isItem)).map(this::state)
-                .allMatch(this::stateIsThis);
-    }
-
-    private boolean thoseApplyToMe(Collection<QualifiedString> flattenedAttributes) {
-        return flattenedAttributes.stream().filter(QualifiedString::isItem) //
-                .map(QualifiedString::kind).map(this::state).anyMatch(peer -> peer.is(name));
-    }
-
-    private static boolean allKinds(Collection<QualifiedString> flattenedAttributes) {
-        return flattenedAttributes.stream().noneMatch(QualifiedString::isItem);
-    }
-
-    private boolean stateContainsAll(Set<QualifiedString> attributes) {
-        return state().isImpl(attributes);
+        return false;
     }
 
     @Override
@@ -366,10 +337,6 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     private boolean containsMyGuid(StateImpl state) {
         return state.peers().contains(this.name);
-    }
-
-    private boolean stateIsThis(StateImpl state) {
-        return state.is(this.name);
     }
 
     @Override

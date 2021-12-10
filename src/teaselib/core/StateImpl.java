@@ -65,7 +65,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
         public static Collection<Object> is(Collection<Object> values) {
             for (Object value : values) {
                 if (value instanceof String || value instanceof Enum<?> || value instanceof Item
-                        || value instanceof State || value instanceof QualifiedString || value instanceof Class<?>) {
+                        || value instanceof State || value instanceof QualifiedString || isEnumClass(value)) {
                     continue;
                 } else {
                     handleIllegalArgument(value);
@@ -75,7 +75,15 @@ public class StateImpl implements State, State.Options, State.Attributes {
         }
 
         private static void handleIllegalArgument(Object value) {
-            throw new IllegalArgumentException(value.getClass().getSimpleName() + ":" + value);
+            if (value instanceof Class<?> clazz) {
+                throw new IllegalArgumentException(value.getClass().getSimpleName() + " is not an Enum: " + value);
+            } else {
+                throw new IllegalArgumentException(value.getClass().getSimpleName() + ":" + value);
+            }
+        }
+
+        private static boolean isEnumClass(Object value) {
+            return value instanceof Class<?> && ((Class<?>) value).isEnum();
         }
     }
 
@@ -182,7 +190,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
     @Override
     public boolean is(Object... attributes) {
-        return isImpl(map(Precondition::apply, attributes));
+        return isImpl(map(Precondition::is, attributes));
     }
 
     public boolean isImpl(Set<QualifiedString> flattenedAttributes) {
@@ -190,18 +198,44 @@ public class StateImpl implements State, State.Options, State.Attributes {
         return isImpl(flattenedAttributes, attributesAndPeers);
     }
 
-    // TODO review mixed attributes, since these likely fail to be evaluated correctly
+    public boolean isImpl(Set<QualifiedString> flattenedAttributes, Set<QualifiedString> attributesAndPeers) {
+        for (QualifiedString element : flattenedAttributes) {
+            if (!isImpl(attributesAndPeers, element)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-    private boolean isImpl(Set<QualifiedString> flattenedAttributes, Set<QualifiedString> attributesAndPeers) {
-        if (appliedToClassValues(attributesAndPeers, flattenedAttributes)) {
-            return true;
-        } else if (!allGuidsFoundInPeers(flattenedAttributes)) {
-            return false;
-        } else if (StateMaps.hasAllAttributes(attributesAndPeers, flattenedAttributes)) {
-            return true;
-        } else {
+    public boolean isImpl(Set<QualifiedString> elements, QualifiedString element) {
+        if (element.name().equals(QualifiedString.ANY)) {
+            if (!haveClass(elements, element))
+                return false;
+        } else if (element.isItem()) {
+            if (!haveItem(elements, element)) {
+                return false;
+            }
+        } else if (!haveAttribute(elements, element) && !element.equals(this.name)) {
             return false;
         }
+        return true;
+    }
+
+    public static boolean haveClass(Set<QualifiedString> attributesAndPeers, QualifiedString element) {
+        String clazz = element.namespace();
+        boolean have = attributesAndPeers.stream().map(QualifiedString::namespace)
+                .anyMatch(namespace -> namespace.equalsIgnoreCase(clazz));
+        return have;
+    }
+
+    public static boolean haveItem(Set<QualifiedString> attributesAndPeers, QualifiedString element) {
+        List<QualifiedString> guids = attributesAndPeers.stream().filter(QualifiedString::isItem).toList();
+        boolean haveGuid = guids.contains(element);
+        return haveGuid;
+    }
+
+    public static boolean haveAttribute(Set<QualifiedString> attributesAndPeers, QualifiedString element) {
+        return attributesAndPeers.stream().anyMatch(element::is);
     }
 
     public boolean appliedToClassValues(Set<QualifiedString> availableAttributes,
@@ -216,11 +250,6 @@ public class StateImpl implements State, State.Options, State.Attributes {
             return available.stream().map(QualifiedString::namespace)
                     .anyMatch(namespace -> namespace.equalsIgnoreCase(className));
         }).count() == desired.size();
-    }
-
-    private boolean allGuidsFoundInPeers(Set<QualifiedString> attributes) {
-        List<QualifiedString> guids = attributes.stream().filter(QualifiedString::isItem).toList();
-        return peers.containsAll(guids);
     }
 
     public Set<QualifiedString> attributesAndPeers() {

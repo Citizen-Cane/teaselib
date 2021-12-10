@@ -372,18 +372,20 @@ public class ItemIdentityTest {
 
             Items gags = script.items(Toys.Gag);
             Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-            ringGag.apply();
-
             Item muzzleGag = gags.matching(Toys.Gags.Muzzle_Gag).get();
+            ringGag.apply();
 
             assertTrue(ringGag.applied());
             assertFalse(muzzleGag.applied());
 
             State inMouth = script.state(Body.InMouth);
+
             assertTrue(inMouth.is(ringGag));
             assertFalse(inMouth.is(muzzleGag));
 
             assertTrue(inMouth.is(script.namespace));
+            // inMouth has not been applied as an item, and is not an item
+            // -> TODO allow only pre-defined items to be applied as such
             assertFalse(script.item(Body.InMouth).is(script.namespace));
 
             assertTrue(ringGag.is(script.namespace));
@@ -611,7 +613,6 @@ public class ItemIdentityTest {
             Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
             assertNotEquals(ringGag, bitGag);
             assertFalse(ringGag.is(bitGag));
-            // TODO comparing items works via has(all attributes) but should check peers for item instance
 
             assertTrue(ringGag.applied());
             assertFalse(bitGag.applied());
@@ -630,7 +631,6 @@ public class ItemIdentityTest {
             Item analBeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
             assertNotEquals(ringGag, analBeads);
             assertFalse(ringGag.is(analBeads));
-            // TODO comparing items works via has(all attributes) but should check peers for item instance
         }
     }
 
@@ -639,32 +639,12 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Item item = script.item(Toys.Gag);
-            item.apply();
-            assertTrue(script.item(Toys.Gag).applied());
+            Item gag = script.item(Toys.Gag);
+            gag.apply();
+            assertTrue(gag.applied());
             assertTrue(script.state(Toys.Gag).applied());
-            assertTrue(script.state(Body.InMouth).is(item));
-            // TODO Requires item instance applied to item state but we decided against this
-            // - value is only applied to peers, not to itself
-            // -> can be resolved via peers
-            assertTrue(script.state(Toys.Gag).is(item));
-        }
-    }
-
-    @Test
-    // TODO This should work as well, but without adding item instance to item state
-    public void testThatStateIsItemWhenAppliedExplicitely() throws IOException {
-        try (TestScript script = new TestScript()) {
-            script.debugger.freezeTime();
-
-            Item item = script.item(Household.Clothes_Pegs);
-            item.apply();
-            assertTrue(script.item(Household.Clothes_Pegs).applied());
-            assertTrue(script.state(Household.Clothes_Pegs).applied());
-            // TODO Requires item instance applied to item state but we decided against this
-            // - value is only applied to peers, not to itself
-            // -> can be resolved via "peers must be added to item state itself"
-            assertTrue(script.state(Household.Clothes_Pegs).is(item));
+            assertTrue(script.state(Body.InMouth).is(gag));
+            assertTrue(script.state(Toys.Gag).is(gag));
         }
     }
 

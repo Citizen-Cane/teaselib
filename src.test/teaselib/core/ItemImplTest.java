@@ -3,6 +3,7 @@ package teaselib.core;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Disabled;
 import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Bondage;
+import teaselib.Color;
 import teaselib.Household;
 import teaselib.Length;
 import teaselib.Material;
@@ -75,24 +77,63 @@ public class ItemImplTest {
     @Test
     public void testIs() throws IOException {
         try (TestScript script = new TestScript()) {
-            Foo[] peers = new Foo[] {};
-            Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
-                    "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+            Foo[] defaultPeers = new Foo[] {};
+            script.teaseLib.addUserItems(Collections.singleton(
+                    new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
+                            "Foo Bar", defaultPeers, new Object[] { Size.Large, Length.Long })));
+            Item fooBar = script.item(Foo.Bar);
 
-            assertTrue(item.is(Size.Large));
-            assertFalse(item.is(Size.Small));
+            assertTrue(fooBar.is(Size.Large));
+            assertFalse(fooBar.is(Size.Small));
+            assertTrue(fooBar.is(Size.Large, Length.Long));
+            assertFalse(fooBar.is(Size.Large, Length.Short));
+            assertFalse(fooBar.is(Size.Small, Length.Short));
 
-            assertTrue(item.is(Size.Large, Length.Long));
-            assertFalse(item.is(Size.Large, Length.Short));
+            State inButt = script.state(Body.InButt);
+            fooBar.applyTo(inButt);
 
-            assertFalse(item.is(Size.Small, Length.Short));
+            assertTrue(inButt.is(Foo.Bar));
+            assertTrue(inButt.is(fooBar));
+            assertTrue(inButt.is(Size.Large));
+            assertTrue(inButt.is(Size.class));
+            assertTrue(inButt.is(Length.Long));
+            assertTrue(inButt.is(Length.class));
+            assertTrue(inButt.is(script.namespace));
 
-            Body inButt = Body.InButt;
-            item.applyTo(inButt);
-            assertTrue(script.state(inButt).is(Size.Large));
-            assertTrue(script.state(inButt).is(Length.Long));
-            assertFalse(script.state(inButt).is(Size.Small));
-            assertFalse(script.state(inButt).is(Length.Short));
+            assertFalse(inButt.is(Size.Small));
+            assertFalse(inButt.is(Length.Short));
+            assertFalse(inButt.is(Color.class));
+        }
+    }
+
+    @Test
+    public void testIsSupportsOnlyEnum() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item item = script.item(Toys.Blindfold);
+            assertTrue(item.is(Toys.class));
+            assertThrows(IllegalArgumentException.class, () -> item.is(Object.class));
+        }
+    }
+
+    @Test
+    public void testIsConditionalAnd() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Foo[] defaultPpeers = new Foo[] {};
+            script.teaseLib.addUserItems(Collections.singleton(
+                    new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
+                            "Foo Bar", defaultPpeers, new Object[] { Size.Large, Length.Long })));
+
+            Item fooBar = script.item(Foo.Bar);
+            State inButt = script.state(Body.InButt);
+            fooBar.applyTo(inButt);
+
+            assertTrue(inButt.is(Foo.Bar));
+            assertTrue(inButt.is(Foo.Bar, fooBar));
+            assertTrue(inButt.is(Foo.Bar, fooBar, Size.Large));
+            assertTrue(inButt.is(Foo.Bar, fooBar, Size.Large, Size.class));
+            assertTrue(inButt.is(Foo.Bar, fooBar, Size.Large, Size.class, Length.Long));
+            assertTrue(inButt.is(Foo.Bar, fooBar, Size.Large, Size.class, Length.Long, Length.class));
+            assertTrue(inButt.is(Foo.Bar, fooBar, Size.Large, Size.class, Length.Long, Length.class, script.namespace));
         }
     }
 
@@ -269,9 +310,7 @@ public class ItemImplTest {
             State wristRestraints = script.state(Toys.Wrist_Restraints);
 
             wristRestraints.apply();
-
             assertTrue(wristRestraints.applied());
-            assertFalse(wristRestraints.is(Toys.Wrist_Restraints));
         }
     }
 
@@ -281,9 +320,7 @@ public class ItemImplTest {
             State gag = script.state(Toys.Gag);
 
             gag.applyTo(Body.InMouth);
-
             assertTrue(gag.applied());
-            assertFalse(gag.is(Toys.Gag));
         }
     }
 
@@ -561,20 +598,17 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testUntilAppliedToStateAndItem() {
+    public void testUntilAppliedToStateAndItem() throws IOException {
         try (TestScript script = new TestScript()) {
             Item woodenSpoon = script.item(Household.Wooden_Spoon);
             woodenSpoon.apply().remember(Until.Expired);
             assertTrue(script.state(Household.Wooden_Spoon).is(Until.Expired));
             assertTrue(woodenSpoon.is(Until.Expired));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
 
     @Test
-    public void testRemoveUserItem() {
+    public void testRemoveUserItem() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems2();
             Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
@@ -588,9 +622,6 @@ public class ItemImplTest {
             assertTrue(script.state(Toys.Humbler).is(Until.Removed));
             assertTrue(item2.is(Until.Removed));
             assertFalse(item1.is(Until.Removed));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
 

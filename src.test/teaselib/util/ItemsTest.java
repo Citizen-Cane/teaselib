@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -557,8 +558,6 @@ public class ItemsTest {
 
     // TODO test that query doesn't work with namespace and show how to do it right
 
-    // TODO test that query doesn't work with namespace and show how to do it right
-
     @Test
     public void testMatchingItemInstanceAttributesDontInterferWithApplied() throws IOException {
         try (TestScript script = new TestScript()) {
@@ -660,13 +659,13 @@ public class ItemsTest {
             assertTrue(nips.applied());
             assertTrue(nips.is(Household.Clothes_Pegs));
             assertTrue(pegs.applied());
-            assertTrue(pegs.is(Household.Clothes_Pegs));
+            assertTrue(pegs.is(Body.OnNipples));
 
             script.item(Household.Clothes_Pegs).removeFrom(Body.OnNipples);
             assertFalse(nips.applied());
             assertFalse(nips.is(Household.Clothes_Pegs));
             assertFalse(pegs.applied());
-            assertFalse(pegs.is(Household.Clothes_Pegs));
+            assertFalse(pegs.is(Body.OnNipples));
         }
     }
 
@@ -773,6 +772,29 @@ public class ItemsTest {
     }
 
     @Test
+    public void testQueryItemDefaultPeers() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
+            assertFalse(gag.applied());
+
+            // Items are different from states in that they have attributes and default peers:
+            // Attributes always apply, but default peers only if applied
+            // The reason for handling attributes and default peers different is:
+            // you can say "if toy is rubber then ...", it's always true, applied or not
+            // but when you say "if toy is Body.InMouth then ..." the statement is only true if applied
+            // if it's necessary to query default peers make them public via the Item interface
+            assertFalse(gag.is(Body.CantLick));
+            assertFalse(script.state(Body.InMouth).is(gag));
+
+            gag.apply();
+            assertTrue(gag.is(Body.CantLick));
+            assertTrue(script.state(Body.InMouth).is(gag));
+        }
+    }
+
+    @Test
     public void testRemoveFromSingleItemExplicit() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
@@ -782,29 +804,62 @@ public class ItemsTest {
 
             Iterator<Item> gag = gags.iterator();
             Item gag0 = gag.next();
+            assertTrue(gag0.is(Toys.Gags.Ball_Gag));
             Item gag1 = gag.next();
+            assertTrue(gag1.is(Toys.Gags.Bit_Gag));
+
             State inMouth = script.state(Body.InMouth);
+            State cantLick = script.state(Body.CantLick);
 
             gag0.applyTo(Body.InMouth);
             assertTrue(gag0.applied());
             assertFalse(gag1.applied());
+            assertTrue(gag0.is(Body.InMouth));
+            assertTrue("Default items must be applied", gag0.is(Body.CantLick));
 
             gag1.applyTo(Body.InMouth);
             assertTrue(gag0.applied());
             assertTrue(gag1.applied());
 
-            // TODO should be gag0.defaultPeers()
+            // TODO decide whether to apply default peers on applyTo()
+            // pro apply defaults: same behavior
+            // con apply defaults: are there any multi-use toys that actually have default peers
+            // con apply defaults: when using applyTo() management should be completely manual
+
+            // TODO instead of explicit list remove gag0.defaultPeers()
             gag0.removeFrom(Body.InMouth, Body.CantLick);
             assertFalse(gag0.applied());
-            // TODO State removed too early
+            assertFalse(gag0.is(Body.InMouth));
+            assertFalse(gag0.is(Body.CantLick));
+            assertFalse(inMouth.is(gag0));
+            assertFalse(cantLick.is(gag0));
+
             assertTrue(gag1.applied());
+            assertTrue(gag1.is(Body.InMouth));
+            assertTrue(gag1.is(Body.CantLick));
+            assertTrue(inMouth.is(gag1));
+            assertTrue(cantLick.is(gag1));
+
             assertEquals(1, gags.getApplied().size());
             assertTrue(inMouth.applied());
+            assertTrue(cantLick.applied());
 
-            // TODO should be gag1.defaultPeers()
+            // TODO instead of explicit list remove gag1.defaultPeers()
             gag1.removeFrom(Body.InMouth, Body.CantLick);
+
+            assertFalse(gag1.applied());
+            assertFalse(gag0.is(Body.InMouth));
+            assertFalse(gag0.is(Body.CantLick));
+
+            assertFalse(gag1.applied());
+            assertFalse(gag1.is(Body.InMouth));
+            assertFalse(gag1.is(Body.CantLick));
+            assertFalse(inMouth.is(gag1));
+            assertFalse(cantLick.is(gag1));
+
             assertEquals(0, gags.getApplied().size());
             assertFalse(inMouth.applied());
+            assertFalse(cantLick.applied());
         }
     }
 
@@ -970,6 +1025,8 @@ public class ItemsTest {
 
     @Test
     public void testItemAppliedToItems() throws IOException {
+        assertTrue(Collections.emptySet().stream().allMatch(x -> true));
+
         try (TestScript script = new TestScript()) {
             Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
             restraints.apply();
@@ -1000,7 +1057,8 @@ public class ItemsTest {
             assertTrue(bells.is(chains.get(1)));
 
             // chains contains bells as an item
-            assertTrue(bells.is(chains));
+            // false since the bells cannot be (Accessories.Bells AND Bondage.Chains)
+            assertFalse(bells.is(chains));
             assertTrue(chains.anyAre(bells));
             assertFalse(chains.allAre(bells));
 

@@ -45,8 +45,8 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         return item.guid().orElseThrow().replace("_", " ");
     }
 
-    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString guid, String displayName) {
-        this(teaseLib, domain, guid, displayName, new Object[] {}, new Object[] {});
+    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString name, String displayName) {
+        this(teaseLib, domain, name, displayName, new Object[] {}, new Object[] {});
     }
 
     public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString name, String displayName, Object[] defaultPeers,
@@ -314,6 +314,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     }
 
     private StateImpl lastUsed() {
+        // Guids cannot be states, so the LastUsed state cannot contain a guid separator
         var lastUsedStateName = ReflectionUtils.qualified(name.kind().toString(), name.guid().orElseThrow());
         return (StateImpl) teaseLib.state(domain, lastUsedStateName);
     }

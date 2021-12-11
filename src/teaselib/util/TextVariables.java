@@ -26,21 +26,21 @@ public class TextVariables implements Iterable<String> {
      *
      */
     public enum Identity {
-    /**
-     * title.
-     */
-    Slave_Title,
+        /**
+         * title.
+         */
+        Slave_Title,
 
-    /**
-     * given name, nick name or title, only one of them.
-     */
-    Slave_Name,
+        /**
+         * given name, nick name or title, only one of them.
+         */
+        Slave_Name,
 
-    /**
-     * 
-     * full name, for instance "#title #name"
-     */
-    Slave_FullName
+        /**
+         * 
+         * full name, for instance "#title #name"
+         */
+        Slave_FullName
 
         ;
 
@@ -182,12 +182,17 @@ public class TextVariables implements Iterable<String> {
         String language = locale.getLanguage();
         String namespace = userNamespace(gender);
 
-        String name = teaseLib.getString(domain, namespace, qualifiedName(FormOfAddress.Name, language));
+        var name = formOfAddress(teaseLib, domain, namespace, FormOfAddress.Name, language);
         set(Identity.Slave_Name.name(), name);
-        set(Identity.Slave_Title.name(),
-                teaseLib.getString(domain, namespace, qualifiedName(FormOfAddress.Title, language)));
-        set(Identity.Slave_FullName.name(),
-                teaseLib.getString(domain, namespace, qualifiedName(FormOfAddress.FullName, language)));
+        var title = formOfAddress(teaseLib, domain, namespace, FormOfAddress.Title, language);
+        set(Identity.Slave_Title.name(), title);
+        var fullname = formOfAddress(teaseLib, domain, namespace, FormOfAddress.FullName, language);
+        set(Identity.Slave_FullName.name(), fullname);
+    }
+
+    private static String formOfAddress(TeaseLib teaseLib, String domain, String namespace, FormOfAddress formOfAddress,
+            String language) {
+        return teaseLib.getString(domain, namespace, qualifiedName(formOfAddress, language));
     }
 
     private static String userNamespace(Gender gender) {

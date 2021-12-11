@@ -7,11 +7,7 @@ import java.util.Objects;
 
 /**
  * 
- * domain/name.space:name
- * <p>
  * domain:name.space/name
- * <p>
- * domain:name/space.name
  * 
  * @author Citizen-Cane
  *

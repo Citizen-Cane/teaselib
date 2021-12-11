@@ -6,12 +6,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AudioSignalProblems {
-    private final Map<AudioSignalProblem, AtomicInteger> problems = new EnumMap<>(AudioSignalProblem.class);
+
     private final Map<AudioSignalProblem, Integer> limits = new EnumMap<>(AudioSignalProblem.class);
     private final Map<AudioSignalProblem, Float> penalties = new EnumMap<>(AudioSignalProblem.class);
+    private final Map<AudioSignalProblem, AtomicInteger> problems = new EnumMap<>(AudioSignalProblem.class);
 
     public AudioSignalProblems() {
-        clear();
         setLimits();
         setPenalties();
     }
@@ -55,8 +55,10 @@ public class AudioSignalProblems {
 
     public float penalty() {
         float penalty = 0.0f;
-        for (Entry<AudioSignalProblem, AtomicInteger> problem : problems.entrySet()) {
-            penalty += penalties.get(problem.getKey()) * limits.get(problem.getKey());
+        for (Entry<AudioSignalProblem, AtomicInteger> entry : problems.entrySet()) {
+            AudioSignalProblem problem = entry.getKey();
+            var count = entry.getValue();
+            penalty += penalties.get(problem) * count.get();
         }
         return penalty;
     }
@@ -65,4 +67,5 @@ public class AudioSignalProblems {
     public String toString() {
         return problems.toString();
     }
+
 }

@@ -2,6 +2,7 @@ package teaselib.core.configuration;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -20,7 +21,8 @@ public class PersistentConfigurationFileStoreService implements Closeable {
     private final NamedExecutorService fileWriterService = NamedExecutorService.newFixedThreadPool(1,
             "Configuration file writer service");
     private final Thread fileWriterShutdownHook;
-    private final Future<Void> Done = new Future<>() {
+
+    private static final Future<Void> Done = new Future<>() {
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             return false;
@@ -59,13 +61,14 @@ public class PersistentConfigurationFileStoreService implements Closeable {
     }
 
     private void queue(PersistentConfigurationFile file) {
-        synchronized (this) {
+        synchronized (elements) {
             elements.add(file);
         }
     }
 
     Future<Void> write() throws IOException {
-        synchronized (this) {
+        Set<PersistentConfigurationFile> pending;
+        synchronized (elements) {
             if (!elements.isEmpty()) {
                 if (!writeAll.isDone() && !writeAll.isCancelled()) {
                     try {
@@ -81,20 +84,23 @@ public class PersistentConfigurationFileStoreService implements Closeable {
                         }
                     }
                 }
-                var pending = new HashSet<>(elements);
+                pending = new HashSet<>(elements);
                 elements.clear();
-                writeAll = fileWriterService.submit(() -> {
-                    for (PersistentConfigurationFile file : pending) {
-                        synchronized (this) {
-                            file.store();
-                        }
-                    }
-                    return null;
-                });
-                return writeAll;
             } else {
-                return Done;
+                pending = Collections.emptySet();
             }
+        }
+
+        if (!pending.isEmpty()) {
+            writeAll = fileWriterService.submit(() -> {
+                for (PersistentConfigurationFile file : pending) {
+                    file.store();
+                }
+                return null;
+            });
+            return writeAll;
+        } else {
+            return Done;
         }
     }
 

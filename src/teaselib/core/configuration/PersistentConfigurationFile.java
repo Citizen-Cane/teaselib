@@ -27,19 +27,18 @@ public class PersistentConfigurationFile extends ConfigurationFileImpl {
     void store() throws IOException {
         var backupPath = path.resolveSibling(path.getFileName() + ".backup");
         var tempPath = path.resolveSibling(path.getFileName() + ".temp");
-        try (var outputStream = Files.newOutputStream(tempPath)) {
-            synchronized (this) {
+        synchronized (this) {
+            try (var outputStream = Files.newOutputStream(tempPath)) {
                 store(outputStream, "Teaselib settings file");
             }
+            if (backupPath.toFile().exists()) {
+                Files.delete(backupPath);
+            }
+            if (path.toFile().exists()) {
+                Files.move(path, backupPath);
+            }
+            Files.move(tempPath, path);
         }
-
-        if (backupPath.toFile().exists()) {
-            Files.delete(backupPath);
-        }
-        if (path.toFile().exists()) {
-            Files.move(path, backupPath);
-        }
-        Files.move(tempPath, path);
     }
 
     @Override

@@ -513,10 +513,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     @Override
     public void show() {
-        if (intertitleActive && repaintText) {
-            repaintText = false;
-            EventQueue.invokeLater(() -> show(html()));
-        } else if (repaintImage && repaintText) {
+        if (repaintImage && repaintText) {
             prepareCurrentImage();
             repaintText = false;
             EventQueue.invokeLater(() -> {

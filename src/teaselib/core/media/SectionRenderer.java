@@ -249,7 +249,7 @@ public class SectionRenderer implements Closeable {
 
     static BinaryOperator<MessageRenderer> append = (current, next) -> {
         next.previousLastParagraph = current.lastParagraph;
-        copy(current, next, current.messages);
+        prepend(current.messages, next);
         next.position = Replay.Position.FromCurrentPosition;
         next.currentMessage = current.messages.size();
         return next;
@@ -259,7 +259,7 @@ public class SectionRenderer implements Closeable {
         next.previousLastParagraph = current.lastParagraph;
         List<RenderedMessage> messages = new ArrayList<>(current.messages);
         messages.remove(messages.size() - 1);
-        copy(current, next, messages);
+        prepend(messages, next);
         next.position = Replay.Position.FromCurrentPosition;
         next.currentMessage = next.messages.size() - 1;
         return next;
@@ -267,14 +267,13 @@ public class SectionRenderer implements Closeable {
 
     static BinaryOperator<MessageRenderer> showAll = (current, next) -> {
         next.previousLastParagraph = current.lastParagraph;
-        copy(current, next, current.messages);
+        prepend(current.messages, next);
         next.position = Replay.Position.End;
         next.currentMessage = next.messages.size();
         return next;
     };
 
-    private static void copy(MessageRenderer current, MessageRenderer next, List<RenderedMessage> messages) {
-        next.accumulatedText = new MessageTextAccumulator();
+    private static void prepend(List<RenderedMessage> messages, MessageRenderer next) {
         messages.forEach(m -> m.forEach(next.accumulatedText::add));
         next.messages.addAll(0, messages);
     }

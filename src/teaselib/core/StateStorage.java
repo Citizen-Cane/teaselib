@@ -82,10 +82,6 @@ class StateStorage {
             for (String persistedPeer : presistedPeers) {
                 restorePersistedPeer(peers, persistedPeer);
             }
-
-            if (peers.isEmpty()) {
-                state.remove();
-            }
         }
         return peers;
     }
@@ -108,6 +104,10 @@ class StateStorage {
             peers.add(peer);
         } else if (isCached(peer) && state.state(peer).applied()) {
             peers.add(peer);
+        } else if (!state.state(peer).storage.persisted()) {
+            logger.warn("Ignoring temporary peer {}", peer);
+        } else {
+            throw new IllegalStateException("Unexpected peer " + peer);
         }
     }
 

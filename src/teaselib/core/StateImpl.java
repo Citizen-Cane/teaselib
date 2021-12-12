@@ -90,7 +90,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
     final StateMaps cache;
     public final String domain;
     public final QualifiedString name;
-    private final StateStorage storage;
+    final StateStorage storage;
 
     boolean applied;
     Duration duration;
@@ -109,6 +109,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
         this.duration = storage.restoreDuration();
         this.peers = storage.restorePeers();
         this.attributes = storage.restoreAttributes();
+
     }
 
     protected StateImpl(TeaseLib teaseLib, String domain, QualifiedString name) {

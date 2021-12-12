@@ -109,6 +109,7 @@ public class StateMapsTestRemember extends TestableStateMaps {
         // Simulate session end & restore
         clear();
 
+        // Temporary restraints are not applied anymore
         assertFalse(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
         assertFalse(state(TEST_DOMAIN, Posture.WristsTiedBehindBack).applied());
 
@@ -125,6 +126,8 @@ public class StateMapsTestRemember extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
 
+        // Because the restraints aren't applied anymore after the simulated session end,
+        // it's now possible to jerk off
         State cannotJerkOff = state(TEST_DOMAIN, Body.CantJerkOff);
         assertFalse(cannotJerkOff.applied());
     }

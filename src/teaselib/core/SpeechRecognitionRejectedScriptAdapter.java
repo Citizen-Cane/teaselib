@@ -37,7 +37,7 @@ public final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognit
         }
 
         if (finishedWithPrompt) {
-            beforeSpeechRecognitionRejected.replay(Replay.Position.FromMandatory);
+            beforeSpeechRecognitionRejected.replay(Replay.Position.FromLastParagraph);
         } else {
             beforeSpeechRecognitionRejected.replay(Replay.Position.End);
         }

@@ -14,7 +14,6 @@ import teaselib.Images;
 import teaselib.Message;
 import teaselib.MessagePart;
 import teaselib.core.AbstractImages;
-import teaselib.core.AbstractMessage;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 
@@ -81,12 +80,7 @@ public abstract class MessageRenderer extends MediaRendererThread implements Run
     }
 
     RenderedMessage getEnd() {
-        return stripAudio(RenderedMessage.getLastParagraph(getLastMessage()));
-    }
-
-    private static RenderedMessage stripAudio(AbstractMessage message) {
-        return message.stream().filter(part -> !Message.Type.AudioTypes.contains(part.type))
-                .collect(RenderedMessage.collector());
+        return RenderedMessage.getLastParagraph(getLastMessage()).stripAudio();
     }
 
     public abstract void play() throws IOException, InterruptedException;

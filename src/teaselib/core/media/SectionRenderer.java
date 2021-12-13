@@ -124,17 +124,35 @@ public class SectionRenderer implements Closeable {
                 } else {
                     renderMessage(getEnd());
                 }
-            } else if (position == Position.FromMandatory) {
-                var temp = createBatch(actor, Collections.singletonList(previousLastParagraph), say, resources);
+            } else if (position == Position.FromLastParagraph) {
+                // say the last paragraph again, the delay, showAll
+                var temp = createBatch(actor, messages.subList(lastTextMessage(), messages.size()), say, resources);
                 temp.renderMessages();
+                // TODO prompt is already displayed while speech part of lastTextMessage() is still rendered
+                // - calling awaitMandatoryCompleted() after replay() doesn't help
+                showAll(this);
+            } else if (position == Position.FromMandatory) {
+                // TODO remember current position in ReplayImpl and play from it
+                // -> update teaselib.core.media.MediaRendererThread.adjustCompletionState()
+                renderMessage(lastParagraph);
                 showAll(this);
             } else if (position == Position.End) {
-                renderMessage(lastParagraph);
+                // TODO remember current position in ReplayImpl and play from it
+                // -> update teaselib.core.media.MediaRendererThread.adjustCompletionState()
                 showAll(this);
             } else {
                 throw new IllegalStateException(position.toString());
             }
+        }
 
+        int lastTextMessage() {
+            int i;
+            for (i = messages.size() - 1; i >= 0; i--) {
+                if (messages.get(i).stream().anyMatch(part -> part.type == Type.Text)) {
+                    return i;
+                }
+            }
+            return i;
         }
 
         private void renderMessages() throws IOException, InterruptedException {
@@ -268,7 +286,7 @@ public class SectionRenderer implements Closeable {
     static BinaryOperator<MessageRenderer> showAll = (current, next) -> {
         next.previousLastParagraph = current.lastParagraph;
         prepend(current.messages, next);
-        next.position = Replay.Position.End;
+        next.position = Replay.Position.FromMandatory;
         next.currentMessage = next.messages.size();
         return next;
     };

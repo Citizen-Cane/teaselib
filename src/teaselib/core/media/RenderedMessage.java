@@ -39,8 +39,8 @@ public class RenderedMessage extends AbstractMessage {
                 }, Collector.Characteristics.UNORDERED);
     }
 
-    public RenderedMessage getLastSection() {
-        return getLastParagraph(this);
+    public RenderedMessage stripAudio() {
+        return stream().filter(part -> !Message.Type.AudioTypes.contains(part.type)).collect(collector());
     }
 
     public static RenderedMessage getLastParagraph(AbstractMessage message) {

@@ -18,9 +18,16 @@ public interface Replay {
         FromCurrentPosition,
 
         /**
+         * Replays the renderer from the start of the Last Paragraph.
+         * 
+         * For a message renderer, this means that the last text part of the message is displayed and spoken.
+         */
+        FromLastParagraph,
+
+        /**
          * Replays the renderer from the end of the mandatory part.
          * 
-         * For a message renderer, this means that the last section of the message is displayed and spoken.
+         * For a message renderer, this means that the last section of the message is displayed.
          */
         FromMandatory,
 

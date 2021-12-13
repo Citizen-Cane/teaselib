@@ -70,6 +70,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
             replayFromStart();
         } else if (position == Replay.Position.FromCurrentPosition) {
             replayFromCurrent();
+        } else if (position == Replay.Position.FromLastParagraph) {
+            replayFromCurrent();
         } else if (position == Replay.Position.FromMandatory) {
             replayFromCurrent();
         } else if (position == Replay.Position.End) {

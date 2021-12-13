@@ -120,7 +120,7 @@ public class SpeechRecognitionSimpleTest {
     }
 
     @Test
-    public void testSimpleSRirregularPhrasesHypootheses() throws InterruptedException {
+    public void testSimpleSRirregularPhrasesHypotheses() throws InterruptedException {
         try (SpeechRecognitionInputMethod inputMethod = getInputMethod(TeaseLibSRSimple.class)) {
             Choices choices = simpleSRirregularPhrases();
             assertRecognizedAsHypothesis(inputMethod, choices, "No Miss", new Prompt.Result(0));

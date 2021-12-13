@@ -142,11 +142,10 @@ public class SpeechRecognitionTest {
 
         List<Rule> rejected = new ArrayList<>();
         rejected.addAll(assertRejected(choices, "Yes I haven't"));
-        assertEquals("Filtered by speech recognition implementation", 1, rejected.size());
+        assertEquals("Should have been filtered by SRGS speech recognition implementation", 0, rejected.size());
 
         Rule distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
         assertEquals(expected.get(0), distinct);
-        assertNotEquals(expected.get(0), rejected.get(0));
 
         assertRejected(choices, "Yes I haven't");
         assertRejected(choices, "No I have");
@@ -163,7 +162,7 @@ public class SpeechRecognitionTest {
         if (rejected.size() > 1) {
             fail("Unstabel - multiple results: " + rejected);
         } else {
-            assertEquals("Filtered by speech recognition implementation", 1, rejected.size());
+            assertEquals("Should have been filtered by SRGS speech recognition implementation", 0, rejected.size());
         }
 
         List<Rule> expected = new ArrayList<>();
@@ -172,7 +171,6 @@ public class SpeechRecognitionTest {
 
         Rule distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
         assertEquals(expected.get(0), distinct);
-        assertNotEquals(expected.get(0), rejected.get(0));
     }
 
     @Test

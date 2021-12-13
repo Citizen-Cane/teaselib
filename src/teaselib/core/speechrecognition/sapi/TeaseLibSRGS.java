@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +34,7 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
         final SlicedPhrases<PhraseString> slicedPhrases;
         final byte[] srgs;
         final IntUnaryOperator mapper;
+        final List<String> phrases;
 
         PreparedChoicesImplementation(Choices choices, SlicedPhrases<PhraseString> slicedPhrases, byte[] srgs,
                 IntUnaryOperator mapper) {
@@ -41,6 +42,8 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
             this.slicedPhrases = slicedPhrases;
             this.srgs = srgs;
             this.mapper = mapper;
+            this.phrases = choices.toPhrases().stream().flatMap(List::stream).map(String::toLowerCase)
+                    .map(PhraseString::words).map(words -> String.join(" ", words)).toList();
         }
 
         @Override
@@ -133,7 +136,7 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
         return repair(result, preparedChoices.slicedPhrases);
     }
 
-    private static List<Rule> repair(List<Rule> result, SlicedPhrases<PhraseString> slicedPhrases) {
+    private List<Rule> repair(List<Rule> result, SlicedPhrases<PhraseString> slicedPhrases) {
 
         // Caveats:
 
@@ -156,6 +159,23 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
         // + however the rule index of such child rules is the right one - can be used to rebuild rule indices
         // -> If the children of the rule aren't distinct, no match
 
+        // DONE: when speech audio doens't match a phrase but sounds similar to parts of a different phrase,
+        // SAPI SRGS may recognize two alternates:
+        // ° one with no choice index, and
+        // ° another with the recognized word but the wrong phrase index (maybe with slightly lower confidence).
+        // This seems to happen in recognitionCompleted only,
+        // and is probably handled this way when the phrase matches more likely the other choice.
+        // However the correct rule would match different phrase, resulting in an empty phrase index set.
+        // Such rules are filtered out by matching the rule text with the phrases.
+        //
+        // For instance, the answer for "Does it protrude?" with predefined phrases
+        // choice1: "Yes, it protrudes"
+        // choice2: "No, it doesn't"
+        // might be answered by the user with: "No, that's not true"
+        // and - because of similarities between "true" and "protrudes" - might be recognized as
+        // -> "No, it protrudes" which is a mix of both phrases.
+        // Adding the spoken answer to the set of accepted phrases would improve recognition in this situation.
+
         List<Rule> rules = new ArrayList<>(result.size());
         for (Rule rule : result) {
             String text = rule.text;
@@ -163,20 +183,29 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
                 if (rule.hasIgnoreableTrailingNullRule()) {
                     rule = rule.withoutIgnoreableTrailingNullRules();
                 }
-                // TODO matching rule indices during repair must map to choices
+                // TODO map rule indices during repair to choice index (instead of phrase index)
                 // -> avoids wrong repair in
                 // teaselib.core.speechrecognition.SpeechRecognitionComplexTest.testSRGSBuilderMultipleChoicesAlternativePhrases()
                 List<Rule> repaired = rule.repair(slicedPhrases);
                 if (repaired.isEmpty()) {
-                    rules.add(rule);
+                    if (isPhrase(rule)) {
+                        rules.add(rule);
+                    } else {
+                        logger.info("Rule with non-matching phrase ignored: {}", rule);
+                    }
                 } else {
-                    rules.addAll(repaired);
+                    repaired.stream().filter(this::isPhrase).forEach(rules::add);
                 }
             }
         }
 
         validate(rules);
         return rules;
+    }
+
+    private boolean isPhrase(Rule rule) {
+        String text = rule.text.toLowerCase();
+        return preparedChoices.phrases.stream().anyMatch(phrase -> phrase.startsWith(text));
     }
 
     private static void validate(List<Rule> candidates) {

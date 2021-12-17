@@ -198,6 +198,7 @@ public class Prompt {
             }
             if (action != null) {
                 action.run(eventArgs);
+                script.awaitMandatoryCompleted();
             }
         } finally {
             inputMethodEventArgs.set(null);

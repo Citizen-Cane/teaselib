@@ -5,6 +5,7 @@ import java.io.IOException;
 import teaselib.core.TeaseLib;
 
 public class RenderInterTitle extends MediaRendererThread implements ReplayableMediaRenderer {
+
     private final RenderedMessage message;
 
     public RenderInterTitle(RenderedMessage message, TeaseLib teaseLib) {

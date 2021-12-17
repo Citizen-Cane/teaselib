@@ -17,7 +17,7 @@ import teaselib.core.AbstractImages;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 
-public abstract class MessageRenderer extends MediaRendererThread implements Runnable, ReplayableMediaRenderer {
+public abstract class MessageRenderer extends MediaRendererThread implements ReplayableMediaRenderer {
 
     static final Logger logger = LoggerFactory.getLogger(MessageRenderer.class);
 

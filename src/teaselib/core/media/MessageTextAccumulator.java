@@ -7,19 +7,21 @@ import java.util.stream.Collectors;
 import teaselib.Message;
 import teaselib.MessagePart;
 
-public class MessageTextAccumulator {
+class MessageTextAccumulator {
+
     private static final String PARAGRAPH_SEPARATOR = "\n\n";
-    List<String> paragraphs;
+
+    final List<String> paragraphs;
+
     private String tail;
+    private boolean appendToParagraph = false;
 
-    boolean appendToParagraph = false;
-
-    public MessageTextAccumulator() {
+    MessageTextAccumulator() {
         this.paragraphs = new ArrayList<>();
         this.tail = "";
     }
 
-    public final void add(MessagePart part) {
+    void add(MessagePart part) {
         StringBuilder tailBuilder;
         if (part.type == Message.Type.Text) {
             add(part.value);
@@ -33,7 +35,7 @@ public class MessageTextAccumulator {
         }
     }
 
-    public final void add(String text) {
+    void add(String text) {
         StringBuilder tailBuilder;
         if (appendToParagraph) {
             tailBuilder = new StringBuilder(removeLast());
@@ -45,6 +47,11 @@ public class MessageTextAccumulator {
         tail = tailBuilder.toString();
         paragraphs.add(tail);
         appendToParagraph = canAppendTo(tail);
+    }
+
+    void addAll(List<RenderedMessage> messages) {
+        messages.stream().flatMap(RenderedMessage::stream).filter(part -> Message.Type.TextTypes.contains(part.type))
+                .map(p -> p.value).forEach(this::add);
     }
 
     private String removeLast() {
@@ -62,16 +69,12 @@ public class MessageTextAccumulator {
         }
     }
 
-    public static boolean canAppendTo(String string) {
+    static boolean canAppendTo(String string) {
         String ending = string.isEmpty() ? " " : string.substring(string.length() - 1, string.length());
         return Message.MainClauseAppendableCharacters.contains(ending);
     }
 
-    public boolean canAppend() {
-        return appendToParagraph;
-    }
-
-    public String getTail() {
+    String getTail() {
         return tail;
     }
 

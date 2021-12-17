@@ -58,6 +58,9 @@ public class Message extends AbstractMessage {
 
         ;
 
+        public static final Set<Message.Type> TextTypes = new HashSet<>(
+                Arrays.asList(Message.Type.Text, Message.Type.Item));
+
         public static final Set<Message.Type> DisplayTypes = new HashSet<>(
                 Arrays.asList(Message.Type.Text, Message.Type.Item, Message.Type.Image));
 

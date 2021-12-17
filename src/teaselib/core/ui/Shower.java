@@ -148,6 +148,7 @@ public class Shower {
             if (eventArgs != null) {
                 invokeHandler(prompt, eventArgs);
                 promptQueue.awaitResult(prompt);
+                // TODO replace recursion with while loop to avoid StackOverflowError
                 return result(prompt);
             } else {
                 return cancelScriptTaskAndReturnResult(prompt);
@@ -178,6 +179,15 @@ public class Shower {
             throw new IllegalStateException("Not top-most: " + prompt);
         }
 
+        // TODO Prompts with script functions will be restored during the handler call
+        // after the first handler prompt is dismissed,  because they're supposed to be active all the time.
+        // In a prompt-handler-script however the current flow of execution is interrupted,
+        // and having a script function prompt active all the time might not be appropriate.
+        // -> Allow injecting a dummy prompt (a fence?) to suppress the script function prompt.
+        // - or preserve the stack, clear it and restore it after invoking the handler
+        // Go for the stack, because clearing the stack temporarily
+        // allows to remove special-casing in Prompt.resumePrevious()
+        
         if (prompt.paused()) {
             promptQueue.resume(prompt);
         }
@@ -228,12 +238,22 @@ public class Shower {
 
         if (!stack.isEmpty()) {
             Prompt previous = stack.peek();
-            previous.lock.lock();
-            try {
-                promptQueue.resume(previous);
-            } finally {
-                previous.lock.unlock();
+            // only prompts with script functions can be resumed here,
+            // because if this is a handler call
+            // the original prompt must be resumed only after the handler has completed.
+            // TODO also ignore script functions during handler calls.
+            if (previous.hasScriptTask()) {
+                resume(previous);
             }
+        }
+    }
+
+    private void resume(Prompt prompt) throws InterruptedException {
+        prompt.lock.lock();
+        try {
+            promptQueue.resume(prompt);
+        } finally {
+            prompt.lock.unlock();
         }
     }
 

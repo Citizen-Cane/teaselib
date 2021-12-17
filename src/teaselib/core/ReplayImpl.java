@@ -21,8 +21,7 @@ class ReplayImpl implements Replay {
         scriptRenderer.renderQueue.awaitAllCompleted();
         // TODO log message comes too early - before the interjection (but looks good in player)
         ScriptRenderer.logger.info("Replaying {} from {}", this, position);
-        scriptRenderer.renderQueue.replay(renderers, position);
-        scriptRenderer.playedRenderers = renderers;
+        scriptRenderer.replay(renderers, position);
     }
 
 }

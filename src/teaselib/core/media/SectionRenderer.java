@@ -107,42 +107,47 @@ public class SectionRenderer implements Closeable {
         }
 
         @Override
-        public void replay(Position replayPosition) {
-            super.replay(replayPosition);
-            run();
-        }
-
-        @Override
         public void play() throws IOException, InterruptedException {
             if (position == Position.FromStart) {
-                accumulatedText = new MessageTextAccumulator();
-                currentMessage = 0;
-                renderMessages();
+                renderAllMessages();
             } else if (position == Position.FromCurrentPosition) {
                 if (currentMessage < messages.size()) {
-                    renderMessages();
+                    renderFromCurrentMessage();
                 } else {
-                    renderMessage(getEnd());
+                    showAll(this);
                 }
             } else if (position == Position.FromLastParagraph) {
-                // say the last paragraph again, the delay, showAll
-                var temp = createBatch(actor, messages.subList(lastTextMessage(), messages.size()), say, resources);
-                temp.renderMessages();
-                // TODO prompt is already displayed while speech part of lastTextMessage() is still rendered
-                // - calling awaitMandatoryCompleted() after replay() doesn't help
+                // say the last paragraph again, including the delay, showAll
+                renderFrom(lastTextMessage());
                 showAll(this);
             } else if (position == Position.FromMandatory) {
-                // TODO remember current position in ReplayImpl and play from it
-                // -> update teaselib.core.media.MediaRendererThread.adjustCompletionState()
-                renderMessage(lastParagraph);
+                // Render the last paragraph, includes final delay, then showAll
+                render(lastParagraph);
                 showAll(this);
             } else if (position == Position.End) {
-                // TODO remember current position in ReplayImpl and play from it
-                // -> update teaselib.core.media.MediaRendererThread.adjustCompletionState()
+                // Just show the summary
                 showAll(this);
             } else {
                 throw new IllegalStateException(position.toString());
             }
+            // TODO implement showAll as a keyword, and have the script append it to the message
+        }
+
+        private void renderAllMessages() throws IOException, InterruptedException {
+            accumulatedText = new MessageTextAccumulator();
+            currentMessage = 0;
+            render(messages);
+        }
+
+        private void renderFromCurrentMessage() throws IOException, InterruptedException {
+            render(messages.subList(currentMessage, messages.size()));
+        }
+
+        private void renderFrom(int messageIndex) throws IOException, InterruptedException {
+            accumulatedText = new MessageTextAccumulator();
+            accumulatedText.addAll(messages.subList(0, messageIndex));
+            currentMessage = messageIndex;
+            render(messages.subList(messageIndex, messages.size()));
         }
 
         int lastTextMessage() {
@@ -155,20 +160,16 @@ public class SectionRenderer implements Closeable {
             return i;
         }
 
-        private void renderMessages() throws IOException, InterruptedException {
-            while (haveMoreMessages()) {
-                RenderedMessage message = messages.get(currentMessage);
+        private void render(List<RenderedMessage> messages) throws IOException, InterruptedException {
+            for (var message : messages) {
+                currentMessage = this.messages.indexOf(message);
                 try {
-                    renderMessage(message);
+                    render(message);
                 } finally {
                     currentMessage++;
                 }
                 renderOptionalDefaultDelayBetweenMultipleMessages();
             }
-        }
-
-        private boolean haveMoreMessages() {
-            return currentMessage < messages.size();
         }
 
         private void renderOptionalDefaultDelayBetweenMultipleMessages() {
@@ -180,7 +181,7 @@ public class SectionRenderer implements Closeable {
             }
         }
 
-        private void renderMessage(RenderedMessage message) throws IOException, InterruptedException {
+        private void render(RenderedMessage message) throws IOException, InterruptedException {
             String mood = Mood.Neutral;
             for (Iterator<MessagePart> it = message.iterator(); it.hasNext();) {
                 MessagePart part = it.next();

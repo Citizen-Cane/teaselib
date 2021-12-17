@@ -59,7 +59,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
      */
     protected abstract void renderMedia() throws InterruptedException, IOException;
 
-    public void replay(Replay.Position position) {
+    public void set(Replay.Position position) {
         this.position = position;
         adjustCompletionState();
         logger.info("Replay from {}", position);

@@ -52,12 +52,15 @@ public class MediaRendererQueue {
     public void replay(List<MediaRenderer> renderers, Replay.Position position) {
         synchronized (activeRenderers) {
             checkPreviousSetCompleted();
-            for (ReplayableMediaRenderer r : replayable(renderers)) {
-                if (r instanceof MediaRenderer.Threaded threaded) {
-                    submit(threaded, () -> r.replay(position));
-                } else {
-                    r.replay(position);
-                }
+            set(renderers, position);
+            play(renderers);
+        }
+    }
+
+    private static void set(List<MediaRenderer> renderers, Replay.Position position) {
+        for (ReplayableMediaRenderer r : replayable(renderers)) {
+            if (r instanceof MediaRenderer.Threaded threaded) {
+                r.set(position);
             }
         }
     }
@@ -68,7 +71,7 @@ public class MediaRendererQueue {
         }
     }
 
-    private List<ReplayableMediaRenderer> replayable(List<MediaRenderer> renderers) {
+    private static List<ReplayableMediaRenderer> replayable(List<MediaRenderer> renderers) {
         List<ReplayableMediaRenderer> elements = new ArrayList<>();
         for (MediaRenderer r : renderers) {
             if (r instanceof ReplayableMediaRenderer replayable) {
@@ -81,8 +84,8 @@ public class MediaRendererQueue {
 
     private void play(List<? extends MediaRenderer> mediaRenderers) {
         for (MediaRenderer r : mediaRenderers) {
-            if (r instanceof MediaRenderer.Threaded) {
-                submit((MediaRenderer.Threaded) r);
+            if (r instanceof MediaRenderer.Threaded threaded) {
+                submit(threaded);
             } else {
                 r.run();
             }
@@ -180,34 +183,6 @@ public class MediaRendererQueue {
         return futures;
     }
 
-    public void cancel(List<Future<?>> futures) {
-        futures.stream().forEach(this::cancel);
-    }
-
-    private void join(List<Future<?>> futures) {
-        RuntimeException exception = null;
-        boolean interrupted = false;
-
-        for (Future<?> future : futures) {
-            try {
-                join(future);
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-                interrupted = true;
-            } catch (RuntimeException e) {
-                if (exception == null) {
-                    exception = e;
-                }
-            }
-        }
-
-        if (interrupted) {
-            throw new ScriptInterruptedException();
-        } else if (exception != null) {
-            throw exception;
-        }
-    }
-
     public boolean hasCompletedStarts() {
         synchronized (activeRenderers) {
             if (!activeRenderers.isEmpty()) {
@@ -275,11 +250,39 @@ public class MediaRendererQueue {
         }
     }
 
+    public void cancel(List<Future<?>> futures) {
+        futures.stream().forEach(this::cancel);
+    }
+
     private Future<?> cancel(Future<?> future) {
         if (!future.isDone() && !future.isCancelled()) {
             future.cancel(true);
         }
         return future;
+    }
+
+    private static void join(List<Future<?>> futures) {
+        RuntimeException exception = null;
+        boolean interrupted = false;
+
+        for (Future<?> future : futures) {
+            try {
+                join(future);
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+                interrupted = true;
+            } catch (RuntimeException e) {
+                if (exception == null) {
+                    exception = e;
+                }
+            }
+        }
+
+        if (interrupted) {
+            throw new ScriptInterruptedException();
+        } else if (exception != null) {
+            throw exception;
+        }
     }
 
     private static void join(Future<?> future) throws InterruptedException {
@@ -295,4 +298,5 @@ public class MediaRendererQueue {
     public ExecutorService getExecutorService() {
         return executor;
     }
+
 }

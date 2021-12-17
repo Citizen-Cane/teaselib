@@ -1,9 +1,8 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.stream.Collectors.toList;
-import static teaselib.core.concurrency.NamedExecutorService.newUnlimitedThreadPool;
-import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
+import static java.util.concurrent.TimeUnit.*;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.concurrency.NamedExecutorService.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -136,6 +135,11 @@ public class ScriptRenderer implements Closeable {
 
     Replay getReplay() {
         return new ReplayImpl(this, playedRenderers);
+    }
+
+    void replay(List<MediaRenderer> renderers, Replay.Position position) {
+        renderQueue.replay(renderers, position);
+        playedRenderers = renderers;
     }
 
     void prependMessage(Message message) {

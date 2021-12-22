@@ -122,12 +122,27 @@ public class Prompt {
 
     private final AtomicBoolean paused = new AtomicBoolean(false);
     final Map<InputMethod.Notification, Action> inputMethodEventActions = new HashMap<>();
-    final AtomicReference<InputMethodEventArgs> inputMethodEventArgs = new AtomicReference<>();
+    final AtomicReference<InputMethodEventArgs> inputMethodEventArgs = new AtomicReference<>(InputMethodEventArgs.None);
 
     private List<InputMethod> realized = Collections.emptyList();
     private Result result;
     private Throwable exception;
     private InputMethod resultInputMethod;
+
+    Prompt() {
+        this.script = null;
+        this.choices = null;
+        this.inputMethods = null;
+        this.inputMethodInitializers = null;
+        this.initialState = null;
+        this.scriptTask = null;
+        this.acceptedResult = null;
+
+        this.lock = new ReentrantLock();
+        this.click = lock.newCondition();
+
+        this.result = Prompt.Result.UNDEFINED;
+    }
 
     public Prompt(Choices choices, InputMethods inputMethods) {
         this(null, choices, inputMethods, null, Result.Accept.Distinct);
@@ -201,7 +216,7 @@ public class Prompt {
                 script.awaitMandatoryCompleted();
             }
         } finally {
-            inputMethodEventArgs.set(null);
+            inputMethodEventArgs.set(InputMethodEventArgs.None);
         }
     }
 
@@ -219,9 +234,16 @@ public class Prompt {
         return !realized.isEmpty();
     }
 
+    public boolean dismissed() {
+        return result().equals(Result.DISMISSED);
+    }
+
+    public boolean undefined() {
+        return result().equals(Result.UNDEFINED);
+    }
+
     public Result result() {
         throwIfNotLocked();
-
         return unsynchronizedResult();
     }
 
@@ -398,11 +420,11 @@ public class Prompt {
         }
     }
 
-    public void throwIfPaused() {
+    private void throwIfPaused() {
         throwIfPaused("Trying to invoke active-only operation");
     }
 
-    public void throwIfPaused(String reason) {
+    private void throwIfPaused(String reason) {
         if (paused()) {
             throw new IllegalStateException(reason + " on paused prompt: " + this);
         }

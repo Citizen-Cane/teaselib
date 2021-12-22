@@ -1,14 +1,9 @@
 package teaselib.core.ui;
 
-import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import teaselib.Answer;
 import teaselib.ScriptFunction.AnswerOverride;
@@ -16,11 +11,6 @@ import teaselib.core.ScriptFutureTask;
 import teaselib.core.util.ExceptionUtil;
 
 public class Shower {
-    private static final Logger logger = LoggerFactory.getLogger(Shower.class);
-
-    static final int PAUSED = -1;
-
-    final Deque<Prompt> stack = new ArrayDeque<>();
 
     private final PromptQueue promptQueue;
 
@@ -32,10 +22,9 @@ public class Shower {
         List<Choice> choice;
         prompt.lock.lockInterruptibly();
         try {
-            pauseCurrent();
+            promptQueue.pauseCurrent();
             choice = showNew(prompt);
-            resumePrevious();
-
+            promptQueue.resumePrevious();
             return answer(prompt, choice);
         } finally {
             prompt.lock.unlock();
@@ -49,8 +38,7 @@ public class Shower {
                 var answer = scriptTask.get();
                 if (answer != null) {
                     return Collections.singletonList(new Choice(answer));
-                } else if (prompt.result().equals(Prompt.Result.UNDEFINED)
-                        || prompt.result().equals(Prompt.Result.DISMISSED)) {
+                } else if (prompt.undefined() || prompt.dismissed()) {
                     return Collections.singletonList(new Choice(Answer.Timeout));
                 } else {
                     return choice;
@@ -85,75 +73,26 @@ public class Shower {
         }
     }
 
-    private void resumePreviousPromptAfterException(Prompt prompt, Exception e) {
-        try {
-            if (stack.isEmpty()) {
-                throw new IllegalStateException("Unexpected empty stack: " + prompt, e);
-            }
-
-            if (prompt.hasScriptTask()) {
-                prompt.scriptTask.cancel(true);
-                prompt.scriptTask.awaitCompleted();
-            }
-
-            if (!stack.isEmpty() && stack.peek() != prompt) {
-                throw new IllegalStateException("Nested prompts not dismissed: " + prompt, e);
-            }
-
-            // active prompt UI must be unrealized explicitly
-            if (prompt == promptQueue.getActive()) {
-                if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
-                    promptQueue.dismiss(prompt);
-                }
-            }
-            stack.remove(prompt);
-            if (!stack.isEmpty()) {
-                promptQueue.setActive(stack.peek());
-            }
-
-            if (prompt.isActive()) {
-                throw new IllegalStateException("Input methods not dismissed: " + prompt);
-            }
-
-        } catch (RuntimeException ignore) {
-            if (e instanceof InterruptedException) {
-                logger.warn(ignore.getMessage(), ignore);
-            } else {
-                throw ExceptionUtil.asRuntimeException(e);
-            }
-        } catch (InterruptedException e1) {
-            Thread.currentThread().interrupt();
-            logger.warn(e1.getMessage(), "");
-        }
-    }
-
     private List<Choice> showNew(Prompt prompt) throws InterruptedException {
         try {
-            stack.push(prompt);
             promptQueue.show(prompt);
             return result(prompt);
         } catch (Exception e) {
-            resumePreviousPromptAfterException(prompt, e);
+            promptQueue.resumePreviousPromptAfterException(prompt, e);
             throwScriptTaskException(prompt);
             throw e;
         }
     }
 
     private List<Choice> result(Prompt prompt) throws InterruptedException {
-        var result = prompt.result();
-        if (result.equals(Prompt.Result.DISMISSED)) {
-            return cancelScriptTaskAndReturnResult(prompt);
-        } else {
-            InputMethodEventArgs eventArgs = prompt.inputMethodEventArgs.getAndSet(null);
-            if (eventArgs != null) {
-                invokeHandler(prompt, eventArgs);
+        while (prompt.undefined()) {
+            var eventArgs = prompt.inputMethodEventArgs.getAndSet(InputMethodEventArgs.None);
+            if (eventArgs != InputMethodEventArgs.None) {
+                promptQueue.invokeHandler(prompt, eventArgs);
                 promptQueue.awaitResult(prompt);
-                // TODO replace recursion with while loop to avoid StackOverflowError
-                return result(prompt);
-            } else {
-                return cancelScriptTaskAndReturnResult(prompt);
             }
         }
+        return cancelScriptTaskAndReturnResult(prompt);
     }
 
     private static List<Choice> cancelScriptTaskAndReturnResult(Prompt prompt) {
@@ -161,112 +100,8 @@ public class Shower {
         return prompt.choice();
     }
 
-    private void invokeHandler(Prompt prompt, InputMethodEventArgs eventArgs) throws InterruptedException {
-        if (promptQueue.getActive() != null) {
-            throw new IllegalStateException("No active prompt expected");
-        }
-        prompt.pause();
-
-        if (!prompt.result().equals(Prompt.Result.UNDEFINED)) {
-            throw new IllegalStateException("Prompt result already set when invoking handler: " + prompt);
-        }
-
-        if (!executingAlready(eventArgs.source)) {
-            prompt.executeInputMethodHandler(eventArgs);
-        }
-
-        if (stack.peek() != prompt) {
-            throw new IllegalStateException("Not top-most: " + prompt);
-        }
-
-        // TODO Prompts with script functions will be restored during the handler call
-        // after the first handler prompt is dismissed,  because they're supposed to be active all the time.
-        // In a prompt-handler-script however the current flow of execution is interrupted,
-        // and having a script function prompt active all the time might not be appropriate.
-        // -> Allow injecting a dummy prompt (a fence?) to suppress the script function prompt.
-        // - or preserve the stack, clear it and restore it after invoking the handler
-        // Go for the stack, because clearing the stack temporarily
-        // allows to remove special-casing in Prompt.resumePrevious()
-        
-        if (prompt.paused()) {
-            promptQueue.resume(prompt);
-        }
-    }
-
-    private boolean executingAlready(InputMethod.Notification eventType) {
-        Prompt current = stack.peek();
-        for (Prompt prompt : stack) {
-            // TODO non-working - blocks since while executing a handler on the prompt, the prompt is locked
-            // -> attempt to execute another handler on the same prompt results in a deadlock
-            // TODO NPE since prompt.inputMethodEventArgs is temporary and set back to null immediately
-            if (prompt != current && prompt.inputMethodEventArgs.get().source == eventType) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void pauseCurrent() throws InterruptedException {
-        if (!stack.isEmpty()) {
-            var prompt = stack.peek();
-            prompt.lock.lockInterruptibly();
-            try {
-                if (!prompt.paused()) {
-                    pause(prompt);
-                }
-            } finally {
-                prompt.lock.unlock();
-            }
-        }
-    }
-
-    private void pause(Prompt prompt) {
-        promptQueue.pause(prompt);
-    }
-
-    private void resumePrevious() throws InterruptedException {
-        if (!stack.isEmpty()) {
-            var prompt = stack.peek();
-
-            if (promptQueue.getActive() == prompt) {
-                throw new IllegalStateException("Prompt not dismissed: " + prompt);
-            }
-            stack.pop();
-        } else {
-            throw new IllegalStateException("Prompt stack empty");
-        }
-
-        if (!stack.isEmpty()) {
-            Prompt previous = stack.peek();
-            // only prompts with script functions can be resumed here,
-            // because if this is a handler call
-            // the original prompt must be resumed only after the handler has completed.
-            // TODO also ignore script functions during handler calls.
-            if (previous.hasScriptTask()) {
-                resume(previous);
-            }
-        }
-    }
-
-    private void resume(Prompt prompt) throws InterruptedException {
-        prompt.lock.lock();
-        try {
-            promptQueue.resume(prompt);
-        } finally {
-            prompt.lock.unlock();
-        }
-    }
-
     public void updateUI(InputMethod.UiEvent event) throws InterruptedException {
-        if (!stack.isEmpty()) {
-            var prompt = stack.peek();
-            prompt.lock.lockInterruptibly();
-            try {
-                prompt.updateUI(event);
-            } finally {
-                prompt.lock.unlock();
-            }
-        }
+        promptQueue.updateUI(event);
     }
 
 }

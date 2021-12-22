@@ -20,7 +20,6 @@ public class PersistentConfigurationFileStoreService implements Closeable {
     private final Set<PersistentConfigurationFile> elements = new CopyOnWriteArraySet<>();
     private final NamedExecutorService fileWriterService = NamedExecutorService.newFixedThreadPool(1,
             "Configuration file writer service");
-    private final Thread fileWriterShutdownHook;
 
     private static final Future<Void> Done = new Future<>() {
         @Override
@@ -50,11 +49,6 @@ public class PersistentConfigurationFileStoreService implements Closeable {
     };
 
     private Future<Void> writeAll = Done;
-
-    PersistentConfigurationFileStoreService() {
-        fileWriterShutdownHook = new Thread(this::shutdown);
-        Runtime.getRuntime().addShutdownHook(fileWriterShutdownHook);
-    }
 
     ConfigurationFile open(Path path) throws IOException {
         return new PersistentConfigurationFile(path, this::queue);
@@ -106,9 +100,7 @@ public class PersistentConfigurationFileStoreService implements Closeable {
 
     @Override
     public void close() {
-        if (Runtime.getRuntime().removeShutdownHook(fileWriterShutdownHook)) {
-            shutdown();
-        }
+        shutdown();
     }
 
     private void shutdown() {
@@ -122,10 +114,8 @@ public class PersistentConfigurationFileStoreService implements Closeable {
             }
 
             try {
-                while (!fileWriterService.awaitTermination(1, TimeUnit.SECONDS)) { //
-                }
+                fileWriterService.awaitTermination(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                fileWriterService.shutdownNow();
                 Thread.currentThread().interrupt();
             }
         }

@@ -88,6 +88,8 @@ public class TeaseLib implements Closeable {
     private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
     private final Set<CheckPointListener> checkPointListeners = new HashSet<>();
 
+    private final Thread shutdownHook = new Thread(this::shutdown);
+
     public TeaseLib(final Host host) throws IOException {
         this(host, new TeaseLibConfigSetup(host));
     }
@@ -111,6 +113,8 @@ public class TeaseLib implements Closeable {
         this.devices = new Devices(config);
 
         this.random = new Random();
+
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
     private static void logDateTime() {
@@ -166,6 +170,10 @@ public class TeaseLib implements Closeable {
             throw e;
         } catch (Exception e) {
             throw ExceptionUtil.asRuntimeException(e);
+        } catch (Throwable e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        } finally {
+            logger.info("Finished");
         }
     }
 
@@ -214,17 +222,33 @@ public class TeaseLib implements Closeable {
 
     @Override
     public void close() {
+        Runtime.getRuntime().removeShutdownHook(shutdownHook);
         boolean isInterrupted = Thread.interrupted();
+        shutdown();
+        if (isInterrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void shutdown() {
+        try {
+            globals.close();
+        } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
+        }
+
+        if (host instanceof Closeable) {
+            try {
+                ((Closeable) host).close();
+            } catch (Throwable t) {
+                logger.error(t.getMessage(), t);
+            }
+        }
+
         try {
             config.close();
-            globals.close();
-            if (host instanceof Closeable) {
-                ((Closeable) host).close();
-            }
-        } finally {
-            if (isInterrupted) {
-                Thread.currentThread().interrupt();
-            }
+        } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
         }
     }
 

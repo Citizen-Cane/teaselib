@@ -40,7 +40,7 @@ public class SectionRenderer implements Closeable {
     // TODO workaround to tell section renderer to add the proper delay for the next message
     public OutlineType nextOutlineType;
     private MessageRenderer currentMessageRenderer;
-    private MediaRenderer.Threaded currentRenderer;
+    private MediaRenderer.Threaded currentRenderer = MediaRenderer.None;
     private RenderSound backgroundSoundRenderer;
 
     public SectionRenderer(TeaseLib teaseLib, MediaRendererQueue renderQueue) {
@@ -79,9 +79,6 @@ public class SectionRenderer implements Closeable {
 
         @Override
         protected void renderMedia() throws InterruptedException, IOException {
-            // TOOO Avoid locks caused by interrupting before start
-            // messageRenderer.startCompleted();
-
             try {
                 boolean emptyMessage = messages.get(0).isEmpty();
                 if (emptyMessage) {
@@ -90,14 +87,11 @@ public class SectionRenderer implements Closeable {
                 } else {
                     play();
                 }
-
                 mandatoryCompleted();
                 finalizeRendering(this);
             } catch (InterruptedException | ScriptInterruptedException e) {
-                if (currentRenderer != null) {
-                    renderQueue.cancel(currentRenderer);
-                    currentRenderer = null;
-                }
+                renderQueue.cancel(currentRenderer);
+                currentRenderer = MediaRenderer.None;
                 if (backgroundSoundRenderer != null) {
                     renderQueue.cancel(backgroundSoundRenderer);
                     backgroundSoundRenderer = null;
@@ -195,7 +189,10 @@ public class SectionRenderer implements Closeable {
                 } else {
                     render(part, mood);
                 }
-                awaitSectionAll();
+
+                if (Message.Type.TextTypes.contains(part.type) || (!it.hasNext() && part.type == Message.Type.Image)) {
+                    show(this, mood);
+                }
 
                 if (!hasCompletedStart()) {
                     if (Message.Type.DisplayTypes.contains(part.type)) {
@@ -203,14 +200,11 @@ public class SectionRenderer implements Closeable {
                     }
                 }
 
-                if (part.type == Message.Type.Text || (!it.hasNext() && part.type == Message.Type.Image)) {
-                    show(this, mood);
-                }
-
                 if (Thread.currentThread().isInterrupted()) {
-                    break;
+                    throw new InterruptedException();
                 }
             }
+            awaitSectionMandatory();
         }
 
         private void render(MessagePart part, String mood) throws IOException, InterruptedException {
@@ -218,7 +212,6 @@ public class SectionRenderer implements Closeable {
                 displayImage = part.value;
             } else if (part.type == Message.Type.BackgroundSound) {
                 playSoundAsynchronous(part, resources);
-                // use awaitSoundCompletion keyword to wait for background sound completion
             } else if (part.type == Message.Type.Sound) {
                 playSound(part, resources);
             } else if (part.type == Message.Type.Speech) {
@@ -246,6 +239,8 @@ public class SectionRenderer implements Closeable {
         }
 
     }
+
+    // TODO make sure batch renderers don't overlap to avoid race conditions with SectionRenderer fields
 
     Batch createBatch(Actor actor, List<RenderedMessage> messages, BinaryOperator<MessageRenderer> operator,
             ResourceLoader resources) {
@@ -297,7 +292,7 @@ public class SectionRenderer implements Closeable {
         next.messages.addAll(0, messages);
     }
 
-    protected void finalizeRendering(MessageRenderer messageRenderer) {
+    private void finalizeRendering(MessageRenderer messageRenderer) {
         awaitSectionMandatory();
         if (nextOutlineType == OutlineType.NewSection && textToSpeechPlayer != null
                 && !messageRenderer.lastParagraph.contains(Type.Delay)) {
@@ -312,11 +307,9 @@ public class SectionRenderer implements Closeable {
     }
 
     private void renderTimeSpannedPart(MediaRenderer.Threaded renderer) {
-        if (this.currentRenderer != null) {
-            this.currentRenderer.awaitMandatoryCompleted();
-        }
+        awaitSectionMandatory();
+        renderQueue.submit(renderer);
         this.currentRenderer = renderer;
-        renderQueue.submit(this.currentRenderer);
     }
 
     private void showDesktopItem(MessagePart part, ResourceLoader resources) throws IOException {
@@ -360,20 +353,17 @@ public class SectionRenderer implements Closeable {
             }
             backgroundSoundRenderer = new RenderSound(resources, part.value, teaseLib);
             renderQueue.submit(backgroundSoundRenderer);
+            // use awaitSoundCompletion keyword to wait for background sound completion
         }
     }
 
     private void awaitSectionMandatory() {
-        if (currentRenderer != null) {
-            currentRenderer.awaitMandatoryCompleted();
-        }
+        currentRenderer.awaitMandatoryCompleted();
     }
 
     private void awaitSectionAll() {
-        if (currentRenderer != null) {
-            currentRenderer.awaitAllCompleted();
-            currentRenderer = null;
-        }
+        currentRenderer.awaitAllCompleted();
+        currentRenderer = MediaRenderer.None;
     }
 
     private void show(MessageRenderer messageRenderer, String mood) throws IOException, InterruptedException {
@@ -455,8 +445,6 @@ public class SectionRenderer implements Closeable {
     }
 
     private void doDelay(MessagePart part) {
-        awaitSectionMandatory();
-
         String args = part.value;
         if (args.isEmpty()) {
             awaitSectionAll();

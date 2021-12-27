@@ -1,6 +1,7 @@
 package teaselib.core.media;
 
 public interface MediaRenderer extends Runnable {
+
     public interface Threaded extends MediaRenderer {
         /**
          * Wait for the renderer having completed the introduction phase of its content
@@ -31,5 +32,40 @@ public interface MediaRenderer extends Runnable {
          * Determine whether the renderer has completed all.
          */
         boolean hasCompletedAll();
+
     }
+
+    static final Threaded None = new MediaRenderer.Threaded() {
+
+        @Override
+        public void run() { //
+        }
+
+        @Override
+        public boolean hasCompletedStart() {
+            return true;
+        }
+
+        @Override
+        public boolean hasCompletedMandatory() {
+            return true;
+        }
+
+        @Override
+        public boolean hasCompletedAll() {
+            return true;
+        }
+
+        @Override
+        public void awaitStartCompleted() { //
+        }
+
+        @Override
+        public void awaitMandatoryCompleted() { //
+        }
+
+        @Override
+        public void awaitAllCompleted() { //
+        }
+    };
 }

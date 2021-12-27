@@ -20,6 +20,7 @@ import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
 public class MediaRendererQueue {
+
     private static final Logger logger = LoggerFactory.getLogger(MediaRendererQueue.class);
 
     static final String RenderTaskBaseName = "RenderTask ";
@@ -222,13 +223,9 @@ public class MediaRendererQueue {
         return true;
     }
 
-    public <T extends MediaRenderer.Threaded> Future<?> submit(T mediaRenderer) {
-        return submit(mediaRenderer, mediaRenderer::run);
-    }
-
-    private <T extends MediaRenderer.Threaded> Future<?> submit(T mediaRenderer, Runnable runnable) {
+    public Future<?> submit(MediaRenderer.Threaded mediaRenderer) {
         synchronized (activeRenderers) {
-            Future<?> future = executor.submit(runnable);
+            Future<?> future = new MediaRendererFutureTask(mediaRenderer, executor.submit(mediaRenderer));
             activeRenderers.put(mediaRenderer, future);
             return future;
         }
@@ -250,7 +247,7 @@ public class MediaRendererQueue {
         }
     }
 
-    public void cancel(List<Future<?>> futures) {
+    private void cancel(List<Future<?>> futures) {
         futures.stream().forEach(this::cancel);
     }
 

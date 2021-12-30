@@ -11,6 +11,7 @@ import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
 import teaselib.Mood;
+import teaselib.test.ActorTestImages;
 import teaselib.test.TestScript;
 
 public class ScriptMessageDecoratorTest {
@@ -58,6 +59,9 @@ public class ScriptMessageDecoratorTest {
     @Test
     public void testImageAfterDelay() throws IOException {
         try (TestScript script = new TestScript()) {
+            script.actor.images = new ActorTestImages("Actor1.jpg", "Actor2.jpg");
+            script.teaseLib.config.set(Config.Render.ActorImages, Boolean.TRUE.toString());
+            // TODO test should succeed without enabling instructional images
             script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
 
             Message m = new Message(script.actor);
@@ -67,7 +71,12 @@ public class ScriptMessageDecoratorTest {
             ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
                     Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
             RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
-            assertEquals("Actor image", 2, r.size());
+            assertEquals("Actor image", 4, r.size());
+
+            assertEquals(r.toString(), Type.Mood, r.get(0).type);
+            assertEquals(r.toString(), Type.Image, r.get(1).type);
+            assertEquals(r.toString(), Type.Delay, r.get(2).type);
+            assertEquals(r.toString(), Type.Image, r.get(3).type);
         }
     }
 

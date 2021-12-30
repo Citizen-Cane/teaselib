@@ -115,67 +115,94 @@ public class ScriptMessageDecorator {
         var parsedMessage = new AbstractMessage();
 
         if (message.isEmpty()) {
-            ensureEmptyMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(displayImage, mood));
+            ensureMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(displayImage, mood));
         } else {
             String imageType = displayImage;
             String nextImage = null;
             String lastMood = null;
             String nextMood = null;
+            MessagePart text = null;
+            MessagePart previousDurationPart = null;
 
             for (MessagePart part : message) {
                 if (part.type == Message.Type.Image) {
-                    // Remember what type of image to display
-                    // with the next text element
-                    if (Message.ActorImage.equalsIgnoreCase(part.value)) {
-                        imageType = part.value;
-                    } else if (Message.NoImage.equalsIgnoreCase(part.value)) {
-                        imageType = part.value;
-                    } else {
+                    imageType = part.value;
+                    previousDurationPart = null;
+                } else if (part.type == Message.Type.Keyword) {
+                    parsedMessage.add(part);
+                    // previousDurationPart = null;
+                } else if (part.type == Message.Type.Mood) {
+                    nextMood = part.value;
+                    previousDurationPart = null;
+                } else if (part.type.isAnyOf(Message.Type.TextTypes)) {
+                    text = part;
+                    previousDurationPart = null;
+                } else if (part.type.isAnyOf(Message.Type.DelayTypes)) {
+                    if (previousDurationPart == null) {
+                        // set mood if not done already
                         String currentMood;
                         if (nextMood == null) {
                             currentMood = mood;
                         } else {
                             currentMood = nextMood;
+                            nextMood = null;
                         }
                         // Inject mood if changed
                         if (currentMood != null && !currentMood.equalsIgnoreCase(lastMood)) {
                             parsedMessage.add(Message.Type.Mood, currentMood);
                         }
                         lastMood = currentMood;
-                        imageType = nextImage = getActorOrDisplayImage(part.value, currentMood);
-                        parsedMessage.add(part.type, nextImage);
-                    }
-                } else if (part.type == Message.Type.Keyword) {
-                    parsedMessage.add(part);
-                } else if (part.type == Message.Type.Mood) {
-                    nextMood = part.value;
-                } else if (part.type == Message.Type.Text) {
-                    // set mood if not done already
-                    String currentMood;
-                    if (nextMood == null) {
-                        currentMood = mood;
+                        // Update image if changed
+                        if (!imageType.equalsIgnoreCase(nextImage)) {
+                            nextImage = getActorOrDisplayImage(imageType, currentMood);
+                            parsedMessage.add(Message.Type.Image, nextImage);
+                        }
+                        // Optional text
+                        if (text != null) {
+                            parsedMessage.add(text);
+                            text = null;
+                        }
+                        // All rendered with DurationType
+                        parsedMessage.add(part);
+
+                        previousDurationPart = part;
                     } else {
-                        currentMood = nextMood;
-                        nextMood = null;
+                        parsedMessage.add(part);
+                        previousDurationPart = null;
                     }
-                    // Inject mood if changed
-                    if (currentMood != null && !currentMood.equalsIgnoreCase(lastMood)) {
-                        parsedMessage.add(Message.Type.Mood, currentMood);
-                    }
-                    lastMood = currentMood;
-                    // Update image if changed
-                    if (!imageType.equalsIgnoreCase(nextImage)) {
-                        nextImage = getActorOrDisplayImage(imageType, currentMood);
-                        parsedMessage.add(Message.Type.Image, nextImage);
-                    }
-                    parsedMessage.add(part);
                 } else {
                     parsedMessage.add(part);
+                    previousDurationPart = null;
+                }
+            }
+
+            MessagePart lastPart = message.get(message.size() - 1);
+            if (lastPart.type.isAnyOf(Message.Type.DisplayTypes)) {
+                // Inject mood if changed
+                String currentMood;
+                if (nextMood == null) {
+                    currentMood = mood;
+                } else {
+                    currentMood = nextMood;
+                    nextMood = null;
+                }
+                if (!currentMood.equalsIgnoreCase(lastMood)) {
+                    parsedMessage.add(Message.Type.Mood, currentMood);
+                }
+                // Update image if changed
+                if (!imageType.equalsIgnoreCase(nextImage)) {
+                    nextImage = getActorOrDisplayImage(imageType, currentMood);
+                    parsedMessage.add(Message.Type.Image, nextImage);
+                }
+                // Optional text
+                if (text != null) {
+                    parsedMessage.add(text);
+                    text = null;
                 }
             }
 
             if (nextImage == null) {
-                ensureEmptyMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(imageType, mood));
+                ensureMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(imageType, mood));
             }
         }
 
@@ -185,13 +212,17 @@ public class ScriptMessageDecorator {
 
     private String getActorOrDisplayImage(String imageType, String currentMood) {
         final String nextImage;
+        // Don't render images
         if (Message.ActorImage.equalsIgnoreCase(imageType)
                 && !Boolean.parseBoolean(config.get(Config.Render.ActorImages))) {
             nextImage = Message.NoImage;
         } else if (!Message.ActorImage.equalsIgnoreCase(imageType)
                 && !Boolean.parseBoolean(config.get(Config.Render.InstructionalImages))) {
             nextImage = Message.NoImage;
-        } else if (Message.ActorImage.equalsIgnoreCase(imageType)) {
+        } else
+        // render images
+        if (Message.ActorImage.equalsIgnoreCase(imageType)) {
+            // actor image
             if (actor.images.hasNext()) {
                 actor.images.hint(currentMood);
                 nextImage = actor.images.next();
@@ -199,12 +230,13 @@ public class ScriptMessageDecorator {
                 nextImage = Message.NoImage;
             }
         } else {
+            // Instructional image
             nextImage = imageType;
         }
         return nextImage;
     }
 
-    private static void ensureEmptyMessageContainsDisplayImage(AbstractMessage parsedMessage, String nextImage) {
+    private static void ensureMessageContainsDisplayImage(AbstractMessage parsedMessage, String nextImage) {
         parsedMessage.add(Message.Type.Image, nextImage);
     }
 

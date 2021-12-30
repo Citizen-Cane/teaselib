@@ -1,6 +1,5 @@
 package teaselib.core.media;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -71,7 +70,7 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
         }
     }
 
-    private RenderedMessage getLastMessage() {
+    RenderedMessage getLastMessage() {
         return getLastMessage(this.messages);
     }
 
@@ -82,8 +81,6 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
     RenderedMessage getEnd() {
         return RenderedMessage.getLastParagraph(getLastMessage()).stripAudio();
     }
-
-    public abstract void play() throws IOException, InterruptedException;
 
     @Override
     public String toString() {

@@ -364,13 +364,22 @@ public abstract class Script {
     }
 
     void showAll(double delaySeconds) {
-        var message = new Message(actor);
-        message.add(Type.Keyword, Message.ShowChoices);
-        message.add(Type.Delay, Double.toString(delaySeconds));
-        if (!scriptRenderer.isShowingInstructionalImage()) {
-            message.add(Type.Image, displayImage);
+        var showAll = new Message(actor);
+        addMatchingImage(showAll);
+        if (scriptRenderer.showsMultipleParagraphs()) {
+            showAll.add(Type.Keyword, Message.ShowChoices);
+            showAll.add(Type.Delay, delaySeconds);
+            addMatchingImage(showAll);
         }
-        scriptRenderer.showAll(teaseLib, resources, actor, message, withoutSpeech());
+        scriptRenderer.showAll(teaseLib, resources, actor, showAll, withoutSpeech());
+    }
+
+    private void addMatchingImage(Message message) {
+        if (scriptRenderer.showsActorImage()) {
+            message.add(Type.Image, displayImage);
+        } else if (!scriptRenderer.showsInstructionalImage()) {
+            message.add(Type.Image, Message.NoImage);
+        }
     }
 
     protected final Answer showChoices(List<Answer> answers) {

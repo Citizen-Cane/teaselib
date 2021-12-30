@@ -65,7 +65,10 @@ public class Message extends AbstractMessage {
                 Arrays.asList(Message.Type.Text, Message.Type.Item, Message.Type.Image));
 
         public static final Set<Message.Type> AudioTypes = new HashSet<>(
-                Arrays.asList(Message.Type.Sound, Message.Type.BackgroundSound, Message.Type.Speech));
+                Arrays.asList(Message.Type.BackgroundSound, Message.Type.Sound, Message.Type.Speech));
+
+        public static final Set<Message.Type> DelayTypes = new HashSet<>(
+                Arrays.asList(Message.Type.Delay, Message.Type.Sound, Message.Type.Speech));
 
         public static final Set<Type> FileTypes = new HashSet<>(
                 Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech, Type.Image, Type.DesktopItem));
@@ -89,6 +92,11 @@ public class Message extends AbstractMessage {
         public static boolean isKeyword(String m) {
             return !endOf(m, EndOfSentenceCharacters) && keywordFrom(m) != null;
         }
+
+        public boolean isAnyOf(Set<Type> types) {
+            return types.contains(this);
+        }
+
     }
 
     /**

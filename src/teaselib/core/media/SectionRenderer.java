@@ -87,6 +87,7 @@ public class SectionRenderer implements Closeable {
                 } else {
                     play();
                 }
+                awaitSectionMandatory();
                 mandatoryCompleted();
                 finalizeRendering(this);
             } catch (InterruptedException | ScriptInterruptedException e) {
@@ -100,8 +101,7 @@ public class SectionRenderer implements Closeable {
             }
         }
 
-        @Override
-        public void play() throws IOException, InterruptedException {
+        private void play() throws IOException, InterruptedException {
             if (position == Position.FromStart) {
                 renderAllMessages();
             } else if (position == Position.FromCurrentPosition) {
@@ -124,7 +124,6 @@ public class SectionRenderer implements Closeable {
             } else {
                 throw new IllegalStateException(position.toString());
             }
-            // TODO implement showAll as a keyword, and have the script append it to the message
         }
 
         private void renderAllMessages() throws IOException, InterruptedException {
@@ -190,21 +189,31 @@ public class SectionRenderer implements Closeable {
                     render(part, mood);
                 }
 
-                if (Message.Type.TextTypes.contains(part.type) || (!it.hasNext() && part.type == Message.Type.Image)) {
-                    show(this, mood);
-                }
+                boolean isDurationType = part.isAnyOf(Message.Type.DelayTypes);
+                boolean isDisplayTypeAtEnd = !it.hasNext() && part.isAnyOf(Message.Type.DisplayTypes);
 
-                if (!hasCompletedStart()) {
-                    if (Message.Type.DisplayTypes.contains(part.type)) {
+                if (isDurationType || isDisplayTypeAtEnd) {
+                    if (!hasCompletedStart()) {
                         startCompleted();
                     }
+                }
+
+                if (isDisplayTypeAtEnd) {
+                    awaitSectionMandatory();
+                }
+
+                if (isDurationType || isDisplayTypeAtEnd) {
+                    show(this, mood);
                 }
 
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException();
                 }
             }
-            awaitSectionMandatory();
+
+            if (!hasCompletedStart()) {
+                throw new IllegalStateException();
+            }
         }
 
         private void render(MessagePart part, String mood) throws IOException, InterruptedException {
@@ -250,10 +259,10 @@ public class SectionRenderer implements Closeable {
         return next;
     }
 
-    static MessageRenderer applyOperator(MessageRenderer currentMessageRenderer, MessageRenderer messageRenderer,
+    static MessageRenderer applyOperator(MessageRenderer currentMessageRenderer, MessageRenderer nextMessageRenderer,
             BinaryOperator<MessageRenderer> operator) {
-        return currentMessageRenderer == null ? messageRenderer
-                : operator.apply(currentMessageRenderer, messageRenderer);
+        return currentMessageRenderer == null ? nextMessageRenderer
+                : operator.apply(currentMessageRenderer, nextMessageRenderer);
     }
 
     static BinaryOperator<MessageRenderer> say = (current, next) -> {
@@ -492,4 +501,11 @@ public class SectionRenderer implements Closeable {
         return Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages));
     }
 
+    public RenderedMessage lastParagraph() {
+        return currentMessageRenderer != null ? currentMessageRenderer.lastParagraph : null;
+    }
+
+    public boolean showsMultipleParagraphs() {
+        return currentMessageRenderer != null ? currentMessageRenderer.accumulatedText.paragraphs.size() > 1 : false;
+    }
 }

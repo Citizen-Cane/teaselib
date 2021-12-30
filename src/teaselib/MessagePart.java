@@ -1,5 +1,7 @@
 package teaselib;
 
+import java.util.Set;
+
 import teaselib.Message.Type;
 
 public class MessagePart {
@@ -38,6 +40,10 @@ public class MessagePart {
 
     public boolean isFile() {
         return Message.Type.isFile(type);
+    }
+
+    public boolean isAnyOf(Set<Type> types) {
+        return type.isAnyOf(types);
     }
 
     @Override

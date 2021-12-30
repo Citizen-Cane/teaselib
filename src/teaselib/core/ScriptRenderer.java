@@ -46,16 +46,14 @@ public class ScriptRenderer implements Closeable {
     private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
 
-    List<MediaRenderer> playedRenderers = null;
+    private List<MediaRenderer> playedRenderers = null;
     private final List<Message> prependedMessages = new ArrayList<>();
     private Actor currentActor = null;
-    private Message currentMessage = null;
-
-    public final ScriptEvents events;
 
     final SectionRenderer sectionRenderer;
     final ScriptEventInputMethod scriptEventInputMethod;
 
+    public final ScriptEvents events;
     public final AudioSync audioSync;
 
     ScriptRenderer(TeaseLib teaseLib) {
@@ -209,12 +207,50 @@ public class ScriptRenderer implements Closeable {
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
         MediaRenderer replaced = concatFunction.apply(actor, renderedMessages, resources);
         renderMessage(teaseLib, replaced, outlineType);
-        currentMessage = messages.get(messages.size() - 1);
     }
 
-    boolean isShowingInstructionalImage() {
-        var current = currentMessage;
-        return current != null && current.contains(Message.Type.Image);
+    boolean showsMultipleParagraphs() {
+        return sectionRenderer.showsMultipleParagraphs();
+    }
+
+    boolean showsActorImage() {
+        var current = sectionRenderer.lastParagraph();
+        if (current != null) {
+            var image = current.findLast(Message.Type.Image);
+            if (image == null) {
+                return false;
+            } else if (currentActor.images.contains(image.value)) {
+                return true;
+            } else if (Message.NoImage.equalsIgnoreCase(image.value)) {
+                return false;
+            } else if (Message.ActorImage.equalsIgnoreCase(image.value)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    boolean showsInstructionalImage() {
+        var current = sectionRenderer.lastParagraph();
+        if (current != null) {
+            var image = current.findLast(Message.Type.Image);
+            if (image == null) {
+                return false;
+            } else if (currentActor.images.contains(image.value)) {
+                return false;
+            } else if (Message.NoImage.equalsIgnoreCase(image.value)) {
+                return false;
+            } else if (Message.ActorImage.equalsIgnoreCase(image.value)) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
     boolean isInterTitle() {

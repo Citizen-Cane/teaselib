@@ -94,6 +94,14 @@ public class AbstractMessage implements Iterable<MessagePart> {
         add(part);
     }
 
+    public void add(Type type, double value) {
+        add(type, Double.toString(value));
+    }
+
+    public void add(Type type, int value) {
+        add(type, Integer.toString(value));
+    }
+
     public void add(Type type, String value) {
         add(new MessagePart(type, value));
     }
@@ -109,6 +117,25 @@ public class AbstractMessage implements Iterable<MessagePart> {
             }
         }
         return false;
+    }
+
+    public MessagePart find(Type type) {
+        for (MessagePart part : parts) {
+            if (part.type == type) {
+                return part;
+            }
+        }
+        return null;
+    }
+
+    public MessagePart findLast(Type type) {
+        for (int i = parts.size() - 1; i >= 0; --i) {
+            var part = parts.get(i);
+            if (part.type == type) {
+                return part;
+            }
+        }
+        return null;
     }
 
     public boolean contains(MessagePart part) {

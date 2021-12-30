@@ -1,6 +1,6 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.Actor;
-import teaselib.Images;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
@@ -22,19 +21,18 @@ import teaselib.Sexuality.Gender;
 import teaselib.core.AbstractMessage;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
+import teaselib.test.ActorTestImage;
 import teaselib.test.TestScript;
-import teaselib.util.AnnotatedImage;
 import teaselib.util.RandomImages;
 
 public class MessagePartInjectionTest {
 
-    private final class DecoratingTestScript extends TestScript {
+    private static final class DecoratingTestScript extends TestScript {
 
         public DecoratingTestScript(Setup setup) throws IOException {
             super(setup);
             actor.images = new ActorTestImage("Actor.jpg");
             debugger.freezeTime();
-            // debugger.advanceTimeAllThreads();
         }
 
         public RenderedMessage.Decorator[] getDecorators() {
@@ -53,38 +51,6 @@ public class MessagePartInjectionTest {
 
         RenderedMessage decorate(Message message) {
             return RenderedMessage.of(message, getDecorators());
-        }
-    }
-
-    public final class ActorTestImage implements Images {
-        private final String resourcePath;
-
-        public ActorTestImage(String resourcePath) {
-            this.resourcePath = resourcePath;
-        }
-
-        @Override
-        public String next() {
-            return resourcePath;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return true;
-        }
-
-        @Override
-        public void hint(String... hint) { // ignore
-        }
-
-        @Override
-        public boolean contains(String resource) {
-            return resourcePath.equals(resource);
-        }
-
-        @Override
-        public AnnotatedImage annotated(String resource) {
-            return new AnnotatedImage(resource, null);
         }
     }
 
@@ -113,6 +79,7 @@ public class MessagePartInjectionTest {
 
             message.add(Message.ActorImage);
             message.add("Even more text.");
+            message.add(Type.Delay, "2");
             message.add("foo.jpg");
             message.add(Type.Delay, "2");
 
@@ -134,6 +101,8 @@ public class MessagePartInjectionTest {
 
             assertEquals(new MessagePart(Type.Image, "Actor.jpg"), parsed.get(n++));
             assertEquals(Type.Text, parsed.get(n++).type);
+            assertEquals(Type.Delay, parsed.get(n++).type);
+
             assertEquals(new MessagePart(Type.Image, "foo.jpg"), parsed.get(n++));
             assertEquals(Type.Delay, parsed.get(n++).type);
 

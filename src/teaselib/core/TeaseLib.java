@@ -166,11 +166,7 @@ public class TeaseLib implements Closeable {
     public static void run(Host host, Setup setup, String script) throws IOException {
         try (var teaseLib = new TeaseLib(host, setup)) {
             teaseLib.run(script);
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        } catch (Throwable e) {
+        } catch (ReflectiveOperationException e) {
             throw ExceptionUtil.asRuntimeException(e);
         } finally {
             logger.info("Finished");

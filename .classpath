@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="bin.test.devices.unattended"/>
 	<classpathentry kind="src" output="bin.test" path="src.test">
 		<attributes>
 			<attribute name="test" value="true"/>

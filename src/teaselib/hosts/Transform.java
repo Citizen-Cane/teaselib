@@ -8,53 +8,15 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Optional;
 
-import teaselib.core.ai.perception.HumanPose;
-
 public class Transform {
 
     private Transform() {
     }
 
-    static AffineTransform centerOnFace(BufferedImage image, Rectangle bounds, HumanPose.Estimation pose, Point2D head,
-            double actorDistance) {
-        Point2D poseHead = pose.head.orElse(new Point2D.Double(0.5, 0.5));
-        float poseDistance = pose.distance.orElse(1.0f);
-
-        // transforms are concatenated from bottom to top
-        var t = new AffineTransform();
-
-        // TODO translate image to avoid borders
-        // TODO translate image to avoid borders @ zoom=1.0 to avoid head shift when user changes proximity
-
-        t.translate(head.getX() * bounds.width, head.getY() * bounds.height);
-        // translate head to center
-
-        // TODO scale to always fill the screen for both portrait and landscape images
-        double aspect = fitOutside(dimension(image), bounds.getSize());
-        t.scale(aspect, aspect);
-        // scale to user space
-
-        t.scale(image.getWidth(), image.getHeight());
-        // scale back to image space
-
-        t.scale(1.0 / actorDistance, 1.0 / actorDistance);
-        // Adjust to proximity to indicate near/face2face/close
-
-        t.scale(poseDistance, poseDistance);
-        // scale to distance so that the head is always the same size
-
-        t.translate(-poseHead.getX(), -poseHead.getY());
-        // move face to 0,0
-
-        t.scale(1.0 / image.getWidth(), 1.0 / image.getHeight());
-        // transform to normalized
-        return t;
-    }
-
     /**
-     * Maximize image size within the bounds while maintaining the same size for ladscape and portrait images:
+     * Maximize image size within the bounds while maintaining the same size for landscape and portrait images:
      * <p>
-     * The transform assumes that all images are made made with the same resolution.
+     * The transform assumes that all images in a set are made made with the same resolution.
      * <p>
      * Fill the bounds so that for landscape bounds
      * <li>landscape images fill the bounds horizontally
@@ -63,6 +25,13 @@ public class Transform {
      * Fill the bounds so that for portrait bounds
      * <li>landscape images fill the bounds as if the image was portrait.
      * <li>portrait images fill the bounds vertically
+     * <p>
+     * This way each set can define the actual actor distance and size. Most importantly for image sets with similar
+     * subject sizes the size will be the same for both landsacpe and portrait images.
+     * <p>
+     * Then, the image is zoomed towards the focus area according to the player distance, and translated to avoid the
+     * focus region covered by any overlays (namely the text area)
+     * <p>
      * 
      * 
      * @param image
@@ -70,14 +39,17 @@ public class Transform {
      *            Bounding box
      * @return
      */
-    static AffineTransform maxImage(BufferedImage image, Rectangle bounds, Optional<Rectangle.Double> focusArea) {
+    static AffineTransform maxImage(BufferedImage image, Dimension bounds, Optional<Rectangle.Double> focusArea) {
+        return maxImage(dimension(image), bounds, focusArea);
+    }
+
+    static AffineTransform maxImage(Dimension imageSize, Dimension bounds, Optional<Rectangle.Double> focusArea) {
         // transforms are concatenated from bottom to top
         var t = new AffineTransform();
 
         t.translate(0.5 * bounds.width, 0.5 * bounds.height);
         // translate image center to bounds center
 
-        var imageSize = dimension(image);
         var size = bounds.getSize();
         double aspect;
         if (focusArea.isPresent()) {
@@ -94,13 +66,13 @@ public class Transform {
         t.scale(aspect, aspect);
         // scale to user space
 
-        t.scale(image.getWidth(), image.getHeight());
+        t.scale(imageSize.getWidth(), imageSize.getHeight());
         // scale back to image space
 
         t.translate(-0.5, -0.5);
         // move image center to 0,0
 
-        t.scale(1.0 / image.getWidth(), 1.0 / image.getHeight());
+        t.scale(1.0 / imageSize.getWidth(), 1.0 / imageSize.getHeight());
         // transform to normalized
 
         return t;
@@ -111,39 +83,42 @@ public class Transform {
      * 
      * @return
      */
-    public static AffineTransform keepFocusAreaVisible(AffineTransform t, BufferedImage image, Rectangle bounds,
-            Rectangle2D.Double r) {
-        var adjusted = new AffineTransform();
+    public static AffineTransform keepFocusAreaVisible(AffineTransform surface, Dimension image, Rectangle bounds,
+            Rectangle2D.Double focus) {
+        var keepFocusAreaVisible = new AffineTransform();
 
-        Point2D top = t.transform(new Point2D.Double(r.getCenterX(), r.getMinY()), new Point2D.Double());
+        Point2D top = surface.transform(new Point2D.Double(focus.getCenterX(), focus.getMinY()), new Point2D.Double());
         if (!bounds.contains(top)) {
-            Point2D offset = t.transform(new Point2D.Double(image.getWidth() / 2.0, 0.0), new Point2D.Double());
-            adjusted.translate(0.0, -offset.getY());
+            Point2D offset = surface.transform(new Point2D.Double(image.getWidth() / 2.0, 0.0), new Point2D.Double());
+            keepFocusAreaVisible.translate(0.0, -offset.getY());
         } else {
-            Point2D bottom = t.transform(new Point2D.Double(r.getCenterX(), r.getMaxY()), new Point2D.Double());
+            Point2D bottom = surface.transform(new Point2D.Double(focus.getCenterX(), focus.getMaxY()),
+                    new Point2D.Double());
             if (!bounds.contains(bottom)) {
-                Point2D offset = t.transform(new Point2D.Double(image.getWidth() / 2.0, image.getHeight()),
+                Point2D offset = surface.transform(new Point2D.Double(image.getWidth() / 2.0, image.getHeight()),
                         new Point2D.Double());
-                adjusted.translate(0.0, bottom.getY() - offset.getY());
+                keepFocusAreaVisible.translate(0.0, bottom.getY() - offset.getY());
             } else {
-                Point2D left = t.transform(new Point2D.Double(r.getMinX(), r.getCenterY()), new Point2D.Double());
+                Point2D left = surface.transform(new Point2D.Double(focus.getMinX(), focus.getCenterY()),
+                        new Point2D.Double());
                 if (!bounds.contains(left)) {
-                    Point2D offset = t.transform(new Point2D.Double(0.0, image.getHeight() / 2.0),
+                    Point2D offset = surface.transform(new Point2D.Double(0.0, image.getHeight() / 2.0),
                             new Point2D.Double());
-                    adjusted.translate(-offset.getX(), 0.0);
+                    keepFocusAreaVisible.translate(-offset.getX(), 0.0);
                 } else {
-                    Point2D right = t.transform(new Point2D.Double(r.getMaxX(), r.getCenterY()), new Point2D.Double());
+                    Point2D right = surface.transform(new Point2D.Double(focus.getMaxX(), focus.getCenterY()),
+                            new Point2D.Double());
                     if (!bounds.contains(right)) {
-                        Point2D offset = t.transform(new Point2D.Double(image.getWidth(), image.getHeight() / 2.0),
-                                new Point2D.Double());
-                        adjusted.translate(right.getX() - offset.getX(), 0.0);
+                        Point2D offset = surface.transform(
+                                new Point2D.Double(image.getWidth(), image.getHeight() / 2.0), new Point2D.Double());
+                        keepFocusAreaVisible.translate(right.getX() - offset.getX(), 0.0);
                     }
                 }
             }
         }
 
-        adjusted.concatenate(t);
-        return adjusted;
+        keepFocusAreaVisible.preConcatenate(surface);
+        return keepFocusAreaVisible;
     }
 
     public static AffineTransform zoom(AffineTransform t, Rectangle2D.Double focusArea, double zoom) {
@@ -163,7 +138,7 @@ public class Transform {
                 new Point2D.Double());
         double overlap = focusRight.getX() - textAreaX;
         if (overlap > 0) {
-            surface.translate(-overlap, 0);
+            surface.preConcatenate(AffineTransform.getTranslateInstance(-overlap, 0));
         }
     }
 

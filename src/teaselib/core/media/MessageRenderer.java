@@ -9,10 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
-import teaselib.Images;
 import teaselib.Message;
-import teaselib.MessagePart;
-import teaselib.core.AbstractImages;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 
@@ -41,33 +38,6 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
         this.resources = resources;
         this.messages = messages;
         this.lastParagraph = RenderedMessage.getLastParagraph(getLastMessage());
-        prefetchImages();
-    }
-
-    void prefetchImages() {
-        prefetchImages(actor, messages);
-    }
-
-    private static void prefetchImages(Actor actor, List<RenderedMessage> messages) {
-        if (actor.images != Images.None) {
-            for (RenderedMessage message : messages) {
-                prefetchImages(actor, message);
-            }
-            if (actor.images instanceof AbstractImages) {
-                ((AbstractImages) actor.images).prefetcher().fetch();
-            }
-        }
-    }
-
-    private static void prefetchImages(Actor actor, RenderedMessage message) {
-        for (MessagePart part : message) {
-            if (part.type == Message.Type.Image) {
-                String resource = part.value;
-                if (!Message.NoImage.equals(part.value) && actor.images instanceof AbstractImages) {
-                    ((AbstractImages) actor.images).prefetcher().add(resource);
-                }
-            }
-        }
     }
 
     RenderedMessage getLastMessage() {

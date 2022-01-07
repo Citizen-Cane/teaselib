@@ -1,7 +1,6 @@
 package teaselib;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import teaselib.util.AnnotatedImage;
@@ -16,7 +15,7 @@ import teaselib.util.AnnotatedImage;
  * @author someone
  *
  */
-public interface Images extends Iterator<String> {
+public interface Images {
 
     public static final Images None = new Images() {
         @Override
@@ -25,17 +24,18 @@ public interface Images extends Iterator<String> {
         }
 
         @Override
-        public void hint(String... hint) { // None
-        }
-
-        @Override
         public boolean hasNext() {
             return false;
         }
 
         @Override
-        public String next() {
+        public String next(String... hints) {
             throw new NoSuchElementException();
+        }
+
+        @Override
+        public void fetch(String resource) {
+            // Ignore
         }
 
         @Override
@@ -51,14 +51,13 @@ public interface Images extends Iterator<String> {
     public static final String SameCameraPosition = "<image SameCameraPosition/>";
     public static final String SameResolution = "<image SameResolution/>";
 
+    public boolean hasNext();
+
+    public String next(String... hints);
+
     public boolean contains(String resource);
 
-    /**
-     * Hint the image iterator to choose an appropriate image
-     * 
-     * @param hint
-     */
-    void hint(String... hint);
+    public void fetch(String resource);
 
     AnnotatedImage annotated(String resource) throws IOException, InterruptedException;
 

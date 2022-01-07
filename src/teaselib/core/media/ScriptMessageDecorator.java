@@ -224,14 +224,16 @@ public class ScriptMessageDecorator {
         if (Message.ActorImage.equalsIgnoreCase(imageType)) {
             // actor image
             if (actor.images.hasNext()) {
-                actor.images.hint(currentMood);
-                nextImage = actor.images.next();
+                nextImage = actor.images.next(currentMood);
+                actor.images.fetch(nextImage);
             } else {
                 nextImage = Message.NoImage;
             }
         } else {
             // Instructional image
             nextImage = imageType;
+            // TODO fetch instructional images from elsewhere and dispose them earlier than actor images
+            actor.images.next(nextImage);
         }
         return nextImage;
     }

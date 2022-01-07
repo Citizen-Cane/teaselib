@@ -17,7 +17,12 @@ public final class ActorTestImages implements Images {
     }
 
     @Override
-    public String next() {
+    public boolean hasNext() {
+        return current.hasNext();
+    }
+
+    @Override
+    public String next(String... hints) {
         String resource = current.next();
         if (!current.hasNext()) {
             current = resources.iterator();
@@ -26,17 +31,13 @@ public final class ActorTestImages implements Images {
     }
 
     @Override
-    public boolean hasNext() {
-        return current.hasNext();
-    }
-
-    @Override
-    public void hint(String... hint) { // ignore
-    }
-
-    @Override
     public boolean contains(String resource) {
         return resources.contains(resource);
+    }
+
+    @Override
+    public void fetch(String resource) {
+        // Ignore
     }
 
     @Override

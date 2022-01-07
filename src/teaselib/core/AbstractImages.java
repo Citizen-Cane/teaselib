@@ -27,8 +27,19 @@ public abstract class AbstractImages implements Images {
         this.interaction = resources.script.interaction(HumanPoseScriptInteraction.class);
     }
 
-    public Prefetcher<AnnotatedImage> prefetcher() {
-        return imageFetcher;
+    @Override
+    public boolean hasNext() {
+        return !resources.isEmpty();
+    }
+
+    @Override
+    public boolean contains(String resource) {
+        return resources.contains(resource);
+    }
+
+    @Override
+    public void fetch(String resource) {
+        imageFetcher.fetch(resource);
     }
 
     @Override

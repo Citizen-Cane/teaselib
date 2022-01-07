@@ -14,7 +14,6 @@ import java.util.NoSuchElementException;
 import teaselib.Resources;
 import teaselib.core.AbstractImages;
 import teaselib.core.events.EventArgs;
-import teaselib.core.util.Prefetcher;
 
 public class SceneBasedImages extends AbstractImages {
 
@@ -146,25 +145,13 @@ public class SceneBasedImages extends AbstractImages {
     }
 
     @Override
-    public String next() {
-        return currentPose.images.next();
+    public String next(String... hints) {
+        return currentPose.images.next(hints);
     }
 
     @Override
     public boolean contains(String resource) {
         return resources.contains(resource);
-    }
-
-    @Override
-    public void hint(String... hint) {
-        // TODO toys
-        // TODO body state (slave standing or kneeling)
-        currentPose.images.hint(hint);
-    }
-
-    @Override
-    public Prefetcher<AnnotatedImage> prefetcher() {
-        return currentPose.images.prefetcher();
     }
 
     @Override

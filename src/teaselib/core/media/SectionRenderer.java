@@ -18,7 +18,6 @@ import teaselib.MessagePart;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.Replay.Position;
-import teaselib.core.AbstractImages;
 import teaselib.core.Closeable;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptEventArgs.BeforeNewMessage.OutlineType;
@@ -419,10 +418,6 @@ public class SectionRenderer implements Closeable {
             } catch (IOException e) {
                 handleIOException(e);
                 return AnnotatedImage.NoImage;
-            } finally {
-                if (actor.images instanceof AbstractImages) {
-                    ((AbstractImages) actor.images).prefetcher().fetch();
-                }
             }
         } else {
             return AnnotatedImage.NoImage;

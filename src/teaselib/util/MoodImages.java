@@ -9,19 +9,17 @@ import teaselib.Resources;
 /**
  * Handles image iteration over a set of resources
  * 
- * @author someone
+ * @author Citizen-Cane
  */
 public class MoodImages extends RandomImages {
-
-    String[] hints = null;
 
     public MoodImages(Resources imageResources) {
         super(imageResources);
     }
 
     @Override
-    public String next() {
-        if (hints == null) {
+    public String next(String... hints) {
+        if (hints == null || hints.length == 0) {
             return super.next();
         } else {
             for (String hint : hints) {
@@ -48,7 +46,7 @@ public class MoodImages extends RandomImages {
 
     private List<String> getMatches(String mood) {
         List<String> matches = new ArrayList<>();
-        for (String resource : images) {
+        for (String resource : resources) {
             if (resource.toLowerCase().contains(mood)) {
                 matches.add(resource);
             }
@@ -56,8 +54,4 @@ public class MoodImages extends RandomImages {
         return matches;
     }
 
-    @Override
-    public void hint(String... hint) {
-        hints = hint;
-    }
 }

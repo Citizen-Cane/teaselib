@@ -14,7 +14,6 @@ import teaselib.util.math.Random;
  */
 public class RandomImages extends AbstractImages {
 
-    protected final List<String> images;
     private final Random random = new Random();
     private String current;
 
@@ -30,35 +29,20 @@ public class RandomImages extends AbstractImages {
      */
     public RandomImages(Resources resources) {
         super(resources);
-        images = resources;
     }
 
     @Override
-    public boolean contains(String resource) {
-        return images.contains(resource);
-    }
-
-    @Override
-    public boolean hasNext() {
-        return !images.isEmpty();
-    }
-
-    @Override
-    public String next() {
+    public String next(String... hints) {
         if (!hasNext()) {
             throw new NoSuchElementException();
         } else {
-            return resource(images);
+            return resource(resources);
         }
     }
 
     protected String resource(List<String> items) {
         current = random.item(current, items);
         return current;
-    }
-
-    @Override
-    public void hint(String... hint) { // None
     }
 
 }

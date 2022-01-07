@@ -11,22 +11,23 @@ public final class ActorTestImage implements Images {
     }
 
     @Override
-    public String next() {
-        return resourcePath;
-    }
-
-    @Override
     public boolean hasNext() {
         return true;
     }
 
     @Override
-    public void hint(String... hint) { // ignore
+    public String next(String... hints) {
+        return resourcePath;
     }
 
     @Override
     public boolean contains(String resource) {
         return resourcePath.equals(resource);
+    }
+
+    @Override
+    public void fetch(String resource) {
+        // Ignore
     }
 
     @Override

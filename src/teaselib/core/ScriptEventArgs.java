@@ -19,7 +19,7 @@ public class ScriptEventArgs extends EventArgs {
 
     }
 
-    public static class BeforeNewMessage extends ScriptEventArgs {
+    public static class BeforeMessage extends ScriptEventArgs {
         public final OutlineType type;
 
         public enum OutlineType {
@@ -28,7 +28,7 @@ public class ScriptEventArgs extends EventArgs {
             ReplaceParagraph
         }
 
-        public BeforeNewMessage(OutlineType type) {
+        public BeforeMessage(OutlineType type) {
             this.type = type;
         }
 

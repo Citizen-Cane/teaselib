@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Replay;
-import teaselib.core.ScriptEventArgs.BeforeNewMessage;
+import teaselib.core.ScriptEventArgs.BeforeMessage;
 import teaselib.core.ScriptEvents.ScriptEventAction;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
@@ -24,7 +24,7 @@ public final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognit
         script.endAll();
         Replay beforeSpeechRecognitionRejected = script.getReplay();
 
-        ScriptEventAction<BeforeNewMessage> beforeMessage = script.scriptRenderer.events.when().beforeMessage()
+        ScriptEventAction<BeforeMessage> beforeMessage = script.scriptRenderer.events.when().beforeMessage()
                 .then(() -> beforeMessage());
         ScriptEventAction<ScriptEventArgs> beforePrompt = script.scriptRenderer.events.when().beforePrompt()
                 .then(() -> beforePrompt());

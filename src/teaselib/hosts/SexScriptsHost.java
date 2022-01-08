@@ -90,9 +90,6 @@ import teaselib.util.Interval;
 
 // List of shortcomings of the user interface from TeaseLibs point of view
 // TODO sounds are not playable from stream directly - using file cache
-// TODO UI layout wastes a lot of screen estate, sub optimal for portrait images
-// TODO pre-allocated screen estate for progress bar eats screen estate
-// -> rendering images on the background image
 // TODO Buttons should be layouted vertically, better for longer prompts
 // TODO Text pane is not fixed size, I liked it better the way CM did it
 // -> workarounded by adding pixels left and right of portrait images
@@ -105,7 +102,7 @@ import teaselib.util.Interval;
 // -> This mostly affects Mine because that script uses pre-recorded speech
 // TODO Combobox doesn't respond to speech recognition reliably
 // - This is in fact not a speech recognition related problem,
-// but dismissing the combobox after showing the list programatically
+// but dismissing the combobox after showing the list programmatically
 /**
  * @author admin
  *
@@ -331,7 +328,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                 : surfaceTransform(displayImage, pose, bounds, estimatedTextAreaX);
         Graphics2D g2d = (Graphics2D) surfaceImage.getGraphics();
         g2d.drawImage(displayImage, surfaceTransform, null);
-        renderDebugInfo(g2d, Transform.dimension(displayImage), pose, surfaceTransform, bounds, estimatedTextAreaX);
+        // renderDebugInfo(g2d, Transform.dimension(displayImage), pose, surfaceTransform, bounds, estimatedTextAreaX);
     }
 
     private AffineTransform surfaceTransform(BufferedImage image, HumanPose.Estimation pose, Rectangle bounds,
@@ -467,7 +464,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     private void show(String message) {
         // New text causes the UI to flicker, namely the UI buttons to move up and down
-        // - this is the case in script functions where text is displayed while buttons are active
+        // - they're moving down while text is added
+        // happens in script functions where text is displayed while buttons are active
         ss.show(message);
     }
 

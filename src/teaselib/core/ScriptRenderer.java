@@ -17,10 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Message;
-import teaselib.Message.Type;
 import teaselib.Replay;
-import teaselib.core.ScriptEventArgs.BeforeNewMessage;
-import teaselib.core.ScriptEventArgs.BeforeNewMessage.OutlineType;
+import teaselib.core.ScriptEventArgs.BeforeMessage;
+import teaselib.core.ScriptEventArgs.BeforeMessage.OutlineType;
 import teaselib.core.debug.CheckPoint;
 import teaselib.core.functional.TriFunction;
 import teaselib.core.media.MediaRenderer;
@@ -116,19 +115,23 @@ public class ScriptRenderer implements Closeable {
     }
 
     void renderIntertitle(TeaseLib teaseLib, Message message, Decorator[] decorators) {
+        var composed = composeIntertitleMessage(message);
+        var interTitle = new RenderInterTitle(RenderedMessage.of(composed, decorators), teaseLib);
+        renderMessage(teaseLib, message.actor, interTitle, OutlineType.NewSection);
+    }
+
+    private Message composeIntertitleMessage(Message message) {
         Message composed;
         if (hasPrependedMessages()) {
-            composed = new Message(currentActor);
             prependedMessages.add(message);
-            prependedMessages.stream().flatMap(Message::stream).filter(part -> part.type == Type.Text)
+            composed = new Message(message.actor);
+            prependedMessages.stream().flatMap(Message::stream).filter(part -> part.isAnyOf(Message.Type.TextTypes))
                     .forEach(composed::add);
             prependedMessages.clear();
         } else {
             composed = message;
         }
-
-        var interTitle = new RenderInterTitle(RenderedMessage.of(composed, decorators), teaseLib);
-        renderMessage(teaseLib, interTitle, OutlineType.NewSection);
+        return composed;
     }
 
     Replay getReplay() {
@@ -173,7 +176,7 @@ public class ScriptRenderer implements Closeable {
         // Workaround: keep it for now, renderer is started and queued, waited for and ended
 
         renderMessage(teaseLib, resources, actor, messages, decorators, //
-                sectionRenderer::say, BeforeNewMessage.OutlineType.NewSection);
+                sectionRenderer::say, BeforeMessage.OutlineType.NewSection);
     }
 
     @FunctionalInterface
@@ -186,27 +189,26 @@ public class ScriptRenderer implements Closeable {
             renderMessage(teaseLib, resources, message, decorators);
         } else {
             renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
-                    sectionRenderer::append, BeforeNewMessage.OutlineType.AppendParagraph);
+                    sectionRenderer::append, BeforeMessage.OutlineType.AppendParagraph);
         }
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) {
         renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
-                sectionRenderer::replace, BeforeNewMessage.OutlineType.ReplaceParagraph);
+                sectionRenderer::replace, BeforeMessage.OutlineType.ReplaceParagraph);
     }
 
     void showAll(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message, Decorator[] decorators) {
         renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
-                sectionRenderer::showAll, BeforeNewMessage.OutlineType.ReplaceParagraph);
+                sectionRenderer::showAll, BeforeMessage.OutlineType.ReplaceParagraph);
     }
 
     private void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
             Decorator[] decorators, ConcatFunction concatFunction, OutlineType outlineType) {
-        fireNewMessageEvent(teaseLib, actor, outlineType);
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
-        MediaRenderer replaced = concatFunction.apply(actor, renderedMessages, resources);
-        renderMessage(teaseLib, replaced, outlineType);
+        MediaRenderer messageRenderer = concatFunction.apply(actor, renderedMessages, resources);
+        renderMessage(teaseLib, actor, messageRenderer, outlineType);
     }
 
     boolean showsMultipleParagraphs() {
@@ -257,15 +259,6 @@ public class ScriptRenderer implements Closeable {
         return playedRenderers != null && playedRenderers.stream().anyMatch(RenderInterTitle.class::isInstance);
     }
 
-    private void fireNewMessageEvent(TeaseLib teaseLib, Actor actor, BeforeNewMessage.OutlineType outlineType) {
-        teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
-        if (actor != currentActor) {
-            currentActor = actor;
-            events.actorChanged.fire(new ScriptEventArgs.ActorChanged(currentActor));
-        }
-        events.beforeMessage.fire(new ScriptEventArgs.BeforeNewMessage(outlineType));
-    }
-
     private List<RenderedMessage> convertMessagesToRendered(List<Message> messages, Decorator[] decorators) {
         Stream<Message> all = Stream.concat(prependedMessages.stream(), messages.stream());
         List<RenderedMessage> renderedMessages = all.map(message -> RenderedMessage.of(message, decorators))
@@ -274,10 +267,14 @@ public class ScriptRenderer implements Closeable {
         return renderedMessages;
     }
 
-    private void renderMessage(TeaseLib teaseLib, MediaRenderer renderMessage, OutlineType outlineType) {
+    private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer messageRenderer, OutlineType outlineType) {
+        rememberActor(actor);
+
+        fireBeforeMessageEvent(teaseLib, actor, outlineType);
+
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
-                queueRenderer(renderMessage);
+                queueRenderer(messageRenderer);
                 // Remember this set for replay
                 // TODO remember the outline type for this set to ensure proper section/paragraph pauses
                 playedRenderers = new ArrayList<>(queuedRenderers);
@@ -301,6 +298,18 @@ public class ScriptRenderer implements Closeable {
             startBackgroundRenderers();
             renderQueue.awaitStartCompleted();
         }
+    }
+
+    private void rememberActor(Actor actor) {
+        if (actor != currentActor) {
+            currentActor = actor;
+            events.actorChanged.fire(new ScriptEventArgs.ActorChanged(currentActor));
+        }
+    }
+
+    private void fireBeforeMessageEvent(TeaseLib teaseLib, Actor actor, BeforeMessage.OutlineType outlineType) {
+        teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
+        events.beforeMessage.fire(new ScriptEventArgs.BeforeMessage(outlineType));
     }
 
     void queueRenderers(List<MediaRenderer> renderers) {

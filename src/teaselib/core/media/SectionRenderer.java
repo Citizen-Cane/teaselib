@@ -20,7 +20,7 @@ import teaselib.Replay;
 import teaselib.Replay.Position;
 import teaselib.core.Closeable;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ScriptEventArgs.BeforeNewMessage.OutlineType;
+import teaselib.core.ScriptEventArgs.BeforeMessage.OutlineType;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeechPlayer;

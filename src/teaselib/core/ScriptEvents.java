@@ -3,7 +3,7 @@ package teaselib.core;
 import java.util.function.Consumer;
 
 import teaselib.State;
-import teaselib.core.ScriptEventArgs.BeforeNewMessage;
+import teaselib.core.ScriptEventArgs.BeforeMessage;
 import teaselib.core.ScriptEvents.ScriptEventAction.Run;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
@@ -11,7 +11,8 @@ import teaselib.util.Item;
 import teaselib.util.Items;
 
 public class ScriptEvents {
-    public final EventSource<ScriptEventArgs.BeforeNewMessage> beforeMessage = new EventSource<>("Before Message");
+
+    public final EventSource<ScriptEventArgs.BeforeMessage> beforeMessage = new EventSource<>("Before Message");
     public final EventSource<ScriptEventArgs> beforePrompt = new EventSource<>("Before Prompt");
     public final EventSource<ScriptEventArgs> afterPrompt = new EventSource<>("After Prompt");
     public final EventSource<ScriptEventArgs.ActorChanged> actorChanged = new EventSource<>("Actor changed");
@@ -51,13 +52,13 @@ public class ScriptEvents {
      *            A script fragment to be executed as soon as possible
      */
     public void interjectScriptFragment(Runnable action) {
-        ScriptEventAction<BeforeNewMessage> scriptEventAction = when().beforeMessage().thenOnce(action);
-        scriptEventInputMethod.signalEvent(() -> scriptEventAction
-                .run(new ScriptEventArgs.BeforeNewMessage(BeforeNewMessage.OutlineType.NewSection)));
+        ScriptEventAction<BeforeMessage> scriptEventAction = when().beforeMessage().thenOnce(action);
+        scriptEventInputMethod.signalEvent(
+                () -> scriptEventAction.run(new ScriptEventArgs.BeforeMessage(BeforeMessage.OutlineType.NewSection)));
     }
 
     public class ScriptEventSource {
-        public ScriptEventTarget<ScriptEventArgs.BeforeNewMessage> beforeMessage() {
+        public ScriptEventTarget<ScriptEventArgs.BeforeMessage> beforeMessage() {
             return new ScriptEventTarget<>(beforeMessage);
         }
 

@@ -20,7 +20,6 @@ import teaselib.core.Closeable;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.configuration.Configuration;
@@ -124,7 +123,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public List<Boolean> showCheckboxes(String caption, List<String> choices, List<Boolean> values,
+    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values,
             boolean allowCancel) {
         return new ArrayList<>(values);
     }
@@ -188,36 +187,28 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public Prompt.Result reply(Choices choices) {
+    public Prompt.Result reply(Choices choices) throws InterruptedException {
         logger.info("Reply {} @ {}", choices, Thread.currentThread().getStackTrace()[1]);
 
+        replySection.lockInterruptibly();
         try {
-            replySection.lockInterruptibly();
-            try {
-                currentChoices = new ArrayList<>(choices);
-                if (replySection.hasWaiters(click)) {
-                    throw new IllegalStateException("Reply not dismissed: " + choices);
-                }
-                if (Thread.interrupted()) {
-                    throw new ScriptInterruptedException();
-                }
-
-                while (!currentChoices.isEmpty()) {
-                    click.await();
-                }
-
-                if (replySection.hasWaiters(click)) {
-                    throw new IllegalStateException("Reply - still waiting on click");
-                }
-
-                return Prompt.Result.DISMISSED;
-            } finally {
-                currentChoices = Collections.emptyList();
-                replySection.unlock();
+            currentChoices = new ArrayList<>(choices);
+            if (replySection.hasWaiters(click)) {
+                throw new IllegalStateException("Reply not dismissed: " + choices);
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
+
+            while (!currentChoices.isEmpty()) {
+                click.await();
+            }
+
+            if (replySection.hasWaiters(click)) {
+                throw new IllegalStateException("Reply - still waiting on click");
+            }
+
+            return Prompt.Result.DISMISSED;
+        } finally {
+            currentChoices = Collections.emptyList();
+            replySection.unlock();
         }
     }
 

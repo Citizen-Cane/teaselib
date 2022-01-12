@@ -40,6 +40,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
             // Expected
             Thread.interrupted();
         } catch (ScriptInterruptedException e) {
+            throw new IllegalAccessError();
             // Expected
         } catch (Exception e) {
             ExceptionUtil.handleException(e, teaseLib.config, logger);
@@ -132,33 +133,18 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     }
 
     @Override
-    public void awaitStartCompleted() {
-        try {
-            completedStart.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
+    public void awaitStartCompleted() throws InterruptedException {
+        completedStart.await();
     }
 
     @Override
-    public void awaitMandatoryCompleted() {
-        try {
-            completedMandatory.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
+    public void awaitMandatoryCompleted() throws InterruptedException {
+        completedMandatory.await();
     }
 
     @Override
-    public void awaitAllCompleted() {
-        try {
-            completedAll.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
+    public void awaitAllCompleted() throws InterruptedException {
+        completedAll.await();
     }
 
     @Override

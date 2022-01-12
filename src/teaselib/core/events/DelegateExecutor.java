@@ -10,43 +10,33 @@ import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
 public class DelegateExecutor {
-    private final ExecutorService workerThread;
+
+    private final ExecutorService executor;
 
     public interface Runnable {
         void run() throws Exception;
     }
 
     public DelegateExecutor(String name) {
-        workerThread = NamedExecutorService.sameThread(name);
+        executor = NamedExecutorService.sameThread(name);
     }
 
     /**
-     * Execute the delegate synchronized. The current thread waits until the delegates has completed execution.
+     * Execute the delegate synchronized. The current thread waits until the delegate has completed execution.
      * 
      * @param delegate
      *            The delegate to execute in the delegate thread.
      */
-
     public void run(Runnable delegate) {
-        try {
-            Future<Void> future = workerThread.submit(() -> {
-                delegate.run();
-                return null;
-            });
-            future.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-        }
+        call(() -> {
+            delegate.run();
+            return null;
+        });
     }
 
     public <T> T call(Callable<T> delegate) {
         try {
-            Future<T> future = workerThread.submit(delegate::call);
+            Future<T> future = executor.submit(delegate::call);
             return future.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -59,9 +49,9 @@ public class DelegateExecutor {
     }
 
     public void shutdown() {
-        workerThread.shutdown();
+        executor.shutdown();
         try {
-            workerThread.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

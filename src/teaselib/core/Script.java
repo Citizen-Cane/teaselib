@@ -155,9 +155,14 @@ public abstract class Script {
         deviceInteractionImplementations.add(KeyReleaseDeviceInteraction.class,
                 () -> new KeyReleaseDeviceInteraction(teaseLib, scriptRenderer));
         if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
-            deviceInteractionImplementations.add(HumanPoseDeviceInteraction.class,
-                    () -> new HumanPoseDeviceInteraction(teaseLib, teaseLib.globals.get(TeaseLibAI.class),
-                            scriptRenderer));
+            deviceInteractionImplementations.add(HumanPoseDeviceInteraction.class, () -> {
+                try {
+                    return new HumanPoseDeviceInteraction(teaseLib, teaseLib.globals.get(TeaseLibAI.class),
+                            scriptRenderer);
+                } catch (InterruptedException e) {
+                    throw new ScriptInterruptedException(e);
+                }
+            });
         }
         return deviceInteractionImplementations;
     }
@@ -285,11 +290,19 @@ public abstract class Script {
     }
 
     public void awaitStartCompleted() {
-        scriptRenderer.awaitStartCompleted();
+        try {
+            scriptRenderer.awaitStartCompleted();
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     public void awaitMandatoryCompleted() {
-        scriptRenderer.awaitMandatoryCompleted();
+        try {
+            scriptRenderer.awaitMandatoryCompleted();
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     /**
@@ -299,7 +312,11 @@ public abstract class Script {
      * This won't display a button, it just waits. Background threads will continue to run.
      */
     public void awaitAllCompleted() {
-        scriptRenderer.awaitAllCompleted();
+        try {
+            scriptRenderer.awaitAllCompleted();
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     /**
@@ -312,6 +329,8 @@ public abstract class Script {
     protected void renderIntertitle(String... text) {
         try {
             scriptRenderer.renderIntertitle(teaseLib, new Message(actor, text), justText());
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
@@ -326,6 +345,8 @@ public abstract class Script {
         Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(useTTS);
         try {
             scriptRenderer.renderMessage(teaseLib, resources, message, decorators(textToSpeech));
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
@@ -356,11 +377,19 @@ public abstract class Script {
     }
 
     protected void appendMessage(Message message) {
-        scriptRenderer.appendMessage(teaseLib, resources, actor, message, decorators(getTextToSpeech()));
+        try {
+            scriptRenderer.appendMessage(teaseLib, resources, actor, message, decorators(getTextToSpeech()));
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     protected void replaceMessage(Message message) {
-        scriptRenderer.replaceMessage(teaseLib, resources, actor, message, decorators(getTextToSpeech()));
+        try {
+            scriptRenderer.replaceMessage(teaseLib, resources, actor, message, decorators(getTextToSpeech()));
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     void showAll(double delaySeconds) {
@@ -371,7 +400,11 @@ public abstract class Script {
             showAll.add(Type.Delay, delaySeconds);
             addMatchingImage(showAll);
         }
-        scriptRenderer.showAll(teaseLib, resources, actor, showAll, withoutSpeech());
+        try {
+            scriptRenderer.showAll(teaseLib, resources, actor, showAll, withoutSpeech());
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     private void addMatchingImage(Message message) {
@@ -414,7 +447,11 @@ public abstract class Script {
     protected Answer showChoices(List<Answer> answers, ScriptFunction scriptFunction, Intention intention) {
         if (scriptRenderer.hasPrependedMessages()) {
             Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
-            scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech));
+            try {
+                scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech));
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException(e);
+            }
         }
 
         var prompt = getPrompt(answers, intention, scriptFunction);
@@ -437,9 +474,15 @@ public abstract class Script {
         }
 
         scriptRenderer.events.beforePrompt.fire(new ScriptEventArgs());
-        var answer = anwser(prompt);
-        endAll();
-        teaseLib.host.endScene();
+        Answer answer;
+        try {
+            answer = anwser(prompt);
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        } finally {
+            endAll();
+            teaseLib.host.endScene();
+        }
         scriptRenderer.events.afterPrompt.fire(new ScriptEventArgs());
         return answer;
     }
@@ -490,7 +533,7 @@ public abstract class Script {
         });
     }
 
-    private Answer anwser(Prompt prompt) {
+    private Answer anwser(Prompt prompt) throws InterruptedException {
         Choice choice;
         if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
             HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
@@ -523,23 +566,15 @@ public abstract class Script {
         return new Choices(actor.locale(), intention, choices);
     }
 
-    private String selectPhrase(Answer answer) {
-        // TODO Use a random function that is not used for control flow
-        // TODO intead of returning a fixed or completely random value,
+    private static String selectPhrase(Answer answer) {
+        // TODO instead of returning a fixed or completely random value,
         // - select one of the main phrases -> those that support the story line
-        // - use all other phrases as alternatives to speak, but not to display
+        // - use all other phrases as alternatives to speak, but not displayed
         return answer.text.get(0);
     }
 
-    private List<Choice> showPrompt(Prompt prompt) {
-        List<Choice> choice;
-        try {
-            choice = teaseLib.globals.get(Shower.class).show(prompt);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException();
-        }
-        return choice;
+    private List<Choice> showPrompt(Prompt prompt) throws InterruptedException {
+        return teaseLib.globals.get(Shower.class).show(prompt);
     }
 
     private Prompt getPrompt(List<Answer> answers, Intention intention, ScriptFunction scriptFunction) {

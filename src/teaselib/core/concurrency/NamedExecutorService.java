@@ -1,6 +1,10 @@
 package teaselib.core.concurrency;
 
+import static teaselib.core.util.ExceptionUtil.*;
+
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -33,12 +37,16 @@ public class NamedExecutorService extends ThreadPoolExecutor {
 
     private static Thread newSingleThread(String name, Runnable r) {
         String threadName = String.format(SINGLETHREADED_NAME_PATTERN, name);
-        return new Thread(r, threadName);
+        Thread thread = new Thread(r, threadName);
+        thread.setUncaughtExceptionHandler(UncaughtExceptionHandler.Instance);
+        return thread;
     }
 
     private static Thread newThread(String name, Runnable r, int n) {
         String threadName = String.format(MULTITHREADED_NAME_PATTERN, name, n);
-        return new Thread(r, threadName);
+        Thread thread = new Thread(r, threadName);
+        thread.setUncaughtExceptionHandler(UncaughtExceptionHandler.Instance);
+        return thread;
     }
 
     private NamedExecutorService(String name, long keepAliveTime, TimeUnit unit) {
@@ -82,4 +90,13 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     public static NamedExecutorService singleThreadedQueue(String namePrefix, long keepAliveTime, TimeUnit unit) {
         return new NamedExecutorService(namePrefix, keepAliveTime, unit);
     }
+
+    public <T> T submitAndGet(Callable<T> task) throws InterruptedException {
+        try {
+            return submit(task).get();
+        } catch (ExecutionException e) {
+            throw asRuntimeException(reduce(e));
+        }
+    }
+
 }

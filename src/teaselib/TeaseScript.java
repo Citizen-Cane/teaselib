@@ -360,9 +360,8 @@ public abstract class TeaseScript extends TeaseScriptMath {
         }
 
         try {
-            teaseLib.sleep(seconds, TimeUnit.SECONDS);
-            if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
-                    && scriptRenderer.audioSync.inProgress()) {
+            sleep(seconds, TimeUnit.SECONDS);
+            if (timeoutBehavior != TimeoutBehavior.InDubioContraReum && scriptRenderer.audioSync.inProgress()) {
                 scriptRenderer.audioSync.completeSpeechRecognition();
             }
         } finally {
@@ -680,9 +679,14 @@ public abstract class TeaseScript extends TeaseScriptMath {
      */
     public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel) {
         awaitMandatoryCompleted();
-        List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices, values, allowCancel);
-        endAll();
-        return results;
+        try {
+            return teaseLib.host.showItems(caption, choices, values, allowCancel);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        } finally {
+            endAll();
+        }
     }
 
     public boolean showItems(String caption, Items items, boolean allowCancel) {

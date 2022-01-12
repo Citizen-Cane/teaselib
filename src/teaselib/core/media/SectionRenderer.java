@@ -164,7 +164,7 @@ public class SectionRenderer implements Closeable {
             }
         }
 
-        private void renderOptionalDefaultDelayBetweenMultipleMessages() {
+        private void renderOptionalDefaultDelayBetweenMultipleMessages() throws InterruptedException {
             if (textToSpeechPlayer != null) {
                 boolean last = currentMessage == messages.size() && nextOutlineType != OutlineType.AppendParagraph;
                 if (!last && !lastParagraph.contains(Type.Delay)) {
@@ -300,7 +300,7 @@ public class SectionRenderer implements Closeable {
         next.messages.addAll(0, messages);
     }
 
-    private void finalizeRendering(MessageRenderer messageRenderer) {
+    private void finalizeRendering(MessageRenderer messageRenderer) throws InterruptedException {
         awaitSectionMandatory();
         if (nextOutlineType == OutlineType.NewSection && textToSpeechPlayer != null
                 && !messageRenderer.lastParagraph.contains(Type.Delay)) {
@@ -309,18 +309,18 @@ public class SectionRenderer implements Closeable {
         awaitSectionAll();
     }
 
-    private void renderSectionEndDelay() {
+    private void renderSectionEndDelay() throws InterruptedException {
         awaitSectionMandatory();
         renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_SECTIONS_SECONDS));
     }
 
-    private void renderTimeSpannedPart(MediaRenderer.Threaded renderer) {
+    private void renderTimeSpannedPart(MediaRenderer.Threaded renderer) throws InterruptedException {
         awaitSectionMandatory();
         renderQueue.submit(renderer);
         this.currentRenderer = renderer;
     }
 
-    private void showDesktopItem(MessagePart part, ResourceLoader resources) throws IOException {
+    private void showDesktopItem(MessagePart part, ResourceLoader resources) throws IOException, InterruptedException {
         var renderDesktopItem = new RenderDesktopItem(teaseLib, resources, part.value);
         awaitSectionAll();
         renderQueue.submit(renderDesktopItem);
@@ -334,7 +334,8 @@ public class SectionRenderer implements Closeable {
         messageRenderer.startCompleted();
     }
 
-    private void playSpeech(Actor actor, MessagePart part, String mood, ResourceLoader resources) throws IOException {
+    private void playSpeech(Actor actor, MessagePart part, String mood, ResourceLoader resources)
+            throws IOException, InterruptedException {
         if (Message.Type.isSound(part.value)) {
             renderTimeSpannedPart(new RenderPrerecordedSpeech(part.value, resources, teaseLib));
         } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
@@ -347,13 +348,14 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    private void playSound(MessagePart part, ResourceLoader resources) throws IOException {
+    private void playSound(MessagePart part, ResourceLoader resources) throws IOException, InterruptedException {
         if (isSoundOutputEnabled()) {
             renderTimeSpannedPart(new RenderSound(resources, part.value, teaseLib));
         }
     }
 
-    private void playSoundAsynchronous(MessagePart part, ResourceLoader resources) throws IOException {
+    private void playSoundAsynchronous(MessagePart part, ResourceLoader resources)
+            throws IOException, InterruptedException {
         if (isSoundOutputEnabled()) {
             awaitSectionMandatory();
             if (backgroundSoundRenderer != null) {
@@ -365,11 +367,11 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    private void awaitSectionMandatory() {
+    private void awaitSectionMandatory() throws InterruptedException {
         currentRenderer.awaitMandatoryCompleted();
     }
 
-    private void awaitSectionAll() {
+    private void awaitSectionAll() throws InterruptedException {
         currentRenderer.awaitAllCompleted();
         currentRenderer = MediaRenderer.None;
     }
@@ -428,7 +430,7 @@ public class SectionRenderer implements Closeable {
         ExceptionUtil.handleIOException(e, teaseLib.config, logger);
     }
 
-    private void doKeyword(MessageRenderer messageRenderer, MessagePart part) {
+    private void doKeyword(MessageRenderer messageRenderer, MessagePart part) throws InterruptedException {
         String keyword = part.value;
         if (Message.ActorImage.equalsIgnoreCase(keyword)) {
             throw new IllegalStateException(keyword + " must be resolved in pre-parse");
@@ -448,7 +450,7 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    private void doDelay(MessagePart part) {
+    private void doDelay(MessagePart part) throws InterruptedException {
         String args = part.value;
         if (args.isEmpty()) {
             awaitSectionAll();

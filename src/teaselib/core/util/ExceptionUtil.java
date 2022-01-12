@@ -66,7 +66,9 @@ public class ExceptionUtil {
             return (RuntimeException) t;
         } else if (t instanceof Exception) {
             Exception e = reduce((Exception) t);
-            if (e != t) {
+            if (e instanceof RuntimeException r) {
+                throw r;
+            } else if (e != t) {
                 return asRuntimeException(e);
             } else {
                 return wrapped(t);

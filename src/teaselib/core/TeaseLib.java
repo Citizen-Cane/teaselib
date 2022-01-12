@@ -90,7 +90,7 @@ public class TeaseLib implements Closeable {
 
     private final Thread shutdownHook = new Thread(this::shutdown);
 
-    public TeaseLib(final Host host) throws IOException {
+    public TeaseLib(Host host) throws IOException {
         this(host, new TeaseLibConfigSetup(host));
     }
 
@@ -251,23 +251,25 @@ public class TeaseLib implements Closeable {
     /**
      * Preferred method to wait, since it allows us to test script with automated input and time advance.
      * 
-     * @param milliseconds
-     *            The time to sleep.
-     * @throws ScriptInterruptedException
+     * @throws InterruptedException
      */
-    public void sleep(long duration, TimeUnit unit) {
+    public void sleep(long duration, TimeUnit unit) throws InterruptedException {
         if (duration > 0) {
             if (isTimeFrozen()) {
                 sleepWhileTimeIsFrozen(duration, unit);
             } else {
                 sleepInRealTime(duration, unit);
             }
+            fireTimeAdvanced();
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
         }
     }
 
-    private void sleepWhileTimeIsFrozen(long duration, TimeUnit unit) {
+    private void sleepWhileTimeIsFrozen(long duration, TimeUnit unit) throws InterruptedException {
         if (Thread.interrupted()) {
-            throw new ScriptInterruptedException();
+            throw new InterruptedException();
         }
 
         if (timeAdvanceThread.get() == null || timeAdvanceThread.get() == Thread.currentThread()) {
@@ -275,31 +277,19 @@ public class TeaseLib implements Closeable {
         } else {
             advanceTime(0, unit);
         }
-        fireTimeAdvanced();
-
-        if (Thread.interrupted()) {
-            throw new ScriptInterruptedException();
-        }
     }
 
-    private void sleepInRealTime(long duration, TimeUnit unit) {
-        try {
-            if (timeAdvanceListeners.isEmpty()) {
-                unit.sleep(duration);
-            } else {
-                long milliSeconds = duration == Long.MAX_VALUE ? Long.MAX_VALUE : MILLISECONDS.convert(duration, unit);
-                while (milliSeconds > 0) {
-                    TimeUnit.MILLISECONDS.sleep(Math.min(1000, milliSeconds));
-                    fireTimeAdvanced();
-                    milliSeconds -= 1000;
-                }
+    private void sleepInRealTime(long duration, TimeUnit unit) throws InterruptedException {
+        if (timeAdvanceListeners.isEmpty()) {
+            unit.sleep(duration);
+        } else {
+            long milliSeconds = duration == Long.MAX_VALUE ? Long.MAX_VALUE : MILLISECONDS.convert(duration, unit);
+            while (milliSeconds > 0) {
+                TimeUnit.MILLISECONDS.sleep(Math.min(1000, milliSeconds));
+                fireTimeAdvanced();
+                milliSeconds -= 1000;
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
         }
-
-        fireTimeAdvanced();
     }
 
     void addTimeAdvancedListener(TimeAdvanceListener listener) {

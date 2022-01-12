@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Replay;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
@@ -93,7 +92,7 @@ public class MediaRendererQueue {
         }
     }
 
-    public void awaitStartCompleted() {
+    public void awaitStartCompleted() throws InterruptedException {
         synchronized (activeRenderers) {
             if (!activeRenderers.isEmpty()) {
                 logger.debug("Completing all threaded renderers starts");
@@ -106,7 +105,7 @@ public class MediaRendererQueue {
         }
     }
 
-    public void awaitMandatoryCompleted() {
+    public void awaitMandatoryCompleted() throws InterruptedException {
         synchronized (activeRenderers) {
             if (!activeRenderers.isEmpty()) {
                 logger.debug("Completing all threaded renderers mandatory part");
@@ -122,8 +121,10 @@ public class MediaRendererQueue {
     /**
      * Completes rendering of all currently running renderers. Returns after all renderers that running at the start of
      * this method have been finished.
+     * 
+     * @throws InterruptedException
      */
-    public void awaitAllCompleted() {
+    public void awaitAllCompleted() throws InterruptedException {
         synchronized (activeRenderers) {
             if (activeRenderers.isEmpty()) {
                 logger.debug("Threaded Renderers completeAll: queue empty");
@@ -163,7 +164,11 @@ public class MediaRendererQueue {
 
                 List<Future<?>> futures = drainActiveRenderers();
                 cancel(futures);
-                join(futures);
+                try {
+                    join(futures);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
 
                 if (!activeRenderers.isEmpty()) {
                     throw new IllegalStateException();
@@ -258,16 +263,15 @@ public class MediaRendererQueue {
         return future;
     }
 
-    private static void join(List<Future<?>> futures) {
+    private static void join(List<Future<?>> futures) throws InterruptedException {
         RuntimeException exception = null;
-        boolean interrupted = false;
+        InterruptedException interrupted = null;
 
         for (Future<?> future : futures) {
             try {
                 join(future);
             } catch (InterruptedException e) {
-                Thread.interrupted();
-                interrupted = true;
+                interrupted = e;
             } catch (RuntimeException e) {
                 if (exception == null) {
                     exception = e;
@@ -275,8 +279,8 @@ public class MediaRendererQueue {
             }
         }
 
-        if (interrupted) {
-            throw new ScriptInterruptedException();
+        if (interrupted != null) {
+            throw interrupted;
         } else if (exception != null) {
             throw exception;
         }

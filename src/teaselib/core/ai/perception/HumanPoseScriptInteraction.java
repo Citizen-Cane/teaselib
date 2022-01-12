@@ -13,6 +13,7 @@ import teaselib.ScriptFunction.Relation;
 import teaselib.core.DeviceInteractionImplementations;
 import teaselib.core.Script;
 import teaselib.core.ScriptInteraction;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.perception.HumanPose.Interest;
 
 public class HumanPoseScriptInteraction implements ScriptInteraction {
@@ -37,7 +38,11 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
     }
 
     public PoseAspects getPose(Set<Interest> interests, byte[] image) {
-        return deviceInteraction.getPose(interests, image);
+        try {
+            return deviceInteraction.getPose(interests, image);
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     public void setPause(Runnable task) {

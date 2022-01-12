@@ -82,21 +82,15 @@ public class ScriptRenderer implements Closeable {
         sectionRenderer.close();
     }
 
-    void awaitStartCompleted() {
+    void awaitStartCompleted() throws InterruptedException {
         renderQueue.awaitStartCompleted();
     }
 
-    void awaitMandatoryCompleted() {
+    void awaitMandatoryCompleted() throws InterruptedException {
         renderQueue.awaitMandatoryCompleted();
     }
 
-    /**
-     * Just wait for everything to be rendered (messages displayed, sounds played, delay expired), and continue
-     * execution of the script.
-     * <p>
-     * This won't display a button, it just waits. Background threads will continue to run.
-     */
-    void awaitAllCompleted() {
+    void awaitAllCompleted() throws InterruptedException {
         renderQueue.awaitAllCompleted();
     }
 
@@ -114,7 +108,7 @@ public class ScriptRenderer implements Closeable {
         return renderQueue.hasCompletedMandatory();
     }
 
-    void renderIntertitle(TeaseLib teaseLib, Message message, Decorator[] decorators) {
+    void renderIntertitle(TeaseLib teaseLib, Message message, Decorator[] decorators) throws InterruptedException {
         var composed = composeIntertitleMessage(message);
         var interTitle = new RenderInterTitle(RenderedMessage.of(composed, decorators), teaseLib);
         renderMessage(teaseLib, message.actor, interTitle, OutlineType.NewSection);
@@ -147,7 +141,8 @@ public class ScriptRenderer implements Closeable {
         prependedMessages.add(message);
     }
 
-    void renderPrependedMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Decorator[] decorators) {
+    void renderPrependedMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Decorator[] decorators)
+            throws InterruptedException {
         List<Message> prepended = new ArrayList<>(prependedMessages);
         prependedMessages.clear();
         renderMessages(teaseLib, resources, actor, prepended, decorators);
@@ -157,12 +152,13 @@ public class ScriptRenderer implements Closeable {
         return !prependedMessages.isEmpty();
     }
 
-    void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators) {
+    void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators)
+            throws InterruptedException {
         renderMessages(teaseLib, resources, message.actor, Collections.singletonList(message), decorators);
     }
 
     void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
-            Decorator[] decorators) {
+            Decorator[] decorators) throws InterruptedException {
 
         // TODO run method of media renderer should start rendering
         // -> currently it's started when say() is called
@@ -184,7 +180,7 @@ public class ScriptRenderer implements Closeable {
     }
 
     void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
-            Decorator[] decorators) {
+            Decorator[] decorators) throws InterruptedException {
         if (!prependedMessages.isEmpty()) {
             renderMessage(teaseLib, resources, message, decorators);
         } else {
@@ -194,18 +190,20 @@ public class ScriptRenderer implements Closeable {
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
-            Decorator[] decorators) {
+            Decorator[] decorators) throws InterruptedException {
         renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
                 sectionRenderer::replace, BeforeMessage.OutlineType.ReplaceParagraph);
     }
 
-    void showAll(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message, Decorator[] decorators) {
+    void showAll(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message, Decorator[] decorators)
+            throws InterruptedException {
         renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
                 sectionRenderer::showAll, BeforeMessage.OutlineType.ReplaceParagraph);
     }
 
     private void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
-            Decorator[] decorators, ConcatFunction concatFunction, OutlineType outlineType) {
+            Decorator[] decorators, ConcatFunction concatFunction, OutlineType outlineType)
+            throws InterruptedException {
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
         MediaRenderer messageRenderer = concatFunction.apply(actor, renderedMessages, resources);
         renderMessage(teaseLib, actor, messageRenderer, outlineType);
@@ -267,7 +265,8 @@ public class ScriptRenderer implements Closeable {
         return renderedMessages;
     }
 
-    private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer messageRenderer, OutlineType outlineType) {
+    private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer messageRenderer, OutlineType outlineType)
+            throws InterruptedException {
         rememberActor(actor);
 
         fireBeforeMessageEvent(teaseLib, actor, outlineType);

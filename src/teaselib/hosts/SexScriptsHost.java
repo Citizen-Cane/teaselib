@@ -58,7 +58,6 @@ import teaselib.core.Closeable;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -243,7 +242,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public void close() {
         mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
-        mainFrame.getJMenuBar().setVisible(true);
+        EventQueue.invokeLater(() -> mainFrame.getJMenuBar().setVisible(true));
     }
 
     @Override
@@ -267,6 +266,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             public void play() throws InterruptedException {
                 // TODO interrupting the thread has no effect
                 // TODO Doesn't react to stopSoundThreads() either
+                // TODO sometimes displays dialog telling "Sleep Interrupted" (when playing mp3 sound)
                 ss.playSound(audioHandle);
             }
 
@@ -328,7 +328,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         var surfaceTransform = surfaceTransform(displayImageSize, pose, bounds, estimatedTextAreaX);
         var g2d = (Graphics2D) surfaceImage.getGraphics();
         g2d.drawImage(displayImage, surfaceTransform, null);
-        //renderDebugInfo(g2d, displayImageSize, pose, surfaceTransform, bounds.getBounds(), estimatedTextAreaX);
+        // renderDebugInfo(g2d, displayImageSize, pose, surfaceTransform, bounds.getBounds(), estimatedTextAreaX);
     }
 
     private AffineTransform surfaceTransform(Dimension image, HumanPose.Estimation pose, Rectangle2D bounds,
@@ -695,16 +695,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     @Override
-    public List<Boolean> showCheckboxes(String caption, List<String> texts, List<Boolean> values, boolean allowCancel) {
+    public List<Boolean> showItems(String caption, List<String> texts, List<Boolean> values, boolean allowCancel)
+            throws InterruptedException {
         List<Boolean> results;
         do {
-            try {
-                results = ss.getBooleans(caption, texts, values);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-            // Loop until the user pressed OK -> != null
+            results = ss.getBooleans(caption, texts, values);
+            // Loop until the user pressed OK
         } while (results == null && !allowCancel);
         return results;
     }
@@ -881,14 +877,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             if (showPopup) {
                 showPopupTask.awaitFinished();
             }
-        } catch (InterruptedException e) {
-            dismissChoices(choices);
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            result = Prompt.Result.DISMISSED;
+        } catch (ExecutionException e) {
+            throw ExceptionUtil.asRuntimeException(e);
         } finally {
+            dismissChoices(choices);
             showPopupTask.cleanup();
             showChoices = null;
             activeChoices = null;

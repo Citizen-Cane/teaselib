@@ -1,11 +1,12 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,12 +42,12 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
         this.throwWhen = throwWhen;
     }
 
-    @Test(expected = TestException.class)
+    @Test
     public void testSingleScriptFunctionErrorHandling() {
         debugger.addResponse("Stop", Debugger.Response.Ignore);
 
         script.say("In main script.");
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+        assertThrows(TestException.class, () -> script.reply(() -> {
             if (throwWhen == THROW_RIGHT_AT_START)
                 throwTestException();
             script.say("Inside script function.");
@@ -54,17 +55,15 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
             if (throwWhen == THROW_AFTER_FIRST_QUESTION)
                 throwTestException();
         }, "Stop"));
-        script.say("Resuming main script");
-
     }
 
-    @Test(expected = TestException.class)
+    @Test
     public void testSingleScriptFunctionWithInnerReplyErrorHandling() {
         debugger.addResponse("Stop", Debugger.Response.Ignore);
         debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+        assertThrows(TestException.class, () -> script.reply(() -> {
             script.say("Start of script function.");
             if (throwWhen == THROW_RIGHT_AT_START)
                 throwTestException();
@@ -73,20 +72,18 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
                 throwTestException();
             script.say("End of script function.");
         }, "Stop"));
-        script.say("Resuming main script");
     }
 
-    @Test(expected = TestException.class)
+    @Test
     public void testTwoScriptFunctionsEachWithInnerReplyErrorHandling() {
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+        assertThrows(TestException.class, () -> script.reply(() -> {
             script.say("Start of script function 1.");
             assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
-
             assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                 script.say("Start of script function 2.");
                 if (throwWhen == THROW_RIGHT_AT_START)
@@ -97,13 +94,11 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
                 if (throwWhen == THROW_AFTER_FIRST_QUESTION)
                     throwTestException();
             }, "Stop script function 2"));
-
-            script.say("End of script function 1.");
+            failedToForwardException();
         }, "Stop script function 1"));
-        script.say("Resuming main script");
     }
 
-    @Test(expected = TestException.class)
+    @Test
     public void testThreeScriptFunctionsEachWithInnerReplyErrorHandling() {
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
         debugger.addResponse("No*1", Debugger.Response.Choose);
@@ -111,7 +106,7 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
         debugger.addResponse("Oh*3", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+        assertThrows(TestException.class, () -> script.reply(() -> {
             script.say("Start of script function 1.");
             assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
@@ -127,20 +122,19 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
                     if (throwWhen == THROW_AFTER_FIRST_QUESTION)
                         throwTestException();
                     script.say("End of script function 3");
-
                 }, "Stop script function 3"));
-
-                script.say("End of script function 2");
-
+                failedToForwardException();
             }, "Stop script function 2"));
-
-            script.say("End of script function 1.");
-
+            failedToForwardException();
         }, "Stop script function 1"));
         script.say("Resuming main script");
     }
 
-    private void throwTestException() {
-        throw new TestException("in script function");
+    private static void failedToForwardException() {
+        Assert.fail("Throwing any exception has to end script");
+    }
+
+    private static void throwTestException() {
+        throw new TestException("iI script function");
     }
 }

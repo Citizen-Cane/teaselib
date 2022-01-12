@@ -101,8 +101,6 @@ public class ScriptFutureTask extends FutureTask<Answer> {
     protected void setException(Throwable t) {
         if (dismissed.get() && (t instanceof ScriptInterruptedException || t instanceof InterruptedException)) {
             logger.info("Script task {} already dismissed", prompt);
-        } else if (t instanceof InterruptedException) {
-            throwable = new ScriptInterruptedException((InterruptedException) t);
         } else {
             throwable = t;
             logger.info("{}:@{} stored - will be forwarded", t.getClass().getSimpleName(), t.hashCode());
@@ -172,14 +170,14 @@ public class ScriptFutureTask extends FutureTask<Answer> {
 
     private void throwException(Throwable t) {
         logger.info("Forwarding script task error of {}", prompt);
-        if (t instanceof ScriptInterruptedException) {
-            throw (ScriptInterruptedException) t;
-        } else if (t instanceof InterruptedException) {
-            throw new ScriptInterruptedException((InterruptedException) t);
-        } else if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
-        } else if (t instanceof Error) {
-            throw (Error) t;
+        if (t instanceof ScriptInterruptedException e) {
+            throw e;
+        } else if (t instanceof InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        } else if (t instanceof RuntimeException e) {
+            throw e;
+        } else if (t instanceof Error error) {
+            throw error;
         } else {
             throw ExceptionUtil.asRuntimeException(t);
         }

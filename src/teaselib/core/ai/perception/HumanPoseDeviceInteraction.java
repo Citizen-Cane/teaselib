@@ -15,6 +15,7 @@ import teaselib.Actor;
 import teaselib.core.Closeable;
 import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.DeviceInteractionImplementation;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ScriptRenderer;
 import teaselib.core.TeaseLib;
 import teaselib.core.ai.TeaseLibAI;
@@ -45,7 +46,8 @@ public class HumanPoseDeviceInteraction extends
         }
     }
 
-    public HumanPoseDeviceInteraction(TeaseLib teaseLib, TeaseLibAI teaseLibAI, ScriptRenderer scriptRenderer) {
+    public HumanPoseDeviceInteraction(TeaseLib teaseLib, TeaseLibAI teaseLibAI, ScriptRenderer scriptRenderer)
+            throws InterruptedException {
         super(Object::equals);
         this.scriptRenderer = scriptRenderer;
         this.poseEstimationTask = new PoseEstimationTask(teaseLibAI, this);
@@ -70,7 +72,7 @@ public class HumanPoseDeviceInteraction extends
         return poseEstimationTask.getPose(interests);
     }
 
-    PoseAspects getPose(Set<Interest> interests, byte[] image) {
+    PoseAspects getPose(Set<Interest> interests, byte[] image) throws InterruptedException {
         Callable<PoseAspects> poseAspects = () -> {
             HumanPose model = getModel(interests);
             List<Estimation> poses = model.poses(image);
@@ -80,10 +82,10 @@ public class HumanPoseDeviceInteraction extends
                 return new PoseAspects(poses.get(0), interests);
             }
         };
-        return poseEstimationTask.submitAndGetResult(poseAspects);
+        return poseEstimationTask.submitAndGet(poseAspects);
     }
 
-    private HumanPose getModel(Set<Interest> interests) {
+    private HumanPose getModel(Set<Interest> interests) throws InterruptedException {
         return poseEstimationTask.getModel(interests);
     }
 
@@ -92,7 +94,11 @@ public class HumanPoseDeviceInteraction extends
     }
 
     public boolean awaitPose(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) {
-        return poseEstimationTask.awaitPose(interests, duration, unit, aspects);
+        try {
+            return poseEstimationTask.awaitPose(interests, duration, unit, aspects);
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     @Override

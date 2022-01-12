@@ -57,4 +57,12 @@ public class ShowChoicesAbstractTest {
         }
     }
 
+    static void throwScriptInterruptedException() {
+        throw new ScriptInterruptedException();
+    }
+
+    static void interruptScript() {
+        Thread.currentThread().interrupt();
+    }
+
 }

@@ -68,7 +68,7 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public List<Boolean> showCheckboxes(String caption, List<String> choices, List<Boolean> values,
+    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values,
             boolean allowCancel) {
         return new ArrayList<>(values);
     }

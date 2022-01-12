@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
  *         to avoid the additional dependency and stick to the standard {@link java.lang.InterruptedException}.
  */
 public class ScriptInterruptedException extends RuntimeException {
+
     private static final Logger logger = LoggerFactory.getLogger(ScriptInterruptedException.class);
 
     private static final long serialVersionUID = 1L;
@@ -25,13 +26,16 @@ public class ScriptInterruptedException extends RuntimeException {
     public ScriptInterruptedException() {
         StackTraceElement[] stackTrace = this.getStackTrace();
         if (stackTrace.length > 0) {
-            final StackTraceElement firstElement = stackTrace[0];
+            StackTraceElement firstElement = stackTrace[0];
             logger.info("interrupted at {}", firstElement);
-            for (StackTraceElement element : stackTrace) {
-                if (element != firstElement) {
-                    logger.debug("\t{}", element);
+            if (logger.isDebugEnabled()) {
+                for (StackTraceElement element : stackTrace) {
+                    if (element != firstElement) {
+                        logger.debug("\t{}", element);
+                    }
                 }
             }
         }
     }
+
 }

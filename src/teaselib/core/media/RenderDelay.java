@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 
 public class RenderDelay extends MediaRendererThread {
@@ -27,21 +26,15 @@ public class RenderDelay extends MediaRendererThread {
     @Override
     public void renderMedia() throws InterruptedException {
         startCompleted();
-        try {
-            if (seconds > 0) {
-                if (logToTransscript) {
-                    teaseLib.transcript.info("Delay=" + seconds + "s");
-                }
-
-                logger.info("Sleeping {} seconds", seconds);
-                teaseLib.sleep((long) (seconds * 1000), TimeUnit.MILLISECONDS);
-            } else {
-                logger.info("skipped sleeping {} seconds", +seconds);
+        if (seconds > 0) {
+            if (logToTransscript) {
+                teaseLib.transcript.info("Delay=" + seconds + "s");
             }
-        } catch (ScriptInterruptedException e) {
-            // Expected
-        } finally {
-            mandatoryCompleted();
+
+            logger.info("Sleeping {} seconds", seconds);
+            teaseLib.sleep((long) (seconds * 1000), TimeUnit.MILLISECONDS);
+        } else {
+            logger.info("skipped sleeping {} seconds", +seconds);
         }
     }
 

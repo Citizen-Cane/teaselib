@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.Debugger.Response;
 import teaselib.core.Debugger.ResponseAction;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.concurrency.UncaughtExceptionHandler;
 import teaselib.core.debug.CheckPoint;
 import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.DebugResponses;
@@ -64,9 +65,10 @@ public class ResponseDebugInputMethod extends AbstractInputMethod implements Deb
                             prompt.lock.unlock();
                         }
                     };
-                    Thread t = new Thread(respond);
-                    t.setName(ResponseDebugInputMethod.class.getSimpleName() + " " + getClass().getSimpleName());
-                    t.start();
+                    Thread thread = new Thread(respond);
+                    thread.setUncaughtExceptionHandler(UncaughtExceptionHandler.Instance);
+                    thread.setName(ResponseDebugInputMethod.class.getSimpleName() + " " + getClass().getSimpleName());
+                    thread.start();
                 }
             }
         }

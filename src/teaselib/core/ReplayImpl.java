@@ -18,7 +18,11 @@ class ReplayImpl implements Replay {
 
     @Override
     public void replay(Replay.Position position) {
-        scriptRenderer.renderQueue.awaitAllCompleted();
+        try {
+            scriptRenderer.renderQueue.awaitAllCompleted();
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
         // TODO log message comes too early - before the interjection (but looks good in player)
         ScriptRenderer.logger.info("Replaying {} from {}", this, position);
         scriptRenderer.replay(renderers, position);

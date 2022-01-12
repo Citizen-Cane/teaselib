@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.TimeOfDay;
 import teaselib.util.Daytime;
@@ -38,7 +39,11 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
     }
 
     public void sleep(long duration, TimeUnit timeUnit) {
-        teaseLib.sleep(duration, timeUnit);
+        try {
+            teaseLib.sleep(duration, timeUnit);
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
     }
 
     public Duration duration() {

@@ -62,7 +62,8 @@ public interface Host {
      * @param values
      * @return
      */
-    List<Boolean> showCheckboxes(String caption, List<String> choices, List<Boolean> values, boolean allowCancel);
+    List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel)
+            throws InterruptedException;
 
     InputMethod inputMethod();
 

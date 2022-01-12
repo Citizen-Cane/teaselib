@@ -1,10 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -25,65 +26,58 @@ public class ShowChoicesTestThrowScriptInterruptedException extends ShowChoicesA
         return Arrays.asList(new Object[ITERATIONS][0]);
     }
 
-    @Test(expected = ScriptInterruptedException.class)
-    public void testSingleScriptFunctionErrorHandling() {
+    @Test
+    public void testSingleScriptFunction() {
         debugger.addResponse("Ignore", Debugger.Response.Ignore);
 
         script.say("In main script.");
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+        assertThrows(ScriptInterruptedException.class, () -> script.reply(() -> {
             script.say("Inside script function.");
             throwScriptInterruptedException();
         }, "Ignore"));
-        script.say("Resuming main script");
     }
 
-    @Test(expected = ScriptInterruptedException.class)
-    public void testSingleScriptFunctionWithInnerReplyErrorHandling() {
+    @Test
+    public void testSingleScriptFunctionWithInnerReply() {
         debugger.addResponse("Ignore", Debugger.Response.Ignore);
         debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+        assertThrows(ScriptInterruptedException.class, () -> script.reply(() -> {
             script.say("Start of script function.");
             assertEquals("No", script.reply("Yes", "No"));
             throwScriptInterruptedException();
-            script.say("End of script function.");
         }, "Ignore"));
-        script.say("Resuming main script");
     }
 
-    @Test(expected = ScriptInterruptedException.class)
-    public void testTwoScriptFunctionsEachWithInnerReplyErrorHandling() {
+    @Test
+    public void testTwoScriptFunctionsEachWithInnerReply() {
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+        assertThrows(ScriptInterruptedException.class, () -> script.reply(() -> {
             script.say("Start of script function 1.");
             assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
             assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                 script.say("Start of script function 2.");
                 throwScriptInterruptedException();
-                assertEquals("Wow Level 2", script.reply("Wow Level 2", "Oh Level 2"));
-                script.say("End of script function 2");
             }, "Ignore script function 2"));
-
-            script.say("End of script function 1.");
+            failedToForwardScriptInterruptedException();
         }, "Ignore script function 1"));
-        script.say("Resuming main script");
     }
 
-    @Test(expected = ScriptInterruptedException.class)
-    public void testThreeScriptFunctionsEachWithInnerReplyErrorHandling() {
+    @Test
+    public void testThreeScriptFunctionsEachWithInnerReply() {
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("No*1", Debugger.Response.Choose);
         debugger.addResponse("Wow*2", Debugger.Response.Choose);
         debugger.addResponse("Oh*3", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
+        assertThrows(ScriptInterruptedException.class, () -> script.reply(() -> {
             script.say("Start of script function 1.");
             assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
@@ -95,19 +89,15 @@ public class ShowChoicesTestThrowScriptInterruptedException extends ShowChoicesA
                     script.say("Start of script function 3.");
                     assertEquals("Oh Level 3", script.reply("No Level 3", "Wow Level 3", "Oh Level 3"));
                     throwScriptInterruptedException();
-                    script.say("End of script function 3");
                 }, "Ignore script function 3"));
-
-                script.say("End of script function 2");
+                failedToForwardScriptInterruptedException();
             }, "Ignore script function 2"));
-
-            script.say("End of script function 1.");
+            failedToForwardScriptInterruptedException();
         }, "Ignore script function 1"));
-        script.say("Resuming main script");
-
     }
 
-    private static void throwScriptInterruptedException() {
-        throw new ScriptInterruptedException();
+    private static void failedToForwardScriptInterruptedException() {
+        Assert.fail("Throwing ScriptInterruptedException has to end script");
     }
+
 }

@@ -1,7 +1,6 @@
 package teaselib.hosts;
 
 import java.awt.Dimension;
-import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -39,89 +38,87 @@ public class Transform {
      *            Bounding box
      * @return
      */
-    static AffineTransform maxImage(BufferedImage image, Dimension bounds, Optional<Rectangle.Double> focusArea) {
+    static AffineTransform maxImage(BufferedImage image, Rectangle2D bounds, Optional<Rectangle2D> focusArea) {
         return maxImage(dimension(image), bounds, focusArea);
     }
 
-    static AffineTransform maxImage(Dimension imageSize, Dimension bounds, Optional<Rectangle.Double> focusArea) {
+    static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea) {
         // transforms are concatenated from bottom to top
         var t = new AffineTransform();
 
-        t.translate(0.5 * bounds.width, 0.5 * bounds.height);
+        t.translate(0.5 * bounds.getWidth(), 0.5 * bounds.getHeight());
         // translate image center to bounds center
 
-        var size = bounds.getSize();
+        Dimension size = bounds.getBounds().getSize();
         double aspect;
         if (focusArea.isPresent()) {
             // fill screen estate while retaining same dpi for landscape and portrait images
             if (aspect(size) > 1.0) {
-                aspect = fitOutside(aspect(imageSize) >= 1.0 ? imageSize : swap(imageSize), size);
+                aspect = fitOutside(aspect(image) >= 1.0 ? image : swap(image), size);
             } else {
-                aspect = fitOutside(aspect(imageSize) < 1.0 ? imageSize : swap(imageSize), size);
+                aspect = fitOutside(aspect(image) < 1.0 ? image : swap(image), size);
             }
         } else {
             // show the whole image
-            aspect = fitInside(imageSize, size);
+            aspect = fitInside(image, size);
         }
         t.scale(aspect, aspect);
         // scale to user space
 
-        t.scale(imageSize.getWidth(), imageSize.getHeight());
+        t.scale(image.getWidth(), image.getHeight());
         // scale back to image space
 
         t.translate(-0.5, -0.5);
         // move image center to 0,0
 
-        t.scale(1.0 / imageSize.getWidth(), 1.0 / imageSize.getHeight());
+        t.scale(1.0 / image.getWidth(), 1.0 / image.getHeight());
         // transform to normalized
 
         return t;
     }
+
+    static final double goldenRatio = 1.618033988749;
+    static final double goldenRatioFactorB = 2.0 - goldenRatio;
 
     /**
      * adjust image position so that the transformed focus area is inside the bounds
      * 
      * @return
      */
-    public static AffineTransform keepFocusAreaVisible(AffineTransform surface, Dimension image, Rectangle bounds,
-            Rectangle2D.Double focus) {
-        var keepFocusAreaVisible = new AffineTransform();
+    public static AffineTransform keepFocusAreaVisible(AffineTransform surface, Dimension image, Rectangle2D bounds,
+            Rectangle2D focusArea) {
+        AffineTransform keepFocusAreaVisible;
 
-        Point2D top = surface.transform(new Point2D.Double(focus.getCenterX(), focus.getMinY()), new Point2D.Double());
-        if (!bounds.contains(top)) {
-            Point2D offset = surface.transform(new Point2D.Double(image.getWidth() / 2.0, 0.0), new Point2D.Double());
-            keepFocusAreaVisible.translate(0.0, -offset.getY());
+        var rect = surface.createTransformedShape(focusArea).getBounds2D();
+        Point2D imageTopLeft = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
+        Point2D imageBottomRight = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()),
+                new Point2D.Double());
+
+        if (rect.getCenterY() < bounds.getMinY() + bounds.getHeight() * goldenRatioFactorB) {
+            double expected = bounds.getHeight() * goldenRatioFactorB - rect.getCenterY();
+            double maximal = bounds.getMinY() - imageTopLeft.getY();
+            keepFocusAreaVisible = AffineTransform.getTranslateInstance(0.0, Math.min(maximal, expected));
+        } else if (rect.getCenterY() > bounds.getMaxY() - bounds.getHeight() * goldenRatioFactorB) {
+            double expected = bounds.getHeight() * goldenRatioFactorB - rect.getCenterY();
+            double maximal = bounds.getMaxY() - imageBottomRight.getY();
+            keepFocusAreaVisible = AffineTransform.getTranslateInstance(0.0, Math.max(maximal, expected));
+        } else if (rect.getCenterX() < bounds.getMinX() + bounds.getWidth() * goldenRatioFactorB) {
+            double expected = bounds.getWidth() * goldenRatioFactorB - rect.getCenterX();
+            double maximal = bounds.getMinX() - imageTopLeft.getX();
+            keepFocusAreaVisible = AffineTransform.getTranslateInstance(0.0, Math.min(maximal, expected));
+        } else if (rect.getCenterX() > bounds.getMaxX() - bounds.getWidth() * goldenRatioFactorB) {
+            double expected = bounds.getWidth() * goldenRatioFactorB - rect.getCenterX();
+            double maximal = bounds.getMaxX() - imageBottomRight.getX();
+            keepFocusAreaVisible = AffineTransform.getTranslateInstance(0.0, Math.max(maximal, expected));
         } else {
-            Point2D bottom = surface.transform(new Point2D.Double(focus.getCenterX(), focus.getMaxY()),
-                    new Point2D.Double());
-            if (!bounds.contains(bottom)) {
-                Point2D offset = surface.transform(new Point2D.Double(image.getWidth() / 2.0, image.getHeight()),
-                        new Point2D.Double());
-                keepFocusAreaVisible.translate(0.0, bottom.getY() - offset.getY());
-            } else {
-                Point2D left = surface.transform(new Point2D.Double(focus.getMinX(), focus.getCenterY()),
-                        new Point2D.Double());
-                if (!bounds.contains(left)) {
-                    Point2D offset = surface.transform(new Point2D.Double(0.0, image.getHeight() / 2.0),
-                            new Point2D.Double());
-                    keepFocusAreaVisible.translate(-offset.getX(), 0.0);
-                } else {
-                    Point2D right = surface.transform(new Point2D.Double(focus.getMaxX(), focus.getCenterY()),
-                            new Point2D.Double());
-                    if (!bounds.contains(right)) {
-                        Point2D offset = surface.transform(
-                                new Point2D.Double(image.getWidth(), image.getHeight() / 2.0), new Point2D.Double());
-                        keepFocusAreaVisible.translate(right.getX() - offset.getX(), 0.0);
-                    }
-                }
-            }
+            return surface;
         }
 
-        keepFocusAreaVisible.preConcatenate(surface);
+        keepFocusAreaVisible.concatenate(surface);
         return keepFocusAreaVisible;
     }
 
-    public static AffineTransform zoom(AffineTransform t, Rectangle2D.Double focusArea, double zoom) {
+    public static AffineTransform zoom(AffineTransform t, Rectangle2D focusArea, double zoom) {
         var zoomed = new AffineTransform();
 
         Point2D focus = new Point2D.Double(focusArea.getCenterX(), focusArea.getCenterY());
@@ -133,7 +130,7 @@ public class Transform {
         return zoomed;
     }
 
-    public static void avoidFocusAreaBehindText(AffineTransform surface, Rectangle2D.Double focusArea, int textAreaX) {
+    public static void avoidFocusAreaBehindText(AffineTransform surface, Rectangle2D focusArea, int textAreaX) {
         Point2D focusRight = surface.transform(new Point2D.Double(focusArea.getMaxX(), focusArea.getCenterY()),
                 new Point2D.Double());
         double overlap = focusRight.getX() - textAreaX;
@@ -178,9 +175,9 @@ public class Transform {
         return new Dimension(dimension.height, dimension.width);
     }
 
-    static Rectangle2D.Double scale(Rectangle2D.Double r, Dimension scale) {
-        return new Rectangle2D.Double(r.x * scale.width, r.y * scale.height, r.width * scale.width,
-                r.height * scale.height);
+    static Rectangle2D.Double scale(Rectangle2D r, Dimension scale) {
+        return new Rectangle2D.Double(r.getMinX() * scale.width, r.getMinY() * scale.height, r.getWidth() * scale.width,
+                r.getHeight() * scale.height);
     }
 
 }

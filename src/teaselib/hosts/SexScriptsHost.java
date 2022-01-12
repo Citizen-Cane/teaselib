@@ -232,6 +232,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         });
 
         inputMethod = new HostInputMethod(NamedExecutorService.singleThreadedQueue(getClass().getSimpleName()), this);
+        mainFrame.getJMenuBar().setVisible(false);
     }
 
     @Override
@@ -242,6 +243,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public void close() {
         mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
+        mainFrame.getJMenuBar().setVisible(true);
     }
 
     @Override
@@ -279,24 +281,22 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         };
     }
 
+    private static final BufferedImageOp blurOp = ConvolveEdgeReflectOp.blur(17);
+
     private void show(BufferedImage image) {
         if (image != null) {
             if (focusLevel < 1.0) {
-                float b = 0.20f;
-                float m = 0.80f;
-                int width = (int) (image.getWidth() * (b + focusLevel * m));
-                int height = (int) (image.getHeight() * (b + focusLevel * m));
-                var resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D resizedg2d = (Graphics2D) resized.getGraphics();
-                BufferedImageOp blurOp = ConvolveEdgeReflectOp.blur(7);
-                resizedg2d.drawImage(image, 0, 0, width, height, null);
-
-                var blurred = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                var blurred = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
                 Graphics2D blurredg2d = (Graphics2D) blurred.getGraphics();
-                blurredg2d.drawImage(resized, blurOp, 0, 0);
+                blurredg2d.drawImage(image, blurOp, 0, 0);
+                show("");
                 backgroundImageIcon.setImage(blurred);
+            } else if (actorProximity == Proximity.CLOSE) {
+                show("");
+                backgroundImageIcon.setImage(image);
             } else {
                 backgroundImageIcon.setImage(image);
+                showCurrentText();
             }
         } else {
             backgroundImageIcon.setImage(backgroundImage);
@@ -322,54 +322,50 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     private void renderDisplayImage(BufferedImage displayImage, HumanPose.Estimation pose, BufferedImage surfaceImage,
-            Rectangle bounds) {
-        int estimatedTextAreaX = bounds.width * 15 / 24;
-        AffineTransform surfaceTransform = intertitleActive ? new AffineTransform()
-                : surfaceTransform(displayImage, pose, bounds, estimatedTextAreaX);
-        Graphics2D g2d = (Graphics2D) surfaceImage.getGraphics();
+            Rectangle2D bounds) {
+        int estimatedTextAreaX = (int) bounds.getWidth() * 15 / 24;
+        var displayImageSize = Transform.dimension(displayImage);
+        var surfaceTransform = surfaceTransform(displayImageSize, pose, bounds, estimatedTextAreaX);
+        var g2d = (Graphics2D) surfaceImage.getGraphics();
         g2d.drawImage(displayImage, surfaceTransform, null);
-        // renderDebugInfo(g2d, Transform.dimension(displayImage), pose, surfaceTransform, bounds, estimatedTextAreaX);
+        //renderDebugInfo(g2d, displayImageSize, pose, surfaceTransform, bounds.getBounds(), estimatedTextAreaX);
     }
 
-    private AffineTransform surfaceTransform(BufferedImage image, HumanPose.Estimation pose, Rectangle bounds,
+    private AffineTransform surfaceTransform(Dimension image, HumanPose.Estimation pose, Rectangle2D bounds,
             int estimatedTextAreaX) {
         AffineTransform surface;
-        if (actorProximity == Proximity.CLOSE) {
-            surface = surfaceTransform(image, bounds, pose.boobs(), 2.5, estimatedTextAreaX);
-        } else if (actorProximity == Proximity.FACE2FACE) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.3, estimatedTextAreaX);
-        } else if (actorProximity == Proximity.NEAR) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.1, estimatedTextAreaX);
-        } else if (actorProximity == Proximity.FAR) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.0, estimatedTextAreaX);
-        } else if (actorProximity == Proximity.AWAY) {
-            // TODO Blur or turn display off
-            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0, estimatedTextAreaX);
+        if (intertitleActive) {
+            surface = new AffineTransform();
         } else {
-            throw new IllegalArgumentException(actorProximity.toString());
+            if (actorProximity == Proximity.CLOSE) {
+                surface = surfaceTransform(image, bounds, pose.boobs(), 2.5, estimatedTextAreaX);
+            } else if (actorProximity == Proximity.FACE2FACE) {
+                surface = surfaceTransform(image, bounds, pose.face(), 1.3, estimatedTextAreaX);
+            } else if (actorProximity == Proximity.NEAR) {
+                surface = surfaceTransform(image, bounds, pose.face(), 1.1, estimatedTextAreaX);
+            } else if (actorProximity == Proximity.FAR) {
+                surface = surfaceTransform(image, bounds, pose.face(), 1.0, estimatedTextAreaX);
+            } else if (actorProximity == Proximity.AWAY) {
+                surface = surfaceTransform(image, bounds, Optional.empty(), 1.0, estimatedTextAreaX);
+            } else {
+                throw new IllegalArgumentException(actorProximity.toString());
+            }
         }
+        surface.preConcatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
         return surface;
     }
 
-    private static AffineTransform surfaceTransform(BufferedImage image, Rectangle bounds,
-            Optional<Rectangle2D.Double> focusArea, double zoom, int textAreaX) {
-        return surfaceTransform(Transform.dimension(image), bounds, focusArea, zoom, textAreaX);
-    }
-
-    private static AffineTransform surfaceTransform(Dimension image, Rectangle bounds,
-            Optional<Rectangle2D.Double> focusArea, double zoom, int textAreaX) {
-        var surface = Transform.maxImage(image, bounds.getSize(), focusArea);
-
+    private static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds,
+            Optional<Rectangle2D> focusArea, double zoom, int textAreaX) {
+        var surface = Transform.maxImage(image, bounds, focusArea);
         if (focusArea.isPresent()) {
-            Rectangle2D.Double focusAreaImage = Transform.scale(focusArea.get(), image);
-            surface = Transform.keepFocusAreaVisible(surface, image, bounds, focusAreaImage);
+            Rectangle2D focusAreaImage = Transform.scale(focusArea.get(), image);
             if (zoom > 1.0) {
                 surface = Transform.zoom(surface, focusAreaImage, zoom);
             }
-
+            surface = Transform.keepFocusAreaVisible(surface, image, bounds, focusAreaImage);
             Transform.avoidFocusAreaBehindText(surface, focusAreaImage, textAreaX);
         }
-
         return surface;
     }
 
@@ -402,26 +398,28 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private static void drawPosture(Graphics2D g2d, Dimension image, HumanPose.Estimation pose,
             AffineTransform surface) {
         if (pose.head.isPresent()) {
-            Optional<Rectangle2D.Double> face = pose.face();
-            if (face.isPresent()) {
-                var scale = AffineTransform.getScaleInstance(image.getWidth(), image.getHeight());
-                var rect = scale.createTransformedShape(face.get());
-                var r = surface.createTransformedShape(rect).getBounds2D();
-                g2d.setColor(face.isPresent() ? Color.blue : Color.red.brighter());
-                g2d.drawRect((int) r.getX(), (int) r.getY(), (int) r.getWidth(), (int) r.getHeight());
-            }
-
+            var face = pose.face();
             Point2D poseHead = pose.head.get();
             Point2D p = surface.transform(
                     new Point2D.Double(poseHead.getX() * image.getWidth(), poseHead.getY() * image.getHeight()),
                     new Point2D.Double());
-            int radius = face.isPresent() ? (int) (image.getWidth() * face.get().width / 3.0f) : 2;
+            int radius = face.isPresent() ? (int) (image.getWidth() * face.get().getWidth() / 3.0f) : 2;
             g2d.setColor(face.isPresent() ? Color.cyan : Color.orange);
             g2d.drawOval((int) p.getX() - 2, (int) p.getY() - 2, 2 * 2, 2 * 2);
             g2d.setColor(face.isPresent() ? Color.cyan.darker().darker() : Color.red.brighter().brighter());
             g2d.drawOval((int) p.getX() - radius, (int) p.getY() - radius, 2 * radius, 2 * radius);
         }
 
+        pose.face().ifPresent(region -> drawRegion(g2d, image, surface, region));
+        pose.boobs().ifPresent(region -> drawRegion(g2d, image, surface, region));
+    }
+
+    private static void drawRegion(Graphics2D g2d, Dimension image, AffineTransform surface, Rectangle2D region) {
+        var scale = AffineTransform.getScaleInstance(image.getWidth(), image.getHeight());
+        var rect = scale.createTransformedShape(region);
+        var r = surface.createTransformedShape(rect).getBounds2D();
+        g2d.setColor(Color.blue);
+        g2d.drawRect((int) r.getX(), (int) r.getY(), (int) r.getWidth(), (int) r.getHeight());
     }
 
     private static void fillTextArea(Graphics2D g2d, Rectangle bounds, int textAreaInsetRight) {
@@ -582,7 +580,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         var surfaceImage = createSurfaceImage(bounds);
         if (currentImage != null) {
             bounds.width -= BACKGROUND_IMAGE_RIGHT_INSET;
-            renderDisplayImage(currentImage, currentPose, surfaceImage, bounds);
+            renderDisplayImage(currentImage, currentPose, surfaceImage,
+                    new Rectangle2D.Double(0, 0, bounds.width, bounds.height));
         } else {
             surfaceImage = null;
         }
@@ -671,7 +670,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         var bounds = getContentBounds(mainFrame);
         var interTitle = createSurfaceImage(bounds);
         if (currentImage != null) {
-            renderDisplayImage(currentImage, currentPose, interTitle, bounds);
+            renderDisplayImage(currentImage, currentPose, interTitle,
+                    new Rectangle2D.Double(0, 0, bounds.width, bounds.height));
         }
 
         int top = bounds.height / 4;

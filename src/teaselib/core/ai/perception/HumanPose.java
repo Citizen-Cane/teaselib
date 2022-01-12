@@ -2,7 +2,6 @@ package teaselib.core.ai.perception;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.Rectangle2D.Double;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -102,11 +101,16 @@ public class HumanPose extends NativeObject.Disposible {
 
         public static class Gaze {
 
+            public final float x;
+            public final float y;
+
             public final float nod;
             public final float shake;
             public final float tilt;
 
             public Gaze(float x, float y, float nod, float shake, float tilt) {
+                this.x = x;
+                this.y = y;
                 this.nod = nod;
                 this.shake = shake;
                 this.tilt = tilt;
@@ -172,7 +176,7 @@ public class HumanPose extends NativeObject.Disposible {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.4f * distanceFactor) {
+                if (z < 0.5f * distanceFactor) {
                     proximity = Proximity.CLOSE;
                 } else if (z < 1.2f * distanceFactor) {
                     proximity = Proximity.FACE2FACE;
@@ -192,7 +196,7 @@ public class HumanPose extends NativeObject.Disposible {
             }
         }
 
-        public Optional<Rectangle2D.Double> face() {
+        public Optional<Rectangle2D> face() {
             if (head.isEmpty()) {
                 return Optional.empty();
             } else {
@@ -202,13 +206,14 @@ public class HumanPose extends NativeObject.Disposible {
             }
         }
 
-        public Optional<Rectangle2D.Double> boobs() {
-            Optional<Double> face = face();
+        public Optional<Rectangle2D> boobs() {
+            Optional<Rectangle2D> face = face();
             if (face.isEmpty()) {
                 return Optional.empty();
             } else {
                 var r = face.get();
-                return Optional.of(new Rectangle2D.Double(r.x, r.y + r.height, r.width, r.height));
+                return Optional.of(new Rectangle2D.Double(r.getMinX(), r.getMinY() + r.getHeight() * 1.5, r.getWidth(),
+                        r.getHeight() / 2));
             }
         }
 

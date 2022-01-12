@@ -1,10 +1,7 @@
 package teaselib.core.ai;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -76,7 +73,7 @@ public class TeaseLibAITest {
         }
     }
 
-    private Object runAccelerated(TeaseLibAI teaseLibAI, Runnable test) throws InterruptedException {
+    private static Object runAccelerated(TeaseLibAI teaseLibAI, Runnable test) throws InterruptedException {
         try {
             return teaseLibAI.getExecutor(ExecutionType.Accelerated).submit(test).get();
         } catch (ExecutionException e) {

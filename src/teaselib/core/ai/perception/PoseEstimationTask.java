@@ -221,8 +221,13 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
             poseAspects.set(PoseAspects.Unavailable);
             signal(actor, PoseAspects.Unavailable, previous);
         }
-        ensureFrametimeMillis(1000);
-        // TODO Listen to actorChanged event and adding/removing listeners -> wait here for condition
+        waitFixedDuration();
+        // TODO Listen to actorChanged event and adding/removing listeners
+        // -> wait here for interruptible condition
+    }
+
+    private void waitFixedDuration() throws InterruptedException {
+        Thread.sleep(1000);
     }
 
     private void estimatePose(Actor actor, PoseAspects previous, Set<Interest> interests) throws InterruptedException {

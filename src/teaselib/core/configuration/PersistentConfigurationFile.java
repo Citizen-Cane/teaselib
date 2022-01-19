@@ -5,12 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class PersistentConfigurationFile extends ConfigurationFileImpl {
-    private final Path path;
 
     interface ChangeListener {
         void fileChanged(PersistentConfigurationFile file);
     }
 
+    private final Path path;
     private final ChangeListener changeListener;
 
     PersistentConfigurationFile(Path path, ChangeListener changeListener) throws IOException {
@@ -59,6 +59,11 @@ public class PersistentConfigurationFile extends ConfigurationFileImpl {
 
     private void writeBackLater() {
         changeListener.fileChanged(this);
+    }
+
+    @Override
+    public String toString() {
+        return path.toString();
     }
 
 }

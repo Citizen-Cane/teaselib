@@ -35,7 +35,7 @@ public class LowerCaseNames implements ConfigurationFile {
 
     @Override
     public void clear(String key) {
-        file.clear(key);
+        file.clear(key.toLowerCase());
     }
 
 }

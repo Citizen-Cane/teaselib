@@ -1,6 +1,9 @@
 package teaselib.core.configuration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -120,6 +123,26 @@ public class PersistentConfigurationFileTest {
             assertTrue(script.persistentBoolean("testVariableName").value());
             assertTrue(script.persistentBoolean("TESTVARIABLENAME").value());
             assertTrue(script.persistentBoolean("testvariablename").value());
+        }
+    }
+
+    @Test
+    public void testCaseIgnoredForClear() throws IOException {
+        DebugSetup setup = new DebugSetup().withUserPath(folder.getRoot());
+
+        try (TestScript script = new TestScript(setup)) {
+            script.persistentBoolean("testVariableName").set(true);
+            script.teaseLib.config.close(); // flush files
+        }
+
+        try (TestScript script = new TestScript(setup)) {
+            assertTrue(script.persistentBoolean("testVariableName").value());
+            script.persistentBoolean("testVariableName").clear();
+            assertFalse(script.persistentBoolean("testVariableName").value());
+        }
+
+        try (TestScript script = new TestScript(setup)) {
+            assertFalse(script.persistentBoolean("testVariableName").value());
         }
     }
 

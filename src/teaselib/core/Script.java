@@ -335,6 +335,7 @@ public abstract class Script {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
         }
+        teaseLib.config.flushSettings();
     }
 
     protected void prependMessage(Message message) {

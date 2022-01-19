@@ -1,6 +1,5 @@
 package teaselib.core;
 
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,8 +67,7 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values,
-            boolean allowCancel) {
+    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel) {
         return new ArrayList<>(values);
     }
 
@@ -100,12 +98,6 @@ public class CommandLineHost implements Host {
             return getLocation(Location.Host);
         else
             throw new IllegalArgumentException(Objects.toString(folder));
-    }
-
-    @Override
-    public void setGaze(Point2D gaze) {
-        // Ignore
-
     }
 
     @Override

@@ -1,6 +1,5 @@
 package teaselib.core.debug;
 
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -123,8 +122,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values,
-            boolean allowCancel) {
+    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel) {
         return new ArrayList<>(values);
     }
 
@@ -232,15 +230,8 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void setGaze(Point2D gaze) {
-        // Ignore
-
-    }
-
-    @Override
     public void setActorProximity(HumanPose.Proximity proximity) {
         // Ignore
-
     }
 
     @Override

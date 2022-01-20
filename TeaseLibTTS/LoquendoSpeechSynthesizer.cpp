@@ -34,7 +34,8 @@ LoquendoSpeechSynthesizer::LoquendoSpeechSynthesizer(JNIEnv* env)
     try {
         checkResult(ttsNewSession(&hSession, NULL));
         checkResult(ttsNewReader(&hReader, hSession));
-        checkResult(ttsSetTextFormat(hReader, ttsTextFormatType::TTSAUTODETECTFORMAT));
+        checkResult(ttsSetTextFormat(hReader, ttsTextFormatType::TTSPLAINTEXT));
+        checkResult(ttsSetTextEncoding(hReader, ttsTextEncodingType::TTSUTF16));
     } catch (...) {
             dispose();
             throw;
@@ -101,7 +102,7 @@ void LoquendoSpeechSynthesizer::speak(const wchar_t* prompt)
 {
     setOutput(OutputType::AudioDevice);
     applyHints();
-    speak(teaselib::strings::utf8(prompt), ttsTRUE);
+    speak(prompt, ttsTRUE);
     awaitDone();
 }
 
@@ -110,11 +111,11 @@ std::wstring LoquendoSpeechSynthesizer::speak(const wchar_t* prompt, const wchar
     const string utf = teaselib::strings::utf8(path);
     setOutput(OutputType::File, utf.c_str());
     applyHints();
-    speak(teaselib::strings::utf8(prompt), ttsFALSE);
+    speak(wstring(prompt), ttsFALSE);
     return path;
 }
 
-void LoquendoSpeechSynthesizer::speak(const string& prompt, ttsBoolType asynchronous) {
+void LoquendoSpeechSynthesizer::speak(const wstring& prompt, ttsBoolType asynchronous) {
     checkResult(ttsRead(hReader, prompt.c_str(), asynchronous, ttsFALSE, nullptr));
 }
 

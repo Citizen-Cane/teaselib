@@ -33,7 +33,7 @@ private:
 	void setOutput(OutputType output, const char* wav = nullptr);
 	OutputType current;
 	void applyHints();
-	void speak(const std::string& prompt, ttsBoolType asynchronous);
+	void speak(const std::wstring& prompt, ttsBoolType asynchronous);
 	void awaitDone();
 
 	std::string extractLocale(const std::string& languageAliases);

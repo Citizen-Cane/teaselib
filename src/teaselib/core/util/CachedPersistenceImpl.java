@@ -15,6 +15,10 @@ import teaselib.core.UserItemsImpl;
 import teaselib.core.configuration.ConfigurationFile;
 import teaselib.util.TextVariables;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public class CachedPersistenceImpl implements CachedPersistence {
 
     private static final Logger logger = LoggerFactory.getLogger(CachedPersistenceImpl.class);
@@ -29,10 +33,6 @@ public class CachedPersistenceImpl implements CachedPersistence {
     public ConfigurationFile file() {
         return file;
     }
-
-    // TODO SexScripts reads/write case insensitive
-    // -> replace SortedProperties to use String::compareToIgnoreCase
-    // -> until then settings will not match because we're not going to write lowercase
 
     @Override
     public boolean has(QualifiedName name) {
@@ -60,7 +60,6 @@ public class CachedPersistenceImpl implements CachedPersistence {
 
     private void set(String name, String value) {
         file.set(name, value);
-
     }
 
     @Override
@@ -90,7 +89,7 @@ public class CachedPersistenceImpl implements CachedPersistence {
         file.clear(name);
     }
 
-    // Duplicated code from SexScriptsPersistence - refactor to host or TeaseLib
+    // TODO resolve Duplicated code from SexScriptsPersistence - move to host or TeaseLib
 
     @Override
     public UserItems getUserItems(TeaseLib teaseLib) throws IOException {

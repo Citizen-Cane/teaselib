@@ -21,6 +21,10 @@ import teaselib.core.util.QualifiedName;
 import teaselib.core.util.Stream;
 import teaselib.util.TextVariables;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public class SexScriptsPersistence implements Persistence {
     private static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
@@ -106,6 +110,8 @@ public class SexScriptsPersistence implements Persistence {
     public void clear(QualifiedName name) {
         host.save(name.toString(), null);
     }
+
+    // TODO resolve Duplicated code from CachedPersistenceImpl - move to host or TeaseLib
 
     @Override
     public TextVariables getTextVariables(Locale locale) {

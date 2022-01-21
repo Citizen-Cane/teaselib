@@ -13,6 +13,10 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.ConfigurationFile;
 import teaselib.util.TextVariables;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public class ConfigFileMapping implements Persistence {
 
     private final Configuration config;
@@ -89,11 +93,7 @@ public class ConfigFileMapping implements Persistence {
     }
 
     private Optional<ConfigurationFile> getConfigFile(QualifiedName name) {
-        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
-        if (properties.isEmpty()) {
-            properties = config.getUserSettings(name.domain);
-        }
-        return properties;
+        return config.getUserSettings(name.namespace);
     }
 
     @Override

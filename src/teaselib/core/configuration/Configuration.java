@@ -1,7 +1,7 @@
 package teaselib.core.configuration;
 
-import static java.util.Collections.singletonList;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static java.util.Collections.*;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,13 +42,13 @@ public class Configuration implements Closeable {
     static final String PROPERTIES_EXTENSION = ".properties";
 
     private final Map<String, ConfigurationFile> userPropertiesNamespaceMapping = new HashMap<>();
-    final PersistentConfigurationFileStoreService persistentConfigurationFiles = new PersistentConfigurationFileStoreService();
+    private final PersistentConfigurationFileStoreService persistentConfigurationFiles = new PersistentConfigurationFileStoreService();
 
     private final List<ConfigurationFileImpl> defaultProperties = new ArrayList<>();
     private final ConfigurationFileImpl sessionProperties = new ConfigurationFileImpl();
     private ConfigurationFileImpl persistentProperties;
 
-    private Optional<File> scriptSettingsFolder = Optional.empty();
+    private Optional<Path> scriptSettingsFolder = Optional.empty();
 
     public Configuration() {
         this.persistentProperties = sessionProperties;
@@ -59,7 +59,7 @@ public class Configuration implements Closeable {
         setup.applyTo(this);
     }
 
-    public ConfigurationFile addPersistentConfigurationFile(Path path) throws IOException {
+    public ConfigurationFile createGlobalSettingsFile(Path path) throws IOException {
         return new LowerCaseNames(persistentConfigurationFiles.open(path));
     }
 
@@ -87,7 +87,7 @@ public class Configuration implements Closeable {
         String filename = QualifiedName.strip(namespace) + PROPERTIES_EXTENSION;
         List<String> namespaces = Collections.singletonList(QualifiedName.strip(namespace));
         if (scriptSettingsFolder.isPresent()) {
-            addPersistentUserProperties(Optional.empty(), filename, scriptSettingsFolder.get(), namespaces);
+            addPersistentUserProperties(Optional.empty(), filename, scriptSettingsFolder.get().toFile(), namespaces);
         } else {
             addDefaultUserProperties(Optional.empty(), filename, namespaces);
         }
@@ -124,7 +124,7 @@ public class Configuration implements Closeable {
             if (defaultResource.isPresent()) {
                 initUserFileWithDefaults(defaultResource.get() + filename, userFile);
             }
-            var configurationFile = addPersistentConfigurationFile(Paths.get(folder.getAbsolutePath(), filename));
+            var configurationFile = createGlobalSettingsFile(Paths.get(folder.getAbsolutePath(), filename));
             registerNamespaces(namespaces, configurationFile);
         }
 
@@ -140,6 +140,12 @@ public class Configuration implements Closeable {
         }
     }
 
+    public Optional<ConfigurationFile> getUserSettings(QualifiedName name) {
+        var namespace = name.namespace;
+        return userPropertiesNamespaceMapping.entrySet().stream().filter(e -> namespace.startsWith(e.getKey()))
+                .map(Entry::getValue).findFirst();
+    }
+
     public Optional<ConfigurationFile> getUserSettings(String namespace) {
         return userPropertiesNamespaceMapping.entrySet().stream().filter(e -> namespace.startsWith(e.getKey()))
                 .map(Entry::getValue).findFirst();
@@ -150,13 +156,13 @@ public class Configuration implements Closeable {
         initUserFileWithDefaults(templateResource, userFile);
     }
 
-    public void initUserFileWithDefaults(String templateResource, File userFile) throws IOException {
+    private static void initUserFileWithDefaults(String templateResource, File userFile) throws IOException {
         if (!userFile.exists()) {
             FileUtilities.copy(templateResource, userFile);
         }
     }
 
-    public void add(File file) throws IOException {
+    private void add(File file) throws IOException {
         ConfigurationFileImpl configurationFileImpl;
         if (defaultProperties.isEmpty()) {
             configurationFileImpl = new ConfigurationFileImpl();
@@ -170,7 +176,7 @@ public class Configuration implements Closeable {
         persistentProperties = configurationFileImpl;
     }
 
-    public void add(String configResource) throws IOException {
+    private void add(String configResource) throws IOException {
         ConfigurationFileImpl configurationFileImpl;
         if (defaultProperties.isEmpty()) {
             configurationFileImpl = new ConfigurationFileImpl();
@@ -269,7 +275,7 @@ public class Configuration implements Closeable {
                     }
                 }
             });
-            scriptSettingsFolder = Optional.of(settings);
+            scriptSettingsFolder = Optional.of(settings.toPath());
         } else {
             scriptSettingsFolder = Optional.empty();
         }
@@ -277,6 +283,10 @@ public class Configuration implements Closeable {
 
     public static boolean settingsFile(File file) {
         return file.getName().endsWith(PROPERTIES_EXTENSION);
+    }
+
+    public Path getScriptSettingsFolder() {
+        return scriptSettingsFolder.orElseThrow();
     }
 
     public void flushSettings() {

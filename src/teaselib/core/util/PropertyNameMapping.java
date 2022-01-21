@@ -3,6 +3,10 @@ package teaselib.core.util;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public abstract class PropertyNameMapping {
     public static final PropertyNameMapping NONE = new PropertyNameMapping() {
 

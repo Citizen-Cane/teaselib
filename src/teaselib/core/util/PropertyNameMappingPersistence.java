@@ -10,6 +10,10 @@ import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.util.TextVariables;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public class PropertyNameMappingPersistence implements Persistence {
     private final Persistence persistence;
     private final PropertyNameMapping mapping;

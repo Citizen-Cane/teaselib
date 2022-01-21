@@ -14,7 +14,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
@@ -51,6 +51,7 @@ import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.PersistenceFilter;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
@@ -61,6 +62,7 @@ import teaselib.core.util.CachedPersistenceImpl;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.PropertyNameMappingPersistence;
+import teaselib.core.util.QualifiedName;
 import teaselib.util.AnnotatedImage;
 import teaselib.util.Interval;
 
@@ -91,8 +93,9 @@ import teaselib.util.Interval;
 // TODO Combobox doesn't respond to speech recognition reliably
 // - This is in fact not a speech recognition related problem,
 // but dismissing the combobox after showing the list programmatically
+
 /**
- * @author admin
+ * @author Citizen-Cane
  *
  */
 public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable {
@@ -232,9 +235,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     @Override
     public Persistence persistence(Configuration configuration) throws IOException {
-        var file = configuration.addPersistentConfigurationFile(
-                Paths.get(getLocation(Location.Host).getAbsolutePath(), "data.properties"));
-        return new PropertyNameMappingPersistence(new CachedPersistenceImpl(file), new SexScriptsPropertyNameMapping());
+        var path = configuration.getScriptSettingsFolder().resolve("common.properties");
+        var common = configuration.createGlobalSettingsFile(path);
+        var commonState = new CachedPersistenceImpl(common);
+
+        var inventory = new SexScriptsPersistence(ss);
+        var mapping = new SexScriptsPropertyNameMapping();
+        var inventoryState = new PropertyNameMappingPersistence(inventory, mapping);
+
+        Predicate<QualifiedName> allButInventory = name -> !name.name.endsWith(".Available");
+        return new PersistenceFilter(allButInventory, commonState, inventoryState);
     }
 
     @Override

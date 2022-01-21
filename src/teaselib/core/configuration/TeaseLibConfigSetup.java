@@ -9,6 +9,10 @@ import teaselib.core.Host.Location;
 import teaselib.core.UserItemsImpl;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public final class TeaseLibConfigSetup implements Setup {
     private static final String TEASELIB_PROPERTIES = "teaselib.properties";
     private static final String NETWORK_PROPERTIES = "network.properties";

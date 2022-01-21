@@ -124,19 +124,45 @@ public class StateImpl implements State, State.Options, State.Attributes {
         return cache.state(domain, name);
     }
 
+    public static Options infiniteDurationWhenRememberedWithoutDuration(State state, State.Options options) {
+        return new Options() {
+
+            @Override
+            public void remember(Until forget) {
+                if (forget == Until.Removed) {
+                    over(Duration.INFINITE, TimeUnit.SECONDS);
+                } else if (state.duration().limit(TimeUnit.SECONDS) == 0) {
+                    throw new IllegalArgumentException("Trying to remember " + forget + " without explicit duration.");
+                }
+                options.remember(forget);
+            }
+
+            @Override
+            public Persistence over(long duration, TimeUnit unit) {
+                return options.over(duration, unit);
+            }
+
+            @Override
+            public Persistence over(Duration duration) {
+                return options.over(duration);
+            }
+
+        };
+    }
+
     @Override
     public Options apply() {
         applyImpl(Collections.emptySet());
-        return this;
+        return infiniteDurationWhenRememberedWithoutDuration(this, this);
     }
 
     @Override
     public State.Options applyTo(Object... attributes) {
         applyImpl(map(Precondition::apply, attributes));
-        return this;
+        return infiniteDurationWhenRememberedWithoutDuration(this, this);
     }
 
-    public State applyImpl(Set<QualifiedString> attributes) {
+    public State.Options applyImpl(Set<QualifiedString> attributes) {
         if (!applied()) {
             setTemporary();
         }
@@ -355,7 +381,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
     private void updateLastUsed(FrozenDuration frozenDuration) {
         // TODO apply with domain name
-        state(Domain.LAST_USED, name).apply().over(frozenDuration).remember(Until.Removed);
+        state(Domain.LAST_USED, name).applyImpl(Collections.emptySet()).over(frozenDuration).remember(Until.Removed);
     }
 
     @Override

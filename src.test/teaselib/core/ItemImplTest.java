@@ -601,7 +601,7 @@ public class ItemImplTest {
     public void testUntilAppliedToStateAndItem() throws IOException {
         try (TestScript script = new TestScript()) {
             Item woodenSpoon = script.item(Household.Wooden_Spoon);
-            woodenSpoon.apply().remember(Until.Expired);
+            woodenSpoon.apply().over(1, TimeUnit.HOURS).remember(Until.Expired);
             assertTrue(script.state(Household.Wooden_Spoon).is(Until.Expired));
             assertTrue(woodenSpoon.is(Until.Expired));
         }

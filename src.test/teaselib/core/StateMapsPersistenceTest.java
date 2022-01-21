@@ -119,8 +119,9 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(NestedTestToys.Chastity_Device);
 
-        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
-        assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
+        boolean notRemembered = !isRemembered();
+        assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
+        assertEquals(notRemembered, state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
 
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
@@ -129,15 +130,15 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
 
         assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
-        assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).expired());
-        assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).expired());
+        assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).expired());
+        assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).expired());
 
         clearStatesMapsOrNot();
 
         assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
-        assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).expired());
-        assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).expired());
+        assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).expired());
+        assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).expired());
 
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
@@ -149,7 +150,7 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
-        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
+        assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
 
         State chastityDevice = state(TEST_DOMAIN, NestedTestToys.Chastity_Device);
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).remove();
@@ -157,14 +158,14 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
         assertTrue(chastityDevice.applied());
-        assertTrue(chastityDevice.expired());
+        assertEquals(notRemembered, chastityDevice.expired());
 
         state(TEST_DOMAIN, NestedTestToys.Chastity_Device).remove();
 
         assertFalse(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
+        assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
 
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());

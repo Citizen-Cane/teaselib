@@ -180,7 +180,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         StateImpl state = state();
 
         if (defaultPeers.isEmpty()) {
-            state.apply();
+            state.applyImpl(Collections.emptySet());
         } else {
             applyInstanceTo(defaultPeers);
         }
@@ -189,7 +189,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         state.applyTo(this.name);
 
         updateLastUsedGuidState();
-        return this;
+        return StateImpl.infiniteDurationWhenRememberedWithoutDuration(this, this);
     }
 
     @Override
@@ -198,7 +198,8 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
-        return applyToImpl(map(Precondition::apply, peers));
+        Options options = applyToImpl(map(Precondition::apply, peers));
+        return StateImpl.infiniteDurationWhenRememberedWithoutDuration(this, options);
     }
 
     private State.Options applyToImpl(Set<QualifiedString> flattenedPeers) {
@@ -244,7 +245,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     public void remember(Until forget) {
         StateImpl state = state();
         state.remember(forget);
-        state(QualifiedString.of(forget)).applyTo(this.name).remember(forget);
+        state(QualifiedString.of(forget)).applyImpl(Collections.singleton(this.name)).remember(forget);
     }
 
     @Override

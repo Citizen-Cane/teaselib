@@ -202,30 +202,30 @@ public abstract class Script {
         for (QualifiedString peer : new ArrayList<>(peers)) {
             if (!peer.isItem()) {
                 var state = (StateImpl) teaseLib.state(domain, peer);
-                if (!cleanupRemovedUserItemReferences(state)) {
-                    remove(state, startupTimeSeconds, limitFactor);
+                if (allUserItemReferencesRemoved(state)) {
+                    state.remove();
+                } else if (autoRemovalLimitReached(state, startupTimeSeconds, limitFactor)) {
+                    state.remove();
                 }
             }
         }
         return untilState;
     }
 
-    private boolean cleanupRemovedUserItemReferences(StateImpl state) {
-        List<QualifiedString> peers = state.peers().stream().filter(peer -> peer.guid().isPresent()).toList();
-
-        List<Item> items = peers.stream().map(peer -> {
-            return teaseLib.findItem(state.domain, peer.kind(), peer.guid().get());
-        }).filter(Predicate.not(Item.NotFound::equals)).toList();
-
-        if (items.isEmpty()) {
-            state.remove();
-            return true;
-        } else {
+    private boolean allUserItemReferencesRemoved(StateImpl state) {
+        List<QualifiedString> peers = state.peers().stream().filter(QualifiedString::isItem).toList();
+        if (peers.isEmpty()) {
             return false;
+        } else {
+            List<Item> items = peers.stream().map(peer -> {
+                return teaseLib.findItem(state.domain, peer.kind(), peer.guid().get());
+            }).filter(Predicate.not(Item.NotFound::equals)).toList();
+            return items.isEmpty();
         }
+
     }
 
-    private static void remove(State state, long startupTimeSeconds, float limitFactor) {
+    private static boolean autoRemovalLimitReached(State state, long startupTimeSeconds, float limitFactor) {
         // Very implicit way of testing for unavailable items
         var duration = state.duration();
         if (state.applied() && duration.expired()) {
@@ -233,10 +233,11 @@ public abstract class Script {
             if (limit >= State.TEMPORARY && limit < Duration.INFINITE) {
                 long autoRemovalTime = duration.start(TimeUnit.SECONDS) + (long) (limit * limitFactor);
                 if (autoRemovalTime <= startupTimeSeconds) {
-                    state.remove();
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     private static <T> T getOrDefault(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {

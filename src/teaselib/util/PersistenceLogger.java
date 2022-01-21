@@ -1,15 +1,8 @@
 package teaselib.util;
 
-import java.io.IOException;
-import java.util.Locale;
-
 import org.slf4j.LoggerFactory;
 
-import teaselib.Actor;
-import teaselib.Sexuality.Gender;
 import teaselib.core.Persistence;
-import teaselib.core.TeaseLib;
-import teaselib.core.UserItems;
 import teaselib.core.util.QualifiedName;
 
 public class PersistenceLogger implements Persistence {
@@ -20,11 +13,6 @@ public class PersistenceLogger implements Persistence {
         super();
         this.persistence = persistence;
         this.logger = LoggerFactory.getLogger(persistence.getClass());
-    }
-
-    @Override
-    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
-        return persistence.getUserItems(teaseLib);
     }
 
     @Override
@@ -66,16 +54,6 @@ public class PersistenceLogger implements Persistence {
             logger.debug("cleared " + name);
         }
         persistence.clear(name);
-    }
-
-    @Override
-    public TextVariables getTextVariables(Locale locale) {
-        return persistence.getTextVariables(locale);
-    }
-
-    @Override
-    public Actor getDominant(Gender gender, Locale locale) {
-        return persistence.getDominant(gender, locale);
     }
 
     @Override

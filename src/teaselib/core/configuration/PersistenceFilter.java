@@ -1,16 +1,9 @@
 package teaselib.core.configuration;
 
-import java.io.IOException;
-import java.util.Locale;
 import java.util.function.Predicate;
 
-import teaselib.Actor;
-import teaselib.Sexuality.Gender;
 import teaselib.core.Persistence;
-import teaselib.core.TeaseLib;
-import teaselib.core.UserItems;
 import teaselib.core.util.QualifiedName;
-import teaselib.util.TextVariables;
 
 /**
  * @author Citizen-Cane
@@ -72,21 +65,6 @@ public class PersistenceFilter implements Persistence {
         } else {
             mismatch.clear(name);
         }
-    }
-
-    @Override
-    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
-        return mismatch.getUserItems(teaseLib);
-    }
-
-    @Override
-    public TextVariables getTextVariables(Locale locale) {
-        return mismatch.getTextVariables(locale);
-    }
-
-    @Override
-    public Actor getDominant(Gender gender, Locale locale) {
-        return mismatch.getDominant(gender, locale);
     }
 
 }

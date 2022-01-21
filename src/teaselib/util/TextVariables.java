@@ -177,7 +177,7 @@ public class TextVariables implements Iterable<String> {
         return sb.toString();
     }
 
-    public void setUserIdentity(TeaseLib teaseLib, String domain, Locale locale) {
+    public void addUserIdentity(TeaseLib teaseLib, String domain, Locale locale) {
         Gender gender = teaseLib.new PersistentEnum<>(domain, Gender.class).value();
         String language = locale.getLanguage();
         String namespace = userNamespace(gender);

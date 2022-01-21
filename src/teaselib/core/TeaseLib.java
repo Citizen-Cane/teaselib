@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Duration;
+import teaselib.Images;
 import teaselib.Sexuality.Gender;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
@@ -106,7 +107,7 @@ public class TeaseLib implements Closeable {
         this.host = host;
         this.persistence = new ConfigFileMapping(config, host.persistence(config));
 
-        this.userItems = persistence.getUserItems(this);
+        this.userItems = new UserItemsImpl(this);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
 
         this.stateMaps = new StateMaps(this);
@@ -833,8 +834,7 @@ public class TeaseLib implements Closeable {
 
     public TextVariables getTextVariables(String domain, Locale locale) {
         var variables = new TextVariables();
-        variables.setUserIdentity(this, domain, locale);
-        variables.setAll(persistence.getTextVariables(locale));
+        variables.addUserIdentity(this, domain, locale);
         return variables;
     }
 
@@ -1008,7 +1008,14 @@ public class TeaseLib implements Closeable {
     }
 
     public Actor getDominant(Gender gender, Locale locale) {
-        return persistence.getDominant(gender, locale);
+        switch (gender) {
+        case Feminine:
+            return new Actor("Mistress", "Miss", gender, locale, Actor.Key.DominantFemale, Images.None);
+        case Masculine:
+            return new Actor("Master", "Sir", gender, locale, Actor.Key.DominantMale, Images.None);
+        default:
+            throw new IllegalArgumentException(gender.toString());
+        }
     }
 
     public void addUserItems(URL items) {

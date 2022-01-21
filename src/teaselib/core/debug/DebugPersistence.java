@@ -1,17 +1,7 @@
 package teaselib.core.debug;
 
-import java.io.IOException;
-import java.util.Locale;
-
-import teaselib.Actor;
-import teaselib.Images;
-import teaselib.Sexuality.Gender;
 import teaselib.core.Persistence;
-import teaselib.core.TeaseLib;
-import teaselib.core.UserItems;
-import teaselib.core.UserItemsImpl;
 import teaselib.core.util.QualifiedName;
-import teaselib.util.TextVariables;
 
 public class DebugPersistence implements Persistence {
     public static final String TRUE = "true";
@@ -21,11 +11,6 @@ public class DebugPersistence implements Persistence {
 
     public DebugPersistence(DebugStorage storage) {
         this.storage = storage;
-    }
-
-    @Override
-    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
-        return new UserItemsImpl(teaseLib);
     }
 
     @Override
@@ -65,23 +50,6 @@ public class DebugPersistence implements Persistence {
     @Override
     public void clear(QualifiedName name) {
         storage.remove(name);
-    }
-
-    @Override
-    public TextVariables getTextVariables(Locale locale) {
-        return new TextVariables();
-    }
-
-    @Override
-    public Actor getDominant(Gender gender, Locale locale) {
-        switch (gender) {
-        case Feminine:
-            return new Actor("Mistress", "Miss", gender, locale, Actor.Key.DominantFemale, Images.None);
-        case Masculine:
-            return new Actor("Master", "Sir", gender, locale, Actor.Key.DominantMale, Images.None);
-        default:
-            throw new IllegalArgumentException(gender.toString());
-        }
     }
 
     @Override

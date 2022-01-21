@@ -1,14 +1,6 @@
 package teaselib.core.util;
 
-import java.io.IOException;
-import java.util.Locale;
-
-import teaselib.Actor;
-import teaselib.Sexuality.Gender;
 import teaselib.core.Persistence;
-import teaselib.core.TeaseLib;
-import teaselib.core.UserItems;
-import teaselib.util.TextVariables;
 
 /**
  * @author Citizen-Cane
@@ -55,21 +47,6 @@ public class PropertyNameMappingPersistence implements Persistence {
     @Override
     public void clear(QualifiedName name) {
         persistence.clear(mapping.map(name));
-    }
-
-    @Override
-    public TextVariables getTextVariables(Locale locale) {
-        return persistence.getTextVariables(locale);
-    }
-
-    @Override
-    public Actor getDominant(Gender gender, Locale locale) {
-        return persistence.getDominant(gender, locale);
-    }
-
-    @Override
-    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
-        return persistence.getUserItems(teaseLib);
     }
 
 }

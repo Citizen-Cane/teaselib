@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -337,7 +336,7 @@ public class ScriptRenderer implements Closeable {
     }
 
     void cleanupCompletedBackgroundRenderers() {
-        backgroundRenderers.stream().filter(Threaded::hasCompletedAll).collect(Collectors.toList()).stream()
+        backgroundRenderers.stream().filter(Threaded::hasCompletedAll).toList().stream()
                 .forEach(backgroundRenderers::remove);
     }
 
@@ -360,7 +359,7 @@ public class ScriptRenderer implements Closeable {
         return inputMethodExecutor;
     }
 
-    ExecutorService getPrefetchExecutorService() {
+    public ExecutorService getPrefetchExecutorService() {
         return prefetchExecutor;
     }
 

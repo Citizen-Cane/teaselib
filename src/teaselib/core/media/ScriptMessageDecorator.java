@@ -219,21 +219,24 @@ public class ScriptMessageDecorator {
         } else if (!Message.ActorImage.equalsIgnoreCase(imageType)
                 && !Boolean.parseBoolean(config.get(Config.Render.InstructionalImages))) {
             nextImage = Message.NoImage;
-        } else
-        // render images
-        if (Message.ActorImage.equalsIgnoreCase(imageType)) {
-            // actor image
-            if (actor.images.hasNext()) {
-                nextImage = actor.images.next(currentMood);
-                actor.images.fetch(nextImage);
-            } else {
-                nextImage = Message.NoImage;
-            }
+        } else if (Message.NoImage.equalsIgnoreCase(imageType)) {
+            nextImage = Message.NoImage;
         } else {
-            // Instructional image
-            nextImage = imageType;
-            // TODO fetch instructional images from elsewhere and dispose them earlier than actor images
-            actor.images.next(nextImage);
+            // choose and fetch image
+            if (Message.ActorImage.equalsIgnoreCase(imageType)) {
+                // actor image
+                if (actor.images.hasNext()) {
+                    nextImage = actor.images.next(currentMood);
+                    actor.images.fetch(nextImage);
+                } else {
+                    nextImage = Message.NoImage;
+                }
+            } else {
+                // Instructional image
+                nextImage = imageType;
+                // TODO fetch instructional images from elsewhere and dispose them earlier than actor images
+                actor.images.fetch(nextImage);
+            }
         }
         return nextImage;
     }

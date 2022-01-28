@@ -69,4 +69,13 @@ public class FileUtilities {
     public static File currentDir() {
         return new File("").getAbsoluteFile();
     }
+
+    public static String removeExtension(String path) {
+        if (path.indexOf(".") > 0) {
+            return path.substring(0, path.lastIndexOf("."));
+        } else {
+            return path;
+        }
+    }
+
 }

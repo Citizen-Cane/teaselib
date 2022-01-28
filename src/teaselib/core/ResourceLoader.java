@@ -148,13 +148,6 @@ public class ResourceLoader {
         return classLoaderCompatibleResourcePath(path).replace("%20", " ");
     }
 
-    @Deprecated
-    // TODO No need to call this, remove
-    public void addAssets(Class<?> scriptClass) {
-        // TODO untested, must be local path, not relative
-        addAssets(ResourceLoader.getProjectPath(scriptClass).getAbsolutePath());
-    }
-
     // TODO Split handling to support mandatory and optional assets
     public void addAssets(String... paths) {
         for (String path : paths) {
@@ -164,8 +157,17 @@ public class ResourceLoader {
 
     private String addAssets(String path) {
         if (!new File(path).isAbsolute()) {
-            path = basePath + absolute(path);
+            return addAssetsImpl(basePath + absolute(path));
+        } else {
+            return addAssetsImpl(path);
         }
+    }
+
+    /**
+     * @param path
+     * @return
+     */
+    private String addAssetsImpl(String path) {
         try {
             resourceCache.add(ResourceCache.location(path, resourceRoot));
         } catch (IOException e) {
@@ -187,6 +189,7 @@ public class ResourceLoader {
         if (absoluteResourcePath != null) {
             return inputStreamOrThrow(path, resource(absoluteResourcePath));
         } else {
+            // TODO probably not used anymore - review
             absoluteResourcePath = absolute(ReflectionUtils.packagePath(clazz) + path);
             InputStream inputStream = resourceCache.get(absoluteResourcePath);
             if (inputStream != null) {

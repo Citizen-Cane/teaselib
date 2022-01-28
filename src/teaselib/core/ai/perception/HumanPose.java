@@ -35,9 +35,9 @@ public class HumanPose extends NativeObject.Disposible {
         Proximity(2),
         HeadGestures(4),
 
-        Arms(8),
-        Torso(16),
-        Legs(32),
+        UpperTorso(8),
+        LowerTorso(16),
+        LegsAndFeet(32),
 
         ;
 
@@ -48,6 +48,11 @@ public class HumanPose extends NativeObject.Disposible {
         }
 
         public static final Set<Interest> supported = asSet(Interest.Status, Interest.Proximity, Interest.HeadGestures);
+
+        public static final Set<Interest> Head = Interest.asSet(Interest.Status, Interest.Proximity);
+
+        public static final Set<Interest> Pose = Interest.asSet(Interest.Status, Interest.Proximity,
+                Interest.UpperTorso, Interest.LowerTorso, Interest.LegsAndFeet);
 
         public static Set<Interest> asSet(Interest... interests) {
             return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(interests)));
@@ -101,16 +106,11 @@ public class HumanPose extends NativeObject.Disposible {
 
         public static class Gaze {
 
-            public final float x;
-            public final float y;
-
             public final float nod;
             public final float shake;
             public final float tilt;
 
-            public Gaze(float x, float y, float nod, float shake, float tilt) {
-                this.x = x;
-                this.y = y;
+            public Gaze(float nod, float shake, float tilt) {
                 this.nod = nod;
                 this.shake = shake;
                 this.tilt = tilt;
@@ -163,9 +163,19 @@ public class HumanPose extends NativeObject.Disposible {
         }
 
         public Estimation(float distance, float x, float y, float s, float t, float u) {
+            this(distance, new Point2D.Float(x, y), new Gaze(s, t, u));
+        }
+
+        public Estimation(float distance, Point2D.Float head) {
             this.distance = Optional.of(distance);
-            this.head = Optional.of(new Point2D.Float(x, y));
-            this.gaze = Optional.of(new Gaze(x, y, s, t, u));
+            this.head = Optional.of(head);
+            this.gaze = Optional.empty();
+        }
+
+        public Estimation(float distance, Point2D.Float head, Gaze gaze) {
+            this.distance = Optional.of(distance);
+            this.head = Optional.of(head);
+            this.gaze = Optional.of(gaze);
         }
 
         public Proximity proximity() {

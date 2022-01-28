@@ -103,6 +103,10 @@ public final class ReflectionUtils {
         return ReflectionUtils.qualified(value.getClass()) + '.' + value.name();
     }
 
+    public static String relativePath(String path) {
+        return classLoaderCompatibleResourcePath(path);
+    }
+
     // Project path - blunt copy from ResourceLoader but with paths
 
     public static Path projectPath(Class<?> clazz) {

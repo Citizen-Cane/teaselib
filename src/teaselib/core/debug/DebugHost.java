@@ -222,7 +222,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
         else if (folder == Location.TeaseLib)
             return new File(".");
         else if (folder == Location.User)
-            throw new UnsupportedOperationException();
+            return new File("bin");
         else if (folder == Location.Log)
             return getLocation(Location.Host);
         else

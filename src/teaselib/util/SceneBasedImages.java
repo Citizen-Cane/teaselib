@@ -181,7 +181,7 @@ public class SceneBasedImages implements teaselib.Images {
 
     @Override
     public AnnotatedImage annotated(String resource) throws IOException, InterruptedException {
-        return currentTake.images.annotated(resource);
+        return pictureSets.annotated(resource);
     }
 
     @Override

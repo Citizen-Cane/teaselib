@@ -1,5 +1,6 @@
 package teaselib.util;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -180,6 +181,10 @@ class PictureSetAssets {
 
     public void fetch(String resource) {
         resources.get(resource).images.fetch(resource);
+    }
+
+    public AnnotatedImage annotated(String resource) throws IOException, InterruptedException {
+        return resources.get(resource).images.annotated(resource);
     }
 
     public boolean isEmpty() {

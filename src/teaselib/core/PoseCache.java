@@ -111,4 +111,10 @@ public class PoseCache {
         var pose = interaction.getPose(Interest.Head, image);
         return pose.is(Status.Available) ? pose.estimation : HumanPose.Estimation.NONE;
     }
+
+    @Override
+    public String toString() {
+        return poses.toString();
+    }
+
 }

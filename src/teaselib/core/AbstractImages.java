@@ -2,6 +2,7 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import teaselib.Images;
@@ -44,12 +45,20 @@ public abstract class AbstractImages implements Images {
 
     @Override
     public void fetch(String resource) {
-        imageFetcher.fetch(resource);
+        if (contains(resource)) {
+            imageFetcher.fetch(resource);
+        } else {
+            throw new NoSuchElementException(resource);
+        }
     }
 
     @Override
     public AnnotatedImage annotated(String resource) throws IOException, InterruptedException {
-        return imageFetcher.get(resource);
+        if (contains(resource)) {
+            return imageFetcher.get(resource);
+        } else {
+            throw new NoSuchElementException(resource);
+        }
     }
 
 }

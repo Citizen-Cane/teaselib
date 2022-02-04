@@ -20,7 +20,7 @@
 #include "DeepSpeechRecognizer.h"
 
 using namespace aifx::audio;
-//using namespace aifx::speech;
+using namespace aifx::speech;
 using namespace aifx::util;
 using namespace std;
 
@@ -45,7 +45,7 @@ extern "C"
 			}
 
 			const filesystem::path models = thisModule;
-			filesystem::path model = filesystem::path(thisModule).parent_path().append("deepspeech");
+			filesystem::path model = filesystem::path(thisModule).parent_path().append("coqui-ai");
 			JNIStringUTF8 languageCode(env, jlanguageCode);
 			try {
 				DeepSpeechRecognizer* speechRecognizer = new DeepSpeechRecognizer(model.string().c_str(), languageCode);

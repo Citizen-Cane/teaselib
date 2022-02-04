@@ -9,12 +9,12 @@
 #include <Audio/AudioCapture.h>
 #include <Speech/SpeechAudioStream.h>
 
-#include <DeepSpeech/DeepSpeechContext.h>
-#include <DeepSpeech/DeepSpeechRecognizer.h>
+#include <CoquiSTT/CoquiContext.h>
+#include <CoquiSTT/CoquiRecognizer.h>
 
 
 class DeepSpeechRecognizer {
-	aifx::speech::DeepSpeechRecognizer recognizer;
+	aifx::speech::CoquiRecognizer recognizer;
 	aifx::speech::SpeechAudioStream audioStream;
 	aifx::audio::AudioCapture audio;
 	aifx::audio::AudioCapture::Input input;

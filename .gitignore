@@ -227,6 +227,7 @@ lib/*.lib
 lib/*.dll
 lib/*.exp
 lib/deepspeech
+lib/coqui-ai
 
 bin.test/
 bin.test.interactive/

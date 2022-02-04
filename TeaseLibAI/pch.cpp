@@ -22,4 +22,5 @@
 // Features
 
 #pragma comment(lib, "Pose.lib") 
-#pragma comment(lib, "DeepSpeech.lib") 
+#pragma comment(lib, "CoquiSTT.lib")
+#pragma comment(lib, "DeepSpeech.lib")

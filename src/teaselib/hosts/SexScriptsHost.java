@@ -1,8 +1,8 @@
 package teaselib.hosts;
 
-import static java.util.function.Predicate.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.concurrency.NamedExecutorService.*;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
+import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
 
 import java.awt.Container;
 import java.awt.EventQueue;
@@ -445,19 +445,28 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public boolean dismissChoices(List<Choice> choices) {
         var dismissed = false;
-        List<Runnable> clickableChoices = getClickableChoices(choices);
+        try {
+            dismissed = clickAnyButton(choices);
+            enable(uiComponents, false);
+            activeChoices = null;
+            showChoices = null;
+            enableUI = null;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return dismissed;
+    }
+
+    private boolean clickAnyButton(List<Choice> choices) {
+        var clickableChoices = getClickableChoices(choices);
         if (clickableChoices != null && !clickableChoices.isEmpty()) {
-            Runnable delegate = clickableChoices.get(0);
+            var delegate = clickableChoices.get(0);
             if (delegate != null) {
                 clickAnyButton(delegate);
-                dismissed = true;
+                return true;
             }
         }
-        enable(uiComponents, false);
-        activeChoices = null;
-        showChoices = null;
-        enableUI = null;
-        return dismissed;
+        return false;
     }
 
     private void clickAnyButton(Runnable dismiss) {

@@ -1,7 +1,7 @@
 package teaselib.core.configuration;
 
-import static java.util.Collections.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.Collections.singletonList;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -236,7 +236,19 @@ public class Configuration implements Closeable {
         throw new IllegalArgumentException("Property not found: " + item);
     }
 
+    public Configuration set(String property, boolean value) {
+        return set(QualifiedString.of(property), value);
+    }
+
+    public Configuration set(String property, Enum<?> value) {
+        return set(QualifiedString.of(property), value);
+    }
+
     public Configuration set(String property, String value) {
+        return set(QualifiedString.of(property), value);
+    }
+
+    public Configuration set(Enum<?> property, boolean value) {
         return set(QualifiedString.of(property), value);
     }
 
@@ -245,7 +257,15 @@ public class Configuration implements Closeable {
     }
 
     public Configuration set(Enum<?> property, Enum<?> value) {
-        return set(QualifiedString.of(property), ReflectionUtils.qualifiedName(value));
+        return set(QualifiedString.of(property), value);
+    }
+
+    public Configuration set(QualifiedString property, boolean value) {
+        return set(property.toString(), Boolean.toString(value));
+    }
+
+    public Configuration set(QualifiedString property, Enum<?> value) {
+        return set(property.toString(), ReflectionUtils.qualifiedName(value));
     }
 
     public Configuration set(QualifiedString property, String value) {

@@ -60,10 +60,10 @@ public class ExceptionUtil {
     }
 
     public static RuntimeException asRuntimeException(Throwable t) {
-        if (t instanceof Error) {
-            throw (Error) t;
-        } else if (t instanceof RuntimeException) {
-            return (RuntimeException) t;
+        if (t instanceof Error e) {
+            throw e;
+        } else if (t instanceof RuntimeException r) {
+            return r;
         } else if (t instanceof Exception) {
             Exception e = reduce((Exception) t);
             if (e instanceof RuntimeException r) {
@@ -98,11 +98,11 @@ public class ExceptionUtil {
             logger.error(e.getMessage(), e);
             throw e;
         } else {
-            logger.warn(e.getMessage(), e);
+            logger.warn(e.getMessage());
         }
     }
 
-    public static void handleException(Exception e, Configuration config, Logger logger) {
+    public static void handleAssetNotFound(IOException e, Configuration config, Logger logger) {
         if (e instanceof IOException) {
             try {
                 ExceptionUtil.handleIOException((IOException) e, config, logger);
@@ -110,10 +110,10 @@ public class ExceptionUtil {
                 throw ExceptionUtil.asRuntimeException(e1);
             }
         } else {
-            if (Boolean.parseBoolean(config.get(Config.Debug.StopOnRenderError))) {
+            if (Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound))) {
                 throw ExceptionUtil.asRuntimeException(e);
             } else {
-                logger.warn(e.getMessage(), e);
+                logger.warn(e.getMessage());
             }
         }
     }

@@ -14,7 +14,7 @@ import teaselib.core.events.EventArgs;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.PictureSetAssets.Take;
 
-public class SceneBasedImages implements teaselib.Images {
+public class SceneBasedImages implements teaselib.ActorImages {
 
     static final Logger logger = LoggerFactory.getLogger(Script.class);
 

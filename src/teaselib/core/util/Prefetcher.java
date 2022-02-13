@@ -77,10 +77,10 @@ public class Prefetcher<T> {
         try {
             return future.get();
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof IOException) {
-                throw (IOException) e.getCause();
+            if (e.getCause() instanceof IOException io) {
+                throw io;
             } else {
-                throw new IOException(e.getMessage(), e);
+                throw ExceptionUtil.asRuntimeException(e);
             }
         }
     }

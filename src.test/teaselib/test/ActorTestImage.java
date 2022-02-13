@@ -1,9 +1,12 @@
 package teaselib.test;
 
-import teaselib.Images;
+import java.util.NoSuchElementException;
+
+import teaselib.ActorImages;
+import teaselib.ImageCollection;
 import teaselib.util.AnnotatedImage;
 
-public final class ActorTestImage implements Images {
+public final class ActorTestImage implements ActorImages, ImageCollection {
     private final String resourcePath;
 
     public ActorTestImage(String resourcePath) {
@@ -27,7 +30,8 @@ public final class ActorTestImage implements Images {
 
     @Override
     public void fetch(String resource) {
-        // Ignore
+        if (!contains(resource))
+            throw new NoSuchElementException(resource);
     }
 
     @Override

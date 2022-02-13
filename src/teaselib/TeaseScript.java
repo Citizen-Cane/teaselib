@@ -1,7 +1,8 @@
 package teaselib;
 
-import static teaselib.core.ai.perception.HumanPose.Interest.*;
-import static teaselib.core.ai.perception.HumanPose.Status.*;
+import static teaselib.core.ai.perception.HumanPose.Interest.Proximity;
+import static teaselib.core.ai.perception.HumanPose.Interest.Status;
+import static teaselib.core.ai.perception.HumanPose.Status.Available;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +35,6 @@ import teaselib.core.speechrecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Intention;
-import teaselib.core.util.ExceptionUtil;
 import teaselib.functional.CallableScript;
 import teaselib.functional.RunnableScript;
 import teaselib.util.Item;
@@ -101,11 +101,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
                 MediaRenderer desktopItem = new RenderDesktopItem(teaseLib, resources, path);
                 scriptRenderer.queueRenderer(desktopItem);
             } catch (IOException e) {
-                if (Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError))) {
-                    throw ExceptionUtil.asRuntimeException(e);
-                } else {
-                    logger.error(e.getMessage(), e);
-                }
+                handleAssetNotFound(e);
             }
         }
     }
@@ -115,7 +111,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             try {
                 scriptRenderer.queueBackgroundRenderer(new RenderSound(resources, path, teaseLib));
             } catch (IOException e) {
-                ExceptionUtil.handleException(e, teaseLib.config, logger);
+                handleAssetNotFound(e);
             }
         }
     }
@@ -125,7 +121,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             try {
                 scriptRenderer.queueRenderer(new RenderSound(resources, path, teaseLib));
             } catch (IOException e) {
-                ExceptionUtil.handleException(e, teaseLib.config, logger);
+                handleAssetNotFound(e);
             }
         }
     }
@@ -135,7 +131,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             try {
                 return new RenderSound(resources, path, teaseLib);
             } catch (IOException e) {
-                ExceptionUtil.handleException(e, teaseLib.config, logger);
+                handleAssetNotFound(e);
             }
         }
         return new RenderDelay(0, teaseLib);

@@ -43,15 +43,21 @@ public class Shower {
                 } else {
                     return choice;
                 }
-            } catch (CancellationException | ExecutionException e) {
+            } catch (CancellationException e) {
                 Throwable exception = scriptTask.getException();
                 if (exception == null) {
                     return choice;
-                } else if (exception instanceof AnswerOverride) {
-                    AnswerOverride override = (AnswerOverride) exception;
+                } else if (exception instanceof AnswerOverride override) {
                     return Collections.singletonList(new Choice(override.answer));
                 } else {
-                    throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+                    throw ExceptionUtil.asRuntimeException(exception);
+                }
+            } catch (ExecutionException e) {
+                Throwable exception = scriptTask.getException();
+                if (exception == null) {
+                    throw ExceptionUtil.asRuntimeException(e);
+                } else {
+                    throw ExceptionUtil.asRuntimeException(exception);
                 }
             }
         } else {

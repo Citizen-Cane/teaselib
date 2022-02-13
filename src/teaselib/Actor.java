@@ -40,7 +40,14 @@ public class Actor {
     /**
      * The actor's images.
      */
-    public Images images = Images.None;
+    // TODO Instead of image cache instances, use final path string and create caches internally
+    // -> static final initialization
+    public ActorImages images = ActorImages.None;
+
+    /**
+     * This actor's instructional images.
+     */
+    public ImageCollection instructions = ImageCollection.None;
 
     /**
      * Optional script to execute when speech is not recognized.
@@ -60,26 +67,27 @@ public class Actor {
     }
 
     public Actor(String fullName, Gender gender, Locale locale) {
-        this(fullName, gender, locale, Images.None);
+        this(fullName, gender, locale, ActorImages.None);
     }
 
     public Actor(String fullName, String title, Gender gender, Locale locale) {
-        this(fullName, title, title, gender, locale, key(fullName), Images.None);
+        this(fullName, title, title, gender, locale, key(fullName), ActorImages.None);
     }
 
-    public Actor(String fullName, Gender gender, Locale locale, Images images) {
+    public Actor(String fullName, Gender gender, Locale locale, ActorImages images) {
         this(fullName, fullName, fullName, gender, locale, key(fullName), images);
     }
 
-    public Actor(String fullName, String title, Gender gender, Locale locale, String key, Images images) {
+    public Actor(String fullName, String title, Gender gender, Locale locale, String key, ActorImages images) {
         this(fullName, title, title, gender, locale, key, images);
     }
 
-    public Actor(String fullName, String title, String name, Gender gender, Locale locale, Images images) {
+    public Actor(String fullName, String title, String name, Gender gender, Locale locale, ActorImages images) {
         this(fullName, title, name, gender, locale, key(fullName), images);
     }
 
-    public Actor(String fullName, String title, String name, Gender gender, Locale locale, String key, Images images) {
+    public Actor(String fullName, String title, String name, Gender gender, Locale locale, String key,
+            ActorImages images) {
         super();
         this.locale = locale;
         this.gender = gender;

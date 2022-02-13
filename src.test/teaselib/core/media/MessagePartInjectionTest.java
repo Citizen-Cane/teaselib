@@ -1,10 +1,9 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -16,14 +15,13 @@ import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
 import teaselib.Mood;
-import teaselib.Resources;
 import teaselib.Sexuality.Gender;
 import teaselib.core.AbstractMessage;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
 import teaselib.test.ActorTestImage;
+import teaselib.test.ActorTestImages;
 import teaselib.test.TestScript;
-import teaselib.util.RandomImages;
 
 public class MessagePartInjectionTest {
 
@@ -57,6 +55,7 @@ public class MessagePartInjectionTest {
     @Test
     public void testEmptyMessage() throws IOException {
         try (DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput())) {
+            script.actor.instructions = new ActorTestImages("foobar.jpg");
             Message message = new Message(script.actor);
             script.setImage("foobar.jpg");
             RenderedMessage parsed = script.decorate(message);
@@ -70,6 +69,7 @@ public class MessagePartInjectionTest {
     public void testInjectionOfInlineResources() throws IOException {
         try (DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput())) {
             script.actor.images = new ActorTestImage("Actor.jpg");
+            script.actor.instructions = new ActorTestImages("foobar.jpg", "foo.jpg", "bar.jpg");
 
             Message message = new Message(script.actor);
             message.add("Some text.");
@@ -116,6 +116,7 @@ public class MessagePartInjectionTest {
     public void testInjectionOfMood() throws IOException {
         try (DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput())) {
             script.actor.images = new ActorTestImage("Actor.jpg");
+            script.actor.instructions = new ActorTestImages("foobar.jpg", "foo.jpg", "bar.jpg");
 
             script.setMood(Mood.Friendly);
 
@@ -180,7 +181,7 @@ public class MessagePartInjectionTest {
     @Test
     public void testThatNoImageTagApplyOverMultipleTextParagraphs() throws IOException {
         try (DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput())) {
-            script.actor.images = new RandomImages(new Resources(script, Collections.singletonList("actor.jpg")));
+            script.actor.images = new ActorTestImage("actor.jpg");
             script.setMood(Mood.Friendly);
 
             Message message = new Message(script.actor);
@@ -256,6 +257,7 @@ public class MessagePartInjectionTest {
     @Test
     public void testInjectionOfScriptImage() throws IOException {
         try (DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput())) {
+            script.actor.instructions = new ActorTestImage("foo.jpg");
             Message message = new Message(script.actor);
             message.add("Some text.");
             script.setImage("foo.jpg");
@@ -315,6 +317,7 @@ public class MessagePartInjectionTest {
     @Test
     public void testInjectionOfImage() throws IOException {
         try (DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput())) {
+            script.actor.instructions = new ActorTestImages("foo.jpg");
             Message message = new Message(script.actor);
             message.add("Some text.");
             script.setImage("foo.jpg");
@@ -539,6 +542,7 @@ public class MessagePartInjectionTest {
     @Test
     public void testMessageWithImageAtEnd() throws IOException {
         try (DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput())) {
+            script.actor.instructions = new ActorTestImage("foobar.jpg");
             Message message = new Message(script.actor);
             message.add("Some text.");
             message.add(Type.Speech, "Some text.");

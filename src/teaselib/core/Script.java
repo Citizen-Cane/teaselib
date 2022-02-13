@@ -63,7 +63,7 @@ import teaselib.util.math.Random;
 
 public abstract class Script {
 
-    static final Logger logger = LoggerFactory.getLogger(Script.class);
+    private static final Logger logger = LoggerFactory.getLogger(Script.class);
 
     public final TeaseLib teaseLib;
     public final ResourceLoader resources;
@@ -80,8 +80,6 @@ public abstract class Script {
     /**
      * Construct a new main-script instance
      * 
-     * @param teaseLib
-     * @param locale
      */
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace, //
@@ -100,7 +98,7 @@ public abstract class Script {
         try {
             config.addScriptSettings(this.namespace);
         } catch (IOException e) {
-            ExceptionUtil.handleException(e, config, logger);
+            throw ExceptionUtil.asRuntimeException(e);
         }
 
         boolean startOnce = teaseLib.globals.get(ScriptCache.class) == null;
@@ -253,8 +251,6 @@ public abstract class Script {
     /**
      * Construct a script with a different actor but with shared resources
      * 
-     * @param script
-     * @param actor
      */
     protected Script(Script script, Actor actor) {
         this(script.teaseLib, script.resources, actor, script.namespace, script.scriptRenderer);
@@ -645,12 +641,12 @@ public abstract class Script {
      * @return A list of resources that match the wildcard pattern.
      */
     public Resources resources(String wildcardPattern) {
-        List<String> items;
+        ResourceLoader.Paths paths;
         int size;
         Class<?> scriptClass = getClass();
         do {
-            items = resources.resources(wildcardPattern, scriptClass);
-            size = items.size();
+            paths = resources.resources(wildcardPattern, scriptClass);
+            size = paths.elements.size();
             if (size > 0) {
                 logger.info("{}: '{}' yields {} resources", scriptClass.getSimpleName(), wildcardPattern, size);
             } else {
@@ -658,7 +654,11 @@ public abstract class Script {
                 scriptClass = scriptClass.getSuperclass();
             }
         } while (size == 0 && scriptClass != TeaseScript.class);
-        return new Resources(this, items);
+        return new Resources(this, paths.elements, paths.mapping);
+    }
+
+    protected void handleAssetNotFound(IOException e) {
+        ExceptionUtil.handleAssetNotFound(e, teaseLib.config, logger);
     }
 
 }

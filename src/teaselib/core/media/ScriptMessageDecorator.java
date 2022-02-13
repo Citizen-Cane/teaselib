@@ -17,6 +17,7 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class ScriptMessageDecorator {
+
     private static final long DELAY_BETWEEN_PARAGRAPHS_MILLIS = 750;
     private static final long DELAY_FOR_APPEND_MILLIS = 0;
 
@@ -115,7 +116,7 @@ public class ScriptMessageDecorator {
         var parsedMessage = new AbstractMessage();
 
         if (message.isEmpty()) {
-            ensureMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(displayImage, mood));
+            ensureMessageContainsDisplayImage(parsedMessage, fetchImage(displayImage, mood));
         } else {
             String imageType = displayImage;
             String nextImage = null;
@@ -154,7 +155,7 @@ public class ScriptMessageDecorator {
                         lastMood = currentMood;
                         // Update image if changed
                         if (!imageType.equalsIgnoreCase(nextImage)) {
-                            nextImage = getActorOrDisplayImage(imageType, currentMood);
+                            nextImage = fetchImage(imageType, currentMood);
                             parsedMessage.add(Message.Type.Image, nextImage);
                         }
                         // Optional text
@@ -191,7 +192,7 @@ public class ScriptMessageDecorator {
                 }
                 // Update image if changed
                 if (!imageType.equalsIgnoreCase(nextImage)) {
-                    nextImage = getActorOrDisplayImage(imageType, currentMood);
+                    nextImage = fetchImage(imageType, currentMood);
                     parsedMessage.add(Message.Type.Image, nextImage);
                 }
                 // Optional text
@@ -202,7 +203,7 @@ public class ScriptMessageDecorator {
             }
 
             if (nextImage == null) {
-                ensureMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(imageType, mood));
+                ensureMessageContainsDisplayImage(parsedMessage, fetchImage(imageType, mood));
             }
         }
 
@@ -210,7 +211,7 @@ public class ScriptMessageDecorator {
 
     }
 
-    private String getActorOrDisplayImage(String imageType, String currentMood) {
+    private String fetchImage(String imageType, String currentMood) {
         final String nextImage;
         // Don't render images
         if (Message.ActorImage.equalsIgnoreCase(imageType)
@@ -224,20 +225,28 @@ public class ScriptMessageDecorator {
         } else {
             // choose and fetch image
             if (Message.ActorImage.equalsIgnoreCase(imageType)) {
-                // actor image
-                if (actor.images.hasNext()) {
-                    nextImage = actor.images.next(currentMood);
-                    actor.images.fetch(nextImage);
-                } else {
-                    nextImage = Message.NoImage;
-                }
+                nextImage = fetchActorImage(currentMood);
             } else {
-                // Instructional image
-                nextImage = imageType;
-                // TODO fetch instructional images from elsewhere and dispose them earlier than actor images
-                actor.images.fetch(nextImage);
+                nextImage = fetchInstructionalImage(imageType);
             }
         }
+        return nextImage;
+    }
+
+    private String fetchActorImage(String currentMood) {
+        String nextImage;
+        if (actor.images.hasNext()) {
+            nextImage = actor.images.next(currentMood);
+            actor.images.fetch(nextImage);
+        } else {
+            nextImage = Message.NoImage;
+        }
+        return nextImage;
+    }
+
+    private String fetchInstructionalImage(String imageType) {
+        String nextImage = imageType;
+        actor.instructions.fetch(nextImage);
         return nextImage;
     }
 

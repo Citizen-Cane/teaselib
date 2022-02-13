@@ -1,6 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,10 +12,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Collection;
 
 import org.junit.Test;
 
+import teaselib.Resources;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.Stream;
 import teaselib.test.TestScript;
@@ -74,7 +77,7 @@ public class ResourceLoaderTest {
             assertEquals(1, script.resources("util/Foo.txt").size());
             assertEquals(2, script.resources("util/Foo?.txt").size());
             assertEquals(3, script.resources("util/Foo*.txt").size());
-            Collection<String> items = script.resources("util/Foo*.txt");
+            Resources items = script.resources("util/Foo*.txt");
             assertEquals(3, items.size());
         }
     }
@@ -86,7 +89,7 @@ public class ResourceLoaderTest {
             assertEquals(1, script.resources(rootDir + "/util/Foo.txt").size());
             assertEquals(2, script.resources(rootDir + "/util/Foo?.txt").size());
             assertEquals(3, script.resources(rootDir + "/util/Foo*.txt").size());
-            Collection<String> items = script.resources(rootDir + "/util/Foo*.txt");
+            Resources items = script.resources(rootDir + "/util/Foo*.txt");
             assertEquals(3, items.size());
         }
     }
@@ -178,11 +181,11 @@ public class ResourceLoaderTest {
             assertFalse(script1.resources.equals(script2.resources));
             assertFalse(script1.resources.getAssetPath("").equals(script2.resources.getAssetPath("")));
 
-            Collection<String> itemsFromRelative = script1.resources("util/Foo*.txt");
-            Collection<String> itemsFromAbsolute = script2.resources("/teaselib/core/util/Foo*.txt");
+            Resources itemsFromRelative = script1.resources("util/Foo*.txt");
+            Resources itemsFromAbsolute = script2.resources("/teaselib/core/util/Foo*.txt");
 
             assertEquals(3, itemsFromRelative.size());
-            assertEquals(itemsFromRelative, itemsFromAbsolute);
+            assertEquals(itemsFromRelative.elements, itemsFromAbsolute.elements);
         }
     }
 
@@ -228,7 +231,7 @@ public class ResourceLoaderTest {
         deleteTestData(script, path);
 
         try {
-            Collection<String> itemsBefore = script.resources(resourcesFolder + "*");
+            Resources itemsBefore = script.resources(resourcesFolder + "*");
             // 1 txt, 3 jpg , 3 png
             assertEquals(7, itemsBefore.size());
             // Cache test data
@@ -239,8 +242,8 @@ public class ResourceLoaderTest {
             }
             assertEquals("1", resource1Content);
             // Test that duplicate resources aren't listed
-            Collection<String> itemsAfter = script.resources(resourcesFolder + "*");
-            assertEquals(itemsBefore, itemsAfter);
+            Resources itemsAfter = script.resources(resourcesFolder + "*");
+            assertEquals(itemsBefore.elements, itemsAfter.elements);
             assertEquals(itemsBefore.size(), getFilesCount(res1.getParentFile()));
             // Repeat with cached content
             res1 = script.resources.unpackEnclosingFolder(path);

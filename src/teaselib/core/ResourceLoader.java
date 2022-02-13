@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -195,7 +195,7 @@ public class ResourceLoader {
             if (inputStream != null) {
                 return inputStream;
             } else {
-                return inputStreamOrThrow(path, resource(resourceRoot + path));
+                return inputStreamOrThrow(path, resource(projectRelative(path)));
             }
         }
     }
@@ -206,7 +206,7 @@ public class ResourceLoader {
         } else if (isNearlyAbsolute(path) && clazz == null) {
             return absolute(path);
         } else if (clazz == null || resourceRoot.equals(absolute(ReflectionUtils.packagePath(clazz)))) {
-            return resourceRoot + path;
+            return projectRelative(path);
         } else {
             return null;
         }
@@ -234,24 +234,48 @@ public class ResourceLoader {
         return resource.startsWith("/");
     }
 
-    public List<String> resources(String wildcardPattern, Class<?> clazz) {
-        String absolutePattern = absolutePathOrNull(wildcardPattern, clazz);
-        if (absolutePattern != null) {
-            return resources(WildcardPattern.compile(absolutePattern));
-        } else {
-            List<String> resources = new ArrayList<>();
-            resources.addAll(classRelative(wildcardPattern, clazz));
-            resources.addAll(projectRelative(wildcardPattern));
-            return resources;
+    public class Paths {
+        final List<String> elements = new ArrayList<>();
+        final HashMap<String, String> mapping = new HashMap<>();
+
+        private void addAll(String wildcardPattern) {
+            elements.addAll(resources(WildcardPattern.compile(wildcardPattern)));
+            // absolute
+            elements.forEach(element -> mapping.put(element, element));
+            // relative to wildcard path
+            String basePath = basePath(wildcardPattern);
+            int length = basePath.length();
+            elements.forEach(element -> mapping.put(element.substring(length), element));
+        }
+
+        private String basePath(String wildcardPattern) {
+            int index = wildcardPattern.indexOf('*');
+            if (index < 0) {
+                return wildcardPattern;
+            } else {
+                return wildcardPattern.substring(0, index);
+            }
         }
     }
 
-    private List<String> classRelative(String wildcardPattern, Class<?> clazz) {
-        return resources(WildcardPattern.compile(ReflectionUtils.absolutePath(clazz.getPackage()) + wildcardPattern));
+    public Paths resources(String wildcardPattern, Class<?> clazz) {
+        var info = new Paths();
+        String absolutePattern = absolutePathOrNull(wildcardPattern, clazz);
+        if (absolutePattern != null) {
+            info.addAll(absolutePattern);
+        } else {
+            info.addAll(classRelative(wildcardPattern, clazz));
+            info.addAll(projectRelative(wildcardPattern));
+        }
+        return info;
     }
 
-    private List<String> projectRelative(String wildcardPattern) {
-        return resources(WildcardPattern.compile(resourceRoot + wildcardPattern));
+    private String classRelative(String wildcardPattern, Class<?> clazz) {
+        return ReflectionUtils.absolutePath(clazz.getPackage()) + wildcardPattern;
+    }
+
+    private String projectRelative(String wildcardPattern) {
+        return resourceRoot + wildcardPattern;
     }
 
     /**
@@ -281,7 +305,7 @@ public class ResourceLoader {
         if (resourcePath.startsWith("/")) {
             return new File(basePath, resourcePath);
         } else {
-            return new File(basePath, resourceRoot + resourcePath);
+            return new File(basePath, projectRelative(resourcePath));
         }
     }
 
@@ -296,7 +320,7 @@ public class ResourceLoader {
     public File unpackEnclosingFolder(String resourcePath) throws IOException {
         File match = null;
         String parentPath = resourcePath.substring(0, resourcePath.lastIndexOf('/'));
-        List<String> folder = resources(absolutePathOrNull(parentPath + "/*", null), null);
+        List<String> folder = resources(absolutePathOrNull(parentPath + "/*", null), null).elements;
         for (String file : folder) {
             File unpacked = unpackFileFromFolder(file);
             if (match == null && file.equals(absolutePathOrNull(resourcePath, null))) {
@@ -334,7 +358,7 @@ public class ResourceLoader {
             try (InputStream resource = get(resourcePath);) {
                 if (!file.exists()) {
                     file.getParentFile().mkdirs();
-                    Files.copy(resource, Paths.get(file.toURI()));
+                    Files.copy(resource, java.nio.file.Paths.get(file.toURI()));
                 }
             }
         }

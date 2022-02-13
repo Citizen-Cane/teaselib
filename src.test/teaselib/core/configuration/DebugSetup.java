@@ -13,7 +13,7 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
 
 public final class DebugSetup implements Setup {
-    boolean ignoreMissingResources = true;
+    boolean stopOnAssetNotFound = true;
     boolean enableRemoteDeviceAccess = false;
     boolean enableOutput = false;
     boolean enableInput = false;
@@ -34,8 +34,8 @@ public final class DebugSetup implements Setup {
     }
 
     private void applyTeaseLibConfiguration(Configuration config) {
-        config.set(Config.Debug.StopOnAssetNotFound, Boolean.toString(ignoreMissingResources));
-        config.set(Config.Debug.StopOnRenderError, Boolean.toString(ignoreMissingResources));
+        config.set(Config.Debug.StopOnAssetNotFound, Boolean.toString(stopOnAssetNotFound));
+        config.set(Config.Debug.StopOnRenderError, Boolean.toString(stopOnAssetNotFound));
         config.set(Config.Debug.LogDetails, Boolean.toString(false));
     }
 
@@ -92,7 +92,7 @@ public final class DebugSetup implements Setup {
     }
 
     public DebugSetup ignoreMissingResources() {
-        ignoreMissingResources = false;
+        stopOnAssetNotFound = false;
         return this;
     }
 

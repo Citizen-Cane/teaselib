@@ -383,40 +383,63 @@ public class SectionRenderer implements Closeable {
     private void show(Actor actor, String displayImage, String text, String mood)
             throws IOException, InterruptedException {
         var transcript = new StringBuilder();
+        var image = getImage(actor, displayImage, mood, transcript);
+        if (text != null && !text.isBlank()) {
+            transcript.append(text);
+        }
+        teaseLib.transcript.info(transcript.toString());
+        show(image, Collections.singletonList(text));
+    }
+
+    private AnnotatedImage getImage(Actor actor, String displayImage, String mood, StringBuilder transcript)
+            throws IOException, InterruptedException {
         if (actor.images.contains(displayImage)) {
             teaseLib.transcript.debug("image = '" + displayImage + "'");
             if (!Mood.Neutral.equalsIgnoreCase(mood)) {
                 transcript.append(mood);
                 transcript.append(" ");
             }
-        } else if (!Message.NoImage.equalsIgnoreCase(displayImage)) {
-            teaseLib.transcript.info("image = '" + displayImage + "'");
+            return actorImage(actor, displayImage);
+        } else {
+            if (!Message.NoImage.equalsIgnoreCase(displayImage)) {
+                teaseLib.transcript.info("image = '" + displayImage + "'");
+            }
+            return instructionalImage(actor, displayImage);
         }
-
-        if (text != null && !text.isBlank()) {
-            transcript.append(text);
-        }
-        teaseLib.transcript.info(transcript.toString());
-
-        show(actor, displayImage, Collections.singletonList(text));
     }
 
     private void showAll(MessageRenderer message) throws IOException, InterruptedException {
-        show(message.actor, message.displayImage, message.accumulatedText.paragraphs);
+        var mood = message.lastParagraph.findLast(Type.Mood);
+        var transcript = new StringBuilder();
+        var currentMood = mood != null ? mood.value : Mood.Neutral;
+        var image = getImage(message.actor, message.displayImage, currentMood, transcript);
+        teaseLib.transcript.info(transcript.toString());
+        show(image, message.accumulatedText.paragraphs);
     }
 
-    private void show(Actor actor, String displayImage, List<String> paragraphs)
-            throws IOException, InterruptedException {
-        if (!Thread.currentThread().isInterrupted()) {
-            teaseLib.host.show(annotatedImage(actor, displayImage), paragraphs);
-            teaseLib.host.show();
-        }
+    private void show(AnnotatedImage image, List<String> paragraphs) {
+        teaseLib.host.show(image, paragraphs);
+        teaseLib.host.show();
     }
 
-    private AnnotatedImage annotatedImage(Actor actor, String displayImage) throws IOException, InterruptedException {
+    private AnnotatedImage actorImage(Actor actor, String displayImage) throws IOException, InterruptedException {
         if (displayImage != null && !Message.NoImage.equals(displayImage)) {
             try {
                 return actor.images.annotated(displayImage);
+            } catch (IOException e) {
+                handleIOException(e);
+                return AnnotatedImage.NoImage;
+            }
+        } else {
+            return AnnotatedImage.NoImage;
+        }
+    }
+
+    private AnnotatedImage instructionalImage(Actor actor, String displayImage)
+            throws IOException, InterruptedException {
+        if (displayImage != null && !Message.NoImage.equals(displayImage)) {
+            try {
+                return actor.instructions.annotated(displayImage);
             } catch (IOException e) {
                 handleIOException(e);
                 return AnnotatedImage.NoImage;

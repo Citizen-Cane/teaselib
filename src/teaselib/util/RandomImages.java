@@ -3,6 +3,7 @@ package teaselib.util;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import teaselib.ActorImages;
 import teaselib.Resources;
 import teaselib.core.AbstractImages;
 import teaselib.util.math.Random;
@@ -10,9 +11,9 @@ import teaselib.util.math.Random;
 /**
  * Handles image iteration over a set of resources
  * 
- * @author someone
+ * @author Citizen-Cane
  */
-public class RandomImages extends AbstractImages {
+public class RandomImages extends AbstractImages implements ActorImages {
 
     private final Random random = new Random();
     private String current;
@@ -36,11 +37,11 @@ public class RandomImages extends AbstractImages {
         if (!hasNext()) {
             throw new NoSuchElementException();
         } else {
-            return resource(resources);
+            return randomImage(resources.elements);
         }
     }
 
-    protected String resource(List<String> items) {
+    protected String randomImage(List<String> items) {
         current = random.item(current, items);
         return current;
     }

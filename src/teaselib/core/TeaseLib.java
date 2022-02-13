@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Duration;
-import teaselib.Images;
+import teaselib.ActorImages;
 import teaselib.Sexuality.Gender;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
@@ -1010,9 +1010,9 @@ public class TeaseLib implements Closeable {
     public Actor getDominant(Gender gender, Locale locale) {
         switch (gender) {
         case Feminine:
-            return new Actor("Mistress", "Miss", gender, locale, Actor.Key.DominantFemale, Images.None);
+            return new Actor("Mistress", "Miss", gender, locale, Actor.Key.DominantFemale, ActorImages.None);
         case Masculine:
-            return new Actor("Master", "Sir", gender, locale, Actor.Key.DominantMale, Images.None);
+            return new Actor("Master", "Sir", gender, locale, Actor.Key.DominantMale, ActorImages.None);
         default:
             throw new IllegalArgumentException(gender.toString());
         }

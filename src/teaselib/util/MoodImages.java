@@ -27,7 +27,7 @@ public class MoodImages extends RandomImages {
                 if (Mood.isMood(hint)) {
                     List<String> matching = getMatchingResources(hint);
                     if (!matching.isEmpty()) {
-                        return resource(matching);
+                        return randomImage(matching);
                     }
                 }
             }

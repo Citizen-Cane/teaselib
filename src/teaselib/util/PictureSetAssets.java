@@ -3,7 +3,6 @@ package teaselib.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -299,8 +298,8 @@ class PictureSetAssets {
         final AbstractImages images;
 
         Take(String key, Script script) {
-            super(key, new Resources(script, Collections.emptyList()));
-            this.images = new MoodImages((Resources) this.assets);
+            super(key, new ArrayList<>());
+            this.images = new MoodImages(new Resources(script, this.assets));
         }
 
         Stream<Map.Entry<String, Take>> entries() {

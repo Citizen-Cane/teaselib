@@ -15,13 +15,13 @@ import teaselib.util.PictureSetAssets.Take;
 
 public class PictureSetAssetsTest {
 
-    private static final String PACKAGE_NAME = "/teaselib/util/Test Picture Set/";
+    private static final String TEST_PICTURE_SET = "/teaselib/util/Test Picture Set/";
 
     private static String relative(String key) {
-        if (key.length() < PACKAGE_NAME.length()) {
+        if (key.length() < TEST_PICTURE_SET.length()) {
             return "";
         } else {
-            return key.substring(PACKAGE_NAME.length());
+            return key.substring(TEST_PICTURE_SET.length());
         }
     }
 

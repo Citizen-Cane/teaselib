@@ -16,6 +16,7 @@ import teaselib.core.util.ExceptionUtil;
  *
  */
 public abstract class MediaRendererThread implements MediaRenderer.Threaded {
+
     private static final Logger logger = LoggerFactory.getLogger(MediaRendererThread.class);
 
     protected final TeaseLib teaseLib;
@@ -42,8 +43,10 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         } catch (ScriptInterruptedException e) {
             throw new IllegalAccessError();
             // Expected
+        } catch (IOException e) {
+            ExceptionUtil.handleAssetNotFound(e, teaseLib.config, logger);
         } catch (Exception e) {
-            ExceptionUtil.handleException(e, teaseLib.config, logger);
+            throw ExceptionUtil.asRuntimeException(e);
         } finally {
             startCompleted();
             mandatoryCompleted();

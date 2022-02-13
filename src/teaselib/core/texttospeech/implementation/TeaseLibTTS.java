@@ -71,6 +71,11 @@ public abstract class TeaseLibTTS extends TextToSpeechImplementation {
             return IPA;
         }
 
+        @Override
+        public void speak(String prompt) {
+            super.speak(prompt.replace("ss", "ß"));
+        }
+
     }
 
     public static class Microsoft extends TeaseLibTTS {

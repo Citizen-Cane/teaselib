@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
@@ -29,13 +30,17 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     static final long requestedDurationSeconds = HOURS.toSeconds(1);
     static final long scheduledDurationSeconds = MINUTES.toSeconds(23);
 
-    final TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
-    final ScriptEvents events = script.events();
-    final KeyReleaseSetup keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
+    TestScript script;
+    ScriptEvents events;
+    KeyReleaseSetup keyReleaseSetup;
     KeyRelease keyReleaseDevice;
 
     @Before
-    public void before() throws InterruptedException {
+    public void before() throws InterruptedException, IOException {
+        script = new TestScript(new DebugSetup().withRemoteDeviceAccess());
+        events = script.events();
+        keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
+
         // TODO deviceConnectedEvent only in first test
         // - for subsequent tests, no startup message is received
         // -> LocalNetworkDevice returns no devices
@@ -52,6 +57,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     @After
     public void releaseActuators() {
         releaseAllRunningActuators(keyReleaseDevice);
+        script.close();
     }
 
     private long availableSeconds(Items items) {
@@ -70,7 +76,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply();
-        assertEquals("Hold renew event removed", 1, events.afterChoices.size());
+        assertEquals("Hold renew event removed", 1, events.afterPrompt.size());
         assertApplied(cuffs, availableSeconds);
 
         script.say("Releasing key", Message.Delay10s);
@@ -89,7 +95,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply().over(scheduledDurationSeconds, SECONDS).remember(Until.Expired);
-        assertEquals("Hold renew event not removed after setting duration", 0, events.afterChoices.size());
+        assertEquals("Hold renew event not removed after setting duration", 0, events.afterPrompt.size());
         assertApplied(cuffs, scheduledDurationSeconds);
 
         script.say("Releasing key", Message.Delay10s);
@@ -109,7 +115,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply();
-        assertEquals("Hold renew event removed", 1, events.afterChoices.size());
+        assertEquals("Hold renew event removed", 1, events.afterPrompt.size());
         assertApplied(cuffs, availableSeconds);
 
         script.say("Releasing key", Message.Delay10s);
@@ -129,7 +135,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply().over(scheduledDurationSeconds, SECONDS).remember(Until.Expired);
-        assertEquals("Hold renew event not removed after setting duration", 0, events.afterChoices.size());
+        assertEquals("Hold renew event not removed after setting duration", 0, events.afterPrompt.size());
         assertApplied(cuffs, scheduledDurationSeconds);
 
         script.say("Releasing key", Message.Delay10s);
@@ -139,7 +145,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     }
 
     private void assertArmedAndHolding(Items items) {
-        assertEquals(1, events.afterChoices.size());
+        assertEquals(1, events.afterPrompt.size());
         assertEquals(keyReleaseDevice.actuators().size(), events.itemApplied.size());
         assertEquals(0, events.itemRemember.size());
         assertEquals(0, events.itemRemoved.size());
@@ -151,7 +157,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         script.say("Holding", Message.Delay10s);
         assertEquals("Hold duration not reset to default", requestedDurationSeconds, actuator.remaining(SECONDS), 1.0);
 
-        script.completeAll();
+        script.awaitAllCompleted();
         assertEquals(requestedDurationSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Are you ready?");
@@ -159,7 +165,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertEquals("Hold duration not reset to default", requestedDurationSeconds, actuator.remaining(SECONDS), 1.0);
 
         script.say("Are you ready?", Message.Delay10s);
-        script.completeAll();
+        script.awaitAllCompleted();
         assertEquals(requestedDurationSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
     }
 
@@ -168,11 +174,11 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertTrue(actuator.isRunning());
         assertEquals("Release timer not reset", scheduledSeconds, actuator.remaining(SECONDS), 1.0);
 
-        script.completeAll();
+        script.awaitAllCompleted();
         assertEquals("Release timer wrong value", scheduledSeconds - 10.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Timer is running", Message.Delay10s);
-        script.completeAll();
+        script.awaitAllCompleted();
         assertEquals("Release timer wrong value", scheduledSeconds - 20.0, actuator.remaining(SECONDS), 1.0);
     }
 
@@ -181,7 +187,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertFalse(actuator.isRunning());
         assertEquals(0, actuator.remaining(SECONDS), 1.0);
 
-        assertEquals("Hold renew event not removed", 0, events.afterChoices.size());
+        assertEquals("Hold renew event not removed", 0, events.afterPrompt.size());
         assertEquals(keyReleaseDevice.actuators().size(), events.itemApplied.size());
         assertEquals(0, events.itemRemember.size());
         assertEquals(0, events.itemRemoved.size());
@@ -200,7 +206,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
-        assertEquals(1, events.afterChoices.size());
+        assertEquals(1, events.afterPrompt.size());
         assertEquals(3, events.itemApplied.size());
         assertEquals(2, events.itemRemember.size());
         assertEquals(3, events.itemRemoved.size());
@@ -214,7 +220,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         // Hold command fails since device is sleeping
 
         script.say("Are you ready?", Message.Delay10s);
-        script.completeAll();
+        script.awaitAllCompleted();
 
         // Woken up
         assertEquals(availableSeconds - 20.0, actuator.remaining(TimeUnit.SECONDS), 1.0);
@@ -222,12 +228,12 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Starting release timer", Message.Delay10s);
         cuffs.apply();
-        assertEquals("Hold renew event removed", 1, events.afterChoices.size());
+        assertEquals("Hold renew event removed", 1, events.afterPrompt.size());
         assertEquals("Release timer not reset", availableSeconds, actuator.remaining(SECONDS), 1.0);
 
         actuator.sleep(15, SECONDS);
         script.say("Timer is running", Message.Delay10s);
-        script.completeAll();
+        script.awaitAllCompleted();
         assertEquals("Release timer wrong value", availableSeconds - 20.0, actuator.remaining(SECONDS), 1.0);
 
         script.say("Releasing key", Message.Delay10s);

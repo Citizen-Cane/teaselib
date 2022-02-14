@@ -654,11 +654,8 @@ public abstract class Script {
                 scriptClass = scriptClass.getSuperclass();
             }
         } while (size == 0 && scriptClass != TeaseScript.class);
+        ExceptionUtil.handleAssetNotFound(wildcardPattern, paths.elements, teaseLib.config, logger);
         return new Resources(this, paths.elements, paths.mapping);
-    }
-
-    protected void handleAssetNotFound(IOException e) {
-        ExceptionUtil.handleAssetNotFound(e, teaseLib.config, logger);
     }
 
 }

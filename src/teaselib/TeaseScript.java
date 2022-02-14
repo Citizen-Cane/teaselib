@@ -35,6 +35,7 @@ import teaselib.core.speechrecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Intention;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.functional.CallableScript;
 import teaselib.functional.RunnableScript;
 import teaselib.util.Item;
@@ -135,6 +136,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
             }
         }
         return new RenderDelay(0, teaseLib);
+    }
+
+    private void handleAssetNotFound(IOException e) {
+        ExceptionUtil.handleAssetNotFound(e, teaseLib.config, logger);
     }
 
     public void setMood(String mood) {
@@ -596,6 +601,18 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
     public final boolean deny(CallableScript<Answer> script, String no) {
         return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) != Answer.Timeout;
+    }
+
+    public final void deny(ScriptFunction scriptFunction, Answer.No no) {
+        showChoices(Arrays.asList(no), scriptFunction);
+    }
+
+    public final void deny(RunnableScript script, Answer.No no) {
+        showChoices(Arrays.asList(no), new ScriptFunction(script));
+    }
+
+    public final void deny(CallableScript<Answer> script, Answer.No no) {
+        showChoices(Arrays.asList(no), new ScriptFunction(script));
     }
 
     public final void agree(String... yes) {

@@ -3,6 +3,7 @@ package teaselib.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -12,6 +13,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.NoSuchElementException;
 
 import org.junit.Test;
 
@@ -100,9 +102,15 @@ public class ResourceLoaderTest {
             assertEquals(1, script.resources("util/bar.txt").size());
             assertEquals(3, script.resources("util/bar?.txt").size());
             assertEquals(4, script.resources("util/bar*.txt").size());
-            assertEquals(0, script.resources("util/Bar.txt").size());
             assertEquals(2, script.resources("util/Bar?.txt").size());
             assertEquals(2, script.resources("util/Bar*.txt").size());
+        }
+    }
+
+    @Test
+    public void testResourceLoadingCaseSensitiveNoResources() throws IOException {
+        try (TestScript script = new TestScript(getClass())) {
+            assertThrows(NoSuchElementException.class, () -> script.resources("util/Bar.txt"));
         }
     }
 

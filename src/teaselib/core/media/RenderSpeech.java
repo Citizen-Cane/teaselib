@@ -32,12 +32,9 @@ public abstract class RenderSpeech extends MediaRendererThread {
         try (SpeechRecognitionInputMethod.ResumeRecognition closeable = inputMethod.pauseRecognition()) {
             renderSpeech();
             logger.info("{} completed", this);
-        } catch (IOException e) {
-            handleIOException(e);
         } finally {
             mandatoryCompleted();
         }
-
     }
 
     protected abstract void renderSpeech() throws IOException, InterruptedException;

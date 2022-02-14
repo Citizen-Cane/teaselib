@@ -2,6 +2,8 @@ package teaselib.core.util;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
@@ -93,7 +95,7 @@ public class ExceptionUtil {
     }
 
     public static void handleIOException(IOException e, Configuration config, Logger logger) throws IOException {
-        boolean stopOnAssetNotFound = Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound));
+        boolean stopOnAssetNotFound = config.getBoolean(Config.Debug.StopOnAssetNotFound);
         if (stopOnAssetNotFound) {
             logger.error(e.getMessage(), e);
             throw e;
@@ -102,7 +104,17 @@ public class ExceptionUtil {
         }
     }
 
-    public static void handleAssetNotFound(IOException e, Configuration config, Logger logger) {
+    public static void handleAssetNotFound(String path, Collection<?> resources, Configuration config, Logger logger) {
+        if (resources.isEmpty()) {
+            if (config.getBoolean(Config.Debug.StopOnAssetNotFound)) {
+                throw ExceptionUtil.asRuntimeException(new NoSuchElementException("No assets found in " + path));
+            } else {
+                logger.warn(path);
+            }
+        }
+    }
+
+    public static void handleAssetNotFound(Exception e, Configuration config, Logger logger) {
         if (e instanceof IOException) {
             try {
                 ExceptionUtil.handleIOException((IOException) e, config, logger);
@@ -110,7 +122,7 @@ public class ExceptionUtil {
                 throw ExceptionUtil.asRuntimeException(e1);
             }
         } else {
-            if (Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound))) {
+            if (config.getBoolean(Config.Debug.StopOnAssetNotFound)) {
                 throw ExceptionUtil.asRuntimeException(e);
             } else {
                 logger.warn(e.getMessage());

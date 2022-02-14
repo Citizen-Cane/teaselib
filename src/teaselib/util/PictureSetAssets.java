@@ -3,6 +3,7 @@ package teaselib.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -218,8 +219,8 @@ class PictureSetAssets {
             this.assets = assets;
         }
 
-        void add(T scene) {
-            assets.add(scene);
+        void add(T asset) {
+            assets.add(asset);
         }
 
         Stream<T> stream() {
@@ -295,11 +296,13 @@ class PictureSetAssets {
             }
         }
 
+        private final Map<String, String> mapping;
         final AbstractImages images;
 
         Take(String key, Script script) {
             super(key, new ArrayList<>());
-            this.images = new MoodImages(new Resources(script, this.assets));
+            this.mapping = new HashMap<>();
+            this.images = new MoodImages(new Resources(script, this.assets, this.mapping));
         }
 
         Stream<Map.Entry<String, Take>> entries() {
@@ -310,5 +313,12 @@ class PictureSetAssets {
         String key(String element) {
             return element;
         }
+
+        @Override
+        void add(String asset) {
+            super.add(asset);
+            mapping.put(asset, asset);
+        }
+
     }
 }

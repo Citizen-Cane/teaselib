@@ -215,6 +215,18 @@ public class Configuration implements Closeable {
         return get(QualifiedString.of(property));
     }
 
+    public boolean getBoolean(String property) {
+        return getBoolean(QualifiedString.of(property));
+    }
+
+    public boolean getBoolean(Enum<?> property) {
+        return Boolean.parseBoolean(get(QualifiedString.of(property)));
+    }
+
+    public boolean getBoolean(QualifiedString property) {
+        return Boolean.parseBoolean(get(property));
+    }
+
     public String get(QualifiedString property) {
         var item = property.toString();
 

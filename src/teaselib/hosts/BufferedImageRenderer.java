@@ -203,6 +203,7 @@ public class BufferedImageRenderer {
     //
 
     private static final float FONT_SIZE = 48;
+    private static final float MINIMAL_FONT_SIZE = 6;
     private static final float PARAGRAPH_SPACING = 1.5f;
     private static final int TEXT_AREA_BORDER = 10;
 
@@ -235,7 +236,7 @@ public class BufferedImageRenderer {
         int inset = 40;
         int textAreaWidth = 12 * inset;
         int topInset = 2 * inset;
-        int bottomInset = 5 * inset;
+        int bottomInset = 4 * inset;
         Rectangle textArea = new Rectangle((int) bounds.getX() + (int) bounds.getWidth() - textAreaWidth - inset, //
                 topInset, //
                 textAreaWidth, //
@@ -260,29 +261,22 @@ public class BufferedImageRenderer {
             FontRenderContext frc = g2d.getFontRenderContext();
             AttributedCharacterIterator paragraph;
             LineBreakMeasurer measurer;
-
             Dimension2D textSize = new Dimension(0, 0);
             TextVisitor measureText = (TextLayout layout, float x, float y) -> textSize
                     .setSize(Math.max(textSize.getWidth(), layout.getAdvance()), y + layout.getDescent() - textArea.y);
             float fontSize = FONT_SIZE;
-
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);
                 g2d.setFont(font);
-
                 AttributedString text = new AttributedString(string);
                 text.addAttribute(TextAttribute.FONT, font);
-
                 paragraph = text.getIterator();
                 measurer = new LineBreakMeasurer(paragraph, frc);
-
                 renderText(textArea, paragraph, measurer, measureText);
-                if (textSize.getHeight() > textArea.height) {
-                    fontSize /= 1.25f;
-                    continue;
+                if (textSize.getHeight() < textArea.height || fontSize <= MINIMAL_FONT_SIZE) {
+                    break;
                 }
-
-                break;
+                fontSize /= 1.25f;
             }
 
             if (!intertitleActive) {

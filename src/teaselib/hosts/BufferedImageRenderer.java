@@ -39,6 +39,17 @@ public class BufferedImageRenderer {
         this.backgroundImage = backgroundImage;
     }
 
+    public void renderBackgound(RenderState frame, Rectangle bounds) {
+        if (frame.repaintSceneImage) {
+            frame.sceneImage = newBufferedImage(bounds);
+            var g2d = frame.sceneImage.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, //
+                    0, 0, backgroundImage.getWidth(null),
+                    backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
+        }
+    }
+
     BufferedImage render(RenderState frame, Rectangle bounds) {
         BufferedImage image = renderScene(frame, bounds);
         image = renderTextOverlay(image, bounds, frame.renderedText, frame.isIntertitle);
@@ -49,12 +60,12 @@ public class BufferedImageRenderer {
 
     public BufferedImage renderScene(RenderState currentFrame, Rectangle bounds) {
         if (currentFrame.repaintSceneImage) {
-            currentFrame.sceneImage = renderDisplayImage(currentFrame, bounds);
+            renderDisplayImage(currentFrame, currentFrame.sceneImage, bounds);
         }
         return currentFrame.sceneImage;
     }
 
-    private static BufferedImage newBufferedImage(Rectangle bounds) {
+    public static BufferedImage newBufferedImage(Rectangle bounds) {
         return newBufferedImage(bounds.width, bounds.height);
     }
 
@@ -67,24 +78,12 @@ public class BufferedImageRenderer {
         return centerRegion;
     }
 
-    private BufferedImage renderDisplayImage(RenderState currentFrame, Rectangle bounds) {
-        var image = newBufferedImage(bounds);
-        var g2d = image.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, //
-                0, 0, backgroundImage.getWidth(null), backgroundImage.getHeight(null) * bounds.height / bounds.width,
-                null);
-
-        // TODO extract SexScripts-specific hack to correctly scale the background image and render to the windows
-        // border
-        // TODO apply corrected bounds to text and overlay - this is too implicit
-        bounds.width -= SexScriptsHost.BACKGROUND_IMAGE_RIGHT_INSET;
-
+    private void renderDisplayImage(RenderState currentFrame, BufferedImage sceneImage, Rectangle bounds) {
         if (currentFrame.displayImage != null) {
+            var g2d = sceneImage.createGraphics();
             renderDisplayImage(g2d, currentFrame.actorProximity, currentFrame.displayImage, currentFrame.pose,
                     new Rectangle2D.Double(0, 0, bounds.width, bounds.height), currentFrame.isIntertitle);
         }
-        return image;
     }
 
     private static void renderDisplayImage(Graphics2D g2d, Proximity actorProximity, BufferedImage displayImage,
@@ -93,7 +92,7 @@ public class BufferedImageRenderer {
         var surfaceTransform = surfaceTransform(actorProximity, displayImageSize, pose, bounds,
                 spokenTextArea(bounds).x);
         g2d.drawImage(displayImage, surfaceTransform, null);
-        renderDebugInfo(g2d, displayImageSize, pose, surfaceTransform, bounds.getBounds(), intertitleActive);
+        // renderDebugInfo(g2d, displayImageSize, pose, surfaceTransform, bounds.getBounds(), intertitleActive);
     }
 
     private static AffineTransform surfaceTransform(Proximity actorProximity, Dimension image,
@@ -125,7 +124,7 @@ public class BufferedImageRenderer {
                 surface = Transform.zoom(surface, focusAreaImage, zoom);
             }
             surface = Transform.keepFocusAreaVisible(surface, image, bounds, focusAreaImage);
-            Transform.avoidFocusAreaBehindText(surface, focusAreaImage, textAreaX);
+            Transform.avoidFocusAreaBehindText(surface, image, bounds, focusAreaImage, textAreaX);
         }
         return surface;
     }
@@ -207,6 +206,9 @@ public class BufferedImageRenderer {
     private static final float PARAGRAPH_SPACING = 1.5f;
     private static final int TEXT_AREA_BORDER = 10;
 
+    private static final int TEXT_AREA_INSET = 40;
+    private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
+
     private static BufferedImage renderTextOverlay(BufferedImage underlay, Rectangle bounds, String text,
             boolean intertitleActive) {
         if (!text.isBlank() || intertitleActive) {
@@ -233,11 +235,11 @@ public class BufferedImageRenderer {
     }
 
     private static Rectangle spokenTextArea(Rectangle2D bounds) {
-        int inset = 40;
-        int textAreaWidth = 12 * inset;
-        int topInset = 2 * inset;
-        int bottomInset = 4 * inset;
-        Rectangle textArea = new Rectangle((int) bounds.getX() + (int) bounds.getWidth() - textAreaWidth - inset, //
+        int textAreaWidth = (int) Math.min(TEXT_AREA_MAX_WIDTH, bounds.getWidth() / 3.0);
+        int scaledInset = TEXT_AREA_INSET * textAreaWidth / TEXT_AREA_MAX_WIDTH;
+        int topInset = 2 * scaledInset;
+        int bottomInset = 4 * scaledInset;
+        Rectangle textArea = new Rectangle((int) bounds.getX() + (int) bounds.getWidth() - textAreaWidth - scaledInset, //
                 topInset, //
                 textAreaWidth, //
                 (int) bounds.getHeight() - bottomInset - topInset);
@@ -264,7 +266,8 @@ public class BufferedImageRenderer {
             Dimension2D textSize = new Dimension(0, 0);
             TextVisitor measureText = (TextLayout layout, float x, float y) -> textSize
                     .setSize(Math.max(textSize.getWidth(), layout.getAdvance()), y + layout.getDescent() - textArea.y);
-            float fontSize = FONT_SIZE;
+
+            float fontSize = FONT_SIZE * textArea.width / TEXT_AREA_MAX_WIDTH;
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);
                 g2d.setFont(font);

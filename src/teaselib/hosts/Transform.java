@@ -130,12 +130,20 @@ public class Transform {
         return zoomed;
     }
 
-    public static void avoidFocusAreaBehindText(AffineTransform surface, Rectangle2D focusArea, int textAreaX) {
+    public static void avoidFocusAreaBehindText(AffineTransform surface, Dimension image, Rectangle2D bounds,
+            Rectangle2D focusArea, int textAreaX) {
         Point2D focusRight = surface.transform(new Point2D.Double(focusArea.getMaxX(), focusArea.getCenterY()),
                 new Point2D.Double());
+
+        Point2D imageLeft = surface.transform(new Point2D.Double(0, 0), new Point2D.Double());
+        Point2D imageRight = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()),
+                new Point2D.Double());
+
         double overlap = focusRight.getX() - textAreaX;
-        if (overlap > 0) {
-            surface.preConcatenate(AffineTransform.getTranslateInstance(-overlap, 0));
+        double maxTranslate = Math.max(imageRight.getX() - bounds.getMaxX(), imageLeft.getX());
+        if (overlap > 0 && maxTranslate > 0) {
+            double compensation = Math.min(overlap, maxTranslate);
+            surface.preConcatenate(AffineTransform.getTranslateInstance(-compensation, 0));
         }
     }
 

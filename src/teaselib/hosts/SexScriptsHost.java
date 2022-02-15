@@ -100,8 +100,6 @@ import teaselib.util.Interval;
  */
 public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable {
 
-    static final int BACKGROUND_IMAGE_RIGHT_INSET = 16;
-
     static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
     private final IScript ss;
@@ -128,6 +126,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     private final Image backgroundImage;
 
+    RenderState previousFrame = new RenderState();
     RenderState newFrame = new RenderState();
     BufferedImageRenderer renderer;
 
@@ -286,8 +285,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private Rectangle getContentBounds() {
         Container contentPane = mainFrame.getContentPane();
         Rectangle bounds = contentPane.getBounds();
-        bounds.width += BACKGROUND_IMAGE_RIGHT_INSET;
-        bounds.height += 0;
         return bounds;
     }
 
@@ -352,12 +349,19 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         }
     }
 
-    RenderState previousFrame = new RenderState();
-
     @Override
     public synchronized void show() {
         newFrame.updateFrom(previousFrame);
         Rectangle bounds = getContentBounds();
+
+        // SexScripts-specific hack to correctly scale the background image to be pixel-correct
+        // and then render only into the visible part of the window
+        int BACKGROUND_IMAGE_RIGHT_INSET = 12;
+        // TODO may be unstable - check with different display/dpi configurations
+        bounds.width += BACKGROUND_IMAGE_RIGHT_INSET;
+        renderer.renderBackgound(newFrame, bounds);
+        bounds.width -= BACKGROUND_IMAGE_RIGHT_INSET;
+
         BufferedImage image = renderer.render(newFrame, bounds);
         previousFrame = newFrame;
         newFrame = newFrame.copy();

@@ -62,6 +62,11 @@ public final class ActorTestImages implements ActorImages, ImageCollection {
         }
     }
 
+    @Override
+    public void advance(Next pictures, String... hints) {
+        // Ignore
+    }
+
     public List<String> getFetched() {
         return fetched;
     }

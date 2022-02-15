@@ -4,15 +4,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Resources;
 import teaselib.core.Script;
-import teaselib.core.events.EventArgs;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.PictureSetAssets.Take;
+import teaselib.util.math.Random;
 
 public class SceneBasedImages implements teaselib.ActorImages {
 
@@ -36,16 +37,18 @@ public class SceneBasedImages implements teaselib.ActorImages {
     private PictureSetAssets.Pose currentPose;
     private PictureSetAssets.Take currentTake;
 
-    private final Script script;
     private final PictureSetAssets pictureSets;
+    private final ExecutorService prefetch;
+    private final Random random;
 
     public SceneBasedImages(Resources resources) {
-        this.script = resources.script;
         this.pictureSets = new PictureSetAssets(resources);
+        this.prefetch = resources.prefetch;
+        this.random = new Random();
 
         if (pictureSets.isEmpty()) {
             String any = "";
-            currentTake = new PictureSetAssets.Take(any, resources.script);
+            currentTake = new PictureSetAssets.Take(any, resources);
             currentPose = new PictureSetAssets.Pose(any);
             currentPose.add(currentTake);
             currentScene = new PictureSetAssets.Scene(any);
@@ -55,9 +58,6 @@ public class SceneBasedImages implements teaselib.ActorImages {
         } else {
             chooseSet();
             loadPoses();
-            resources.script.scriptRenderer.events.afterPrompt.add(this::handleAfterChoices);
-            resources.script.scriptRenderer.events.beforeMessage.add(this::handleBeforeMessage);
-            // TODO remove events when instance are not used anymore - otherwise may result in memory leak
         }
     }
 
@@ -80,7 +80,7 @@ public class SceneBasedImages implements teaselib.ActorImages {
 
     private void awaitPosesComputed() {
         try {
-            script.scriptRenderer.getPrefetchExecutorService().submit(() -> {
+            prefetch.submit(() -> {
                 logger.info("Pose computation complete");
             }).get();
         } catch (InterruptedException e) {
@@ -90,11 +90,7 @@ public class SceneBasedImages implements teaselib.ActorImages {
         }
     }
 
-    /**
-     * @param e
-     *            Not used
-     */
-    void handleAfterChoices(EventArgs e) {
+    private void decrementRemainingViews() {
         remainingTakeViews--;
         if (remainingTakeViews <= 0) {
             remainingPoseTakes--;
@@ -107,14 +103,7 @@ public class SceneBasedImages implements teaselib.ActorImages {
         }
     }
 
-    // TODO too late to change the image set, because the images are needed when the message is built,
-    // but the BeforeMessage event happens when the message is ready and about to be rendered
-
-    /**
-     * @param e
-     *            Not used
-     */
-    void handleBeforeMessage(EventArgs e) {
+    private void chooseFollowupPictures() {
         if (remainingSetScenes <= 0) {
             chooseSet();
         } else if (remainingScenePoses <= 0) {
@@ -129,7 +118,7 @@ public class SceneBasedImages implements teaselib.ActorImages {
     private void chooseSet() {
         // TODO random / linear
         // TODO persistence (choose set once per session)
-        currentSet = script.random.item(currentSet, new ArrayList<>(pictureSets.values()));
+        currentSet = random.item(currentSet, new ArrayList<>(pictureSets.values()));
         // TODO play each scene -> shuffle list
         remainingSetScenes = currentSet.assets.size();
         chooseScene();
@@ -138,7 +127,7 @@ public class SceneBasedImages implements teaselib.ActorImages {
     private void chooseScene() {
         // TODO random / linear
         // TODO intro outro
-        currentScene = script.random.item(currentScene, currentSet.assets);
+        currentScene = random.item(currentScene, currentSet.assets);
         // TODO play each scene -> shuffle list
         remainingScenePoses = currentScene.assets.size();
         choosePose();
@@ -146,7 +135,7 @@ public class SceneBasedImages implements teaselib.ActorImages {
 
     void choosePose() {
         // TODO random / linear
-        currentPose = script.random.item(currentPose, currentScene.assets);
+        currentPose = random.item(currentPose, currentScene.assets);
         // TODO play each pose -> shuffle list
         remainingPoseTakes = currentPose.assets.size();
         chooseTake();
@@ -154,7 +143,7 @@ public class SceneBasedImages implements teaselib.ActorImages {
 
     void chooseTake() {
         // TODO random / linear
-        currentTake = script.random.item(currentTake, currentPose.assets);
+        currentTake = random.item(currentTake, currentPose.assets);
         // TODO play each pose -> shuffle list
         remainingTakeViews = currentTake.assets.size();
     }
@@ -182,6 +171,33 @@ public class SceneBasedImages implements teaselib.ActorImages {
     @Override
     public AnnotatedImage annotated(String resource) throws IOException, InterruptedException {
         return pictureSets.annotated(resource);
+    }
+
+    @Override
+    public void advance(Next pictures, String... hints) {
+        switch (pictures) {
+        case Message:
+            decrementRemainingViews();
+            break;
+        case Section:
+            chooseFollowupPictures();
+            break;
+        case Take:
+            chooseTake();
+            break;
+        case Pose:
+            choosePose();
+            break;
+        case Scene:
+            chooseScene();
+            break;
+        case Set:
+            chooseSet();
+            break;
+        default:
+            throw new UnsupportedOperationException(pictures.toString());
+        }
+        // Ignore
     }
 
     @Override

@@ -15,7 +15,6 @@ import teaselib.Resources;
 import teaselib.core.AbstractImages;
 import teaselib.core.PoseCache;
 import teaselib.core.ResourceLoader;
-import teaselib.core.Script;
 
 class PictureSetAssets {
 
@@ -39,7 +38,7 @@ class PictureSetAssets {
         for (String resource : resources) {
             String parent = parent(resource);
             if (PathType.Take.matches(parent)) {
-                takes.computeIfAbsent(parent, key -> new Take(key, resources.script)).add(resource);
+                takes.computeIfAbsent(parent, key -> new Take(key, resources)).add(resource);
             }
         }
         return takes;
@@ -128,7 +127,7 @@ class PictureSetAssets {
     }
 
     private static Take newParentLevelTake(Resources resources, String key) {
-        var take = new Take(key, resources.script);
+        var take = new Take(key, resources);
         for (String r : resources) {
             if (parent(r).equals(key)) {
                 take.add(r);
@@ -299,10 +298,10 @@ class PictureSetAssets {
         private final Map<String, String> mapping;
         final AbstractImages images;
 
-        Take(String key, Script script) {
+        public Take(String key, Resources resources) {
             super(key, new ArrayList<>());
             this.mapping = new HashMap<>();
-            this.images = new MoodImages(new Resources(script, this.assets, this.mapping));
+            this.images = new MoodImages(new Resources(resources, this.assets, this.mapping));
         }
 
         Stream<Map.Entry<String, Take>> entries() {

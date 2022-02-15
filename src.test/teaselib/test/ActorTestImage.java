@@ -38,4 +38,10 @@ public final class ActorTestImage implements ActorImages, ImageCollection {
     public AnnotatedImage annotated(String resource) {
         return new AnnotatedImage(resource, null);
     }
+
+    @Override
+    public void advance(Next pictures, String... hints) {
+        // Ignore
+    }
+
 }

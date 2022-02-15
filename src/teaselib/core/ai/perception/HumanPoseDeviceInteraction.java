@@ -1,6 +1,6 @@
 package teaselib.core.ai.perception;
 
-import static teaselib.core.util.ExceptionUtil.*;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.Collections;
 import java.util.List;
@@ -72,7 +72,7 @@ public class HumanPoseDeviceInteraction extends
         return poseEstimationTask.getPose(interests);
     }
 
-    PoseAspects getPose(Set<Interest> interests, byte[] image) throws InterruptedException {
+    public PoseAspects getPose(Set<Interest> interests, byte[] image) throws InterruptedException {
         Callable<PoseAspects> poseAspects = () -> {
             HumanPose model = getModel(interests);
             List<Estimation> poses = model.poses(image);

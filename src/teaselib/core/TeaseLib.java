@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,9 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.ActorImages;
 import teaselib.Config;
 import teaselib.Duration;
-import teaselib.ActorImages;
 import teaselib.Sexuality.Gender;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
@@ -1024,6 +1024,10 @@ public class TeaseLib implements Closeable {
 
     public void addUserItems(Collection<Item> items) {
         userItems.addItems(items);
+    }
+
+    public <T extends DeviceInteractionImplementation<?, ?>> T deviceInteraction(Class<T> deviceInteraction) {
+        return globals.get(DeviceInteractionImplementations.class).get(deviceInteraction);
     }
 
 }

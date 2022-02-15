@@ -43,6 +43,11 @@ public interface ActorImages extends Images {
         }
 
         @Override
+        public void advance(Next pictures, String... hints) {
+            // Ignore
+        }
+
+        @Override
         public String toString() {
             return "[]";
         }
@@ -54,5 +59,16 @@ public interface ActorImages extends Images {
     public boolean hasNext();
 
     public String next(String... hints);
+
+    public enum Next {
+        Set,
+        Scene,
+        Pose,
+        Take,
+        Section,
+        Message
+    }
+
+    public void advance(Next pictures, String... hints);
 
 }

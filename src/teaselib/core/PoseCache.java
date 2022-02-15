@@ -11,7 +11,8 @@ import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Status;
-import teaselib.core.ai.perception.HumanPoseScriptInteraction;
+import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
+import teaselib.core.ai.perception.PoseAspects;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.util.AnnotatedImage;
@@ -21,16 +22,18 @@ public class PoseCache {
     private static final String PROPERTIES_EXTENSION = ".properties";
 
     private final Path path;
-    private final Script script;
-    private final HumanPoseScriptInteraction interaction;
+    private final TeaseLib teaseLib;
+    private final ResourceLoader loader;
+    private final HumanPoseDeviceInteraction interaction;
 
     private final Map<String, HumanPose.Estimation> poses = new HashMap<>();
     private final Map<String, AnnotatedImage> annotatedImages = new HashMap<>();
 
-    public PoseCache(Path poseCache, Script script) {
+    public PoseCache(Path poseCache, TeaseLib teaseLib, ResourceLoader loader) {
         this.path = poseCache;
-        this.script = script;
-        this.interaction = script.interaction(HumanPoseScriptInteraction.class);
+        this.teaseLib = teaseLib;
+        this.loader = loader;
+        this.interaction = teaseLib.deviceInteraction(HumanPoseDeviceInteraction.class);
     }
 
     public static boolean isPropertyFile(String resource) {
@@ -51,7 +54,7 @@ public class PoseCache {
     private InputStream tryLoadPersistedPose(String name) {
         InputStream in;
         try {
-            in = script.resources.get(name);
+            in = loader.get(name);
         } catch (IOException e1) {
             Path file = path.resolve(name);
             if (Files.exists(file)) {
@@ -86,8 +89,8 @@ public class PoseCache {
     private HumanPose.Estimation getPose(String resource, byte[] image) {
         HumanPose.Estimation estimation = poses.computeIfAbsent(resource, key -> {
             // TODO add status display to host since this is not about actors and script conversation
-            script.teaseLib.host.showInterTitle("Pose estimation pre-caching: \n\n" + key);
-            script.teaseLib.host.show();
+            teaseLib.host.showInterTitle("Pose estimation pre-caching: \n\n" + key);
+            teaseLib.host.show();
             Estimation pose = computePose(image);
             Path file = path.resolve(propertyFilename(resource));
             try {
@@ -108,8 +111,14 @@ public class PoseCache {
 
     private Estimation computePose(byte[] image) {
         // TODO implement HumanPose.Interest.Pose to get better results
-        var pose = interaction.getPose(Interest.Head, image);
-        return pose.is(Status.Available) ? pose.estimation : HumanPose.Estimation.NONE;
+        PoseAspects pose;
+        try {
+            pose = interaction.getPose(Interest.Head, image);
+            return pose.is(Status.Available) ? pose.estimation : HumanPose.Estimation.NONE;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return HumanPose.Estimation.NONE;
+        }
     }
 
     @Override

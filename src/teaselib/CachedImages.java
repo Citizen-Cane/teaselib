@@ -21,8 +21,7 @@ public abstract class CachedImages implements Images {
     public CachedImages(Resources resources) {
         Objects.requireNonNull(resources);
         this.resources = resources;
-        this.imageFetcher = new Prefetcher<>(resources.script.scriptRenderer.getPrefetchExecutorService(),
-                this::annotatedImage);
+        this.imageFetcher = new Prefetcher<>(resources.prefetch, this::annotatedImage);
     }
 
     protected abstract AnnotatedImage annotatedImage(String resource) throws IOException;
@@ -42,7 +41,7 @@ public abstract class CachedImages implements Images {
     }
 
     protected void handleAssetNotFound(String resource) {
-        ExceptionUtil.handleAssetNotFound(new IOException(resource), resources.script.teaseLib.config, logger);
+        ExceptionUtil.handleAssetNotFound(new IOException(resource), resources.teaseLib.config, logger);
     }
 
     @Override

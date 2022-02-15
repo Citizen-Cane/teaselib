@@ -16,8 +16,8 @@ public abstract class AbstractImages extends CachedImages implements ActorImages
     protected AbstractImages(Resources resources) {
         super(resources);
         this.poseCache = new PoseCache(
-                Paths.get(resources.script.teaseLib.host.getLocation(Location.User).getAbsolutePath(), "Pose cache"),
-                resources.script);
+                Paths.get(resources.teaseLib.host.getLocation(Location.User).getAbsolutePath(), "Pose cache"),
+                resources.teaseLib, resources.loader);
     }
 
     @Override

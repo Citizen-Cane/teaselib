@@ -1,40 +1,34 @@
 package teaselib;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 
-import teaselib.core.Script;
+import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseLib;
 
 public class Resources implements Iterable<String> {
 
-    // TODO Don't store Script - it's just used to allow SceneBasedImages to change the Take/Pose/Scene after prompt
-    // -> call from Script.showPrompt() to change Take/Pose/Scene/Set
-    public final Script script;
+    public final TeaseLib teaseLib;
+    public final ResourceLoader loader;
+    public final ExecutorService prefetch;
     public final List<String> elements;
     public final Map<String, String> mapping;
 
-    public Resources(Script script, Collection<String> elements) {
-        this(script, elements.isEmpty() ? Collections.emptyList() : new ArrayList<>(elements));
+    public Resources(Resources resources, List<String> elements, Map<String, String> mapping) {
+        this(resources.teaseLib, resources.loader, resources.prefetch, elements, mapping);
     }
 
-    public Resources(Script script, List<String> elements) {
-        this.script = script;
-        this.elements = elements;
-        this.mapping = new HashMap<>();
-        elements.forEach(element -> mapping.put(element, element));
-    }
-
-    public Resources(Script script, List<String> elements, Map<String, String> mapping) {
-        this.script = script;
+    public Resources(TeaseLib teaseLib, ResourceLoader loader, ExecutorService prefetch, List<String> elements,
+            Map<String, String> mapping) {
+        this.teaseLib = teaseLib;
+        this.loader = loader;
+        this.prefetch = prefetch;
         this.elements = elements;
         this.mapping = mapping;
     }
@@ -73,7 +67,7 @@ public class Resources implements Iterable<String> {
     }
 
     public byte[] getBytes(String resource) throws IOException {
-        return script.resources.get(resource).readAllBytes();
+        return loader.get(resource).readAllBytes();
     }
 
 }

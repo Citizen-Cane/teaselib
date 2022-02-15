@@ -46,4 +46,9 @@ public class RandomImages extends AbstractImages implements ActorImages {
         return current;
     }
 
+    @Override
+    public void advance(Next pictures, String... hints) {
+        // Ignore
+    }
+
 }

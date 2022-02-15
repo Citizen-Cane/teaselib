@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.ActorImages.Next;
 import teaselib.Answer;
 import teaselib.Body;
 import teaselib.Config;
@@ -283,7 +284,7 @@ public abstract class Script {
     }
 
     private <T extends DeviceInteractionImplementation<?, ?>> T deviceInteraction(Class<T> deviceInteraction) {
-        return teaseLib.globals.get(DeviceInteractionImplementations.class).get(deviceInteraction);
+        return teaseLib.deviceInteraction(deviceInteraction);
     }
 
     public void awaitStartCompleted() {
@@ -340,6 +341,7 @@ public abstract class Script {
     }
 
     protected void renderMessage(Message message, boolean useTTS) {
+        actor.images.advance(Next.Message);
         Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(useTTS);
         try {
             scriptRenderer.renderMessage(teaseLib, resources, message, decorators(textToSpeech));
@@ -482,6 +484,7 @@ public abstract class Script {
             teaseLib.host.endScene();
         }
         scriptRenderer.events.afterPrompt.fire(new ScriptEventArgs());
+        actor.images.advance(Next.Section);
         return answer;
     }
 
@@ -655,7 +658,8 @@ public abstract class Script {
             }
         } while (size == 0 && scriptClass != TeaseScript.class);
         ExceptionUtil.handleAssetNotFound(wildcardPattern, paths.elements, teaseLib.config, logger);
-        return new Resources(this, paths.elements, paths.mapping);
+        return new Resources(teaseLib, resources, scriptRenderer.getPrefetchExecutorService(), paths.elements,
+                paths.mapping);
     }
 
 }

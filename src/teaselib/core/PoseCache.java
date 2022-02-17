@@ -6,13 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Estimation;
-import teaselib.core.ai.perception.HumanPose.Interest;
-import teaselib.core.ai.perception.HumanPose.Status;
-import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
-import teaselib.core.ai.perception.PoseAspects;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.util.AnnotatedImage;
@@ -22,18 +19,16 @@ public class PoseCache {
     private static final String PROPERTIES_EXTENSION = ".properties";
 
     private final Path path;
-    private final TeaseLib teaseLib;
     private final ResourceLoader loader;
-    private final HumanPoseDeviceInteraction interaction;
+    private final BiFunction<String, byte[], Estimation> computePose;
 
     private final Map<String, HumanPose.Estimation> poses = new HashMap<>();
     private final Map<String, AnnotatedImage> annotatedImages = new HashMap<>();
 
-    public PoseCache(Path poseCache, TeaseLib teaseLib, ResourceLoader loader) {
+    public PoseCache(Path poseCache, ResourceLoader loader, BiFunction<String, byte[], Estimation> computePose) {
         this.path = poseCache;
-        this.teaseLib = teaseLib;
         this.loader = loader;
-        this.interaction = teaseLib.deviceInteraction(HumanPoseDeviceInteraction.class);
+        this.computePose = computePose;
     }
 
     public static boolean isPropertyFile(String resource) {
@@ -88,10 +83,7 @@ public class PoseCache {
 
     private HumanPose.Estimation getPose(String resource, byte[] image) {
         HumanPose.Estimation estimation = poses.computeIfAbsent(resource, key -> {
-            // TODO add status display to host since this is not about actors and script conversation
-            teaseLib.host.showInterTitle("Pose estimation pre-caching: \n\n" + key);
-            teaseLib.host.show();
-            Estimation pose = computePose(image);
+            Estimation pose = computePose.apply(resource, image);
             Path file = path.resolve(propertyFilename(resource));
             try {
                 Files.createDirectories(file.getParent());
@@ -107,18 +99,6 @@ public class PoseCache {
     private static String propertyFilename(String resource) {
         return teaselib.core.util.ReflectionUtils
                 .relativePath(FileUtilities.removeExtension(resource) + PROPERTIES_EXTENSION);
-    }
-
-    private Estimation computePose(byte[] image) {
-        // TODO implement HumanPose.Interest.Pose to get better results
-        PoseAspects pose;
-        try {
-            pose = interaction.getPose(Interest.Head, image);
-            return pose.is(Status.Available) ? pose.estimation : HumanPose.Estimation.NONE;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return HumanPose.Estimation.NONE;
-        }
     }
 
     @Override

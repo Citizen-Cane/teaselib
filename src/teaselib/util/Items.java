@@ -1,6 +1,9 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +30,7 @@ import teaselib.TeaseScriptPersistence;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.math.Combinations;
+import teaselib.util.math.Random;
 import teaselib.util.math.Varieties;
 
 /**
@@ -217,7 +221,11 @@ public class Items implements Iterable<Item> {
      */
     // TODO when get(Enum<?>) is removed because of item(), rename this to first()
     public Item get() {
-        return getAppliedOrFirstAvailableOrNotFound();
+        return getAppliedOrFirstAvailableOrNotFound(null);
+    }
+
+    public Item get(Random random) {
+        return getAppliedOrFirstAvailableOrNotFound(random);
     }
 
     /**
@@ -258,16 +266,24 @@ public class Items implements Iterable<Item> {
         }).findFirst().orElse(Item.NotFound);
     }
 
-    private Item getAppliedOrFirstAvailableOrNotFound() {
+    private Item getAppliedOrFirstAvailableOrNotFound(Random random) {
         List<Item> applied = getApplied().elements;
         if (!applied.isEmpty()) {
             return applied.get(0);
         } else {
             List<Item> available = getAvailable().elements;
             if (!available.isEmpty()) {
-                return available.get(0);
+                if (random!=null){
+                return random.item(available);}
+                else{
+                    return available.get(0);
+                }
             } else if (!elements.isEmpty()) {
-                return elements.get(0);
+                if (random!=null){
+                return random.item(elements);}
+                else{
+                    return elements.get(0);
+                }
             } else {
                 return Item.NotFound;
             }

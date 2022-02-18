@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -125,9 +124,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private Set<String> activeChoices;
     private FutureTask<Prompt.Result> showChoices;
 
-    // TODO Consolidate, use a single thread pool
-    private final ExecutorService showPopupThreadPool = singleThreadedQueue("Show-Choices");
-    private final ExecutorService showChoicesThreadPool = singleThreadedQueue("Show-Popup");
+    private final ExecutorService showChoicesThreadPool = singleThreadedQueue("Show-Choices");
     private final InputMethod inputMethod = new HostInputMethod(singleThreadedQueue(getClass().getSimpleName()), this);
     private CountDownLatch enableUI = null;
 
@@ -549,7 +546,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             dismissed = clickAnyButton(choices);
             enable(uiComponents, false);
             activeChoices = null;
-            showChoices = null;
             enableUI = null;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -592,56 +588,37 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     class ShowPopupTask {
-        private static final int POLL_INTERVAL_MILLIS = 100;
 
-        private final FutureTask<Boolean> task;
         private final AtomicBoolean resetPopupVisibility = new AtomicBoolean(false);
         private final JComboBox<String> comboBox;
 
         public ShowPopupTask(JComboBox<String> comboBox) {
             this.comboBox = comboBox;
-            task = new FutureTask<>(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    // Poll a little
-                    for (int i = 1; i < 10; i++) {
-                        if (comboBox.isVisible() /* && comboBox.hasFocus() */) {
-                            // Work-around the issue that the pop-up cannot be hidden
-                            // after making it visible when not focused
-                            showPopup();
-                            return true;
-                        }
-                        Thread.sleep(POLL_INTERVAL_MILLIS);
-                    }
-                    return false;
+        }
+
+        void call() {
+            EventQueue.invokeLater(() -> {
+                if (comboBox.isVisible()) {
+                    showPopup();
                 }
             });
         }
 
         void showPopup() {
-            java.awt.EventQueue.invokeLater(() -> {
-                comboBox.requestFocus();
-                comboBox.setPopupVisible(true);
-                resetPopupVisibility.set(true);
-            });
-        }
-
-        void awaitFinished() throws InterruptedException {
-            try {
-                task.get();
-            } catch (ExecutionException e) {
-                logger.error(e.getMessage(), e);
-            }
+            comboBox.requestFocus();
+            comboBox.setPopupVisible(true);
+            resetPopupVisibility.set(true);
         }
 
         void cleanup() {
-            java.awt.EventQueue.invokeLater(() -> {
+            EventQueue.invokeLater(() -> {
                 if (resetPopupVisibility.get() && comboBox.isPopupVisible()) {
                     comboBox.setPopupVisible(false);
                 }
                 comboBox.removeAllItems();
             });
         }
+
     }
 
     @Override
@@ -660,28 +637,22 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         this.activeChoices = choices.stream().map(Choice::getDisplay).collect(toSet());
         // open the combo box pop-up if necessary in order to
         // allow the user to read prompts without mouse/touch interaction
-        boolean showPopup = choices.size() > 1;
-        if (showPopup) {
-            showPopupThreadPool.execute(showPopupTask.task);
-        }
         showChoices = new FutureTask<>(() -> new Prompt.Result(ss.getSelectedValue(null, choices.toDisplay())));
         Prompt.Result result;
         showChoicesThreadPool.execute(showChoices);
+
         try {
             result = showChoices.get();
-            if (showPopup) {
-                showPopupTask.awaitFinished();
-            }
         } catch (ExecutionException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        } catch (Throwable e) {
             throw ExceptionUtil.asRuntimeException(e);
         } finally {
             dismissChoices(choices);
-            showPopupTask.cleanup();
+            boolean cleanuoPopup = choices.size() > 1;
+            if (cleanuoPopup) {
+                showPopupTask.cleanup();
+            }
             showChoices = null;
             activeChoices = null;
-
         }
         return result;
     }
@@ -691,6 +662,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         if (showChoices == null) {
             if (event.enabled) {
                 enableUI.countDown();
+            }
+            try {
+                // TODO Synchronization issue
+                // - without the sleep call it works all but the first time
+                Thread.sleep(500);
+                enableButtons(event.enabled);
+            } catch (InterruptedException ignore) { //
             }
         } else {
             enableButtons(event.enabled);
@@ -709,8 +687,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         var unusedComponents = uiComponents.stream().filter(not(activeComponents::contains)).collect(toSet());
         enable(unusedComponents, false);
 
-        if (!popupCombobox && enabled) {
-            showPopupThreadPool.execute(showPopupTask.task);
+        if (popupCombobox && enabled) {
+            showPopupTask.call();
         }
     }
 

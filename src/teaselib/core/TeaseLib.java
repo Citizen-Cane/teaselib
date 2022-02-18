@@ -184,6 +184,10 @@ public class TeaseLib implements Closeable {
             Class<RunnableScript> scriptClass = (Class<RunnableScript>) contextClassLoader.loadClass(scriptName);
             RunnableScript script = script(scriptClass);
             script.run();
+        } catch (ScriptInterruptedException e) {
+            throw e;
+        } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
         } finally {
             try {
                 temporaryItems().remove();

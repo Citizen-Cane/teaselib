@@ -6,8 +6,15 @@ import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue
 
 import java.awt.Container;
 import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.IllegalComponentStateException;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
@@ -218,7 +225,93 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                 // Ignore
             }
         });
+
         mainFrame.getJMenuBar().setVisible(false);
+        setWindowState();
+
+        mainFrame.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) { //
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) { //
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_F11) {
+                    toggleFullScreen();
+                }
+            }
+        });
+        mainFrame.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    toggleFullScreen();
+                } else {
+                    super.mouseClicked(e);
+                }
+            }
+        });
+    }
+
+    private void toggleFullScreen() {
+        // TODO ThreadDeath in main thread -> script ends
+        // EventQueue.invokeLater(() -> {
+        // try {
+        // setFullscreen(!isFullScreen());
+        // } catch (ThreadDeath t) {
+        // logger.warn(t.getMessage());
+        // }
+        // });
+    }
+
+    Rectangle normalWindowPosition;
+
+    private void setWindowState() {
+        normalWindowPosition = mainFrame.getBounds();
+        if (isSemiMaximized()) {
+            mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
+        }
+
+        boolean isMaximized = (mainFrame.getExtendedState() & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH;
+        setFullscreen(isMaximized && !isFullScreen());
+    }
+
+    private boolean isSemiMaximized() {
+        Rectangle screen = mainFrame.getGraphicsConfiguration().getBounds();
+        Rectangle bounds = mainFrame.getBounds();
+        boolean fullScreenBounds = bounds.x + bounds.width >= screen.width || bounds.y + bounds.height >= screen.height;
+        return fullScreenBounds;
+    }
+
+    private boolean isFullScreen() {
+        return mainFrame.isUndecorated();
+    }
+
+    private void setFullscreen(boolean setFullscreen) {
+        if (!mainFrame.isUndecorated() && setFullscreen) {
+            mainFrame.setVisible(false);
+            normalWindowPosition = mainFrame.getBounds();
+            mainFrame.dispose();
+            try {
+                mainFrame.setUndecorated(true);
+                mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
+            } catch (IllegalComponentStateException e) {
+                logger.warn(e.getMessage(), e);
+            } finally {
+                mainFrame.setVisible(true);
+            }
+        } else if (mainFrame.isUndecorated() && !setFullscreen) {
+            mainFrame.setVisible(false);
+            mainFrame.dispose();
+            mainFrame.setUndecorated(false);
+            mainFrame.setExtendedState(0);
+            mainFrame.setBounds(normalWindowPosition);
+            mainFrame.setVisible(true);
+        }
     }
 
     @Override
@@ -229,7 +322,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public void close() {
         mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
-        EventQueue.invokeLater(() -> mainFrame.getJMenuBar().setVisible(true));
+        EventQueue.invokeLater(() -> {
+            setFullscreen(false);
+            mainFrame.getJMenuBar().setVisible(true);
+        });
     }
 
     @Override
@@ -352,15 +448,15 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public synchronized void show() {
         newFrame.updateFrom(previousFrame);
-        Rectangle bounds = getContentBounds();
 
-        // SexScripts-specific hack to correctly scale the background image to be pixel-correct
-        // and then render only into the visible part of the window
-        int BACKGROUND_IMAGE_RIGHT_INSET = 12;
-        // TODO may be unstable - check with different display/dpi configurations
-        bounds.width += BACKGROUND_IMAGE_RIGHT_INSET;
+        // Consider insets for pixel-correct (non-scaled) image size
+        Rectangle bounds = getContentBounds();
+        Insets insets = mainFrame.getInsets();
+        int horizontalAdjustment = insets.left + insets.right;
+
+        bounds.width += horizontalAdjustment;
         renderer.renderBackgound(newFrame, bounds);
-        bounds.width -= BACKGROUND_IMAGE_RIGHT_INSET;
+        bounds.width -= horizontalAdjustment;
 
         BufferedImage image = renderer.render(newFrame, bounds);
         previousFrame = newFrame;
@@ -577,6 +673,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                 showPopupTask.awaitFinished();
             }
         } catch (ExecutionException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        } catch (Throwable e) {
             throw ExceptionUtil.asRuntimeException(e);
         } finally {
             dismissChoices(choices);

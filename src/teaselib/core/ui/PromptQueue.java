@@ -136,9 +136,12 @@ class PromptQueue {
 
         HiddenPrompt() throws InterruptedException {
             prompt.lock.lock();
-            stack.push(prompt);
-            PromptQueue.this.activate(prompt);
-            prompt.lock.unlock();
+            try {
+                stack.push(prompt);
+                PromptQueue.this.activate(prompt);
+            } finally {
+                prompt.lock.unlock();
+            }
         }
 
         @Override

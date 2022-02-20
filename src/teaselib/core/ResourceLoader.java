@@ -230,7 +230,7 @@ public class ResourceLoader {
         return resource.startsWith(resourceRoot.substring(1));
     }
 
-    private static boolean isAbsolute(String resource) {
+    public static boolean isAbsolute(String resource) {
         return resource.startsWith("/");
     }
 
@@ -248,7 +248,7 @@ public class ResourceLoader {
             elements.forEach(element -> mapping.put(element.substring(length), element));
         }
 
-        private String basePath(String wildcardPattern) {
+        public static String basePath(String wildcardPattern) {
             int index = wildcardPattern.indexOf('*');
             if (index < 0) {
                 return wildcardPattern;

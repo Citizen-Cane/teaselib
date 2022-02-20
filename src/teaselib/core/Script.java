@@ -658,8 +658,8 @@ public abstract class Script {
             }
         } while (size == 0 && scriptClass != TeaseScript.class);
         ExceptionUtil.handleAssetNotFound(wildcardPattern, paths.elements, teaseLib.config, logger);
-        return new Resources(teaseLib, resources, scriptRenderer.getPrefetchExecutorService(), paths.elements,
-                paths.mapping);
+        return new Resources(teaseLib, resources, scriptRenderer.getPrefetchExecutorService(), wildcardPattern,
+                paths.elements, paths.mapping);
     }
 
 }

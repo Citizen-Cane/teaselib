@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Script;
-import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.Prefetcher;
 import teaselib.util.AnnotatedImage;
 
@@ -41,7 +40,7 @@ public abstract class CachedImages implements Images {
     }
 
     protected void handleAssetNotFound(String resource) {
-        ExceptionUtil.handleAssetNotFound(new IOException(resource), resources.teaseLib.config, logger);
+        resources.handleAssetNotFound(resource, logger);
     }
 
     @Override

@@ -188,6 +188,7 @@ public class TeaseLib implements Closeable {
             throw e;
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
+            throw t;
         } finally {
             try {
                 temporaryItems().remove();

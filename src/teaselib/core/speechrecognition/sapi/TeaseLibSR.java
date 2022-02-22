@@ -97,6 +97,7 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
             this.timeoutWatchdog = new SpeechRecognitionTimeoutWatchdog(events, this::handleRecognitionTimeout);
             this.timeoutWatchdog.addEvents();
             super.startEventLoop(events);
+            timeoutWatchdog.enable(true);
         }
 
         private void handleRecognitionTimeout(SpeechRecognitionEvents events) {
@@ -105,14 +106,12 @@ abstract class TeaseLibSR extends SpeechRecognitionNativeImplementation {
 
         @Override
         public void startRecognition() {
-            timeoutWatchdog.enable(true);
             super.startRecognition();
         }
 
         @Override
         public void stopRecognition() {
             super.stopRecognition();
-            timeoutWatchdog.enable(false);
         }
 
         @Override

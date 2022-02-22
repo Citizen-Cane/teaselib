@@ -64,9 +64,9 @@ public class SpeechRecognitionTimeoutWatchdog {
         return enabled;
     }
 
-    public void enable(boolean enabled) {
-        this.enabled = enabled;
-        if (!enabled) {
+    public void enable(boolean isEnabled) {
+        this.enabled = isEnabled;
+        if (!isEnabled) {
             stopRecognitionTimeout();
         }
     }

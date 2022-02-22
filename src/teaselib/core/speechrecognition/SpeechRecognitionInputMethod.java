@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.HashMap;
 import java.util.List;
@@ -573,6 +573,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 }
             } else {
                 if (recognizer.isActive()) {
+                    completeSpeechRecognition();
                     recognizer.pauseRecognition();
                 }
             }

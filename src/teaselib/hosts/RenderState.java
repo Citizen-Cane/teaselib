@@ -49,18 +49,18 @@ class RenderState {
     RenderState copy() {
         RenderState copy = new RenderState();
 
-        copy.displayImage = displayImage;
+        copy.displayImage = this.displayImage;
         copy.displayImageResource = this.displayImageResource;
         copy.pose = this.pose;
         copy.actorProximity = this.actorProximity;
 
         copy.text = this.text;
-        copy.isIntertitle = false;
+        copy.isIntertitle = this.isIntertitle;
 
         copy.focusLevel = this.focusLevel;
 
         copy.repaintSceneImage = false;
-        copy.sceneImage = sceneImage;
+        copy.sceneImage = this.sceneImage;
 
         copy.renderedImage = this.renderedImage;
         copy.renderedText = this.renderedText;

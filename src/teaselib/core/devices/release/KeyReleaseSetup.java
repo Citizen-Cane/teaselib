@@ -3,9 +3,9 @@ package teaselib.core.devices.release;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import teaselib.core.DeviceInteractionImplementations;
 import teaselib.core.Script;
 import teaselib.core.ScriptInteraction;
-import teaselib.core.DeviceInteractionImplementations;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
@@ -42,6 +42,14 @@ public class KeyReleaseSetup implements ScriptInteraction {
 
     public boolean isPrepared(Item item) {
         return deviceInteraction.isPrepared(item);
+    }
+
+    public boolean prepare(Item item) {
+        return deviceInteraction.prepare(script.actor, item);
+    }
+
+    public boolean prepare(Item item, Consumer<Items> instructions) {
+        return deviceInteraction.prepare(script.actor, item, instructions);
     }
 
     public boolean prepare(Item item, long duration, TimeUnit unit, Consumer<Items> instructions) {

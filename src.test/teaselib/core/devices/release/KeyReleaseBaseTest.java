@@ -1,6 +1,7 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -264,6 +265,11 @@ public class KeyReleaseBaseTest {
         public DeviceEventMock(KeyRelease device) {
             super();
             this.device = device;
+        }
+
+        @Override
+        public String getDevicePath() {
+            return device.getDevicePath();
         }
 
         @Override

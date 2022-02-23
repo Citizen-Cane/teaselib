@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -362,7 +362,7 @@ public class UserItemsImpl implements UserItems {
         } else if (item.is(Toys.Nipple_Clamps)) {
             return new Body[] { Body.OnNipples };
         } else if (item.is(Toys.Chastity_Device)) {
-            return new Body[] { Body.OnPenis, Body.CantJerkOff };
+            return new Body[] { Body.AroundCockBase, Body.OnPenis, Body.CantJerkOff };
         } else if (item.is(Toys.Dildo)) {
             return new Body[] {};
         } else if (item.is(Toys.VaginalInsert)) {

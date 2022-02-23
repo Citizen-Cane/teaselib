@@ -18,24 +18,24 @@ import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.remote.RemoteDeviceMessage;
 
 public class KeyRelease implements Device.Creatable {
-    private static final class MyDeviceFactory extends DeviceFactory<KeyRelease> {
+
+    static final class MyDeviceFactory extends DeviceFactory<KeyRelease> {
         DeviceListener<LocalNetworkDevice> forwardEvents = new DeviceListener<>() {
             @Override
             public void deviceConnected(DeviceEvent<LocalNetworkDevice> e) {
                 MyDeviceFactory.this.fireDeviceConnected(
-                        DeviceCache.createDevicePath(DeviceClassName, e.getDevice().getDevicePath()), KeyRelease.class);
+                        DeviceCache.createDevicePath(DeviceClassName, e.getDevicePath()), KeyRelease.class);
             }
 
             @Override
             public void deviceDisconnected(DeviceEvent<LocalNetworkDevice> e) {
                 MyDeviceFactory.this.fireDeviceDisconnected(
-                        DeviceCache.createDevicePath(DeviceClassName, e.getDevice().getDevicePath()), KeyRelease.class);
+                        DeviceCache.createDevicePath(DeviceClassName, e.getDevicePath()), KeyRelease.class);
             }
         };
 
         MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
-            devices.get(LocalNetworkDevice.class).addDeviceListener(forwardEvents);
         }
 
         @Override
@@ -64,7 +64,16 @@ public class KeyRelease implements Device.Creatable {
     }
 
     public static synchronized DeviceCache<KeyRelease> getDeviceCache(Devices devices, Configuration configuration) {
-        return new DeviceCache<KeyRelease>().addFactory(getDeviceFactory(devices, configuration));
+        return new DeviceCache<KeyRelease>() {
+            @Override
+            public void addListeners() {
+                var localNetwork = devices.get(LocalNetworkDevice.class);
+                factories.values().stream().forEach(factory -> {
+                    var f = (MyDeviceFactory) factory;
+                    localNetwork.addDeviceListener(f.forwardEvents);
+                });
+            }
+        }.addFactory(getDeviceFactory(devices, configuration));
     }
 
     /**

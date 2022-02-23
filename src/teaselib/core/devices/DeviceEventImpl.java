@@ -10,6 +10,11 @@ public final class DeviceEventImpl<T extends Device> implements DeviceEvent<T> {
     }
 
     @Override
+    public String getDevicePath() {
+        return devicePath;
+    }
+
+    @Override
     public T getDevice() {
         return deviceCache.getDevice(devicePath);
     }

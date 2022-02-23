@@ -24,6 +24,7 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
+import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.core.media.MediaRenderer;
@@ -744,9 +745,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
     /**
      * Apply items at the end of the call
      */
-    public State.Options apply(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
-            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
-            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
+    public final State.Options apply(Item item, Message firstCommand, Answer command1stConfirmation,
+            Message secondCommand, Answer command2ndConfirmation, Message progressInstructions,
+            Message completionQuestion, Answer completionConfirmation, Answer prolongationExcuse,
+            Message prolongationComment) {
 
         return apply(new Items(item), firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
                 progressInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
@@ -756,6 +758,14 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public State.Options apply(Items items, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
             Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
+
+        KeyReleaseSetup keyRelease = interaction(KeyReleaseSetup.class);
+        if (keyRelease != null) {
+            if (!keyRelease.isPrepared(items) && keyRelease.canPrepare(items)) {
+                keyRelease.prepare(items, all -> {
+                });
+            }
+        }
 
         perform(items, firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,
                 progressInstructions, completionQuestion, completionConfirmation, prolongationExcuse,
@@ -767,7 +777,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     /**
      * Remove the items at the start of the call
      */
-    public void remove(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
+    public final void remove(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
             Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
         remove(new Items(item), firstCommand, command1stConfirmation, secondCommand, command2ndConfirmation,

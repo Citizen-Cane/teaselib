@@ -30,6 +30,7 @@ public class Devices {
                 DeviceCache<T> deviceCache = (DeviceCache<T>) method.invoke(this.getClass(), this, configuration);
                 deviceClasses.put(deviceClass, deviceCache);
                 deviceCache.getFactoryClassNames().stream().forEach(name -> deviceClassNames.put(name, deviceCache));
+                deviceCache.addListeners();
                 return deviceCache;
             } catch (ReflectiveOperationException e) {
                 throw new UnsupportedOperationException(e);

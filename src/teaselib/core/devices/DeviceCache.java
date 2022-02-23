@@ -16,7 +16,7 @@ public class DeviceCache<T extends Device> {
     private static final int CONNECTION_WAIT_UNTIL_CONNECTED = -1;
     private static final char PathSeparator = '/';
 
-    private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<>();
+    protected final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<>();
     private final Set<DeviceListener<T>> deviceListeners = new LinkedHashSet<>();
 
     public DeviceCache<T> addFactory(DeviceFactory<? extends T> factory) {
@@ -54,6 +54,8 @@ public class DeviceCache<T extends Device> {
                 throw new DeviceNotFoundException(devicePath);
             }
             return device;
+        } catch (DeviceNotFoundException e) {
+            throw e;
         } catch (RuntimeException e) {
             throw new DeviceNotFoundException(devicePath, e);
         }
@@ -69,6 +71,9 @@ public class DeviceCache<T extends Device> {
     public List<String> getFactoryClassNames() {
         return factories.values().stream().map(DeviceFactory<? extends T>::getDeviceClass).collect(toList());
     }
+
+    public void addListeners() { //
+    };
 
     public static String createDevicePath(String deviceClassName, String deviceName) {
         return deviceClassName + PathSeparator + deviceName;
@@ -127,23 +132,35 @@ public class DeviceCache<T extends Device> {
 
     void fireDeviceConnected(String devicePath) {
         synchronized (deviceListeners) {
+            DeviceEventImpl<T> event = new DeviceEventImpl<>(this, devicePath);
             for (DeviceListener<T> deviceListener : deviceListeners) {
-                deviceListener.deviceConnected(new DeviceEventImpl<>(this, devicePath));
+                deviceListener.deviceConnected(event);
             }
         }
     }
 
     void fireDeviceDisconnected(String devicePath) {
         synchronized (deviceListeners) {
+            DeviceEventImpl<T> event = new DeviceEventImpl<>(this, devicePath);
             for (DeviceListener<T> deviceListener : deviceListeners) {
-                deviceListener.deviceDisconnected(new DeviceEventImpl<>(this, devicePath));
+                deviceListener.deviceDisconnected(event);
             }
         }
     }
 
     public void addDeviceListener(DeviceListener<T> deviceListener) {
+        List<String> alreadyConnected;
         synchronized (deviceListeners) {
+            alreadyConnected = factories.entrySet().stream().map(Map.Entry::getValue)
+                    .flatMap(factory -> factory.getDevices().stream()).toList();
             deviceListeners.add(deviceListener);
+        }
+        fireDeviceConnected(alreadyConnected);
+    }
+
+    private void fireDeviceConnected(List<String> already) {
+        for (String devicePath : already) {
+            fireDeviceConnected(devicePath);
         }
     }
 

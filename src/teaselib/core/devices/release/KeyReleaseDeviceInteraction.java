@@ -347,6 +347,14 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         return actuator.isPresent() && actuator.get().isRunning();
     }
 
+    public boolean prepare(Actor actor, Item item) {
+        return prepare(actor, new Items(item), defaultInstructions);
+    }
+
+    public boolean prepare(Actor actor, Item item, Consumer<Items> instructions) {
+        return prepare(actor, new Items(item), instructions, null);
+    }
+
     public boolean prepare(Actor actor, Item item, long duration, TimeUnit unit, Consumer<Items> instructions) {
         return prepare(actor, new Items(item), duration, unit, instructions, null);
     }

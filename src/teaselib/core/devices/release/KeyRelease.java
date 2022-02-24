@@ -246,7 +246,7 @@ public class KeyRelease implements Device.Creatable {
         }
     }
 
-    int sleep(int seconds) {
+    public int sleep(int seconds) {
         return remoteDevice.sleep(seconds);
     }
 

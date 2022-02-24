@@ -1,4 +1,4 @@
-package teaselib.core.devices.release;
+package teaselib.core.devices.release.unattended;
 
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -21,11 +21,16 @@ import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.ScriptEvents;
 import teaselib.core.configuration.DebugSetup;
+import teaselib.core.devices.release.Actuator;
+import teaselib.core.devices.release.KeyRelease;
+import teaselib.core.devices.release.KeyReleaseBaseTest;
+import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
 public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
+
     private static final String FOOBAR = "foobar";
     static final long requestedDurationSeconds = HOURS.toSeconds(1);
     static final long scheduledDurationSeconds = MINUTES.toSeconds(23);
@@ -48,9 +53,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         script.say(FOOBAR);
 
         keyReleaseDevice = script.teaseLib.devices.getDefaultDevice(KeyRelease.class);
-
         releaseAllRunningActuators(keyReleaseDevice);
-
         script.debugger.resumeTime();
     }
 

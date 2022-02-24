@@ -1,4 +1,4 @@
-package teaselib.core.devices.release;
+package teaselib.core.devices.release.unattended;
 
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
@@ -18,21 +18,27 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.Devices;
+import teaselib.core.devices.release.Actuator;
+import teaselib.core.devices.release.Actuators;
+import teaselib.core.devices.release.KeyRelease;
+import teaselib.core.devices.release.KeyReleaseBaseTest;
 
 public class KeyReleaseAutoReleaseTest extends KeyReleaseBaseTest {
+
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseAutoReleaseTest.class);
 
     static final long requestedDurationSeconds = HOURS.toSeconds(1);
 
     final Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
     final KeyRelease keyRelease = devices.getDefaultDevice(KeyRelease.class);
-    final Actuators actuators = keyRelease.actuators();
 
     @Before
     public void before() {
         assertConnected(keyRelease);
         releaseAllRunningActuators(keyRelease);
 
+        Actuators actuators = keyRelease.actuators();
+        assertFalse("No actuators found", actuators.available().isEmpty());
         assertTrue("All actuators still active", actuators.available().size() > 0);
         assertEquals("Actuators still active", actuators.available().size(), actuators.size());
     }
@@ -57,7 +63,7 @@ public class KeyReleaseAutoReleaseTest extends KeyReleaseBaseTest {
     }
 
     private void awaitAutoRelease(Consumer<Actuator> test) throws InterruptedException {
-        ExecutorService executor = NamedExecutorService.newFixedThreadPool(actuators.size(), "test", 0,
+        ExecutorService executor = NamedExecutorService.newFixedThreadPool(keyRelease.actuators().size(), "test", 0,
                 TimeUnit.MINUTES);
         for (final Actuator actuator : assertConnected(keyRelease)) {
             executor.submit(() -> {
@@ -102,7 +108,7 @@ public class KeyReleaseAutoReleaseTest extends KeyReleaseBaseTest {
         sleep(10, TimeUnit.SECONDS);
         assertTrue(keyRelease.connected());
         assertTrue(keyRelease.active());
-        assertTrue(actuators.size() > 0);
+        assertTrue(keyRelease.actuators().size() > 0);
     }
 
 }

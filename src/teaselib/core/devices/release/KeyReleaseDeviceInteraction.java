@@ -497,12 +497,12 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         itemActuators.remove(items);
     }
 
-    Optional<Actuator> getActuator(Item item) {
+    public Optional<Actuator> getActuator(Item item) {
         return itemActuators.entrySet().stream().filter(entry -> entry.getKey().contains(item))
                 .map(Entry<Items, Actuator>::getValue).findAny();
     }
 
-    Optional<Actuator> getActuator(Items items) {
+    public Optional<Actuator> getActuator(Items items) {
         return itemActuators.entrySet().stream().filter(entry -> entry.getKey().containsAny(items))
                 .map(Entry<Items, Actuator>::getValue).findAny();
     }
@@ -563,7 +563,6 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
 
     private void start(Actuator actuator, Instructions definition, Items handled) {
         actuator.start();
-        renewHold(actuator);
         singleRenewHoldEvent(actuator);
         startCountdownAction(actuator, definition.items);
         installReleaseAction(actuator, definition.items, handled, definition);
@@ -571,8 +570,6 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
 
     private void startAfterApply(Actuator actuator, Instructions definition, Items handled) {
         actuator.start();
-        renewHold(actuator);
-
         startCountdownAction(actuator, definition.items);
         Optional<Long> durationSeconds = durationSeconds(definition.items);
         if (durationSeconds.isPresent()) {

@@ -194,15 +194,12 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     return Ok.toBuffer(buffer);
   }
   else if (isCommand(received, "hold")) {
-    // TODO When start() has been called, disallow hold() until release -> error
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     Duration& duration = durations[index];
     if (duration.status == Actuator::Armed || duration.status == Actuator::Holding) {
       duration.hold();
-      if (duration.status == Actuator::Armed) {
-        updatePulse(Actuator::Holding);
-      }
+      updatePulse(Actuator::Holding);
       releaseTimer.start();
       const char* parameters[] = {sessionKey};
       return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
@@ -380,22 +377,22 @@ void KeyReleaseService::updatePulse(const Actuator::Status status) {
 
   if (status == Actuator::Armed) {
     RGB.control(true);
-    updatePulse(224, 128, 0, PulseFrequencyWhenArming);
+    updatePulse(128, 224, 0, PulseFrequencyWhenArming); // Bright yellow
   } else if (status == Actuator::Holding) {
-    updatePulse(0, 192, 0, PulseFrequencyWhenHolding);
+    updatePulse(0, 96, 0, PulseFrequencyWhenHolding); //  dark green
   } else if (status == Actuator::Error) {
-    updatePulse(192, 0, 0, PulseFrequencyWhenError);
+    updatePulse(192, 0, 0, PulseFrequencyWhenError); // Bright red
   } else if (status == Actuator::CountDown) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
-      updatePulse(0, 0, 255, pulsePeriod(nextReleaseDuration));
+      updatePulse(0, 0, 255, pulsePeriod(nextReleaseDuration)); // Bright blue
     } else {
-      updatePulse(Actuator::Idle);
+      updatePulse(Actuator::Idle); // default cyan Breathing
     }
   } else if (status == Actuator::AwaitRelease) {
-    updatePulse(0, 0, 192, PulseFrequencyWhenHolding);
+    updatePulse(0, 0, 128, PulseFrequencyWhenHolding); // Dark blue
   } else if (status == Actuator::Released) {
-    updatePulse(255, 0, 255, PulseFrequencyWhenIdle);
+    updatePulse(255, 0, 255, PulseFrequencyWhenIdle); // Purple pulse, immediately changes to Idle
   } else if (status == Actuator::Idle) {
     ledTimer.stop();
     RGB.brightness(255);

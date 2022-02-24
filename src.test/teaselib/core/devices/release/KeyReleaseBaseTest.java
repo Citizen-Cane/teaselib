@@ -24,8 +24,8 @@ import teaselib.core.devices.DeviceListener;
 public class KeyReleaseBaseTest {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseBaseTest.class);
 
-    static final long WAIT_FOR_CONNECTION_SECONDS = 20;
-    static final long HOLD_DURATION_MINUTES = 1;
+    public static final long WAIT_FOR_CONNECTION_SECONDS = 20;
+    public static final long HOLD_DURATION_MINUTES = 1;
 
     public static void releaseAllRunningActuators(KeyRelease keyRelease) {
         if (keyRelease != null) {
@@ -38,10 +38,10 @@ public class KeyReleaseBaseTest {
     }
 
     public static Actuators assertConnected(KeyRelease keyRelease) {
-        return assertConnected(keyRelease, 0.0);
+        return assertConnected(keyRelease, WAIT_FOR_CONNECTION_SECONDS);
     }
 
-    public static Actuators assertConnected(KeyRelease keyRelease, double seconds) {
+    public static Actuators assertConnected(KeyRelease keyRelease, long seconds) {
         assertTrue("No KeyRelease device found:" + keyRelease, DeviceCache.connect(keyRelease, seconds));
         assertTrue(keyRelease.connected());
         logger.info(keyRelease.getName());
@@ -95,7 +95,7 @@ public class KeyReleaseBaseTest {
         assertTrue(keyRelease.actuators().size() > 0);
     }
 
-    static void sleep(long duration, TimeUnit unit) {
+    public static void sleep(long duration, TimeUnit unit) {
         try {
             Thread.sleep(TimeUnit.MILLISECONDS.convert(duration, unit));
         } catch (InterruptedException e) {

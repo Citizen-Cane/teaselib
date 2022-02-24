@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class Actuators implements Iterable<Actuator> {
@@ -66,14 +66,14 @@ public class Actuators implements Iterable<Actuator> {
     }
 
     public Actuators available() {
-        return new Actuators(stream().filter(actuator -> !actuator.isRunning()).collect(Collectors.toList()));
+        return new Actuators(stream().filter(Predicate.not(Actuator::isRunning)).toList());
     }
 
     private static List<Long> durations(List<Actuator> actuators, TimeUnit unit) {
-        return actuators.stream().map(actuator -> actuator.available(unit)).collect(Collectors.toList());
+        return actuators.stream().map(actuator -> actuator.available(unit)).toList();
     }
 
-    static int getActuatorIndex(long duration, List<Long> durations) {
+    public static int getActuatorIndex(long duration, List<Long> durations) {
         long bestDifferenceSoFar = Integer.MAX_VALUE;
         int unset = Integer.MIN_VALUE;
         int bestActuator = unset;

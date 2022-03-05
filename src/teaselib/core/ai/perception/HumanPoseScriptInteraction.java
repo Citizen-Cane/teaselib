@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import teaselib.Answer;
 import teaselib.ScriptFunction;
@@ -49,6 +48,10 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
         deviceInteraction.setPause(task);
     }
 
+    public void clearPause() {
+        deviceInteraction.clearPause();
+    }
+
     public ScriptFunction autoConfirm(Interest interest, HumanPose.PoseAspect... aspects) {
         return autoConfirm(Collections.singleton(interest), aspects);
     }
@@ -57,15 +60,21 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
         return autoConfirm(interest, Long.MAX_VALUE, TimeUnit.SECONDS, aspects);
     }
 
-    public ScriptFunction autoConfirm(Interest interest, long time, TimeUnit unit, HumanPose.PoseAspect... aspects) {
-        return autoConfirm(Collections.singleton(interest), time, unit, aspects);
+    public ScriptFunction autoConfirm(Interest interest, long duration, TimeUnit unit,
+            HumanPose.PoseAspect... aspects) {
+        return autoConfirm(Collections.singleton(interest), duration, unit, aspects);
     }
 
-    public ScriptFunction autoConfirm(Set<Interest> interest, long time, TimeUnit unit,
+    public ScriptFunction autoConfirm(Interest interest, long duration, TimeUnit unit, long over,
+            HumanPose.PoseAspect... aspects) {
+        return autoConfirm(Collections.singleton(interest), duration, unit, aspects);
+    }
+
+    public ScriptFunction autoConfirm(Set<Interest> interest, long duration, TimeUnit unit,
             HumanPose.PoseAspect... aspects) {
         return new ScriptFunction(() -> {
-            return deviceInteraction.awaitPose(interest, time, unit, aspects)
-                    ? Answer.yes(Arrays.stream(aspects).map(Objects::toString).collect(Collectors.toList()))
+            return deviceInteraction.awaitPose(interest, duration, unit, aspects)
+                    ? Answer.yes(Arrays.stream(aspects).map(Objects::toString).toList())
                     : Answer.Timeout;
         }, Relation.Confirmation);
     }

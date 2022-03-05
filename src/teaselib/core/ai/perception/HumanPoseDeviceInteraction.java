@@ -15,6 +15,7 @@ import teaselib.Actor;
 import teaselib.core.Closeable;
 import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.DeviceInteractionImplementation;
+import teaselib.core.ScriptEventArgs.ActorChanged;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ScriptRenderer;
 import teaselib.core.TeaseLib;
@@ -29,10 +30,10 @@ public class HumanPoseDeviceInteraction extends
         DeviceInteractionImplementation<HumanPose.Interest, EventSource<PoseEstimationEventArgs>> implements Closeable {
     static final Logger logger = LoggerFactory.getLogger(HumanPoseDeviceInteraction.class);
 
-    final ScriptRenderer scriptRenderer;
-
-    public final HumanPoseDeviceInteraction.EventListener proximitySensor;
     private final PoseEstimationTask poseEstimationTask;
+    public final HumanPoseDeviceInteraction.EventListener proximitySensor;
+    final ScriptRenderer scriptRenderer;
+    final Event<ActorChanged> actorChangedListener;
 
     public abstract static class EventListener implements Event<PoseEstimationEventArgs> {
         final Set<Interest> interests;
@@ -49,15 +50,17 @@ public class HumanPoseDeviceInteraction extends
     public HumanPoseDeviceInteraction(TeaseLib teaseLib, TeaseLibAI teaseLibAI, ScriptRenderer scriptRenderer)
             throws InterruptedException {
         super(Object::equals);
-        this.scriptRenderer = scriptRenderer;
         this.poseEstimationTask = new PoseEstimationTask(teaseLibAI, this);
-        this.proximitySensor = new ProximitySensor(teaseLib, Interest.asSet(Interest.Status, Interest.Proximity));
+        this.proximitySensor = new ProximitySensor(teaseLib, HumanPose.asSet(Interest.Status, Interest.Proximity));
+        this.scriptRenderer = scriptRenderer;
+        this.actorChangedListener = e -> poseEstimationTask.setActor(e.actor);
+        scriptRenderer.events.actorChanged.add(actorChangedListener);
     }
 
     @Override
     public void close() {
+        scriptRenderer.events.actorChanged.remove(actorChangedListener);
         poseEstimationTask.close();
-
     }
 
     public boolean isActive() {
@@ -91,6 +94,10 @@ public class HumanPoseDeviceInteraction extends
 
     public void setPause(Runnable task) {
         poseEstimationTask.setPause(task);
+    }
+
+    public void clearPause() {
+        poseEstimationTask.clearPause();
     }
 
     public boolean awaitPose(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) {

@@ -49,14 +49,16 @@ public class HumanPose extends NativeObject.Disposible {
 
         public static final Set<Interest> supported = asSet(Interest.Status, Interest.Proximity, Interest.HeadGestures);
 
-        public static final Set<Interest> Head = Interest.asSet(Interest.Status, Interest.Proximity);
+        public static final Set<Interest> Head = asSet(Interest.Status, Interest.Proximity);
 
-        public static final Set<Interest> Pose = Interest.asSet(Interest.Status, Interest.Proximity,
-                Interest.UpperTorso, Interest.LowerTorso, Interest.LegsAndFeet);
+        public static final Set<Interest> Pose = asSet(Interest.Status, Interest.Proximity, Interest.UpperTorso,
+                Interest.LowerTorso, Interest.LegsAndFeet);
 
-        public static Set<Interest> asSet(Interest... interests) {
-            return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(interests)));
-        }
+    }
+
+    @SafeVarargs
+    public static <T> Set<T> asSet(T... interests) {
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(interests)));
     }
 
     public enum Status implements PoseAspect {
@@ -72,12 +74,6 @@ public class HumanPose extends NativeObject.Disposible {
         FACE2FACE(1),
         CLOSE(0),
 
-        NOTAWAY(5),
-        NOTFAR(4),
-        NOTNEAR(3),
-        NOTFACE2FACE(2),
-        NOTCLOSE(1),
-
         ;
 
         private final int distance;
@@ -86,11 +82,7 @@ public class HumanPose extends NativeObject.Disposible {
             this.distance = distance;
         }
 
-        public static final Proximity[] Away = { AWAY, NOTFAR, NOTNEAR, NOTFACE2FACE, NOTCLOSE };
-        public static final Proximity[] Far = { NOTAWAY, FAR, NOTNEAR, NOTFACE2FACE, NOTCLOSE };
-        public static final Proximity[] Near = { NOTAWAY, NOTFAR, NEAR, NOTFACE2FACE, NOTCLOSE };
-        public static final Proximity[] Face2Face = { NOTAWAY, NOTFAR, NOTNEAR, FACE2FACE, NOTCLOSE };
-        public static final Proximity[] Close = { NOTAWAY, NOTFAR, NOTNEAR, NOTFACE2FACE, CLOSE };
+        public static final Proximity[] NotFace2Face = { AWAY, FAR, NEAR, CLOSE };
 
         boolean isCloserThan(Proximity proximity) {
             return distance < proximity.distance;
@@ -188,9 +180,9 @@ public class HumanPose extends NativeObject.Disposible {
                 Proximity proximity;
                 if (z < 0.5f * distanceFactor) {
                     proximity = Proximity.CLOSE;
-                } else if (z < 1.2f * distanceFactor) {
+                } else if (z < 1.1f * distanceFactor) {
                     proximity = Proximity.FACE2FACE;
-                } else if (z < 2.0f * distanceFactor) {
+                } else if (z < 1.8f * distanceFactor) {
                     proximity = Proximity.NEAR;
                 } else {
                     proximity = Proximity.FAR;

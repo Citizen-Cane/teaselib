@@ -115,12 +115,15 @@ public abstract class Script {
 
             if (teaseLib.globals.has(TeaseLibAI.class)
                     && Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))) {
-                // TODO humanPoseInteraction should be zero
                 HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
                 if (humanPoseInteraction != null) {
                     var speechRecognitionInputMethod = inputMethods.get(SpeechRecognitionInputMethod.class);
                     speechRecognitionInputMethod.events.recognitionStarted.add(ev -> humanPoseInteraction
                             .setPause(speechRecognitionInputMethod::completeSpeechRecognition));
+                    speechRecognitionInputMethod.events.recognitionRejected
+                            .add(ev -> humanPoseInteraction.clearPause());
+                    speechRecognitionInputMethod.events.recognitionCompleted
+                            .add(ev -> humanPoseInteraction.clearPause());
                     // TODO Generalize - HeadGestures -> Perception
                     if (Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))) {
                         inputMethods.add(new HeadGesturesV2InputMethod( //
@@ -128,7 +131,6 @@ public abstract class Script {
                                 () -> !canSpeak.getAsBoolean());
                     }
                 }
-
             }
         }
 

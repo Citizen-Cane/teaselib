@@ -731,7 +731,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         else if (folder == Location.TeaseLib)
             return ResourceLoader.getProjectPath(getClass()).getParentFile().getAbsoluteFile();
         else if (folder == Location.User)
-            return new File(getLocation(Location.Host).getAbsoluteFile(), "teaselib");
+            return new File(getLocation(Location.Host).getAbsoluteFile(), "settings");
         else if (folder == Location.Log)
             return getLocation(Location.Host);
         else

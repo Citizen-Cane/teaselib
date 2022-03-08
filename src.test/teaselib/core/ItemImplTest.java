@@ -1,6 +1,10 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -362,6 +366,75 @@ public class ItemImplTest {
             assertTrue(gag.applied());
             assertFalse(gag.canApply());
             assertTrue(gag.is(gag));
+        }
+    }
+
+    @Test
+    public void testApplyExtraStateToState() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State fooBar = script.state(Foo.Bar);
+            State buttPlug = script.state(Toys.Buttplug);
+
+            assertFalse(buttPlug.applied());
+
+            buttPlug.applyTo(Body.InButt);
+            fooBar.applyTo(buttPlug);
+            assertTrue(buttPlug.applied());
+            assertTrue(fooBar.applied());
+            assertTrue(buttPlug.is(Foo.Bar));
+
+            buttPlug.remove();
+            assertFalse(buttPlug.applied());
+            assertFalse(fooBar.applied());
+        }
+    }
+
+    @Test
+    public void testApplyToRemoveFromExtraStateToItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State fooBar = script.state(Foo.Bar);
+            Item buttPlug = script.items(Toys.Buttplug).get();
+
+            assertFalse(buttPlug.applied());
+
+            buttPlug.apply();
+            fooBar.applyTo(buttPlug);
+
+            assertTrue(buttPlug.applied());
+            assertTrue(fooBar.applied());
+            assertTrue(buttPlug.is(Foo.Bar));
+
+            fooBar.removeFrom(buttPlug);
+            assertFalse(fooBar.applied());
+
+            buttPlug.remove();
+            assertFalse(buttPlug.applied());
+            State buttPlugState = script.state(Toys.Buttplug);
+            assertFalse(buttPlugState.applied());
+        }
+    }
+
+    @Test
+    public void testApplyExtraStateToItemRemoveAll() throws IOException {
+        try (TestScript script = new TestScript()) {
+            State fooBar = script.state(Foo.Bar);
+            Item buttPlug = script.items(Toys.Buttplug).get();
+
+            assertFalse(buttPlug.applied());
+
+            buttPlug.apply();
+            fooBar.applyTo(buttPlug);
+
+            assertTrue(buttPlug.applied());
+            assertTrue(fooBar.applied());
+            assertTrue(buttPlug.is(Foo.Bar));
+
+            buttPlug.remove();
+            assertFalse(buttPlug.applied());
+            State buttPlugState = script.state(Toys.Buttplug);
+            assertFalse(buttPlugState.applied());
+
+            assertFalse(fooBar.applied());
         }
     }
 

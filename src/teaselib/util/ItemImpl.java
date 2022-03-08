@@ -1,7 +1,7 @@
 package teaselib.util;
 
-import static java.util.Collections.*;
-import static teaselib.core.util.QualifiedStringMapping.*;
+import static java.util.Collections.unmodifiableSet;
+import static teaselib.core.util.QualifiedStringMapping.map;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,7 +112,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         }
 
         StateImpl state = state();
-        boolean isMyState = state(name.kind()).is(name);
+        boolean isMyState = state(name.kind()).isImpl(Collections.singleton(name));
         for (QualifiedString element : flattenedAttributes) {
             if (!isImpl(element, state, isMyState)) {
                 return false;
@@ -186,7 +186,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         }
 
         state.applyAttributes(this.attributes);
-        state.applyTo(this.name);
+        state.applyImpl(Collections.singleton(this.name));
 
         updateLastUsedGuidState();
         return StateImpl.infiniteDurationWhenRememberedWithoutDuration(this, this);
@@ -252,16 +252,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     public void remove() {
         StateImpl state = state();
         if (containsMyGuid(state)) {
-            for (QualifiedString peer : new ArrayList<>(state.peers())) {
-                if (!peer.isItem()) {
-                    StateImpl peerState = state(peer);
-                    peerState.removeFrom(this.name);
-                    state.removeFrom(this.name);
-                }
-            }
-
-            // TODO better: remove only peers of this instances that are not peered by any other item
-
+            removeMeFromMyPeers(state);
             releaseInstanceGuid();
             if (state.peers().isEmpty()) {
                 state.remove();
@@ -270,6 +261,25 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         } else {
             throw new IllegalStateException("This item is not applied: " + name);
         }
+    }
+
+    private void removeMeFromMyPeers(StateImpl me) {
+        for (QualifiedString peer : new ArrayList<>(me.peers())) {
+            if (!peer.isItem()) {
+                StateImpl peerState = state(peer);
+                peerState.removeFroImpl(Collections.singleton(this.name));
+                me.removeFroImpl(Collections.singleton(this.name));
+
+                if (allInstanceGuidsRemoved(peerState)) {
+                    peerState.removeFroImpl(Collections.singleton(this.kind()));
+                }
+            }
+        }
+    }
+
+    private boolean allInstanceGuidsRemoved(StateImpl peerState) {
+        return peerState.peers().stream().filter(QualifiedString::isItemGuid).map(QualifiedString::kind)
+                .filter(kind -> kind.equals(this.kind())).count() == 0;
     }
 
     @Override
@@ -283,7 +293,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             for (QualifiedString peer : peers) {
                 if (!peer.isItem()) {
                     StateImpl peerState = state(peer);
-                    peerState.removeFrom(this.name);
+                    peerState.removeFroImpl(Collections.singleton(this.name));
                 }
             }
 
@@ -302,7 +312,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         if (state.peerStates().stream().anyMatch(this::containsMyGuid)) {
             return false;
         }
-        state.removeFrom(this.name);
+        state.removeFroImpl(Collections.singleton(this.name));
         return true;
     }
 

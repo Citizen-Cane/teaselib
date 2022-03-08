@@ -1,6 +1,11 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1120,6 +1125,30 @@ public class ItemsTest {
             Items myShoes2 = myOutfit.items(Shoes.All);
             assertEquals(1, myShoes2.size());
         }
-
     }
+
+    @Test
+    public void testGetItemsApplied() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Items myOutfit = script.items(Toys.Collar, Shoes.High_Heels);
+            assertEquals(2, myOutfit.size());
+
+            myOutfit.apply();
+            assertEquals(2, script.items(Toys.All, Shoes.All).getApplied().size());
+        }
+    }
+
+    @Test
+    public void testGetItemsAppliedToPeers() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Items anal = script.items(Toys.Dildo, Toys.Buttplug);
+
+            anal.applyTo(Body.InButt);
+            Items inButt = script.items(Toys.All).matching(Body.InButt).getApplied();
+            assertEquals(2, inButt.size());
+            assertTrue(inButt.anyAre(Toys.Buttplug));
+            assertTrue(inButt.anyAre(Toys.Dildo));
+        }
+    }
+
 }

@@ -1,11 +1,14 @@
 package teaselib.core;
 
-import static java.util.Collections.*;
-import static java.util.concurrent.TimeUnit.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.StateImpl.Internal.*;
-import static teaselib.core.TeaseLib.*;
-import static teaselib.core.util.QualifiedStringMapping.*;
+import static java.util.Collections.unmodifiableSet;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static teaselib.core.StateImpl.Internal.DEFAULT_DOMAIN_NAME;
+import static teaselib.core.StateImpl.Internal.PERSISTED_DOMAINS_STATE;
+import static teaselib.core.TeaseLib.DefaultDomain;
+import static teaselib.core.util.QualifiedStringMapping.map;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -24,6 +27,7 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedString;
+import teaselib.core.util.QualifiedStringMapping;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
@@ -158,7 +162,8 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
     @Override
     public State.Options applyTo(Object... attributes) {
-        applyImpl(map(Precondition::apply, attributes));
+        applyImpl(QualifiedStringMapping.map(Precondition::apply, QualifiedStringMapping::reduceItemGuidsToStates,
+                attributes));
         return infiniteDurationWhenRememberedWithoutDuration(this, this);
     }
 
@@ -348,7 +353,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
             var copyOfPeers = new QualifiedString[peers.size()];
             for (QualifiedString peer : peers.toArray(copyOfPeers)) {
                 if (!peer.isItem()) {
-                    state(peer).removeFrom(Collections.singletonList(name));
+                    state(peer).removeFroImpl(Collections.singleton(name));
                 }
             }
             peers.clear();
@@ -385,28 +390,29 @@ public class StateImpl implements State, State.Options, State.Attributes {
     }
 
     @Override
-    public void removeFrom(Object... peers2) {
-        if (peers2.length == 0) {
+    public void removeFrom(Object... peers) {
+        if (peers.length == 0) {
             throw new IllegalArgumentException("removeFrom requires at least one peer");
         }
 
-        Set<QualifiedString> flattenedPeers = map(Precondition::remove, peers2);
+        Set<QualifiedString> flattenedPeers = QualifiedStringMapping.map(Precondition::remove,
+                QualifiedStringMapping::reduceItemGuidsToStates, peers);
         removeFroImpl(flattenedPeers);
     }
 
-    private void removeFroImpl(Set<QualifiedString> flattenedPeers) {
+    public void removeFroImpl(Set<QualifiedString> flattenedPeers) {
         for (QualifiedString peer : flattenedPeers) {
             if (peersContain(peer)) {
+                // TODO removing just those peers not available in any other applied item
                 removePeer(peer);
 
                 if (!QualifiedString.isItemGuid(peer)) {
                     removeRepresentingGuids(peer);
                 }
 
-                // TODO assumes all items have the same set of default peers -> remove only disjunct set
                 if (guidsOfSameKind(peer.kind()) == 0) {
-                    // reverse callback states to resolve peering
-                    state(peer.kind()).removeFrom(Collections.singletonList(name));
+                    // reverse callback to resolve peering
+                    state(peer.kind()).removeFroImpl(Collections.singleton(name));
                 }
             }
 

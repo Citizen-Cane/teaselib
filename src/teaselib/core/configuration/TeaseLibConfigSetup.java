@@ -23,10 +23,14 @@ public final class TeaseLibConfigSetup implements Setup {
 
     private final File teaseLibPath;
     private final File userPath;
+    private final File scriptItemsPath;
+    private final File userItemsPath;
 
     public TeaseLibConfigSetup(Host host) {
         teaseLibPath = host.getLocation(Location.TeaseLib);
         userPath = host.getLocation(Location.User);
+        userItemsPath = new File(host.getLocation(Location.User), "User Items");
+        scriptItemsPath = new File(host.getLocation(Location.User), "Script Items");
     }
 
     @Override
@@ -45,9 +49,14 @@ public final class TeaseLibConfigSetup implements Setup {
     private void addTeaseLibDefaults(Configuration config) throws IOException {
         config.add(Configuration.DEFAULTS, TEASELIB_PROPERTIES, userPath);
 
+        config.set(UserItemsImpl.Settings.USER_ITEMS_PATH, userItemsPath.getAbsolutePath());
+        config.set(UserItemsImpl.Settings.SCRIPT_ITEMS_PATH, scriptItemsPath.getAbsolutePath());
+
         config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, Configuration.DEFAULTS + ITEM_DEFAULT_STORE_FILENAME);
+        userItemsPath.mkdirs();
         config.addUserFile(UserItemsImpl.Settings.ITEM_USER_STORE,
-                Configuration.DEFAULTS + ITEM_TEMPLATE_STORE_FILENAME, new File(userPath, ITEM_USER_STORE_FILENAME));
+                Configuration.DEFAULTS + ITEM_TEMPLATE_STORE_FILENAME,
+                new File(userItemsPath, ITEM_USER_STORE_FILENAME));
     }
 
     private void addNetworkDefaults(Configuration config) throws IOException {

@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
@@ -51,6 +52,12 @@ public class FileUtilities {
 
     public static void copy(File source, File destination) throws IOException {
         Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public static void copy(URL source, File destination) throws IOException {
+        try (InputStream stream = source.openStream()) {
+            copy(stream, destination);
+        }
     }
 
     public static void copy(String resource, File destination) throws IOException {

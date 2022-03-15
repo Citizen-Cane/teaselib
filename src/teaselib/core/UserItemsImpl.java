@@ -2,6 +2,7 @@ package teaselib.core;
 
 import static java.util.stream.Collectors.toList;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -19,7 +20,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -42,17 +42,32 @@ import teaselib.Posture;
 import teaselib.Shoes;
 import teaselib.Toys;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 
 public class UserItemsImpl implements UserItems {
+
+    public enum Settings {
+        ITEM_DEFAULT_STORE,
+        ITEM_USER_STORE,
+        USER_ITEMS_PATH,
+        SCRIPT_ITEMS_PATH,
+    }
+
+    private static final String ITEM_EXTENSION = ".xml";
+
+    private static boolean isUserItemsFile(File file) {
+        return file.getName().endsWith(ITEM_EXTENSION);
+    }
+
     private static final String ITEMS_DTD = "items.dtd";
 
     protected final TeaseLib teaseLib;
     private final Map<String, ItemMap> domainMap = new HashMap<>();
-    List<URL> loadOrder = new ArrayList<>();
+    List<URL> defaults = new ArrayList<>();
 
     class ItemMap extends LinkedHashMap<Object, Map<String, Item>> {
         private static final long serialVersionUID = 1L;
@@ -67,38 +82,52 @@ public class UserItemsImpl implements UserItems {
         }
     }
 
-    public enum Settings {
-        ITEM_DEFAULT_STORE,
-        ITEM_USER_STORE
+    public UserItemsImpl(TeaseLib teaseLib) throws IOException {
+        this.teaseLib = teaseLib;
+        addDefaultUserItems();
     }
 
-    public UserItemsImpl(TeaseLib teaseLib) {
-        this.teaseLib = teaseLib;
-
-        if (loadOrder.isEmpty()) {
-            addItems(getClass().getResource(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
-            if (teaseLib.config.has(Settings.ITEM_USER_STORE)) {
-                try {
-                    addItems(Paths.get(teaseLib.config.get(Settings.ITEM_USER_STORE)).toUri().toURL());
-                } catch (MalformedURLException e) {
-                    throw ExceptionUtil.asRuntimeException(e);
-                }
-            }
+    private void addDefaultUserItems() throws IOException {
+        addUserItems(getClass().getResource(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
+        if (teaseLib.config.has(Settings.ITEM_USER_STORE)) {
+            addUserItems(Paths.get(teaseLib.config.get(Settings.ITEM_USER_STORE)).toUri().toURL());
         }
+    }
+
+    public void addUserItems(URL url) {
+        Objects.requireNonNull(url);
+        defaults.add(url);
+        clearCachedItems();
     }
 
     @Override
     public void addItems(URL url) {
         Objects.requireNonNull(url);
-
-        loadOrder.add(url);
+        if (teaseLib.config.has(Settings.SCRIPT_ITEMS_PATH)) {
+            try {
+                File inventoryPath = new File(teaseLib.config.get(Settings.SCRIPT_ITEMS_PATH));
+                inventoryPath.mkdirs();
+                String name = new File(url.getPath()).getName();
+                addUserFileOnce(url, new File(inventoryPath, name));
+            } catch (IOException e) {
+                throw ExceptionUtil.asRuntimeException(e);
+            }
+        } else {
+            defaults.add(url);
+        }
         clearCachedItems();
+    }
+
+    public void addUserFileOnce(URL url, File userFile) throws IOException {
+        if (!userFile.exists()) {
+            FileUtilities.copy(url, userFile);
+        }
     }
 
     @Override
     public void addItems(Collection<Item> items) {
         ItemMap itemMap = domainMap.get(TeaseLib.DefaultDomain);
-        List<ItemImpl> instances = items.stream().map(ItemImpl.class::cast).collect(Collectors.toList());
+        List<ItemImpl> instances = items.stream().map(ItemImpl.class::cast).toList();
         addItems(itemMap, instances);
     }
 
@@ -107,10 +136,15 @@ public class UserItemsImpl implements UserItems {
     }
 
     public void clearLoadOrder() {
-        loadOrder.clear();
+        defaults.clear();
+        try {
+            addDefaultUserItems();
+        } catch (IOException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
     }
 
-    private List<ItemImpl> readItems(String domain, URL url) throws IOException {
+    private List<ItemImpl> loadItems(String domain, URL url) throws IOException {
         List<ItemImpl> items = new ArrayList<>();
 
         var dbf = DocumentBuilderFactory.newInstance();
@@ -221,9 +255,36 @@ public class UserItemsImpl implements UserItems {
     }
 
     private void loadItems(String domain, ItemMap itemMap) throws IOException {
-        for (URL url : loadOrder) {
-            List<ItemImpl> items = readItems(domain, url);
+        List<List<ItemImpl>> all = new ArrayList<>();
+        all.addAll(defaultItems(domain));
+        all.addAll(userItems(domain, Settings.USER_ITEMS_PATH));
+        all.addAll(userItems(domain, Settings.SCRIPT_ITEMS_PATH));
+        for (var items : all) {
             addItems(itemMap, items);
+        }
+    }
+
+    private List<List<ItemImpl>> defaultItems(String domain) throws IOException {
+        List<List<ItemImpl>> e = new ArrayList<>();
+        for (var def : defaults) {
+            e.add(loadItems(domain, def));
+        }
+        return e;
+    }
+
+    private List<List<ItemImpl>> userItems(String domain, Settings path) throws MalformedURLException, IOException {
+        if (teaseLib.config.has(path)) {
+            File inventoryPath = new File(teaseLib.config.get(path));
+            File[] files = inventoryPath.listFiles(UserItemsImpl::isUserItemsFile);
+            List<List<ItemImpl>> all = new ArrayList<>();
+            for (var file : files) {
+                URL url = file.toURI().toURL();
+                List<ItemImpl> items = loadItems(domain, url);
+                all.add(items);
+            }
+            return all;
+        } else {
+            return Collections.emptyList();
         }
     }
 

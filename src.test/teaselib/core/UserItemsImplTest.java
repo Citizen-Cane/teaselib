@@ -98,7 +98,7 @@ public class UserItemsImplTest {
         }
     }
 
-    private static UserItems configureUserItems(TestScript script) {
+    private static UserItems configureUserItems(TestScript script) throws IOException {
         UserItems userItems = new UserItemsImpl(script.teaseLib);
         userItems.addItems(script.getClass().getResource("useritems.xml"));
         return userItems;

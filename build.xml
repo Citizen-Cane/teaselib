@@ -2,7 +2,7 @@
 <project default="buildTeaseLib" name="DeployTeaseLib">
 	<dirname property="DeployTeaseLib.basedir" file="${ant.file.DeployTeaseLib}"/>
 
-    <target name="createTeaseLibFolder">
+    <target name="createTeaseLibRuntime">
         <jar destfile="${DeployTeaseLib.basedir}/lib/TeaseLib.jar">
             <manifest>
                 <attribute name="Class-Path" value="jump3er-1.03.jar"/>
@@ -13,7 +13,7 @@
         </jar>
     </target>
 
-	<target name="deploy">
+    <target name="deploy" depends="createTeaseLibRuntime">
         <copy todir="${destination}/lib/">
             <fileset dir="${DeployTeaseLib.basedir}/lib/" excludes="**.obj,**.iobj,**.pdb,**.ipdb,**.exp,**.ilk,**.lib"/>
         </copy>
@@ -27,7 +27,7 @@
         <antcall target="deploy"/>
     </target>
 
-    <target name="deployToMine" depends="createTeaseLibFolder">
+    <target name="deployToMine" depends="createTeaseLibRuntime">
         <antcall target="deploy"/>
     </target>
 

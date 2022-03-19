@@ -950,7 +950,7 @@ public class TeaseLib implements Closeable {
      */
     Items temporaryItems() {
         Set<Item> temporaryItems = new HashSet<>();
-        for (Entry<String, StateMapCache> domains : stateMaps.cache.entrySet()) {
+        for (Entry<String, StateMapCache> domains : new ArrayList<>(stateMaps.cache.entrySet())) {
             String domain = domains.getKey();
             ArrayList<Entry<String, StateMap>> namespaces = new ArrayList<>(domains.getValue().entrySet());
             for (Entry<String, StateMap> namespace : namespaces) {

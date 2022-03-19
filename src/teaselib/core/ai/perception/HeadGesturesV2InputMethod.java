@@ -22,7 +22,6 @@ import teaselib.Answer;
 import teaselib.Answer.Meaning;
 import teaselib.core.ai.perception.HumanPose.Estimation.Gaze;
 import teaselib.core.ai.perception.HumanPose.HeadGestures;
-import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ui.AbstractInputMethod;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -67,78 +66,34 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
         this.humanPoseInteraction = humanPoseInteraction.deviceInteraction;
     }
 
-    public final HumanPoseDeviceInteraction.EventListener trackProximity = new HumanPoseDeviceInteraction.EventListener(
-            HumanPose.Interest.Proximity) {
+    public final HumanPoseDeviceInteraction.EventListener trackGaze = new HumanPoseDeviceInteraction.EventListener(
+            HumanPose.Interest.HeadGestures) {
 
         long face2faceLast = 0;
 
         @Override
         public void run(PoseEstimationEventArgs eventArgs) throws Exception {
-            activePrompt.updateAndGet(prompt -> {
-                var actor = eventArgs.actor;
-                if (prompt == null) {
-                    stopGazeTracking(actor);
-                } else {
-                    Optional<Proximity> proximity = eventArgs.pose.aspect(Proximity.class);
-                    boolean face2face;
-                    if (proximity.isPresent()) {
-                        if (proximity.get() == Proximity.FACE2FACE) {
-                            Optional<Gaze> gaze = eventArgs.pose.estimation.gaze;
-                            if (gaze.isPresent()) {
-                                if (gaze.get().isFace2Face()) {
-                                    if (!humanPoseInteraction.containsEventListener(actor, trackGaze)) {
-                                        clearTimeline(gaze.get());
-                                        startGazeTracking(actor);
-                                    }
-                                    face2face = true;
-                                    face2faceLast = eventArgs.timestamp;
-                                } else {
-                                    long duration = eventArgs.timestamp - face2faceLast;
-                                    face2face = duration <= shaking.maxDuration(MILLISECONDS);
-                                }
-                            } else {
-                                face2face = false;
-                            }
-                        } else {
-                            face2face = false;
-                        }
-                    } else {
-                        face2face = false;
-                    }
-
-                    if (!face2face) {
-                        stopGazeTracking(actor);
-                    }
-                }
-                return prompt;
-            });
-        }
-
-        private void clearTimeline(Gaze gaze) {
-            detectedGesture.set(Gesture.None);
-            long timestamp = System.currentTimeMillis();
-            nodding.clear(gaze.nod * rad2deg, timestamp, MILLISECONDS);
-            shaking.clear(gaze.shake * rad2deg, timestamp, MILLISECONDS);
-        }
-
-        private void startGazeTracking(Actor actor) {
-            humanPoseInteraction.addEventListener(actor, trackGaze);
-        }
-    };
-
-    public final HumanPoseDeviceInteraction.EventListener trackGaze = new HumanPoseDeviceInteraction.EventListener(
-            HumanPose.Interest.HeadGestures) {
-
-        @Override
-        public void run(PoseEstimationEventArgs eventArgs) throws Exception {
             if (eventArgs.pose.is(HeadGestures.Gaze)) {
+                boolean face2face;
                 var gaze = eventArgs.pose.estimation.gaze.orElseThrow();
-                boolean nod = nodding.update(eventArgs.timestamp, gaze.nod * rad2deg);
-                boolean shake = shaking.update(eventArgs.timestamp, gaze.shake * rad2deg);
-                if (nod && !shake) {
-                    signal(eventArgs, Gesture.Nod);
-                } else if (shake && !nod) {
-                    signal(eventArgs, Gesture.Shake);
+                if (gaze.isFace2Face()) {
+                    face2face = true;
+                    face2faceLast = eventArgs.pose.timestamp;
+                } else {
+                    long duration = eventArgs.pose.timestamp - face2faceLast;
+                    face2face = duration <= shaking.maxDuration(MILLISECONDS);
+                }
+
+                if (face2face) {
+                    boolean nod = nodding.update(eventArgs.pose.timestamp, gaze.nod * rad2deg);
+                    boolean shake = shaking.update(eventArgs.pose.timestamp, gaze.shake * rad2deg);
+                    if (nod && !shake) {
+                        signal(eventArgs, Gesture.Nod);
+                    } else if (shake && !nod) {
+                        signal(eventArgs, Gesture.Shake);
+                    }
+                } else {
+                    clearTimeline(gaze);
                 }
             }
         }
@@ -156,33 +111,33 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
 
     };
 
-    private boolean trackGestures = false;
+    private void clearTimeline(Gaze gaze) {
+        detectedGesture.set(Gesture.None);
+        long timestamp = System.currentTimeMillis();
+        nodding.clear(gaze.nod * rad2deg, timestamp, MILLISECONDS);
+        shaking.clear(gaze.shake * rad2deg, timestamp, MILLISECONDS);
+    }
 
     @Override
     public Setup getSetup(Choices choices) {
-        return () -> trackGestures = distinctGestures(choices);
+        return Setup.None;
     }
 
     @Override
     protected Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
-        if (trackGestures) {
-            updateUI(prompt.initialState.get());
-            while (!Thread.currentThread().isInterrupted()) {
-                gestureDetectionLock.lockInterruptibly();
-                try {
-                    gestureDetected.await();
-                    var meaning = meaning(detectedGesture.get());
-                    Optional<Choice> choice = prompt.choices.stream().filter(c -> c.answer.meaning == meaning)
-                            .findFirst();
-                    if (choice.isPresent()) {
-                        return new Result(prompt.choices.indexOf(choice.get()));
-                    }
-                } finally {
-                    gestureDetectionLock.unlock();
+        while (!Thread.currentThread().isInterrupted()) {
+            gestureDetectionLock.lockInterruptibly();
+            clearTimeline(new Gaze(0, 0, 0));
+            try {
+                gestureDetected.await();
+                var meaning = meaning(detectedGesture.get());
+                Optional<Choice> choice = prompt.choices.stream().filter(c -> c.answer.meaning == meaning).findFirst();
+                if (choice.isPresent()) {
+                    return new Result(prompt.choices.indexOf(choice.get()));
                 }
+            } finally {
+                gestureDetectionLock.unlock();
             }
-        } else {
-            Thread.sleep(Long.MAX_VALUE);
         }
         return Result.UNDEFINED;
     }
@@ -201,10 +156,8 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
     public void updateUI(UiEvent event) {
         var actor = activePrompt.get().script.actor;
         if (event.enabled) {
-            // TODO just track gaze since proximity handled by UiEvent
-            startProximityTracking(actor);
+            startGazeTracking(actor);
         } else {
-            stopProximityTracking(actor);
             stopGazeTracking(actor);
         }
     }
@@ -212,17 +165,12 @@ public class HeadGesturesV2InputMethod extends AbstractInputMethod {
     @Override
     protected void handleDismiss(Prompt prompt) throws InterruptedException {
         var actor = prompt.script.actor;
-        stopProximityTracking(actor);
         stopGazeTracking(actor);
     }
 
-    private void startProximityTracking(Actor actor) {
-        humanPoseInteraction.addEventListener(actor, trackProximity);
-    }
-
-    private void stopProximityTracking(Actor actor) {
-        if (humanPoseInteraction.containsEventListener(actor, trackProximity)) {
-            humanPoseInteraction.removeEventListener(actor, trackProximity);
+    private void startGazeTracking(Actor actor) {
+        if (!humanPoseInteraction.containsEventListener(actor, trackGaze)) {
+            humanPoseInteraction.addEventListener(actor, trackGaze);
         }
     }
 

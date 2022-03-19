@@ -18,8 +18,6 @@ import teaselib.core.jni.NativeObject;
 
 public class HumanPose extends NativeObject.Disposible {
 
-    private long timestamp = 0;
-
     public HumanPose() {
         super(newNativeInstance());
     }
@@ -253,7 +251,6 @@ public class HumanPose extends NativeObject.Disposible {
     }
 
     public List<HumanPose.Estimation> poses(SceneCapture device, Rotation rotation) {
-        timestamp = System.currentTimeMillis();
         // TODO test Rotation.None in C++ code instead of setting it to null here
         if (acquire(device, rotation == Rotation.None ? null : rotation)) {
             estimate();
@@ -272,17 +269,12 @@ public class HumanPose extends NativeObject.Disposible {
     }
 
     public List<HumanPose.Estimation> poses(byte[] bytes) {
-        timestamp = System.currentTimeMillis();
         if (acquireImage(bytes)) {
             estimate();
             return results();
         } else {
             throw new SceneCapture.DeviceLost("Camera not started or closed");
         }
-    }
-
-    public long getTimestamp() {
-        return timestamp;
     }
 
     @Override

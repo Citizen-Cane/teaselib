@@ -548,11 +548,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             }
 
             prompt.inputMethodInitializers.setup(this);
-
-            UiEvent initialState = prompt.initialState.get();
-            if (initialState.enabled) {
-                recognizer.startRecognition();
-            }
+            recognizer.startRecognition();
             return prompt;
         });
     }

@@ -12,12 +12,13 @@ import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Shower;
 
-final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
+public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
 
     static final Logger logger = LoggerFactory.getLogger(ProximitySensor.class);
 
     private final TeaseLib teaseLib;
 
+    private PoseAspects pose = PoseAspects.Unavailable;
     private Proximity previous = Proximity.FACE2FACE;
 
     ProximitySensor(TeaseLib teaseLib, Set<Interest> interests) {
@@ -27,15 +28,16 @@ final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
 
     @Override
     public void run(PoseEstimationEventArgs eventArgs) throws InterruptedException {
-        var presence = presence(eventArgs);
-        var proximity = proximity(eventArgs);
-        var stream = stream(eventArgs);
+        pose = eventArgs.pose;
+
+        var presence = presence(pose);
+        var proximity = proximity();
+        var stream = stream(pose);
 
         var speechProximity = presence && proximity == Proximity.FACE2FACE;
         var focusLevel = stream ? (presence || proximity == Proximity.CLOSE ? 1.0f : 0.0f) : 1.0f;
 
-        logger.info("User Presence: {}", presence);
-        logger.info("User Proximity: {}", proximity);
+        logger.info("User Presence: {}\t User Proximity: {}, Stream: {}", presence, proximity, stream);
 
         // TODO update during actor speech - disabled to reduce power consumption on older hardware
         // TODO faster updates for immediate response - disabled to reduce power consumption on older hardware
@@ -55,8 +57,8 @@ final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
         teaseLib.host.show();
     }
 
-    private static boolean stream(PoseEstimationEventArgs eventArgs) {
-        Optional<HumanPose.Status> aspect = eventArgs.pose.aspect(HumanPose.Status.class);
+    private static boolean stream(PoseAspects pose) {
+        Optional<HumanPose.Status> aspect = pose.aspect(HumanPose.Status.class);
         HumanPose.Status stream;
         if (aspect.isPresent()) {
             stream = aspect.get();
@@ -66,8 +68,8 @@ final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
         return stream == HumanPose.Status.Stream;
     }
 
-    private static boolean presence(PoseEstimationEventArgs eventArgs) {
-        Optional<HumanPose.Status> aspect = eventArgs.pose.aspect(HumanPose.Status.class);
+    private static boolean presence(PoseAspects pose) {
+        Optional<HumanPose.Status> aspect = pose.aspect(HumanPose.Status.class);
         HumanPose.Status presence;
         if (aspect.isPresent()) {
             presence = aspect.get();
@@ -77,8 +79,8 @@ final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
         return presence != HumanPose.Status.None;
     }
 
-    private Proximity proximity(PoseEstimationEventArgs eventArgs) {
-        Optional<Proximity> aspect = eventArgs.pose.aspect(Proximity.class);
+    private Proximity proximity() {
+        Optional<Proximity> aspect = pose.aspect(Proximity.class);
         Proximity proximity;
         if (aspect.isPresent()) {
             proximity = aspect.get();
@@ -96,5 +98,9 @@ final class ProximitySensor extends HumanPoseDeviceInteraction.EventListener {
             }
         }
         return proximity;
+    }
+
+    public PoseAspects pose() {
+        return pose;
     }
 }

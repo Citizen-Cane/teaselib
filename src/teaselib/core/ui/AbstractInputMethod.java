@@ -67,7 +67,6 @@ public abstract class AbstractInputMethod implements InputMethod {
 
         activePrompt.set(prompt);
         start(prompt);
-        updateUI(prompt.initialState.get());
 
         if (Thread.interrupted()) {
             throw new InterruptedException();

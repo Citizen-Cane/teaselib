@@ -2,6 +2,7 @@ package teaselib.core.ai.perception;
 
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +32,7 @@ public class HumanPoseDeviceInteraction extends
     static final Logger logger = LoggerFactory.getLogger(HumanPoseDeviceInteraction.class);
 
     private final PoseEstimationTask poseEstimationTask;
-    public final HumanPoseDeviceInteraction.EventListener proximitySensor;
+    public final ProximitySensor proximitySensor;
     final ScriptRenderer scriptRenderer;
     final Event<ActorChanged> actorChangedListener;
 
@@ -78,11 +79,12 @@ public class HumanPoseDeviceInteraction extends
     public PoseAspects getPose(Set<Interest> interests, byte[] image) throws InterruptedException {
         Callable<PoseAspects> poseAspects = () -> {
             HumanPose model = getModel(interests);
+            long timestamp = System.currentTimeMillis();
             List<Estimation> poses = model.poses(image);
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
             } else {
-                return new PoseAspects(poses.get(0), interests);
+                return new PoseAspects(poses.get(0), timestamp, interests);
             }
         };
         return poseEstimationTask.submitAndGet(poseAspects);
@@ -116,30 +118,34 @@ public class HumanPoseDeviceInteraction extends
     }
 
     public void addEventListener(Actor actor, EventListener listener) {
+        List<EventSource<PoseEstimationEventArgs>> eventSources = new ArrayList<>();
         synchronized (this) {
             DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
                     actor);
             for (Interest interest : listener.interests) {
                 EventSource<PoseEstimationEventArgs> eventSource = definitions.get(interest,
                         k -> new EventSource<>(k.toString()));
-                eventSource.add(listener);
+                eventSources.add(eventSource);
             }
         }
+        eventSources.stream().forEach(eventSource -> eventSource.add(listener));
+        poseEstimationTask.interestChanged();
 
         try {
-            listener.run(new PoseEstimationEventArgs(actor, poseEstimationTask.getPose(listener.interests),
-                    System.currentTimeMillis()));
+            PoseEstimationEventArgs eventArgs = new PoseEstimationEventArgs(actor,
+                    poseEstimationTask.getPose(listener.interests));
+            listener.run(eventArgs);
         } catch (Exception e) {
             throw asRuntimeException(e);
         }
     }
 
     public boolean containsEventListener(Actor actor, EventListener listener) {
-        EventSource<PoseEstimationEventArgs> eventSource;
         synchronized (this) {
             DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
                     actor);
             for (Interest interest : listener.interests) {
+                EventSource<PoseEstimationEventArgs> eventSource;
                 eventSource = definitions.get(interest);
                 if (eventSource != null && eventSource.contains(listener)) {
                     return true;
@@ -150,14 +156,17 @@ public class HumanPoseDeviceInteraction extends
     }
 
     public void removeEventListener(Actor actor, EventListener listener) {
+        List<EventSource<PoseEstimationEventArgs>> eventSources = new ArrayList<>();
         synchronized (this) {
             DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
                     actor);
             for (Interest interest : listener.interests) {
                 EventSource<PoseEstimationEventArgs> eventSource = definitions.get(interest);
-                eventSource.remove(listener);
+                eventSources.add(eventSource);
             }
         }
+        eventSources.stream().forEach(eventSource -> eventSource.remove(listener));
+        poseEstimationTask.interestChanged();
     }
 
 }

@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -31,7 +31,6 @@ import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HeadGesturesV2InputMethod;
-import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
@@ -102,13 +101,14 @@ public abstract class Script {
             throw ExceptionUtil.asRuntimeException(e);
         }
 
-        boolean startOnce = teaseLib.globals.get(ScriptCache.class) == null;
-        if (startOnce) {
+        boolean callOnce = teaseLib.globals.get(ScriptCache.class) == null;
+        if (callOnce) {
             handleAutoRemove();
             bindNetworkProperties();
 
             var inputMethods = teaseLib.globals.get(InputMethods.class);
-            BooleanSupplier canSpeak = () -> !teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied();
+            Function<Choices, Boolean> canSpeak = choices -> !teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth)
+                    .applied();
             inputMethods.add(new SpeechRecognitionInputMethod(config, scriptRenderer.audioSync), canSpeak);
             inputMethods.add(teaseLib.host.inputMethod());
             inputMethods.add(scriptRenderer.scriptEventInputMethod);
@@ -124,11 +124,12 @@ public abstract class Script {
                             .add(ev -> humanPoseInteraction.clearPause());
                     speechRecognitionInputMethod.events.recognitionCompleted
                             .add(ev -> humanPoseInteraction.clearPause());
-                    // TODO Generalize - HeadGestures -> Perception
+
                     if (Boolean.parseBoolean(config.get(Config.InputMethod.HeadGestures))) {
                         inputMethods.add(new HeadGesturesV2InputMethod( //
                                 humanPoseInteraction, scriptRenderer.getInputMethodExecutorService()),
-                                () -> !canSpeak.getAsBoolean());
+                                choices -> !canSpeak.apply(choices)
+                                        && HeadGesturesV2InputMethod.distinctGestures(choices));
                     }
                 }
             }
@@ -138,14 +139,12 @@ public abstract class Script {
         deviceInteraction(KeyReleaseDeviceInteraction.class).setDefaults(actor);
     }
 
-    // TODO move speech recognition-related part to sr input method, find out how to deal with absent camera
-
-    protected void define(HumanPoseScriptInteraction humanPoseInteraction) {
+    protected void startProximitySensor(HumanPoseScriptInteraction humanPoseInteraction) {
         humanPoseInteraction.deviceInteraction.addEventListener(actor,
                 humanPoseInteraction.deviceInteraction.proximitySensor);
     }
 
-    protected void undefine(HumanPoseScriptInteraction humanPoseInteraction) {
+    protected void stopProimitySensor(HumanPoseScriptInteraction humanPoseInteraction) {
         humanPoseInteraction.deviceInteraction.removeEventListener(actor,
                 humanPoseInteraction.deviceInteraction.proximitySensor);
         teaseLib.host.setActorProximity(Proximity.FAR);
@@ -542,16 +541,15 @@ public abstract class Script {
             HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
             if (humanPoseInteraction != null && humanPoseInteraction.deviceInteraction.isActive()) {
                 try {
-                    define(humanPoseInteraction);
-                    choice = showPrompt(prompt).get(0);
+                    choice = getDistinctChoice(prompt);
                 } finally {
-                    undefine(humanPoseInteraction);
+                    stopProimitySensor(humanPoseInteraction);
                 }
             } else {
-                choice = showPrompt(prompt).get(0);
+                choice = getDistinctChoice(prompt);
             }
         } else {
-            choice = showPrompt(prompt).get(0);
+            choice = getDistinctChoice(prompt);
         }
 
         String answer = "< " + choice.display;
@@ -559,6 +557,10 @@ public abstract class Script {
         teaseLib.transcript.info(answer);
 
         return choice.answer;
+    }
+
+    private Choice getDistinctChoice(Prompt prompt) throws InterruptedException {
+        return showPrompt(prompt).get(0);
     }
 
     private Choices choices(List<Answer> answers, Intention intention) {
@@ -592,22 +594,29 @@ public abstract class Script {
     }
 
     protected Supplier<UiEvent> uiEvents() {
-        // TODO also depends on camera input - possibly wrong state after camera surprise-removal
+        // TODO also depends on camera input
+        // - possibly wrong state after camera surprise-removal
+        // - camera is only recognized on the next prompt - but UI would be always active which is good
         if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
-            return () -> new InputMethod.UiEvent(isFace2Face());
+            return () -> {
+                HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
+                if (humanPoseInteraction != null && humanPoseInteraction.deviceInteraction.isActive()) {
+                    var proximitySensor = humanPoseInteraction.deviceInteraction.proximitySensor;
+                    if (!humanPoseInteraction.deviceInteraction.containsEventListener(actor, proximitySensor)) {
+                        startProximitySensor(humanPoseInteraction);
+                    }
+                    return new InputMethod.UiEvent(face2face(proximitySensor.pose()));
+                } else {
+                    return new InputMethod.UiEvent(true);
+                }
+            };
         } else {
             return Prompt.AlwaysEnabled;
         }
     }
 
-    boolean isFace2Face() {
-        HumanPoseScriptInteraction humanPoseInteraction = interaction(HumanPoseScriptInteraction.class);
-        if (humanPoseInteraction != null && humanPoseInteraction.deviceInteraction.isActive()) {
-            PoseAspects pose = humanPoseInteraction.getPose(Interest.Proximity);
-            return pose.is(Proximity.FACE2FACE);
-        } else {
-            return true;
-        }
+    private boolean face2face(PoseAspects pose) {
+        return pose.is(Proximity.FACE2FACE);
     }
 
     public Replay getReplay() {

@@ -1,14 +1,12 @@
 package teaselib.core.ui;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 
 /**
  * @author Citizen-Cane
@@ -25,10 +23,10 @@ public class InputMethods implements Iterable<InputMethod>, teaselib.core.Closea
 
     }
 
-    private static final BooleanSupplier Always = () -> true;
+    private static final Function<Choices, Boolean> Always = choices -> true;
 
     private final List<InputMethod> elements = new ArrayList<>();
-    private final Map<InputMethod, BooleanSupplier> conditions = new HashMap<>();
+    private final Map<InputMethod, Function<Choices, Boolean>> conditions = new HashMap<>();
 
     public InputMethods() {
     }
@@ -46,7 +44,7 @@ public class InputMethods implements Iterable<InputMethod>, teaselib.core.Closea
         conditions.put(inputMethod, Always);
     }
 
-    public void add(InputMethod inputMethod, BooleanSupplier condition) {
+    public void add(InputMethod inputMethod, Function<Choices, Boolean> condition) {
         elements.add(inputMethod);
         conditions.put(inputMethod, condition);
     }
@@ -56,8 +54,8 @@ public class InputMethods implements Iterable<InputMethod>, teaselib.core.Closea
         return elements.remove(inputMethod);
     }
 
-    List<InputMethod> selected() {
-        return elements.stream().filter(element -> conditions.get(element).getAsBoolean()).collect(toList());
+    List<InputMethod> selected(Choices choices) {
+        return elements.stream().filter(element -> conditions.get(element).apply(choices)).toList();
     }
 
     @Override

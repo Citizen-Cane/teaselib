@@ -18,21 +18,24 @@ public class PoseAspects {
 
     public final HumanPose.Estimation estimation;
 
+    final long timestamp;
     final Set<Interest> interests;
     private final Set<PoseAspect> aspects;
 
     PoseAspects() {
         this.estimation = HumanPose.Estimation.NONE;
+        this.timestamp = 0;
         this.interests = Collections.singleton(Interest.Status);
         this.aspects = Collections.singleton(Status.None);
     }
 
-    PoseAspects(HumanPose.Estimation pose, Set<Interest> interests) {
-        this(pose, interests, Unavailable);
+    PoseAspects(HumanPose.Estimation pose, long timestamp, Set<Interest> interests) {
+        this(pose, timestamp, interests, Unavailable);
     }
 
-    PoseAspects(HumanPose.Estimation pose, Set<Interest> interests, PoseAspects previous) {
+    PoseAspects(HumanPose.Estimation pose, long timestamp, Set<Interest> interests, PoseAspects previous) {
         this.estimation = pose;
+        this.timestamp = timestamp;
         this.interests = Collections.unmodifiableSet(interests);
         this.aspects = new HashSet<>();
         aspects.add(Status.Available);

@@ -7,12 +7,15 @@ public class PoseEstimationEventArgs extends EventArgs {
 
     public final Actor actor;
     public final PoseAspects pose;
-    public final long timestamp;
 
-    public PoseEstimationEventArgs(Actor actor, PoseAspects pose, long timestamp) {
+    public PoseEstimationEventArgs(Actor actor, PoseAspects pose) {
         this.actor = actor;
         this.pose = pose;
-        this.timestamp = timestamp;
+    }
+
+    @Override
+    public String toString() {
+        return "[" + actor.key + ", " + pose + "]";
     }
 
 }

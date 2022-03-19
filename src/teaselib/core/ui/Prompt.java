@@ -27,6 +27,7 @@ public class Prompt {
     private static final List<Choice> SCRIPTFUNCTION_TIMEOUT = Collections.singletonList(new Choice(Answer.Timeout));
 
     public static final Supplier<InputMethod.UiEvent> AlwaysEnabled = () -> new InputMethod.UiEvent(true);
+    public static final InputMethod.UiEvent AlwaysDisabled = new InputMethod.UiEvent(false);
 
     public static class Result {
         public static final Result UNDEFINED = new Result(Integer.MIN_VALUE) {
@@ -113,12 +114,14 @@ public class Prompt {
 
     final InputMethods inputMethods;
     public final InputMethods.Initializers inputMethodInitializers;
-    public final Supplier<InputMethod.UiEvent> initialState;
+    private final Supplier<InputMethod.UiEvent> initialUiEventSupplier;
+    private InputMethod.UiEvent initialUiEvent = AlwaysDisabled;
 
     final ScriptFutureTask scriptTask;
 
     public final ReentrantLock lock;
     public final Condition click;
+    private final Condition uiChanged;
 
     private final AtomicBoolean paused = new AtomicBoolean(false);
     final Map<InputMethod.Notification, Action> inputMethodEventActions = new HashMap<>();
@@ -130,18 +133,7 @@ public class Prompt {
     private InputMethod resultInputMethod;
 
     Prompt() {
-        this.script = null;
-        this.choices = null;
-        this.inputMethods = null;
-        this.inputMethodInitializers = null;
-        this.initialState = null;
-        this.scriptTask = null;
-        this.acceptedResult = null;
-
-        this.lock = new ReentrantLock();
-        this.click = lock.newCondition();
-
-        this.result = Prompt.Result.UNDEFINED;
+        this(null, null);
     }
 
     public Prompt(Choices choices, InputMethods inputMethods) {
@@ -158,18 +150,20 @@ public class Prompt {
     }
 
     public Prompt(Script script, Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction,
-            Result.Accept mode, Supplier<InputMethod.UiEvent> initialState) {
+            Result.Accept mode, Supplier<InputMethod.UiEvent> initialUiEventSupplier) {
         this.script = script;
         this.choices = choices;
         this.inputMethods = inputMethods;
         this.inputMethodInitializers = inputMethods.initializers(choices);
-        this.initialState = initialState;
+        this.initialUiEventSupplier = initialUiEventSupplier;
+        this.initialUiEvent = AlwaysDisabled;
 
         this.scriptTask = scriptFunction != null ? new ScriptFutureTask(script, scriptFunction, this) : null;
         this.acceptedResult = mode;
 
         this.lock = new ReentrantLock();
         this.click = lock.newCondition();
+        this.uiChanged = lock.newCondition();
 
         this.result = Prompt.Result.UNDEFINED;
     }
@@ -224,7 +218,12 @@ public class Prompt {
         throwIfNotLocked();
         throwIfPaused();
 
-        realized = inputMethods.selected();
+        initialUiEvent = initialUiEventSupplier.get();
+        while (!initialUiEvent.enabled) {
+            uiChanged.await();
+        }
+
+        realized = inputMethods.selected(choices);
         for (InputMethod inputMethod : realized) {
             inputMethod.show(this);
         }
@@ -325,12 +324,15 @@ public class Prompt {
     }
 
     public void updateUI(UiEvent event) {
+        initialUiEvent = event;
+        uiChanged.signalAll();
         for (InputMethod inputMethod : realized) {
             inputMethod.updateUI(event);
         }
     }
 
     public void dismiss() {
+        initialUiEvent = Prompt.AlwaysDisabled;
         throwIfNotLocked();
         dismissInputMethods().ifPresent(this::throwInputMethodException);
     }

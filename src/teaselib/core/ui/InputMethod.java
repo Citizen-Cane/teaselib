@@ -7,6 +7,9 @@ package teaselib.core.ui;
 public interface InputMethod extends teaselib.core.Closeable {
 
     public interface Setup {
+        static final Setup None = () -> {
+        };
+
         void apply();
     }
 

@@ -53,7 +53,16 @@ public class EventSource<T extends EventArgs> {
         return delegates.size();
     }
 
-    public synchronized void fire(T eventArgs) {
+    public void fire(T eventArgs) {
+        ArrayList<Event<T>> runnableDelegates;
+        synchronized (this) {
+            runnableDelegates = new ArrayList<>(delegates);
+        }
+        fire(name, eventArgs, initial, runnableDelegates, completing);
+    }
+
+    private static <T extends EventArgs> void fire(String name, T eventArgs, Event<T> initial, List<Event<T>> delegates,
+            Event<T> completing) {
         List<Throwable> throwables = new ArrayList<>(delegates.size());
 
         logger.info("{} , {} listeners {}", name, delegates.size(), eventArgs);
@@ -80,7 +89,8 @@ public class EventSource<T extends EventArgs> {
         }
     }
 
-    private void runAndCatchThrowable(T eventArgs, Event<T> delegate, List<Throwable> throwables) {
+    private static <T extends EventArgs> void runAndCatchThrowable(T eventArgs, Event<T> delegate,
+            List<Throwable> throwables) {
         try {
             delegate.run(eventArgs);
         } catch (Throwable t) {

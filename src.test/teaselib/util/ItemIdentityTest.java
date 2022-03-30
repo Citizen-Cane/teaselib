@@ -3,7 +3,13 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,12 +40,12 @@ public class ItemIdentityTest {
     @Test
     public void testRetrievingTheIdenticalItem() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
 
             Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
             assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
-            Item sameRingGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            Item sameRingGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             assertEquals(ringGag, sameRingGag);
 
             assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
@@ -50,9 +56,9 @@ public class ItemIdentityTest {
     @Test
     public void testApplyingTheIdenticalItem() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            var gags = script.items(Toys.Gag);
 
-            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).item();
             assertFalse(ringGag.is(Body.InMouth));
 
             ringGag.apply();
@@ -70,9 +76,9 @@ public class ItemIdentityTest {
     @Test
     public void testComparingItemsAndStateWorks() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            var gags = script.items(Toys.Gag);
 
-            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).item();
             assertFalse(ringGag.is(Body.InMouth));
             ringGag.apply();
 
@@ -103,7 +109,7 @@ public class ItemIdentityTest {
     public void testItemInstanceRemoveAnyInstance() throws IOException {
         try (TestScript script = new TestScript()) {
             Item chastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell)
-                    .get();
+                    .item();
             State onPenis = script.state(Body.OnPenis);
 
             chastityDevice.apply();
@@ -111,7 +117,7 @@ public class ItemIdentityTest {
             assertTrue(chastityDevice.applied());
             assertTrue(onPenis.applied());
 
-            Item otherChastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Belt).get();
+            Item otherChastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Belt).item();
 
             // Removing the wrong item doesn't work
             try {
@@ -136,7 +142,7 @@ public class ItemIdentityTest {
     public void testItemInstanceRemoveAnyInstanceStringBased() throws IOException {
         try (TestScript script = new TestScript()) {
             Item chastityDevice = script.items("teaselib.Toys.Chastity_Device")
-                    .matching("teaselib.Toys.Chastity_Devices.Gates_of_Hell").get();
+                    .matching("teaselib.Toys.Chastity_Devices.Gates_of_Hell").item();
             State onPenis = script.state("teaselib.Body.OnPenis");
 
             chastityDevice.apply();
@@ -145,7 +151,7 @@ public class ItemIdentityTest {
             assertTrue(onPenis.applied());
 
             Item otherChastityDevice = script.items("teaselib.Toys.Chastity_Device")
-                    .matching("teaselib.Toys.Chastity_Devices.Belt").get();
+                    .matching("teaselib.Toys.Chastity_Devices.Belt").item();
 
             // Removing the wrong item doesn't work
             try {
@@ -243,12 +249,14 @@ public class ItemIdentityTest {
     private static ArrayList<Item> placeClothesPegs(TestScript script, State nipples) {
         int numberOfPegs = 10;
         ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, numberOfPegs);
-
         script.teaseLib.addUserItems(clothesPegsOnNipples);
 
         for (Item peg : clothesPegsOnNipples) {
+            peg.setAvailable(true);
+            assertTrue(peg.canApply());
             assertFalse(peg.applied());
             peg.applyTo(Body.OnNipples);
+            assertFalse(peg.canApply());
         }
         assertTrue(nipples.applied());
 
@@ -292,9 +300,9 @@ public class ItemIdentityTest {
     @Test
     public void testUserItemsInstanciatingAndCaching() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            var gags = script.items(Toys.Gag);
 
-            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).item();
             Item sameRingGag = script.teaseLib.getItem(TeaseLib.DefaultDomain, QualifiedString.of(Toys.Gag),
                     "ring_gag");
             assertEquals(ringGag, sameRingGag);
@@ -350,14 +358,14 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Items gags1 = script.items(Toys.Gag);
-            Item persisted = gags1.matching(Toys.Gags.Ring_Gag).get();
+            var gags1 = script.items(Toys.Gag);
+            Item persisted = gags1.matching(Toys.Gags.Ring_Gag).item();
             persisted.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
 
             script.debugger.clearStateMaps();
 
-            Items gags = script.items(Toys.Gag);
-            Item restored = gags.matching(Toys.Gags.Ring_Gag).get();
+            var gags = script.items(Toys.Gag);
+            Item restored = gags.matching(Toys.Gags.Ring_Gag).item();
 
             State inMouth = script.state(Body.InMouth);
             assertTrue(inMouth.is(restored));
@@ -370,9 +378,9 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Items gags = script.items(Toys.Gag);
-            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-            Item muzzleGag = gags.matching(Toys.Gags.Muzzle_Gag).get();
+            var gags = script.items(Toys.Gag);
+            Item ringGag = gags.matching(Toys.Gags.Ring_Gag).item();
+            Item muzzleGag = gags.matching(Toys.Gags.Muzzle_Gag).item();
             ringGag.apply();
 
             assertTrue(ringGag.applied());
@@ -402,8 +410,8 @@ public class ItemIdentityTest {
 
             script.debugger.clearStateMaps();
 
-            Items gags = script.items(Toys.Gag);
-            Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).get();
+            var gags = script.items(Toys.Gag);
+            Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).item();
             assertNotSame(ringGag, ringGag2);
 
             verifyInMouth(script);
@@ -422,15 +430,15 @@ public class ItemIdentityTest {
 
             verifyInMouth(script);
 
-            Items gags = script.items(Toys.Gag);
-            Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).get();
+            var gags = script.items(Toys.Gag);
+            Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).item();
             verifyGagApplied(script, ringGag2);
         }
     }
 
     private static Item applyRingGagAndRemember(TestScript script) {
-        Items gags = script.items(Toys.Gag);
-        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
+        var gags = script.items(Toys.Gag);
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).item();
 
         assertFalse(ringGag.is(Body.InMouth));
         ringGag.apply().remember(Until.Removed);
@@ -456,17 +464,16 @@ public class ItemIdentityTest {
     public void testCanApplyMultipleInstancesWithoutDefaultPeers() throws IOException {
         try (TestScript script = new TestScript()) {
             ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, 10);
-
             for (Item peg : clothesPegsOnNipples) {
+                peg.setAvailable(true);
                 assertTrue(peg.canApply());
                 assertFalse(peg.applied());
-                peg.applyTo(Body.OnNipples);
+                peg.apply();
 
                 State pegs = script.state(Household.Clothes_Pegs);
                 assertTrue(pegs.applied());
                 assertTrue(peg.applied());
                 assertTrue(peg.is(peg));
-
                 assertFalse(peg.canApply());
             }
         }
@@ -476,6 +483,7 @@ public class ItemIdentityTest {
     public void testCanApplySingleInstancesWithDefaultPeers() throws IOException {
         try (TestScript script = new TestScript()) {
             Item nippleClamps = script.item(Toys.Nipple_Clamps);
+            nippleClamps.setAvailable(true);
             assertTrue(nippleClamps.canApply());
             nippleClamps.apply();
             assertTrue(nippleClamps.applied());
@@ -517,14 +525,14 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            var gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
             assertTrue(gag.applied());
             assertTrue(script.state(Toys.Gag).applied());
 
             script.debugger.clearStateMaps();
 
-            Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            var restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             assertTrue(restored.applied());
             assertTrue(script.state(Toys.Gag).applied());
         }
@@ -535,7 +543,7 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
             assertTrue(gag.applied());
             assertTrue(script.state(Toys.Gag).applied());
@@ -560,7 +568,7 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
 
             script.debugger.clearStateMaps();
@@ -586,7 +594,7 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
             assertTrue(gag.applied());
             assertTrue(script.item(Toys.Gag).applied());
@@ -594,7 +602,7 @@ public class ItemIdentityTest {
 
             script.debugger.clearStateMaps();
 
-            Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             assertTrue(restored.applied());
             assertTrue(script.item(Toys.Gag).applied());
             assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
@@ -606,11 +614,11 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             ringGag.apply();
             assertTrue(ringGag.is(ringGag));
 
-            Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
+            Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).item();
             assertNotEquals(ringGag, bitGag);
             assertFalse(ringGag.is(bitGag));
 
@@ -624,11 +632,11 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             ringGag.apply();
             assertTrue(ringGag.is(ringGag));
 
-            Item analBeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
+            Item analBeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).item();
             assertNotEquals(ringGag, analBeads);
             assertFalse(ringGag.is(analBeads));
         }
@@ -653,15 +661,16 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-            Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
+            Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
+            Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).item();
 
             QualifiedString ringGagRef = QualifiedString.of(ringGag);
             QualifiedString bitGagRef = QualifiedString.of(bitGag);
             assertNotEquals(ringGagRef, bitGagRef);
             assertNotEquals(ringGagRef.toString(), bitGagRef.toString());
 
-            assertTrue(script.item(Toys.Gag).is(Gags.Ball_Gag));
+            Item ballGag = script.defaultDomain.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).item();
+            assertTrue(ballGag.is(Gags.Ball_Gag));
             assertEquals(ringGag, script.item(ringGagRef.toString()));
             assertEquals(bitGag, script.item(bitGagRef.toString()));
         }

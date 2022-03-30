@@ -108,19 +108,19 @@ public class UserItemsImplTest {
     public void testUserItemsOverwriteEntry() throws IOException {
         try (TestScript script = new TestScript()) {
             // Default
-            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+            Iterator<Item> humblers = script.items(Toys.Humbler).inventory().iterator();
             assertFalse(humblers.next().is(Material.Wood));
             assertFalse(humblers.hasNext());
 
             // Overwrite by user items
             script.addTestUserItems();
-            Iterator<Item> humblers1 = script.items(Toys.Humbler).iterator();
+            Iterator<Item> humblers1 = script.items(Toys.Humbler).inventory().iterator();
             assertTrue(humblers1.next().is(Material.Wood));
             assertFalse(humblers1.hasNext());
 
             // additional items via custom user items
             script.addTestUserItems2();
-            Iterator<Item> humblers2 = script.items(Toys.Humbler).iterator();
+            Iterator<Item> humblers2 = script.items(Toys.Humbler).inventory().iterator();
             assertTrue(humblers2.next().is(Material.Wood));
             assertTrue(humblers2.next().is(Material.Metal));
             assertFalse(humblers2.hasNext());
@@ -202,7 +202,7 @@ public class UserItemsImplTest {
         try (TestScript script = new TestScript()) {
             // Default
             {
-                Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+                Iterator<Item> humblers = script.items(Toys.Humbler).inventory().iterator();
                 assertEquals("Humbler", humblers.next().displayName());
                 assertFalse(humblers.hasNext());
             }
@@ -210,7 +210,7 @@ public class UserItemsImplTest {
             // additional items via custom user items
             {
                 script.addTestUserItems2();
-                Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+                Iterator<Item> humblers = script.items(Toys.Humbler).inventory().iterator();
                 Item notMyHumbler = humblers.next();
                 assertEquals("Humbler", notMyHumbler.displayName());
 
@@ -226,7 +226,7 @@ public class UserItemsImplTest {
 
             script.debugger.clearStateMaps();
             {
-                Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+                Iterator<Item> humblers = script.items(Toys.Humbler).inventory().iterator();
                 Item notMyHumbler = humblers.next();
                 assertFalse(notMyHumbler.applied());
 
@@ -245,7 +245,7 @@ public class UserItemsImplTest {
             script.debugger.clearStateMaps();
             script.addTestUserItems();
             {
-                Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+                Iterator<Item> humblers = script.items(Toys.Humbler).inventory().iterator();
                 Item notMyHumbler = humblers.next();
                 // assertEquals("Humbler", notMyHumbler.displayName());
                 assertFalse("User items not reset", humblers.hasNext());

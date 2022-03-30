@@ -1,6 +1,5 @@
 package teaselib.util;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,13 +28,22 @@ public class Select {
     }
 
     public static Items.Query select(Items.Query items, List<Clause<Items>> statements) {
-        return () -> {
-            var result = items.get();
-            for (Clause<Items> statement : statements) {
-                result = statement.apply(result);
+        Items.Query selected = new ItemsQueryImpl() {
+            @Override
+            public Items inventory() {
+                return select(items.inventory(), statements);
             }
-            return result;
+
         };
+        return selected;
+    }
+
+    public static Items select(Items items, List<Clause<Items>> statements) {
+        var result = items;
+        for (Clause<Items> statement : statements) {
+            result = statement.apply(result);
+        }
+        return result;
     }
 
     @SafeVarargs
@@ -49,14 +57,15 @@ public class Select {
         };
     }
 
+    // TODO items(Select.Statement ... statements) and get rid of using Statement.values
+
     public static Statement items(Enum<?>[]... values) {
-        Enum<?>[] all = Arrays.stream(values).flatMap(Arrays::stream)
-                .toArray(size -> (Enum<?>[]) Array.newInstance(values[0].getClass().getComponentType(), size));
-        return new Statement(all, Collections.emptyList());
+        Enum<?>[] all = Arrays.stream(values).flatMap(Arrays::stream).toArray(Enum<?>[]::new);
+        return items(all);
     }
 
     public static Statement items(Enum<?>... values) {
-        return new Statement(values, Collections.emptyList());
+        return new Statement(values, Collections.singletonList(items -> items.matchingAny(values)));
     }
 
     public abstract static class AbstractStatement {
@@ -68,6 +77,10 @@ public class Select {
             super();
             this.values = values;
             this.clauses = clauses;
+        }
+
+        public Items get(Items items) {
+            return select(items, clauses);
         }
 
         public Items.Query get(Items.Query items) {

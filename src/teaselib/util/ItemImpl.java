@@ -144,10 +144,14 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     @Override
     public boolean canApply() {
-        if (defaultPeers.isEmpty()) {
-            return !state().is(this.name);
+        if (isAvailable()) {
+            if (defaultPeers.isEmpty()) {
+                return !state().is(this.name);
+            } else {
+                return defaultStates().allMatch(state -> !state.applied());
+            }
         } else {
-            return defaultStates().allMatch(state -> !state.applied());
+            return false;
         }
     }
 

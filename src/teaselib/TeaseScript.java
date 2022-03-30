@@ -231,15 +231,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      *            The items to hint / display.
      */
     public void show(Item... items) {
-        show(Arrays.asList(items));
-    }
-
-    public void show(Enum<?>... items) {
         show(items(items));
-    }
-
-    public void show(List<Item> items) {
-        show(new Items(items));
     }
 
     public void show(Items items) {
@@ -727,14 +719,14 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public void fetch(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
             Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse) {
-        fetch(new Items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
+        fetch(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
                 completionConfirmation, prolongationExcuse);
     }
 
     public void fetch(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
             Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
-        fetch(new Items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
+        fetch(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
                 completionConfirmation, prolongationExcuse, prolongationComment);
     }
 
@@ -758,14 +750,14 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public final State.Options apply(Item item, Message firstCommand, Answer command1stConfirmation,
             Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
             Answer prolongationExcuse) {
-        return apply(new Items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
+        return apply(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
                 completionConfirmation, prolongationExcuse, firstCommand);
     }
 
     public final State.Options apply(Item item, Message firstCommand, Answer command1stConfirmation,
             Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
             Answer prolongationExcuse, Message prolongationComment) {
-        return apply(new Items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
+        return apply(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
                 completionConfirmation, prolongationExcuse, prolongationComment);
     }
 
@@ -811,7 +803,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public final void remove(Item item, Message firstCommand, Answer command1stConfirmation,
             Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
             Answer prolongationExcuse, Message prolongationComment) {
-        remove(new Items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
+        remove(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
                 completionConfirmation, prolongationExcuse, prolongationComment);
     }
 

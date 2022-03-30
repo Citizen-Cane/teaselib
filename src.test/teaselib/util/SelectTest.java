@@ -1,7 +1,10 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
-import static teaselib.util.Select.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static teaselib.util.Select.items;
+import static teaselib.util.Select.select;
 
 import java.io.IOException;
 
@@ -11,6 +14,7 @@ import org.junit.Test;
 
 import teaselib.Clothes;
 import teaselib.Sexuality;
+import teaselib.Shoes;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
@@ -29,15 +33,30 @@ public class SelectTest {
 
     @Test
     public void testItemQuery() {
-        Items.Query items = test.query(Toys.Humbler);
+        Items.Query items = test.items(Toys.Humbler);
 
-        assertEquals(1, items.get().size());
-        assertEquals(0, items.get().getAvailable().size());
-        assertFalse(items.get().anyAvailable());
+        assertEquals(1, items.inventory().size());
+        assertEquals(0, items.inventory().getAvailable().size());
+        assertFalse(items.anyAvailable());
 
         Items.Query itemsQuery = select(items, Items::getAvailable);
-        assertEquals(0, itemsQuery.get().size());
-        assertFalse(itemsQuery.get().anyAvailable());
+        assertEquals(0, itemsQuery.inventory().size());
+        assertFalse(itemsQuery.anyAvailable());
+
+        items.inventory().stream().forEach(item -> item.setAvailable(true));
+
+        Items.Query available = select(items);
+        assertEquals(1, available.inventory().size());
+        assertTrue(itemsQuery.anyAvailable());
+    }
+
+    @Test
+    public void testStatementItems() {
+        Select.Statement all = items(Shoes.All.values, Clothes.All.values);
+        assertTrue(test.items(all).inventory().size() > 0);
+
+        Select.Statement shoes = items(Shoes.All.values);
+        assertTrue(test.items(shoes).inventory().size() > 0);
     }
 
     @Test
@@ -55,17 +74,17 @@ public class SelectTest {
     @Test
     public void testWhereQuery() {
         test.addTestUserItems();
-        assertEquals(2, test.items(Clothes.Underpants).matching(Sexuality.Gender.Masculine).size());
+        assertEquals(2, test.items(Clothes.Underpants).matching(Sexuality.Gender.Masculine).inventory().size());
         assertEquals(3, test.items(Clothes.Underpants).matching(Sexuality.Gender.Feminine)
-                .without(Clothes.Category.Swimwear).size());
+                .without(Clothes.Category.Swimwear).inventory().size());
 
-        Items.Query maleUnderpants = test.select(items(Clothes.Underpants)
+        Items.Query maleUnderpants = test.items(items(Clothes.Underpants)
                 .where(Items::matching, Sexuality.Gender.Masculine).and(Items::without, Clothes.Category.Swimwear));
-        assertEquals(2, maleUnderpants.get().size());
+        assertEquals(2, maleUnderpants.inventory().size());
 
-        Items.Query femaleUnderpants = test.select(items(Clothes.Underpants)
+        Items.Query femaleUnderpants = test.items(items(Clothes.Underpants)
                 .where(Items::matching, Sexuality.Gender.Feminine).and(Items::without, Clothes.Category.Swimwear));
-        assertEquals(3, femaleUnderpants.get().size());
+        assertEquals(3, femaleUnderpants.inventory().size());
     }
 
     @Test
@@ -74,35 +93,49 @@ public class SelectTest {
 
         Select.Statement query1 = new Select.Statement(items(Clothes.Underpants)
                 .where(Items::matching, Sexuality.Gender.Masculine).and(Items::without, Clothes.Category.Swimwear));
-        assertEquals(2, test.items(query1).size());
-        Items.Query maleUnderpants = test.select(query1);
-        assertEquals(2, maleUnderpants.get().size());
+        assertEquals(2, test.items(query1).inventory().size());
+        Items.Query maleUnderpants = test.items(query1);
+        assertEquals(2, maleUnderpants.inventory().size());
 
         Select.Statement query2 = new Select.Statement(items(Clothes.Underpants)
                 .where(Items::matching, Sexuality.Gender.Feminine).and(Items::without, Clothes.Category.Swimwear));
-        assertEquals(3, test.items(query2).size());
-        Items.Query femaleUnderpants = test.select(query2);
-        assertEquals(3, femaleUnderpants.get().size());
+        assertEquals(3, test.items(query2).inventory().size());
+        Items.Query femaleUnderpants = test.items(query2);
+        assertEquals(3, femaleUnderpants.inventory().size());
 
-        Items.Query pants = test.select(query1, query2);
-        assertEquals(5, pants.get().size());
+        Items.Query pants = test.items(query1, query2);
+        assertEquals(5, pants.inventory().size());
+        assertEquals(0, pants.inventory().getAvailable().size());
+
+        maleUnderpants.inventory().get().setAvailable(true);
+        femaleUnderpants.inventory().get().setAvailable(true);
+        assertEquals(2, pants.inventory().getAvailable().size());
     }
 
     @Test
     public void testValueSelection() {
         Select.Statement query = Clothes.Male.items(Clothes.Shirt, Clothes.Trousers);
-        Items attire = test.items(query);
+        Items attire = test.items(query).inventory();
         assertEquals(2, attire.valueSet().size());
     }
 
+    Select.Statement[] attire = { //
+            Clothes.Male.items(Clothes.Shirt, Clothes.Trousers), //
+            Select.items(Toys.Collar) //
+    };
+
     @Test
     public void testStatementPlusStatement() {
-        Select.Statement[] query = { //
-                Clothes.Male.items(Clothes.Shirt, Clothes.Trousers), //
-                Select.items(Toys.Collar) //
-        };
-        Items attire = test.items(query);
-        assertEquals(3, attire.valueSet().size());
+        assertEquals(5, test.items(Clothes.Male.items(Clothes.Shirt, Clothes.Trousers)).inventory().size());
+        assertEquals(1, test.items(Select.items(Toys.Collar)).inventory().size());
+        assertEquals(6, test.items(attire).inventory().size());
+    }
+
+    @Test
+    public void testStatementPlusStatementValueSet() {
+        assertEquals(2, test.items(Clothes.Male.items(Clothes.Shirt, Clothes.Trousers)).inventory().valueSet().size());
+        assertEquals(1, test.items(Select.items(Toys.Collar)).inventory().valueSet().size());
+        assertEquals(3, test.items(attire).inventory().valueSet().size());
     }
 
 }

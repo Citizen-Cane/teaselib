@@ -276,13 +276,17 @@ public class UserItemsImpl implements UserItems {
         if (teaseLib.config.has(path)) {
             File inventoryPath = new File(teaseLib.config.get(path));
             File[] files = inventoryPath.listFiles(UserItemsImpl::isUserItemsFile);
-            List<List<ItemImpl>> all = new ArrayList<>();
-            for (var file : files) {
-                URL url = file.toURI().toURL();
-                List<ItemImpl> items = loadItems(domain, url);
-                all.add(items);
+            if (files == null) {
+                return Collections.emptyList();
+            } else {
+                List<List<ItemImpl>> all = new ArrayList<>();
+                for (var file : files) {
+                    URL url = file.toURI().toURL();
+                    List<ItemImpl> items = loadItems(domain, url);
+                    all.add(items);
+                }
+                return all;
             }
-            return all;
         } else {
             return Collections.emptyList();
         }

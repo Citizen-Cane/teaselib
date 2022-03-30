@@ -110,7 +110,7 @@ public class TestScript extends TeaseScript implements Closeable {
     }
 
     public void setAvailable(Enum<?>... items) {
-        items(items).stream().forEach(item -> item.setAvailable(true));
+        items(items).inventory().stream().forEach(item -> item.setAvailable(true));
     }
 
     private void addCustomUserItems(String resourcePath) {

@@ -14,7 +14,6 @@ import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import teaselib.Actor;
 import teaselib.Bondage;
@@ -129,8 +128,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     private void restore(Actuator actuator) {
         StateImpl actuatorState = AbstractProxy.removeProxy(
                 teaseLib.state(QualifiedString.of(Gadgets.Key_Release).toString(), actuatorName(actuator)));
-        Items handled = new Items(actuatorState.peers().stream().filter(peer -> peer instanceof Item)
-                .map(item -> (Item) item).collect(Collectors.toList()));
+        Items handled = new Items(
+                actuatorState.peers().stream().filter(peer -> peer instanceof Item).map(item -> (Item) item).toList());
 
         if (!handled.equals(Items.None)) {
             Items items = teaseLib.relatedItems(TeaseLib.DefaultDomain, handled);

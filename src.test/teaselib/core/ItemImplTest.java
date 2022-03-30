@@ -189,7 +189,7 @@ public class ItemImplTest {
             assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
             assertFalse(script.state(Body.InButt).is(Body.Orifice.Anal));
 
-            Item analBeads1 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
+            Item analBeads1 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).inventory().get();
             analBeads1.apply();
 
             assertTrue(script.state(Toys.Buttplug).applied());
@@ -202,7 +202,7 @@ public class ItemImplTest {
             assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
             assertTrue(script.state(Body.InButt).is(Body.Orifice.Anal));
 
-            Item analBeads2 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
+            Item analBeads2 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).inventory().get();
             assertTrue(analBeads2.is(Toys.Anal.Beads));
             analBeads2.remove();
 
@@ -233,7 +233,8 @@ public class ItemImplTest {
             assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
             // Wrists are not only tied, but also tied behind back
-            script.items(Toys.Wrist_Restraints).matching(Material.Leather).get().applyTo(Posture.WristsTiedBehindBack);
+            script.items(Toys.Wrist_Restraints).matching(Material.Leather).inventory()
+                    .applyTo(Posture.WristsTiedBehindBack);
 
             assertTrue(script.state(Toys.Wrist_Restraints).applied());
             assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
@@ -277,7 +278,7 @@ public class ItemImplTest {
     public void testApply1toNAndRemoveTheOtherWayAround() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
-            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).inventory();
             restraints.stream().forEach(item -> item.setAvailable(true));
             restraints = restraints.prefer(Material.Metal);
 
@@ -333,20 +334,21 @@ public class ItemImplTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            assertFalse(script.state(Toys.Wrist_Restraints).applied());
+            assertFalse(script.state(Toys.Dildo).applied());
 
-            Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
+            Item dildo = script.items(Toys.Dildo).item();
+            assertFalse(dildo.applied());
 
-            assertFalse(wristRestraints.applied());
-            assertTrue(wristRestraints.canApply());
-            assertTrue(wristRestraints.is(wristRestraints));
+            assertFalse(dildo.canApply());
+            dildo.setAvailable(true);
+            assertTrue(dildo.canApply());
+            assertTrue(dildo.is(dildo));
 
-            // Perfectly legal for detachable restraints
-            wristRestraints.apply();
+            dildo.apply();
 
-            assertTrue(wristRestraints.applied());
-            assertFalse(wristRestraints.canApply());
-            assertTrue(wristRestraints.is(wristRestraints));
+            assertTrue(dildo.applied());
+            assertFalse(dildo.canApply());
+            assertTrue(dildo.is(dildo));
         }
     }
 
@@ -354,18 +356,62 @@ public class ItemImplTest {
     public void testCanApplyWithDefaults() throws IOException {
         try (TestScript script = new TestScript()) {
             assertFalse(script.state(Toys.Gag).applied());
+            assertFalse(script.state(Toys.Gag).is(Body.InMouth));
 
-            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).item();
             assertNotEquals(Item.NotFound, gag);
             assertFalse(gag.applied());
+            assertFalse(gag.canApply());
+            gag.setAvailable(true);
             assertTrue(gag.canApply());
-            assertTrue(gag.is(gag));
+            assertFalse(gag.is(Body.InMouth));
 
             gag.apply();
 
             assertTrue(gag.applied());
-            assertFalse(gag.canApply());
-            assertTrue(gag.is(gag));
+            assertFalse("Already applied", gag.canApply());
+            assertTrue(gag.is(Body.InMouth));
+        }
+    }
+
+    @Test
+    public void testCanApplyTo() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+            script.addTestUserItems2();
+            assertFalse(script.state(Toys.Dildo).applied());
+
+            Item analDildo = script.items(Toys.Dildo).item();
+            assertNotEquals(Item.NotFound, analDildo);
+            assertFalse(analDildo.applied());
+
+            assertFalse(analDildo.canApply());
+            analDildo.setAvailable(true);
+            assertTrue(analDildo.canApply());
+            assertTrue(analDildo.is(analDildo));
+
+            analDildo.applyTo(Body.InButt);
+
+            assertTrue(analDildo.applied());
+            assertFalse(analDildo.canApply());
+            assertTrue(analDildo.is(Body.InButt));
+
+            Item oralDildo = script.items(Toys.Dildo).getApplicable().get();
+            assertEquals(Item.NotFound, oralDildo);
+            script.items(Toys.Dildo).inventory().forEach(item -> item.setAvailable(true));
+            oralDildo = script.items(Toys.Dildo).getApplicable().get();
+            assertNotEquals(Item.NotFound, oralDildo);
+            assertNotEquals(analDildo, oralDildo);
+            assertFalse(oralDildo.applied());
+
+            assertTrue(oralDildo.canApply());
+            assertTrue(oralDildo.is(oralDildo));
+
+            oralDildo.applyTo(Body.InVagina);
+
+            assertTrue(oralDildo.applied());
+            assertFalse(oralDildo.canApply());
+            assertTrue(oralDildo.is(Body.InVagina));
         }
     }
 
@@ -393,7 +439,7 @@ public class ItemImplTest {
     public void testApplyToRemoveFromExtraStateToItem() throws IOException {
         try (TestScript script = new TestScript()) {
             State fooBar = script.state(Foo.Bar);
-            Item buttPlug = script.items(Toys.Buttplug).get();
+            Item buttPlug = script.items(Toys.Buttplug).item();
 
             assertFalse(buttPlug.applied());
 
@@ -418,7 +464,7 @@ public class ItemImplTest {
     public void testApplyExtraStateToItemRemoveAll() throws IOException {
         try (TestScript script = new TestScript()) {
             State fooBar = script.state(Foo.Bar);
-            Item buttPlug = script.items(Toys.Buttplug).get();
+            Item buttPlug = script.items(Toys.Buttplug).item();
 
             assertFalse(buttPlug.applied());
 
@@ -479,7 +525,7 @@ public class ItemImplTest {
 
             // Wrists are not only tied, but also tied behind back
 
-            script.items(Toys_Wrist_Restraints).matching(leather).get().applyTo(Body_WristsTiedBehindBack);
+            script.items(Toys_Wrist_Restraints).matching(leather).inventory().applyTo(Body_WristsTiedBehindBack);
 
             assertTrue(script.state(Toys_Wrist_Restraints).applied());
             assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
@@ -514,7 +560,7 @@ public class ItemImplTest {
 
             // Wrists are not only tied, but also tied behind back
 
-            script.items(Toys_Wrist_Restraints).matching(leather).get().applyTo(Posture_WristsTiedBehindBack);
+            script.items(Toys_Wrist_Restraints).matching(leather).inventory().applyTo(Posture_WristsTiedBehindBack);
 
             assertTrue(script.state(Toys.Wrist_Restraints).applied());
             assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
@@ -568,7 +614,7 @@ public class ItemImplTest {
             assertFalse(script.state(Toys.Gag).applied());
             assertEquals(0, script.teaseLib.temporaryItems().size());
 
-            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).item();
             gag.apply();
             assertEquals(1, script.teaseLib.temporaryItems().size());
             gag.remove();
@@ -600,7 +646,7 @@ public class ItemImplTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
+            Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).item();
             wristRestraints.applyTo(Posture.WristsTiedBehindBack);
             Items temporaryItems = script.teaseLib.temporaryItems();
             Item temporaryWristRestraints = temporaryItems.matching(Toys.Wrist_Restraints).get();
@@ -616,10 +662,10 @@ public class ItemImplTest {
     public void testRemoveOneOfMultipleItemsToSamePeer() throws IOException {
         try (TestScript script = new TestScript()) {
             Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
-                    .prefer(Material.Leather);
+                    .prefer(Material.Leather).inventory();
             restraints.apply();
 
-            Items chains = script.items(Bondage.Chains, Accessoires.Bells);
+            Items chains = script.items(Bondage.Chains, Accessoires.Bells).inventory();
             chains.applyTo(restraints);
             assertTrue(chains.allApplied());
             assertTrue(restraints.allApplied());
@@ -644,7 +690,7 @@ public class ItemImplTest {
             bell.remove();
             assertFalse(chains.anyApplied());
 
-            script.items(Toys.Ankle_Restraints, Toys.Collar).remove();
+            script.items(Toys.Ankle_Restraints, Toys.Collar).getApplied().remove();
             assertFalse(restraints.anyApplied());
         }
     }
@@ -684,7 +730,7 @@ public class ItemImplTest {
     public void testRemoveUserItem() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems2();
-            Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+            Iterator<Item> humblers = script.items(Toys.Humbler).inventory().iterator();
             Item item1 = humblers.next();
             assertEquals("Humbler", item1.displayName());
             Item item2 = humblers.next();

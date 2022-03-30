@@ -30,10 +30,6 @@ public class ScriptEvents {
         this.scriptEventInputMethod = scriptEventInputMethod;
     }
 
-    public ItemEventSource when(Item item) {
-        return new ItemEventSource(new Items(item));
-    }
-
     public ScriptEventSource when() {
         return new ScriptEventSource();
     }

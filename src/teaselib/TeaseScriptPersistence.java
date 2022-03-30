@@ -3,9 +3,6 @@
  */
 package teaselib;
 
-import static java.util.Arrays.*;
-import static java.util.stream.Collectors.*;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,13 +12,12 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
 import teaselib.core.ScriptRenderer;
 import teaselib.core.TeaseLib;
-import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 import teaselib.util.Items;
+import teaselib.util.ItemsQueryImpl;
 import teaselib.util.Select;
 import teaselib.util.States;
 
@@ -54,37 +50,8 @@ public abstract class TeaseScriptPersistence extends Script {
             this.scriptRenderer = script.scriptRenderer;
         }
 
-        public Item item(Item item) {
-            if (item == Item.NotFound) {
-                return item;
-            } else {
-                ItemImpl itemImpl = AbstractProxy.itemImpl(item);
-                return new ItemProxy(namespace, getItemByGuid(itemImpl), scriptRenderer.events);
-            }
-        }
-
         public Items related(Items items) {
             return proxiesOf(teaseLib.relatedItems(name, items));
-        }
-
-        private Item getItemByGuid(ItemImpl item) {
-            return teaseLib.getItem(name, item.kind(), item.name.guid().orElseThrow());
-        }
-
-        public Items items(Enum<?>... values) {
-            if (values.length > 0) {
-                return proxiesOf(teaseLib.items(name, (Object[]) values));
-            } else {
-                return Items.None;
-            }
-        }
-
-        public Items items(String... values) {
-            if (values.length > 0) {
-                return proxiesOf(teaseLib.items(name, (Object[]) values));
-            } else {
-                return Items.None;
-            }
         }
 
         public <T extends Enum<?>> Item item(T value) {
@@ -108,49 +75,55 @@ public abstract class TeaseScriptPersistence extends Script {
             return new StateProxy(namespace, teaseLib.state(name, value), scriptRenderer.events);
         }
 
-        @SafeVarargs
-        public final <T extends Enum<?>> Items items(T[]... values) {
-            List<Item> items = new ArrayList<>();
-            for (T[] s : values) {
-                Items.addTo(items, items(s));
-            }
-            return new Items(items);
+        public final Items.Query items(Enum<?>[]... values) {
+            Enum<?>[] array = Arrays.stream(values).flatMap(Arrays::stream).toArray(Enum<?>[]::new);
+            return items(array);
         }
 
-        public Items items(String[]... values) {
-            List<Item> items = new ArrayList<>();
-            for (String[] s : values) {
-                Items.addTo(items, items(s));
-            }
-            return new Items(items);
+        public Items.Query items(String[]... values) {
+            Enum<?>[] array = Arrays.stream(values).flatMap(Arrays::stream).toArray(Enum<?>[]::new);
+            return items(array);
         }
 
-        public Items items(Items.Query query) {
-            return query.get();
+        public Items.Query items(Enum<?>... values) {
+            return new ItemsQueryImpl() {
+                @Override
+                public Items inventory() {
+                    if (values.length > 0) {
+                        return proxiesOf(teaseLib.items(name, (Object[]) values));
+                    } else {
+                        return Items.None;
+                    }
+                }
+            };
         }
 
-        public Items items(Select.AbstractStatement query) {
-            return select(query).get();
+        public Items.Query items(String... values) {
+            return new ItemsQueryImpl() {
+                @Override
+                public Items inventory() {
+                    if (values.length > 0) {
+                        return proxiesOf(teaseLib.items(name, (Object[]) values));
+                    } else {
+                        return Items.None;
+                    }
+                }
+            };
         }
 
-        public Items items(Select.AbstractStatement... queries) {
-            return select(queries).get();
+        public Items.Query items(Select.AbstractStatement statement) {
+            return statement.get(items(statement.values));
         }
 
-        public Items.Query query(Enum<?>... values) {
-            return () -> items(values);
-        }
-
-        public Items.Query select(Select.AbstractStatement query) {
-            return query.get(query(query.values));
-        }
-
-        public Items.Query select(Select.AbstractStatement... queries) {
-            return () -> {
-                Function<? super Select.AbstractStatement, Items.Query> mapper = query -> query
-                        .get(query(query.values));
-                return new Items(
-                        stream(queries).map(mapper).map(Items.Query::get).flatMap(Items::stream).collect(toList()));
+        public Items.Query items(Select.AbstractStatement... statements) {
+            return new ItemsQueryImpl() {
+                @Override
+                public Items inventory() {
+                    Function<? super Select.AbstractStatement, Items.Query> mapper = query -> query
+                            .get(Domain.this.items(query.values));
+                    return new Items(Arrays.stream(statements).map(mapper).map(Items.Query::inventory)
+                            .flatMap(Items::stream).toList());
+                };
             };
         }
 
@@ -195,25 +168,6 @@ public abstract class TeaseScriptPersistence extends Script {
     }
 
     /**
-     * Get items from a enumeration. This is different from toys and clothing in that toys and clothing is usually
-     * maintained by the host, whereas script-related enumerations are handled by the script.
-     * 
-     * @param values
-     * @return A list of items whose names are based on the enumeration members
-     */
-    public Items items(Enum<?>... values) {
-        return defaultDomain.items(values);
-    }
-
-    public Items items(String... values) {
-        return defaultDomain.items(values);
-    }
-
-    public Items items(Item... items) {
-        return new Items(items);
-    }
-
-    /**
      * Get the item from an enumeration member
      * 
      * @param value
@@ -229,49 +183,56 @@ public abstract class TeaseScriptPersistence extends Script {
         return defaultDomain.item(value);
     }
 
-    public Items items(Enum<?>[]... values) {
-        return defaultDomain.items(values);
-    }
-
-    public Items items(String[]... values) {
-        return defaultDomain.items(values);
+    public Items items(Item... items) {
+        return new Items(items);
     }
 
     public Items items(Items... items) {
         return new Items(items);
     }
 
-    public Items items(Items.Query query) {
-        return query.get();
-    }
-
-    public Items items(Select.AbstractStatement statement) {
-        return select(statement).get();
-    }
-
-    public Items items(Select.AbstractStatement... statements) {
-        return select(statements).get();
-    }
-
-    public Items.Query query(Enum<?>... values) {
-        return () -> defaultDomain.items(values);
-    }
-
-    public Items.Query select(Select.AbstractStatement statement) {
-        return statement.get(query(statement.values));
-    }
-
-    public Items.Query select(Select.AbstractStatement... statements) {
-        return () -> {
-            Function<? super Select.AbstractStatement, Items.Query> mapper = statement -> statement
-                    .get(query(statement.values));
-            return new Items(
-                    stream(statements).map(mapper).map(Items.Query::get).flatMap(Items::stream).collect(toList()));
+    public Items.Query items(Items.Query... items) {
+        return new ItemsQueryImpl() {
+            @Override
+            public Items inventory() {
+                return new Items(Arrays.stream(items).map(Items.Query::inventory).flatMap(Items::stream).toList());
+            }
         };
     }
 
+    /**
+     * Get items from a enumeration. This is different from toys and clothing in that toys and clothing is usually
+     * maintained by the host, whereas script-related enumerations are handled by the script.
+     * 
+     * @param values
+     * @return A list of items whose names are based on the enumeration members
+     */
+    public Items.Query items(Enum<?>... values) {
+        return defaultDomain.items(values);
+    }
+
+    public Items.Query items(String... values) {
+        return defaultDomain.items(values);
+    }
+
+    public Items.Query items(Enum<?>[]... values) {
+        return defaultDomain.items(values);
+    }
+
+    public Items.Query items(String[]... values) {
+        return defaultDomain.items(values);
+    }
+
+    public Items.Query items(Select.AbstractStatement statement) {
+        return defaultDomain.items(statement);
+    }
+
+    public Items.Query items(Select.AbstractStatement... statements) {
+        return defaultDomain.items(statements);
+    }
+
     public States.Query states(Enum<?>... values) {
-        return () -> new States(Arrays.stream(values).map(this::state).collect(toList()));
+        return () -> new States(Arrays.stream(values).map(this::state).toList());
     }
 
     public TeaseLib.PersistentBoolean persistentBoolean(String name) {

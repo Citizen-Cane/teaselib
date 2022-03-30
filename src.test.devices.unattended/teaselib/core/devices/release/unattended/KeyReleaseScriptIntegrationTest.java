@@ -69,7 +69,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItem() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled).inventory();
         long availableSeconds = availableSeconds(cuffs);
 
         script.say("Arm", Message.Delay10s);
@@ -89,7 +89,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItemOverDuration() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled).inventory();
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
@@ -108,7 +108,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItems() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled).inventory();
         long availableSeconds = availableSeconds(cuffs);
 
         script.say("Arm", Message.Delay10s);
@@ -129,7 +129,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItemsOverDuration() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled);
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled).inventory();
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
@@ -203,7 +203,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     @Ignore
     // TODO Device becomes disconnected while sending command during sleep, but reconnect fails
     public void testScriptEventsWithItemsAndSleepWhileHolding() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).inventory();
         Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(cuffs).orElseThrow();
         long availableSeconds = actuator.available(TimeUnit.SECONDS);
 

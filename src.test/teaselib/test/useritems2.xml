@@ -9,5 +9,9 @@
 			<Attribute> Features.Lockable </Attribute>
 			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
+
+		<Item item="Dildo" guid="another_dildo" displayName="Another Dildo">
+			<Attribute>Material.Rubber</Attribute>
+		</Item>
 	</Toys>
 </Items>

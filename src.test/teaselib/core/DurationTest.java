@@ -1,7 +1,10 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.Assert.*;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -180,8 +183,8 @@ public class DurationTest {
         FrozenDuration neverApplied = new FrozenDuration(script.teaseLib, 0, 0, TimeUnit.HOURS);
 
         script.debugger.freezeTime();
-        Item item1 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Cage).get();
-        Item item2 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).get();
+        Item item1 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Cage).item();
+        Item item2 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).item();
 
         assertEquals("Removed since for item1", neverApplied.since(unit), item1.removed(unit));
         assertEquals("Removed since for item2", neverApplied.since(unit), item2.removed(unit));

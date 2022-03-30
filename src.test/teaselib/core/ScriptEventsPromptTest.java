@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -47,7 +48,7 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
         script.debugger.addResponse(FOOBAR, Debugger.Response.Ignore);
         AtomicBoolean triggered = new AtomicBoolean();
         CountDownLatch done = new CountDownLatch(1);
-        keyReleaseSetup.prepare(script.items(Bondage.Chains), items -> {
+        keyReleaseSetup.prepare(script.items(Bondage.Chains).inventory(), items -> {
             triggered.set(true);
             done.countDown();
         });

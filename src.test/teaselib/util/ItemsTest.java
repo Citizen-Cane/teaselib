@@ -44,7 +44,7 @@ public class ItemsTest {
             // -> to resolve applying state should also apply default item - review
             assertFalse(script.item(Clothes.Stockings).applied());
 
-            Items items = script.items(Clothes.Garter_Belt);
+            Items items = script.items(Clothes.Garter_Belt).inventory();
             items.apply();
             assertTrue(script.state(Clothes.Garter_Belt).applied());
             assertTrue(script.item(Clothes.Garter_Belt).applied());
@@ -58,7 +58,7 @@ public class ItemsTest {
             assertTrue(script.state(Clothes.Stockings).applied());
             assertTrue(script.item(Clothes.Stockings).applied());
 
-            Items items = script.items(Clothes.Garter_Belt);
+            Items items = script.items(Clothes.Garter_Belt).inventory();
             items.apply();
             assertTrue(script.state(Clothes.Garter_Belt).applied());
             assertTrue(script.item(Clothes.Garter_Belt).applied());
@@ -72,7 +72,7 @@ public class ItemsTest {
             gag.apply();
             assertTrue(script.item(Toys.Gag).applied());
 
-            Items buttPlugs = script.items(Toys.Buttplug);
+            Items buttPlugs = script.items(Toys.Buttplug).inventory();
             buttPlugs.apply();
             assertTrue(script.item(Toys.Buttplug).applied());
         }
@@ -81,7 +81,7 @@ public class ItemsTest {
     @Test
     public void testGetAvailableItemsFirst() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
 
             assertFalse(gags.anyAvailable());
             assertFalse(gags.get().is(Toys.Gags.Ring_Gag));
@@ -92,7 +92,7 @@ public class ItemsTest {
             ringGag.setAvailable(true);
             assertTrue(gags.anyAvailable());
 
-            Items sameGags = script.items(Toys.Gag);
+            Items sameGags = script.items(Toys.Gag).inventory();
             assertTrue(sameGags.anyAvailable());
             assertTrue(sameGags.get().is(Toys.Gags.Ring_Gag));
 
@@ -100,7 +100,7 @@ public class ItemsTest {
             assertTrue(sameRingGag.isAvailable());
             assertTrue(sameRingGag.is(Toys.Gags.Ring_Gag));
 
-            Item againTheSameGag = script.items(Toys.Gag).getAvailable().get();
+            Item againTheSameGag = script.items(Toys.Gag).item();
             assertTrue(againTheSameGag.isAvailable());
             assertTrue(againTheSameGag.is(Toys.Gags.Ring_Gag));
 
@@ -112,22 +112,20 @@ public class ItemsTest {
     @Test
     public void testAvailable() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
             assertFalse(gags.anyAvailable());
+            assertEquals(0, gags.getAvailable().size());
 
             Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
             assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
-            assertEquals(0, gags.getAvailable().size());
-            assertNotEquals(ringGag, script.item(Toys.Gag));
-            assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ball_Gag));
+            Item ballGag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).item();
+            assertTrue(ballGag.is(Toys.Gags.Ball_Gag));
 
             ringGag.setAvailable(true);
             assertTrue(ringGag.isAvailable());
-
             assertEquals(ringGag, gags.get());
         }
-
     }
 
     @Test
@@ -135,7 +133,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
 
             Items bitGags = gags.matching(Toys.Gags.Bit_Gag, Body.Orifice.Oral);
             assertEquals(1, bitGags.size());
@@ -150,7 +148,7 @@ public class ItemsTest {
     @Test
     public void testGet() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
             assertEquals(Toys.Gags.values().length, gags.size());
 
             assertNotEquals(Item.NotFound, gags.get());
@@ -185,7 +183,7 @@ public class ItemsTest {
     @Test
     public void testContains() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
             assertEquals(Toys.Gags.values().length, gags.size());
 
             assertTrue(gags.contains(Toys.Gag));
@@ -200,14 +198,14 @@ public class ItemsTest {
     }
 
     @Test
-    public void testAny() throws IOException {
+    public void testAnyAvailable() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
             assertEquals(Toys.Gags.values().length, gags.size());
 
             assertNotEquals(Item.NotFound, gags.get());
             assertFalse(gags.get().isAvailable());
-            for (Item item : script.items(Toys.Gag)) {
+            for (Item item : script.items(Toys.Gag).inventory()) {
                 assertFalse(item.isAvailable());
             }
             assertFalse(gags.anyAvailable());
@@ -217,8 +215,8 @@ public class ItemsTest {
             penisGag.setAvailable(true);
 
             assertTrue(gags.anyAvailable());
-            assertEquals(1, script.items(Toys.Gag).getAvailable().size());
-            assertEquals(penisGag, script.items(Toys.Gag).getAvailable().get());
+            assertEquals(1, script.items(Toys.Gag).getApplicable().size());
+            assertEquals(penisGag, script.items(Toys.Gag).getApplicable().get());
         }
     }
 
@@ -236,44 +234,72 @@ public class ItemsTest {
         assertTrue(Items.None.allExpired());
 
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.values());
+            var gags = script.items(Toys.values()).inventory();
 
             assertFalse(gags.equals(Items.None));
             assertFalse(Items.None.equals(gags));
             assertTrue(Items.None.equals(Items.None));
             assertTrue(gags.equals(gags));
-        }
 
-        Items none = new Items(new Item[] {});
-        assertTrue(none.equals(Items.None));
-        assertTrue(Items.None.equals(none));
+            Items none = script.items(new Item[] {});
+            assertTrue(none.equals(Items.None));
+            assertTrue(Items.None.equals(none));
+        }
     }
 
     @Test
-    public void testAll() throws IOException {
+    public void testAllAvailable() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.values());
-            assertFalse(gags.allAvailable());
+            Items toys = script.items(Toys.All).inventory();
+            assertFalse(toys.anyAvailable());
 
-            gags.get().setAvailable(true);
-            assertTrue(gags.anyAvailable());
-            assertFalse(gags.allAvailable());
+            toys.get().setAvailable(true);
+            assertTrue(toys.anyAvailable());
+            assertFalse(toys.allAvailable());
 
             script.setAvailable(Toys.values());
-            assertTrue(gags.allAvailable());
+            assertTrue(toys.allAvailable());
+        }
+    }
+
+    @Test
+    public void testApplicableSet() throws IOException {
+        try (TestScript script = new TestScript()) {
+            var collar = script.item(Toys.Collar);
+            var handcuffs = script.item(Toys.Wrist_Restraints);
+            var anklecuffs = script.item(Toys.Ankle_Restraints);
+
+            handcuffs.setAvailable(true);
+            collar.apply();
+
+            var cuffs = script.items(Toys.Collar, Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            assertTrue(cuffs.anyApplicable());
+            assertFalse(cuffs.allApplicable());
+
+            var items = cuffs.getApplicableSet();
+            assertTrue(items.anyApplicable());
+            assertTrue(items.allApplicable());
+
+            items.apply();
+            assertFalse(cuffs.anyApplicable());
+            assertFalse(cuffs.allApplied());
+
+            anklecuffs.apply();
+            assertTrue(cuffs.noneApplicable());
+            assertTrue(cuffs.allApplied());
         }
     }
 
     @Test
     public void testRetainIsLogicalAnd() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items buttPlugs = script.items(Toys.Buttplug);
+            Items buttPlugs = script.items(Toys.Buttplug).inventory();
             assertTrue(buttPlugs.size() > 1);
 
             Item analBeads = buttPlugs.matching(Toys.Anal.Beads).get();
             assertNotEquals(Item.NotFound, analBeads);
 
-            Items allAnalbeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads);
+            Items allAnalbeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).inventory();
             assertEquals(1, allAnalbeads.size());
             assertEquals(analBeads, allAnalbeads.get());
         }
@@ -282,7 +308,7 @@ public class ItemsTest {
     @Test
     public void testGetDoesntSearchForPeersOrAttributes() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Bondage.Chains);
+            Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Bondage.Chains).inventory();
 
             Item chains = chainedUp.get(Bondage.Chains);
             assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).kind()));
@@ -360,7 +386,7 @@ public class ItemsTest {
     @Test
     public void testVarietiesNone() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items none = script.items(new Enum<?>[] {});
+            Items none = script.items(new Enum<?>[] {}).inventory();
             assertTrue(none.varieties().isEmpty());
         }
     }
@@ -371,7 +397,8 @@ public class ItemsTest {
             script.addTestUserItems();
             script.addTestUserItems2();
 
-            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains);
+            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains)
+                    .inventory();
             Varieties<Items> all = inventory.varieties();
             assertEquals(4, all.size());
         }
@@ -383,7 +410,8 @@ public class ItemsTest {
             script.addTestUserItems();
             script.addTestUserItems2();
 
-            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains);
+            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains)
+                    .inventory();
             Items restraints = inventory.prefer(Features.Lockable, Material.Leather);
             assertEquals(4, restraints.size());
 
@@ -405,7 +433,8 @@ public class ItemsTest {
             script.addTestUserItems();
             script.addTestUserItems2();
 
-            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains);
+            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains)
+                    .inventory();
             testAnyWithAppliedItem(inventory, Material.Leather);
             testAnyWithAppliedItem(inventory, Material.Metal);
         }
@@ -425,19 +454,23 @@ public class ItemsTest {
     }
 
     @Test
-    public void testVarietiesBestAppliedNotInSet() throws IOException {
+    public void testThatPreferIgnoresApplied() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
             script.addTestUserItems2();
 
-            Items allMetal = script.items(Toys.Wrist_Restraints, Toys.Humbler).prefer(Material.Metal);
+            Items allMetal = script.items(Toys.Wrist_Restraints, Toys.Humbler).prefer(Material.Metal).inventory();
             assertTrue(allMetal.item(Toys.Wrist_Restraints).is(Material.Metal));
             assertTrue(allMetal.item(Toys.Humbler).is(Material.Metal));
 
-            script.items(Toys.Wrist_Restraints).matching(Material.Leather).get().apply();
-            Items alreadyApplied = script.items(Toys.Wrist_Restraints, Toys.Humbler).prefer(Material.Metal);
-            assertTrue(alreadyApplied.item(Toys.Wrist_Restraints).is(Material.Leather));
-            assertTrue(alreadyApplied.item(Toys.Humbler).is(Material.Wood));
+            script.items(Toys.Wrist_Restraints).matching(Material.Leather).getApplicableSet().apply();
+
+            Items alreadyApplied = script.items(Toys.Wrist_Restraints, Toys.Humbler).prefer(Material.Metal).inventory();
+
+            assertFalse(alreadyApplied.item(Toys.Wrist_Restraints).is(Material.Leather));
+            assertFalse(alreadyApplied.item(Toys.Humbler).is(Material.Wood));
+            assertTrue(alreadyApplied.item(Toys.Wrist_Restraints).is(Material.Metal));
+            assertTrue(alreadyApplied.item(Toys.Humbler).is(Material.Metal));
         }
     }
 
@@ -447,11 +480,11 @@ public class ItemsTest {
             Item wristRestraints = script.item(Toys.Wrist_Restraints);
             assertTrue(wristRestraints.is(Toys.Wrist_Restraints));
 
-            Item wristRestraints2 = script.items(Toys.Wrist_Restraints).items(Toys.Wrist_Restraints).get();
+            Item wristRestraints2 = script.items(Toys.Wrist_Restraints).inventory().items(Toys.Wrist_Restraints).get();
             assertNotEquals(Item.NotFound, wristRestraints2);
             assertTrue(wristRestraints2.is(Toys.Wrist_Restraints));
 
-            Item notFound = script.items(Toys.Wrist_Restraints).items(Toys.Humbler).get();
+            Item notFound = script.items(Toys.Wrist_Restraints).inventory().items(Toys.Humbler).get();
             assertEquals(Item.NotFound, notFound);
         }
     }
@@ -461,7 +494,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).inventory();
             assertEquals(4, restraints.size());
 
             List<Object> values = new ArrayList<>(restraints.valueSet());
@@ -474,7 +507,8 @@ public class ItemsTest {
     @Test
     public void testAnyApplied() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Material.Metal);
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Material.Metal)
+                    .inventory();
             assertEquals(2, restraints.size());
             assertFalse(restraints.anyApplied());
 
@@ -492,14 +526,43 @@ public class ItemsTest {
     }
 
     @Test
+    public void testAllApplied() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.setAvailable(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).getApplicableSet();
+            assertEquals(2, restraints.size());
+            assertFalse(restraints.anyApplied());
+
+            restraints.item(Toys.Wrist_Restraints).apply();
+            assertTrue(restraints.anyApplied());
+            assertFalse(restraints.allApplied());
+            assertEquals(1, restraints.getApplied().size());
+
+            assertTrue(script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).anyApplied());
+            assertFalse(script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).allApplied());
+
+            restraints.item(Toys.Ankle_Restraints).apply();
+            assertTrue(restraints.anyApplied());
+            assertTrue(restraints.allApplied());
+            assertEquals(2, restraints.getApplied().size());
+
+            assertTrue(script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).anyApplied());
+            assertTrue(script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).allApplied());
+
+            restraints.remove();
+            assertFalse(restraints.anyApplied());
+        }
+    }
+
+    @Test
     public void testWhatItemHasBeenApplied() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
             assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
-            Item leatherCuffs = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
-            Item handCuffs = script.items(Toys.Wrist_Restraints).matching(Material.Metal).get();
+            Item leatherCuffs = script.items(Toys.Wrist_Restraints).matching(Material.Leather).inventory().get();
+            Item handCuffs = script.items(Toys.Wrist_Restraints).matching(Material.Metal).inventory().get();
 
             assertNotEquals(leatherCuffs, handCuffs);
 
@@ -518,14 +581,18 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints = script.items(Toys.Wrist_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints).inventory();
             assertEquals(2, restraints.size());
 
             assertEquals(0, restraints.getAvailable().size());
             restraints.get().setAvailable(true);
-            assertEquals(1, restraints.getAvailable().size());
-            assertFalse(restraints.allAvailable());
-            assertTrue(restraints.preferred().allAvailable());
+            assertEquals("Only one available item expected", 1, restraints.getAvailable().size());
+            assertTrue(restraints.anyAvailable());
+            assertFalse("Only one available item expected", restraints.allAvailable());
+
+            assertTrue(script.items(Toys.Wrist_Restraints).anyAvailable());
+            assertTrue("For queries one or more available item per kind is expected",
+                    script.items(Toys.Wrist_Restraints).allAvailable());
         }
     }
 
@@ -534,7 +601,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints = script.items(Toys.Wrist_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints).inventory();
             assertEquals(2, restraints.size());
 
             script.item(Toys.Wrist_Restraints).apply();
@@ -551,7 +618,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints = script.items(Toys.Wrist_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints).inventory();
             assertEquals(2, restraints.size());
 
             restraints.get().apply();
@@ -568,7 +635,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Items gags1 = script.items(Toys.Gag);
+            Items gags1 = script.items(Toys.Gag).inventory();
             Item ringGag = gags1.matching(Toys.Gags.Ring_Gag).get();
             assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
             ringGag.apply();
@@ -576,7 +643,7 @@ public class ItemsTest {
             assertTrue(script.state(Body.InMouth).is(ringGag));
             // assertTrue(script.state(Toys.Gag).is(ringGag)); // ???
 
-            Items gags2 = script.items(Toys.Gag);
+            Items gags2 = script.items(Toys.Gag).inventory();
             Item ringGag2 = gags2.matching(Toys.Gags.Ring_Gag).get();
             assertEquals(ringGag, ringGag2);
             assertNotSame(ringGag, ringGag2);
@@ -591,7 +658,7 @@ public class ItemsTest {
             // TODO Answer the question "Is the applied gag this ring gag?"
             // assertTrue(script.state(Toys.Gag).is(ringGag2)); // ???
 
-            Items gags3 = script.items(Toys.Gag);
+            Items gags3 = script.items(Toys.Gag).inventory();
             Item muzzleGag = gags3.matching(Toys.Gags.Muzzle_Gag).get();
 
             assertNotSame(ringGag2, muzzleGag);
@@ -617,7 +684,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
             Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
             ringGag.apply();
             assertTrue(ringGag.applied());
@@ -679,7 +746,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints = script.items(Toys.Wrist_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints).inventory();
             assertEquals(2, restraints.size());
 
             restraints.apply();
@@ -694,7 +761,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items ballTorture = script.items(Toys.Ball_Stretcher, Toys.Humbler);
+            Items ballTorture = script.items(Toys.Ball_Stretcher, Toys.Humbler).inventory();
             assertEquals(2, ballTorture.size());
 
             ballTorture.apply();
@@ -717,7 +784,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
             assertEquals(5, gags.size());
 
             Iterator<Item> gag = gags.iterator();
@@ -748,7 +815,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
             assertEquals(5, gags.size());
 
             Iterator<Item> gag = gags.iterator();
@@ -781,7 +848,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
+            Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).inventory().get();
             assertFalse(gag.applied());
 
             // Items are different from states in that they have attributes and default peers:
@@ -804,7 +871,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items gags = script.items(Toys.Gag);
+            Items gags = script.items(Toys.Gag).inventory();
             assertEquals(5, gags.size());
 
             Iterator<Item> gag = gags.iterator();
@@ -873,7 +940,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints = script.items(Toys.Wrist_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints).inventory();
             assertEquals(2, restraints.size());
 
             restraints.stream().forEach(Item::apply);
@@ -889,7 +956,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).inventory();
             assertEquals(4, restraints.size());
 
             restraints.item(Toys.Wrist_Restraints).apply();
@@ -911,10 +978,10 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints1 = script.items(Toys.Wrist_Restraints);
+            Items restraints1 = script.items(Toys.Wrist_Restraints).inventory();
             assertEquals(2, restraints1.size());
 
-            Items restraints2 = script.items(Toys.Wrist_Restraints).orElseItems(Toys.Wrist_Restraints);
+            Items restraints2 = script.items(Toys.Wrist_Restraints).inventory().orElseItems(Toys.Wrist_Restraints);
             assertEquals(restraints1, restraints2);
         }
     }
@@ -924,11 +991,11 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
-            Items restraints1 = script.items("teaselib.Toys.Wrist_Restraints");
+            Items restraints1 = script.items("teaselib.Toys.Wrist_Restraints").inventory();
             assertEquals(2, restraints1.size());
 
             Items restraints2 = script.items("teaselib.Toys.Wrist_Restraints")
-                    .orElseItems("teaselib.Toys.Wrist_Restraints");
+                    .orElseItems("teaselib.Toys.Wrist_Restraints").inventory();
             assertEquals(restraints1, restraints2);
         }
     }
@@ -937,9 +1004,10 @@ public class ItemsTest {
     public void testOrElsePreferEnum() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
-            script.items(Toys.Wrist_Restraints).matching(Material.Metal).get().setAvailable(true);
+            script.items(Toys.Wrist_Restraints).matching(Material.Metal).inventory().get().setAvailable(true);
 
-            Items restraints = script.items(Toys.Wrist_Restraints).matching(Material.Wood).orElsePrefer(Material.Metal);
+            Items restraints = script.items(Toys.Wrist_Restraints).matching(Material.Wood).inventory()
+                    .orElsePrefer(Material.Metal);
             assertTrue(restraints.allAre(Material.Metal));
         }
     }
@@ -948,10 +1016,10 @@ public class ItemsTest {
     public void testOrElsePreferString() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
-            script.items(Toys.Wrist_Restraints).matching(Material.Metal).get().setAvailable(true);
+            script.items(Toys.Wrist_Restraints).matching(Material.Metal).inventory().get().setAvailable(true);
 
             Items restraints = script.items("teaselib.Toys.Wrist_Restraints").matching("teaselib.Material.Wood")
-                    .orElsePrefer("teaselib.Material.Metal");
+                    .orElsePrefer("teaselib.Material.Metal").inventory();
 
             assertTrue(restraints.allAre("teaselib.Material.Metal"));
         }
@@ -961,10 +1029,10 @@ public class ItemsTest {
     public void testOrElseMatchingEnum() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
-            script.items(Toys.Wrist_Restraints).matching(Material.Metal).get().setAvailable(true);
+            script.items(Toys.Wrist_Restraints).matching(Material.Metal).inventory().get().setAvailable(true);
 
             Items restraints = script.items(Toys.Wrist_Restraints).matching(Material.Wood)
-                    .orElseMatching(Material.Metal);
+                    .orElseMatching(Material.Metal).inventory();
             assertTrue(restraints.allAre(Material.Metal));
         }
     }
@@ -973,10 +1041,10 @@ public class ItemsTest {
     public void testOrElseMatchingString() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
-            script.items(Toys.Wrist_Restraints).matching(Material.Metal).get().setAvailable(true);
+            script.items(Toys.Wrist_Restraints).matching(Material.Metal).inventory().get().setAvailable(true);
 
             Items restraints = script.items("teaselib.Toys.Wrist_Restraints").matching("teaselib.Material.Wood")
-                    .orElseMatching("teaselib.Material.Metal");
+                    .orElseMatching("teaselib.Material.Metal").inventory();
             assertTrue(restraints.allAre("teaselib.Material.Metal"));
         }
     }
@@ -984,21 +1052,20 @@ public class ItemsTest {
     @Test
     public void testWithoutEnum() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items all = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            Items all = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).inventory();
             assertEquals(4, all.size());
-            assertEquals(script.item(Toys.Ankle_Restraints), all.item(Toys.Ankle_Restraints));
-            assertEquals(script.item(Toys.Wrist_Restraints), all.item(Toys.Wrist_Restraints));
 
             Items without = all.without(Toys.Ankle_Restraints);
             assertEquals(2, without.size());
-
             assertEquals(Item.NotFound, without.item(Toys.Ankle_Restraints));
-            assertEquals(script.item(Toys.Wrist_Restraints), without.item(Toys.Wrist_Restraints));
 
-            assertEquals(script.item(Toys.Wrist_Restraints),
-                    without.orElseItems(Toys.Ankle_Restraints, Toys.Wrist_Restraints).item(Toys.Wrist_Restraints));
-            assertEquals(script.item(Toys.Ankle_Restraints),
-                    without.orElseItems(Toys.Ankle_Restraints).item(Toys.Ankle_Restraints));
+            assertTrue(
+                    without.orElseItems(Toys.Ankle_Restraints, Toys.Wrist_Restraints).contains(Toys.Wrist_Restraints));
+            assertTrue(without.orElseItems(Toys.Ankle_Restraints).contains(Toys.Ankle_Restraints));
+            script.setAvailable(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            assertTrue(
+                    without.orElseItems(Toys.Ankle_Restraints, Toys.Wrist_Restraints).contains(Toys.Wrist_Restraints));
+            assertFalse(without.orElseItems(Toys.Ankle_Restraints).contains(Toys.Ankle_Restraints));
 
             assertEquals(2, all.without(Material.Metal).size());
         }
@@ -1007,22 +1074,22 @@ public class ItemsTest {
     @Test
     public void testWithoutString() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items all = script.items("teaselib.Toys.Wrist_Restraints", "teaselib.Toys.Ankle_Restraints");
+            Items all = script.items("teaselib.Toys.Wrist_Restraints", "teaselib.Toys.Ankle_Restraints").inventory();
             assertEquals(4, all.size());
-            assertEquals(script.item("teaselib.Toys.Ankle_Restraints"), all.item("teaselib.Toys.Ankle_Restraints"));
-            assertEquals(script.item("teaselib.Toys.Wrist_Restraints"), all.item("teaselib.Toys.Wrist_Restraints"));
 
             Items without = all.without("teaselib.Toys.Ankle_Restraints");
             assertEquals(2, without.size());
-
             assertEquals(Item.NotFound, without.item("teaselib.Toys.Ankle_Restraints"));
-            assertEquals(script.item("teaselib.Toys.Wrist_Restraints"), without.item("teaselib.Toys.Wrist_Restraints"));
 
-            assertEquals(script.item(Toys.Wrist_Restraints),
-                    without.orElseItems("teaselib.Toys.Ankle_Restraints", "teaselib.Toys.Wrist_Restraints")
-                            .item("teaselib.Toys.Wrist_Restraints"));
-            assertEquals(script.item(Toys.Ankle_Restraints),
-                    without.orElseItems("teaselib.Toys.Ankle_Restraints").item("teaselib.Toys.Ankle_Restraints"));
+            assertTrue(without.orElseItems("teaselib.Toys.Ankle_Restraints", "teaselib.Toys.Wrist_Restraints")
+                    .contains("teaselib.Toys.Wrist_Restraints"));
+            assertTrue(
+                    without.orElseItems("teaselib.Toys.Ankle_Restraints").contains("teaselib.Toys.Ankle_Restraints"));
+            script.setAvailable(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+            assertTrue(without.orElseItems("teaselib.Toys.Ankle_Restraints", "teaselib.Toys.Wrist_Restraints")
+                    .contains("teaselib.Toys.Wrist_Restraints"));
+            assertFalse(
+                    without.orElseItems("teaselib.Toys.Ankle_Restraints").contains("teaselib.Toys.Ankle_Restraints"));
 
             assertEquals(2, all.without(Material.Metal).size());
         }
@@ -1033,9 +1100,9 @@ public class ItemsTest {
         assertTrue(Collections.emptySet().stream().allMatch(x -> true));
 
         try (TestScript script = new TestScript()) {
-            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar).inventory();
             restraints.apply();
-            Items chains = script.items(Bondage.Chains, Accessoires.Bells);
+            Items chains = script.items(Bondage.Chains, Accessoires.Bells).inventory();
             chains.applyTo(restraints);
 
             Item bells = chains.get(Accessoires.Bells);
@@ -1078,9 +1145,9 @@ public class ItemsTest {
     @Test
     public void testItemNotAppliedToFreeItems() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar).inventory();
             restraints.apply();
-            Items chains = script.items(Bondage.Chains, Accessoires.Bells);
+            Items chains = script.items(Bondage.Chains, Accessoires.Bells).inventory();
             chains.applyTo(restraints);
 
             Item bells = chains.get(Accessoires.Bells);
@@ -1100,7 +1167,7 @@ public class ItemsTest {
         try (TestScript script = new TestScript()) {
             Domain domain = script.domain(Gadgets.Key_Release);
 
-            Items items = script.items(Toys.Wrist_Restraints);
+            Items items = script.items(Toys.Wrist_Restraints).inventory();
             Items handled = items.of(domain);
 
             assertEquals(items.size(), handled.size());
@@ -1112,10 +1179,10 @@ public class ItemsTest {
     @Test
     public void testItemsStatement() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items myOutfit = script.items(Toys.Collar, Shoes.High_Heels);
+            var myOutfit = script.items(Toys.Collar, Shoes.High_Heels).inventory();
             assertEquals(2, myOutfit.size());
 
-            Items allShoes = script.items(Shoes.All);
+            Items allShoes = script.items(Shoes.All).inventory();
             assertEquals(5, allShoes.size());
 
             // TODO using Statement.values isn't a query -> change to (package-) private field
@@ -1130,10 +1197,11 @@ public class ItemsTest {
     @Test
     public void testGetItemsApplied() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items myOutfit = script.items(Toys.Collar, Shoes.High_Heels);
+            Items myOutfit = script.items(Toys.Collar, Shoes.High_Heels).inventory();
             assertEquals(2, myOutfit.size());
 
             myOutfit.apply();
+            assertEquals(2, myOutfit.getApplied().size());
             assertEquals(2, script.items(Toys.All, Shoes.All).getApplied().size());
         }
     }
@@ -1141,10 +1209,10 @@ public class ItemsTest {
     @Test
     public void testGetItemsAppliedToPeers() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items anal = script.items(Toys.Dildo, Toys.Buttplug);
+            Items anal = script.items(Toys.Dildo, Toys.Buttplug).inventory();
 
             anal.applyTo(Body.InButt);
-            Items inButt = script.items(Toys.All).matching(Body.InButt).getApplied();
+            Items inButt = script.items(Toys.All).matching(Body.InButt).inventory();
             assertEquals(2, inButt.size());
             assertTrue(inButt.anyAre(Toys.Buttplug));
             assertTrue(inButt.anyAre(Toys.Dildo));

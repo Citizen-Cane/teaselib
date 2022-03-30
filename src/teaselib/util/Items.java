@@ -3,7 +3,6 @@ package teaselib.util;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +44,7 @@ import teaselib.util.math.Varieties;
  * non-index-based methods use or return always the item that is applied, or the first available. A a result, applying
  * multiple items works as if applying single items of each kind one-by-one.
  * <p>
- * However, wWhen performing a {@link Items#prefer} or {@link Items#query} command, only the requested item instances
+ * However, wWhen performing a {@link Items#prefer} or {@link Items#attire} command, only the requested item instances
  * are retained.
  * <p>
  * TODO use sets the user has pre-selected via the user interface (like the "Dresser App" that has been around a few
@@ -55,12 +54,135 @@ import teaselib.util.math.Varieties;
  *
  */
 public class Items implements Iterable<Item> {
+
     public static final Items None = new Items(Collections.emptyList());
 
-    public interface Query extends Supplier<Items> {
-        // tag interface
+    // TODO rename get() to available
+    // TODO implement oneOfEach(), avail or not, similar to inventory but only on of each kind
+    // TODO review all calls to item() and replace with item(random)
+    public interface Query {
+
+        Query prefer(Enum<?>... values);
+
+        Query prefer(String... values);
+
+        Query matching(Enum<?>... values);
+
+        Query matching(String... values);
+
+        Query matchingAny(Enum<?>... values);
+
+        Query matchingAny(String... values);
+
+        Query without(Enum<?>... values);
+
+        Query without(String... values);
+
+        Query orElseItems(Enum<?>... items);
+
+        Query orElseItems(String... items);
+
+        Query orElsePrefer(Enum<?>... attributes);
+
+        Query orElsePrefer(String... attributes);
+
+        Query orElseMatching(Enum<?>... attributes);
+
+        Query orElseMatching(String... attributes);
+
+        Query orElse(Items.Query items);
+
+        boolean noneApplied();
+
+        boolean noneAvailable();
+
+        boolean noneApplicable();
+
+        boolean anyApplied();
+
+        boolean anyAvailable();
+
+        boolean anyApplicable();
+
+        /**
+         * Determine whether the query result would contain at least one applied item of each element of its value set.
+         * <p>
+         * This does not necessarily mean that all items in the query are applied, but the value set of
+         * {@link Items.Query#getApplied} would be equal to this item query' {@link Items#valueSet}.
+         * 
+         * @return Whether all items are applied.
+         */
+        boolean allApplied();
+
+        /**
+         * Determine whether the query result would contain at least one available item of each element of its value
+         * set.
+         * <p>
+         * This does not necessarily mean that all items in the query are available, but the value set of
+         * {@link Items.Query#getAvailable} would be equal to this item query' {@link Items#valueSet}.
+         * 
+         * @return Whether all items are applied.
+         */
+        boolean allAvailable();
+
+        /**
+         * Determine whether the query result would contain at least one applicable item of each element of its value
+         * set.
+         * <p>
+         * This does not necessarily mean that all items in the query are available, but the value set of
+         * {@link Items.Query#getApplicable} would be equal to this item query' {@link Items#valueSet}.
+         * 
+         * @return Whether all items are applied.
+         */
+        boolean allApplicable();
+
+        /**
+         * Return the applied item, a random available or an unavailable item.
+         * 
+         * @return A valid item, or Item.NotFound if the query did not select any item.
+         */
+        Item item();
+
+        /**
+         * Select a set of items, one per kind, taking in account already applied items.
+         * <p>
+         * Only applicable items are considered. This means that the returned set does not contain applied or
+         * unavailable items.
+         * 
+         * @return A set of items that can be applied, one per available kind.
+         */
+        Items getApplicableSet();
+
+        /**
+         * Get all items that are currently applied.
+         * 
+         * @return All applied items.
+         */
+        Items getApplied();
+
+        /**
+         * Get all items that are currently available.
+         * 
+         * @return All available items.
+         */
+        Items getAvailable();
+
+        /**
+         * Get all items that are currently applied.
+         * 
+         * @return All applied items.
+         */
+        Items getApplicable();
+
+        /**
+         * Get all items that are defined in the inventory. This also includes items that are defined but not available.
+         * 
+         * @return All defined items in the inventory.
+         */
+        Items inventory();
     }
 
+    final Random randomInternal;
     private final List<Item> elements;
     private final List<Item> inventory;
 
@@ -73,7 +195,7 @@ public class Items implements Iterable<Item> {
     }
 
     public Items(Items... items) {
-        this(Arrays.stream(items).flatMap(Items::stream).collect(Collectors.toList()));
+        this(Arrays.stream(items).flatMap(Items::stream).toList());
     }
 
     public Items(Set<Item> items) {
@@ -87,12 +209,19 @@ public class Items implements Iterable<Item> {
     }
 
     private Items(List<Item> elements, List<Item> inventory) {
+        this.randomInternal = random(elements, inventory);
         this.elements = elements;
         this.inventory = inventory;
     }
 
+    private static Random random(List<Item> elements, List<Item> inventory) {
+        return Stream.concat(elements.stream(), inventory.stream()).filter(Predicate.not(Item.NotFound::equals))
+                .map(AbstractProxy::removeProxy).filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
+                .map(item -> item.teaseLib.random).findFirst().orElse(null);
+    }
+
     public Items filter(Predicate<? super Item> predicate) {
-        List<Item> list = elements.stream().filter(predicate).collect(Collectors.toList());
+        List<Item> list = elements.stream().filter(predicate).toList();
         return new Items(list, inventory);
     }
 
@@ -109,6 +238,10 @@ public class Items implements Iterable<Item> {
             return false;
         }
         return elements.stream().allMatch(Item::isAvailable);
+    }
+
+    public boolean noneApplicable() {
+        return elements.stream().noneMatch(Item::canApply);
     }
 
     public boolean anyApplicable() {
@@ -215,17 +348,13 @@ public class Items implements Iterable<Item> {
     }
 
     /**
-     * Return applied or first available item.
+     * Return applied or random available item.
      * 
      * @return First item or {@link Item#NotFound}
      */
     // TODO when get(Enum<?>) is removed because of item(), rename this to first()
     public Item get() {
-        return getAppliedOrFirstAvailableOrNotFound(null);
-    }
-
-    public Item get(Random random) {
-        return getAppliedOrFirstAvailableOrNotFound(random);
+        return getAppliedOrAvailableOrNotFound(randomInternal);
     }
 
     /**
@@ -266,27 +395,31 @@ public class Items implements Iterable<Item> {
         }).findFirst().orElse(Item.NotFound);
     }
 
-    private Item getAppliedOrFirstAvailableOrNotFound(Random random) {
+    private Item getAppliedOrAvailableOrNotFound(Random random) {
         List<Item> applied = getApplied().elements;
         if (!applied.isEmpty()) {
             return applied.get(0);
         } else {
-            List<Item> available = getAvailable().elements;
-            if (!available.isEmpty()) {
-                if (random!=null){
-                return random.item(available);}
-                else{
-                    return available.get(0);
-                }
-            } else if (!elements.isEmpty()) {
-                if (random!=null){
-                return random.item(elements);}
-                else{
-                    return elements.get(0);
-                }
+            return getAvailableOrNotFound(random);
+        }
+    }
+
+    private Item getAvailableOrNotFound(Random random) {
+        List<Item> available = getAvailable().elements;
+        if (!available.isEmpty()) {
+            if (random != null) {
+                return random.item(available);
             } else {
-                return Item.NotFound;
+                return available.get(0);
             }
+        } else if (!elements.isEmpty()) {
+            if (random != null) {
+                return random.item(elements);
+            } else {
+                return elements.get(0);
+            }
+        } else {
+            return Item.NotFound;
         }
     }
 
@@ -310,13 +443,38 @@ public class Items implements Iterable<Item> {
         if (attributes.isEmpty()) {
             matchingItems = new Items(this);
         } else {
-            // List<Item> matching = elements.stream()
-            // .filter(item -> (item instanceof ItemImpl) || (item instanceof AbstractProxy))
-            // .filter(item -> itemImpl(item).is(attributes)).collect(toList());
             List<Item> matching = elements.stream().filter(item -> item.is(attributes)).toList();
             matchingItems = new Items(matching, inventory);
         }
         return matchingItems;
+    }
+
+    public final Items matchingAny(Enum<?>... attributes) {
+        return matchingAny(Arrays.asList(attributes));
+    }
+
+    public final Items matchingAny(String... attributes) {
+        return matchingAny(Arrays.asList(attributes));
+    }
+
+    private Items matchingAny(List<? extends Object> attributes) {
+        Items matchingItems;
+        if (attributes.isEmpty()) {
+            matchingItems = new Items(this);
+        } else {
+            List<Item> matching = elements.stream().filter(item -> isAny(item, attributes)).toList();
+            matchingItems = new Items(matching, inventory);
+        }
+        return matchingItems;
+    }
+
+    boolean isAny(Item item, List<? extends Object> attributes) {
+        for (Object object : attributes) {
+            if (item.is(object)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean contains(Enum<?> item) {
@@ -340,20 +498,11 @@ public class Items implements Iterable<Item> {
     }
 
     public Items intersection(Items items) {
-        return new Items(elements.stream().distinct().filter(items::contains).collect(toList()));
+        return new Items(elements.stream().distinct().filter(items::contains).toList());
     }
 
     private boolean containsImpl(QualifiedString kind) {
         return elements.stream().map(AbstractProxy::removeProxy).map(ItemImpl::kind).anyMatch(kind::is);
-    }
-
-    /**
-     * Reduce an item selection to an applyable set. Choose an applicable set from all available items.
-     * 
-     * @return A set of matching items, containing already applied items. Each kind of item will be contained only once.
-     */
-    public Items preferred() {
-        return appliedOrPreferred();
     }
 
     /**
@@ -371,26 +520,11 @@ public class Items implements Iterable<Item> {
      *         available items as a fall-back. The result may be empty if none of the requested items are available.
      */
     public Items prefer(Enum<?>... attributes) {
-        return appliedOrPreferred((Object[]) attributes);
+        return preferredItems((Object[]) attributes);
     }
 
     public Items prefer(String... attributes) {
-        return appliedOrPreferred((Object[]) attributes);
-    }
-
-    private Items appliedOrPreferred(Object... attributes) {
-        if (anyApplied()) {
-            Varieties<Items> varieties = varieties();
-            List<Items> someApplied = varieties.stream().filter(Items::anyApplied).collect(Collectors.toList());
-            return best(someApplied, attributes);
-        } else {
-            return preferredItems(attributes);
-        }
-    }
-
-    private static Items best(List<Items> someApplied, Object... attributes) {
-        // TODO select best set based on attributes of applied and requested items
-        return someApplied.stream().reduce(Items::best).orElse(Items.None);
+        return preferredItems((Object[]) attributes);
     }
 
     static class Preferred {
@@ -404,20 +538,13 @@ public class Items implements Iterable<Item> {
             this.attributes = attributes;
         }
 
-        public void addApplied() {
-            for (Item item : elements) {
-                if (item.applied() && missing(item)) {
-                    found.add(itemValue(item));
-                    items.add(item);
-                }
-            }
-        }
-
         // TODO Optimize items by number of matching attributes - best matching set with attribute coverage
         // e.g. all lockable, or all metal, use attribute order as priority
+
         public void addAvailableMatching() {
             for (Item item : elements) {
-                if (missing(item) && item.is(attributes) && item.isAvailable()) {
+                // Add all matching, select set later for variance
+                if (item.is(attributes) && item.isAvailable()) {
                     found.add(itemValue(item));
                     items.add(item);
                 }
@@ -463,12 +590,10 @@ public class Items implements Iterable<Item> {
 
     private Items preferredItems(Object... attributes) {
         Preferred preferred = new Preferred(elements, attributes);
-        preferred.addApplied();
         preferred.addAvailableMatching();
         preferred.addAvailableNonMatching();
         preferred.addMissingMatching();
         preferred.addMissing();
-
         return new Items(preferred.toList(), inventory);
     }
 
@@ -476,7 +601,7 @@ public class Items implements Iterable<Item> {
      * Return all combinations of item sets:
      * <li>All combinations of the items are returned, the resulting sets will contain one item per kind. To receive
      * combinations that match the intention of the script, use:
-     * <li>{@link Items#query} to retain only the items that match a specific criteria
+     * <li>{@link Items#attire} to retain only the items that match a specific criteria
      * <li>{@link Items#prefer} to retain the items that match a specific criteria, or any other available item. Get the
      * best combination of items via {@link Varieties#reduce} with argument {@link Items#best}
      * 
@@ -491,7 +616,7 @@ public class Items implements Iterable<Item> {
 
     private boolean isVariety(List<Item> combination) {
         return Varieties.isVariety(combination.stream().map(AbstractProxy::itemImpl).map(itemImpl -> itemImpl.kind())
-                .map(QualifiedString::toString).collect(toList()));
+                .map(QualifiedString::toString).toList());
     }
 
     private int getVariety() {
@@ -553,7 +678,7 @@ public class Items implements Iterable<Item> {
     }
 
     private State.Options applyToImpl(Function<Item, State.Options> applyFunction) {
-        List<State.Options> options = firstOfEachKind().stream().map(applyFunction::apply).collect(toList());
+        List<State.Options> options = firstOfEachKind().stream().map(applyFunction::apply).toList();
         return new State.Options() {
             @Override
             public void remember(Until forget) {
@@ -634,10 +759,10 @@ public class Items implements Iterable<Item> {
     }
 
     public Items items(Select.Statement query) {
-        return query.get(() -> this.items(query.values)).get();
+        return query.get(this);
     }
 
-    public Items itemsImpl(Object... anyItemOrAttribute) {
+    private Items itemsImpl(Object... anyItemOrAttribute) {
         List<Item> items = new ArrayList<>();
         for (Item item : elements) {
             for (Object any : anyItemOrAttribute) {
@@ -667,8 +792,8 @@ public class Items implements Iterable<Item> {
      * 
      * @return
      */
-    Set<Object> valueSet() {
-        return elements.stream().map(item -> itemImpl(item).kind()).collect(toCollection(LinkedHashSet::new));
+    Set<QualifiedString> valueSet() {
+        return elements.stream().map(Items::itemImpl).map(ItemImpl::kind).collect(toCollection(LinkedHashSet::new));
     }
 
     private static ItemImpl itemImpl(Item item) {
@@ -751,9 +876,7 @@ public class Items implements Iterable<Item> {
     }
 
     private Items withoutImpl(Object... values) {
-        return new Items(
-                stream().filter(item -> Arrays.stream(values).noneMatch(item::is)).collect(Collectors.toList()),
-                inventory);
+        return new Items(stream().filter(item -> Arrays.stream(values).noneMatch(item::is)).toList(), inventory);
     }
 
     public Items of(TeaseScriptPersistence.Domain domain) {

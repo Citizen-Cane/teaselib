@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
@@ -126,7 +125,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     private final ExecutorService showChoicesThreadPool = singleThreadedQueue("Show-Choices");
     private final InputMethod inputMethod = new HostInputMethod(singleThreadedQueue(getClass().getSimpleName()), this);
-    private CountDownLatch enableUI = null;
 
     private final Image backgroundImage;
 
@@ -546,7 +544,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             dismissed = clickAnyButton(choices);
             enable(uiComponents, false);
             activeChoices = null;
-            enableUI = null;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -628,12 +625,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     @Override
     public void setup() {
-        enableUI = new CountDownLatch(1);
     }
 
     @Override
     public Prompt.Result reply(Choices choices) throws InterruptedException {
-        enableUI.await();
         this.activeChoices = choices.stream().map(Choice::getDisplay).collect(toSet());
         // open the combo box pop-up if necessary in order to
         // allow the user to read prompts without mouse/touch interaction
@@ -660,13 +655,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public void updateUI(InputMethod.UiEvent event) {
         if (showChoices == null) {
-            if (event.enabled) {
-                enableUI.countDown();
-            }
             try {
                 // TODO Synchronization issue
-                // - without the sleep call it works all but the first time
-                Thread.sleep(500);
+                // - without the sleep call showing the combobox allways but the first time
+                // TODO it depends on the system
+                Thread.sleep(1500);
                 enableButtons(event.enabled);
             } catch (InterruptedException ignore) { //
             }

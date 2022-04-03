@@ -62,6 +62,8 @@ public class Items implements Iterable<Item> {
     // TODO review all calls to item() and replace with item(random)
     public interface Query {
 
+        public static final Query None = ItemsQueryImpl.None;
+
         Query prefer(Enum<?>... values);
 
         Query prefer(String... values);
@@ -182,7 +184,7 @@ public class Items implements Iterable<Item> {
         Items inventory();
     }
 
-    final Random randomInternal;
+    final Random random;
     private final List<Item> elements;
     private final List<Item> inventory;
 
@@ -209,7 +211,7 @@ public class Items implements Iterable<Item> {
     }
 
     private Items(List<Item> elements, List<Item> inventory) {
-        this.randomInternal = random(elements, inventory);
+        this.random = random(elements, inventory);
         this.elements = elements;
         this.inventory = inventory;
     }
@@ -286,23 +288,13 @@ public class Items implements Iterable<Item> {
     }
 
     /**
-     * Returns the time span since any of the items has been removed.
+     * Returns the time span since the last of the items has been removed.
      * 
      * @param unit
-     * @return The time span since the first item has been removed, or 0 if all are still applied.
+     * @return The time span since the last of the item have been removed, or 0 if any is still applied.
      */
-    public long anyRemoved(TimeUnit unit) {
-        return elements.stream().map(item -> item.removed(unit)).reduce(Math::max).orElse(Long.MAX_VALUE);
-    }
-
-    /**
-     * Returns the time span since all of the items have been removed.
-     * 
-     * @param unit
-     * @return The time span since the last item has been removed, or 0 if any is still applied.
-     */
-    public long allRemoved(TimeUnit unit) {
-        return elements.stream().map(item -> item.removed(unit)).reduce(Math::min).orElse(Long.MAX_VALUE);
+    public long removed(TimeUnit unit) {
+        return elements.stream().map(item -> item.removed(unit)).reduce(Math::min).orElse(666L);
     }
 
     public boolean anyAre(Object... attributes) {
@@ -354,7 +346,7 @@ public class Items implements Iterable<Item> {
      */
     // TODO when get(Enum<?>) is removed because of item(), rename this to first()
     public Item get() {
-        return getAppliedOrAvailableOrNotFound(randomInternal);
+        return getAppliedOrAvailableOrNotFound(random);
     }
 
     /**
@@ -390,7 +382,7 @@ public class Items implements Iterable<Item> {
             throw new UnsupportedOperationException("Support named items");
         }
 
-        return firstOfEachKind().stream().filter(element -> {
+        return oneOfEachKind().stream().filter(element -> {
             return item.equals(AbstractProxy.removeProxy(element).kind());
         }).findFirst().orElse(Item.NotFound);
     }
@@ -678,7 +670,7 @@ public class Items implements Iterable<Item> {
     }
 
     private State.Options applyToImpl(Function<Item, State.Options> applyFunction) {
-        List<State.Options> options = firstOfEachKind().stream().map(applyFunction::apply).toList();
+        List<State.Options> options = oneOfEachKind().stream().map(applyFunction::apply).toList();
         return new State.Options() {
             @Override
             public void remember(Until forget) {
@@ -700,48 +692,63 @@ public class Items implements Iterable<Item> {
     }
 
     public void remove() {
-        for (Item item : firstOfEachKind()) {
+        for (Item item : oneOfEachKind()) {
             item.remove();
         }
     }
 
-    public void removeFrom(Object... peers) {
-        for (Item item : firstOfEachKind()) {
-            item.removeFrom(peers);
+    public void removeFrom(Enum<?>... peers) {
+        for (var item : oneOfEachKind()) {
+            item.removeFrom((Object[]) peers);
         }
     }
 
-    public Collection<Item> firstOfEachKind() {
+    public void removeFrom(String... peers) {
+        for (var item : oneOfEachKind()) {
+            item.removeFrom((Object[]) peers);
+        }
+    }
+
+    public Collection<Item> oneOfEachKind() {
         List<Item> firstOfEachKind = new ArrayList<>();
         Set<QualifiedString> kinds = new HashSet<>();
 
-        for (Object item : this.valueSet()) {
+        for (QualifiedString item : this.valueSet()) {
             var kind = QualifiedString.of(item);
             if (!kinds.contains(kind)) {
                 kinds.add(kind);
-                firstOfEachKind.add(getAppliedOrFirstAvailableOrNotFound(item));
+                firstOfEachKind.add(getAppliedOrRandomAvailableOrNotFound(item));
             }
         }
         return firstOfEachKind;
     }
 
-    private Item getAppliedOrFirstAvailableOrNotFound(Object item) {
-        Item firstAvailable = getApplied().findFirst(item);
-        if (firstAvailable == Item.NotFound) {
-            firstAvailable = getAvailable().findFirst(item);
-            if (firstAvailable == Item.NotFound) {
-                firstAvailable = findFirst(item);
+    private Item getAppliedOrRandomAvailableOrNotFound(QualifiedString item) {
+        Item available = getApplied().findFirst(item);
+        if (available == Item.NotFound) {
+            available = getAvailable().random(item);
+            if (available == Item.NotFound) {
+                available = random(item);
             }
         }
-        return firstAvailable;
+        return available;
     }
 
-    private Item findFirst(Object item) {
+    private Item findFirst(QualifiedString item) {
         Optional<Item> first = elements.stream().filter(i -> i.is(item)).findFirst();
         if (first.isPresent()) {
             return first.get();
         } else {
             return Item.NotFound;
+        }
+    }
+
+    private Item random(QualifiedString item) {
+        var items = elements.stream().filter(i -> i.is(item)).toList();
+        if (items.isEmpty()) {
+            return Item.NotFound;
+        } else {
+            return random.item(items);
         }
     }
 

@@ -65,7 +65,7 @@ public class QualifiedStringMapping {
         for (Object peer : peers) {
             if (peer instanceof Items) {
                 var items = (Items) peer;
-                flattenedPeers.addAll(items.firstOfEachKind());
+                flattenedPeers.addAll(items.oneOfEachKind());
             } else if (peer instanceof Collection) {
                 var collection = (Collection<?>) peer;
                 flattenedPeers.addAll(collection);

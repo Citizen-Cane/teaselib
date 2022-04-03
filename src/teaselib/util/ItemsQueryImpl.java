@@ -14,6 +14,13 @@ import teaselib.util.Items.Query;
 // TODO package private - requires moving a bunch of other classes
 public abstract class ItemsQueryImpl implements Items.Query {
 
+    public static final Query None = new ItemsQueryImpl() {
+        @Override
+        public Items inventory() {
+            return Items.None;
+        }
+    };
+
     @Override
     public Query prefer(Enum<?>... values) {
         return query(items -> items.prefer(values));

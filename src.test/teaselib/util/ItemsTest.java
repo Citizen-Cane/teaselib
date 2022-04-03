@@ -1219,4 +1219,32 @@ public class ItemsTest {
         }
     }
 
+    @Test
+    public void testRemovedDuration() throws IOException {
+        try (TestScript script = new TestScript()) {
+            var statement = Select.items(Toys.Dildo, Toys.Buttplug);
+
+            Items plugs = script.items(statement).inventory();
+
+            Item buttplug = plugs.get(Toys.Buttplug);
+            buttplug.apply();
+            script.debugger.advanceTime(30, TimeUnit.MINUTES);
+            buttplug.remove();
+
+            script.debugger.advanceTime(1, TimeUnit.HOURS);
+            assertEquals(1, script.items(statement).inventory().removed(TimeUnit.HOURS));
+
+            script.debugger.advanceTime(1, TimeUnit.HOURS);
+            assertEquals(2, script.items(statement).inventory().removed(TimeUnit.HOURS));
+
+            Item dildo = plugs.get(Toys.Dildo);
+            dildo.apply();
+            script.debugger.advanceTime(30, TimeUnit.MINUTES);
+            dildo.remove();
+
+            script.debugger.advanceTime(3, TimeUnit.HOURS);
+            assertEquals(3, script.items(statement).inventory().removed(TimeUnit.HOURS));
+        }
+    }
+
 }

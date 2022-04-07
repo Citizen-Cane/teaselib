@@ -208,6 +208,7 @@ public class BufferedImageRenderer {
 
     private static final int TEXT_AREA_INSET = 40;
     private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
+    private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
 
     private static BufferedImage renderTextOverlay(BufferedImage underlay, Rectangle bounds, String text,
             boolean intertitleActive) {
@@ -239,6 +240,10 @@ public class BufferedImageRenderer {
         int scaledInset = TEXT_AREA_INSET * textAreaWidth / TEXT_AREA_MAX_WIDTH;
         int topInset = 2 * scaledInset;
         int bottomInset = 4 * scaledInset;
+        if (textAreaWidth < TEXT_AREA_MIN_WIDTH) {
+            textAreaWidth = (int) bounds.getWidth() - 4 * TEXT_AREA_BORDER;
+            scaledInset = 0;
+        }
         Rectangle textArea = new Rectangle((int) bounds.getX() + (int) bounds.getWidth() - textAreaWidth - scaledInset, //
                 topInset, //
                 textAreaWidth, //

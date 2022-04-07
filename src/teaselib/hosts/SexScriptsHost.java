@@ -563,22 +563,21 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     private void clickAnyButton(Runnable dismiss) {
-        FutureTask<Result> choicesToBeDismissed = showChoices;
-        while (choicesToBeDismissed != null && !choicesToBeDismissed.isDone()) {
-            // Stupid trick to be able to actually click a combo item
+        FutureTask<Result> choicesToBeDismissed;
+        while ((choicesToBeDismissed = showChoices) != null && !choicesToBeDismissed.isDone()) {
             if (showPopupTask.comboBox.isVisible()) {
                 showPopupTask.showPopup();
             }
 
             try {
                 dismiss.run();
-            } catch (Exception e1) {
-                throw ExceptionUtil.asRuntimeException(e1);
+            } catch (Exception e) {
+                throw ExceptionUtil.asRuntimeException(e);
             }
 
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException ignored) { // Ignore
+            } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             }
         }
@@ -654,35 +653,29 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     @Override
     public void updateUI(InputMethod.UiEvent event) {
-        if (showChoices == null) {
-            try {
-                // TODO Synchronization issue
-                // - without the sleep call showing the combobox allways but the first time
-                // TODO it depends on the system
-                Thread.sleep(1500);
-                enableButtons(event.enabled);
-            } catch (InterruptedException ignore) { //
-            }
-        } else {
-            enableButtons(event.enabled);
+        Set<JComponent> activeComponents;
+        try {
+            activeComponents = awaitRealizedUI();
+        } catch (InterruptedException bailout) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+
+        var unusedComponents = uiComponents.stream().filter(not(activeComponents::contains)).collect(toSet());
+        enable(unusedComponents, false);
+        enable(activeComponents, event.enabled);
+        boolean popupCombobox = activeComponents.contains(ssComboBox) && ssComboBox.isVisible();
+        if (popupCombobox && event.enabled) {
+            showPopupTask.call();
         }
     }
 
-    // TODO UI components are always visible at first:
-    // - because SexScripts defines the initial visibility,
-    // instead of using initial updateUI event
-
-    private void enableButtons(boolean enabled) {
-        Set<JComponent> activeComponents = activeComponents();
-        boolean popupCombobox = activeComponents.contains(ssComboBox) && ssComboBox.isVisible();
-
-        enable(activeComponents, enabled);
-        var unusedComponents = uiComponents.stream().filter(not(activeComponents::contains)).collect(toSet());
-        enable(unusedComponents, false);
-
-        if (popupCombobox && enabled) {
-            showPopupTask.call();
+    private Set<JComponent> awaitRealizedUI() throws InterruptedException {
+        Set<JComponent> activeComponents;
+        while ((activeComponents = activeComponents()).isEmpty()) {
+            Thread.sleep(100);
         }
+        return activeComponents;
     }
 
     private Set<JComponent> activeComponents() {

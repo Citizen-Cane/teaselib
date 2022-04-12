@@ -37,7 +37,11 @@ public class FrozenDuration extends AbstractDuration {
 
     @Override
     public long since(TimeUnit unit) {
-        return teaseLib.getTime(unit) - convertToUnit(start + elapsed, unit);
+        if (start == 0) {
+            return Long.MAX_VALUE;
+        } else {
+            return teaseLib.getTime(unit) - convertToUnit(start + elapsed, unit);
+        }
     }
 
     @Override

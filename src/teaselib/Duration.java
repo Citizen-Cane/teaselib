@@ -103,10 +103,13 @@ public interface Duration {
      * The time passed since the end of the duration.
      * 
      * @param unit
-     * @return For elapsing durations, returns 0 because the duration hasn't ended yet.
+     * @return For elapsing durations, returns always 0 because the elapsing durations never end.
      *         <p>
      *         However if the duration has elapsed, e.g. the process it describes has come to an end, since() returns
-     *         the passed time.
+     *         the passed time since the end of the process.
+     *         <p>
+     *         If the process described by the duration has never started, then the return value will be
+     *         {@link Duration#INFINITE}.
      * 
      */
     long since(TimeUnit unit);

@@ -20,6 +20,7 @@ import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Bondage;
 import teaselib.Clothes;
+import teaselib.Duration;
 import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.Household;
@@ -1220,16 +1221,27 @@ public class ItemsTest {
     }
 
     @Test
+    public void testRemovedDurationNeverApplied() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item buttplug = script.item(Toys.Buttplug);
+            assertEquals(Duration.INFINITE, buttplug.removed(TimeUnit.MILLISECONDS));
+        }
+    }
+
+    @Test
     public void testRemovedDuration() throws IOException {
         try (TestScript script = new TestScript()) {
             var statement = Select.items(Toys.Dildo, Toys.Buttplug);
-
             Items plugs = script.items(statement).inventory();
-
             Item buttplug = plugs.get(Toys.Buttplug);
             buttplug.apply();
             script.debugger.advanceTime(30, TimeUnit.MINUTES);
             buttplug.remove();
+            assertEquals(0, script.items(statement).inventory().removed(TimeUnit.HOURS));
+
+            script.debugger.advanceTime(30, TimeUnit.MINUTES);
+            assertEquals(30, script.items(statement).inventory().removed(TimeUnit.MINUTES));
+            assertEquals(0, script.items(statement).inventory().removed(TimeUnit.HOURS));
 
             script.debugger.advanceTime(1, TimeUnit.HOURS);
             assertEquals(1, script.items(statement).inventory().removed(TimeUnit.HOURS));

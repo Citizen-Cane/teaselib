@@ -40,7 +40,7 @@ public class FrozenDuration extends AbstractDuration {
         if (start == 0) {
             return Long.MAX_VALUE;
         } else {
-            return teaseLib.getTime(unit) - convertToUnit(start + elapsed, unit);
+            return convertToUnit(teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT) - start - elapsed, unit);
         }
     }
 

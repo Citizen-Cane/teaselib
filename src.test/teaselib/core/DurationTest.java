@@ -1,10 +1,7 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static java.util.concurrent.TimeUnit.*;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -49,10 +46,36 @@ public class DurationTest {
     @Test
     public void testLimit() throws Exception {
         assertEquals(24, script.duration(24, TimeUnit.HOURS).limit(TimeUnit.HOURS));
-
         assertEquals(60, script.duration(60, TimeUnit.MINUTES).limit(TimeUnit.MINUTES));
-
         assertEquals(60, script.duration(60, TimeUnit.SECONDS).limit(TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testSinceElapsingDuration() throws Exception {
+        Duration duration = script.duration(30, TimeUnit.MINUTES);
+        assertEquals(0, duration.since(TimeUnit.MINUTES));
+        assertEquals(0, duration.since(TimeUnit.HOURS));
+        script.debugger.advanceTime(30, MINUTES);
+        assertEquals(0, duration.since(TimeUnit.MINUTES));
+        assertEquals(0, duration.since(TimeUnit.HOURS));
+        script.debugger.advanceTime(30, MINUTES);
+        assertEquals(0, duration.since(TimeUnit.MINUTES));
+        assertEquals(0, duration.since(TimeUnit.HOURS));
+        script.debugger.advanceTime(30, MINUTES);
+        assertEquals(0, duration.since(TimeUnit.MINUTES));
+        assertEquals(0, duration.since(TimeUnit.HOURS));
+    }
+
+    @Test
+    public void testSinceFrozenDuration() throws Exception {
+        Duration duration = new FrozenDuration(script.teaseLib, script.duration(30, TimeUnit.MINUTES));
+        assertEquals(0, duration.since(TimeUnit.HOURS));
+        script.debugger.advanceTime(30, MINUTES);
+        assertEquals(30, duration.since(TimeUnit.MINUTES));
+        assertEquals(0, duration.since(TimeUnit.HOURS));
+        script.debugger.advanceTime(30, MINUTES);
+        assertEquals(60, duration.since(TimeUnit.MINUTES));
+        assertEquals(1, duration.since(TimeUnit.HOURS));
     }
 
     @Test
@@ -95,7 +118,6 @@ public class DurationTest {
     public void testElapsingDuration() {
         TimeUnit unit = SECONDS;
 
-        script.debugger.freezeTime();
         Duration duration = script.duration(60, unit);
 
         assertEquals(now(unit), duration.start(unit));
@@ -112,7 +134,6 @@ public class DurationTest {
     public void testStateDuration() {
         TimeUnit unit = SECONDS;
 
-        script.debugger.freezeTime();
         State state = script.state("test");
         assertEquals(Duration.INFINITE, state.removed(unit));
         state.apply();
@@ -147,7 +168,6 @@ public class DurationTest {
     public void testItemDuration() {
         TimeUnit unit = MINUTES;
 
-        script.debugger.freezeTime();
         Item item = script.item(Toys.Nipple_Clamps);
         item.apply();
 
@@ -183,7 +203,6 @@ public class DurationTest {
         TimeUnit unit = TimeUnit.HOURS;
         FrozenDuration neverApplied = new FrozenDuration(script.teaseLib, 0, 0, TimeUnit.HOURS);
 
-        script.debugger.freezeTime();
         Item item1 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Cage).item();
         Item item2 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).item();
 
@@ -216,7 +235,6 @@ public class DurationTest {
     public void testStateNotRemovedSince() {
         TimeUnit unit = SECONDS;
 
-        script.debugger.freezeTime();
         State state = script.state("test");
         state.apply();
 
@@ -233,7 +251,6 @@ public class DurationTest {
 
     @Test
     public void testStateNeverApplied() {
-        script.debugger.freezeTime();
         State state = script.state("test");
         assertTrue(state.removed());
         assertTrue(state.removed(TimeUnit.DAYS) > 0);
@@ -241,7 +258,6 @@ public class DurationTest {
 
     @Test
     public void testItemNeverApplied() {
-        script.debugger.freezeTime();
         Item item = script.item("test");
         assertTrue(item.removed());
         assertTrue(item.removed(TimeUnit.DAYS) > 0);

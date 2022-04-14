@@ -1,6 +1,7 @@
 package teaselib.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
@@ -31,6 +32,10 @@ public class States extends ArrayList<State> {
 
     public States(State element) {
         super(Collections.singletonList(element));
+    }
+
+    public States(State... elements) {
+        super(Arrays.asList(elements));
     }
 
     public States(List<State> elements) {

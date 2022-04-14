@@ -114,6 +114,7 @@ public class DurationTest {
 
         script.debugger.freezeTime();
         State state = script.state("test");
+        assertEquals(Duration.INFINITE, state.removed(unit));
         state.apply();
 
         Duration elapsing = state.duration();

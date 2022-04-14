@@ -3,13 +3,13 @@ package teaselib.core;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static teaselib.core.StateImpl.Internal.DEFAULT_DOMAIN_NAME;
 import static teaselib.core.StateImpl.Internal.PERSISTED_DOMAINS_STATE;
 import static teaselib.core.TeaseLib.DefaultDomain;
 import static teaselib.core.util.QualifiedStringMapping.map;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -18,6 +18,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -40,6 +41,9 @@ public class StateImpl implements State, State.Options, State.Attributes {
     static class Internal {
         static final String PERSISTED_DOMAINS_STATE = ReflectionUtils.qualified("teaselib", "PersistedDomains");
         static final String DEFAULT_DOMAIN_NAME = ReflectionUtils.qualified("teaselib", "DefaultDomain");
+
+        static final Set<QualifiedString> ExcludeFromDurationCalculation = new HashSet<>(
+                Arrays.asList(QualifiedString.of(Until.Removed), QualifiedString.of(Until.Expired)));
     }
 
     static class Domain {
@@ -195,8 +199,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
     }
 
     private List<StateImpl> states(Collection<QualifiedString> elements) {
-        return elements.stream().filter(peer -> QualifiedString.of(peer).guid().isEmpty()).map(this::state)
-                .collect(toList());
+        return elements.stream().filter(peer -> QualifiedString.of(peer).guid().isEmpty()).map(this::state).toList();
     }
 
     private void setTemporary() {
@@ -290,8 +293,9 @@ public class StateImpl implements State, State.Options, State.Attributes {
     @Override
     public Duration duration() {
         if (applied || Domain.LAST_USED.equals(domain)) {
-            Stream<Duration> durations = peerStates().stream().map(state -> state.duration);
-            Optional<Duration> maximum = Stream.concat(Stream.of(this.duration), durations)
+            var relevant = peers.stream().filter(Predicate.not(Internal.ExcludeFromDurationCalculation::contains)).toList();
+            var durations = states(relevant).stream().map(state -> state.duration).toList();
+            Optional<Duration> maximum = Stream.concat(Stream.of(this.duration), durations.stream())
                     .max((a, b) -> Long.compare(a.remaining(TimeUnit.SECONDS), b.remaining(TimeUnit.SECONDS)));
             if (maximum.isPresent()) {
                 return maximum.get();

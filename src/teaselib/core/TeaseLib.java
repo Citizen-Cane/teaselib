@@ -60,6 +60,7 @@ import teaselib.util.Daytime;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
+import teaselib.util.ItemsImpl;
 import teaselib.util.TeaseLibLogger;
 import teaselib.util.TextVariables;
 import teaselib.util.math.Random;
@@ -930,7 +931,7 @@ public class TeaseLib implements Closeable {
         for (Object item : values) {
             items.addAll(userItems.get(domain, QualifiedString.of(item)));
         }
-        return new Items(items);
+        return new ItemsImpl(items);
     }
 
     public Items relatedItems(Enum<?> domain, Items items) {
@@ -941,8 +942,17 @@ public class TeaseLib implements Closeable {
         return relatedItems(domain.toString(), items);
     }
 
+    /**
+     * Get related items from another domain.
+     * 
+     * @param domain
+     *            The domain to get related items for.
+     * @param items
+     *            The items for which to retrieve related items from another domain.
+     * @return Items similar to those supplied but for the specified domain.
+     */
     public Items relatedItems(String domain, Items items) {
-        return new Items(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
+        return new ItemsImpl(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
     }
 
     /**
@@ -968,7 +978,7 @@ public class TeaseLib implements Closeable {
                 }
             }
         }
-        return new Items(temporaryItems);
+        return new ItemsImpl(temporaryItems);
     }
 
     /**

@@ -6,6 +6,12 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static teaselib.Body.OnNipples;
+import static teaselib.Bondage.Chains;
+import static teaselib.Toys.Ankle_Restraints;
+import static teaselib.Toys.Collar;
+import static teaselib.Toys.Nipple_Clamps;
+import static teaselib.Toys.Wrist_Restraints;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -363,21 +369,21 @@ public class ItemsTest {
     @Test
     public void showThatNamespaceAttributeIsSymetric() throws IOException {
         try (TestScript script = new TestScript()) {
-            Item nippleClamps = script.item(Toys.Nipple_Clamps);
+            Item nippleClamps = script.item(Nipple_Clamps);
             nippleClamps.apply();
-            State onNipples = script.state(Body.OnNipples);
+            State onNipples = script.state(OnNipples);
 
             assertTrue(onNipples.is(script.namespace));
-            assertTrue(onNipples.is(Toys.Nipple_Clamps));
-            assertTrue(nippleClamps.is(Body.OnNipples));
+            assertTrue(onNipples.is(Nipple_Clamps));
+            assertTrue(nippleClamps.is(OnNipples));
             assertTrue(nippleClamps.is(script.namespace));
 
             nippleClamps.remove();
 
             assertFalse(onNipples.is(script.namespace));
-            assertFalse(onNipples.is(Toys.Nipple_Clamps));
-            assertFalse(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
-            assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
+            assertFalse(onNipples.is(Nipple_Clamps));
+            assertFalse(script.state(Nipple_Clamps).is(OnNipples));
+            assertFalse(script.state(Nipple_Clamps).is(script.namespace));
 
             assertFalse(nippleClamps.applied());
             assertFalse(onNipples.applied());
@@ -387,7 +393,7 @@ public class ItemsTest {
     @Test
     public void testVarietiesNone() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items none = script.items(new Enum<?>[] {}).inventory();
+            var none = (ItemsImpl) script.items(new Enum<?>[] {}).inventory();
             assertTrue(none.varieties().isEmpty());
         }
     }
@@ -398,8 +404,7 @@ public class ItemsTest {
             script.addTestUserItems();
             script.addTestUserItems2();
 
-            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains)
-                    .inventory();
+            var inventory = (ItemsImpl) script.items(Collar, Ankle_Restraints, Wrist_Restraints, Chains).inventory();
             Varieties<Items> all = inventory.varieties();
             assertEquals(4, all.size());
         }
@@ -411,15 +416,14 @@ public class ItemsTest {
             script.addTestUserItems();
             script.addTestUserItems2();
 
-            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains)
-                    .inventory();
+            Items inventory = script.items(Collar, Ankle_Restraints, Wrist_Restraints, Chains).inventory();
             Items restraints = inventory.prefer(Features.Lockable, Material.Leather);
             assertEquals(4, restraints.size());
 
-            Item collar = restraints.get(Toys.Collar);
-            Item anklecuffs = restraints.get(Toys.Ankle_Restraints);
-            Item wristCuffs = restraints.get(Toys.Wrist_Restraints);
-            Item chains = restraints.get(Bondage.Chains);
+            Item collar = restraints.get(Collar);
+            Item anklecuffs = restraints.get(Ankle_Restraints);
+            Item wristCuffs = restraints.get(Wrist_Restraints);
+            Item chains = restraints.get(Chains);
 
             assertNotEquals(Item.NotFound, collar);
             assertNotEquals(Item.NotFound, anklecuffs);
@@ -434,14 +438,13 @@ public class ItemsTest {
             script.addTestUserItems();
             script.addTestUserItems2();
 
-            Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Chains)
-                    .inventory();
+            var inventory = (ItemsImpl) script.items(Collar, Ankle_Restraints, Wrist_Restraints, Chains).inventory();
             testAnyWithAppliedItem(inventory, Material.Leather);
             testAnyWithAppliedItem(inventory, Material.Metal);
         }
     }
 
-    private static void testAnyWithAppliedItem(Items inventory, Material material) {
+    private static void testAnyWithAppliedItem(ItemsImpl inventory, Material material) {
         Varieties<Items> all = inventory.varieties();
         assertEquals(4, all.size());
 
@@ -450,7 +453,7 @@ public class ItemsTest {
         assertEquals(1, cuffsWithMaterial.size());
 
         cuffsWithMaterial.apply();
-        Items appliedCuffs = all.reduce(Items::best);
+        Items appliedCuffs = all.reduce(ItemsImpl::best);
         assertTrue(appliedCuffs.get(Toys.Wrist_Restraints).is(material));
     }
 
@@ -1169,7 +1172,7 @@ public class ItemsTest {
             Domain domain = script.domain(Gadgets.Key_Release);
 
             Items items = script.items(Toys.Wrist_Restraints).inventory();
-            Items handled = items.of(domain);
+            Items handled = domain.related(items);
 
             assertEquals(items.size(), handled.size());
             assertEquals(script.defaultDomain.toString(), AbstractProxy.itemImpl(items.get()).domain);

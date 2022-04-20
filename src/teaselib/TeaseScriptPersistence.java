@@ -17,6 +17,7 @@ import teaselib.core.state.StateProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.Items;
+import teaselib.util.ItemsImpl;
 import teaselib.util.ItemsQueryImpl;
 import teaselib.util.Select;
 import teaselib.util.States;
@@ -121,7 +122,7 @@ public abstract class TeaseScriptPersistence extends Script {
                 public Items inventory() {
                     Function<? super Select.AbstractStatement, Items.Query> mapper = query -> query
                             .get(Domain.this.items(query.values));
-                    return new Items(Arrays.stream(statements).map(mapper).map(Items.Query::inventory)
+                    return new ItemsImpl(Arrays.stream(statements).map(mapper).map(Items.Query::inventory)
                             .flatMap(Items::stream).toList());
                 };
             };
@@ -143,7 +144,7 @@ public abstract class TeaseScriptPersistence extends Script {
                     proxies.add(new ItemProxy(namespace, item, scriptRenderer.events));
                 }
             }
-            return new Items(proxies);
+            return new ItemsImpl(proxies);
         }
     }
 
@@ -184,18 +185,18 @@ public abstract class TeaseScriptPersistence extends Script {
     }
 
     public Items items(Item... items) {
-        return new Items(items);
+        return new ItemsImpl(items);
     }
 
     public Items items(Items... items) {
-        return new Items(items);
+        return new ItemsImpl(items);
     }
 
     public Items.Query items(Items.Query... items) {
         return new ItemsQueryImpl() {
             @Override
             public Items inventory() {
-                return new Items(Arrays.stream(items).map(Items.Query::inventory).flatMap(Items::stream).toList());
+                return new ItemsImpl(Arrays.stream(items).map(Items.Query::inventory).flatMap(Items::stream).toList());
             }
         };
     }

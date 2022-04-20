@@ -177,7 +177,7 @@ public abstract class ItemsQueryImpl implements Items.Query {
                 items.put(impl.kind(), impl);
             }
         }
-        return new Items(new ArrayList<>(items.values()));
+        return new ItemsImpl(new ArrayList<>(items.values()));
     }
 
     @Override

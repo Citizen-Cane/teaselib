@@ -42,6 +42,7 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.Items;
+import teaselib.util.ItemsImpl;
 
 /**
  * Setup key release actuators
@@ -128,7 +129,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     private void restore(Actuator actuator) {
         StateImpl actuatorState = AbstractProxy.removeProxy(
                 teaseLib.state(QualifiedString.of(Gadgets.Key_Release).toString(), actuatorName(actuator)));
-        Items handled = new Items(
+        Items handled = new ItemsImpl(
                 actuatorState.peers().stream().filter(peer -> peer instanceof Item).map(item -> (Item) item).toList());
 
         if (!handled.equals(Items.None)) {
@@ -159,12 +160,12 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         // - add anklets/wristlets as explicit type to Accessoires, however they're still connectable as
         // - find a way to specify that anklets/wristlets can be detached -> via removeFrom Hands/Wrists Tied
         // -> blocks applying/removing all states with applying/removing an item - but that feature isn't needed anyway
-        var cuffs = new Items( //
+        var cuffs = new ItemsImpl( //
                 teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wristlets, Bondage.Anklets, Toys.Collar, Toys.Humbler)
                         .matching(Features.Lockable) //
         );
 
-        var handcuffs = new Items( //
+        var handcuffs = new ItemsImpl( //
                 teaseLib.items(TeaseLib.DefaultDomain, Toys.Wrist_Restraints, Toys.Ankle_Restraints)
                         .without(Features.Detachable), //
                 teaseLib.items(TeaseLib.DefaultDomain, Bondage.Chains) //
@@ -323,7 +324,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     public boolean canPrepare(Item item) {
-        return canPrepare(new Items(item));
+        return canPrepare(new ItemsImpl(item));
     }
 
     /**
@@ -342,25 +343,25 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     public boolean isPrepared(Item item) {
-        Optional<Actuator> actuator = assigned(itemActuators, new Items(item));
+        Optional<Actuator> actuator = assigned(itemActuators, new ItemsImpl(item));
         return actuator.isPresent() && actuator.get().isRunning();
     }
 
     public boolean prepare(Actor actor, Item item) {
-        return prepare(actor, new Items(item), defaultInstructions);
+        return prepare(actor, new ItemsImpl(item), defaultInstructions);
     }
 
     public boolean prepare(Actor actor, Item item, Consumer<Items> instructions) {
-        return prepare(actor, new Items(item), instructions, null);
+        return prepare(actor, new ItemsImpl(item), instructions, null);
     }
 
     public boolean prepare(Actor actor, Item item, long duration, TimeUnit unit, Consumer<Items> instructions) {
-        return prepare(actor, new Items(item), duration, unit, instructions, null);
+        return prepare(actor, new ItemsImpl(item), duration, unit, instructions, null);
     }
 
     public boolean prepare(Actor actor, Item item, long duration, TimeUnit unit, Consumer<Items> instructions,
             Consumer<Items> instructionsAgain) {
-        return prepare(actor, new Items(item), duration, unit, instructions, instructionsAgain);
+        return prepare(actor, new ItemsImpl(item), duration, unit, instructions, instructionsAgain);
     }
 
     public boolean isPrepared(Items items) {

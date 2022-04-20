@@ -8,6 +8,7 @@ import teaselib.core.Script;
 import teaselib.core.ScriptInteraction;
 import teaselib.util.Item;
 import teaselib.util.Items;
+import teaselib.util.ItemsImpl;
 
 /**
  * @author Citizen-Cane
@@ -33,7 +34,7 @@ public class KeyReleaseSetup implements ScriptInteraction {
     }
 
     public boolean canPrepare(Item item) {
-        return deviceInteraction.canPrepare(new Items(item));
+        return deviceInteraction.canPrepare(new ItemsImpl(item));
     }
 
     public boolean canPrepare(Items items) {

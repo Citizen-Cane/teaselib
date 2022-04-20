@@ -16,7 +16,7 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
 import teaselib.util.ItemImpl;
-import teaselib.util.Items;
+import teaselib.util.ItemsImpl;
 
 /**
  * @author Citizen-Cane
@@ -63,11 +63,9 @@ public class QualifiedStringMapping {
     private static Collection<Object> flatten(Object... peers) {
         List<Object> flattenedPeers = new ArrayList<>(peers.length);
         for (Object peer : peers) {
-            if (peer instanceof Items) {
-                var items = (Items) peer;
+            if (peer instanceof ItemsImpl items) {
                 flattenedPeers.addAll(items.oneOfEachKind());
-            } else if (peer instanceof Collection) {
-                var collection = (Collection<?>) peer;
+            } else if (peer instanceof Collection<?> collection) {
                 flattenedPeers.addAll(collection);
             } else if (peer instanceof Object[]) {
                 var list = Arrays.asList(peer);

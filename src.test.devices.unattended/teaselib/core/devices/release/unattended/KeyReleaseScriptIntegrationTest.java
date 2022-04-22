@@ -1,11 +1,7 @@
 package teaselib.core.devices.release.unattended;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static java.util.concurrent.TimeUnit.*;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -108,7 +104,9 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItems() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled).inventory();
+        script.setAvailable(Toys.All);
+        var cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled)
+                .getApplicableSet();
         long availableSeconds = availableSeconds(cuffs);
 
         script.say("Arm", Message.Delay10s);
@@ -129,7 +127,9 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItemsOverDuration() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled).inventory();
+        script.setAvailable(Toys.All);
+        var cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled)
+                .getApplicableSet();
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
@@ -203,7 +203,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     @Ignore
     // TODO Device becomes disconnected while sending command during sleep, but reconnect fails
     public void testScriptEventsWithItemsAndSleepWhileHolding() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).inventory();
+        script.setAvailable(Toys.All);
+        var cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).getApplicableSet();
         Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(cuffs).orElseThrow();
         long availableSeconds = actuator.available(TimeUnit.SECONDS);
 

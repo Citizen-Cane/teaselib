@@ -22,6 +22,7 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.PropertyNameMappingPersistence;
 import teaselib.core.util.QualifiedName;
+import teaselib.util.Select.AbstractStatement;
 
 public class TestScript extends TeaseScript implements Closeable {
     public final DebugHost host;
@@ -107,6 +108,10 @@ public class TestScript extends TeaseScript implements Closeable {
 
     public void addTestUserItems2() {
         addCustomUserItems("useritems2.xml");
+    }
+
+    public void setAvailable(AbstractStatement... statements) {
+        items(statements).inventory().stream().forEach(item -> item.setAvailable(true));
     }
 
     public void setAvailable(Enum<?>... items) {

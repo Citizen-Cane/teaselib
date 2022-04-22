@@ -30,8 +30,8 @@ public class Select {
     public static Items.Query select(Items.Query items, List<Clause<Items>> statements) {
         Items.Query selected = new ItemsQueryImpl() {
             @Override
-            public Items inventory() {
-                return select(items.inventory(), statements);
+            public Items.Collection inventory() {
+                return (Items.Collection) select(items.inventory(), statements);
             }
 
         };

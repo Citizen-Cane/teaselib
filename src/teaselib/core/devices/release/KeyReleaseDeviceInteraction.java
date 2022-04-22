@@ -55,6 +55,7 @@ import teaselib.util.ItemsImpl;
  */
 public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation<Items, Instructions>
         implements DeviceListener<KeyRelease> {
+
     static class Instructions {
         public final Actor actor;
         public final Items items;
@@ -62,16 +63,16 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         public final Consumer<Items> acquireKeys;
         public final Optional<Consumer<Items>> acquireKeysAgain;
 
-        public Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys) {
+        Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys) {
             this(actor, items, duration, unit, acquireKeys, Optional.empty());
         }
 
-        public Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys,
+        Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys,
                 Consumer<Items> acquireKeysAgain) {
             this(actor, items, duration, unit, acquireKeys, Optional.ofNullable(acquireKeysAgain));
         }
 
-        public Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys,
+        Instructions(Actor actor, Items items, long duration, TimeUnit unit, Consumer<Items> acquireKeys,
                 Optional<Consumer<Items>> acquireKeysAgain) {
             this.actor = actor;
             this.items = items;

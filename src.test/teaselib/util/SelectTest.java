@@ -3,8 +3,7 @@ package teaselib.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static teaselib.util.Select.items;
-import static teaselib.util.Select.select;
+import static teaselib.util.Select.*;
 
 import java.io.IOException;
 

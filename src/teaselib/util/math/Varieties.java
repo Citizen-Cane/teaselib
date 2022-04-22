@@ -20,8 +20,8 @@ public class Varieties<T> extends ArrayList<T> {
         return stream().reduce(get(0), accumulator);
     }
 
-    public static Collector<Items, Varieties<Items>, Varieties<Items>> toVarieties() {
-        return Collector.of(Varieties<Items>::new, //
+    public static Collector<Items.Set, Varieties<Items.Set>, Varieties<Items.Set>> toVarieties() {
+        return Collector.of(Varieties<Items.Set>::new, //
                 (items, item) -> items.add(item), //
                 (items1, items2) -> {
                     items1.addAll(items2);

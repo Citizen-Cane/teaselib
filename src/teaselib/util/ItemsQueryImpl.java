@@ -16,8 +16,8 @@ public abstract class ItemsQueryImpl implements Items.Query {
 
     public static final Query None = new ItemsQueryImpl() {
         @Override
-        public Items inventory() {
-            return Items.None;
+        public Items.Collection inventory() {
+            return (Items.Collection) Items.None;
         }
     };
 
@@ -96,11 +96,22 @@ public abstract class ItemsQueryImpl implements Items.Query {
         return anyAvailable() ? this : otherItems;
     }
 
+    @SuppressWarnings("static-method")
     private Query query(Function<Items, Items> function) {
         return new ItemsQueryImpl() {
             @Override
-            public Items inventory() {
-                return function.apply(ItemsQueryImpl.this.inventory());
+            public Items.Collection inventory() {
+                return (Items.Collection) function.apply(ItemsQueryImpl.this.inventory());
+            }
+        };
+    }
+
+    @Override
+    public Query filter(Predicate<? super Item> predicate) {
+        return new ItemsQueryImpl() {
+            @Override
+            public Items.Collection inventory() {
+                return (Items.Collection) ItemsQueryImpl.this.inventory().filter(predicate);
             }
         };
     }
@@ -151,9 +162,10 @@ public abstract class ItemsQueryImpl implements Items.Query {
     }
 
     private boolean allKindsMatch(Predicate<? super Item> predicate) {
-        Items items = inventory();
+        Items.Collection items = inventory();
         // all inventory items are tested for applied() and isAvailable() through Items.item()
-        return items.valueSet().stream().map(QualifiedString::toString).map(items::item).allMatch(predicate);
+        return items.valueSet().stream().map(QualifiedString::toString).map(e -> items.items(e).get())
+                .allMatch(predicate);
     }
 
     @Override
@@ -162,39 +174,35 @@ public abstract class ItemsQueryImpl implements Items.Query {
     }
 
     @Override
-    public Items getApplicableSet() {
-        // TODO Split Items into ItemsImpl & interfaces Items & ItemSet
-        // -> return ItemSet here, for inventory queries Items - return always ItemsImpl
-        //
+    public Items.Set getApplicableSet() {
         // TODO match best set according to prefer() and matching already applied items
-        // TODO review item(Enum<?>) to return random item instead of first
         Map<QualifiedString, Item> items = new LinkedHashMap<>();
         Iterator<Item> iterator = inventory().iterator();
         while (iterator.hasNext()) {
             var item = iterator.next();
             ItemImpl impl = AbstractProxy.removeProxy(item);
             if (item.canApply() && !items.containsKey(impl.kind())) {
-                items.put(impl.kind(), impl);
+                items.put(impl.kind(), item);
             }
         }
         return new ItemsImpl(new ArrayList<>(items.values()));
     }
 
     @Override
-    public Items getApplied() {
+    public Items.Collection getApplied() {
         return inventory().getApplied();
     }
 
     @Override
-    public Items getAvailable() {
+    public Items.Collection getAvailable() {
         return inventory().getAvailable();
     }
 
     @Override
-    public Items getApplicable() {
+    public Items.Collection getApplicable() {
         return inventory().getApplicable();
     }
 
     @Override
-    abstract public Items inventory();
+    abstract public Items.Collection inventory();
 }

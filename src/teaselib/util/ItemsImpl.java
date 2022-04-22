@@ -1,8 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,9 +48,9 @@ import teaselib.util.math.Varieties;
  * @author Citizen-Cane
  *
  */
-public class ItemsImpl implements Items {
+public class ItemsImpl implements Items.Collection, Items.Set {
 
-    public static final Items None = new ItemsImpl(Collections.emptyList());
+    public static final ItemsImpl None = new ItemsImpl(Collections.emptyList());
 
     final Random random;
     private final List<Item> elements;
@@ -207,7 +205,7 @@ public class ItemsImpl implements Items {
     }
 
     @Override
-    public Items getApplicable() {
+    public ItemsImpl getApplicable() {
         return new ItemsImpl(filter(Item::canApply));
     }
 
@@ -217,12 +215,12 @@ public class ItemsImpl implements Items {
     }
 
     @Override
-    public Items getFree() {
+    public ItemsImpl getFree() {
         return new ItemsImpl(filter(Predicate.not(Item::applied)));
     }
 
     @Override
-    public Items getExpired() {
+    public ItemsImpl getExpired() {
         return new ItemsImpl(filter(Item::expired));
     }
 
@@ -234,7 +232,7 @@ public class ItemsImpl implements Items {
     // TODO when get(Enum<?>) is removed because of item(), rename this to first()
     @Override
     public Item get() {
-        return getAppliedOrAvailableOrNotFound(random);
+        return getAppliedOrApplicableOrNotFound(random);
     }
 
     /**
@@ -274,27 +272,28 @@ public class ItemsImpl implements Items {
             throw new UnsupportedOperationException("Support named items");
         }
 
-        return oneOfEachKind().stream().filter(element -> {
+        Item result = oneOfEachKind().stream().filter(element -> {
             return item.equals(AbstractProxy.removeProxy(element).kind());
         }).findFirst().orElse(Item.NotFound);
+        return result;
     }
 
-    private Item getAppliedOrAvailableOrNotFound(Random random) {
+    private Item getAppliedOrApplicableOrNotFound(Random random) {
         List<Item> applied = getApplied().elements;
         if (!applied.isEmpty()) {
             return applied.get(0);
         } else {
-            return getAvailableOrNotFound(random);
+            return getApplicableOrNotFound(random);
         }
     }
 
-    private Item getAvailableOrNotFound(Random random) {
-        List<Item> available = getAvailable().elements;
-        if (!available.isEmpty()) {
+    private Item getApplicableOrNotFound(Random random) {
+        List<Item> applicable = getApplicable().elements;
+        if (!applicable.isEmpty()) {
             if (random != null) {
-                return random.item(available);
+                return random.item(applicable);
             } else {
-                return available.get(0);
+                return applicable.get(0);
             }
         } else if (!elements.isEmpty()) {
             if (random != null) {
@@ -315,17 +314,17 @@ public class ItemsImpl implements Items {
      * @return Items that match all of the attributes.
      */
     @Override
-    public final Items matching(Enum<?>... attributes) {
+    public final ItemsImpl matching(Enum<?>... attributes) {
         return matching(Arrays.asList(attributes));
     }
 
     @Override
-    public final Items matching(String... attributes) {
+    public final ItemsImpl matching(String... attributes) {
         return matching(Arrays.asList(attributes));
     }
 
-    private Items matching(List<? extends Object> attributes) {
-        Items matchingItems;
+    private ItemsImpl matching(List<? extends Object> attributes) {
+        ItemsImpl matchingItems;
         if (attributes.isEmpty()) {
             matchingItems = new ItemsImpl(this);
         } else {
@@ -345,8 +344,8 @@ public class ItemsImpl implements Items {
         return matchingAny(Arrays.asList(attributes));
     }
 
-    private Items matchingAny(List<? extends Object> attributes) {
-        Items matchingItems;
+    private ItemsImpl matchingAny(List<? extends Object> attributes) {
+        ItemsImpl matchingItems;
         if (attributes.isEmpty()) {
             matchingItems = new ItemsImpl(this);
         } else {
@@ -384,10 +383,6 @@ public class ItemsImpl implements Items {
     public boolean containsAny(Items items) {
         return !intersection(items).isEmpty();
     }
-
-    // public boolean containsAll(Items items) {
-    // return elements.containsAll(items.elements);
-    // }
 
     @Override
     public Items intersection(Items items) {
@@ -502,7 +497,7 @@ public class ItemsImpl implements Items {
      * 
      * @return
      */
-    Varieties<Items> varieties() {
+    Varieties<Items.Set> varieties() {
         int variety = getVariety();
         Combinations<Item[]> combinations = Combinations.combinationsK(variety, toArray());
         return combinations.stream().map(Arrays::asList).filter(this::isVariety).map(ItemsImpl::new)
@@ -537,7 +532,7 @@ public class ItemsImpl implements Items {
      * @param itemsB
      * @return The items that is match better.
      */
-    static Items best(Items itemsA, Items itemsB) {
+    static Items.Set best(Items.Set itemsA, Items.Set itemsB) {
         // TODO Improve attribute matching for applied items
         // - decide whether to consider preferred or matching attributes
         // - currently there is no attribute matching at all
@@ -657,12 +652,12 @@ public class ItemsImpl implements Items {
      * @return A sublist containing the requested items, or {@link Item#NotFound} for any missing item.
      */
     @Override
-    public Items items(Enum<?>... anyItemOrAttribute) {
+    public ItemsImpl items(Enum<?>... anyItemOrAttribute) {
         return itemsImpl((Object[]) anyItemOrAttribute);
     }
 
     @Override
-    public Items items(String... anyItemOrAttribute) {
+    public ItemsImpl items(String... anyItemOrAttribute) {
         return itemsImpl((Object[]) anyItemOrAttribute);
     }
 
@@ -671,7 +666,7 @@ public class ItemsImpl implements Items {
         return query.get(this);
     }
 
-    private Items itemsImpl(Object... anyItemOrAttribute) {
+    private ItemsImpl itemsImpl(Object... anyItemOrAttribute) {
         List<Item> items = new ArrayList<>();
         for (Item item : elements) {
             for (Object any : anyItemOrAttribute) {
@@ -777,17 +772,17 @@ public class ItemsImpl implements Items {
     }
 
     @Override
-    public Items without(Enum<?>... values) {
+    public ItemsImpl without(Enum<?>... values) {
         return withoutImpl((Object[]) values);
     }
 
     @Override
-    public Items without(String... values) {
+    public ItemsImpl without(String... values) {
         return withoutImpl((Object[]) values);
 
     }
 
-    private Items withoutImpl(Object... values) {
+    private ItemsImpl withoutImpl(Object... values) {
         return new ItemsImpl(stream().filter(item -> Arrays.stream(values).noneMatch(item::is)).toList(), inventory);
     }
 

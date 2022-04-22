@@ -1,10 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -661,11 +657,12 @@ public class ItemImplTest {
     @Test
     public void testRemoveOneOfMultipleItemsToSamePeer() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
-                    .prefer(Material.Leather).inventory();
+            script.setAvailable(Toys.All, Bondage.All, Accessoires.All);
+            var restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar)
+                    .prefer(Material.Leather).getApplicableSet();
             restraints.apply();
 
-            Items chains = script.items(Bondage.Chains, Accessoires.Bells).inventory();
+            var chains = script.items(Bondage.Chains, Accessoires.Bells).getApplicableSet();
             chains.applyTo(restraints);
             assertTrue(chains.allApplied());
             assertTrue(restraints.allApplied());

@@ -89,11 +89,11 @@ public abstract class TeaseScriptPersistence extends Script {
         public Items.Query items(Enum<?>... values) {
             return new ItemsQueryImpl() {
                 @Override
-                public Items inventory() {
+                public Items.Collection inventory() {
                     if (values.length > 0) {
-                        return proxiesOf(teaseLib.items(name, (Object[]) values));
+                        return (Items.Collection) proxiesOf(teaseLib.items(name, (Object[]) values));
                     } else {
-                        return Items.None;
+                        return (Items.Collection) Items.None;
                     }
                 }
             };
@@ -102,11 +102,11 @@ public abstract class TeaseScriptPersistence extends Script {
         public Items.Query items(String... values) {
             return new ItemsQueryImpl() {
                 @Override
-                public Items inventory() {
+                public Items.Collection inventory() {
                     if (values.length > 0) {
-                        return proxiesOf(teaseLib.items(name, (Object[]) values));
+                        return (Items.Collection) proxiesOf(teaseLib.items(name, (Object[]) values));
                     } else {
-                        return Items.None;
+                        return (Items.Collection) Items.None;
                     }
                 }
             };
@@ -119,12 +119,14 @@ public abstract class TeaseScriptPersistence extends Script {
         public Items.Query items(Select.AbstractStatement... statements) {
             return new ItemsQueryImpl() {
                 @Override
-                public Items inventory() {
+                public Items.Collection inventory() {
                     Function<? super Select.AbstractStatement, Items.Query> mapper = query -> query
                             .get(Domain.this.items(query.values));
-                    return new ItemsImpl(Arrays.stream(statements).map(mapper).map(Items.Query::inventory)
-                            .flatMap(Items::stream).toList());
-                };
+                    List<Item> items = Arrays.stream(statements).map(mapper).map(Items.Query::inventory)
+                            .flatMap(Items::stream).toList();
+                    return new ItemsImpl(items);
+                }
+
             };
         }
 
@@ -184,18 +186,22 @@ public abstract class TeaseScriptPersistence extends Script {
         return defaultDomain.item(value);
     }
 
-    public Items items(Item... items) {
+    public Items.Collection items(Item... items) {
         return new ItemsImpl(items);
     }
 
-    public Items items(Items... items) {
+    public Items.Collection items(Items... items) {
+        return new ItemsImpl(items);
+    }
+
+    public Items.Collection items(Items.Collection... items) {
         return new ItemsImpl(items);
     }
 
     public Items.Query items(Items.Query... items) {
         return new ItemsQueryImpl() {
             @Override
-            public Items inventory() {
+            public Items.Collection inventory() {
                 return new ItemsImpl(Arrays.stream(items).map(Items.Query::inventory).flatMap(Items::stream).toList());
             }
         };

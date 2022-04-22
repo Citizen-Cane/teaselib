@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -951,7 +951,16 @@ public class TeaseLib implements Closeable {
      *            The items for which to retrieve related items from another domain.
      * @return Items similar to those supplied but for the specified domain.
      */
+
     public Items relatedItems(String domain, Items items) {
+        return new ItemsImpl(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
+    }
+
+    public Items.Collection relatedItems(String domain, Items.Collection items) {
+        return new ItemsImpl(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
+    }
+
+    public Items.Set relatedItems(String domain, Items.Set items) {
         return new ItemsImpl(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
     }
 

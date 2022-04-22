@@ -15,8 +15,6 @@ public interface Items extends Iterable<Item> {
 
     public interface Query {
 
-        public static final Query None = ItemsQueryImpl.None;
-
         Query prefer(Enum<?>... values);
 
         Query prefer(String... values);
@@ -46,6 +44,8 @@ public interface Items extends Iterable<Item> {
         Query orElseMatching(String... attributes);
 
         Query orElse(Items.Query items);
+
+        Query filter(Predicate<? super Item> predicate);
 
         boolean noneApplied();
 
@@ -106,35 +106,35 @@ public interface Items extends Iterable<Item> {
          * 
          * @return A set of items that can be applied, one per available kind.
          */
-        Items getApplicableSet();
+        Items.Set getApplicableSet();
 
         /**
          * Get all items that are currently applied.
          * 
          * @return All applied items.
          */
-        Items getApplied();
+        Items.Collection getApplied();
 
         /**
          * Get all items that are currently available.
          * 
          * @return All available items.
          */
-        Items getAvailable();
+        Items.Collection getAvailable();
 
         /**
          * Get all items that are currently applied.
          * 
          * @return All applied items.
          */
-        Items getApplicable();
+        Items.Collection getApplicable();
 
         /**
          * Get all items that are defined in the inventory. This also includes items that are defined but not available.
          * 
          * @return All defined items in the inventory.
          */
-        Items inventory();
+        Items.Collection inventory();
     }
 
     boolean isEmpty();
@@ -185,23 +185,22 @@ public interface Items extends Iterable<Item> {
 
     boolean allExpired();
 
-    Items getAvailable();
-
-    Items getApplicable();
-
-    Items getApplied();
-
-    Items getFree();
-
-    Items getExpired();
-
     boolean contains(Enum<?> item);
 
     boolean contains(String item);
 
     boolean contains(Item item);
 
+    boolean containsAny(Items items);
+
     Items filter(Predicate<? super Item> predicate);
+
+    /**
+     * return distinct item values.
+     * 
+     * @return
+     */
+    java.util.Set<QualifiedString> valueSet();
 
     /**
      * Get applied, matching or available items:
@@ -273,8 +272,6 @@ public interface Items extends Iterable<Item> {
 
     void remove();
 
-    // TODO resolve return type to Collection or Set
-
     /**
      * Get a sublist just containing the requested items
      * 
@@ -288,9 +285,6 @@ public interface Items extends Iterable<Item> {
 
     Items intersection(Items items);
 
-    //
-    // TODO move methods to Collection
-
     /**
      * Return applied or random available item.
      * 
@@ -298,54 +292,94 @@ public interface Items extends Iterable<Item> {
      */
     Item get();
 
-    // TODO private to Items.Query
-    // Varieties<Items> varieties();
+    Items getAvailable();
 
-    public interface Collection {
+    Items getApplicable();
 
+    Items getApplied();
+
+    Items getFree();
+
+    Items getExpired();
+
+    public interface Collection extends Items {
+
+        public static final Items.Set Empty = ItemsImpl.None;
+
+        @Override
+        Collection getAvailable();
+
+        @Override
+        Collection getApplicable();
+
+        @Override
+        Collection getApplied();
+
+        @Override
+        Collection getFree();
+
+        @Override
+        Collection getExpired();
+
+        @Override
+        Collection without(Enum<?>... values);
+
+        @Override
+        Collection without(String... values);
+
+        @Override
+        Items.Collection items(Enum<?>... items);
+
+        @Override
+        Items.Collection items(String... items);
     }
 
-    //
-    // TODO move to set
+    public interface Set extends Items {
 
-    /**
-     * Return applied or first available item with the supplied value.
-     * 
-     * @return First item or {@link Item#NotFound}
-     */
-    Item get(Enum<?> item);
+        public static final Items.Set EmptySet = ItemsImpl.None;
 
-    /**
-     * Return applied or first available item with the supplied value.
-     * 
-     * @return First item or {@link Item#NotFound}
-     */
-    Item item(Enum<?> item);
+        @Override
+        Set getAvailable();
 
-    Item item(String item);
+        @Override
+        Set getApplicable();
 
-    /**
-     * return distinct item values.
-     * 
-     * @return
-     */
-    java.util.Set<QualifiedString> valueSet();
+        @Override
+        Set getApplied();
 
-    public interface Set {
+        @Override
+        Set getFree();
 
+        @Override
+        Set getExpired();
+
+        @Override
+        Set without(Enum<?>... values);
+
+        @Override
+        Set without(String... values);
+
+        /**
+         * Return applied or first available item with the supplied value.
+         * 
+         * @return First item or {@link Item#NotFound}
+         */
+        Item get(Enum<?> item);
+
+        /**
+         * Return applied or first available item with the supplied value.
+         * 
+         * @return First item or {@link Item#NotFound}
+         */
+        Item item(Enum<?> item);
+
+        Item item(String item);
+
+        @Override
+        Items.Set items(Enum<?>... items);
+
+        @Override
+        Items.Set items(String... items);
     }
-
-    boolean containsAny(Items items);
-
-    /**
-     * Return all combinations of item sets:
-     * <li>All combinations of the items are returned, the resulting sets will contain one item per kind. To receive
-     * combinations that match the intention of the script, use:
-     * <li>{@link Items#attire} to retain only the items that match a specific criteria
-     * <li>{@link Items#prefer} to retain the items that match a specific criteria, or any other available item. Get the
-     * best combination of items via {@link Varieties#reduce} with argument {@link Items#best}
-     * 
-     * @return
-     */
 
 }

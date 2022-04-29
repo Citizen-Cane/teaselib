@@ -176,7 +176,7 @@ public class HumanPose extends NativeObject.Disposible {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.5f * distanceFactor) {
+                if (z < 0.4f * distanceFactor) {
                     proximity = Proximity.CLOSE;
                 } else if (z < 1.1f * distanceFactor) {
                     proximity = Proximity.FACE2FACE;
@@ -236,42 +236,54 @@ public class HumanPose extends NativeObject.Disposible {
         setInterests(interests.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b));
     }
 
+    // TODO Parameter of estimate() or handle multiple models in Java
+    // - handle in Java for simpler warm-up
+    // - handle in AIfx to choose the right model for portrait and landscape image bytes
+    // -> cache models in native code but select in Java
     private native void setInterests(int aspects);
 
-    private native boolean acquire(SceneCapture device, Rotation rotation);
+    private native void setRotation(int rotation);
+
+    private native boolean acquire(SceneCapture device);
 
     private native boolean acquireImage(byte[] bytes);
 
-    private native void estimate();
-
-    private native List<HumanPose.Estimation> results();
+    private native List<HumanPose.Estimation> estimate();
 
     public List<HumanPose.Estimation> poses(SceneCapture device) {
-        return poses(device, device.rotation());
+        return poses(device, device.rotation().reverse());
     }
 
-    public List<HumanPose.Estimation> poses(SceneCapture device, Rotation rotation) {
-        // TODO test Rotation.None in C++ code instead of setting it to null here
-        if (acquire(device, rotation == Rotation.None ? null : rotation)) {
-            estimate();
-            return results();
+    private List<HumanPose.Estimation> poses(SceneCapture device, Rotation rotation) {
+        if (acquire(device)) {
+            setRotation(rotation.value);
+            return estimate();
         } else {
             throw new SceneCapture.DeviceLost("Camera not started or closed");
         }
     }
 
     public List<HumanPose.Estimation> poses(InputStream image) throws IOException {
+        return poses(image, Rotation.None);
+    }
+
+    public List<HumanPose.Estimation> poses(InputStream image, Rotation rotation) throws IOException {
         try {
-            return poses(image.readAllBytes());
+            return poses(image.readAllBytes(), rotation);
         } finally {
             image.close();
         }
     }
 
     public List<HumanPose.Estimation> poses(byte[] bytes) {
+        return poses(bytes, Rotation.None);
+    }
+
+    public List<HumanPose.Estimation> poses(byte[] bytes, Rotation rotation) {
         if (acquireImage(bytes)) {
-            estimate();
-            return results();
+            // TODO Decode image bytes and derive rotation & model from image dimension
+            setRotation(rotation.value);
+            return estimate();
         } else {
             throw new SceneCapture.DeviceLost("Camera not started or closed");
         }

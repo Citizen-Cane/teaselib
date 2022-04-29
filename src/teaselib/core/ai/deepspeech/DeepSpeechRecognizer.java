@@ -1,6 +1,7 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.Collections;
 import java.util.List;

@@ -50,8 +50,6 @@ public abstract class TeaseLibTTS extends TextToSpeechImplementation {
             try {
                 NativeLibraries.require(TEASELIB, TEASELIB_TTS);
                 return new TeaseLibTTS.Loquendo(newNativeInstance(LTTS7));
-            } catch (UnsatisfiedLinkError e) {
-                throw ExceptionUtil.asRuntimeException(e);
             } catch (UnsupportedOperationException e) {
                 return Unsupported.Instance;
             }

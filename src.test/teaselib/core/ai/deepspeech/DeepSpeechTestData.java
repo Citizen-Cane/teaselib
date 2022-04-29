@@ -11,7 +11,7 @@ public class DeepSpeechTestData {
 
     private static final Path projectPath = ReflectionUtils.projectPath(DeepSpeechTestData.class);
     static final Path testDataPath = projectPath.resolve(Path.of( //
-            "..", "..", "TeaseLibAIfx", "AIml", "models", "tflite", "deepspeech")).normalize();
+            "..", "..", "TeaseLibAIfx", "AIml", "models", "tflite", "coqui-ai")).normalize();
 
     static final DeepSpeechTestData AUDIO_2830_3980_0043_RAW = new DeepSpeechTestData(
             testDataPath.resolve(Path.of(Locale.ENGLISH.getLanguage() + "-audio/2830-3980-0043.raw")), //

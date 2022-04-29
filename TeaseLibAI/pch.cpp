@@ -11,7 +11,6 @@
 
 #pragma comment(lib, "Audio.lib") 
 #pragma comment(lib, "Compute.lib") 
-#pragma comment(lib, "Inference.lib") 
 #pragma comment(lib, "Math.lib") 
 #pragma comment(lib, "Speech.lib") 
 #pragma comment(lib, "TensorFlow.lib") 
@@ -23,4 +22,3 @@
 
 #pragma comment(lib, "Pose.lib") 
 #pragma comment(lib, "CoquiSTT.lib")
-#pragma comment(lib, "DeepSpeech.lib")

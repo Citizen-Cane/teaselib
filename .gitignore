@@ -225,6 +225,7 @@ lib/TeaseLib.jar
 lib/TeaseLib_tests.jar
 lib/*.lib
 lib/*.dll
+lib/*.so
 lib/*.exp
 lib/deepspeech
 lib/coqui-ai

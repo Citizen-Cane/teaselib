@@ -20,19 +20,24 @@ public class LibraryLoader {
     private static String library(String name) {
         String extension;
         Environment system = Environment.SYSTEM;
-        if (system == Environment.Windows) {
-            extension = "dll";
+        if (name.toLowerCase().endsWith(".dll") || name.toLowerCase().endsWith(".so")) {
+            return name;
         } else {
-            throw new UnsupportedOperationException("LoadLibrary() " + system + " unsupported");
+            if (system == Environment.Windows) {
+                extension = "dll";
+            } else {
+                throw new UnsupportedOperationException("LoadLibrary() " + system + " unsupported");
+            }
+            final String architecture;
+            Arch arch = Environment.ARCH;
+            if (arch == Environment.Arch.x64) {
+                architecture = "x64";
+            } else {
+                throw new UnsupportedOperationException(
+                        "LoadLibrary() processor architecture " + arch + " unsupported");
+            }
+            return name + "_" + architecture + "." + extension;
         }
-        final String architecture;
-        Arch arch = Environment.ARCH;
-        if (arch == Environment.Arch.x64) {
-            architecture = "x64";
-        } else {
-            throw new UnsupportedOperationException("LoadLibrary() processor architecture " + arch + " unsupported");
-        }
-        return name + "_" + architecture + "." + extension;
     }
 
 }

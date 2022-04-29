@@ -7,28 +7,28 @@
 
 #include <NativeObject.h>
 
-#include <Pose/PoseEstimation.h>
+#include <Math/Image.h>
+#include <Pose/Movenet.h>
 
 class HumanPose {
 public:
     HumanPose();
     virtual ~HumanPose();
 
-    bool acquire(JNIEnv* env, jobject jdevice, jobject jrotation);
+    void setRotation(const aifx::image::Rotation rotation);
+    bool acquire(JNIEnv* env, jobject jdevice);
     bool acquire(JNIEnv* env, jbyteArray jimage);
-    void estimate();
-    const std::vector<aifx::pose::Pose>& results();
+    const std::vector<aifx::pose::Pose>& estimate();
 
 private:
-    const aifx::pose::PoseEstimation::Model model;
-    const aifx::pose::PoseEstimation::Resolution resolution;
+    const aifx::pose::Movenet::Model model;
 
-    typedef std::map<aifx::pose::PoseEstimation::Rotation, aifx::pose::PoseEstimation*> InterpreterMap;
-    InterpreterMap interpreterMap;
+    typedef std::map<aifx::image::Orientation, aifx::pose::Movenet*> Models;
+    Models models;
 
-    aifx::pose::PoseEstimation::Rotation rotation;
+    aifx::image::Rotation rotation;
     cv::UMat frame;
 
-    aifx::pose::PoseEstimation* interpreter();
+    aifx::pose::Movenet* interpreter();
     std::vector<aifx::pose::Pose> poses;
 };

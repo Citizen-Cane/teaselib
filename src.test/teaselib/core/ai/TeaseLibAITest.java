@@ -49,7 +49,7 @@ public class TeaseLibAITest {
                 try (HumanPose humanPose = new HumanPose()) {
                     var sceneCapture = devices.get(0);
                     sceneCapture.start();
-                    List<Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
+                    List<Estimation> poses = humanPose.poses(sceneCapture);
                     assertNotNull(poses);
                 }
             };
@@ -66,9 +66,79 @@ public class TeaseLibAITest {
             sceneCapture.start();
             Runnable test = () -> {
                 try (HumanPose humanPose = new HumanPose()) {
-                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, Rotation.None);
+                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture);
                     assertNotNull(poses);
                     assertEquals(2, poses.size());
+                }
+            };
+            runAccelerated(teaseLibAI, test);
+        }
+    }
+
+    @Test
+    public void testImageCaptureRotated() throws InterruptedException {
+        String name = "images/handsup1_camera_rotated_clockwise_01.jpg";
+        String pattern = "handsup1_camera_rotated_clockwise_%02d.jpg";
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI();
+                SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern)) {
+                    @Override
+                    public Rotation rotation() {
+                        return Rotation.Clockwise;
+                    }
+                }) {
+            sceneCapture.start();
+            Runnable test = () -> {
+                try (HumanPose humanPose = new HumanPose()) {
+                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture);
+                    assertNotNull(poses);
+                    assertEquals(1, poses.size());
+                }
+            };
+            runAccelerated(teaseLibAI, test);
+        }
+    }
+
+    @Test
+    public void testReverseRotation() {
+        assertEquals(Rotation.None, Rotation.None.reverse());
+        assertEquals(Rotation.Clockwise, Rotation.CounterClockwise.reverse());
+        assertEquals(Rotation.UpsideDown, Rotation.UpsideDown.reverse());
+        assertEquals(Rotation.CounterClockwise, Rotation.Clockwise.reverse());
+    }
+
+    @Test
+    public void testImageRotated() throws InterruptedException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
+            Runnable test = () -> {
+                try (HumanPose humanPose = new HumanPose()) {
+                    List<HumanPose.Estimation> poses = humanPose.poses(
+                            resource("images/handsup1_camera_rotated_clockwise_01.jpg"), Rotation.CounterClockwise);
+                    assertNotNull(poses);
+                    assertEquals(1, poses.size());
+                } catch (IOException e) {
+                    throw ExceptionUtil.asRuntimeException(e);
+                }
+            };
+            runAccelerated(teaseLibAI, test);
+        }
+    }
+
+    @Test
+    public void testImageRotationChange() throws InterruptedException {
+        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
+            Runnable test = () -> {
+                try (HumanPose humanPose = new HumanPose()) {
+                    List<HumanPose.Estimation> poses1 = humanPose.poses(resource("images/p2_320x240_01.jpg"),
+                            Rotation.None);
+                    assertNotNull(poses1);
+                    assertEquals(2, poses1.size());
+
+                    List<HumanPose.Estimation> poses2 = humanPose.poses(
+                            resource("images/handsup1_camera_rotated_clockwise_01.jpg"), Rotation.CounterClockwise);
+                    assertNotNull(poses2);
+                    assertEquals(1, poses2.size());
+                } catch (IOException e) {
+                    throw ExceptionUtil.asRuntimeException(e);
                 }
             };
             runAccelerated(teaseLibAI, test);
@@ -87,11 +157,11 @@ public class TeaseLibAITest {
     public void testSomeImages() throws InterruptedException {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();) {
             Runnable test = () -> {
-                try (HumanPose humnaPose = new HumanPose()) {
+                try (HumanPose humanPose = new HumanPose()) {
                     try {
-                        pose1(humnaPose);
-                        pose2(humnaPose);
-                        pose3(humnaPose);
+                        pose1(humanPose);
+                        pose2(humanPose);
+                        pose3(humanPose);
                     } catch (IOException e) {
                         throw ExceptionUtil.asRuntimeException(e);
                     }
@@ -104,10 +174,10 @@ public class TeaseLibAITest {
     private void pose1(HumanPose humnaPose) throws IOException {
         List<Estimation> poses = humnaPose.poses(resource("images/p2_320x240_01.jpg"));
         assertEquals(2, poses.size());
-        assertEquals(0.25, poses.get(1).head.orElseThrow().getX(), 0.02);
-        assertEquals(0.09, poses.get(1).head.orElseThrow().getY(), 0.02);
-        assertEquals(0.7, poses.get(0).head.orElseThrow().getX(), 0.01);
-        assertEquals(0.10, poses.get(0).head.orElseThrow().getY(), 0.02);
+        assertEquals(0.25, poses.get(0).head.orElseThrow().getX(), 0.02);
+        assertEquals(0.09, poses.get(0).head.orElseThrow().getY(), 0.02);
+        assertEquals(0.7, poses.get(1).head.orElseThrow().getX(), 0.01);
+        assertEquals(0.10, poses.get(1).head.orElseThrow().getY(), 0.02);
     }
 
     private void pose2(HumanPose humnaPose) throws IOException {
@@ -120,7 +190,7 @@ public class TeaseLibAITest {
     private void pose3(HumanPose humnaPose) throws IOException {
         List<Estimation> poses = humnaPose.poses(resource("images/hand2.jpg"));
         assertEquals(1, poses.size());
-        assertEquals(0.58, poses.get(0).head.orElseThrow().getX(), 0.02);
+        assertEquals(0.59, poses.get(0).head.orElseThrow().getX(), 0.02);
         assertEquals(0.41, poses.get(0).head.orElseThrow().getY(), 0.02);
     }
 
@@ -174,20 +244,20 @@ public class TeaseLibAITest {
             Runnable test = () -> {
                 try (HumanPose humanPose1 = new HumanPose(); HumanPose humanPose2 = new HumanPose()) {
                     sceneCapture.start();
-                    List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture, Rotation.None);
+                    List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture);
                     assertEquals(1, poses1.size());
-                    assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.71f,
+                    assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.70f,
                             poses1.get(0).distance.orElseThrow(), 0.01f);
                     assertEquals(Proximity.FACE2FACE, poses1.get(0).proximity());
 
-                    List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture, Rotation.None);
+                    List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture);
                     assertEquals(1, poses2.size());
                     assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.92,
                             poses2.get(0).distance.orElseThrow(), 0.1);
                     assertEquals(Proximity.FACE2FACE, poses2.get(0).proximity());
 
                     try {
-                        humanPose2.poses(sceneCapture, Rotation.None);
+                        humanPose2.poses(sceneCapture);
                         fail("Expected device lost since image sequence doesn't contain any more images");
                     } catch (SceneCapture.DeviceLost exception) {
                         return;

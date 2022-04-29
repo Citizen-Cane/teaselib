@@ -24,10 +24,34 @@ public class SceneCapture extends NativeObject.Disposible {
     }
 
     public enum Rotation {
-        None,
-        Clockwise,
-        CounterClockwise,
-        UpsideDown
+
+        None(-1),
+        Clockwise(0),
+        UpsideDown(1),
+        CounterClockwise(2),
+
+        ;
+
+        public final int value;
+
+        /**
+         * @param value
+         *            -1 for None or cv::RotateFLags
+         */
+        Rotation(int value) {
+            this.value = value;
+        }
+
+        public Rotation reverse() {
+            switch (this) {
+            case Clockwise:
+                return CounterClockwise;
+            case CounterClockwise:
+                return Clockwise;
+            default:
+                return this;
+            }
+        }
     }
 
     public static class DeviceLost extends RuntimeException {
@@ -103,11 +127,14 @@ public class SceneCapture extends NativeObject.Disposible {
     public native void stop();
 
     public Rotation rotation() {
-        // TODO get device orientation and replace prototype with production code
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        boolean portrait = screenSize.width < screenSize.height;
-        // The native code only understands rotation != null and rotates clockwise
-        return portrait ? Rotation.Clockwise : null;
+        if (location == EnclosureLocation.External) {
+            return Rotation.None; // TODO manual setting
+        } else {
+            // TODO get actual device orientation from hardware sensor
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            boolean portrait = screenSize.width < screenSize.height;
+            return portrait ? Rotation.CounterClockwise : Rotation.None;
+        }
     }
 
     @Override

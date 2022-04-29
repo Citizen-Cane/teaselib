@@ -25,11 +25,19 @@ JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setInterests
 
 /*
  * Class:     teaselib_core_ai_perception_HumanPose
+ * Method:    setRotation
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setRotation
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     teaselib_core_ai_perception_HumanPose
  * Method:    acquire
- * Signature: (Lteaselib/core/ai/perception/SceneCapture;Lteaselib/core/ai/perception/SceneCapture/Rotation;)Z
+ * Signature: (Lteaselib/core/ai/perception/SceneCapture;)Z
  */
 JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_HumanPose_acquire
-  (JNIEnv *, jobject, jobject, jobject);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     teaselib_core_ai_perception_HumanPose
@@ -42,17 +50,9 @@ JNIEXPORT jboolean JNICALL Java_teaselib_core_ai_perception_HumanPose_acquireIma
 /*
  * Class:     teaselib_core_ai_perception_HumanPose
  * Method:    estimate
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_estimate
-  (JNIEnv *, jobject);
-
-/*
- * Class:     teaselib_core_ai_perception_HumanPose
- * Method:    results
  * Signature: ()Ljava/util/List;
  */
-JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_results
+JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_estimate
   (JNIEnv *, jobject);
 
 /*

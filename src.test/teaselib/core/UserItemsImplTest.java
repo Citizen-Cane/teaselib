@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.Bondage;
 import teaselib.Clothes;
 import teaselib.Features;
 import teaselib.Gadgets;
@@ -270,6 +271,45 @@ public class UserItemsImplTest {
                 assertFalse(item.applied());
                 assertFalse(item.is(until));
             }
+        }
+    }
+
+    @Test
+    public void testItemBlockers() throws Exception {
+        try (TestScript script = new TestScript()) {
+            script.setAvailable(Clothes.Pantyhose);
+            assertTrue(script.item(Clothes.Pantyhose).canApply());
+            script.item(Toys.Ankle_Restraints).apply();
+            assertFalse(script.item(Clothes.Pantyhose).canApply());
+        }
+    }
+
+    @Test
+    public void testPeerBlockers() throws Exception {
+        try (TestScript script = new TestScript()) {
+            script.setAvailable(Toys.Buttplug);
+            assertTrue(script.item(Toys.Buttplug).canApply());
+            script.item(Bondage.Harness).apply();
+            assertFalse(script.item(Toys.Buttplug).canApply());
+        }
+    }
+
+    @Test
+    public void testRelaxBlockingRules() throws Exception {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+            script.setAvailable(Toys.Cock_Ring);
+            assertEquals(2, script.items(Toys.Cock_Ring).getApplicable().size());
+
+            var solidCockRing = script.items(Toys.Cock_Ring).without(Features.Detachable).getApplicable().get();
+            var detachableCockRing = script.items(Toys.Cock_Ring).matching(Features.Detachable).getApplicable().get();
+            assertNotEquals(solidCockRing, detachableCockRing);
+
+            assertTrue(solidCockRing.canApply());
+            assertTrue(detachableCockRing.canApply());
+            script.item(Toys.Humbler).apply();
+            assertFalse(solidCockRing.canApply());
+            assertTrue(detachableCockRing.canApply());
         }
     }
 

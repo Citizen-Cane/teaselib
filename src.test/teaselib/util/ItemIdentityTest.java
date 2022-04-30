@@ -24,6 +24,7 @@ import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.Toys.Gags;
+import teaselib.core.ItemImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.Persist;

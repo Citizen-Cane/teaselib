@@ -10,13 +10,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import teaselib.core.ItemImpl;
+import teaselib.core.ItemsImpl;
 import teaselib.core.StateImpl;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
-import teaselib.util.ItemImpl;
-import teaselib.util.ItemsImpl;
 
 /**
  * @author Citizen-Cane
@@ -75,6 +77,11 @@ public class QualifiedStringMapping {
             }
         }
         return flattenedPeers;
+    }
+
+    @SafeVarargs
+    public static <T extends Object> Set<QualifiedString> of(T... values) {
+        return Stream.of(values).map(QualifiedString::of).collect(Collectors.toSet());
     }
 
     private static Set<QualifiedString> identityMapping(Collection<Object> values) {

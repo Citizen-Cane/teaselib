@@ -1,9 +1,17 @@
-package teaselib.util;
+package teaselib.core;
 
-import static org.junit.Assert.*;
-import static teaselib.Body.*;
-import static teaselib.Bondage.*;
-import static teaselib.Toys.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static teaselib.Body.OnNipples;
+import static teaselib.Bondage.Chains;
+import static teaselib.Toys.Ankle_Restraints;
+import static teaselib.Toys.Collar;
+import static teaselib.Toys.Nipple_Clamps;
+import static teaselib.Toys.Wrist_Restraints;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +39,10 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
+import teaselib.util.Item;
+import teaselib.util.Items;
 import teaselib.util.Items.Query;
+import teaselib.util.Select;
 import teaselib.util.math.Varieties;
 
 public class ItemsTest {
@@ -1296,6 +1307,41 @@ public class ItemsTest {
         assertFalse("Items expected but was empty", items.isEmpty());
         String expected = "ItemProxy instances expected";
         assertTrue(expected, items.stream().allMatch(ItemProxy.class::isInstance));
+    }
+
+    @Test
+    public void testItemAsOtherItems() throws Exception {
+        try (TestScript script = new TestScript()) {
+            script.setAvailable(Toys.Dildo, Toys.Buttplug);
+
+            Item buttPlug = script.items(Toys.Buttplug).getApplicable().get();
+            Item dildo = script.items(Toys.Dildo).getApplicable().get();
+            Item analDildo = script.items(Toys.Dildo).getApplicable().to(Body.InButt).get();
+
+            assertTrue(buttPlug.canApply());
+            assertTrue(dildo.canApply());
+            assertTrue(analDildo.canApply());
+
+            buttPlug.apply();
+            assertFalse(buttPlug.canApply());
+            assertTrue(dildo.canApply());
+            assertFalse(analDildo.canApply());
+
+            buttPlug.remove();
+            assertTrue(buttPlug.canApply());
+            assertTrue(dildo.canApply());
+            assertTrue(analDildo.canApply());
+
+            analDildo.apply();
+            assertFalse(buttPlug.canApply());
+            assertFalse(dildo.canApply()); // already applied as similar item
+            assertFalse(analDildo.canApply());
+
+            analDildo.remove();
+            assertTrue(buttPlug.canApply());
+            assertTrue(dildo.canApply());
+            assertTrue(analDildo.canApply());
+        }
     }
 
 }

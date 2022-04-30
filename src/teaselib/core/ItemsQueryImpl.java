@@ -1,4 +1,4 @@
-package teaselib.util;
+package teaselib.core;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -9,6 +9,8 @@ import java.util.function.Predicate;
 
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedString;
+import teaselib.util.Item;
+import teaselib.util.Items;
 import teaselib.util.Items.Query;
 
 // TODO package private - requires moving a bunch of other classes

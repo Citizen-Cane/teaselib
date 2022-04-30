@@ -9,16 +9,17 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -36,6 +37,7 @@ import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Bondage;
 import teaselib.Clothes;
+import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.Household;
 import teaselib.Posture;
@@ -44,9 +46,8 @@ import teaselib.Toys;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedString;
-import teaselib.core.util.ReflectionUtils;
+import teaselib.core.util.QualifiedStringMapping;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 
 public class UserItemsImpl implements UserItems {
 
@@ -185,35 +186,39 @@ public class UserItemsImpl implements UserItems {
 
     private ItemImpl readItem(String domain, Node itemClass, Node itemNode) {
         NamedNodeMap attributes = itemNode.getAttributes();
-        String itemName = attributes.getNamedItem("item").getNodeValue();
-        String guid = attributes.getNamedItem("guid").getNodeValue();
-        String displayName = attributes.getNamedItem("displayName").getNodeValue();
 
         String namespace = "teaselib." + itemClass.getNodeName();
-        String enumName = namespace + "." + itemName;
-        Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedString.of(enumName));
-        List<Enum<?>> defaultPeers = new ArrayList<>(Arrays.asList(defaults(QualifiedString.of(enumValue))));
-        List<Enum<?>> itemAttributes = new ArrayList<>();
+        String itemName = attributes.getNamedItem("item").getNodeValue();
+        var kind = QualifiedString.of(namespace + "." + itemName);
+        Set<QualifiedString> defaultPeers = QualifiedStringMapping.of(defaults(kind));
+        Set<QualifiedString> itemAttributes = new HashSet<>();
+        Set<QualifiedString> itemBlockers = QualifiedStringMapping.of(itemBlockers(kind));
 
         NodeList childNodes = itemNode.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
             var node = childNodes.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 if ("Attribute".equalsIgnoreCase(node.getNodeName())) {
-                    String enumClassName = "teaselib." + node.getTextContent().trim();
-                    itemAttributes.add(ReflectionUtils.getEnum(QualifiedString.of(enumClassName)));
-                }
+                    String name = "teaselib." + node.getTextContent().trim();
+                    itemAttributes.add(QualifiedString.of(name));
+                } else //
                 if ("DefaultPeer".equalsIgnoreCase(node.getNodeName())) {
-                    String enumClassName = "teaselib." + node.getTextContent().trim();
-                    defaultPeers.add(ReflectionUtils.getEnum(QualifiedString.of(enumClassName)));
+                    String name = "teaselib." + node.getTextContent().trim();
+                    defaultPeers.add(QualifiedString.of(name));
+                } else //
+                if ("BlockedBy".equalsIgnoreCase(node.getNodeName())) {
+                    String name = "teaselib." + node.getTextContent().trim();
+                    defaultPeers.add(QualifiedString.of(name));
                 }
             }
         }
+        applyPeerRules(kind, defaultPeers, itemAttributes, itemBlockers);
+        relaxBlockingRules(kind, defaultPeers, itemAttributes, itemBlockers);
 
-        var kind = QualifiedString.of(enumValue);
-        return new ItemImpl(teaseLib, domain, QualifiedString.from(kind, guid), //
-                displayName, defaultPeers.toArray(new Enum<?>[defaultPeers.size()]), //
-                itemAttributes.toArray(new Enum<?>[itemAttributes.size()]));
+        String guid = attributes.getNamedItem("guid").getNodeValue();
+        QualifiedString item = QualifiedString.from(kind, guid);
+        String displayName = attributes.getNamedItem("displayName").getNodeValue();
+        return new ItemImpl(teaseLib, domain, item, displayName, defaultPeers, itemAttributes, itemBlockers);
     }
 
     private ItemImpl getDefaultItem(String domain, QualifiedString kind) {
@@ -235,7 +240,6 @@ public class UserItemsImpl implements UserItems {
         }
 
         return Collections.unmodifiableList(all);
-
     }
 
     private ItemMap getItemMap(String domain) {
@@ -362,42 +366,42 @@ public class UserItemsImpl implements UserItems {
 
     private static Enum<?>[] getAccessoiresDefaults(QualifiedString item) {
         if (item.is(Accessoires.Breast_Forms)) {
-            return new Body[] { Body.OnNipples };
+            return peers(Body.OnNipples);
         } else {
-            return new Body[] {};
+            return None;
         }
     }
 
     private static Enum<?>[] getBondageDefaults(QualifiedString item) {
         if (item.is(Bondage.Chains)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Bondage.Rope)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Bondage.Spreader_Bar)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Bondage.Anklets)) {
-            return new Body[] { Body.AnklesCuffed };
+            return peers(Body.AnklesCuffed);
         } else if (item.is(Bondage.Wristlets)) {
-            return new Body[] { Body.WristsCuffed };
+            return peers(Body.WristsCuffed);
         } else {
-            return new Body[] {};
+            return None;
         }
     }
 
     private static Enum<?>[] getClothesDefaults(@SuppressWarnings("unused") QualifiedString item) {
-        return new Body[] {};
+        return None;
     }
 
     private static Enum<?>[] getGadgetsDefaults(@SuppressWarnings("unused") QualifiedString item) {
-        return new Body[] {};
+        return None;
     }
 
     private static Enum<?>[] getHouseholdDefaults(@SuppressWarnings("unused") QualifiedString item) {
-        return new Body[] {};
+        return None;
     }
 
     private static Enum<?>[] getShoesDefaults(@SuppressWarnings("unused") QualifiedString item) {
-        return new Body[] {};
+        return None;
     }
 
     /**
@@ -405,7 +409,8 @@ public class UserItemsImpl implements UserItems {
      * have a clear application or are applied to a distinct spot, like putting a collar around one's neck. Same for
      * ankle restraints.
      * <p>
-     * On the other hand wrist restraints don't have a default, since wrists can be tied before and behind the body.
+     * On the other hand wrist restraints don't have a Posture default, since wrists can be tied before and behind the
+     * body.
      * 
      * @param item
      *            The item to get defaults for.
@@ -413,57 +418,151 @@ public class UserItemsImpl implements UserItems {
      */
     private static Enum<?>[] getToyDefaults(QualifiedString item) {
         if (item.is(Toys.Buttplug)) {
-            return new Body[] { Body.InButt };
+            return peers(Body.InButt);
         } else if (item.is(Toys.Ankle_Restraints)) {
-            return new Body[] { Body.AnklesCuffed, Body.AnklesTied };
+            return peers(Body.AnklesCuffed, Body.AnklesTied, Posture.AnklesTiedTogether);
         } else if (item.is(Toys.Wrist_Restraints)) {
-            return new Body[] { Body.WristsCuffed, Body.WristsTied };
+            return peers(Body.WristsCuffed, Body.WristsTied);
         } else if (item.is(Toys.Gag)) {
-            return new Body[] { Body.InMouth };
+            return peers(Body.InMouth);
         } else if (item.is(Toys.Spanking_Implement)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Toys.Collar)) {
-            return new Body[] { Body.AroundNeck };
+            return peers(Body.AroundNeck);
         } else if (item.is(Toys.Nipple_Clamps)) {
-            return new Body[] { Body.OnNipples };
+            return peers(Body.OnNipples);
         } else if (item.is(Toys.Chastity_Device)) {
-            return new Body[] { Body.AroundCockBase, Body.OnPenis, Body.CantJerkOff };
+            return peers( //
+                    Body.AroundCockBase, // Not for chastity belts with crotch band
+                    Body.OnPenis, //
+                    Body.CantJerkOff);
         } else if (item.is(Toys.Dildo)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Toys.VaginalInsert)) {
-            return new Body[] { Body.InVagina };
+            return peers(Body.InVagina);
         } else if (item.is(Toys.Vibrator)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Toys.Ball_Stretcher)) {
-            return new Body[] { Body.OnBalls };
+            return peers(Body.OnBalls);
         } else if (item.is(Toys.Blindfold)) {
-            return new Body[] { Body.Blindfolded };
+            return peers(Body.Blindfolded);
         } else if (item.is(Toys.Cock_Ring)) {
-            return new Body[] { Body.AroundCockBase };
+            return peers(Body.AroundCockBase);
         } else if (item.is(Toys.Anal_Douche)) {
-            return new Body[] { Body.InButt };
+            return peers(Body.InButt);
         } else if (item.is(Toys.Enema_Bulb)) {
-            return new Body[] { Body.InButt };
+            return peers(Body.InButt);
         } else if (item.is(Toys.Enema_Kit)) {
-            return new Body[] { Body.InButt };
+            return peers(Body.InButt);
         } else if (item.is(Toys.Glans_Ring)) {
-            return new Enum<?>[] { Body.OnPenis };
+            return peers(Body.OnPenis);
         } else if (item.is(Toys.Humbler)) {
-            return new Enum<?>[] { Body.OnBalls, Posture.CantStand, Posture.CantSitOnChair };
+            return peers(Body.OnBalls, Posture.CantStand, Posture.CantSitOnChair);
         } else if (item.is(Toys.Masturbator)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Toys.Pussy_Clamps)) {
-            return new Body[] { Body.OnLabia, Body.OnBalls };
+            return peers(Body.OnLabia, Body.OnBalls);
         } else if (item.is(Toys.Clit_Clamp)) {
-            return new Body[] { Body.OnClit, Body.OnPenis };
+            return peers(Body.OnClit, Body.OnPenis);
         } else if (item.is(Toys.EStim_Device)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Toys.Doll)) {
-            return new Body[] {};
+            return None;
         } else if (item.is(Toys.Spouse)) {
-            return new Body[] {};
+            return None;
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);
         }
     }
+
+    private static final Enum<?>[] None = new Enum<?>[] {};
+
+    private static Enum<?>[] peers(Enum<?>... state) {
+        return state;
+    }
+
+    private static Enum<?>[] itemBlockers(QualifiedString state) {
+        if (state.is(Toys.Buttplug)) {
+            return blockedBy(Body.CrotchRoped);
+        } else if (state.is(Toys.Cock_Ring)) {
+            return blockedBy(Body.OnBalls, Body.OnPenis);
+        } //
+        else if (state.is(Clothes.Babydoll)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Blouse)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Body)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Bra)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Catsuit)) {
+            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether, Body.WristsTied, Posture.WristsTiedBehindBack,
+                    Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Dress)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Jacket)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Leotard)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Nightie)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Pajamas)) {
+            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether, Body.WristsTied, Posture.WristsTiedBehindBack,
+                    Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Pantyhose)) {
+            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether);
+        } else if (state.is(Clothes.Shirt)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Stockings)) {
+            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether);
+        } else if (state.is(Clothes.Suit)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Tanktop)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Trousers)) {
+            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether);
+        } else if (state.is(Clothes.Vest)) {
+            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
+        } else if (state.is(Clothes.Underpants)) {
+            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether);
+        } //
+        else if (state.is(Shoes.class)) {
+            return blockedBy(Clothes.Socks, Clothes.Pantyhose, Clothes.Stockings);
+        } else {
+            return NotBlocked;
+        }
+    }
+
+    private void applyPeerRules(QualifiedString kind, Collection<QualifiedString> defaultPeers,
+            Collection<QualifiedString> itemAttributes, Collection<QualifiedString> itemBlockers) {
+        for (QualifiedString peer : defaultPeers) {
+            itemBlockers.addAll(QualifiedStringMapping.of(peerBlockers(peer)));
+        }
+    }
+
+    private Enum<?>[] peerBlockers(QualifiedString peer) {
+        if (peer.is(Body.InButt) || peer.is(Body.InVagina)) {
+            return blockedBy(Body.CrotchRoped);
+        } else if (peer.is(Body.AroundCockBase)) {
+            return blockedBy(Body.OnBalls);
+        } else {
+            return NotBlocked;
+        }
+    }
+
+    private static final Enum<?>[] NotBlocked = new Enum<?>[] {};
+
+    private static Enum<?>[] blockedBy(Enum<?>... state) {
+        return state;
+    }
+
+    private void relaxBlockingRules(QualifiedString kind, Collection<QualifiedString> defaultPeers,
+            Collection<QualifiedString> itemAttributes, Collection<QualifiedString> itemBlockers) {
+        if (kind.is(Toys.Cock_Ring)) {
+            if (itemAttributes.contains(QualifiedString.of(Features.Detachable))) {
+                itemBlockers.remove(QualifiedString.of(Body.OnBalls));
+            }
+        }
+    }
+
 }

@@ -17,6 +17,12 @@
 		<Item item="Wrist_Restraints" guid="handcuffs" displayName="Hand cuffs">
 			<Attribute> Material.Metal </Attribute>
 		</Item>
+
+		<Item item="Cock_Ring" guid="detachable_cockring" displayName="Detachable cock ring">
+			<Attribute> Features.Detachable </Attribute>
+			<Attribute> Material.Metal </Attribute>
+			<Attribute> Sexuality.Sex.Male </Attribute>
+		</Item>
 		
 	</Toys>
 

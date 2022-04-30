@@ -1,10 +1,17 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -25,7 +32,6 @@ import teaselib.Toys;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 
 public class ItemImplTest {
@@ -74,13 +80,15 @@ public class ItemImplTest {
         Bar
     }
 
+    private static Set<QualifiedString> LargeAndLong = new HashSet<>(
+            Arrays.asList(QualifiedString.of(Size.Large), QualifiedString.of(Length.Long)));
+
     @Test
     public void testIs() throws IOException {
         try (TestScript script = new TestScript()) {
-            Foo[] defaultPeers = new Foo[] {};
             script.teaseLib.addUserItems(Collections.singleton(
                     new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
-                            "Foo Bar", defaultPeers, new Object[] { Size.Large, Length.Long })));
+                            "Foo Bar", Collections.emptySet(), LargeAndLong, Collections.emptySet())));
             Item fooBar = script.item(Foo.Bar);
 
             assertTrue(fooBar.is(Size.Large));
@@ -118,10 +126,9 @@ public class ItemImplTest {
     @Test
     public void testIsConditionalAnd() throws IOException {
         try (TestScript script = new TestScript()) {
-            Foo[] defaultPpeers = new Foo[] {};
             script.teaseLib.addUserItems(Collections.singleton(
                     new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
-                            "Foo Bar", defaultPpeers, new Object[] { Size.Large, Length.Long })));
+                            "Foo Bar", Collections.emptySet(), LargeAndLong, Collections.emptySet())));
 
             Item fooBar = script.item(Foo.Bar);
             State inButt = script.state(Body.InButt);
@@ -140,9 +147,8 @@ public class ItemImplTest {
     @Test
     public void testIs_EmptyArg() throws IOException {
         try (TestScript script = new TestScript()) {
-            Foo[] peers = new Foo[] {};
             Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
-                    "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+                    "Foo Bar", Collections.emptySet(), LargeAndLong, Collections.emptySet());
 
             assertFalse(item.is());
         }
@@ -151,9 +157,8 @@ public class ItemImplTest {
     @Test
     public void testIsHandlesArrays() throws IOException {
         try (TestScript script = new TestScript()) {
-            Foo[] peers = new Foo[] {};
             Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(Foo.Bar, "Foo_Bar"),
-                    "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+                    "Foo Bar", Collections.emptySet(), LargeAndLong, Collections.emptySet());
 
             assertTrue(item.is(Size.Large));
             assertFalse(item.is(Size.Small));

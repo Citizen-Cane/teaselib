@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
+import teaselib.core.ItemsImpl;
+import teaselib.core.ItemsQueryImpl;
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
 import teaselib.core.ScriptRenderer;
@@ -17,8 +19,6 @@ import teaselib.core.state.StateProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.Items;
-import teaselib.util.ItemsImpl;
-import teaselib.util.ItemsQueryImpl;
 import teaselib.util.Select;
 import teaselib.util.States;
 

@@ -1,7 +1,7 @@
 package teaselib.core.state;
 
-import static java.util.Arrays.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +19,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, State.Attrib
     private static final Logger logger = LoggerFactory.getLogger(ItemProxy.class);
 
     public final Item item;
-    final ScriptEvents events;
+    public final ScriptEvents events;
 
     public ItemProxy(String namespace, Item item, ScriptEvents events) {
         super(namespace, item);

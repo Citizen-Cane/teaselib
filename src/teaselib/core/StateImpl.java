@@ -31,7 +31,6 @@ import teaselib.core.util.QualifiedString;
 import teaselib.core.util.QualifiedStringMapping;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 
 public class StateImpl implements State, State.Options, State.Attributes {
     private static final Logger logger = LoggerFactory.getLogger(StateImpl.class);

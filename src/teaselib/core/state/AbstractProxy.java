@@ -4,13 +4,13 @@ import java.util.Collection;
 import java.util.List;
 
 import teaselib.State;
+import teaselib.core.ItemImpl;
 import teaselib.core.StateImpl;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 
 public class AbstractProxy<T> {
 
-    protected final String namespace;
+    public final String namespace;
     public final T state;
 
     public AbstractProxy(String namespace, T state) {

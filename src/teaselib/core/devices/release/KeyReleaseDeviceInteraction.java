@@ -25,6 +25,7 @@ import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.DeviceInteractionImplementation;
+import teaselib.core.ItemsImpl;
 import teaselib.core.ScriptEventArgs;
 import teaselib.core.ScriptEvents;
 import teaselib.core.ScriptEvents.ItemEventAction;
@@ -42,7 +43,6 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.Items;
-import teaselib.util.ItemsImpl;
 
 /**
  * Setup key release actuators

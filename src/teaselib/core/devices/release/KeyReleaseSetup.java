@@ -4,11 +4,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import teaselib.core.DeviceInteractionImplementations;
+import teaselib.core.ItemsImpl;
 import teaselib.core.Script;
 import teaselib.core.ScriptInteraction;
 import teaselib.util.Item;
 import teaselib.util.Items;
-import teaselib.util.ItemsImpl;
 
 /**
  * @author Citizen-Cane

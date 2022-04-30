@@ -9,11 +9,11 @@ import teaselib.Household;
 import teaselib.Sexuality;
 import teaselib.Sexuality.Sex;
 import teaselib.Toys;
+import teaselib.core.ItemImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedName;
 import teaselib.core.util.ReflectionUtils;
-import teaselib.util.ItemImpl;
 
 /**
  * Map TeaseLib enumerations to SexSripts state, and correct a few naming issues, precisely the use of british vs us

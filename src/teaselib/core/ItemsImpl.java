@@ -1,6 +1,8 @@
-package teaselib.util;
+package teaselib.core;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toCollection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +24,11 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.State.Persistence;
 import teaselib.core.state.AbstractProxy;
+import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedString;
+import teaselib.util.Item;
+import teaselib.util.Items;
+import teaselib.util.Select;
 import teaselib.util.math.Combinations;
 import teaselib.util.math.Random;
 import teaselib.util.math.Varieties;
@@ -784,6 +790,43 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
     private ItemsImpl withoutImpl(Object... values) {
         return new ItemsImpl(stream().filter(item -> Arrays.stream(values).noneMatch(item::is)).toList(), inventory);
+    }
+
+    @Override
+    public Collection to(Enum<?>... peers) {
+        return withDefaultPeersImpl((Object[]) peers);
+    }
+
+    @Override
+    public Collection withDefaultPeers(String... peers) {
+        return withDefaultPeersImpl((Object[]) peers);
+    }
+
+    private Collection withDefaultPeersImpl(Object... peers) {
+        List<Item> items = elements.stream().map(item -> withAdditionalDefaultPeers(item, peers)).toList();
+        return new ItemsImpl(items);
+    }
+
+    private Item withAdditionalDefaultPeers(Item item, Object... additionalPeers) {
+        if (item instanceof ItemProxy itemProxy) {
+            ItemImpl itemImpl = ItemProxy.itemImpl(itemProxy.item);
+            return new ItemProxy(itemProxy.namespace, item, itemProxy.events) {
+                @Override
+                public Options apply() {
+                    Options options = super.apply();
+                    super.applyTo(additionalPeers);
+                    return options;
+                }
+
+                @Override
+                public boolean canApply() {
+                    return super.canApply() && Arrays.stream(additionalPeers)
+                            .noneMatch(additionalPeer -> itemImpl.state(QualifiedString.of(additionalPeer)).applied());
+                }
+            };
+        } else {
+            return item;
+        }
     }
 
     @Override

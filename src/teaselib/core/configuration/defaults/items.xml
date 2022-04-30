@@ -52,6 +52,7 @@
 		</Item>
 		
 		<Item item="Nipple_Clamps" guid="nipple_clamps" displayName="Nipple Clamps">
+			<BlockedBy> Accessoires.Breast_Forms </BlockedBy>
 		</Item>
 
 		<Item item="Spanking_Implement" guid="cane" displayName="Cane">

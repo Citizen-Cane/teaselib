@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import teaselib.State.Options;
+import teaselib.core.ItemsImpl;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Select.Statement;
 
@@ -332,6 +333,21 @@ public interface Items extends Iterable<Item> {
 
         @Override
         Items.Collection items(String... items);
+
+        /**
+         * Produce similar items with additional default peers. The similar item will proxy the original item with
+         * additional default peers, e.g. when it's applied, the original item will be applied to its default peers,
+         * plus the additional peers.
+         * 
+         * @param peers
+         *            Additional default peers for the similar items.
+         * @return A new items collection with the original items, but with additional default peers to be applied. The
+         *         similar items are the same entity as the original items, e.g. when applied, the original item will
+         *         also change its state to applied.
+         */
+        Items.Collection to(Enum<?>... peers);
+
+        Items.Collection withDefaultPeers(String... peers);
     }
 
     public interface Set extends Items {

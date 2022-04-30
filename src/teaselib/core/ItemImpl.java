@@ -1,4 +1,4 @@
-package teaselib.util;
+package teaselib.core;
 
 import static java.util.Collections.unmodifiableSet;
 import static teaselib.core.util.QualifiedStringMapping.map;
@@ -15,14 +15,13 @@ import java.util.stream.Stream;
 
 import teaselib.Duration;
 import teaselib.State;
-import teaselib.core.StateImpl;
 import teaselib.core.StateImpl.Precondition;
-import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
+import teaselib.util.Item;
 
 /**
  * @author Citizen-Cane
@@ -40,32 +39,35 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     private final TeaseLib.PersistentBoolean available;
     public final Set<QualifiedString> defaultPeers;
     public final Set<QualifiedString> attributes;
+    public final Set<QualifiedString> blockers;
 
     public static String createDisplayName(QualifiedString item) {
         return item.guid().orElseThrow().replace("_", " ");
     }
 
     public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString name, String displayName) {
-        this(teaseLib, domain, name, displayName, new Object[] {}, new Object[] {});
+        this(teaseLib, domain, name, displayName, Collections.emptySet(), Collections.emptySet(),
+                Collections.emptySet());
     }
 
-    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString name, String displayName, Object[] defaultPeers,
-            Object[] attributes) {
+    public ItemImpl(TeaseLib teaseLib, String domain, QualifiedString name, String displayName,
+            Set<QualifiedString> defaultPeers, Set<QualifiedString> attributes, Set<QualifiedString> blockers) {
         this.teaseLib = teaseLib;
         this.domain = domain;
         this.name = name;
         this.displayName = displayName;
         this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
                 name.guid().orElseThrow() + "." + Available);
-        this.defaultPeers = unmodifiableSet(map(Precondition::apply, defaultPeers));
-        this.attributes = unmodifiableSet(attributes(map(Precondition::apply, attributes)));
+        this.defaultPeers = unmodifiableSet(defaultPeers);
+        this.attributes = unmodifiableSet(attributes(attributes));
+        this.blockers = unmodifiableSet(blockers);
     }
 
     public QualifiedString kind() {
         return name.kind();
     }
 
-    private StateImpl state() {
+    StateImpl state() {
         return state(kind());
     }
 
@@ -144,15 +146,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     @Override
     public boolean canApply() {
-        if (isAvailable()) {
-            if (defaultPeers.isEmpty()) {
-                return !state().is(this.name);
-            } else {
-                return defaultStates().allMatch(state -> !state.applied());
-            }
-        } else {
-            return false;
-        }
+        return teaseLib.applyRules.test(this);
     }
 
     @Override
@@ -334,11 +328,11 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         return (StateImpl) teaseLib.state(domain, lastUsedStateName);
     }
 
-    private Stream<StateImpl> defaultStates() {
+    Stream<StateImpl> defaultStates() {
         return defaultPeers.stream().map(this::state);
     }
 
-    private StateImpl state(QualifiedString peer) {
+    StateImpl state(QualifiedString peer) {
         return (StateImpl) teaseLib.state(domain, peer);
     }
 

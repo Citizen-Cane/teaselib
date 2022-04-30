@@ -8,11 +8,11 @@ import org.junit.Test;
 
 import teaselib.Material;
 import teaselib.Toys;
+import teaselib.core.ItemImpl;
 import teaselib.core.Script;
 import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 
 public class QualifiedItemTest {
 

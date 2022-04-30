@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,9 +58,7 @@ import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
 import teaselib.util.Daytime;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 import teaselib.util.Items;
-import teaselib.util.ItemsImpl;
 import teaselib.util.TeaseLibLogger;
 import teaselib.util.TextVariables;
 import teaselib.util.math.Random;
@@ -83,6 +81,8 @@ public class TeaseLib implements Closeable {
     final StateMaps stateMaps;
     public final Devices devices;
     public final Random random;
+
+    public final ApplyRules applyRules = new ApplyRules(ApplyRules.All);
 
     private final AtomicReference<Thread> timeAdvanceThread = new AtomicReference<>(null);
     private final AtomicLong frozenTime = new AtomicLong(Long.MIN_VALUE);

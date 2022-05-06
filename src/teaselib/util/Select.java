@@ -138,15 +138,15 @@ public class Select {
 
             @SafeVarargs
             public final Additional and(Clause<Items>... statements) {
-                List<Clause<Items>> where = new ArrayList<>(Arrays.asList(statements));
-                return new Additional(values, where);
+                List<Clause<Items>> and = new ArrayList<>(clauses);
+                and.addAll(Arrays.asList(statements));
+                return new Additional(values, and);
             }
 
             public Additional and(BiFunction<Items, Enum<?>[], Items> selector, Enum<?>... attributes) {
-                Clause<Items> statement = items -> selector.apply(items, attributes);
-                List<Clause<Items>> clause = new ArrayList<>(clauses);
-                clause.add(statement);
-                return new Additional(values, clause);
+                List<Clause<Items>> and = new ArrayList<>(clauses);
+                and.add(items -> selector.apply(items, attributes));
+                return new Additional(values, and);
             }
 
             public Additional items(Enum<?>... items) {

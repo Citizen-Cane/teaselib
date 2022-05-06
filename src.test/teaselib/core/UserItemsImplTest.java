@@ -375,7 +375,7 @@ public class UserItemsImplTest {
             assertFalse(script.items(restraints).anyApplicable());
             assertTrue(script.items(restraints).noneApplicable());
 
-            script.item(Bondage.Chains).applyTo(Bondage.Anklets, Body.WristsTied, Posture.WristsTiedInFront);
+            script.item(Bondage.Chains).to(Bondage.Anklets, Body.WristsTied, Posture.WristsTiedInFront).apply();
             assertFalse(script.items(shoesAndStockings).getApplicableSet().get(Clothes.Blouse).canApply());
 
             assertFalse(script.items(shoesAndStockings).allApplicable());

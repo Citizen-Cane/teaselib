@@ -256,7 +256,7 @@ public class ItemIdentityTest {
             peg.setAvailable(true);
             assertTrue(peg.canApply());
             assertFalse(peg.applied());
-            peg.applyTo(Body.OnNipples);
+            peg.to(Body.OnNipples).apply();
             assertFalse(peg.canApply());
         }
         assertTrue(nipples.applied());
@@ -279,10 +279,12 @@ public class ItemIdentityTest {
         return clothesPegs;
     }
 
-    private static ItemImpl createPeg(TestScript script, String name) {
+    private static Item createPeg(TestScript script, String name) {
         // TODO Improve serialization to allow for white space
         QualifiedString kind = QualifiedString.of(Household.Clothes_Pegs);
-        return new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(kind, name), "A_Clothes_Peg");
+        ItemImpl item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(kind, name),
+                "A_Clothes_Peg");
+        return new ItemProxy(script.namespace, item, script.scriptRenderer.events);
     }
 
     private static void verifyAllPegsRemoved(TestScript script, State nipples, List<Item> clothesPegsOnNipples) {

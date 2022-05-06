@@ -34,6 +34,11 @@ public interface Item extends State {
         }
 
         @Override
+        public Item to(Object... additionalPeers) {
+            return this;
+        }
+
+        @Override
         public State.Options applyTo(Object... peers) {
             throw new UnsupportedOperationException();
         }
@@ -100,8 +105,7 @@ public interface Item extends State {
 
     String displayName();
 
-    // TODO change meaning of canApply() to available & applicable - that's checked in the code very often
-    // - would be closer to the meaning of "can"since unavailable stuff can't be applied anyway
-    // - and canApply although not available can be checked by checking whether all default peers are free
     boolean canApply();
+
+    Item to(Object... additionalPeers);
 }

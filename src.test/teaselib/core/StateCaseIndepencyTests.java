@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
@@ -19,7 +20,7 @@ public class StateCaseIndepencyTests {
             assertFalse(script.state(Toys.Collar).applied());
             assertTrue(script.state(Toys.Collar).expired());
 
-            script.state(Toys.Collar).applyTo();
+            script.state(Toys.Collar).apply();
 
             assertTrue(script.state(Toys.Collar).is(script.namespace));
             assertTrue(script.state("teaselib.Toys.Collar").is(script.namespace));
@@ -74,7 +75,7 @@ public class StateCaseIndepencyTests {
     @Test
     public void testCaseIndepencencyOfItemAttributes() throws IOException {
         try (TestScript script = new TestScript()) {
-            script.item("teaselib.household.clothes_pegs").applyTo("teaseLib.body.onnipples");
+            script.item("teaselib.household.clothes_pegs").to("teaseLib.body.onnipples").apply();
             assertTrue(script.state(Body.OnNipples).applied());
             assertTrue(script.state("TeaseLib.Body.OnNipples").applied());
 

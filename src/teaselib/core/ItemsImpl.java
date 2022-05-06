@@ -24,7 +24,6 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.State.Persistence;
 import teaselib.core.state.AbstractProxy;
-import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.Items;
@@ -780,6 +779,11 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     @Override
+    public Collection to(String... peers) {
+        return withDefaultPeersImpl((Object[]) peers);
+    }
+
+    @Override
     public Collection withDefaultPeers(String... peers) {
         return withDefaultPeersImpl((Object[]) peers);
     }
@@ -790,25 +794,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     private Item withAdditionalDefaultPeers(Item item, Object... additionalPeers) {
-        if (item instanceof ItemProxy itemProxy) {
-            ItemImpl itemImpl = ItemProxy.itemImpl(itemProxy.item);
-            return new ItemProxy(itemProxy.namespace, item, itemProxy.events) {
-                @Override
-                public Options apply() {
-                    Options options = super.apply();
-                    super.applyTo(additionalPeers);
-                    return options;
-                }
-
-                @Override
-                public boolean canApply() {
-                    return super.canApply() && Arrays.stream(additionalPeers)
-                            .noneMatch(additionalPeer -> itemImpl.state(QualifiedString.of(additionalPeer)).applied());
-                }
-            };
-        } else {
-            return item;
-        }
+        return item.to(additionalPeers);
     }
 
     @Override

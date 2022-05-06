@@ -165,6 +165,9 @@ public abstract class ItemsQueryImpl implements Items.Query {
 
     private boolean allKindsMatch(Predicate<? super Item> predicate) {
         Items.Collection items = inventory();
+        if (items.isEmpty()) {
+            return false;
+        }
         // all inventory items are tested for applied() and isAvailable() through Items.item()
         return items.valueSet().stream().map(QualifiedString::toString).map(e -> items.items(e).get())
                 .allMatch(predicate);

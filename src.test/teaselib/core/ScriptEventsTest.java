@@ -1,6 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -164,7 +166,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(0);
         assertRemoveActions(0);
 
-        chains.applyTo(items);
+        chains.to(items).apply();
         assertApplyActions(1);
         assertHoldActions(1);
         assertCountdownActions(1);
@@ -193,7 +195,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(0);
         assertRemoveActions(0);
 
-        chainsReplaceOneDefault.applyTo(items);
+        chainsReplaceOneDefault.to(items).apply();
         assertApplyActions(1);
         assertHoldActions(1);
         assertCountdownActions(1);
@@ -222,7 +224,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(0);
         assertRemoveActions(0);
 
-        chainsReplaceOneDefault.applyTo(items);
+        chainsReplaceOneDefault.to(items).apply();
         assertApplyActions(1);
         assertHoldActions(1);
         assertCountdownActions(1);
@@ -438,7 +440,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(0);
         assertRemoveActions(0);
 
-        chains.applyTo(items);
+        chains.to(items).apply();
         assertApplyActions(1);
         assertHoldActions(1);
         assertCountdownActions(1);
@@ -462,7 +464,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         script.say(FOOBAR);
         assertApplyActions(2);
 
-        chains.applyTo(items);
+        chains.to(items).apply();
         assertApplyActions(1);
         assertHoldActions(1);
         assertCountdownActions(1);

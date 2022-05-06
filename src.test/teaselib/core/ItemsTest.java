@@ -323,7 +323,7 @@ public class ItemsTest {
 
             Item chains = chainedUp.get(Bondage.Chains);
             assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).kind()));
-            chainedUp.get(Toys.Wrist_Restraints).applyTo(Bondage.Chains);
+            chainedUp.get(Toys.Wrist_Restraints).to(Bondage.Chains).apply();
             assertEquals(QualifiedString.of(Bondage.Chains), QualifiedString.of(AbstractProxy.itemImpl(chains).kind()));
         }
     }
@@ -713,7 +713,7 @@ public class ItemsTest {
     @Test
     public void documentThatApplyingStateDoesntApplyItems() throws IOException {
         try (TestScript script = new TestScript()) {
-            script.item(Household.Clothes_Pegs).applyTo(Body.OnNipples);
+            script.item(Household.Clothes_Pegs).to(Body.OnNipples).apply();
 
             assertTrue(script.state(Household.Clothes_Pegs).applied());
             assertTrue(script.state(Household.Clothes_Pegs).is(Body.OnNipples));
@@ -737,7 +737,7 @@ public class ItemsTest {
             State pegs = script.state(Household.Clothes_Pegs);
             State nips = script.state(Body.OnNipples);
 
-            script.item(Household.Clothes_Pegs).applyTo(Body.OnNipples);
+            script.item(Household.Clothes_Pegs).to(Body.OnNipples).apply();
             assertTrue(nips.applied());
             assertTrue(nips.is(Household.Clothes_Pegs));
             assertTrue(pegs.applied());
@@ -834,11 +834,11 @@ public class ItemsTest {
             Item gag1 = gag.next();
             State inMouth = script.state(Body.InMouth);
 
-            gag0.applyTo(Body.InMouth);
+            gag0.to(Body.InMouth).apply();
             assertTrue(gag0.applied());
             assertFalse(gag1.applied());
 
-            gag1.applyTo(Body.InMouth);
+            gag1.to(Body.InMouth).apply();
             assertTrue(gag0.applied());
             assertTrue(gag1.applied());
 
@@ -894,13 +894,13 @@ public class ItemsTest {
             State inMouth = script.state(Body.InMouth);
             State cantLick = script.state(Body.CantLick);
 
-            gag0.applyTo(Body.InMouth);
+            gag0.to(Body.InMouth).apply();
             assertTrue(gag0.applied());
             assertFalse(gag1.applied());
             assertTrue(gag0.is(Body.InMouth));
             assertTrue("Default items must be applied", gag0.is(Body.CantLick));
 
-            gag1.applyTo(Body.InMouth);
+            gag1.to(Body.InMouth).apply();
             assertTrue(gag0.applied());
             assertTrue(gag1.applied());
 

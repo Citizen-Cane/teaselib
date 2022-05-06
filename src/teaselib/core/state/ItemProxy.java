@@ -3,6 +3,7 @@ package teaselib.core.state;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -13,6 +14,7 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.ScriptEvents;
 import teaselib.core.ScriptEvents.ItemChangedEventArgs;
+import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 
 public class ItemProxy extends AbstractProxy<Item> implements Item, State.Attributes {
@@ -138,6 +140,24 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, State.Attrib
     @Override
     public boolean canApply() {
         return item.canApply();
+    }
+
+    @Override
+    public Item to(Object... additionalPeers) {
+        return new ItemProxy(namespace, item, events) {
+            @Override
+            public Options apply() {
+                Options options = super.apply();
+                super.applyTo(additionalPeers);
+                return options;
+            }
+
+            @Override
+            public boolean canApply() {
+                return super.canApply() && Arrays.stream(additionalPeers).noneMatch(
+                        additionalPeer -> itemImpl(item).state(QualifiedString.of(additionalPeer)).applied());
+            }
+        };
     }
 
     @Override

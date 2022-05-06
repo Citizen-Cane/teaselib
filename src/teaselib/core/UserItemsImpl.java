@@ -33,6 +33,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedString;
@@ -119,7 +120,7 @@ public class UserItemsImpl implements UserItems {
     @Override
     public void addItems(Collection<Item> items) {
         ItemMap itemMap = domainMap.get(TeaseLib.DefaultDomain);
-        List<ItemImpl> instances = items.stream().map(ItemImpl.class::cast).toList();
+        List<ItemImpl> instances = items.stream().map(AbstractProxy::removeProxy).map(ItemImpl.class::cast).toList();
         addItems(itemMap, instances);
     }
 

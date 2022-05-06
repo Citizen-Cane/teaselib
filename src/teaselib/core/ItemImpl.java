@@ -116,7 +116,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         StateImpl state = state();
         boolean isMyState = state(name.kind()).isImpl(Collections.singleton(name));
         for (QualifiedString element : flattenedAttributes) {
-            if (!isImpl(element, state, isMyState)) {
+            if (!isImpl(state, element, isMyState)) {
                 return false;
             }
         }
@@ -124,29 +124,42 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         return true;
     }
 
-    private boolean isImpl(QualifiedString element, StateImpl state, boolean isMyState) {
-        if (this.attributes.stream().anyMatch(element::is)) { // Item attributes
+    private boolean isImpl(StateImpl myState, QualifiedString attribute, boolean isMyGuid) {
+        if (this.attributes.stream().anyMatch(attribute::is)) { // Item attributes
             return true;
-        } else if (element.is(this.name)) {
+        } else if (attribute.is(this.name)) {
             return true;
-        } else if (element.name().equals(QualifiedString.ANY) && // Item class attributes
-                (StateImpl.haveClass(attributes, element))) {
+        } else if (attribute.name().equals(QualifiedString.ANY) && // Item class attributes
+                (StateImpl.haveClass(attributes, attribute))) {
             return true;
         } else {
-            if (isMyState) { // Item identity
-                if (state.isImpl(state.getAttributes(), element)) { // State attributes
-                    return applied();
-                } else if (state.isImpl(state.peers(), element)) { // State peers
-                    return applied();
+            if (isMyGuid) { // Item identity
+                if (myState.isImpl(myState.getAttributes(), attribute)) { // State attributes
+                    return true;
+                } else if (myState.isImpl(myState.peers(), attribute)) { // State peers
+                    return true;
                 }
             }
         }
-        return false;
+
+        // Test whether this items guid is referenced by the item denoted by the attribute
+        // -> resolves applying items to each other before applying to peers
+        if (myState.peers.contains(attribute)) {
+            StateImpl attributeState = state(attribute.isItem() ? attribute.kind() : attribute);
+            return attributeState.peers.contains(name);
+        } else {
+            return false;
+        }
     }
 
     @Override
     public boolean canApply() {
         return teaseLib.applyRules.test(this);
+    }
+
+    @Override
+    public Item to(Object... peers) {
+        throw new UnsupportedOperationException("proxy required");
     }
 
     @Override
@@ -201,6 +214,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     }
 
     private State.Options applyToImpl(Set<QualifiedString> flattenedPeers) {
+        // TODO remove applying to default peers because applyTo should be absolutely custom apply
         applyInstanceTo(defaultPeers);
         applyInstanceTo(flattenedPeers);
 
@@ -332,7 +346,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         return defaultPeers.stream().map(this::state);
     }
 
-    StateImpl state(QualifiedString peer) {
+    public StateImpl state(QualifiedString peer) {
         return (StateImpl) teaseLib.state(domain, peer);
     }
 

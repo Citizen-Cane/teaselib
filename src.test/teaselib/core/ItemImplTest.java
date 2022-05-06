@@ -29,6 +29,7 @@ import teaselib.Size;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
+import teaselib.Toys.Gags;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -98,7 +99,7 @@ public class ItemImplTest {
             assertFalse(fooBar.is(Size.Small, Length.Short));
 
             State inButt = script.state(Body.InButt);
-            fooBar.applyTo(inButt);
+            fooBar.to(inButt).apply();
 
             assertTrue(inButt.is(Foo.Bar));
             assertTrue(inButt.is(fooBar));
@@ -132,7 +133,7 @@ public class ItemImplTest {
 
             Item fooBar = script.item(Foo.Bar);
             State inButt = script.state(Body.InButt);
-            fooBar.applyTo(inButt);
+            fooBar.to(inButt).apply();
 
             assertTrue(inButt.is(Foo.Bar));
             assertTrue(inButt.is(Foo.Bar, fooBar));
@@ -391,7 +392,7 @@ public class ItemImplTest {
             assertTrue(analDildo.canApply());
             assertTrue(analDildo.is(analDildo));
 
-            analDildo.applyTo(Body.InButt);
+            analDildo.to(Body.InButt).apply();
 
             assertTrue(analDildo.applied());
             assertFalse(analDildo.canApply());
@@ -408,7 +409,7 @@ public class ItemImplTest {
             assertTrue(oralDildo.canApply());
             assertTrue(oralDildo.is(oralDildo));
 
-            oralDildo.applyTo(Body.InVagina);
+            oralDildo.to(Body.InVagina).apply();
 
             assertTrue(oralDildo.applied());
             assertFalse(oralDildo.canApply());
@@ -648,7 +649,7 @@ public class ItemImplTest {
             script.addTestUserItems();
 
             Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).item();
-            wristRestraints.applyTo(Posture.WristsTiedBehindBack);
+            wristRestraints.to(Posture.WristsTiedBehindBack).apply();
             Items temporaryItems = script.teaseLib.temporaryItems();
             Item temporaryWristRestraints = temporaryItems.matching(Toys.Wrist_Restraints).get();
             assertEquals(wristRestraints, temporaryWristRestraints);
@@ -743,6 +744,136 @@ public class ItemImplTest {
             assertTrue(script.state(Toys.Humbler).is(Until.Removed));
             assertTrue(item2.is(Until.Removed));
             assertFalse(item1.is(Until.Removed));
+        }
+    }
+
+    @Test
+    public void testToState() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item leash = script.item(Household.Leash);
+            leash.to(Toys.Collar).apply();
+            assertTrue(script.item(Household.Leash).applied());
+            assertFalse(script.item(Toys.Collar).applied());
+            assertTrue(script.state(Toys.Collar).applied());
+
+            // Not applied to specific item
+            assertFalse(script.item(Toys.Collar).is(Household.Leash));
+            assertTrue(script.state(Toys.Collar).is(Household.Leash));
+
+            script.item(Toys.Collar).apply();
+            assertTrue(script.item(Household.Leash).applied());
+            assertTrue(script.item(Toys.Collar).applied());
+            assertTrue(script.state(Toys.Collar).applied());
+            assertTrue(script.item(Toys.Collar).is(Household.Leash));
+            assertTrue(script.state(Toys.Collar).is(Household.Leash));
+        }
+    }
+
+    @Test
+    public void testApplyToItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item leash = script.item(Household.Leash);
+            Item collar = script.item(Toys.Collar);
+
+            leash.applyTo(collar);
+            assertTrue(script.item(Household.Leash).applied());
+            assertFalse(collar.applied());
+            assertTrue(script.state(Toys.Collar).applied());
+            assertTrue(leash.is(collar));
+            assertTrue(collar.is(leash));
+            assertTrue(collar.is(Household.Leash));
+            assertTrue(script.state(Toys.Collar).is(Household.Leash));
+
+            collar.apply();
+            assertTrue(script.item(Household.Leash).applied());
+            assertTrue(collar.applied());
+            assertTrue(collar.applied());
+            assertTrue(leash.is(collar));
+            assertTrue(collar.is(leash));
+            assertTrue(collar.is(Household.Leash));
+            assertTrue(script.state(Toys.Collar).is(Household.Leash));
+        }
+    }
+
+    @Test
+    public void testToItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            Item leash = script.item(Household.Leash);
+            Item collar = script.item(Toys.Collar);
+
+            leash.to(collar).apply();
+            assertTrue(script.item(Household.Leash).applied());
+            assertFalse(collar.applied());
+            assertTrue(script.state(Toys.Collar).applied());
+            assertTrue(leash.is(collar));
+            assertTrue(collar.is(leash));
+            assertTrue(collar.is(Household.Leash));
+            assertTrue(script.state(Toys.Collar).is(Household.Leash));
+
+            collar.apply();
+            assertTrue(script.item(Household.Leash).applied());
+            assertTrue(collar.applied());
+            assertTrue(collar.applied());
+            assertTrue(leash.is(collar));
+            assertTrue(collar.is(leash));
+            assertTrue(collar.is(Household.Leash));
+            assertTrue(script.state(Toys.Collar).is(Household.Leash));
+        }
+    }
+
+    @Test
+    public void testApplyToNotAppliedItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            var gags = script.items(Toys.Gag);
+            Item gag = gags.inventory().get(0);
+            Item unusedGag = gags.inventory().get(1);
+            assertNotEquals(gag, unusedGag);
+
+            Item chains = script.item(Bondage.Chains);
+            chains.applyTo(gag);
+            assertTrue(chains.applied());
+            assertFalse(gag.applied()); // <- Gag not applied, that's correct because we indeed didn't apply it
+            assertTrue(chains.is(gag));
+            assertTrue(gag.is(chains));
+            assertFalse(chains.is(unusedGag));
+            assertFalse(unusedGag.is(chains));
+        }
+    }
+
+    @Test
+    public void testToNotAppliedItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            var gags = script.items(Toys.Gag);
+            Item gag = gags.inventory().get(0);
+            Item unusedGag = gags.inventory().get(1);
+            assertNotEquals(gag, unusedGag);
+
+            Item chains = script.item(Bondage.Chains);
+            chains.to(gag).apply();
+            assertTrue(chains.applied());
+            assertFalse(gag.applied()); // <- Gag not applied, that's correct because we indeed didn't apply it
+            assertTrue(chains.is(gag));
+            assertTrue(gag.is(chains));
+            assertFalse(chains.is(unusedGag));
+            assertFalse(unusedGag.is(chains));
+        }
+    }
+
+    @Test
+    public void testApplyToAppliedItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            var gags = script.items(Toys.Gag);
+            Item ballGag = gags.matching(Gags.Ball_Gag).inventory().get();
+            Item ringGag = gags.matching(Gags.Ring_Gag).inventory().get();
+            assertNotEquals(ballGag, ringGag);
+
+            ballGag.apply();
+            Item chains = script.item(Bondage.Chains);
+            chains.to(ballGag).apply();
+            assertTrue(chains.is(ballGag));
+            assertFalse(chains.is(ringGag));
+            assertTrue(ballGag.is(chains));
+            assertFalse(ringGag.is(chains));
         }
     }
 

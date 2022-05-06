@@ -279,6 +279,8 @@ public interface Items extends Iterable<Item>, Inventory {
          */
         Items.Collection to(Enum<?>... peers);
 
+        Items.Collection to(String... peers);
+
         Items.Collection withDefaultPeers(String... peers);
     }
 

@@ -1,6 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -66,7 +69,7 @@ public class ItemImplAutoRemoveTests {
                 assertFalse(part.applied());
                 assertTrue(part.expired());
 
-                item.applyTo(TestStates.BODY_PART).over(2, TimeUnit.HOURS).remember(Until.Removed);
+                item.to(TestStates.BODY_PART).apply().over(2, TimeUnit.HOURS).remember(Until.Removed);
 
                 assertTrue(item.applied());
                 assertFalse(item.expired());
@@ -142,7 +145,7 @@ public class ItemImplAutoRemoveTests {
                 assertFalse(part.applied());
                 assertTrue(part.expired());
 
-                item.applyTo(TestStates.BODY_PART).remember(Until.Removed);
+                item.to(TestStates.BODY_PART).apply().remember(Until.Removed);
                 assertTrue(item.applied());
                 assertFalse(item.expired());
                 assertTrue(part.applied());

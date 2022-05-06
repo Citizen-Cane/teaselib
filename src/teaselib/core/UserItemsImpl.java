@@ -33,16 +33,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import teaselib.Accessoires;
-import teaselib.Body;
-import teaselib.Bondage;
-import teaselib.Clothes;
-import teaselib.Features;
-import teaselib.Gadgets;
-import teaselib.Household;
-import teaselib.Posture;
-import teaselib.Shoes;
-import teaselib.Toys;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedString;
@@ -66,9 +56,10 @@ public class UserItemsImpl implements UserItems {
 
     private static final String ITEMS_DTD = "items.dtd";
 
-    protected final TeaseLib teaseLib;
+    private final TeaseLib teaseLib;
+    private final UserItemsLogic rules = new UserItemsLogic();
     private final Map<String, ItemMap> domainMap = new HashMap<>();
-    List<URL> defaults = new ArrayList<>();
+    List<URL> userItemDefinitions = new ArrayList<>();
 
     class ItemMap extends LinkedHashMap<Object, Map<String, Item>> {
         private static final long serialVersionUID = 1L;
@@ -97,7 +88,7 @@ public class UserItemsImpl implements UserItems {
 
     public void addUserItems(URL url) {
         Objects.requireNonNull(url);
-        defaults.add(url);
+        userItemDefinitions.add(url);
         clearCachedItems();
     }
 
@@ -114,7 +105,7 @@ public class UserItemsImpl implements UserItems {
                 throw ExceptionUtil.asRuntimeException(e);
             }
         } else {
-            defaults.add(url);
+            userItemDefinitions.add(url);
         }
         clearCachedItems();
     }
@@ -137,7 +128,7 @@ public class UserItemsImpl implements UserItems {
     }
 
     public void clearLoadOrder() {
-        defaults.clear();
+        userItemDefinitions.clear();
         try {
             addDefaultUserItems();
         } catch (IOException e) {
@@ -190,9 +181,10 @@ public class UserItemsImpl implements UserItems {
         String namespace = "teaselib." + itemClass.getNodeName();
         String itemName = attributes.getNamedItem("item").getNodeValue();
         var kind = QualifiedString.of(namespace + "." + itemName);
-        Set<QualifiedString> defaultPeers = QualifiedStringMapping.of(defaults(kind));
         Set<QualifiedString> itemAttributes = new HashSet<>();
-        Set<QualifiedString> itemBlockers = QualifiedStringMapping.of(itemBlockers(kind));
+        Set<QualifiedString> defaultPeers = QualifiedStringMapping.of(rules.defaultPeers(kind));
+        Set<QualifiedString> itemBlockers = QualifiedStringMapping.of(//
+                rules.physicallyBlockingPeers(kind), rules.logicallyBlockingPeers(kind));
 
         NodeList childNodes = itemNode.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
@@ -208,12 +200,12 @@ public class UserItemsImpl implements UserItems {
                 } else //
                 if ("BlockedBy".equalsIgnoreCase(node.getNodeName())) {
                     String name = "teaselib." + node.getTextContent().trim();
-                    defaultPeers.add(QualifiedString.of(name));
+                    itemBlockers.add(QualifiedString.of(name));
                 }
             }
         }
-        applyPeerRules(kind, defaultPeers, itemAttributes, itemBlockers);
-        relaxBlockingRules(kind, defaultPeers, itemAttributes, itemBlockers);
+        rules.applyPeerRules(kind, defaultPeers, itemAttributes, itemBlockers);
+        rules.relaxBlockingRules(kind, defaultPeers, itemAttributes, itemBlockers);
 
         String guid = attributes.getNamedItem("guid").getNodeValue();
         QualifiedString item = QualifiedString.from(kind, guid);
@@ -270,7 +262,7 @@ public class UserItemsImpl implements UserItems {
 
     private List<List<ItemImpl>> defaultItems(String domain) throws IOException {
         List<List<ItemImpl>> e = new ArrayList<>();
-        for (var def : defaults) {
+        for (var def : userItemDefinitions) {
             e.add(loadItems(domain, def));
         }
         return e;
@@ -341,228 +333,6 @@ public class UserItemsImpl implements UserItems {
         List<ItemImpl> defaultItems = Collections.singletonList(getDefaultItem(domain, kind));
         addItems(itemMap, defaultItems);
         all.addAll(defaultItems);
-    }
-
-    @Override
-    public Enum<?>[] defaults(QualifiedString item) {
-        if (item.namespace().equalsIgnoreCase(Accessoires.class.getName())) {
-            return getAccessoiresDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Bondage.class.getName())) {
-            return getBondageDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Clothes.class.getName())) {
-            return getClothesDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Gadgets.class.getName())) {
-            return getGadgetsDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Household.class.getName())) {
-            return getHouseholdDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Shoes.class.getName())) {
-            return getShoesDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(Toys.class.getName())) {
-            return getToyDefaults(item);
-        } else {
-            throw new IllegalArgumentException("Defaults not defined for " + item);
-        }
-    }
-
-    private static Enum<?>[] getAccessoiresDefaults(QualifiedString item) {
-        if (item.is(Accessoires.Breast_Forms)) {
-            return peers(Body.OnNipples);
-        } else {
-            return None;
-        }
-    }
-
-    private static Enum<?>[] getBondageDefaults(QualifiedString item) {
-        if (item.is(Bondage.Chains)) {
-            return None;
-        } else if (item.is(Bondage.Rope)) {
-            return None;
-        } else if (item.is(Bondage.Spreader_Bar)) {
-            return None;
-        } else if (item.is(Bondage.Anklets)) {
-            return peers(Body.AnklesCuffed);
-        } else if (item.is(Bondage.Wristlets)) {
-            return peers(Body.WristsCuffed);
-        } else {
-            return None;
-        }
-    }
-
-    private static Enum<?>[] getClothesDefaults(@SuppressWarnings("unused") QualifiedString item) {
-        return None;
-    }
-
-    private static Enum<?>[] getGadgetsDefaults(@SuppressWarnings("unused") QualifiedString item) {
-        return None;
-    }
-
-    private static Enum<?>[] getHouseholdDefaults(@SuppressWarnings("unused") QualifiedString item) {
-        return None;
-    }
-
-    private static Enum<?>[] getShoesDefaults(@SuppressWarnings("unused") QualifiedString item) {
-        return None;
-    }
-
-    /**
-     * Get system default peers for items. The defaults depend on the meaning of the item. Item have defaults if they
-     * have a clear application or are applied to a distinct spot, like putting a collar around one's neck. Same for
-     * ankle restraints.
-     * <p>
-     * On the other hand wrist restraints don't have a Posture default, since wrists can be tied before and behind the
-     * body.
-     * 
-     * @param item
-     *            The item to get defaults for.
-     * @return The defaults for the item. An item may not have defaults, in this case the returned array is empty.
-     */
-    private static Enum<?>[] getToyDefaults(QualifiedString item) {
-        if (item.is(Toys.Buttplug)) {
-            return peers(Body.InButt);
-        } else if (item.is(Toys.Ankle_Restraints)) {
-            return peers(Body.AnklesCuffed, Body.AnklesTied, Posture.AnklesTiedTogether);
-        } else if (item.is(Toys.Wrist_Restraints)) {
-            return peers(Body.WristsCuffed, Body.WristsTied);
-        } else if (item.is(Toys.Gag)) {
-            return peers(Body.InMouth);
-        } else if (item.is(Toys.Spanking_Implement)) {
-            return None;
-        } else if (item.is(Toys.Collar)) {
-            return peers(Body.AroundNeck);
-        } else if (item.is(Toys.Nipple_Clamps)) {
-            return peers(Body.OnNipples);
-        } else if (item.is(Toys.Chastity_Device)) {
-            return peers( //
-                    Body.AroundCockBase, // Not for chastity belts with crotch band
-                    Body.OnPenis, //
-                    Body.CantJerkOff);
-        } else if (item.is(Toys.Dildo)) {
-            return None;
-        } else if (item.is(Toys.VaginalInsert)) {
-            return peers(Body.InVagina);
-        } else if (item.is(Toys.Vibrator)) {
-            return None;
-        } else if (item.is(Toys.Ball_Stretcher)) {
-            return peers(Body.OnBalls);
-        } else if (item.is(Toys.Blindfold)) {
-            return peers(Body.Blindfolded);
-        } else if (item.is(Toys.Cock_Ring)) {
-            return peers(Body.AroundCockBase);
-        } else if (item.is(Toys.Anal_Douche)) {
-            return peers(Body.InButt);
-        } else if (item.is(Toys.Enema_Bulb)) {
-            return peers(Body.InButt);
-        } else if (item.is(Toys.Enema_Kit)) {
-            return peers(Body.InButt);
-        } else if (item.is(Toys.Glans_Ring)) {
-            return peers(Body.OnPenis);
-        } else if (item.is(Toys.Humbler)) {
-            return peers(Body.OnBalls, Posture.CantStand, Posture.CantSitOnChair);
-        } else if (item.is(Toys.Masturbator)) {
-            return None;
-        } else if (item.is(Toys.Pussy_Clamps)) {
-            return peers(Body.OnLabia, Body.OnBalls);
-        } else if (item.is(Toys.Clit_Clamp)) {
-            return peers(Body.OnClit, Body.OnPenis);
-        } else if (item.is(Toys.EStim_Device)) {
-            return None;
-        } else if (item.is(Toys.Doll)) {
-            return None;
-        } else if (item.is(Toys.Spouse)) {
-            return None;
-        } else {
-            throw new IllegalArgumentException("Defaults not defined for " + item);
-        }
-    }
-
-    private static final Enum<?>[] None = new Enum<?>[] {};
-
-    private static Enum<?>[] peers(Enum<?>... state) {
-        return state;
-    }
-
-    private static Enum<?>[] itemBlockers(QualifiedString state) {
-        if (state.is(Toys.Buttplug)) {
-            return blockedBy(Body.CrotchRoped);
-        } else if (state.is(Toys.Cock_Ring)) {
-            return blockedBy(Body.OnBalls, Body.OnPenis);
-        } //
-        else if (state.is(Clothes.Babydoll)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Blouse)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Body)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Bra)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Catsuit)) {
-            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether, Body.WristsTied, Posture.WristsTiedBehindBack,
-                    Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Dress)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Jacket)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Leotard)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Nightie)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Pajamas)) {
-            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether, Body.WristsTied, Posture.WristsTiedBehindBack,
-                    Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Pantyhose)) {
-            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether);
-        } else if (state.is(Clothes.Shirt)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Stockings)) {
-            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether);
-        } else if (state.is(Clothes.Suit)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Tanktop)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Trousers)) {
-            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether);
-        } else if (state.is(Clothes.Vest)) {
-            return blockedBy(Body.WristsTied, Posture.WristsTiedBehindBack, Posture.WristsTiedInFront);
-        } else if (state.is(Clothes.Underpants)) {
-            return blockedBy(Body.AnklesTied, Posture.AnklesTiedTogether);
-        } //
-        else if (state.is(Shoes.class)) {
-            return blockedBy(Clothes.Socks, Clothes.Pantyhose, Clothes.Stockings);
-        } else {
-            return NotBlocked;
-        }
-    }
-
-    private void applyPeerRules(QualifiedString kind, Collection<QualifiedString> defaultPeers,
-            Collection<QualifiedString> itemAttributes, Collection<QualifiedString> itemBlockers) {
-        for (QualifiedString peer : defaultPeers) {
-            itemBlockers.addAll(QualifiedStringMapping.of(peerBlockers(peer)));
-        }
-    }
-
-    private Enum<?>[] peerBlockers(QualifiedString peer) {
-        if (peer.is(Body.InButt) || peer.is(Body.InVagina)) {
-            return blockedBy(Body.CrotchRoped);
-        } else if (peer.is(Body.AroundCockBase)) {
-            return blockedBy(Body.OnBalls);
-        } else {
-            return NotBlocked;
-        }
-    }
-
-    private static final Enum<?>[] NotBlocked = new Enum<?>[] {};
-
-    private static Enum<?>[] blockedBy(Enum<?>... state) {
-        return state;
-    }
-
-    private void relaxBlockingRules(QualifiedString kind, Collection<QualifiedString> defaultPeers,
-            Collection<QualifiedString> itemAttributes, Collection<QualifiedString> itemBlockers) {
-        if (kind.is(Toys.Cock_Ring)) {
-            if (itemAttributes.contains(QualifiedString.of(Features.Detachable))) {
-                itemBlockers.remove(QualifiedString.of(Body.OnBalls));
-            }
-        }
     }
 
 }

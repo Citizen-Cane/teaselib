@@ -80,6 +80,11 @@ public class QualifiedStringMapping {
     }
 
     @SafeVarargs
+    public static <T extends Object> Set<QualifiedString> of(T[]... values) {
+        return Stream.of(values).flatMap(Stream::of).map(QualifiedString::of).collect(Collectors.toSet());
+    }
+
+    @SafeVarargs
     public static <T extends Object> Set<QualifiedString> of(T... values) {
         return Stream.of(values).map(QualifiedString::of).collect(Collectors.toSet());
     }

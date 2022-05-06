@@ -3,7 +3,8 @@ package teaselib.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static teaselib.util.Select.*;
+import static teaselib.util.Select.items;
+import static teaselib.util.Select.select;
 
 import java.io.IOException;
 
@@ -11,6 +12,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Sexuality;
 import teaselib.Shoes;
@@ -135,6 +137,34 @@ public class SelectTest {
         assertEquals(2, test.items(Clothes.Male.items(Clothes.Shirt, Clothes.Trousers)).inventory().valueSet().size());
         assertEquals(1, test.items(Select.items(Toys.Collar)).inventory().valueSet().size());
         assertEquals(3, test.items(attire).inventory().valueSet().size());
+    }
+
+    @Test
+    public void testStatementApplied() {
+        var plugs = Select.items(Toys.Buttplug, Toys.Dildo);
+        var analDildo = plugs.where(Items::matching, Body.InButt).and(Items::getApplied);
+
+        assertTrue(test.items(analDildo).inventory().isEmpty());
+        assertTrue(test.items(analDildo).noneApplied());
+        assertFalse(test.items(analDildo).anyApplied());
+        assertFalse(test.items(analDildo).allApplied());
+
+        test.setAvailable(plugs);
+        assertTrue(test.items(analDildo).noneApplied());
+
+        test.items(plugs).getAvailable().items(Toys.Dildo).to(Body.InVagina).get().apply();
+        assertTrue(test.items(analDildo).noneApplied());
+        assertFalse(test.items(analDildo).anyApplied());
+        assertFalse(test.items(analDildo).allApplied());
+
+        test.items(plugs).getAvailable().items(Toys.Dildo).to(Body.InButt).get().apply();
+        assertTrue(test.items(analDildo).anyApplied());
+        assertTrue(test.items(analDildo).allApplied());
+
+        assertTrue(test.items(plugs).noneApplicable());
+        assertFalse(test.items(plugs).anyApplicable());
+        assertFalse(test.items(plugs).allApplicable());
+
     }
 
 }

@@ -14,36 +14,40 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.Body;
 import teaselib.Bondage;
 import teaselib.Clothes;
 import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.Household;
 import teaselib.Material;
+import teaselib.Posture;
+import teaselib.Shoes;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
+import teaselib.util.Select;
 
 public class UserItemsImplTest {
 
     @Test
     public void testToyDefaults() throws IOException {
         try (TestScript script = new TestScript()) {
-            UserItems items = new UserItemsImpl(script.teaseLib);
+            UserItemsLogic items = new UserItemsLogic();
 
             for (Clothes item : Clothes.values()) {
-                assertNotNull(items.defaults(QualifiedString.of(item)));
+                assertNotNull(items.defaultPeers(QualifiedString.of(item)));
             }
 
             for (Household item : Household.values()) {
-                assertNotNull(items.defaults(QualifiedString.of(item)));
+                assertNotNull(items.defaultPeers(QualifiedString.of(item)));
             }
 
             for (Toys item : Toys.values()) {
-                assertNotNull(items.defaults(QualifiedString.of(item)));
+                assertNotNull(items.defaultPeers(QualifiedString.of(item)));
             }
         }
     }
@@ -275,12 +279,28 @@ public class UserItemsImplTest {
     }
 
     @Test
-    public void testItemBlockers() throws Exception {
+    public void testPhysicalBlockingPeers() throws Exception {
         try (TestScript script = new TestScript()) {
             script.setAvailable(Clothes.Pantyhose);
             assertTrue(script.item(Clothes.Pantyhose).canApply());
             script.item(Toys.Ankle_Restraints).apply();
             assertFalse(script.item(Clothes.Pantyhose).canApply());
+        }
+
+        try (TestScript script = new TestScript()) {
+            script.setAvailable(Clothes.Pantyhose, Shoes.High_Heels);
+            script.item(Shoes.High_Heels).apply();
+            assertFalse(script.item(Clothes.Pantyhose).canApply());
+        }
+    }
+
+    @Test
+    public void testLogiccallyBlockingPeers() throws Exception {
+        try (TestScript script = new TestScript()) {
+            script.setAvailable(Clothes.Pantyhose, Clothes.Underpants);
+            assertTrue(script.item(Clothes.Underpants).canApply());
+            script.item(Clothes.Pantyhose).apply();
+            assertFalse(script.item(Clothes.Underpants).canApply());
         }
     }
 
@@ -310,6 +330,62 @@ public class UserItemsImplTest {
             script.item(Toys.Humbler).apply();
             assertFalse(solidCockRing.canApply());
             assertTrue(detachableCockRing.canApply());
+        }
+    }
+
+    @Test
+    public void testRestraints() throws Exception {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+            var shoesAndStockings = Select.items(Shoes.High_Heels, Clothes.Stockings, Clothes.Blouse);
+            var restraints = Select.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints, Bondage.Anklets,
+                    Bondage.Wristlets);
+            script.setAvailable(shoesAndStockings);
+            script.setAvailable(restraints);
+
+            assertTrue(script.items(shoesAndStockings).allApplicable());
+            assertTrue(script.items(shoesAndStockings).anyApplicable());
+            assertFalse(script.items(shoesAndStockings).noneApplicable());
+
+            assertTrue(script.items(restraints).allApplicable());
+            assertTrue(script.items(restraints).anyApplicable());
+            assertFalse(script.items(restraints).noneApplicable());
+
+            script.items(restraints).getApplicableSet().get(Toys.Ankle_Restraints).apply();
+            assertFalse(script.items(restraints).getApplicableSet().get(Bondage.Anklets).canApply());
+            assertFalse(script.items(restraints).getApplicableSet().get(Clothes.Stockings).canApply());
+
+            assertFalse(script.items(shoesAndStockings).allApplicable());
+            assertTrue(script.items(shoesAndStockings).anyApplicable());
+            assertFalse(script.items(shoesAndStockings).noneApplicable());
+
+            assertFalse(script.items(restraints).allApplicable());
+            assertTrue(script.items(restraints).anyApplicable());
+            assertFalse(script.items(restraints).noneApplicable());
+
+            script.items(restraints).getApplicableSet().get(Bondage.Wristlets).apply();
+            assertFalse(script.items(restraints).getApplicableSet().get(Toys.Wrist_Restraints).canApply());
+            assertTrue(script.items(shoesAndStockings).getApplicableSet().get(Clothes.Blouse).canApply());
+
+            assertFalse(script.items(shoesAndStockings).allApplicable());
+            assertTrue(script.items(shoesAndStockings).anyApplicable());
+            assertFalse(script.items(shoesAndStockings).noneApplicable());
+
+            assertFalse(script.items(restraints).allApplicable());
+            assertFalse(script.items(restraints).anyApplicable());
+            assertTrue(script.items(restraints).noneApplicable());
+
+            script.item(Bondage.Chains).applyTo(Bondage.Anklets, Body.WristsTied, Posture.WristsTiedInFront);
+            assertFalse(script.items(shoesAndStockings).getApplicableSet().get(Clothes.Blouse).canApply());
+
+            assertFalse(script.items(shoesAndStockings).allApplicable());
+            assertTrue(script.items(shoesAndStockings).anyApplicable());
+            assertFalse(script.items(shoesAndStockings).noneApplicable());
+
+            script.items(shoesAndStockings).getApplicableSet().get(Shoes.High_Heels).apply();
+            assertFalse(script.items(shoesAndStockings).allApplicable());
+            assertFalse(script.items(shoesAndStockings).anyApplicable());
+            assertTrue(script.items(shoesAndStockings).noneApplicable());
         }
     }
 

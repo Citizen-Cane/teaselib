@@ -157,24 +157,6 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     @Override
-    public boolean noneRemoved() {
-        return elements.stream().noneMatch(Item::removed);
-    }
-
-    @Override
-    public boolean anyRemoved() {
-        return elements.stream().anyMatch(Item::removed);
-    }
-
-    @Override
-    public boolean allRemoved() {
-        if (elements.isEmpty()) {
-            return false;
-        }
-        return elements.stream().allMatch(Item::removed);
-    }
-
-    @Override
     public long removed(TimeUnit unit) {
         return elements.stream().map(item -> item.removed(unit)).reduce(Math::min).orElse(666L);
     }

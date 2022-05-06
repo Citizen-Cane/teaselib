@@ -10,11 +10,11 @@ import teaselib.core.ItemsImpl;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Select.Statement;
 
-public interface Items extends Iterable<Item> {
+public interface Items extends Iterable<Item>, Inventory {
 
     public static final Items None = ItemsImpl.None;
 
-    public interface Query {
+    public interface Query extends Inventory {
 
         Query prefer(Enum<?>... values);
 
@@ -47,50 +47,6 @@ public interface Items extends Iterable<Item> {
         Query orElse(Items.Query items);
 
         Query filter(Predicate<? super Item> predicate);
-
-        boolean noneApplied();
-
-        boolean noneAvailable();
-
-        boolean noneApplicable();
-
-        boolean anyApplied();
-
-        boolean anyAvailable();
-
-        boolean anyApplicable();
-
-        /**
-         * Determine whether the query result would contain at least one applied item of each element of its value set.
-         * <p>
-         * This does not necessarily mean that all items in the query are applied, but the value set of
-         * {@link Items.Query#getApplied} would be equal to this item query' {@link Items#valueSet}.
-         * 
-         * @return Whether all items are applied.
-         */
-        boolean allApplied();
-
-        /**
-         * Determine whether the query result would contain at least one available item of each element of its value
-         * set.
-         * <p>
-         * This does not necessarily mean that all items in the query are available, but the value set of
-         * {@link Items.Query#getAvailable} would be equal to this item query' {@link Items#valueSet}.
-         * 
-         * @return Whether all items are applied.
-         */
-        boolean allAvailable();
-
-        /**
-         * Determine whether the query result would contain at least one applicable item of each element of its value
-         * set.
-         * <p>
-         * This does not necessarily mean that all items in the query are available, but the value set of
-         * {@link Items.Query#getApplicable} would be equal to this item query' {@link Items#valueSet}.
-         * 
-         * @return Whether all items are applied.
-         */
-        boolean allApplicable();
 
         /**
          * Return the applied item, a random available or an unavailable item.
@@ -145,30 +101,6 @@ public interface Items extends Iterable<Item> {
     Item get(int index);
 
     Stream<Item> stream();
-
-    boolean noneAvailable();
-
-    boolean anyAvailable();
-
-    boolean allAvailable();
-
-    boolean noneApplicable();
-
-    boolean anyApplicable();
-
-    boolean allApplicable();
-
-    boolean noneApplied();
-
-    boolean anyApplied();
-
-    boolean allApplied();
-
-    boolean noneRemoved();
-
-    boolean anyRemoved();
-
-    boolean allRemoved();
 
     /**
      * Returns the time span since the last of the items has been removed.

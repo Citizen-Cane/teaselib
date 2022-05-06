@@ -82,7 +82,7 @@ public class TeaseLib implements Closeable {
     public final Devices devices;
     public final Random random;
 
-    public final ApplyRules applyRules = new ApplyRules(ApplyRules.All);
+    final ApplyRules applyRules = new ApplyRules(ApplyRules.All);
 
     private final AtomicReference<Thread> timeAdvanceThread = new AtomicReference<>(null);
     private final AtomicLong frozenTime = new AtomicLong(Long.MIN_VALUE);

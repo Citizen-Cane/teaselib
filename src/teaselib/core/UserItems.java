@@ -13,6 +13,4 @@ public interface UserItems {
     void addItems(URL path);
 
     void addItems(Collection<Item> items);
-
-    Enum<?>[] defaults(QualifiedString item);
 }

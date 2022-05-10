@@ -934,6 +934,27 @@ public class TeaseLib implements Closeable {
         return new ItemsImpl(items);
     }
 
+    public Items.Collection items(Item... items) {
+        return new ItemsImpl(items);
+    }
+
+    public Items.Collection items(Items... items) {
+        return new ItemsImpl(items);
+    }
+
+    public Items.Collection items(Items.Collection... items) {
+        return new ItemsImpl(items);
+    }
+
+    public Items.Query items(Items.Query... items) {
+        return new ItemsQueryImpl() {
+            @Override
+            public Items.Collection inventory() {
+                return new ItemsImpl(Arrays.stream(items).map(Items.Query::inventory).flatMap(Items::stream).toList());
+            }
+        };
+    }
+
     public Items relatedItems(Enum<?> domain, Items items) {
         return relatedItems(QualifiedString.of(domain), items);
     }

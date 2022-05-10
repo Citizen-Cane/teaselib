@@ -492,6 +492,11 @@ public class ItemIdentityTest {
             assertTrue(nippleClamps.applied());
             assertTrue(nippleClamps.is(nippleClamps));
 
+            State onNipples = script.state(Body.OnNipples);
+            assertTrue(nippleClamps.is(nippleClamps));
+            assertTrue(nippleClamps.is(onNipples));
+            assertTrue(onNipples.is(nippleClamps));
+
             assertFalse(nippleClamps.canApply());
         }
     }

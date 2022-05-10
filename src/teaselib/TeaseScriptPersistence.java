@@ -187,24 +187,19 @@ public abstract class TeaseScriptPersistence extends Script {
     }
 
     public Items.Collection items(Item... items) {
-        return new ItemsImpl(items);
+        return teaseLib.items(items);
     }
 
     public Items.Collection items(Items... items) {
-        return new ItemsImpl(items);
+        return teaseLib.items(items);
     }
 
     public Items.Collection items(Items.Collection... items) {
-        return new ItemsImpl(items);
+        return teaseLib.items(items);
     }
 
     public Items.Query items(Items.Query... items) {
-        return new ItemsQueryImpl() {
-            @Override
-            public Items.Collection inventory() {
-                return new ItemsImpl(Arrays.stream(items).map(Items.Query::inventory).flatMap(Items::stream).toList());
-            }
-        };
+        return teaseLib.items(items);
     }
 
     /**

@@ -161,10 +161,17 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         // - add anklets/wristlets as explicit type to Accessoires, however they're still connectable as
         // - find a way to specify that anklets/wristlets can be detached -> via removeFrom Hands/Wrists Tied
         // -> blocks applying/removing all states with applying/removing an item - but that feature isn't needed anyway
-        var cuffs = new ItemsImpl( //
-                teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wristlets, Bondage.Anklets, Toys.Collar, Toys.Humbler)
-                        .matching(Features.Lockable) //
+        var cuffs = teaseLib.items(//
+                // teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wristlets, Bondage.Anklets)
+                teaseLib.items(TeaseLib.DefaultDomain, Toys.Wrist_Restraints, Toys.Ankle_Restraints)
+                        .matching(Features.Detachable), //
+                teaseLib.items(TeaseLib.DefaultDomain, Toys.Collar, Toys.Humbler).matching(Features.Lockable) //
         );
+
+        // var cuffs = new ItemsImpl( //
+        // teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wristlets, Bondage.Anklets, Toys.Collar, Toys.Humbler)
+        // .matching(Features.Lockable) //
+        // );
 
         var handcuffs = new ItemsImpl( //
                 teaseLib.items(TeaseLib.DefaultDomain, Toys.Wrist_Restraints, Toys.Ankle_Restraints)

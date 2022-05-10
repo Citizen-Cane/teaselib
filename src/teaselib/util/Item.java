@@ -108,6 +108,25 @@ public interface Item extends State {
     Options apply();
 
     /**
+     * Test whether the item is applied, either as a singleton item (no default peers using {@link Item#apply}), or to
+     * at least one of its default peers (using {@link Item#applyTo}.
+     */
+    @Override
+    boolean applied();
+
+    /**
+     * Determine whether the item can be applied, e.g. a call to apply would succeed and change the configuration of the
+     * item.
+     * <p>
+     * Items are applicable until all of their default peers are applied. Either by the item itself, or by other items.
+     * Items can be partially applied without all or some of their default peers using {@link Item#applyTo}.
+     *
+     * @return True if the item can be applied, or the application of the item can be completed by calling
+     *         {@link Item#apply}.
+     */
+    boolean canApply();
+
+    /**
      * Apply the item and its attributes to custom peers.
      * 
      * @return Duration-{@link Options} for this item.
@@ -120,8 +139,6 @@ public interface Item extends State {
     void setAvailable(boolean isAvailable);
 
     String displayName();
-
-    boolean canApply();
 
     /**
      * Produce a similar item with additional default peers. The similar item will extend the original item with

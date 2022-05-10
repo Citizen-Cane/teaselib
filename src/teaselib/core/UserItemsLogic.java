@@ -52,10 +52,10 @@ public class UserItemsLogic {
             return None;
         } else if (item.is(Bondage.Spreader_Bar)) {
             return None;
-        } else if (item.is(Bondage.Anklets)) {
-            return peers(Body.AnklesCuffed);
-        } else if (item.is(Bondage.Wristlets)) {
-            return peers(Body.WristsCuffed);
+            // } else if (item.is(Bondage.Anklets)) {
+            // return peers(Body.AnklesCuffed);
+            // } else if (item.is(Bondage.Wristlets)) {
+            // return peers(Body.WristsCuffed);
         } else {
             return None;
         }

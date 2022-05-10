@@ -3,6 +3,7 @@ package teaselib.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -21,6 +22,7 @@ import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Bondage;
 import teaselib.Color;
+import teaselib.Features;
 import teaselib.Household;
 import teaselib.Length;
 import teaselib.Material;
@@ -30,6 +32,7 @@ import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.Toys.Gags;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -884,6 +887,39 @@ public class ItemImplTest {
             assertTrue(ballGag.is(Body.class));
             assertFalse(ringGag.is(Body.class));
             assertFalse(chains.is(Body.class)); // applied to ball gag but not to body
+        }
+    }
+
+    @Test
+    public void testApplyBondageCuffs() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.setAvailable(Toys.Wrist_Restraints);
+            var wristCuffs = script.items(Toys.Wrist_Restraints).matching(Features.Detachable).getApplicable().get();
+
+            // Only cuff the wrists but do not tie them together - leave that for later
+            wristCuffs.applyTo(Body.WristsCuffed);
+            assertTrue(wristCuffs.applied());
+
+            var wristRestraints = script.item(Toys.Wrist_Restraints);
+            assertSame(AbstractProxy.removeProxy(wristRestraints), AbstractProxy.removeProxy(wristCuffs));
+
+            assertTrue(wristRestraints.canApply());
+            // Still applicable because we only applied the cuffs to the wrists
+            // but did not tie the wrists together
+            assertTrue(wristRestraints.applied());
+
+            assertTrue(wristRestraints.is(Body.WristsCuffed));
+            assertFalse(wristRestraints.is(Body.WristsTied));
+            assertFalse(wristRestraints.is(Posture.WristsTiedBehindBack));
+            assertFalse(wristRestraints.is(Posture.WristsTiedToAnkles));
+            assertFalse(wristRestraints.is(Posture.WristsTiedInFront));
+
+            // Tied wrist together using default & custom peers
+            wristRestraints.to(Posture.WristsTiedInFront).apply();
+            assertTrue(wristRestraints.is(Body.WristsTied));
+            assertFalse(wristRestraints.is(Posture.WristsTiedBehindBack));
+            assertFalse(wristRestraints.is(Posture.WristsTiedToAnkles));
+            assertTrue(wristRestraints.is(Posture.WristsTiedInFront));
         }
     }
 

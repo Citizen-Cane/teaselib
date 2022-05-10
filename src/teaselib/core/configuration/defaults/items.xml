@@ -96,7 +96,6 @@
 			<Attribute> Material.Metal </Attribute>
 		</Item>
 
-
 		<Item item="Ball_Stretcher" guid="ball_stretcher" displayName="Ball stretcher">
 			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
@@ -462,17 +461,19 @@
 	</Shoes>
 
 	<Bondage>
-
+<!-- 
 		<Item item="Wristlets" guid="wristlets" displayName="Wristlets">
 			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Features.Detachable </Attribute>
 			<Attribute> Material.Leather </Attribute>
 		</Item>
-
 	
 		<Item item="Anklets" guid="anklets" displayName="Anklets">
 			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Features.Detachable </Attribute>
 			<Attribute> Material.Leather </Attribute>
 		</Item>
+-->
 
 		<Item item="Rope" guid="rope" displayName="Rope">
 			<Attribute> Material.Rope </Attribute>

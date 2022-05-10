@@ -116,9 +116,9 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void testKeyReleaseEventHandlingRemoveOneItem() {
         simulateDeviceConnect();
 
-        var itemsReplacingAllDefaults = script.items(script.items(Bondage.Wristlets, Bondage.Anklets).inventory(), //
-                script.items(Toys.Collar).inventory() //
-        );
+        var itemsReplacingAllDefaults = script.items( //
+                script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable), //
+                script.items(Toys.Collar)).inventory();
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -139,7 +139,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(1);
         assertRemoveActions(1);
 
-        itemsReplacingAllDefaults.items(Bondage.Wristlets).remove();
+        itemsReplacingAllDefaults.items(Toys.Wrist_Restraints).remove();
         assertApplyActions(2);
         assertHoldActions(0);
         assertCountdownActions(0);
@@ -242,9 +242,10 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         simulateDeviceConnect();
 
         script.setAvailable(Toys.All, Bondage.All);
-        var items = script.items(script.items(Bondage.Wristlets, Bondage.Anklets), //
-                script.items(Toys.Humbler, Toys.Collar) //
-        ).getApplicableSet();
+        var items = script
+                .items(script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable), //
+                        script.items(Toys.Humbler, Toys.Collar) //
+                ).getApplicableSet();
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -302,7 +303,10 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void testKeyReleaseDefaultHandlerRemoveAllItems() {
         simulateDeviceConnect();
 
-        Items items = script.items(Bondage.Wristlets, Bondage.Anklets, Toys.Collar).inventory();
+        Items items = script
+                .items(script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable),
+                        script.items(Toys.Collar))
+                .inventory();
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -328,7 +332,9 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void testKeyReleaseDefaultHandlerCountdownRemoveAllItems() {
         simulateDeviceConnect();
 
-        Items items = script.items(Bondage.Wristlets, Bondage.Anklets, Toys.Collar).inventory();
+        Items items = script.items(
+                script.items(script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable)),
+                script.items(Toys.Collar)).inventory();
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -360,7 +366,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void testKeyReleaseDefaultHandlerTwoActuatorsRemoveAllItems() {
         simulateDeviceConnect();
 
-        Items cuffsFirst = script.items(Bondage.Wristlets, Bondage.Anklets).inventory();
+        Items cuffsFirst = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable)
+                .inventory();
         Items chainsSecond = script.items(Bondage.Chains).inventory();
 
         script.say(FOOBAR);
@@ -406,7 +413,9 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void testKeyReleaseDefaultHandlerRemoveOneItem() {
         simulateDeviceConnect();
 
-        var items = script.items(Bondage.Wristlets, Bondage.Anklets, Toys.Collar).inventory();
+        var items = script.items( //
+                script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable),
+                script.items(Toys.Collar)).inventory();
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -420,7 +429,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(1);
         assertRemoveActions(1);
 
-        items.items(Bondage.Wristlets).remove();
+        items.items(Toys.Wrist_Restraints).remove();
         assertApplyActions(2);
         assertHoldActions(0);
         assertCountdownActions(0);
@@ -458,7 +467,9 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         simulateDeviceConnect();
 
         script.setAvailable(Toys.All, Bondage.All);
-        var items = script.items(Bondage.Wristlets, Bondage.Anklets, Toys.Collar).getApplicableSet();
+        var items = script.items( //
+                script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable),
+                script.items(Toys.Collar)).getApplicableSet();
         Item chains = script.item(Bondage.Chains);
 
         script.say(FOOBAR);
@@ -482,7 +493,9 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         simulateDeviceConnect();
 
         script.setAvailable(Toys.All, Bondage.All);
-        Items.Set cuffs = script.items(Bondage.Wristlets, Bondage.Anklets, Toys.Humbler).getApplicableSet();
+        Items.Set cuffs = script.items(//
+                script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Detachable),
+                script.items(Toys.Humbler)).getApplicableSet();
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -491,7 +504,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertRemoveActions(0);
 
         cuffs.get(Toys.Humbler).apply();
-        cuffs.items(Bondage.Wristlets, Bondage.Anklets).apply();
+        cuffs.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).apply();
         assertApplyActions(1);
         assertHoldActions(1);
         assertCountdownActions(1);
@@ -503,7 +516,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(1);
         assertRemoveActions(1);
 
-        cuffs.items(Bondage.Wristlets, Bondage.Anklets).remove();
+        cuffs.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).remove();
 
         assertApplyActions(2);
         assertHoldActions(0);
@@ -514,7 +527,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     @Test
     public void testKeyReleaseConnectAfterPrepare() {
         Items items = script.items(
-                script.items(Bondage.Wristlets, Bondage.Anklets).prefer(Features.Lockable).inventory(),
+                script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints)
+                        .matching(Features.Lockable, Features.Detachable).inventory(),
                 script.items(Toys.Collar).inventory());
 
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);

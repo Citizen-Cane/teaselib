@@ -99,6 +99,22 @@ public interface Item extends State {
         }
     };
 
+    /**
+     * Apply the item and its attributes to its default peers.
+     * 
+     * @return Duration-{@link Options} for this item.
+     */
+    @Override
+    Options apply();
+
+    /**
+     * Apply the item and its attributes to custom peers.
+     * 
+     * @return Duration-{@link Options} for this item.
+     */
+    @Override
+    Options applyTo(Object... peers);
+
     boolean isAvailable();
 
     void setAvailable(boolean isAvailable);
@@ -107,5 +123,16 @@ public interface Item extends State {
 
     boolean canApply();
 
+    /**
+     * Produce a similar item with additional default peers. The similar item will extend the original item with
+     * additional default peers, e.g. when it's applied, the original item will be applied to its original default
+     * peers, plus the additional peers.
+     * 
+     * @param additionalPeers
+     *            Additional default peers for the similar items.
+     * @return An extension of the original item, with additional default peers to be applied. The similar item is the
+     *         same entity as the original items, e.g. when applied, the original item will also change its state to
+     *         applied.
+     */
     Item to(Object... additionalPeers);
 }

@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import teaselib.Duration;
@@ -169,7 +170,8 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             if (defaultPeers.isEmpty()) {
                 return containsMyGuid(state);
             } else {
-                return defaultStates().anyMatch(this::containsMyGuid);
+                var peers = state.peers().stream().filter(Predicate.not(QualifiedString::isItem));
+                return peers.map(this::state).anyMatch(this::containsMyGuid);
             }
         } else {
             return false;
@@ -214,10 +216,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     }
 
     private State.Options applyToImpl(Set<QualifiedString> flattenedPeers) {
-        // TODO remove applying to default peers because applyTo should be absolutely custom apply
-        applyInstanceTo(defaultPeers);
         applyInstanceTo(flattenedPeers);
-
         StateImpl state = state();
         state.applyAttributes(this.attributes);
         state.applyImpl(Collections.singleton(this.name));
@@ -438,4 +437,5 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             return false;
         return true;
     }
+
 }

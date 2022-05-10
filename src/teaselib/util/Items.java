@@ -267,21 +267,19 @@ public interface Items extends Iterable<Item>, Inventory {
         Items.Collection items(String... items);
 
         /**
-         * Produce similar items with additional default peers. The similar item will proxy the original item with
-         * additional default peers, e.g. when it's applied, the original item will be applied to its default peers,
-         * plus the additional peers.
+         * Produce similar items with additional default peers. The similar item will extend the original item with
+         * additional default peers, e.g. when it's applied, the original item will be applied to its original default
+         * peers, plus the additional peers.
          * 
-         * @param peers
+         * @param additionalPeers
          *            Additional default peers for the similar items.
-         * @return A new items collection with the original items, but with additional default peers to be applied. The
-         *         similar items are the same entity as the original items, e.g. when applied, the original item will
-         *         also change its state to applied.
+         * @return A new items collection with extensions of the original items, with additional default peers to be
+         *         applied. The similar items are the same entity as the original items, e.g. when applied, the original
+         *         item will also change its state to applied.
          */
-        Items.Collection to(Enum<?>... peers);
+        Items.Collection to(Enum<?>... additionalPeers);
 
-        Items.Collection to(String... peers);
-
-        Items.Collection withDefaultPeers(String... peers);
+        Items.Collection to(String... additionalPeers);
     }
 
     public interface Set extends Items {

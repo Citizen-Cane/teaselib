@@ -783,11 +783,6 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return withDefaultPeersImpl((Object[]) peers);
     }
 
-    @Override
-    public Collection withDefaultPeers(String... peers) {
-        return withDefaultPeersImpl((Object[]) peers);
-    }
-
     private Collection withDefaultPeersImpl(Object... peers) {
         List<Item> items = elements.stream().map(item -> withAdditionalDefaultPeers(item, peers)).toList();
         return new ItemsImpl(items);

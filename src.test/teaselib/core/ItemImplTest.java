@@ -228,7 +228,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeers() throws IOException {
+    public void testApplyToIgnoresDefaultPeers() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
@@ -238,19 +238,40 @@ public class ItemImplTest {
             script.items(Toys.Wrist_Restraints).matching(Material.Leather).inventory()
                     .applyTo(Posture.WristsTiedBehindBack);
 
+            assertFalse(script.state(Body.WristsTied).applied());
+            assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
+            assertTrue(script.state(Posture.WristsTiedBehindBack).is(Material.Leather));
+            assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+        }
+    }
+
+    @Test
+    public void testApplyToAppliesAttributesPlusCustomPeers() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+
+            assertFalse(script.state(Toys.Wrist_Restraints).applied());
+
+            script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).matching(Material.Leather).inventory().applyTo(
+                    Body.AnklesCuffed, Body.AnklesTied, Body.WristsCuffed, Body.WristsTied, Posture.WristsTiedToAnkles);
+
+            assertTrue(script.state(Toys.Ankle_Restraints).applied());
             assertTrue(script.state(Toys.Wrist_Restraints).applied());
+            assertTrue(script.state(Toys.Ankle_Restraints).is(Material.Leather));
             assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
 
+            assertTrue(script.state(Body.AnklesTied).applied());
             assertTrue(script.state(Body.WristsTied).applied());
-            assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
+            assertTrue(script.state(Posture.WristsTiedToAnkles).applied());
 
             assertTrue(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
-            assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+            assertTrue(script.state(Posture.WristsTiedToAnkles).is(Toys.Wrist_Restraints));
 
-            script.item(Toys.Wrist_Restraints).remove();
+            script.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).getApplied().remove();
+            assertFalse(script.state(Toys.Ankle_Restraints).applied());
             assertFalse(script.state(Toys.Wrist_Restraints).applied());
             assertFalse(script.state(Body.WristsTied).applied());
-            assertFalse(script.state(Posture.WristsTiedBehindBack).applied());
+            assertFalse(script.state(Posture.WristsTiedToAnkles).applied());
         }
     }
 
@@ -525,17 +546,15 @@ public class ItemImplTest {
 
             assertFalse(script.state(Toys_Wrist_Restraints).applied());
 
-            // Wrists are not only tied, but also tied behind back
-
             script.items(Toys_Wrist_Restraints).matching(leather).inventory().applyTo(Body_WristsTiedBehindBack);
 
             assertTrue(script.state(Toys_Wrist_Restraints).applied());
             assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
 
-            assertTrue(script.state(Body_WristsTied).applied());
+            assertFalse(script.state(Body_WristsTied).applied());
             assertTrue(script.state(Body_WristsTiedBehindBack).applied());
 
-            assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
+            assertFalse(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
             assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
 
             // This is how to comment a certain item in a certain body location
@@ -548,7 +567,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testStringsAndEnumsMixed() throws IOException {
+    public void testStringsAndEnumsMixedApplyTo() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
@@ -571,40 +590,14 @@ public class ItemImplTest {
             assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
             assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
 
-            assertTrue(script.state(Body_WristsTied).applied());
             assertTrue(script.state(Posture_WristsTiedBehindBack).applied());
-            assertTrue(script.state(Body.WristsTied).applied());
             assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
 
-            assertTrue(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
             assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
-            assertTrue(script.state(Body_WristsTied).is(Toys.Wrist_Restraints));
             assertTrue(script.state(Posture_WristsTiedBehindBack).is(Toys.Wrist_Restraints));
 
-            assertTrue(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
             assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys_Wrist_Restraints));
-            assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
             assertTrue(script.state(Posture_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
-
-            // This is how to comment an item in a certain body location
-            if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
-                if (script.item(Toys_Wrist_Restraints).is(leather)) {
-                    say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
-                }
-            }
-
-            // Better
-            if (script.state(Toys_Wrist_Restraints).is(Body.WristsTied)) {
-                if (script.state(Toys_Wrist_Restraints).is(leather)) {
-                    say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
-                }
-            }
-
-            // Even better
-            if (script.item(Toys_Wrist_Restraints).is(Body.WristsTied, leather)) {
-                say("You're wearing leather restraints",
-                        script.state(Toys_Wrist_Restraints).is(Body.WristsTied, leather));
-            }
         }
     }
 
@@ -777,8 +770,11 @@ public class ItemImplTest {
 
             leash.applyTo(collar);
             assertTrue(script.item(Household.Leash).applied());
-            assertFalse(collar.applied());
+
+            assertTrue(collar.applied()); // s.o. applied to collar
+            assertFalse(collar.is(Body.AroundNeck)); // but collar not applied to body (yet)
             assertTrue(script.state(Toys.Collar).applied());
+
             assertTrue(leash.is(collar));
             assertTrue(collar.is(leash));
             assertTrue(collar.is(Household.Leash));
@@ -787,7 +783,7 @@ public class ItemImplTest {
             collar.apply();
             assertTrue(script.item(Household.Leash).applied());
             assertTrue(collar.applied());
-            assertTrue(collar.applied());
+            assertTrue(collar.is(Body.class));
             assertTrue(leash.is(collar));
             assertTrue(collar.is(leash));
             assertTrue(collar.is(Household.Leash));
@@ -803,7 +799,11 @@ public class ItemImplTest {
 
             leash.to(collar).apply();
             assertTrue(script.item(Household.Leash).applied());
-            assertFalse(collar.applied());
+
+            assertTrue(collar.applied()); // s.o. applied to collar
+            assertFalse(collar.is(Body.class)); // but collar not applied to body (yet)
+            assertTrue(script.state(Toys.Collar).applied());
+
             assertTrue(script.state(Toys.Collar).applied());
             assertTrue(leash.is(collar));
             assertTrue(collar.is(leash));
@@ -813,7 +813,7 @@ public class ItemImplTest {
             collar.apply();
             assertTrue(script.item(Household.Leash).applied());
             assertTrue(collar.applied());
-            assertTrue(collar.applied());
+            assertTrue(collar.is(Body.class));
             assertTrue(leash.is(collar));
             assertTrue(collar.is(leash));
             assertTrue(collar.is(Household.Leash));
@@ -832,7 +832,10 @@ public class ItemImplTest {
             Item chains = script.item(Bondage.Chains);
             chains.applyTo(gag);
             assertTrue(chains.applied());
-            assertFalse(gag.applied()); // <- Gag not applied, that's correct because we indeed didn't apply it
+
+            assertTrue(gag.applied()); // <- s.o. applied to gag (leash)
+            assertFalse(gag.is(Body.class)); // but gag not applied to body (yet)
+
             assertTrue(chains.is(gag));
             assertTrue(gag.is(chains));
             assertFalse(chains.is(unusedGag));
@@ -851,7 +854,10 @@ public class ItemImplTest {
             Item chains = script.item(Bondage.Chains);
             chains.to(gag).apply();
             assertTrue(chains.applied());
-            assertFalse(gag.applied()); // <- Gag not applied, that's correct because we indeed didn't apply it
+
+            assertTrue(gag.applied()); // <- s.o. applied to gag (leash)
+            assertFalse(gag.is(Body.class)); // but gag not applied to body
+
             assertTrue(chains.is(gag));
             assertTrue(gag.is(chains));
             assertFalse(chains.is(unusedGag));
@@ -874,6 +880,10 @@ public class ItemImplTest {
             assertFalse(chains.is(ringGag));
             assertTrue(ballGag.is(chains));
             assertFalse(ringGag.is(chains));
+
+            assertTrue(ballGag.is(Body.class));
+            assertFalse(ringGag.is(Body.class));
+            assertFalse(chains.is(Body.class)); // applied to ball gag but not to body
         }
     }
 

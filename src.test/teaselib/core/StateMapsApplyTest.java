@@ -1,7 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-import static teaselib.Household.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static teaselib.Household.Clothes_Pegs;
 
 import java.util.concurrent.TimeUnit;
 
@@ -9,6 +11,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Bondage;
 import teaselib.Posture;
 import teaselib.State;
 import teaselib.Toys;
@@ -33,7 +36,7 @@ public class StateMapsApplyTest extends TestableStateMaps {
     @Test
     public void testCannotJerkOff() {
         State chastityCage = state(TEST_DOMAIN, Toys.Chastity_Device);
-        State wristRestraints = state(TEST_DOMAIN, Toys.Wrist_Restraints);
+        State wristRestraints = state(TEST_DOMAIN, Bondage.Wrist_Restraints);
 
         assertFalse(chastityCage.applied());
         assertFalse(wristRestraints.applied());
@@ -122,7 +125,7 @@ public class StateMapsApplyTest extends TestableStateMaps {
     @Test
     public void testLockUp() {
         State chastityCage = state(TEST_DOMAIN, Toys.Chastity_Device);
-        State wristRestraints = state(TEST_DOMAIN, Toys.Wrist_Restraints);
+        State wristRestraints = state(TEST_DOMAIN, Bondage.Wrist_Restraints);
         State key = state(TEST_DOMAIN, Locks.Chastity_Device_Lock);
 
         assertFalse(chastityCage.applied());

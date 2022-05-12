@@ -1,6 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -8,6 +10,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Bondage;
 import teaselib.Duration;
 import teaselib.Posture;
 import teaselib.State;
@@ -118,16 +121,16 @@ public class StateMapsDurationTest extends TestableStateMaps {
         assertEquals(1, state(TEST_DOMAIN, Body.OnPenis).duration().remaining(TimeUnit.HOURS));
         assertEquals(1, state(TEST_DOMAIN, Body.CantJerkOff).duration().remaining(TimeUnit.HOURS));
 
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff).over(2,
+        state(TEST_DOMAIN, Bondage.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff).over(2,
                 TimeUnit.HOURS);
 
         assertEquals(1, state(TEST_DOMAIN, Toys.Chastity_Device).duration().remaining(TimeUnit.HOURS));
         assertEquals(1, state(TEST_DOMAIN, Body.OnPenis).duration().remaining(TimeUnit.HOURS));
         assertEquals(2, state(TEST_DOMAIN, Body.CantJerkOff).duration().remaining(TimeUnit.HOURS));
 
-        assertEquals(2, state(TEST_DOMAIN, Toys.Wrist_Restraints).duration().remaining(TimeUnit.HOURS));
+        assertEquals(2, state(TEST_DOMAIN, Bondage.Wrist_Restraints).duration().remaining(TimeUnit.HOURS));
 
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).remove();
+        state(TEST_DOMAIN, Bondage.Wrist_Restraints).remove();
 
         assertEquals(1, state(TEST_DOMAIN, Body.CantJerkOff).duration().remaining(TimeUnit.HOURS));
     }

@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 import teaselib.State.Options;
 import teaselib.core.ItemsImpl;
 import teaselib.core.util.QualifiedString;
-import teaselib.util.Select.Statement;
 
 public interface Items extends Iterable<Item>, Inventory {
 
@@ -153,6 +152,10 @@ public interface Items extends Iterable<Item>, Inventory {
 
     Items prefer(String... attributes);
 
+    Items avoid(Enum<?>... attributes);
+
+    Items avoid(String... attributes);
+
     /**
      * Get all items matching the supplied attributes. All items are returned, as a result the collection may contains
      * unavailable items.
@@ -168,6 +171,10 @@ public interface Items extends Iterable<Item>, Inventory {
 
     Items matchingAny(String... attributes);
 
+    Items without(Enum<?>... values);
+
+    Items without(String... values);
+
     Items orElseItems(Enum<?>... items);
 
     Items orElseItems(String... items);
@@ -182,10 +189,6 @@ public interface Items extends Iterable<Item>, Inventory {
 
     Items orElse(Supplier<Items> items);
 
-    Items without(Enum<?>... values);
-
-    Items without(String... values);
-
     /**
      * Applies each item. If the list contains multiple items of the same kind, only the first of each kind is applied.
      * 
@@ -197,10 +200,16 @@ public interface Items extends Iterable<Item>, Inventory {
      * is applied. To apply to multiple instances, iterate over the elements and apply each with {@link Item#apply}
      * 
      */
+    @Deprecated
+    // TODO Doesn't work for Items.Set of (different) items, and has issues with Items.Collection
     Options applyTo(Object... peers);
 
+    @Deprecated
+    // TODO Doesn't work for Items.Set of (different) items, and has issues with Items.Collection
     void removeFrom(String... peers);
 
+    @Deprecated
+    // TODO Doesn't work for Items.Set of (different) items, and has issues with Items.Collection
     void removeFrom(Enum<?>... peers);
 
     void remove();
@@ -214,7 +223,7 @@ public interface Items extends Iterable<Item>, Inventory {
 
     Items items(String... anyItemOrAttribute);
 
-    Items items(Statement query);
+    Items items(Select.Statement... queries);
 
     Items intersection(Items items);
 

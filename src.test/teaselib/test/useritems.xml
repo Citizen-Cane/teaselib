@@ -10,6 +10,15 @@
 			<Attribute> Sexuality.Sex.Male </Attribute>
 		</Item>
 
+		<Item item="Cock_Ring" guid="detachable_cockring" displayName="Detachable cock ring">
+			<Attribute> Features.Detachable </Attribute>
+			<Attribute> Material.Metal </Attribute>
+			<Attribute> Sexuality.Sex.Male </Attribute>
+		</Item>
+	</Toys>
+
+
+	<Bondage>
 		<Item item="Wrist_Restraints" guid="wrist_restraints" displayName="Wrist Restraints">
 			<Attribute> Material.Leather </Attribute>
 		</Item>
@@ -17,14 +26,8 @@
 		<Item item="Wrist_Restraints" guid="handcuffs" displayName="Hand cuffs">
 			<Attribute> Material.Metal </Attribute>
 		</Item>
+	</Bondage>
 
-		<Item item="Cock_Ring" guid="detachable_cockring" displayName="Detachable cock ring">
-			<Attribute> Features.Detachable </Attribute>
-			<Attribute> Material.Metal </Attribute>
-			<Attribute> Sexuality.Sex.Male </Attribute>
-		</Item>
-		
-	</Toys>
 
 	<Household>
 		<Item item="Wooden_Spoon" guid="wooden_spoon" displayName="Wooden spoon">

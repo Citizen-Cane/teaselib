@@ -284,7 +284,7 @@ public class UserItemsImplTest {
         try (TestScript script = new TestScript()) {
             script.setAvailable(Clothes.Pantyhose);
             assertTrue(script.item(Clothes.Pantyhose).canApply());
-            script.item(Toys.Ankle_Restraints).apply();
+            script.item(Bondage.Ankle_Restraints).apply();
             assertFalse(script.item(Clothes.Pantyhose).canApply());
         }
 
@@ -338,9 +338,9 @@ public class UserItemsImplTest {
     public void testRestraints() throws Exception {
         try (TestScript script = new TestScript()) {
             var shoesAndStockings = Select.items(Shoes.High_Heels, Clothes.Stockings, Clothes.Blouse);
-            var restraints = Select.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).where(Items::without,
+            var restraints = Select.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints).where(Items::without,
                     Features.Detachable);
-            var cuffs = Select.items(Toys.Ankle_Restraints, Toys.Wrist_Restraints).where(Items::matching,
+            var cuffs = Select.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints).where(Items::matching,
                     Features.Detachable);
             script.setAvailable(shoesAndStockings);
             script.setAvailable(restraints);
@@ -358,8 +358,8 @@ public class UserItemsImplTest {
             assertTrue(script.items(cuffs).anyApplicable());
             assertFalse(script.items(cuffs).noneApplicable());
 
-            script.items(restraints).getApplicableSet().get(Toys.Ankle_Restraints).apply();
-            assertFalse(script.items(cuffs).getApplicableSet().get(Toys.Ankle_Restraints).canApply());
+            script.items(restraints).getApplicableSet().get(Bondage.Ankle_Restraints).apply();
+            assertFalse(script.items(cuffs).getApplicableSet().get(Bondage.Ankle_Restraints).canApply());
             assertFalse(script.items(shoesAndStockings).getApplicableSet().get(Clothes.Stockings).canApply());
 
             assertFalse(script.items(shoesAndStockings).allApplicable());
@@ -370,8 +370,8 @@ public class UserItemsImplTest {
             assertTrue(script.items(restraints).anyApplicable());
             assertFalse(script.items(restraints).noneApplicable());
 
-            script.items(cuffs).getApplicableSet().get(Toys.Wrist_Restraints).applyTo(Body.WristsCuffed);
-            assertFalse(script.items(restraints).getApplicableSet().get(Toys.Wrist_Restraints).canApply());
+            script.items(cuffs).getApplicableSet().get(Bondage.Wrist_Restraints).applyTo(Body.WristsCuffed);
+            assertFalse(script.items(restraints).getApplicableSet().get(Bondage.Wrist_Restraints).canApply());
             assertTrue(script.items(shoesAndStockings).getApplicableSet().get(Clothes.Blouse).canApply());
 
             assertFalse(script.items(shoesAndStockings).allApplicable());
@@ -382,7 +382,8 @@ public class UserItemsImplTest {
             assertFalse(script.items(restraints).anyApplicable());
             assertTrue(script.items(restraints).noneApplicable());
 
-            script.item(Bondage.Chains).to(Toys.Wrist_Restraints, Body.WristsTied, Posture.WristsTiedInFront).apply();
+            script.item(Bondage.Chains).to(Bondage.Wrist_Restraints, Body.WristsTied, Posture.WristsTiedInFront)
+                    .apply();
             assertFalse(script.items(shoesAndStockings).getApplicableSet().get(Clothes.Blouse).canApply());
 
             assertFalse(script.items(shoesAndStockings).allApplicable());

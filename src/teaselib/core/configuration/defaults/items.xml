@@ -71,30 +71,6 @@
 			<Attribute> Toys.Spanking_Implements.Whip </Attribute>
 		</Item>
 
-	
-		<Item item="Ankle_Restraints" guid="ankle_restraints" displayName="Ankle restraints">
-			<Attribute> Features.Detachable </Attribute>
-			<Attribute> Material.Leather </Attribute>
-			<Attribute> Features.Lockable </Attribute>
-		</Item>
-
-		<Item item="Wrist_Restraints" guid="wrist_restraints" displayName="Wrist restraints">
-			<Attribute> Features.Detachable </Attribute>
-			<Attribute> Material.Leather </Attribute>
-			<Attribute> Features.Lockable </Attribute>
-		</Item>
-
-		<Item item="Ankle_Restraints" guid="ankle_cuffs" displayName="Ankle cuffs">
-			<Attribute> Features.Coupled </Attribute>
-			<Attribute> Features.Lockable </Attribute>
-			<Attribute> Material.Metal </Attribute>
-		</Item>
-
-		<Item item="Wrist_Restraints" guid="handcuffs" displayName="Hand cuffs">
-			<Attribute> Features.Coupled </Attribute>
-			<Attribute> Features.Lockable </Attribute>
-			<Attribute> Material.Metal </Attribute>
-		</Item>
 
 		<Item item="Ball_Stretcher" guid="ball_stretcher" displayName="Ball stretcher">
 			<Attribute> Sexuality.Sex.Male </Attribute>
@@ -461,19 +437,30 @@
 	</Shoes>
 
 	<Bondage>
-<!-- 
-		<Item item="Wristlets" guid="wristlets" displayName="Wristlets">
-			<Attribute> Features.Lockable </Attribute>
+
+		<Item item="Ankle_Restraints" guid="ankle_restraints" displayName="Ankle restraints">
 			<Attribute> Features.Detachable </Attribute>
 			<Attribute> Material.Leather </Attribute>
-		</Item>
-	
-		<Item item="Anklets" guid="anklets" displayName="Anklets">
 			<Attribute> Features.Lockable </Attribute>
+		</Item>
+
+		<Item item="Wrist_Restraints" guid="wrist_restraints" displayName="Wrist restraints">
 			<Attribute> Features.Detachable </Attribute>
 			<Attribute> Material.Leather </Attribute>
+			<Attribute> Features.Lockable </Attribute>
 		</Item>
--->
+
+		<Item item="Ankle_Restraints" guid="ankle_cuffs" displayName="Ankle cuffs">
+			<Attribute> Features.Coupled </Attribute>
+			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Material.Metal </Attribute>
+		</Item>
+
+		<Item item="Wrist_Restraints" guid="handcuffs" displayName="Hand cuffs">
+			<Attribute> Features.Coupled </Attribute>
+			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Material.Metal </Attribute>
+		</Item>
 
 		<Item item="Rope" guid="rope" displayName="Rope">
 			<Attribute> Material.Rope </Attribute>

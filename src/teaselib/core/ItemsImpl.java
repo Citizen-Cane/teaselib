@@ -40,7 +40,7 @@ import teaselib.util.math.Varieties;
  * <p>
  * Most methods that work with single items can be use with multiple items too.
  * <p>
- * Before performing queries ({@link Items#prefer}, {@link Items#matching},{@link Items#queryInventory}), the
+ * Before performing queries ({@link Items#prefer}, {@link Items#matcher},{@link Items#queryInventory}), the
  * non-index-based methods use or return always the item that is applied, or the first available. A a result, applying
  * multiple items works as if applying single items of each kind one-by-one.
  * <p>
@@ -406,13 +406,13 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
     static class Preferred {
         private final List<Item> elements;
-        private final Object[] attributes;
         private final java.util.Set<QualifiedString> found = new HashSet<>();
         private final List<Item> items = new ArrayList<>();
+        private final Predicate<Item> matcher;
 
-        public Preferred(List<Item> elements, Object[] attributes) {
+        public Preferred(List<Item> elements, Predicate<Item> matcher) {
             this.elements = elements;
-            this.attributes = attributes;
+            this.matcher = matcher;
         }
 
         // TODO Optimize items by number of matching attributes - best matching set with attribute coverage
@@ -421,7 +421,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         public void addAvailableMatching() {
             for (Item item : elements) {
                 // Add all matching, select set later for variance
-                if (item.is(attributes) && item.isAvailable()) {
+                if (matcher.test(item) && item.isAvailable()) {
                     found.add(itemValue(item));
                     items.add(item);
                 }
@@ -439,7 +439,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
         public void addMissingMatching() {
             for (Item item : elements) {
-                if (missing(item) && item.is(attributes)) {
+                if (missing(item) && !matcher.test(item)) {
                     found.add(itemValue(item));
                     items.add(item);
                 }
@@ -465,8 +465,26 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
     }
 
-    private Items preferredItems(Object... attributes) {
-        Preferred preferred = new Preferred(elements, attributes);
+    @Override
+    public Items avoid(Enum<?>... attributes) {
+        return avoidedItems(attributes);
+    }
+
+    @Override
+    public Items avoid(String... attributes) {
+        return avoidedItems(attributes);
+    }
+
+    private Items preferredItems(Object[] attributes) {
+        return preferredItems(item -> item.is(attributes));
+    }
+
+    private Items avoidedItems(Object[] attributes) {
+        return preferredItems(item -> !item.is(attributes));
+    }
+
+    private Items preferredItems(Predicate<Item> matcher) {
+        Preferred preferred = new Preferred(elements, matcher);
         preferred.addAvailableMatching();
         preferred.addAvailableNonMatching();
         preferred.addMissingMatching();
@@ -649,8 +667,8 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     @Override
-    public Items items(Select.Statement query) {
-        return query.get(this);
+    public ItemsImpl items(Select.Statement... queries) {
+        return new ItemsImpl(Stream.of(queries).map(query -> query.get(this)).flatMap(Items::stream).toList());
     }
 
     private ItemsImpl itemsImpl(Object... anyItemOrAttribute) {

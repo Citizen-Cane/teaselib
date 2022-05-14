@@ -238,7 +238,8 @@ public class ItemImplTest {
             assertFalse(script.state(Bondage.Wrist_Restraints).applied());
 
             // Wrists are not only tied, but also tied behind back
-            script.items(Bondage.Wrist_Restraints).matching(Material.Leather).inventory()
+            script.setAvailable(Bondage.Wrist_Restraints);
+            script.items(Bondage.Wrist_Restraints).matching(Material.Leather).getApplicable().get()
                     .applyTo(Posture.WristsTiedBehindBack);
 
             assertFalse(script.state(Body.WristsTied).applied());
@@ -252,12 +253,14 @@ public class ItemImplTest {
     public void testApplyToAppliesAttributesPlusCustomPeers() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
-
+            script.setAvailable(Bondage.AllCuffs);
             assertFalse(script.state(Bondage.Wrist_Restraints).applied());
 
-            script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints).matching(Material.Leather).inventory()
-                    .applyTo(Body.AnklesCuffed, Body.AnklesTied, Body.WristsCuffed, Body.WristsTied,
-                            Posture.WristsTiedToAnkles);
+            Items.Set restraints = script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints)
+                    .matching(Material.Leather).getApplicableSet();
+            restraints.get(Bondage.Ankle_Restraints).to(Body.AnklesCuffed, Body.AnklesTied).apply();
+            restraints.get(Bondage.Wrist_Restraints).to(Body.WristsCuffed, Body.WristsTied, Posture.WristsTiedToAnkles)
+                    .apply();
 
             assertTrue(script.state(Bondage.Ankle_Restraints).applied());
             assertTrue(script.state(Bondage.Wrist_Restraints).applied());
@@ -550,7 +553,9 @@ public class ItemImplTest {
 
             assertFalse(script.state(Bondage_Wrist_Restraints).applied());
 
-            script.items(Bondage_Wrist_Restraints).matching(leather).inventory().applyTo(Body_WristsTiedBehindBack);
+            script.setAvailable(Bondage.Wrist_Restraints);
+            script.items(Bondage_Wrist_Restraints).matching(leather).getApplicable().get()
+                    .applyTo(Body_WristsTiedBehindBack);
 
             assertTrue(script.state(Bondage_Wrist_Restraints).applied());
             assertTrue(script.state(Bondage_Wrist_Restraints).is(leather));
@@ -574,6 +579,7 @@ public class ItemImplTest {
     public void testStringsAndEnumsMixedApplyTo() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
+            script.setAvailable(Bondage.Wrist_Restraints);
 
             String Bondage_Wrist_Restraints = "teaselib.Bondage.Wrist_Restraints";
             String Body_WristsTied = "teaselib.Body.WristsTied";
@@ -584,8 +590,8 @@ public class ItemImplTest {
             assertFalse(script.state(Bondage_Wrist_Restraints).applied());
 
             // Wrists are not only tied, but also tied behind back
-
-            script.items(Bondage_Wrist_Restraints).matching(leather).inventory().applyTo(Posture_WristsTiedBehindBack);
+            script.items(Bondage_Wrist_Restraints).matching(leather).getApplicable().get()
+                    .applyTo(Posture_WristsTiedBehindBack);
 
             assertTrue(script.state(Bondage.Wrist_Restraints).applied());
             assertTrue(script.state(Bondage_Wrist_Restraints).is(leather));
@@ -647,7 +653,7 @@ public class ItemImplTest {
 
             Item wristRestraints = script.items(Bondage.Wrist_Restraints).matching(Material.Leather).item();
             wristRestraints.to(Posture.WristsTiedBehindBack).apply();
-            Items temporaryItems = script.teaseLib.temporaryItems();
+            Items.Collection temporaryItems = script.teaseLib.temporaryItems();
             Item temporaryWristRestraints = temporaryItems.matching(Bondage.Wrist_Restraints).get();
             assertEquals(wristRestraints, temporaryWristRestraints);
             assertEquals(1, script.teaseLib.temporaryItems().size());
@@ -666,7 +672,7 @@ public class ItemImplTest {
             restraints.apply();
 
             var chains = script.items(Bondage.Chains, Accessoires.Bells).getApplicableSet();
-            chains.applyTo(restraints);
+            chains.forEach(item -> item.applyTo(restraints));
             assertTrue(chains.allApplied());
             assertTrue(restraints.allApplied());
 

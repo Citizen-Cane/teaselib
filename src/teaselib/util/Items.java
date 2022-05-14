@@ -195,23 +195,6 @@ public interface Items extends Iterable<Item>, Inventory {
      */
     Options apply();
 
-    /**
-     * Applies each item to the given peers. If there are multiple items of the same kind, only the first of each kind
-     * is applied. To apply to multiple instances, iterate over the elements and apply each with {@link Item#apply}
-     * 
-     */
-    @Deprecated
-    // TODO Doesn't work for Items.Set of (different) items, and has issues with Items.Collection
-    Options applyTo(Object... peers);
-
-    @Deprecated
-    // TODO Doesn't work for Items.Set of (different) items, and has issues with Items.Collection
-    void removeFrom(String... peers);
-
-    @Deprecated
-    // TODO Doesn't work for Items.Set of (different) items, and has issues with Items.Collection
-    void removeFrom(Enum<?>... peers);
-
     void remove();
 
     /**
@@ -227,13 +210,6 @@ public interface Items extends Iterable<Item>, Inventory {
 
     Items intersection(Items items);
 
-    /**
-     * Return applied or random available item.
-     * 
-     * @return First item or {@link Item#NotFound}
-     */
-    Item get();
-
     Items getAvailable();
 
     Items getApplicable();
@@ -247,6 +223,67 @@ public interface Items extends Iterable<Item>, Inventory {
     public interface Collection extends Items {
 
         public static final Items.Set Empty = ItemsImpl.None;
+
+        @Override
+        Collection filter(Predicate<? super Item> predicate);
+
+        @Override
+        Collection prefer(Enum<?>... attributes);
+
+        @Override
+        Collection prefer(String... attributes);
+
+        @Override
+        Collection avoid(Enum<?>... attributes);
+
+        @Override
+        Collection avoid(String... attributes);
+
+        @Override
+        Collection matching(Enum<?>... attributes);
+
+        @Override
+        Collection matching(String... attributes);
+
+        @Override
+        Collection matchingAny(Enum<?>... attributes);
+
+        @Override
+        Collection matchingAny(String... attributes);
+
+        @Override
+        Collection without(Enum<?>... values);
+
+        @Override
+        Collection without(String... values);
+
+        @Override
+        Collection orElseItems(Enum<?>... items);
+
+        @Override
+        Collection orElseItems(String... items);
+
+        @Override
+        Collection orElsePrefer(Enum<?>... attributes);
+
+        @Override
+        Collection orElsePrefer(String... attributes);
+
+        @Override
+        Collection orElseMatching(Enum<?>... attributes);
+
+        @Override
+        Collection orElseMatching(String... attributes);
+
+        @Override
+        Collection orElse(Supplier<Items> items);
+
+        /**
+         * Return applied or random applicable or available item.
+         * 
+         * @return First item or {@link Item#NotFound}
+         */
+        Item get();
 
         @Override
         Collection getAvailable();
@@ -264,16 +301,10 @@ public interface Items extends Iterable<Item>, Inventory {
         Collection getExpired();
 
         @Override
-        Collection without(Enum<?>... values);
+        Collection items(Enum<?>... items);
 
         @Override
-        Collection without(String... values);
-
-        @Override
-        Items.Collection items(Enum<?>... items);
-
-        @Override
-        Items.Collection items(String... items);
+        Collection items(String... items);
 
         /**
          * Produce similar items with additional default peers. The similar item will extend the original item with
@@ -286,14 +317,68 @@ public interface Items extends Iterable<Item>, Inventory {
          *         applied. The similar items are the same entity as the original items, e.g. when applied, the original
          *         item will also change its state to applied.
          */
-        Items.Collection to(Enum<?>... additionalPeers);
+        Collection to(Enum<?>... additionalPeers);
 
-        Items.Collection to(String... additionalPeers);
+        Collection to(String... additionalPeers);
     }
 
     public interface Set extends Items {
 
         public static final Items.Set EmptySet = ItemsImpl.None;
+
+        @Override
+        Set filter(Predicate<? super Item> predicate);
+
+        @Override
+        Set prefer(Enum<?>... attributes);
+
+        @Override
+        Set prefer(String... attributes);
+
+        @Override
+        Set avoid(Enum<?>... attributes);
+
+        @Override
+        Set avoid(String... attributes);
+
+        @Override
+        Set matching(Enum<?>... attributes);
+
+        @Override
+        Set matching(String... attributes);
+
+        @Override
+        Set matchingAny(Enum<?>... attributes);
+
+        @Override
+        Set matchingAny(String... attributes);
+
+        @Override
+        Set without(Enum<?>... values);
+
+        @Override
+        Set without(String... values);
+
+        @Override
+        Set orElseItems(Enum<?>... items);
+
+        @Override
+        Set orElseItems(String... items);
+
+        @Override
+        Set orElsePrefer(Enum<?>... attributes);
+
+        @Override
+        Set orElsePrefer(String... attributes);
+
+        @Override
+        Set orElseMatching(Enum<?>... attributes);
+
+        @Override
+        Set orElseMatching(String... attributes);
+
+        @Override
+        Set orElse(Supplier<Items> items);
 
         @Override
         Set getAvailable();
@@ -310,27 +395,14 @@ public interface Items extends Iterable<Item>, Inventory {
         @Override
         Set getExpired();
 
-        @Override
-        Set without(Enum<?>... values);
-
-        @Override
-        Set without(String... values);
-
         /**
-         * Return applied or first available item with the supplied value.
+         * Return applied or random applicable or available item matching the supplied value.
          * 
-         * @return First item or {@link Item#NotFound}
+         * @return Item instance or {@link Item#NotFound}
          */
         Item get(Enum<?> item);
 
-        /**
-         * Return applied or first available item with the supplied value.
-         * 
-         * @return First item or {@link Item#NotFound}
-         */
-        Item item(Enum<?> item);
-
-        Item item(String item);
+        Item get(String item);
 
         @Override
         Items.Set items(Enum<?>... items);

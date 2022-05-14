@@ -41,7 +41,7 @@ public class ItemIdentityTest {
     @Test
     public void testRetrievingTheIdenticalItem() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag).inventory();
+            Items.Collection gags = script.items(Toys.Gag).inventory();
 
             Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
             assertTrue(ringGag.is(Toys.Gags.Ring_Gag));

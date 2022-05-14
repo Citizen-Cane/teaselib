@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -96,7 +95,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     @Override
-    public Items filter(Predicate<? super Item> predicate) {
+    public ItemsImpl filter(Predicate<? super Item> predicate) {
         List<Item> list = elements.stream().filter(predicate).toList();
         return new ItemsImpl(list, inventory);
     }
@@ -216,22 +215,9 @@ public class ItemsImpl implements Items.Collection, Items.Set {
      * 
      * @return First item or {@link Item#NotFound}
      */
-    // TODO when get(Enum<?>) is removed because of item(), rename this to first()
     @Override
     public Item get() {
         return getAppliedOrApplicableOrNotFound(random);
-    }
-
-    /**
-     * Return applied or first available item with the supplied value.
-     * 
-     * @return First item or {@link Item#NotFound}
-     */
-    // TODO get() and item() are the same ->
-    // + keep get() since item(...).item(...) is confusing - I misinterpreted it myself
-    @Override
-    public Item get(Enum<?> item) {
-        return item(item);
     }
 
     @Override
@@ -239,18 +225,13 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return elements.get(index);
     }
 
-    /**
-     * Return applied or first available item with the supplied value.
-     * 
-     * @return First item or {@link Item#NotFound}
-     */
     @Override
-    public final Item item(Enum<?> item) {
+    public final Item get(Enum<?> item) {
         return item(QualifiedString.of(item));
     }
 
     @Override
-    public final Item item(String item) {
+    public final Item get(String item) {
         return item(QualifiedString.of(item));
     }
 
@@ -322,12 +303,12 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     @Override
-    public final Items matchingAny(Enum<?>... attributes) {
+    public final ItemsImpl matchingAny(Enum<?>... attributes) {
         return matchingAny(Arrays.asList(attributes));
     }
 
     @Override
-    public final Items matchingAny(String... attributes) {
+    public final ItemsImpl matchingAny(String... attributes) {
         return matchingAny(Arrays.asList(attributes));
     }
 
@@ -395,12 +376,12 @@ public class ItemsImpl implements Items.Collection, Items.Set {
      *         available items as a fall-back. The result may be empty if none of the requested items are available.
      */
     @Override
-    public Items prefer(Enum<?>... attributes) {
+    public ItemsImpl prefer(Enum<?>... attributes) {
         return preferredItems((Object[]) attributes);
     }
 
     @Override
-    public Items prefer(String... attributes) {
+    public ItemsImpl prefer(String... attributes) {
         return preferredItems((Object[]) attributes);
     }
 
@@ -466,24 +447,24 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     @Override
-    public Items avoid(Enum<?>... attributes) {
+    public ItemsImpl avoid(Enum<?>... attributes) {
         return avoidedItems(attributes);
     }
 
     @Override
-    public Items avoid(String... attributes) {
+    public ItemsImpl avoid(String... attributes) {
         return avoidedItems(attributes);
     }
 
-    private Items preferredItems(Object[] attributes) {
+    private ItemsImpl preferredItems(Object[] attributes) {
         return preferredItems(item -> item.is(attributes));
     }
 
-    private Items avoidedItems(Object[] attributes) {
+    private ItemsImpl avoidedItems(Object[] attributes) {
         return preferredItems(item -> !item.is(attributes));
     }
 
-    private Items preferredItems(Predicate<Item> matcher) {
+    private ItemsImpl preferredItems(Predicate<Item> matcher) {
         Preferred preferred = new Preferred(elements, matcher);
         preferred.addAvailableMatching();
         preferred.addAvailableNonMatching();
@@ -557,16 +538,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
     @Override
     public State.Options apply() {
-        return applyToImpl(Item::apply);
-    }
-
-    @Override
-    public State.Options applyTo(Object... peers) {
-        return applyToImpl(item -> item.applyTo(peers));
-    }
-
-    private State.Options applyToImpl(Function<Item, State.Options> applyFunction) {
-        List<State.Options> options = oneOfEachKind().stream().map(applyFunction::apply).toList();
+        List<State.Options> options = oneOfEachKind().stream().map(Item::apply).toList();
         return new State.Options() {
             @Override
             public void remember(Until forget) {
@@ -591,20 +563,6 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     public void remove() {
         for (Item item : oneOfEachKind()) {
             item.remove();
-        }
-    }
-
-    @Override
-    public void removeFrom(Enum<?>... peers) {
-        for (var item : oneOfEachKind()) {
-            item.removeFrom((Object[]) peers);
-        }
-    }
-
-    @Override
-    public void removeFrom(String... peers) {
-        for (var item : oneOfEachKind()) {
-            item.removeFrom((Object[]) peers);
         }
     }
 
@@ -742,38 +700,38 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     @Override
-    public Items orElseItems(Enum<?>... items) {
+    public ItemsImpl orElseItems(Enum<?>... items) {
         return anyAvailable() ? this : new ItemsImpl(inventory).items(items);
     }
 
     @Override
-    public Items orElseItems(String... items) {
+    public ItemsImpl orElseItems(String... items) {
         return anyAvailable() ? this : new ItemsImpl(inventory).items(items);
     }
 
     @Override
-    public Items orElsePrefer(Enum<?>... attributes) {
+    public ItemsImpl orElsePrefer(Enum<?>... attributes) {
         return anyAvailable() ? this : new ItemsImpl(inventory).prefer(attributes);
     }
 
     @Override
-    public Items orElsePrefer(String... attributes) {
+    public ItemsImpl orElsePrefer(String... attributes) {
         return anyAvailable() ? this : new ItemsImpl(inventory).prefer(attributes);
     }
 
     @Override
-    public Items orElseMatching(Enum<?>... attributes) {
+    public ItemsImpl orElseMatching(Enum<?>... attributes) {
         return anyAvailable() ? this : new ItemsImpl(inventory).matching(attributes);
     }
 
     @Override
-    public Items orElseMatching(String... attributes) {
+    public ItemsImpl orElseMatching(String... attributes) {
         return anyAvailable() ? this : new ItemsImpl(inventory).matching(attributes);
     }
 
     @Override
-    public Items orElse(Supplier<Items> items) {
-        return anyAvailable() ? this : items.get();
+    public ItemsImpl orElse(Supplier<Items> items) {
+        return anyAvailable() ? this : (ItemsImpl) items.get();
     }
 
     @Override

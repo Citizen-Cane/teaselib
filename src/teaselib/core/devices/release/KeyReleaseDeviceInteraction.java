@@ -545,8 +545,9 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     private Items handledItems(Actuator actuator, Instructions definition) {
         Items handled = teaseLib.relatedItems(Gadgets.Key_Release, definition.items);
         if (!handled.anyApplied()) {
-            handled.applyTo(actuatorName(actuator)).over(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS)
-                    .remember(Until.Removed);
+            String actuatorName = actuatorName(actuator);
+            handled.forEach(item -> item.applyTo(actuatorName)
+                    .over(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS).remember(Until.Removed));
         }
         return handled;
     }
@@ -554,7 +555,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     private Items handledItems(Actuator actuator, Instructions definition, long duration, TimeUnit unit) {
         Items handled = teaseLib.relatedItems(Gadgets.Key_Release, definition.items);
         if (!handled.anyApplied()) {
-            handled.applyTo(actuatorName(actuator)).over(duration, unit).remember(Until.Removed);
+            String actuatorName = actuatorName(actuator);
+            handled.forEach(item -> item.applyTo(actuatorName).over(duration, unit).remember(Until.Removed));
         }
         return handled;
     }
@@ -611,7 +613,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
             Optional<Instructions> definition) {
         events.when(items).removed().thenOnce(() -> {
             actuator.release();
-            handled.removeFrom(actuatorName(actuator));
+            String actuatorName = actuatorName(actuator);
+            handled.stream().forEach(item -> item.removeFrom(actuatorName));
             removeEvents(actuator);
 
             Actor currentActor = scriptRenderer.currentActor();

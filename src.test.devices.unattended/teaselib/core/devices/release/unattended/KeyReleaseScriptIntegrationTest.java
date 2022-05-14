@@ -53,6 +53,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         script.say(FOOBAR);
 
         keyReleaseDevice = script.teaseLib.devices.getDefaultDevice(KeyRelease.class);
+        assertFalse("No Key-Release Device found", keyReleaseDevice.actuators().isEmpty());
+
         releaseAllRunningActuators(keyReleaseDevice);
         script.debugger.resumeTime();
     }
@@ -160,7 +162,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertEquals(0, events.itemRemoved.size());
         script.reply("Keys placed, #title");
 
-        Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(items.get()).orElseThrow();
+        Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(items.get(0)).orElseThrow();
         assertTrue(actuator.isRunning());
 
         script.say("Holding", Message.Delay10s);

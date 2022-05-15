@@ -1,7 +1,11 @@
 package teaselib.core.devices.release.unattended;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.Assert.*;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -11,10 +15,10 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import teaselib.Bondage;
 import teaselib.Features;
 import teaselib.Message;
 import teaselib.State.Persistence.Until;
-import teaselib.Toys;
 import teaselib.core.ScriptEvents;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.Actuator;
@@ -49,6 +53,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         script.say(FOOBAR);
 
         keyReleaseDevice = script.teaseLib.devices.getDefaultDevice(KeyRelease.class);
+        assertFalse("No Key-Release Device found", keyReleaseDevice.actuators().isEmpty());
+
         releaseAllRunningActuators(keyReleaseDevice);
         script.debugger.resumeTime();
     }
@@ -65,7 +71,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItem() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled).inventory();
+        Items cuffs = script.items(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints).without(Features.Detachable)
+                .inventory();
         long availableSeconds = availableSeconds(cuffs);
 
         script.say("Arm", Message.Delay10s);
@@ -85,7 +92,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItemOverDuration() {
-        Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled).inventory();
+        Items cuffs = script.items(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints).without(Features.Detachable)
+                .inventory();
 
         script.say("Arm", Message.Delay10s);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, script::show);
@@ -104,8 +112,8 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
     @Test
     public void testScriptEventsWithItems() {
-        script.setAvailable(Toys.All);
-        var cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled)
+        script.setAvailable(Bondage.All);
+        var cuffs = script.items(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints).without(Features.Detachable)
                 .getApplicableSet();
         long availableSeconds = availableSeconds(cuffs);
 
@@ -120,15 +128,15 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertApplied(cuffs, availableSeconds);
 
         script.say("Releasing key", Message.Delay10s);
-        Item wristCuffs = cuffs.get(Toys.Wrist_Restraints);
+        Item wristCuffs = cuffs.get(Bondage.Wrist_Restraints);
         wristCuffs.remove();
         assertReleased(cuffs);
     }
 
     @Test
     public void testScriptEventsWithItemsOverDuration() {
-        script.setAvailable(Toys.All);
-        var cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).matching(Features.Coupled)
+        script.setAvailable(Bondage.All);
+        var cuffs = script.items(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints).without(Features.Detachable)
                 .getApplicableSet();
 
         script.say("Arm", Message.Delay10s);
@@ -142,7 +150,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertApplied(cuffs, scheduledDurationSeconds);
 
         script.say("Releasing key", Message.Delay10s);
-        Item wristCuffs = cuffs.get(Toys.Wrist_Restraints);
+        Item wristCuffs = cuffs.get(Bondage.Wrist_Restraints);
         wristCuffs.remove();
         assertReleased(cuffs);
     }
@@ -154,7 +162,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
         assertEquals(0, events.itemRemoved.size());
         script.reply("Keys placed, #title");
 
-        Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(items.get()).orElseThrow();
+        Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(items.get(0)).orElseThrow();
         assertTrue(actuator.isRunning());
 
         script.say("Holding", Message.Delay10s);
@@ -203,8 +211,9 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
     @Ignore
     // TODO Device becomes disconnected while sending command during sleep, but reconnect fails
     public void testScriptEventsWithItemsAndSleepWhileHolding() {
-        script.setAvailable(Toys.All);
-        var cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).getApplicableSet();
+        script.setAvailable(Bondage.All);
+        var cuffs = script.items(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints).without(Features.Detachable)
+                .getApplicableSet();
         Actuator actuator = keyReleaseSetup.deviceInteraction.getActuator(cuffs).orElseThrow();
         long availableSeconds = actuator.available(TimeUnit.SECONDS);
 
@@ -242,7 +251,7 @@ public class KeyReleaseScriptIntegrationTest extends KeyReleaseBaseTest {
 
         script.say("Releasing key", Message.Delay10s);
 
-        Item wristCuffs = cuffs.get(Toys.Wrist_Restraints);
+        Item wristCuffs = cuffs.get(Bondage.Wrist_Restraints);
         wristCuffs.remove();
         assertReleased(cuffs);
     }

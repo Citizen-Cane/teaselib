@@ -155,22 +155,19 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
      * Other potentially lockable items are requested explicitly.
      */
     public void setDefaults(Actor actor) {
-        // TODO Decide whether to support different kinds of restraints,
-        // or find out how to handle them without explicit queries
-        // - force scripts to use matching(Features.Coupled/Features.Detachable)
-        // - add anklets/wristlets as explicit type to Accessoires, however they're still connectable as
-        // - find a way to specify that anklets/wristlets can be detached -> via removeFrom Hands/Wrists Tied
-        // -> blocks applying/removing all states with applying/removing an item - but that feature isn't needed anyway
-        var cuffs = new ItemsImpl( //
-                teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wristlets, Bondage.Anklets, Toys.Collar, Toys.Humbler)
+
+        var cuffs = teaseLib.items(//
+                teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wrist_Restraints, Bondage.Ankle_Restraints)
+                        .matching(Features.Lockable).matching(Features.Detachable), //
+                teaseLib.items(TeaseLib.DefaultDomain, Toys.Collar, Toys.Humbler) //
                         .matching(Features.Lockable) //
         );
 
         var handcuffs = new ItemsImpl( //
-                teaseLib.items(TeaseLib.DefaultDomain, Toys.Wrist_Restraints, Toys.Ankle_Restraints)
-                        .without(Features.Detachable), //
+                teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wrist_Restraints, Bondage.Ankle_Restraints)
+                        .matching(Features.Lockable).without(Features.Detachable), //
                 teaseLib.items(TeaseLib.DefaultDomain, Bondage.Chains) //
-        ).matching(Features.Lockable);
+        );
 
         prepare(actor, handcuffs, 1, TimeUnit.HOURS, defaultInstructions);
         prepare(actor, cuffs, 2, TimeUnit.HOURS, defaultInstructions);
@@ -548,8 +545,9 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     private Items handledItems(Actuator actuator, Instructions definition) {
         Items handled = teaseLib.relatedItems(Gadgets.Key_Release, definition.items);
         if (!handled.anyApplied()) {
-            handled.applyTo(actuatorName(actuator)).over(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS)
-                    .remember(Until.Removed);
+            String actuatorName = actuatorName(actuator);
+            handled.forEach(item -> item.applyTo(actuatorName)
+                    .over(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS).remember(Until.Removed));
         }
         return handled;
     }
@@ -557,7 +555,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     private Items handledItems(Actuator actuator, Instructions definition, long duration, TimeUnit unit) {
         Items handled = teaseLib.relatedItems(Gadgets.Key_Release, definition.items);
         if (!handled.anyApplied()) {
-            handled.applyTo(actuatorName(actuator)).over(duration, unit).remember(Until.Removed);
+            String actuatorName = actuatorName(actuator);
+            handled.forEach(item -> item.applyTo(actuatorName).over(duration, unit).remember(Until.Removed));
         }
         return handled;
     }
@@ -614,7 +613,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
             Optional<Instructions> definition) {
         events.when(items).removed().thenOnce(() -> {
             actuator.release();
-            handled.removeFrom(actuatorName(actuator));
+            String actuatorName = actuatorName(actuator);
+            handled.stream().forEach(item -> item.removeFrom(actuatorName));
             removeEvents(actuator);
 
             Actor currentActor = scriptRenderer.currentActor();

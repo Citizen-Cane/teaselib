@@ -934,10 +934,49 @@ public class TeaseLib implements Closeable {
         return new ItemsImpl(items);
     }
 
+    public Items.Collection items(Item... items) {
+        return new ItemsImpl(items);
+    }
+
+    public Items.Collection items(Items... items) {
+        return new ItemsImpl(items);
+    }
+
+    public Items.Collection items(Items.Collection... items) {
+        return new ItemsImpl(items);
+    }
+
+    public Items.Query items(Items.Query... items) {
+        return new ItemsQueryImpl() {
+            @Override
+            public Items.Collection inventory() {
+                return new ItemsImpl(Arrays.stream(items).map(Items.Query::inventory).flatMap(Items::stream).toList());
+            }
+        };
+    }
+
+    /**
+     * Get related items from another domain.
+     * 
+     * @param domain
+     *            The domain to get related items for.
+     * @param items
+     *            The items for which to retrieve related items from another domain.
+     * @return Items similar to those supplied but for the specified domain.
+     */
     public Items relatedItems(Enum<?> domain, Items items) {
         return relatedItems(QualifiedString.of(domain), items);
     }
 
+    /**
+     * Get related items from another domain.
+     * 
+     * @param domain
+     *            The domain to get related items for.
+     * @param items
+     *            The items for which to retrieve related items from another domain.
+     * @return Items similar to those supplied but for the specified domain.
+     */
     public Items relatedItems(QualifiedString domain, Items items) {
         return relatedItems(domain.toString(), items);
     }
@@ -956,10 +995,28 @@ public class TeaseLib implements Closeable {
         return new ItemsImpl(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
     }
 
+    /**
+     * Get related items from another domain.
+     * 
+     * @param domain
+     *            The domain to get related items for.
+     * @param items
+     *            The items for which to retrieve related items from another domain.
+     * @return Items similar to those supplied but for the specified domain.
+     */
     public Items.Collection relatedItems(String domain, Items.Collection items) {
         return new ItemsImpl(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
     }
 
+    /**
+     * Get related items from another domain.
+     * 
+     * @param domain
+     *            The domain to get related items for.
+     * @param items
+     *            The items for which to retrieve related items from another domain.
+     * @return Items similar to those supplied but for the specified domain.
+     */
     public Items.Set relatedItems(String domain, Items.Set items) {
         return new ItemsImpl(items.stream().map(AbstractProxy::itemImpl).map(item -> getItem(domain, item)).toList());
     }
@@ -967,7 +1024,7 @@ public class TeaseLib implements Closeable {
     /**
      * @return All temporary items
      */
-    Items temporaryItems() {
+    Items.Collection temporaryItems() {
         Set<Item> temporaryItems = new HashSet<>();
         for (Entry<String, StateMapCache> domains : new ArrayList<>(stateMaps.cache.entrySet())) {
             String domain = domains.getKey();
@@ -1003,7 +1060,7 @@ public class TeaseLib implements Closeable {
         if (item instanceof Item) {
             throw new IllegalArgumentException(item.toString());
         } else {
-            return items(domain, item).get();
+            return ((ItemsImpl) items(domain, item)).get();
         }
     }
 

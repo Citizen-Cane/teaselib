@@ -31,9 +31,6 @@ public enum Toys {
     Nipple_Clamps,
     Spanking_Implement,
 
-    Ankle_Restraints,
-    Wrist_Restraints,
-
     Ball_Stretcher,
     Chastity_Device,
     Cock_Ring,
@@ -120,8 +117,7 @@ public enum Toys {
 
     public static final Select.Statement All = items(values());
 
-    public static final Select.Statement Essential = items(Blindfold, Collar, Gag, Nipple_Clamps, Spanking_Implement,
-            Ankle_Restraints, Wrist_Restraints);
+    public static final Select.Statement Essential = items(Blindfold, Collar, Gag, Nipple_Clamps, Spanking_Implement);
 
     public static final Select.Statement Backdoor = items(Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit);
     public static final Select.Statement Female = items(Chastity_Device, Clit_Clamp, Pussy_Clamps, VaginalInsert);

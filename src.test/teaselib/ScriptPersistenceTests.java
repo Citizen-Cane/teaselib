@@ -1,6 +1,9 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -166,15 +169,12 @@ public class ScriptPersistenceTests {
             assertTrue(script.storage.containsKey(QualifiedName.of("My domain",
                     "ScriptPersistenceTests.TestValuesEnumClass", "My_Test_Value_set_by_enum")));
 
-            script.teaseLib
-                    .item(TeaseLib.DefaultDomain,
-                            "My namespace" + "." + TestValuesEnumClass.My_Test_Value_item_by_name.name())
+            script.item("My namespace" + "." + TestValuesEnumClass.My_Test_Value_item_by_name.name())
                     .setAvailable(true);
             assertTrue(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain,
                     "My namespace.My_Test_Value_item_by_name", "My_Test_Value_item_by_name.Available")));
 
-            script.teaseLib.item(TeaseLib.DefaultDomain, TestValuesEnumClass.My_Test_Value_item_by_enum)
-                    .setAvailable(true);
+            script.item(TestValuesEnumClass.My_Test_Value_item_by_enum).setAvailable(true);
             assertTrue(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain,
                     "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_item_by_enum",
                     "My_Test_Value_item_by_enum.Available")));

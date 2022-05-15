@@ -23,6 +23,11 @@ public interface State {
 
     boolean is(Object... attributes);
 
+    /**
+     * Whether the state is applied.
+     * 
+     * @return True if applied.
+     */
     boolean applied();
 
     boolean expired();

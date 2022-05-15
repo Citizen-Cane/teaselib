@@ -1,6 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -9,6 +11,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Bondage;
 import teaselib.Posture;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
@@ -42,10 +45,10 @@ public class StateMapsTestRemember extends TestableStateMaps {
     @Test
     public void testRememberIsShallow() {
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertFalse(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
+        assertFalse(state(TEST_DOMAIN, Bondage.Wrist_Restraints).applied());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff);
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
+        state(TEST_DOMAIN, Bondage.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device).over(24, TimeUnit.HOURS)
                 .remember(Until.Removed);
@@ -64,9 +67,9 @@ public class StateMapsTestRemember extends TestableStateMaps {
     }
 
     private void assertUnrelatedStateIsNotAffected() {
-        assertTrue(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
+        assertTrue(state(TEST_DOMAIN, Bondage.Wrist_Restraints).applied());
         assertTrue(state(TEST_DOMAIN, Posture.WristsTiedBehindBack).applied());
-        assertTrue(state(TEST_DOMAIN, Toys.Wrist_Restraints).expired());
+        assertTrue(state(TEST_DOMAIN, Bondage.Wrist_Restraints).expired());
         assertTrue(state(TEST_DOMAIN, Posture.WristsTiedBehindBack).expired());
     }
 
@@ -79,7 +82,7 @@ public class StateMapsTestRemember extends TestableStateMaps {
 
     @Test
     public void testRememberedItemsAreCompletelyRemoved() {
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
+        state(TEST_DOMAIN, Bondage.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS)
                 .remember(Until.Removed);
 
@@ -93,16 +96,16 @@ public class StateMapsTestRemember extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).remove();
+        state(TEST_DOMAIN, Bondage.Wrist_Restraints).remove();
 
-        assertFalse(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
+        assertFalse(state(TEST_DOMAIN, Bondage.Wrist_Restraints).applied());
         assertFalse(state(TEST_DOMAIN, Posture.WristsTiedBehindBack).applied());
         assertFalse(state(TEST_DOMAIN, Body.CantJerkOff).applied());
     }
 
     @Test
     public void testRememberedItemsAreCompletelyRemovedAfterSessionRestore() {
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
+        state(TEST_DOMAIN, Bondage.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS)
                 .remember(Until.Removed);
 
@@ -110,7 +113,7 @@ public class StateMapsTestRemember extends TestableStateMaps {
         clear();
 
         // Temporary restraints are not applied anymore
-        assertFalse(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
+        assertFalse(state(TEST_DOMAIN, Bondage.Wrist_Restraints).applied());
         assertFalse(state(TEST_DOMAIN, Posture.WristsTiedBehindBack).applied());
 
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());

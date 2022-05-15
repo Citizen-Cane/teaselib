@@ -52,10 +52,10 @@ public class UserItemsLogic {
             return None;
         } else if (item.is(Bondage.Spreader_Bar)) {
             return None;
-        } else if (item.is(Bondage.Anklets)) {
-            return peers(Body.AnklesCuffed);
-        } else if (item.is(Bondage.Wristlets)) {
-            return peers(Body.WristsCuffed);
+        } else if (item.is(Bondage.Ankle_Restraints)) {
+            return peers(Body.AnklesCuffed, Body.AnklesTied, Posture.AnklesTiedTogether);
+        } else if (item.is(Bondage.Wrist_Restraints)) {
+            return peers(Body.WristsCuffed, Body.WristsTied);
         } else {
             return None;
         }
@@ -92,10 +92,6 @@ public class UserItemsLogic {
     private Enum<?>[] getToyDefaults(QualifiedString item) {
         if (item.is(Toys.Buttplug)) {
             return peers(Body.InButt);
-        } else if (item.is(Toys.Ankle_Restraints)) {
-            return peers(Body.AnklesCuffed, Body.AnklesTied, Posture.AnklesTiedTogether);
-        } else if (item.is(Toys.Wrist_Restraints)) {
-            return peers(Body.WristsCuffed, Body.WristsTied);
         } else if (item.is(Toys.Gag)) {
             return peers(Body.InMouth);
         } else if (item.is(Toys.Spanking_Implement)) {

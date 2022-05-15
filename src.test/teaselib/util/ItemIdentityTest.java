@@ -41,7 +41,7 @@ public class ItemIdentityTest {
     @Test
     public void testRetrievingTheIdenticalItem() throws IOException {
         try (TestScript script = new TestScript()) {
-            Items gags = script.items(Toys.Gag).inventory();
+            Items.Collection gags = script.items(Toys.Gag).inventory();
 
             Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
             assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
@@ -491,6 +491,11 @@ public class ItemIdentityTest {
             nippleClamps.apply();
             assertTrue(nippleClamps.applied());
             assertTrue(nippleClamps.is(nippleClamps));
+
+            State onNipples = script.state(Body.OnNipples);
+            assertTrue(nippleClamps.is(nippleClamps));
+            assertTrue(nippleClamps.is(onNipples));
+            assertTrue(onNipples.is(nippleClamps));
 
             assertFalse(nippleClamps.canApply());
         }

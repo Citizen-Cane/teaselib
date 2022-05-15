@@ -305,7 +305,7 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
     @Test
     public void testCannotJerkOffWearingAChastityCageAndHandsTiedOnBackWithStrings() {
         String Toys_Chastity_Device = "teaselib.Toys.Chastity_Device";
-        String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
+        String Toys_Wrist_Restraints = "teaselib.Bondage.Wrist_Restraints";
 
         String Body_WristsTiedBehindBack = "teaselib.Body.WristsTiedBehindBack";
         String Body_SomethingOnPenis = "teaselib.Body.SomethingOnPenis";

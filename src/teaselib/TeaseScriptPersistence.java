@@ -120,8 +120,8 @@ public abstract class TeaseScriptPersistence extends Script {
             return new ItemsQueryImpl() {
                 @Override
                 public Items.Collection inventory() {
-                    Function<? super Select.AbstractStatement, Items.Query> mapper = query -> query
-                            .get(Domain.this.items(query.values));
+                    Function<? super Select.AbstractStatement, Items.Query> mapper = statement -> statement
+                            .get(Domain.this.items(statement.values));
                     List<Item> items = Arrays.stream(statements).map(mapper).map(Items.Query::inventory)
                             .flatMap(Items::stream).toList();
                     return new ItemsImpl(items);

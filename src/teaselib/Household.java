@@ -51,8 +51,9 @@ public enum Household {
 
     public static final Select.Statement All = items(values());
 
-    public static final Select.Statement Discipline = items(Clothes_Pegs, Weight, Hairbrush, Ruler, Wooden_Spoon);
-    public static final Select.Statement Bondage = items(Padlock, Shoe_Lace, Shrinkwrap, Duct_Tape, Leash);
+    public static final Select.Statement Discipline = items(Clothes_Pegs, Weight, Hairbrush, Ruler, Wooden_Spoon,
+            Leash);
+    public static final Select.Statement Bondage = items(Padlock, Shoe_Lace, Shrinkwrap, Duct_Tape);
     public static final Select.Statement Commodities = items(Balloons, Candle, Cigarettes, Condoms, Diaper, Heat_Rub,
             Lube, Rubber_Bands, Tampons);
     public static final Select.Statement Aids = items(Dust_Pan, Sewing_Box, Vacuum_Cleaner);

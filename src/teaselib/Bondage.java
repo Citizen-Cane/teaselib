@@ -12,8 +12,6 @@ import teaselib.util.Select;
 
 public enum Bondage {
 
-    Harness,
-
     Ankle_Restraints,
     Wrist_Restraints,
 
@@ -21,6 +19,7 @@ public enum Bondage {
     Rope,
     Tape,
 
+    Harness,
     Spreader_Bar,
 
     ;
@@ -28,7 +27,6 @@ public enum Bondage {
     public enum HarnessType implements Item.Attribute {
         Torso,
         Crotch,
-
         Strap_On,
     }
 
@@ -38,24 +36,19 @@ public enum Bondage {
             items(Ankle_Restraints).where(Items::matching, Features.Detachable));
     public static final Select.Statement Wristlets = new Select.Statement(
             items(Wrist_Restraints).where(Items::matching, Features.Detachable));
-
-    public static final Select.Statement Cuffs = new Select.Statement(
-            items(Ankle_Restraints, Wrist_Restraints).where(Items::without, Features.Detachable));
+    public static final Select.Statement[] Cufflets = { Anklets, Wristlets };
 
     public static final Select.Statement Ankle_Cuffs = new Select.Statement(
             items(Ankle_Restraints).where(Items::without, Features.Detachable));
-    public static final Select.Statement Hand_Cuffs = new Select.Statement(
+    public static final Select.Statement Wrist_Cuffs = new Select.Statement(
             items(Wrist_Restraints).where(Items::without, Features.Detachable));
+    public static final Select.Statement Cuffs[] = { Ankle_Cuffs, Wrist_Cuffs };
 
-    // TODO public static final Select.Statement Cufflets = Select.items(Wristlets, Anklets);
-    public static final Select.Statement Cufflets = new Select.Statement(
-            items(Ankle_Restraints, Wrist_Restraints).where(Items::matching, Features.Detachable));
-
-    public static final Select.Statement AllCuffs = items(Ankle_Restraints, Wrist_Restraints);
-    public static final Select.Statement Restraints = items(Chains, Rope, Tape);
-    public static final Select.Statement FetishItems = items(Harness, Spreader_Bar);
+    public static final Select.Statement Restraints = items(Ankle_Restraints, Wrist_Restraints);
+    public static final Select.Statement Rig = items(Chains, Rope, Tape);
+    public static final Select.Statement Fetish = items(Harness, Spreader_Bar);
 
     public static final List<Select.Statement> Categories = Collections.unmodifiableList(Arrays.asList( //
-            AllCuffs, Restraints, FetishItems));
+            Restraints, Rig, Fetish));
 
 }

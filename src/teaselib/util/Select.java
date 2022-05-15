@@ -59,8 +59,6 @@ public class Select {
         };
     }
 
-    // TODO items(Select.Statement ... statements) and get rid of using Statement.values
-
     public static Statement items(Enum<?>[]... values) {
         Enum<?>[] all = Arrays.stream(values).flatMap(Arrays::stream).toArray(Enum<?>[]::new);
         return items(all);
@@ -71,6 +69,8 @@ public class Select {
     }
 
     public abstract static class AbstractStatement {
+
+        // TODO package private Statement.values
 
         public final Enum<?>[] values;
         final List<Clause<Items>> clauses;
@@ -89,12 +89,8 @@ public class Select {
             return select(items, clauses);
         }
 
-        List<Clause<Items>> gather(Enum<?>... items) {
-            BiFunction<Items, Enum<?>[], Items> selector = (i, v) -> i.items(items);
-            Clause<Items> statement = i -> selector.apply(i, values);
-            List<Clause<Items>> clause = new ArrayList<>(clauses);
-            clause.add(statement);
-            return clause;
+        static List<Clause<Items>> gather(Enum<?>... items) {
+            return Collections.singletonList(query -> query.items(items));
         }
 
     }

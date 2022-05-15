@@ -253,7 +253,7 @@ public class ItemImplTest {
     public void testApplyToAppliesAttributesPlusCustomPeers() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
-            script.setAvailable(Bondage.AllCuffs);
+            script.setAvailable(Bondage.Restraints);
             assertFalse(script.state(Bondage.Wrist_Restraints).applied());
 
             Items.Set restraints = script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints)

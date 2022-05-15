@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Bondage;
 import teaselib.Clothes;
 import teaselib.Sexuality;
 import teaselib.Shoes;
@@ -20,6 +21,7 @@ import teaselib.Toys;
 import teaselib.test.TestScript;
 
 public class SelectTest {
+
     TestScript test;
 
     @Before
@@ -137,6 +139,19 @@ public class SelectTest {
         assertEquals(2, test.items(Clothes.Male.items(Clothes.Shirt, Clothes.Trousers)).inventory().valueSet().size());
         assertEquals(1, test.items(Select.items(Toys.Collar)).inventory().valueSet().size());
         assertEquals(3, test.items(attire).inventory().valueSet().size());
+    }
+
+    @Test
+    public void testPredefinedStatementArray() {
+        assertEquals(1, test.items(Bondage.Anklets).inventory().size());
+        assertEquals(1, test.items(Bondage.Wristlets).inventory().size());
+        assertEquals(1, test.items(Bondage.Ankle_Cuffs).inventory().size());
+        assertEquals(1, test.items(Bondage.Wrist_Cuffs).inventory().size());
+
+        assertEquals(2, test.items(Bondage.Cuffs).inventory().size());
+        assertEquals(2, test.items(Bondage.Cufflets).inventory().size());
+
+        assertEquals(4, test.items(Bondage.Restraints).inventory().size());
     }
 
     @Test

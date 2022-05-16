@@ -180,8 +180,9 @@ public abstract class Script {
             } else {
                 domain = domain.equalsIgnoreCase(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain
                         : domain;
-                if (!handleUntilRemoved(domain, startupTimeSeconds).applied()
-                        && !handleUntilExpired(domain, startupTimeSeconds).applied()) {
+                boolean allRemoved = !handleUntilRemoved(domain, startupTimeSeconds).applied();
+                boolean allExpired = !handleUntilExpired(domain, startupTimeSeconds).applied();
+                if (allRemoved && allExpired) {
                     persistedDomains.removeFrom(domain);
                 }
             }
@@ -222,7 +223,6 @@ public abstract class Script {
             }).filter(Predicate.not(Item.NotFound::equals)).toList();
             return items.isEmpty();
         }
-
     }
 
     private static boolean autoRemovalLimitReached(State state, long startupTimeSeconds, float limitFactor) {

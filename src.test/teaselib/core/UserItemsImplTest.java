@@ -280,6 +280,30 @@ public class UserItemsImplTest {
     }
 
     @Test
+    public void testExpiredAndRemoved() throws IOException {
+        test(Until.Expired, Until.Removed);
+    }
+
+    @Test
+    public void testRemovedAndExpired() throws IOException {
+        test(Until.Removed, Until.Expired);
+    }
+
+    private void test(Until until1, Until until2) throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.item(Toys.Nipple_Clamps).apply().over(30, TimeUnit.MINUTES).remember(until1);
+            script.item(Toys.Gag).apply().over(10, TimeUnit.MINUTES).remember(until2);
+            script.debugger.advanceTime(30, TimeUnit.MINUTES);
+            assertTrue(script.item(Toys.Nipple_Clamps).applied());
+            assertTrue(script.item(Toys.Gag).applied());
+            script.debugger.clearStateMaps();
+            script.handleAutoRemove();
+            assertFalse(until1 == Until.Expired && script.item(Toys.Nipple_Clamps).applied());
+            assertFalse(until2 == Until.Expired && script.item(Toys.Gag).applied());
+        }
+    }
+
+    @Test
     public void testPhysicalBlockingPeers() throws Exception {
         try (TestScript script = new TestScript()) {
             script.setAvailable(Clothes.Pantyhose);

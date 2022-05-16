@@ -585,7 +585,8 @@ public abstract class Script {
     private Prompt getPrompt(List<Answer> answers, Intention intention, ScriptFunction scriptFunction) {
         var choices = choices(answers, intention);
         var inputMethods = teaseLib.globals.get(InputMethods.class);
-        var prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct, uiEvents());
+        var prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct,
+                initialUiEvent());
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {
             logger.info("{} {}", inputMethod.getClass().getSimpleName(), inputMethod);
@@ -593,7 +594,7 @@ public abstract class Script {
         return prompt;
     }
 
-    protected Supplier<UiEvent> uiEvents() {
+    protected Supplier<UiEvent> initialUiEvent() {
         // TODO also depends on camera input
         // - possibly wrong state after camera surprise-removal
         // - camera is only recognized on the next prompt - but UI would be always active which is good
@@ -603,7 +604,9 @@ public abstract class Script {
                 if (humanPoseInteraction != null && humanPoseInteraction.deviceInteraction.isActive()) {
                     var proximitySensor = humanPoseInteraction.deviceInteraction.proximitySensor;
                     if (!humanPoseInteraction.deviceInteraction.containsEventListener(actor, proximitySensor)) {
+                        // Starting the sensor includes fires event with all relevant updates for the new listener
                         startProximitySensor(humanPoseInteraction);
+                        // -> current pose available
                     }
                     return new InputMethod.UiEvent(face2face(proximitySensor.pose()));
                 } else {

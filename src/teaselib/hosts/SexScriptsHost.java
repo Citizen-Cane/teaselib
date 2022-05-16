@@ -660,6 +660,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             Thread.currentThread().interrupt();
             return;
         }
+        if (activeComponents.isEmpty()) {
+            return;
+        }
 
         var unusedComponents = uiComponents.stream().filter(not(activeComponents::contains)).collect(toSet());
         enable(unusedComponents, false);
@@ -671,8 +674,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     private Set<JComponent> awaitRealizedUI() throws InterruptedException {
-        Set<JComponent> activeComponents;
-        while ((activeComponents = activeComponents()).isEmpty()) {
+        Set<JComponent> activeComponents = Collections.emptySet();
+        while (activeChoices != null && (activeComponents = activeComponents()).isEmpty()) {
             Thread.sleep(100);
         }
         return activeComponents;

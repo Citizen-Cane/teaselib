@@ -42,6 +42,7 @@ import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -201,16 +202,48 @@ public abstract class Script {
         var untilState = (StateImpl) teaseLib.state(domain, until);
         Set<QualifiedString> peers = untilState.peers();
         for (QualifiedString peer : new ArrayList<>(peers)) {
-            if (!peer.isItem()) {
+            if (peer.isItem()) {
+                Item candidate = teaseLib.item(domain, peer);
+                if (candidate == Item.NotFound) {
+                    continue;
+                } else {
+                    var item = AbstractProxy.removeProxy(candidate);
+                    if (allUserItemReferencesRemoved(item)) {
+                        remove(item);
+                    } else if (autoRemovalLimitReached(item, startupTimeSeconds, limitFactor)) {
+                        remove(item);
+                    }
+                }
+            } else {
                 var state = (StateImpl) teaseLib.state(domain, peer);
                 if (allUserItemReferencesRemoved(state)) {
-                    state.remove();
+                    remove(state);
                 } else if (autoRemovalLimitReached(state, startupTimeSeconds, limitFactor)) {
-                    state.remove();
+                    remove(state);
                 }
             }
         }
         return untilState;
+    }
+
+    private void remove(ItemImpl item) {
+        item.remove(elapsedDuration(item));
+    }
+
+    private void remove(StateImpl state) {
+        state.remove(elapsedDuration(state));
+    }
+
+    private FrozenDuration elapsedDuration(State state) {
+        Duration duration = state.duration();
+        long start = duration.start(TeaseLib.DURATION_TIME_UNIT);
+        long limit = duration.limit(TeaseLib.DURATION_TIME_UNIT);
+        long elapsed = limit;
+        return new FrozenDuration(teaseLib, start, limit, elapsed, TeaseLib.DURATION_TIME_UNIT);
+    }
+
+    private boolean allUserItemReferencesRemoved(ItemImpl item) {
+        return allUserItemReferencesRemoved(item.state());
     }
 
     private boolean allUserItemReferencesRemoved(StateImpl state) {

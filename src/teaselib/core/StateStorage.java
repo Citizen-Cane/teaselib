@@ -60,7 +60,7 @@ class StateStorage {
                 throw new IllegalStateException(durationStorage.value());
             }
         } else {
-            return new FrozenDuration(state.cache.teaseLib, 0, 0, TimeUnit.SECONDS);
+            return new FrozenDuration(state.cache.teaseLib, 0, 0, 0, TimeUnit.SECONDS);
         }
     }
 

@@ -261,28 +261,32 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     @Override
     public void remove() {
+        remove(duration());
+    }
+
+    void remove(Duration duration) {
         StateImpl state = state();
         if (containsMyGuid(state)) {
-            removeMeFromMyPeers(state);
-            releaseInstanceGuid();
+            removeMeFromMyPeers(state, duration);
+            releaseInstanceGuid(duration);
             if (state.peers().isEmpty()) {
-                state.remove();
+                state.remove(duration);
             }
-            updateLastUsedGuidState(duration());
+            updateLastUsedGuidState(duration);
         } else {
             throw new IllegalStateException("This item is not applied: " + name);
         }
     }
 
-    private void removeMeFromMyPeers(StateImpl me) {
-        for (QualifiedString peer : new ArrayList<>(me.peers())) {
+    private void removeMeFromMyPeers(StateImpl myState, Duration duration) {
+        for (QualifiedString peer : new ArrayList<>(myState.peers())) {
             if (!peer.isItem()) {
                 StateImpl peerState = state(peer);
-                peerState.removeFroImpl(Collections.singleton(this.name));
-                me.removeFroImpl(Collections.singleton(this.name));
+                peerState.removeFromImpl(Collections.singleton(this.name), duration);
+                myState.removeFromImpl(Collections.singleton(this.name), duration);
 
                 if (allInstanceGuidsRemoved(peerState)) {
-                    peerState.removeFroImpl(Collections.singleton(this.kind()));
+                    peerState.removeFromImpl(Collections.singleton(this.kind()), duration);
                 }
             }
         }
@@ -300,38 +304,39 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     private void removeInternal(Set<QualifiedString> peers) {
         StateImpl state = state();
+        Duration duration = duration();
         if (containsMyGuid(state)) {
             for (QualifiedString peer : peers) {
                 if (!peer.isItem()) {
                     StateImpl peerState = state(peer);
-                    peerState.removeFroImpl(Collections.singleton(this.name));
+                    peerState.removeFromImpl(Collections.singleton(this.name), duration);
                 }
             }
 
-            releaseInstanceGuid();
+            releaseInstanceGuid(duration);
             if (state.peers().isEmpty()) {
                 state.remove();
             }
-            updateLastUsedGuidState(duration());
+            updateLastUsedGuidState(duration);
         } else {
             throw new IllegalStateException("This item is not applied: " + name);
         }
     }
 
-    public boolean releaseInstanceGuid() {
+    public boolean releaseInstanceGuid(Duration duration) {
         StateImpl state = state();
         if (state.peerStates().stream().anyMatch(this::containsMyGuid)) {
             return false;
         }
-        state.removeFroImpl(Collections.singleton(this.name));
+        state.removeFromImpl(Collections.singleton(this.name), duration);
         return true;
     }
 
     private void updateLastUsedGuidState() {
-        lastUsed().updateLastUsed();
+        updateLastUsedGuidState(duration());
     }
 
-    private void updateLastUsedGuidState(Duration duration) {
+    void updateLastUsedGuidState(Duration duration) {
         lastUsed().updateLastUsed(duration);
     }
 

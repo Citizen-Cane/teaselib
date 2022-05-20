@@ -1,7 +1,10 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.Assert.*;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -201,7 +204,7 @@ public class DurationTest {
     @Test
     public void testItemDurationForDifferentItemsOfSameKind() {
         TimeUnit unit = TimeUnit.HOURS;
-        FrozenDuration neverApplied = new FrozenDuration(script.teaseLib, 0, 0, TimeUnit.HOURS);
+        FrozenDuration neverApplied = new FrozenDuration(script.teaseLib, 0, 0, 0, TimeUnit.HOURS);
 
         Item item1 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Cage).item();
         Item item2 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).item();
@@ -218,7 +221,10 @@ public class DurationTest {
 
         script.debugger.advanceTime(1, unit);
 
+        assertEquals("Removed since for item1", 1, item1.removed(unit));
         item2.apply();
+        assertEquals("Removed since for item1", 1, item1.removed(unit));
+
         script.debugger.advanceTime(1, unit);
         assertEquals("Removed since for item2", 0, item2.removed(unit));
 
@@ -253,14 +259,18 @@ public class DurationTest {
     public void testStateNeverApplied() {
         State state = script.state("test");
         assertTrue(state.removed());
-        assertTrue(state.removed(TimeUnit.DAYS) > 0);
+        assertEquals(Duration.INFINITE, state.removed(TimeUnit.SECONDS));
+        assertEquals(Duration.INFINITE, state.removed(TimeUnit.MINUTES));
+        assertEquals(Duration.INFINITE, state.removed(TimeUnit.DAYS));
     }
 
     @Test
     public void testItemNeverApplied() {
         Item item = script.item("test");
         assertTrue(item.removed());
-        assertTrue(item.removed(TimeUnit.DAYS) > 0);
+        assertEquals(Duration.INFINITE, item.removed(TimeUnit.SECONDS));
+        assertEquals(Duration.INFINITE, item.removed(TimeUnit.MINUTES));
+        assertEquals(Duration.INFINITE, item.removed(TimeUnit.DAYS));
     }
 
     @Test

@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.Body;
+import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.TeaseScriptPersistence.Domain;
 import teaselib.Toys;
@@ -32,6 +34,76 @@ public class ItemPersistencyTest {
             script.debugger.advanceTime(1, TimeUnit.HOURS);
             script.triggerAutoRemove();
             assertFalse(item.applied());
+        }
+    }
+
+    @Test
+    public void testLastUsedItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            Item item = script.item(Toys.Buttplug);
+
+            item.apply().over(60, TimeUnit.MINUTES).remember(Until.Expired);
+            script.debugger.advanceTime(60, TimeUnit.MINUTES);
+            item.remove();
+            script.debugger.advanceTime(60, TimeUnit.MINUTES);
+
+            assertFalse(item.applied());
+            assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
+            assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
+            assertEquals(60, item.removed(TimeUnit.MINUTES));
+        }
+    }
+
+    @Test
+    public void testLastUsedItemAutoRemove() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            Item item = script.item(Toys.Buttplug);
+
+            item.apply().over(60, TimeUnit.MINUTES).remember(Until.Expired);
+            script.debugger.advanceTime(120, TimeUnit.MINUTES);
+            script.triggerAutoRemove();
+
+            assertFalse(item.applied());
+            assertEquals(60, item.removed(TimeUnit.MINUTES));
+            assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
+            assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
+        }
+    }
+
+    @Test
+    public void testLastUsedState() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            State state = script.state(Toys.Buttplug);
+
+            state.applyTo(Body.InButt).over(60, TimeUnit.MINUTES).remember(Until.Expired);
+            script.debugger.advanceTime(60, TimeUnit.MINUTES);
+            state.remove();
+            script.debugger.advanceTime(60, TimeUnit.MINUTES);
+
+            assertFalse(state.applied());
+            assertEquals(60, state.removed(TimeUnit.MINUTES));
+            assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
+            assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
+        }
+    }
+
+    @Test
+    public void testLastUsedStateAutoRemove() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            State state = script.state(Toys.Buttplug);
+
+            state.applyTo(Body.InButt).over(60, TimeUnit.MINUTES).remember(Until.Expired);
+            script.debugger.advanceTime(120, TimeUnit.MINUTES);
+            script.triggerAutoRemove();
+
+            assertFalse(state.applied());
+            assertEquals(60, state.removed(TimeUnit.MINUTES));
+            assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
+            assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
         }
     }
 

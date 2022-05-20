@@ -1,13 +1,11 @@
 package teaselib.core;
 
-import static java.util.Collections.unmodifiableSet;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toSet;
-import static teaselib.core.StateImpl.Internal.DEFAULT_DOMAIN_NAME;
-import static teaselib.core.StateImpl.Internal.PERSISTED_DOMAINS_STATE;
-import static teaselib.core.TeaseLib.DefaultDomain;
-import static teaselib.core.util.QualifiedStringMapping.map;
+import static java.util.Collections.*;
+import static java.util.concurrent.TimeUnit.*;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.StateImpl.Internal.*;
+import static teaselib.core.TeaseLib.*;
+import static teaselib.core.util.QualifiedStringMapping.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -189,7 +187,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
         }
 
         setApplied();
-        updateLastUsed();
+        updateLastUsed(duration);
         return this;
     }
 
@@ -352,11 +350,20 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
     @Override
     public void remove() {
+        remove(duration);
+    }
+
+    void remove(Duration duration) {
+        removeState(duration);
+        updateLastUsed(duration);
+    }
+
+    private void removeState(Duration duration) {
         if (!peers.isEmpty()) {
             var copyOfPeers = new QualifiedString[peers.size()];
             for (QualifiedString peer : peers.toArray(copyOfPeers)) {
                 if (!peer.isItem()) {
-                    state(peer).removeFroImpl(Collections.singleton(name));
+                    state(peer).removeFromImpl(Collections.singleton(name), duration);
                 }
             }
             peers.clear();
@@ -367,23 +374,11 @@ public class StateImpl implements State, State.Options, State.Attributes {
         if (storage.persisted()) {
             storage.deletePersistence();
         }
-
-        updateLastUsed(this.duration);
     }
 
-    public void updateLastUsed(Duration duration) {
+    void updateLastUsed(Duration duration) {
         if (!Domain.LAST_USED.equals(domain)) {
             updateLastUsed(new FrozenDuration(cache.teaseLib, duration));
-        }
-    }
-
-    public void updateLastUsed() {
-        if (!Domain.LAST_USED.equals(domain)) {
-            long now = cache.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT);
-            // TODO update with actual duration value
-            long limit = State.TEMPORARY;
-            long elapsed = 0;
-            updateLastUsed(new FrozenDuration(cache.teaseLib, now, limit, elapsed, TeaseLib.DURATION_TIME_UNIT));
         }
     }
 
@@ -400,13 +395,13 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
         Set<QualifiedString> flattenedPeers = QualifiedStringMapping.map(Precondition::remove,
                 QualifiedStringMapping::reduceItemGuidsToStates, peers);
-        removeFroImpl(flattenedPeers);
+        removeFromImpl(flattenedPeers, duration);
     }
 
-    public void removeFroImpl(Set<QualifiedString> flattenedPeers) {
+    public void removeFromImpl(Set<QualifiedString> flattenedPeers, Duration duration) {
         for (QualifiedString peer : flattenedPeers) {
             if (peersContain(peer)) {
-                // TODO removing just those peers not available in any other applied item
+                // TODO remove only those peers not available in any other applied item
                 removePeer(peer);
 
                 if (!QualifiedString.isItemGuid(peer)) {
@@ -415,7 +410,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
 
                 if (guidsOfSameKind(peer.kind()) == 0) {
                     // reverse callback to resolve peering
-                    state(peer.kind()).removeFroImpl(Collections.singleton(name));
+                    state(peer.kind()).removeFromImpl(Collections.singleton(name), duration);
                 }
             }
 
@@ -425,9 +420,9 @@ public class StateImpl implements State, State.Options, State.Attributes {
         }
 
         if (peers.isEmpty()) {
-            remove();
+            remove(duration);
         } else if (containOnlyBookkeepingStates()) {
-            remove();
+            remove(duration);
         } else if (storage.persisted()) {
             storage.updatePersistence();
         }
@@ -462,7 +457,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
                     ItemImpl peerItem;
                     try {
                         peerItem = getItem(peer);
-                        peerItem.releaseInstanceGuid();
+                        peerItem.releaseInstanceGuid(duration);
                     } catch (NoSuchElementException e) {
                         logger.warn("Item {} does not exist anymore: {}", peer, e.getMessage());
                     }

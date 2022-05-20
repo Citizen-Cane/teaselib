@@ -16,10 +16,6 @@ public class FrozenDuration extends AbstractDuration {
 
     private final long elapsed;
 
-    public FrozenDuration(TeaseLib teaseLib, long start, long limit, TimeUnit unit) {
-        this(teaseLib, start, limit, 0, unit);
-    }
-
     public FrozenDuration(TeaseLib teaseLib, long start, long limit, long elapsed, TimeUnit unit) {
         super(teaseLib, convertToDuration(start, unit), convertToDuration(limit, unit));
         this.elapsed = convertToDuration(elapsed, unit);

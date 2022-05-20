@@ -26,7 +26,6 @@ import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Bondage;
 import teaselib.Clothes;
-import teaselib.Duration;
 import teaselib.Features;
 import teaselib.Gadgets;
 import teaselib.Household;
@@ -1238,14 +1237,6 @@ public class ItemsTest {
             assertEquals(2, inButt.size());
             assertTrue(inButt.anyAre(Toys.Buttplug));
             assertTrue(inButt.anyAre(Toys.Enema_Kit));
-        }
-    }
-
-    @Test
-    public void testRemovedDurationNeverApplied() throws IOException {
-        try (TestScript script = new TestScript()) {
-            Item buttplug = script.item(Toys.Buttplug);
-            assertEquals(Duration.INFINITE, buttplug.removed(TimeUnit.MILLISECONDS));
         }
     }
 

@@ -204,14 +204,13 @@ public class UserItemsLogic {
 
     Enum<?>[] logicallyBlockingPeers(QualifiedString state) {
         if (state.is(Clothes.Underpants)) {
-            // TODO allow panties/catsuit/pantyhose Ouvert
+            // TODO allow to wear panties over catsuit/pantyhose/Trowsers Ouvert
             return blockedBy(Clothes.Catsuit, Clothes.Pantyhose, Clothes.Trousers);
         } //
-        else if (state.is(Shoes.class)) {
-            return blockedBy(Clothes.Socks, Clothes.Pantyhose, Clothes.Stockings);
-        } else if (state.is(Clothes.Socks) || state.is(Clothes.Pantyhose) || state.is(Clothes.Stockings)) {
+        else if (state.is(Clothes.Socks) || state.is(Clothes.Pantyhose) || state.is(Clothes.Stockings) || state.is(Clothes.Trousers)) {
             return blockedBy(Shoes.values());
-        } else {
+        } //
+        else {
             return NotBlocked;
         }
     }

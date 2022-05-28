@@ -1,6 +1,6 @@
 package teaselib;
 
-import static teaselib.util.Select.items;
+import static teaselib.util.Select.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,28 +83,18 @@ public enum Clothes {
         Swimsuit, // body/leotard
     }
 
-    public enum GenitalAccessType implements Item.Attribute {
-        Ouvert,
-        Zipper,
-        None
+    public enum Ouvert implements Item.Attribute {
+        Anal,
+        Breasts,
+        Genital,
+        Nipples
     }
 
-    public enum AnalAccessType implements Item.Attribute {
-        Ouvert,
-        Zipper,
-        None
-    }
-
-    public enum BreastAccessType implements Item.Attribute {
-        Ouvert,
-        Zipper,
-        None
-    }
-
-    public enum NippleAccessType implements Item.Attribute {
-        Ouvert,
-        Zipper,
-        None
+    public enum Zipper implements Item.Attribute {
+        Anal,
+        Breasts,
+        Genital,
+        Nipples
     }
 
     @SuppressWarnings("hiding")

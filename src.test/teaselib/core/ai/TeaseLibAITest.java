@@ -49,7 +49,8 @@ public class TeaseLibAITest {
                 try (HumanPose humanPose = new HumanPose()) {
                     var sceneCapture = devices.get(0);
                     sceneCapture.start();
-                    List<Estimation> poses = humanPose.poses(sceneCapture);
+                    var timestamp = System.currentTimeMillis();
+                    List<Estimation> poses = humanPose.poses(sceneCapture, timestamp);
                     assertNotNull(poses);
                 }
             };
@@ -66,7 +67,8 @@ public class TeaseLibAITest {
             sceneCapture.start();
             Runnable test = () -> {
                 try (HumanPose humanPose = new HumanPose()) {
-                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture);
+                    var timestamp = System.currentTimeMillis();
+                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, timestamp);
                     assertNotNull(poses);
                     assertEquals(2, poses.size());
                 }
@@ -89,7 +91,8 @@ public class TeaseLibAITest {
             sceneCapture.start();
             Runnable test = () -> {
                 try (HumanPose humanPose = new HumanPose()) {
-                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture);
+                    var timestamp = System.currentTimeMillis();
+                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, timestamp);
                     assertNotNull(poses);
                     assertEquals(1, poses.size());
                 }
@@ -244,20 +247,23 @@ public class TeaseLibAITest {
             Runnable test = () -> {
                 try (HumanPose humanPose1 = new HumanPose(); HumanPose humanPose2 = new HumanPose()) {
                     sceneCapture.start();
-                    List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture);
+                    var timestamp = System.currentTimeMillis();
+                    List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture, timestamp);
                     assertEquals(1, poses1.size());
                     assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.70f,
                             poses1.get(0).distance.orElseThrow(), 0.01f);
                     assertEquals(Proximity.FACE2FACE, poses1.get(0).proximity());
 
-                    List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture);
+                    var timestamp2 = System.currentTimeMillis();
+                    List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture, timestamp2);
                     assertEquals(1, poses2.size());
                     assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.92,
                             poses2.get(0).distance.orElseThrow(), 0.1);
                     assertEquals(Proximity.FACE2FACE, poses2.get(0).proximity());
 
                     try {
-                        humanPose2.poses(sceneCapture);
+                        var timestamp3 = System.currentTimeMillis();
+                        humanPose2.poses(sceneCapture, timestamp3);
                         fail("Expected device lost since image sequence doesn't contain any more images");
                     } catch (SceneCapture.DeviceLost exception) {
                         return;

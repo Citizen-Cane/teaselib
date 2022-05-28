@@ -248,16 +248,16 @@ public class HumanPose extends NativeObject.Disposible {
 
     private native boolean acquireImage(byte[] bytes);
 
-    private native List<HumanPose.Estimation> estimate();
+    private native List<HumanPose.Estimation> estimate(long timestamp);
 
-    public List<HumanPose.Estimation> poses(SceneCapture device) {
-        return poses(device, device.rotation().reverse());
+    public List<HumanPose.Estimation> poses(SceneCapture device, long timestamp) {
+        return poses(device, device.rotation().reverse(), timestamp);
     }
 
-    private List<HumanPose.Estimation> poses(SceneCapture device, Rotation rotation) {
+    private List<HumanPose.Estimation> poses(SceneCapture device, Rotation rotation, long timestamp) {
         if (acquire(device)) {
             setRotation(rotation.value);
-            return estimate();
+            return estimate(timestamp);
         } else {
             throw new SceneCapture.DeviceLost("Camera not started or closed");
         }
@@ -283,7 +283,7 @@ public class HumanPose extends NativeObject.Disposible {
         if (acquireImage(bytes)) {
             // TODO Decode image bytes and derive rotation & model from image dimension
             setRotation(rotation.value);
-            return estimate();
+            return estimate(0);
         } else {
             throw new SceneCapture.DeviceLost("Camera not started or closed");
         }

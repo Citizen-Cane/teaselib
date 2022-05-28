@@ -180,6 +180,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         return false;
     }
 
+    // TODO remove multiple cached models since HumanPose handles interests already
     HumanPose getModel(Set<Interest> interests) throws InterruptedException {
         throwIfUnsupported(interests);
         if (humanPoseCachedModel == null) {
@@ -371,10 +372,15 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         try {
             HumanPose model = getModel(interests);
             long timestamp = System.currentTimeMillis();
-            List<HumanPose.Estimation> poses = model.poses(device);
+            // Model.poses requires passing native Person record here in order to track timeline
+            // Person person = new Person(model); // device might change over time
+            // person.track(device); -> Person::track(aifx::pose::Pose& nearest); // best idea without id
+            // var pose = person.pose();
+            var poses = model.poses(device, timestamp);
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
             } else {
+                // TODO person tracking requires ID or is only available for nearest person
                 return new PoseAspects(poses.get(0), timestamp, interests, previous);
             }
         } catch (InterruptedException e) {
@@ -388,7 +394,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         try {
             HumanPose model = getModel(interests);
             long timestamp = System.currentTimeMillis();
-            List<HumanPose.Estimation> poses = model.poses(device);
+            List<HumanPose.Estimation> poses = model.poses(device, timestamp);
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
             } else {

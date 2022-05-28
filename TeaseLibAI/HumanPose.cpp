@@ -61,8 +61,24 @@ extern "C"
 	 * Signature: (I)V
 	 */
 	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_setInterests
-	(JNIEnv* /*env*/, jobject /*jthis*/, jint /*interestMask*/) {
+	(JNIEnv* env, jobject jthis, jint interests) {
 		// TODO choose inference model according to desired aspects
+		try {
+			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
+			humanPose->set(static_cast<HumanPose::Interest>(interests));
+		}
+		catch (invalid_argument& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (exception& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (JNIException& e) {
+			e.rethrow();
+		}
 	}
 
 	/*
@@ -75,7 +91,7 @@ extern "C"
 	{
 		try {
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
-			humanPose->setRotation(static_cast<image::Rotation>(value));
+			humanPose->set(static_cast<image::Rotation>(value));
 		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 		} catch (exception& e) {
@@ -85,7 +101,6 @@ extern "C"
 		} catch (JNIException& e) {
 			e.rethrow();
 		}
-
 	}
 
 	/*
@@ -99,7 +114,8 @@ extern "C"
 		try {
 			Objects::requireNonNull(L"device", jdevice);
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
-			return humanPose->acquire(env, jdevice);
+			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jdevice);
+			return humanPose->acquire(capture);
 		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return false;
@@ -125,7 +141,8 @@ extern "C"
 		try {
 			Objects::requireNonNull(L"image", jimage);
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
-			return humanPose->acquire(env, jimage);
+			JNIByteArray image(env, jimage);
+			return humanPose->acquire(image.bytes, image.size);
 		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return false;
@@ -147,56 +164,16 @@ extern "C"
 	 * Signature: ()Ljava/util/List;
 	 */
 	JNIEXPORT jobject JNICALL Java_teaselib_core_ai_perception_HumanPose_estimate
-	(JNIEnv* env, jobject jthis)
+	(JNIEnv* env, jobject jthis, jlong timestamp)
 	{
 		try {
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
-			vector<Pose> poses = humanPose->estimate();
-			set<NativeObject*> aspects;
+			auto millis = std::chrono::milliseconds(timestamp);
+			vector<Pose> poses = humanPose->estimate(millis);
 
 			vector<jobject> results;
 			for_each(poses.begin(), poses.end(), [&env, &results](const Pose& pose) {
-				const Point2f head = pose.head();
-				const Point3f gaze = pose.gaze();
-				jclass resultClass = JNIClass::getClass(env, "teaselib/core/ai/perception/HumanPose$Estimation");
-				if (env->ExceptionCheck()) throw JNIException(env);
-				jobject jpose;
-				if (isnan(pose.distance)) {
-					jpose = env->NewObject(
-						resultClass,
-						JNIClass::getMethodID(env, resultClass, "<init>", "()V")
-					);
-				} else
-					if (isnan(head.x) || isnan(head.y)) {
-						jpose = env->NewObject(
-							resultClass,
-							JNIClass::getMethodID(env, resultClass, "<init>", "(F)V"),
-							pose.distance
-						);
-					} else
-						if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
-							jpose = env->NewObject(
-								resultClass,
-								JNIClass::getMethodID(env, resultClass, "<init>", "(FFF)V"),
-								pose.distance,
-								head.x,
-								head.y
-							);
-						} else {
-							jpose = env->NewObject(
-								resultClass,
-								JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
-								pose.distance,
-								head.x,
-								head.y,
-								gaze.x,
-								gaze.y,
-								gaze.z
-							);
-						}
-				if (env->ExceptionCheck()) throw JNIException(env);
-
-				results.push_back(jpose);
+				results.push_back(jpose(env, pose));
 			});
 
 			return JNIUtilities::asList(env, results);
@@ -214,7 +191,6 @@ extern "C"
 			return nullptr;
 		}
 	}
-
 
 	/*
 	 * Class:     teaselib_core_ai_perception_HumanPose
@@ -240,10 +216,58 @@ extern "C"
 
 }
 
+jobject jpose(JNIEnv* env, const aifx::pose::Pose& pose)
+{
+	const Point2f head = pose.head();
+	const Point3f gaze = pose.gaze();
+	jclass resultClass = JNIClass::getClass(env, "teaselib/core/ai/perception/HumanPose$Estimation");
+	if (env->ExceptionCheck()) throw JNIException(env);
+	jobject jpose;
+	if (isnan(pose.distance)) {
+		jpose = env->NewObject(
+			resultClass,
+			JNIClass::getMethodID(env, resultClass, "<init>", "()V")
+		);
+	}
+	else
+		if (isnan(head.x) || isnan(head.y)) {
+			jpose = env->NewObject(
+				resultClass,
+				JNIClass::getMethodID(env, resultClass, "<init>", "(F)V"),
+				pose.distance
+			);
+		}
+		else
+			if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
+				jpose = env->NewObject(
+					resultClass,
+					JNIClass::getMethodID(env, resultClass, "<init>", "(FFF)V"),
+					pose.distance,
+					head.x,
+					head.y
+				);
+			}
+			else {
+				jpose = env->NewObject(
+					resultClass,
+					JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
+					pose.distance,
+					head.x,
+					head.y,
+					gaze.x,
+					gaze.y,
+					gaze.z
+				);
+			}
+	if (env->ExceptionCheck()) throw JNIException(env);
+	return jpose;
+}
+
 // TODO Presence, Face2Face & Head Gesture aspects require SinglePoseExact, tests and multiplayer require MultiPoseFast
 
 HumanPose::HumanPose()
 	: model(Movenet::Model::MultiposeFast)
+	, interests(Interest::Status | Interest::Proximity)
 	, rotation(image::Rotation::None)
 	{}
 
@@ -254,14 +278,18 @@ HumanPose::~HumanPose()
 	});
 }
 
-void HumanPose::setRotation(const image::Rotation value)
+void HumanPose::set(Interest flags)
+{
+	this->interests = flags;
+}
+
+void HumanPose::set(const image::Rotation value)
 {
 	this->rotation = value;
 }
 
-bool HumanPose::acquire(JNIEnv* env, jobject jdevice)
+bool HumanPose::acquire(VideoCapture* capture)
 {
-	VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jdevice);
 	if (capture->started()) {
 		*capture >> frame;
 		return !frame.empty();
@@ -270,13 +298,12 @@ bool HumanPose::acquire(JNIEnv* env, jobject jdevice)
 	}
 }
 
-bool HumanPose::acquire(JNIEnv* env, jbyteArray jimage)
+bool HumanPose::acquire(const void* image, int size)
 {
-	JNIByteArray image(env, jimage);
-	if (image.size == 0) {
+	if (size == 0) {
 		throw invalid_argument("no bytes");
 	} else {
-		Mat data(1, image.size, CV_8UC1, (void*) image.bytes);
+		Mat data(1, size, CV_8UC1, (void*) image);
 		imdecode(data, IMREAD_COLOR).copyTo(frame);
 		if (frame.empty()) {
 			throw invalid_argument("not an image");
@@ -285,10 +312,10 @@ bool HumanPose::acquire(JNIEnv* env, jbyteArray jimage)
 	}
 }
 
-const vector<Pose>& HumanPose::estimate()
+const vector<Pose>& HumanPose::estimate(const std::chrono::milliseconds timestamp)
 {
 	Movenet& poseEstimation = *interpreter();
-	poses = poseEstimation(frame, rotation);
+	poses = poseEstimation(frame, rotation, timestamp);
 	return poses;
 }
 
@@ -296,7 +323,6 @@ Movenet* HumanPose::interpreter()
 {
 	// TODO Landscape/Portrait only for Multipose model -> implement model rotation vs camera rotation 
 	// TODO image rotation for sqaure sensors  / model selection and image rotation for non-square models
-	// TODO singlepose models use sqaure input - resize model input to 4:3
 	const image::Orientation orientation = rotation == aifx::image::Rotation::None || rotation == image::Rotation::Rotate_180 
 		? image::Orientation::Landscape : image::Orientation::Portrait;
 	auto pose_estimation = models.find(orientation);

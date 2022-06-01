@@ -429,11 +429,6 @@ public abstract class Script {
     void showAll(double delaySeconds) {
         var showAll = new Message(actor);
         addMatchingImage(showAll);
-        if (scriptRenderer.showsMultipleParagraphs()) {
-            showAll.add(Type.Keyword, Message.ShowChoices);
-            showAll.add(Type.Delay, delaySeconds);
-            addMatchingImage(showAll);
-        }
         try {
             scriptRenderer.showAll(teaseLib, resources, actor, showAll, withoutSpeech());
         } catch (InterruptedException e) {

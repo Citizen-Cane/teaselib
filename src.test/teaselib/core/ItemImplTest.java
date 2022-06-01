@@ -1,11 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -14,6 +9,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Disabled;
@@ -894,6 +890,36 @@ public class ItemImplTest {
             assertTrue(ballGag.is(Body.class));
             assertFalse(ringGag.is(Body.class));
             assertFalse(chains.is(Body.class)); // applied to ball gag but not to body
+        }
+    }
+
+    @Test
+    public void testCompleteApplyingPartiallyAppliedItem() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.setAvailable(Toys.Chastity_Device);
+            var chastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Cage).getApplicable().get();
+
+            assertTrue(chastityDevice.canApply());
+            assertFalse(chastityDevice.is(Body.AroundCockBase));
+
+            chastityDevice.applyTo(Body.AroundCockBase);
+            assertTrue(chastityDevice.canApply());
+            assertTrue(chastityDevice.applied());
+
+            var chastityDevice2 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Cage).filter(Predicate.not(Item::applied)).getAvailable()
+                    .get();
+            assertNotEquals(chastityDevice, chastityDevice2);
+            assertFalse(chastityDevice2.canApply());
+            assertFalse(chastityDevice2.is(Body.AroundCockBase));
+
+            chastityDevice.apply();
+            assertFalse(chastityDevice.canApply());
+            assertTrue(chastityDevice.applied());
+            assertTrue(chastityDevice.is(Body.AroundCockBase));
+
+            assertFalse(chastityDevice2.canApply());
+            assertFalse(chastityDevice2.is(Body.AroundCockBase));
+
         }
     }
 

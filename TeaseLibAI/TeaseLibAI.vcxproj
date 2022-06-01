@@ -113,6 +113,7 @@
     <ClInclude Include="ComputeContext.h" />
     <ClInclude Include="DeepSpeechRecognizer.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Human.h" />
     <ClInclude Include="SceneCapture.h" />
     <ClInclude Include="HumanPose.h" />
     <ClInclude Include="pch.h" />
@@ -126,6 +127,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Human.cpp" />
     <ClCompile Include="SceneCapture.cpp" />
     <ClCompile Include="TeaseLibAI.cpp" />
   </ItemGroup>

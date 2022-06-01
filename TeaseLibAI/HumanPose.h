@@ -35,6 +35,7 @@ public:
     bool acquire(const void* image, int size);
     const std::vector<aifx::pose::Pose>& estimate(const std::chrono::milliseconds timestamp = 0ms);
 
+    static jobject estimation(JNIEnv* env, const aifx::pose::Pose& pose);
 private:
     const aifx::pose::Movenet::Model model;
 
@@ -49,4 +50,3 @@ private:
     std::vector<aifx::pose::Pose> poses;
 };
 
-jobject jpose(JNIEnv* env, const aifx::pose::Pose& pose);

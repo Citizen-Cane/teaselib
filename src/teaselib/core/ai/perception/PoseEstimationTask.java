@@ -3,7 +3,6 @@ package teaselib.core.ai.perception;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -50,6 +49,9 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     private final Condition interestChange = estimatePoses.newCondition();
     private final AtomicReference<Runnable> pause = new AtomicReference<>(null);
 
+    // TODO new Person or clear when device changes
+    private final Person human = new Person();
+
     private SceneCapture device = null;
     private HumanPose humanPoseCachedModel = null;
     private Actor currentActor;
@@ -79,6 +81,8 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+
+        human.close();
     }
 
     public boolean isActive() {
@@ -367,38 +371,21 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         }
     }
 
+    private PoseAspects getPoseAspects(Set<Interest> interests) {
+        return getPoseAspects(PoseAspects.Unavailable, interests);
+    }
+
     private PoseAspects getPoseAspects(PoseAspects previous, Set<Interest> interests) {
         wakeUpFromHibernate(device);
         try {
             HumanPose model = getModel(interests);
             long timestamp = System.currentTimeMillis();
-            // Model.poses requires passing native Person record here in order to track timeline
-            // Person person = new Person(model); // device might change over time
-            // person.track(device); -> Person::track(aifx::pose::Pose& nearest); // best idea without id
-            // var pose = person.pose();
-            var poses = model.poses(device, timestamp);
-            if (poses.isEmpty()) {
+            Person.update(human, model, device, device.rotation().reverse().value, timestamp);
+            var pose = human.pose();
+            if (pose == HumanPose.Estimation.NONE) {
                 return PoseAspects.Unavailable;
             } else {
-                // TODO person tracking requires ID or is only available for nearest person
-                return new PoseAspects(poses.get(0), timestamp, interests, previous);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return PoseAspects.Unavailable;
-        }
-    }
-
-    private PoseAspects getPoseAspects(Set<Interest> interests) {
-        wakeUpFromHibernate(device);
-        try {
-            HumanPose model = getModel(interests);
-            long timestamp = System.currentTimeMillis();
-            List<HumanPose.Estimation> poses = model.poses(device, timestamp);
-            if (poses.isEmpty()) {
-                return PoseAspects.Unavailable;
-            } else {
-                return new PoseAspects(poses.get(0), timestamp, interests);
+                return new PoseAspects(pose, timestamp, interests, previous);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

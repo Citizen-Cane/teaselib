@@ -327,7 +327,7 @@ Movenet* HumanPose::interpreter()
 		? image::Orientation::Landscape : image::Orientation::Portrait;
 	auto pose_estimation = models.find(orientation);
 	if (pose_estimation == models.end()) {
-		return models[orientation]  = new Movenet(model, orientation, new TfLiteDelegateV2(aifx::compute::Compute::Mode::GPU_CPU));
+		return models[orientation]  = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);
 	}
 	return pose_estimation->second;
 }

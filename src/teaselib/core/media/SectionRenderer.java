@@ -209,13 +209,6 @@ public class SectionRenderer implements Closeable {
                     awaitSectionMandatory();
                 }
 
-                // TODO Speech and Delay are both duration types
-                // -> Speech followed by Delay renders text+image twice
-                // first speech is rendered, then delay
-                // - but no display change takes place
-                // -> Actually it would be nice to change the image before the delay
-                // However, the text remains the same
-
                 if ((isDurationType && !previousPart.isAnyOf(Message.Type.DelayTypes))
                         || isDisplayTypeAtEnd) {
                     show(getImage(actor, displayImage, mood), accumulatedText.getTail());

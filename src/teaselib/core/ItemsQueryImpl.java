@@ -34,6 +34,16 @@ public abstract class ItemsQueryImpl implements Items.Query {
     }
 
     @Override
+    public Query avoid(Enum<?>... values) {
+        return query(items -> items.avoid(values));
+    }
+
+    @Override
+    public Query avoid(String... values) {
+        return query(items -> items.avoid(values));
+    }
+
+    @Override
     public Query matching(Enum<?>... values) {
         return query(items -> items.matching(values));
     }

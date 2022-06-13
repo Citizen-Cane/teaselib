@@ -19,6 +19,10 @@ public interface Items extends Iterable<Item>, Inventory {
 
         Query prefer(String... values);
 
+        Query avoid(Enum<?>... attributes);
+
+        Query avoid(String... attributes);
+
         Query matching(Enum<?>... values);
 
         Query matching(String... values);

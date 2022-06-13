@@ -46,6 +46,10 @@ public class Resources implements Iterable<String> {
         return elements.size();
     }
 
+    public String get(int index) {
+        return elements.get(index);
+    }
+
     public boolean contains(String resource) {
         return mapping.containsKey(resource);
     }

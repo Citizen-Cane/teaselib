@@ -2,6 +2,7 @@ package teaselib.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Resources;
 import teaselib.core.Script;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.util.PictureSetAssets.Attribute;
 import teaselib.util.PictureSetAssets.Take;
 import teaselib.util.math.Random;
 
@@ -36,6 +38,8 @@ public class SceneBasedImages implements teaselib.ActorImages {
     private PictureSetAssets.Scene currentScene;
     private PictureSetAssets.Pose currentPose;
     private PictureSetAssets.Take currentTake;
+
+    private PictureSetAssets.Assets.LinearDirection linearDirection = PictureSetAssets.Assets.LinearDirection.Forward;
 
     private final PictureSetAssets pictureSets;
     private final ExecutorService prefetch;
@@ -116,7 +120,6 @@ public class SceneBasedImages implements teaselib.ActorImages {
     }
 
     private void chooseSet() {
-        // TODO random / linear
         // TODO persistence (choose set once per session)
         currentSet = random.item(currentSet, new ArrayList<>(pictureSets.values()));
         // TODO play each scene -> shuffle list
@@ -125,26 +128,85 @@ public class SceneBasedImages implements teaselib.ActorImages {
     }
 
     private void chooseScene() {
-        // TODO random / linear
         // TODO intro outro
-        currentScene = random.item(currentScene, currentSet.assets);
-        // TODO play each scene -> shuffle list
+        if (currentSet.attributes.contains(Attribute.Linear)) {
+            var newScene = currentSet.successorOf(currentScene, linearDirection);
+            if (newScene == null) {
+                chooseSet();
+                return;
+            } else {
+                currentScene = newScene;
+            }
+        } else {
+            boolean wasLinear = currentScene != null && currentScene.attributes.contains(Attribute.Linear);
+            var newScene = random.item(currentScene, currentSet.assets);
+            if (newScene == currentScene) {
+                chooseSet();
+                return;
+            }
+            boolean isLinear = newScene.attributes.contains(Attribute.Linear);
+            if (wasLinear && isLinear) {
+                linearDirection = linearDirection.opposite();
+            }
+            currentScene = newScene;
+        }
         remainingScenePoses = currentScene.assets.size();
         choosePose();
     }
 
     void choosePose() {
-        // TODO random / linear
-        currentPose = random.item(currentPose, currentScene.assets);
-        // TODO play each pose -> shuffle list
+        if (currentScene.attributes.contains(Attribute.Linear)) {
+            var newPose = currentScene.successorOf(currentPose, linearDirection);
+            if (newPose == null) {
+                chooseScene();
+                return;
+            } else {
+                currentPose = newPose;
+            }
+        } else {
+            boolean wasLinear = currentPose != null && currentPose.attributes.contains(Attribute.Linear);
+            var newPose = random.item(currentPose, currentScene.assets);
+            if (newPose == currentPose) {
+                chooseScene();
+                return;
+            }
+            boolean isLinear = newPose.attributes.contains(Attribute.Linear);
+            if (wasLinear && isLinear) {
+                linearDirection = linearDirection.opposite();
+            }
+            currentPose = newPose;
+        }
         remainingPoseTakes = currentPose.assets.size();
         chooseTake();
     }
 
     void chooseTake() {
-        // TODO random / linear
-        currentTake = random.item(currentTake, currentPose.assets);
-        // TODO play each pose -> shuffle list
+        if (currentPose.attributes.contains(Attribute.Linear)) {
+            var newTake = currentPose.successorOf(currentTake, linearDirection);
+            if (newTake == null) {
+                choosePose();
+                return;
+            } else {
+                currentTake = newTake;
+            }
+        } else {
+            boolean wasLinear = currentTake != null && currentTake.attributes.contains(Attribute.Linear);
+            var newTake = random.item(currentTake, currentPose.assets);
+            if (newTake == currentTake) {
+                // TODO infinite loop when no images present, or only one set
+                choosePose();
+                return;
+            } else if (!newTake.images.hasNext()) {
+                // TODO honor once here and choose a take/pose/scene that has not been used yet
+                // -> wben all done, choose a different random top-level entity -> choosePose() ...
+                newTake.images.advance(Next.Take); // Workaround for resetting "Once"
+            }
+            boolean isLinear = newTake.attributes.contains(Attribute.Linear);
+            if (wasLinear && isLinear) {
+                linearDirection = linearDirection.opposite();
+            }
+            currentTake = newTake;
+        }
         remainingTakeViews = currentTake.assets.size();
     }
 
@@ -155,7 +217,11 @@ public class SceneBasedImages implements teaselib.ActorImages {
 
     @Override
     public String next(String... hints) {
-        return currentTake.images.next(hints);
+        var all = new ArrayList<String>(hints.length + 1);
+        all.addAll(Arrays.asList(hints));
+        all.add(linearDirection.name());
+        var allHints = new String[all.size()];
+        return currentTake.images.next(all.toArray(allHints));
     }
 
     @Override

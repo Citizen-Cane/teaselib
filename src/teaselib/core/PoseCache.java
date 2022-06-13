@@ -2,8 +2,10 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -23,7 +25,7 @@ public class PoseCache {
     private final BiFunction<String, byte[], Estimation> computePose;
 
     private final Map<String, HumanPose.Estimation> poses = new HashMap<>();
-    private final Map<String, AnnotatedImage> annotatedImages = new HashMap<>();
+    private final Map<String, WeakReference<AnnotatedImage>> annotatedImages = new HashMap<>();
 
     public PoseCache(Path poseCache, ResourceLoader loader, BiFunction<String, byte[], Estimation> computePose) {
         this.path = poseCache;
@@ -51,7 +53,7 @@ public class PoseCache {
         try {
             in = loader.get(name);
         } catch (IOException e1) {
-            Path file = path.resolve(name);
+            Path file = Paths.get(path.toString(), name);
             if (Files.exists(file)) {
                 try {
                     in = Files.newInputStream(file);
@@ -76,15 +78,27 @@ public class PoseCache {
     }
 
     AnnotatedImage annotatedImage(String resource, byte[] image) {
-        return annotatedImages.computeIfAbsent(resource, key -> {
-            return new AnnotatedImage(key, image, getPose(resource, image));
+        WeakReference<AnnotatedImage> reference = annotatedImages.computeIfAbsent(resource, key -> {
+            return new WeakReference<>(createAnnotatedImage(key, image));
         });
+        AnnotatedImage annotatedImage = reference.get();
+        if (annotatedImage != null) {
+            return annotatedImage;
+        } else {
+            annotatedImage = createAnnotatedImage(resource, image);
+            annotatedImages.put(resource, new WeakReference<>(annotatedImage));
+            return annotatedImage;
+        }
+    }
+
+    private AnnotatedImage createAnnotatedImage(String resource, byte[] image) {
+        return new AnnotatedImage(resource, image, getPose(resource, image));
     }
 
     private HumanPose.Estimation getPose(String resource, byte[] image) {
         HumanPose.Estimation estimation = poses.computeIfAbsent(resource, key -> {
             Estimation pose = computePose.apply(resource, image);
-            Path file = path.resolve(propertyFilename(resource));
+            Path file = Paths.get(path.toString(), propertyFilename(resource));
             try {
                 Files.createDirectories(file.getParent());
                 new PersistedPoseEstimation(pose).store(Files.newOutputStream(file));
@@ -97,8 +111,7 @@ public class PoseCache {
     }
 
     private static String propertyFilename(String resource) {
-        return teaselib.core.util.ReflectionUtils
-                .relativePath(FileUtilities.removeExtension(resource) + PROPERTIES_EXTENSION);
+        return FileUtilities.removeExtension(resource) + PROPERTIES_EXTENSION;
     }
 
     @Override

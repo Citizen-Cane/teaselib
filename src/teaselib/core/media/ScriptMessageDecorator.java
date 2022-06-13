@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import teaselib.Actor;
+import teaselib.ActorImages.Next;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Type;
@@ -239,7 +240,13 @@ public class ScriptMessageDecorator {
             nextImage = actor.images.next(currentMood);
             actor.images.fetch(nextImage);
         } else {
-            nextImage = Message.NoImage;
+            actor.images.advance(Next.Take, currentMood);
+            if (actor.images.hasNext()) {
+                nextImage = actor.images.next(currentMood);
+                actor.images.fetch(nextImage);
+            } else {
+                nextImage = Message.NoImage;
+            }
         }
         return nextImage;
     }

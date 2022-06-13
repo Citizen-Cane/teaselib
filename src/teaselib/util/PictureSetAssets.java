@@ -2,12 +2,16 @@ package teaselib.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,11 +63,16 @@ class PictureSetAssets {
                     Pose pose = poses.computeIfAbsent(parent, Pose::new);
 
                     pose.add(take);
+                    pullDownAttributes(pose.attributes, take.attributes);
                     return take;
                 });
             }
         }
         return poses;
+    }
+
+    private static <T> void pullDownAttributes(Set<Attribute> parent, Set<Attribute> child) {
+        parent.removeIf(child::contains);
     }
 
     private static Map<String, Scene> gatherScenes(Resources resources, Map<String, Take> takes,
@@ -84,6 +93,7 @@ class PictureSetAssets {
 
                     Scene scene = scenes.computeIfAbsent(key, Scene::new);
                     scene.add(pose);
+                    pullDownAttributes(scene.attributes, pose.attributes);
 
                     return take;
                 });
@@ -100,12 +110,12 @@ class PictureSetAssets {
         }
 
         // root & picture set folders may contain images
-        addTake(resources, PathType.Set, sets, scenes, poses, takes);
-        addTake(resources, PathType.Unknown, sets, scenes, poses, takes);
+        addSetTake(resources, PathType.Set, sets, scenes, poses, takes);
+        addSetTake(resources, PathType.Unknown, sets, scenes, poses, takes);
         return sets;
     }
 
-    private static void addTake(Resources resources, PathType type, Map<String, PictureSet> sets,
+    private static void addSetTake(Resources resources, PathType type, Map<String, PictureSet> sets,
             Map<String, Scene> scenes, Map<String, Pose> poses, Map<String, Take> takes) {
         for (String resource : resources) {
             String parent = parent(resource);
@@ -120,6 +130,9 @@ class PictureSetAssets {
                     PictureSet set = sets.computeIfAbsent(key, PictureSet::new);
                     set.add(scene);
 
+                    pullDownAttributes(set.attributes, take.attributes);
+                    pullDownAttributes(scene.attributes, take.attributes);
+                    pullDownAttributes(pose.attributes, take.attributes);
                     return take;
                 });
             }
@@ -203,19 +216,30 @@ class PictureSetAssets {
         return sets.toString();
     }
 
+    enum Attribute {
+        Linear,
+        Once;
+    }
+
     abstract static class Assets<T> {
 
         final String key;
         final List<T> assets;
+        final Set<Attribute> attributes;
 
         Assets(String key) {
-            this.key = key;
-            this.assets = new ArrayList<>();
+            this(key, new ArrayList<>());
         }
 
         Assets(String key, List<T> assets) {
             this.key = key;
             this.assets = assets;
+            this.attributes = Stream.of(Attribute.values())
+                    .filter(attribute -> localAndInherited(key, attribute)).collect(Collectors.toSet());
+        }
+
+        private static boolean localAndInherited(String key, Attribute attribute) {
+            return key.toLowerCase().contains(attribute.name().toLowerCase());
         }
 
         void add(T asset) {
@@ -233,6 +257,46 @@ class PictureSetAssets {
 
         abstract String key(T element);
 
+        enum LinearDirection {
+            Forward,
+            Backward;
+
+            LinearDirection opposite() {
+                if (this == Forward)
+                    return Backward;
+                else
+                    return Forward;
+            }
+        }
+
+        public T successorOf(T asset, LinearDirection direction) {
+            Objects.requireNonNull(direction);
+            if (direction == LinearDirection.Forward) {
+                if (asset == null) {
+                    return assets.get(0);
+                } else {
+                    int index = assets.indexOf(asset);
+                    if (index >= 0 && index < assets.size() - 1) {
+                        return assets.get(index + 1);
+                    } else {
+                        return null;
+                    }
+                }
+            } else if (direction == LinearDirection.Backward) {
+                if (asset == null) {
+                    return assets.get(assets.size() - 1);
+                } else {
+                    int index = assets.indexOf(asset);
+                    if (index > 0 && index < assets.size()) {
+                        return assets.get(index - 1);
+                    } else {
+                        return null;
+                    }
+                }
+            } else {
+                throw new IllegalArgumentException(direction.toString());
+            }
+        }
     }
 
     static class PictureSet extends Assets<Scene> {
@@ -244,7 +308,6 @@ class PictureSetAssets {
         String key(Scene element) {
             return element.key;
         }
-
     }
 
     static class Scene extends Assets<Pose> {
@@ -301,7 +364,43 @@ class PictureSetAssets {
         public Take(String key, Resources resources) {
             super(key, new ArrayList<>());
             this.mapping = new HashMap<>();
-            this.images = new MoodImages(new Resources(resources, this.assets, this.mapping));
+            if (attributes.contains(Attribute.Linear)) {
+                this.images = new AbstractImages(new Resources(resources, this.assets, this.mapping)) {
+
+                    int index = 0;
+
+                    @Override
+                    public boolean hasNext() {
+                        if (attributes.contains(Attribute.Once)) {
+                            return index < resources.size();
+                        } else {
+                            return super.hasNext();
+                        }
+                    }
+
+                    @Override
+                    public String next(String... hints) {
+                        if (index >= resources.size()) {
+                            throw new NoSuchElementException();
+                        }
+                        // TODO turn known hints into parameter object
+                        if (new HashSet<>(Arrays.asList(hints)).contains(LinearDirection.Backward.name())) {
+                            return resources.get(resources.size() - ++index);
+                        } else {
+                            return resources.get(index++);
+                        }
+                    }
+
+                    @Override
+                    public void advance(Next pictures, String... hints) {
+                        index = 0;
+                    }
+
+                };
+
+            } else {
+                this.images = new MoodImages(new Resources(resources, this.assets, this.mapping));
+            }
         }
 
         Stream<Map.Entry<String, Take>> entries() {

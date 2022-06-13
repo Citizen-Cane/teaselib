@@ -15,7 +15,7 @@ public class RenderInterTitle extends MediaRendererThread implements ReplayableM
 
     @Override
     protected void renderMedia() throws InterruptedException, IOException {
-        teaseLib.transcript.info("Intertitle:" + message);
+        teaseLib.transcript.info("Intertitle:\n" + message);
         teaseLib.host.showInterTitle(message.toString());
         teaseLib.host.show();
     }

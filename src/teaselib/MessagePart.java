@@ -5,12 +5,15 @@ import java.util.Set;
 import teaselib.Message.Type;
 
 public class MessagePart {
+
+    public static final MessagePart None = new MessagePart(Type.Text, "");
+
     public final Type type;
     public final String value;
 
     public MessagePart(String text) {
         text = text.trim();
-        Type type = Message.determineType(text);
+        this.type = Message.determineType(text);
         if (type == Type.Keyword) {
             text = Message.keywordFrom(text);
         } else if (type == Type.DesktopItem) {
@@ -22,7 +25,6 @@ public class MessagePart {
         } else if (type == Type.BackgroundSound) {
             text = removeKeyword(Message.BackgroundSound, text);
         }
-        this.type = type;
         this.value = text;
     }
 

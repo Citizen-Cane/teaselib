@@ -81,7 +81,7 @@ public class SectionRenderer implements Closeable {
             try {
                 boolean emptyMessage = messages.get(0).isEmpty();
                 if (emptyMessage) {
-                    show(this, Mood.Neutral);
+                    show(AnnotatedImage.NoImage, "");
                     startCompleted();
                 } else {
                     play();
@@ -125,6 +125,13 @@ public class SectionRenderer implements Closeable {
             }
         }
 
+        private void showAll(MessageRenderer message) throws IOException, InterruptedException {
+            var mood = message.lastParagraph.findLast(Type.Mood);
+            var currentMood = mood != null ? mood.value : Mood.Neutral;
+            var image = getImage(message.actor, message.displayImage, currentMood);
+            show(image, message.accumulatedText.paragraphs);
+        }
+
         private void renderAllMessages() throws IOException, InterruptedException {
             accumulatedText = new MessageTextAccumulator();
             currentMessage = 0;
@@ -152,8 +159,8 @@ public class SectionRenderer implements Closeable {
             return i;
         }
 
-        private void render(List<RenderedMessage> messages) throws IOException, InterruptedException {
-            for (var message : messages) {
+        private void render(List<RenderedMessage> renderedMessges) throws IOException, InterruptedException {
+            for (var message : renderedMessges) {
                 currentMessage = this.messages.indexOf(message);
                 try {
                     render(message);
@@ -174,6 +181,7 @@ public class SectionRenderer implements Closeable {
         }
 
         private void render(RenderedMessage message) throws IOException, InterruptedException {
+            MessagePart previousPart = MessagePart.None;
             String mood = Mood.Neutral;
             for (Iterator<MessagePart> it = message.iterator(); it.hasNext();) {
                 MessagePart part = it.next();
@@ -201,18 +209,41 @@ public class SectionRenderer implements Closeable {
                     awaitSectionMandatory();
                 }
 
-                if (isDurationType || isDisplayTypeAtEnd) {
-                    show(this, mood);
+                // TODO Speech and Delay are both duration types
+                // -> Speech followed by Delay renders text+image twice
+                // first speech is rendered, then delay
+                // - but no display change takes place
+                // -> Actually it would be nice to change the image before the delay
+                // However, the text remains the same
+
+                if ((isDurationType && !previousPart.isAnyOf(Message.Type.DelayTypes))
+                        || isDisplayTypeAtEnd) {
+                    show(getImage(actor, displayImage, mood), accumulatedText.getTail());
+                }
+
+                if (part.type == Type.Text) {
+                    logTextToTranscript(accumulatedText.getTail(), mood);
                 }
 
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException();
                 }
+
+                previousPart = part;
             }
 
             if (!hasCompletedStart()) {
                 throw new IllegalStateException();
             }
+        }
+
+        private void logTextToTranscript(String text, String mood) {
+            var transcript = new StringBuilder();
+            appendMood(mood, transcript);
+            if (text != null && !text.isBlank()) {
+                transcript.append(text);
+            }
+            teaseLib.transcript.info(transcript.toString());
         }
 
         private void render(MessagePart part, String mood) throws IOException, InterruptedException {
@@ -330,7 +361,8 @@ public class SectionRenderer implements Closeable {
             String mood, IOException e) throws IOException, InterruptedException {
         accumulatedText.add(new MessagePart(Message.Type.Text, e.getMessage()));
         awaitSectionAll();
-        show(messageRenderer, mood);
+        AnnotatedImage image = getImage(messageRenderer.actor, messageRenderer.displayImage, mood);
+        show(image, e.getMessage());
         messageRenderer.startCompleted();
     }
 
@@ -376,29 +408,10 @@ public class SectionRenderer implements Closeable {
         currentRenderer = MediaRenderer.None;
     }
 
-    private void show(MessageRenderer messageRenderer, String mood) throws IOException, InterruptedException {
-        show(messageRenderer.actor, messageRenderer.displayImage, messageRenderer.accumulatedText.getTail(), mood);
-    }
-
-    private void show(Actor actor, String displayImage, String text, String mood)
-            throws IOException, InterruptedException {
-        var transcript = new StringBuilder();
-        var image = getImage(actor, displayImage, mood, transcript);
-        if (text != null && !text.isBlank()) {
-            transcript.append(text);
-        }
-        teaseLib.transcript.info(transcript.toString());
-        show(image, Collections.singletonList(text));
-    }
-
-    private AnnotatedImage getImage(Actor actor, String displayImage, String mood, StringBuilder transcript)
+    private AnnotatedImage getImage(Actor actor, String displayImage, String mood)
             throws IOException, InterruptedException {
         if (actor.images.contains(displayImage)) {
             teaseLib.transcript.debug("image = '" + displayImage + "'");
-            if (!Mood.Neutral.equalsIgnoreCase(mood)) {
-                transcript.append(mood);
-                transcript.append(" ");
-            }
             return actorImage(actor, displayImage);
         } else {
             if (!Message.NoImage.equalsIgnoreCase(displayImage)) {
@@ -408,13 +421,15 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    private void showAll(MessageRenderer message) throws IOException, InterruptedException {
-        var mood = message.lastParagraph.findLast(Type.Mood);
-        var transcript = new StringBuilder();
-        var currentMood = mood != null ? mood.value : Mood.Neutral;
-        var image = getImage(message.actor, message.displayImage, currentMood, transcript);
-        teaseLib.transcript.info(transcript.toString());
-        show(image, message.accumulatedText.paragraphs);
+    private void appendMood(String mood, StringBuilder transcript) {
+        if (!Mood.Neutral.equalsIgnoreCase(mood)) {
+            transcript.append(mood);
+            transcript.append(" ");
+        }
+    }
+
+    private void show(AnnotatedImage image, String paragraph) {
+        show(image, Collections.singletonList(paragraph));
     }
 
     private void show(AnnotatedImage image, List<String> paragraphs) {

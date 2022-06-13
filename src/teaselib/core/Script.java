@@ -168,8 +168,10 @@ public abstract class Script {
         return deviceInteractionImplementations;
     }
 
-    private static final float UNTIL_REMOVE_LIMIT = 1.5f;
-    private static final float UNTIL_EXPIRED_LIMIT = 1.0f;
+    private static final long UNTIL_REMOVE_LIMIT_MINIMUM_SECONDS = TimeUnit.SECONDS.convert(2, TimeUnit.DAYS);
+    private static final float UNTIL_REMOVE_LIMIT_FACTOR = 1.5f;
+    private static final long UNTIL_EXPIRED_LIMIT_MINIMUM_SECONDS = TimeUnit.SECONDS.convert(0, TimeUnit.DAYS);
+    private static final float UNTIL_EXPIRED_LIMIT_FACTOR = 1.0f;
 
     protected void handleAutoRemove() {
         long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
@@ -191,14 +193,17 @@ public abstract class Script {
     }
 
     private State handleUntilRemoved(String domain, long startupTimeSeconds) {
-        return handle(domain, State.Persistence.Until.Removed, startupTimeSeconds, UNTIL_REMOVE_LIMIT);
+        return handle(domain, State.Persistence.Until.Removed, startupTimeSeconds, UNTIL_REMOVE_LIMIT_MINIMUM_SECONDS,
+                UNTIL_REMOVE_LIMIT_FACTOR);
     }
 
     private State handleUntilExpired(String domain, long startupTimeSeconds) {
-        return handle(domain, State.Persistence.Until.Expired, startupTimeSeconds, UNTIL_EXPIRED_LIMIT);
+        return handle(domain, State.Persistence.Until.Expired, startupTimeSeconds, UNTIL_EXPIRED_LIMIT_MINIMUM_SECONDS,
+                UNTIL_EXPIRED_LIMIT_FACTOR);
     }
 
-    private State handle(String domain, State.Persistence.Until until, long startupTimeSeconds, float limitFactor) {
+    private State handle(String domain, State.Persistence.Until until, long startupTimeSeconds, long minimumDuration,
+            float expirationFactor) {
         var untilState = (StateImpl) teaseLib.state(domain, until);
         Set<QualifiedString> peers = untilState.peers();
         for (QualifiedString peer : new ArrayList<>(peers)) {
@@ -210,7 +215,7 @@ public abstract class Script {
                     var item = AbstractProxy.removeProxy(candidate);
                     if (allUserItemReferencesRemoved(item)) {
                         remove(item);
-                    } else if (autoRemovalLimitReached(item, startupTimeSeconds, limitFactor)) {
+                    } else if (autoRemovalLimitReached(item, startupTimeSeconds, minimumDuration, expirationFactor)) {
                         remove(item);
                     }
                 }
@@ -218,7 +223,7 @@ public abstract class Script {
                 var state = (StateImpl) teaseLib.state(domain, peer);
                 if (allUserItemReferencesRemoved(state)) {
                     remove(state);
-                } else if (autoRemovalLimitReached(state, startupTimeSeconds, limitFactor)) {
+                } else if (autoRemovalLimitReached(state, startupTimeSeconds, minimumDuration, expirationFactor)) {
                     remove(state);
                 }
             }
@@ -258,13 +263,15 @@ public abstract class Script {
         }
     }
 
-    private static boolean autoRemovalLimitReached(State state, long startupTimeSeconds, float limitFactor) {
-        // Very implicit way of testing for unavailable items
+    private static boolean autoRemovalLimitReached(State state, long startupTimeSeconds,
+            long minimumDuration, float limitFactor) {
         var duration = state.duration();
+        // Very implicit way of testing for unavailable items
         if (state.applied() && duration.expired()) {
             long limit = duration.limit(TimeUnit.SECONDS);
             if (limit >= State.TEMPORARY && limit < Duration.INFINITE) {
-                long autoRemovalTime = duration.start(TimeUnit.SECONDS) + (long) (limit * limitFactor);
+                long expirationDuration = Math.max(minimumDuration, (long) (limit * limitFactor));
+                long autoRemovalTime = duration.start(TimeUnit.SECONDS) + expirationDuration;
                 if (autoRemovalTime <= startupTimeSeconds) {
                     return true;
                 }

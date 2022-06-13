@@ -69,7 +69,7 @@ public class ItemImplAutoRemoveTests {
                 assertFalse(part.applied());
                 assertTrue(part.expired());
 
-                item.to(TestStates.BODY_PART).apply().over(2, TimeUnit.HOURS).remember(Until.Removed);
+                item.to(TestStates.BODY_PART).apply().over(2, TimeUnit.HOURS).remember(Until.Expired);
 
                 assertTrue(item.applied());
                 assertFalse(item.expired());

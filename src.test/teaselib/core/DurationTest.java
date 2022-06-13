@@ -267,6 +267,9 @@ public class DurationTest {
     @Test
     public void testItemNeverApplied() {
         Item item = script.item("test");
+        assertFalse(item.is("test"));
+        assertFalse(item.is("other"));
+        assertEquals(0, item.duration().elapsed(TimeUnit.SECONDS));
         assertTrue(item.removed());
         assertEquals(Duration.INFINITE, item.removed(TimeUnit.SECONDS));
         assertEquals(Duration.INFINITE, item.removed(TimeUnit.MINUTES));

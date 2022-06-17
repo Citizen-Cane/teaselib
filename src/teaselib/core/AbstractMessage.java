@@ -89,7 +89,7 @@ public class AbstractMessage implements Iterable<MessagePart> {
 
     public void add(String text) {
         if (text == null)
-            throw new IllegalArgumentException(text);
+            text = "";
         MessagePart part = new MessagePart(text);
         add(part);
     }

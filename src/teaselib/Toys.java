@@ -55,8 +55,10 @@ public enum Toys {
 
     ;
 
-    public enum ClampType implements Item.Attribute {
+    public enum ClampStyle implements Item.Attribute {
+        Alligator,
         Clover,
+        Tweezer
     }
 
     public enum Masturbators implements Item.Attribute {

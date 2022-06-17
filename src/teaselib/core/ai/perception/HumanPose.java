@@ -176,11 +176,11 @@ public class HumanPose extends NativeObject.Disposible {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.4f * distanceFactor) {
+                if (z < 0.3f * distanceFactor) {
                     proximity = Proximity.CLOSE;
-                } else if (z < 1.1f * distanceFactor) {
+                } else if (z < 1.2f * distanceFactor) {
                     proximity = Proximity.FACE2FACE;
-                } else if (z < 1.8f * distanceFactor) {
+                } else if (z < 2.4f * distanceFactor) {
                     proximity = Proximity.NEAR;
                 } else {
                     proximity = Proximity.FAR;

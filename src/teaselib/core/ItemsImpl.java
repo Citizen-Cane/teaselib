@@ -663,7 +663,13 @@ public class ItemsImpl implements Items.Collection, Items.Set {
      */
     @Override
     public java.util.Set<QualifiedString> valueSet() {
-        return elements.stream().map(ItemsImpl::itemImpl).map(ItemImpl::kind).collect(toCollection(LinkedHashSet::new));
+        return elements.stream().filter(AbstractProxy.class::isInstance).map(AbstractProxy::itemImpl)
+                .map(ItemImpl::kind).collect(toCollection(LinkedHashSet::new));
+    }
+
+    @Override
+    public List<Item> toList() {
+        return Collections.unmodifiableList(elements);
     }
 
     private static ItemImpl itemImpl(Item item) {

@@ -1,5 +1,6 @@
 package teaselib.util;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -137,6 +138,8 @@ public interface Items extends Iterable<Item>, Inventory {
      * @return
      */
     java.util.Set<QualifiedString> valueSet();
+
+    List<Item> toList();
 
     /**
      * Get applied, matching or available items:

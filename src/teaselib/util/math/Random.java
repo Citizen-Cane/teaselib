@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 
 import teaselib.util.Interval;
@@ -11,7 +12,17 @@ import teaselib.util.Item;
 import teaselib.util.Items;
 
 public class Random {
-    private final java.util.Random generator = new java.util.Random(System.currentTimeMillis());
+
+    private final RandomGenerator generator;
+
+    public Random() {
+        this(new java.util.Random(System.currentTimeMillis()));
+
+    }
+
+    public Random(RandomGenerator generator) {
+        this.generator = generator;
+    }
 
     public boolean chance() {
         return chance(0.5f);
@@ -73,9 +84,15 @@ public class Random {
             return current;
 
         T another;
-        do {
-            another = items.get(value(0, items.size() - 1));
-        } while (another == current && items.size() > 1);
+        int index = value(0, items.size() - 1);
+        another = items.get(index);
+        if (another == current) {
+            if (index == items.size() - 1) {
+                another = items.get(0);
+            } else {
+                another = items.get(index + 1);
+            }
+        }
         return another;
     }
 

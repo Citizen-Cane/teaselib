@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -72,7 +73,11 @@ class PictureSetAssets {
     }
 
     private static <T> void pullDownAttributes(Set<Attribute> parent, Set<Attribute> child) {
-        parent.removeIf(child::contains);
+        // TODO re-define:
+        // + sets are random per default
+        // + all other nodes are linear once per default
+        // + nodes must be actively tagged as random or they will be Linear and Once
+        // parent.removeIf(child::contains);
     }
 
     private static Map<String, Scene> gatherScenes(Resources resources, Map<String, Take> takes,
@@ -217,11 +222,15 @@ class PictureSetAssets {
     }
 
     enum Attribute {
+        Random,
         Linear,
         Once;
     }
 
     abstract static class Assets<T> {
+
+        private static final Set<Attribute> defaults = Collections
+                .unmodifiableSet(new HashSet<>(Arrays.asList(Attribute.Linear, Attribute.Once)));
 
         final String key;
         final List<T> assets;
@@ -234,8 +243,13 @@ class PictureSetAssets {
         Assets(String key, List<T> assets) {
             this.key = key;
             this.assets = assets;
-            this.attributes = Stream.of(Attribute.values())
+            Set<Attribute> collectedAttributes = Stream.of(Attribute.values())
                     .filter(attribute -> localAndInherited(key, attribute)).collect(Collectors.toSet());
+            if (collectedAttributes.isEmpty()) {
+                this.attributes = defaults;
+            } else {
+                this.attributes = collectedAttributes;
+            }
         }
 
         private static boolean localAndInherited(String key, Attribute attribute) {

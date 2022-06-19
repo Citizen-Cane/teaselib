@@ -382,7 +382,6 @@ public abstract class Script {
     }
 
     protected void renderMessage(Message message, boolean useTTS) {
-        actor.images.advance(Next.Message);
         Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(useTTS);
         try {
             scriptRenderer.renderMessage(teaseLib, resources, message, decorators(textToSpeech));
@@ -680,6 +679,18 @@ public abstract class Script {
 
     ExecutorService getScriptFuntionExecutorService() {
         return scriptRenderer.getScriptFunctionExecutorService();
+    }
+
+    /**
+     * Fetch resources with pre-defined regex-patterns
+     * 
+     * @param folder
+     * @param wildcardPattern
+     * @return
+     */
+    public Resources resources(String folder, String regex) {
+        String path = folder + (folder.endsWith("/") ? "" : "/") + regex;
+        return resources(path);
     }
 
     /**

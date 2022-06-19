@@ -65,8 +65,11 @@ public interface ActorImages extends Images {
         Scene,
         Pose,
         Take,
-        Section,
-        Message
+
+        /**
+         * A new section starts after answering a prompt.
+         */
+        Section
     }
 
     public void advance(Next pictures, String... hints);

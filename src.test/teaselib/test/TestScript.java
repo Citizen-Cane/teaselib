@@ -1,8 +1,11 @@
 package teaselib.test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 
 import teaselib.Actor;
@@ -23,6 +26,7 @@ import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.PropertyNameMappingPersistence;
 import teaselib.core.util.QualifiedName;
 import teaselib.util.Select.AbstractStatement;
+import teaselib.util.math.Random;
 
 public class TestScript extends TeaseScript implements Closeable {
     public final DebugHost host;
@@ -143,5 +147,15 @@ public class TestScript extends TeaseScript implements Closeable {
     @Override
     public String toString() {
         return "namespace=" + namespace + ", storage=" + storage;
+    }
+
+    public Random randomNumbers(Integer... numbers) {
+        Iterator<Integer> sequence = Arrays.asList(numbers).iterator();
+        return new Random(new RandomGenerator() {
+            @Override
+            public long nextLong() {
+                return sequence.next();
+            }
+        });
     }
 }

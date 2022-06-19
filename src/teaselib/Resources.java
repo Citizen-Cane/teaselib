@@ -17,6 +17,9 @@ import teaselib.core.TeaseLib;
 
 public class Resources implements Iterable<String> {
 
+    public static final String Images = "*.jpg"; // TODO // "*.(jpg|png)" or "*.\\b(?:jpg|png|webp)\\b";
+    public static final String Audio = "*.mp3";
+
     public final TeaseLib teaseLib;
     public final ResourceLoader loader;
     public final ExecutorService prefetch;

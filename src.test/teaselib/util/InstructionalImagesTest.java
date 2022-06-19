@@ -22,7 +22,7 @@ public class InstructionalImagesTest {
         try (TestScript script = new TestScript(getClass())) {
             Resources resources = script.resources("Test Picture Set/*.jpg");
             assertTrue(resources.contains(TEST_PICTURE_SET + "p1.jpg"));
-            assertEquals(6, resources.size());
+            assertEquals(12, resources.size());
 
             var images = new InstructionalImages(resources);
             assertTrue(images.contains(TEST_PICTURE_SET + "p1.jpg"));
@@ -33,11 +33,11 @@ public class InstructionalImagesTest {
     }
 
     @Test
-    public void testRemoveIfAbsolute() throws IOException, InterruptedException {
+    public void testRemoveIfAbsolute() throws IOException {
         try (TestScript script = new TestScript(getClass())) {
             Resources resources = script.resources("Test Picture Set/*.jpg");
             assertTrue(resources.contains(TEST_PICTURE_SET + "p1.jpg"));
-            assertEquals(6, resources.size());
+            assertEquals(12, resources.size());
 
             var images = new InstructionalImages(resources);
             assertTrue(images.contains(TEST_PICTURE_SET + "p1.jpg"));
@@ -49,11 +49,11 @@ public class InstructionalImagesTest {
     }
 
     @Test
-    public void testRemoveIfRelative() throws IOException, InterruptedException {
+    public void testRemoveIfRelative() throws IOException {
         try (TestScript script = new TestScript(getClass())) {
             Resources resources = script.resources("Test Picture Set/*.jpg");
             assertTrue(resources.contains(TEST_PICTURE_SET + "p1.jpg"));
-            assertEquals(6, resources.size());
+            assertEquals(12, resources.size());
 
             var images = new InstructionalImages(resources);
             assertTrue(images.contains(TEST_PICTURE_SET + "p1.jpg"));

@@ -21,9 +21,6 @@ public class SceneBasedImages implements teaselib.ActorImages {
 
     static final Logger logger = LoggerFactory.getLogger(Script.class);
 
-    // TODO chapters
-    // TODO sections are defined as afterChoices, but should be before saying s.o.
-
     private static final int numberOfChoicesToKeepTake = 0;
     private static final int numberOfChoicesToKeepPose = 0;
     private static final int numberOfPosesToKeepScene = 0;
@@ -46,9 +43,13 @@ public class SceneBasedImages implements teaselib.ActorImages {
     private final Random random;
 
     public SceneBasedImages(Resources resources) {
+        this(resources, new Random());
+    }
+
+    SceneBasedImages(Resources resources, Random random) {
         this.pictureSets = new PictureSetAssets(resources);
         this.prefetch = resources.prefetch;
-        this.random = new Random();
+        this.random = random;
 
         if (pictureSets.isEmpty()) {
             String any = "";
@@ -120,28 +121,41 @@ public class SceneBasedImages implements teaselib.ActorImages {
     }
 
     private void chooseSet() {
-        // TODO persistence (choose set once per session)
         currentSet = random.item(currentSet, new ArrayList<>(pictureSets.values()));
-        // TODO play each scene -> shuffle list
         remainingSetScenes = currentSet.assets.size();
         chooseScene();
     }
 
     private void chooseScene() {
-        // TODO intro outro
+        // TODO intro & outro
         if (currentSet.attributes.contains(Attribute.Linear)) {
+            boolean wasLinear = currentScene != null && currentScene.attributes.contains(Attribute.Linear);
             var newScene = currentSet.successorOf(currentScene, linearDirection);
             if (newScene == null) {
-                chooseSet();
+                if (pictureSets.size() > 1) {
+                    currentScene = null;
+                    chooseSet();
+                    boolean isLinear = currentScene.attributes.contains(Attribute.Linear);
+                    if (wasLinear && isLinear) {
+                        linearDirection = linearDirection.opposite();
+                    }
+                } else {
+                    linearDirection = linearDirection.opposite();
+                    if (currentPose == null) {
+                        choosePose();
+                    }
+                }
                 return;
             } else {
                 currentScene = newScene;
             }
-        } else {
+        } else if (currentSet.attributes.contains(Attribute.Random)) {
             boolean wasLinear = currentScene != null && currentScene.attributes.contains(Attribute.Linear);
             var newScene = random.item(currentScene, currentSet.assets);
             if (newScene == currentScene) {
-                chooseSet();
+                if (pictureSets.size() > 1) {
+                    chooseSet();
+                }
                 return;
             }
             boolean isLinear = newScene.attributes.contains(Attribute.Linear);
@@ -149,6 +163,8 @@ public class SceneBasedImages implements teaselib.ActorImages {
                 linearDirection = linearDirection.opposite();
             }
             currentScene = newScene;
+        } else {
+            throw new IllegalStateException("Iteration attribute missing: " + currentSet.key);
         }
         remainingScenePoses = currentScene.assets.size();
         choosePose();
@@ -158,12 +174,13 @@ public class SceneBasedImages implements teaselib.ActorImages {
         if (currentScene.attributes.contains(Attribute.Linear)) {
             var newPose = currentScene.successorOf(currentPose, linearDirection);
             if (newPose == null) {
+                currentPose = null;
                 chooseScene();
                 return;
             } else {
                 currentPose = newPose;
             }
-        } else {
+        } else if (currentScene.attributes.contains(Attribute.Random)) {
             boolean wasLinear = currentPose != null && currentPose.attributes.contains(Attribute.Linear);
             var newPose = random.item(currentPose, currentScene.assets);
             if (newPose == currentPose) {
@@ -175,6 +192,8 @@ public class SceneBasedImages implements teaselib.ActorImages {
                 linearDirection = linearDirection.opposite();
             }
             currentPose = newPose;
+        } else {
+            throw new IllegalStateException("Iteration attribute missing: " + currentScene.key);
         }
         remainingPoseTakes = currentPose.assets.size();
         chooseTake();
@@ -184,16 +203,16 @@ public class SceneBasedImages implements teaselib.ActorImages {
         if (currentPose.attributes.contains(Attribute.Linear)) {
             var newTake = currentPose.successorOf(currentTake, linearDirection);
             if (newTake == null) {
+                currentTake = null;
                 choosePose();
                 return;
             } else {
                 currentTake = newTake;
             }
-        } else {
+        } else if (currentPose.attributes.contains(Attribute.Random)) {
             boolean wasLinear = currentTake != null && currentTake.attributes.contains(Attribute.Linear);
             var newTake = random.item(currentTake, currentPose.assets);
             if (newTake == currentTake) {
-                // TODO infinite loop when no images present, or only one set
                 choosePose();
                 return;
             } else if (!newTake.images.hasNext()) {
@@ -206,8 +225,13 @@ public class SceneBasedImages implements teaselib.ActorImages {
                 linearDirection = linearDirection.opposite();
             }
             currentTake = newTake;
+        } else {
+            throw new IllegalStateException("Iteration attribute missing: " + currentPose.key);
         }
         remainingTakeViews = currentTake.assets.size();
+        if (currentTake.attributes.contains(Attribute.Once)) {
+            currentTake.images.advance(Next.Take);
+        }
     }
 
     @Override
@@ -240,13 +264,13 @@ public class SceneBasedImages implements teaselib.ActorImages {
     }
 
     @Override
-    public void advance(Next pictures, String... hints) {
-        switch (pictures) {
-        case Message:
-            decrementRemainingViews();
-            break;
+    public void advance(Next next, String... hints) {
+        switch (next) {
         case Section:
-            chooseFollowupPictures();
+            if (currentTake.attributes.contains(Attribute.Random)) {
+                decrementRemainingViews();
+                chooseFollowupPictures();
+            }
             break;
         case Take:
             chooseTake();
@@ -261,9 +285,8 @@ public class SceneBasedImages implements teaselib.ActorImages {
             chooseSet();
             break;
         default:
-            throw new UnsupportedOperationException(pictures.toString());
+            throw new UnsupportedOperationException(next.toString());
         }
-        // Ignore
     }
 
     @Override

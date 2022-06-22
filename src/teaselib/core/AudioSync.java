@@ -30,37 +30,33 @@ public final class AudioSync {
 
     public void completeSpeechRecognition() {
         synchronize(() -> { //
-        }, "Waiting for speech recognition to complete", "Speech recognition in progress completed");
+        }, "Waiting for speech recognition to complete");
     }
 
     public void synchronizeTextToSpeech(Runnable runnable) {
         String logStart = "Waiting for speech recognition to finish";
-        String logSuccess = "Speech recognition finished";
-        synchronize(runnable, logStart, logSuccess);
+        synchronize(runnable, logStart);
     }
 
     public void synchronizeSpeechRecognition(Runnable runnable) {
         String logStart = "Waiting for speech to complete";
-        String logSuccess = "Speech completed";
-        synchronize(runnable, logStart, logSuccess);
+        synchronize(runnable, logStart);
     }
 
-    private void synchronize(Runnable runnable, String logStart, String logSuccess) {
-        if (sync.isLocked()) {
-            logger.info(logStart);
-            try {
+    private void synchronize(Runnable runnable, String logStart) {
+        try {
+            boolean tryLocked = sync.tryLock();
+            if (!tryLocked) {
+                logger.info(logStart);
                 sync.lockInterruptibly();
-                try {
-                    runnable.run();
-                } finally {
-                    sync.unlock();
-                }
-                logger.info(logSuccess);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
-        } else {
-            runnable.run();
+            try {
+                runnable.run();
+            } finally {
+                sync.unlock();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

@@ -437,6 +437,12 @@ public abstract class Script {
         addMatchingImage(showAll);
         try {
             scriptRenderer.showAll(teaseLib, resources, actor, showAll, withoutSpeech());
+            // TODO resolve race condition between explicit and frame-based rendering
+            // - explicit here
+            // - frame-based only if the camera is enabled and the proximity sensor updates zoom and ui
+            // Without the wait, Host.show(image) would be rendered from multiple threads
+            // With a queue, the explicit render call (later on in Section renderer) would be too much
+            awaitMandatoryCompleted();
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
         }

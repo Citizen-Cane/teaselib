@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextAttribute;
@@ -78,7 +79,7 @@ public class BufferedImageRenderer {
         return centerRegion;
     }
 
-    private void renderDisplayImage(RenderState currentFrame, BufferedImage sceneImage, Rectangle bounds) {
+    private static void renderDisplayImage(RenderState currentFrame, BufferedImage sceneImage, Rectangle bounds) {
         if (currentFrame.displayImage != null) {
             var g2d = sceneImage.createGraphics();
             renderDisplayImage(g2d, currentFrame.actorProximity, currentFrame.displayImage, currentFrame.pose,
@@ -89,25 +90,25 @@ public class BufferedImageRenderer {
     private static void renderDisplayImage(Graphics2D g2d, Proximity actorProximity, BufferedImage displayImage,
             HumanPose.Estimation pose, Rectangle2D bounds, boolean intertitleActive) {
         var displayImageSize = Transform.dimension(displayImage);
-        var surfaceTransform = surfaceTransform(actorProximity, displayImageSize, pose, bounds,
-                spokenTextArea(bounds).x);
+        var surfaceTransform = surfaceTransform(actorProximity, displayImageSize, pose, bounds);
         g2d.drawImage(displayImage, surfaceTransform, null);
         // renderDebugInfo(g2d, displayImageSize, pose, surfaceTransform, bounds.getBounds(), intertitleActive);
     }
 
     private static AffineTransform surfaceTransform(Proximity actorProximity, Dimension image,
-            HumanPose.Estimation pose, Rectangle2D bounds, int textAreaX) {
+            HumanPose.Estimation pose, Rectangle2D bounds) {
         AffineTransform surface;
         if (actorProximity == Proximity.CLOSE) {
-            surface = surfaceTransform(image, bounds, pose.boobs(), 2.5, textAreaX);
+            // TODO make zoom depend on distance to focus solely on the region of interest
+            surface = surfaceTransform(image, bounds, pose.boobs(), 2.0);
         } else if (actorProximity == Proximity.FACE2FACE) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.3, textAreaX);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.3);
         } else if (actorProximity == Proximity.NEAR) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.1, textAreaX);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.1);
         } else if (actorProximity == Proximity.FAR) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.0, textAreaX);
+            surface = surfaceTransform(image, bounds, pose.face(), 1.0);
         } else if (actorProximity == Proximity.AWAY) {
-            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0, textAreaX);
+            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0);
         } else {
             throw new IllegalArgumentException(actorProximity.toString());
         }
@@ -116,15 +117,14 @@ public class BufferedImageRenderer {
     }
 
     private static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds,
-            Optional<Rectangle2D> focusArea, double zoom, int textAreaX) {
+            Optional<Rectangle2D> focusArea, double zoom) {
         var surface = Transform.maxImage(image, bounds, focusArea);
         if (focusArea.isPresent()) {
             Rectangle2D focusAreaImage = Transform.scale(focusArea.get(), image);
+            surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, focusAreaImage);
             if (zoom > 1.0) {
                 surface = Transform.zoom(surface, focusAreaImage, zoom);
             }
-            surface = Transform.keepFocusAreaVisible(surface, image, bounds, focusAreaImage);
-            Transform.avoidFocusAreaBehindText(surface, image, bounds, focusAreaImage, textAreaX);
         }
         return surface;
     }
@@ -201,7 +201,7 @@ public class BufferedImageRenderer {
     // =====================
     //
 
-    private static final float FONT_SIZE = 48;
+    private static final float FONT_SIZE = 36;
     private static final float MINIMAL_FONT_SIZE = 6;
     private static final float PARAGRAPH_SPACING = 1.5f;
     private static final int TEXT_AREA_BORDER = 10;
@@ -237,13 +237,19 @@ public class BufferedImageRenderer {
 
     private static Rectangle spokenTextArea(Rectangle2D bounds) {
         int textAreaWidth = (int) Math.min(TEXT_AREA_MAX_WIDTH, bounds.getWidth() / 3.0);
+        if (textAreaWidth < TEXT_AREA_MIN_WIDTH) {
+            textAreaWidth = Math.min(TEXT_AREA_MIN_WIDTH, (int) (bounds.getWidth() * 0.8f));
+        }
+
         int scaledInset = TEXT_AREA_INSET * textAreaWidth / TEXT_AREA_MAX_WIDTH;
+        if (bounds.getWidth() < textAreaWidth + 2 * scaledInset) {
+            textAreaWidth = (int) (bounds.getWidth() * 0.9);
+            scaledInset = (int) (bounds.getWidth() * 0.05);
+        }
+
         int topInset = 2 * scaledInset;
         int bottomInset = 4 * scaledInset;
-        if (textAreaWidth < TEXT_AREA_MIN_WIDTH) {
-            textAreaWidth = (int) bounds.getWidth() - 4 * TEXT_AREA_BORDER;
-            scaledInset = 0;
-        }
+
         Rectangle textArea = new Rectangle((int) bounds.getX() + (int) bounds.getWidth() - textAreaWidth - scaledInset, //
                 topInset, //
                 textAreaWidth, //
@@ -272,7 +278,11 @@ public class BufferedImageRenderer {
             TextVisitor measureText = (TextLayout layout, float x, float y) -> textSize
                     .setSize(Math.max(textSize.getWidth(), layout.getAdvance()), y + layout.getDescent() - textArea.y);
 
-            float fontSize = FONT_SIZE * textArea.width / TEXT_AREA_MAX_WIDTH;
+            // float fontSize = FONT_SIZE * textArea.width / TEXT_AREA_MAX_WIDTH;
+
+            float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+            float fontSize = FONT_SIZE / dpi * 72.0f;
+
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);
                 g2d.setFont(font);

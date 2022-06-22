@@ -1,8 +1,8 @@
 package teaselib.hosts;
 
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toSet;
-import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
+import static java.util.function.Predicate.*;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.concurrency.NamedExecutorService.*;
 
 import java.awt.Container;
 import java.awt.EventQueue;
@@ -11,6 +11,8 @@ import java.awt.IllegalComponentStateException;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -249,6 +251,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                     super.mouseClicked(e);
                 }
             }
+        });
+
+        mainFrame.addComponentListener(new ComponentAdapter() {
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                previousFrame.displayImageResource = null;
+                show();
+            }
+
         });
     }
 

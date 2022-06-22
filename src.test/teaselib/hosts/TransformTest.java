@@ -28,8 +28,8 @@ public class TransformTest {
 
     private static void assertEquals(Point2D expected, Point2D actual) {
         String message = "Expected " + expected + " but got " + actual;
-        Assert.assertEquals(message, expected.getX(), actual.getX(), 10E-8);
-        Assert.assertEquals(message, expected.getY(), actual.getY(), 10E-8);
+        Assert.assertEquals(message, expected.getX(), actual.getX(), 10E-3);
+        Assert.assertEquals(message, expected.getY(), actual.getY(), 10E-3);
     }
 
     private static Point2D.Double p(double x, double y) {
@@ -72,8 +72,8 @@ public class TransformTest {
         Rectangle bounds = new Rectangle(32, 32, 320, 120);
 
         var t = Transform.maxImage(image, bounds, Optional.of(head));
-        assertEquals(t, p(40.0, -100.0), p(0.0, 0.0));
-        assertEquals(t, p(280.0, 220.0), p(240.0, 320.0));
+        assertEquals(t, p(0.0, -153.333), p(0.0, 0.0));
+        assertEquals(t, p(320.0, 273.333), p(240.0, 320.0));
     }
 
     @Test
@@ -87,11 +87,11 @@ public class TransformTest {
                 new Point2D.Double());
         assertTrue(focusTop.getY() < 0.0);
 
-        t = Transform.keepFocusAreaVisible(t, image, bounds, focusAreaImage);
-        assertEquals(t, p(40.0, 0.0), p(0.0, 0.0)); //
-        assertEquals(t, p(280.0, 320.0), p(240.0, 320.0));
-        assertEquals(t, p(160.0, 0.0), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()));
-        assertEquals(t, p(160.0, 80.0), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMaxY()));
+        t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, focusAreaImage);
+        assertEquals(t, p(0.0, -7.497), p(0.0, 0.0)); //
+        assertEquals(t, p(320.0, 419.169), p(240.0, 320.0));
+        assertEquals(t, p(160.0, -7.497), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()));
+        assertEquals(t, p(160.0, 99.169), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMaxY()));
         // upper bounds transformed to y == 0
     }
 
@@ -106,12 +106,11 @@ public class TransformTest {
                 new Point2D.Double());
         assertTrue(focusBottom.getY() > bounds.height);
 
-        t = Transform.keepFocusAreaVisible(t, image, bounds, focusAreaImage);
-        assertEquals(t, p(40.0, -200.0), p(0.0, 0.0)); //
-        assertEquals(t, p(280.0, 120.0), p(240.0, 320.0));
-        assertEquals(t, p(160.0, 40.0), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()));
+        t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, focusAreaImage);
+        assertEquals(t, p(0.0, -306.666), p(0.0, 0.0));
+        assertEquals(t, p(320.0, 120.0), p(240.0, 320.0));
+        assertEquals(t, p(160.0, 13.333), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()));
         assertEquals(t, p(160.0, 120.0), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMaxY()));
-        // lower bounds transformed to y == bounds.height
     }
 
     @Test
@@ -152,13 +151,11 @@ public class TransformTest {
                 new Point2D.Double());
         assertTrue(focusTop.getY() < 0.0);
 
-        t = Transform.keepFocusAreaVisible(t, image, bounds, focusAreaImage);
-        assertEquals(t, p(40.0, -74.1640786498), p(0.0, 0.0)); //
-        assertEquals(t, p(280.0, 245.83592135011997), p(240.0, 320.0));
-        assertEquals(t, p(100.0, 5.835921350119989),
-                new Point2D.Double(focusAreaImage.getMinX(), focusAreaImage.getMinY()));
-        assertEquals(t, p(160.0, 85.83592135011999),
-                new Point2D.Double(focusAreaImage.getMaxX(), focusAreaImage.getMaxY()));
+        t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, focusAreaImage);
+        assertEquals(t, p(2.229, -114.164), p(0.0, 0.0)); //
+        assertEquals(t, p(322.229, 312.502), p(240.0, 320.0));
+        assertEquals(t, p(82.229, -7.497), new Point2D.Double(focusAreaImage.getMinX(), focusAreaImage.getMinY()));
+        assertEquals(t, p(162.229, 99.169), new Point2D.Double(focusAreaImage.getMaxX(), focusAreaImage.getMaxY()));
     }
 
 }

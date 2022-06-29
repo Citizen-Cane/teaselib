@@ -17,9 +17,9 @@ public class NativeLibraries {
     public static final String TEASELIB_TTS = "TeaseLibTTS";
     public static final String TEASELIB_X360C = "TeaseLibx360c";
 
-    public static final String[] TEASELIB_TENSORFLOW_SHARED = { "libtensorflowlite.so", "wegl.so",
-            "libtensorflowlite_gpu_cl.so" };
-    public static final String[] TEASELIB_DEEPSPEECH_SHARED = { "libkenlm.so", "libstt.so" };
+    // public static final String[] TEASELIB_TENSORFLOW_SHARED = { "libtensorflowlite.so", "wegl.so",
+    // "libtensorflowlite_gpu_cl.so" };
+    // public static final String[] TEASELIB_DEEPSPEECH_SHARED = { "libkenlm.so", "libstt.so" };
 
     private static final Set<String> loaded = new HashSet<>();
 

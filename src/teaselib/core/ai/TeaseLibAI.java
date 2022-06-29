@@ -1,8 +1,6 @@
 package teaselib.core.ai;
 
-import static teaselib.core.jni.NativeLibraries.TEASELIB;
-import static teaselib.core.jni.NativeLibraries.TEASELIB_AI;
-import static teaselib.core.jni.NativeLibraries.TEASELIB_TENSORFLOW_SHARED;
+import static teaselib.core.jni.NativeLibraries.*;
 
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -21,8 +19,8 @@ public class TeaseLibAI implements Closeable {
 
     public TeaseLibAI() throws UnsatisfiedLinkError {
         NativeLibraries.require(TEASELIB);
-        NativeLibraries.require(TEASELIB_TENSORFLOW_SHARED);
-        NativeLibraries.require(NativeLibraries.TEASELIB_DEEPSPEECH_SHARED);
+        // NativeLibraries.require(TEASELIB_TENSORFLOW_SHARED);
+        // NativeLibraries.require(TEASELIB_DEEPSPEECH_SHARED);
         NativeLibraries.require(TEASELIB_AI);
         var executor = new ComputeService();
         if (executor.context.accelerated) {

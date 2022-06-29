@@ -51,9 +51,9 @@ public class SpeechRecognition {
         delegateThread.run(() -> {
             // RenetrantLock is ref-counted,
             // and startRecognition events can occur more than once
-            if (!audioSync.inProgress()) {
+            if (!audioSync.isHeldByCurrentThread()) {
                 logger.debug("Locking speech recognition sync object");
-                audioSync.start();
+                audioSync.start(AudioSync.AudioType.Recognition);
             }
         });
     }
@@ -66,7 +66,7 @@ public class SpeechRecognition {
         // Check because this is called as a completion event by the
         // event source, and might be called twice when the
         // hypothesis event handler generates a Completion event
-        if (audioSync.inProgress()) {
+        if (audioSync.isHeldByCurrentThread()) {
             logger.debug("Unlocking speech recognition sync object");
             audioSync.stop();
         }

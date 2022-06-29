@@ -353,7 +353,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
         try {
             sleep(seconds, TimeUnit.SECONDS);
-            if (timeoutBehavior != TimeoutBehavior.InDubioContraReum && scriptRenderer.audioSync.inProgress()) {
+            if (timeoutBehavior != TimeoutBehavior.InDubioContraReum) {
                 scriptRenderer.audioSync.completeSpeechRecognition();
             }
         } finally {

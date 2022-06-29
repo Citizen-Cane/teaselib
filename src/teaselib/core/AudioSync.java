@@ -14,45 +14,61 @@ import org.slf4j.LoggerFactory;
 public final class AudioSync {
     private static final Logger logger = LoggerFactory.getLogger(AudioSync.class);
 
-    private ReentrantLock sync = new ReentrantLock();
-
-    public void start() {
-        sync.lock();
+    public enum AudioType {
+        Recognition,
+        Speech
     }
 
-    public boolean inProgress() {
-        return sync.isLocked();
+    private ReentrantLock sync = new ReentrantLock();
+    private AudioType audioType = null;
+
+    public void start(AudioType audioType) {
+        sync.lock();
+        this.audioType = audioType;
+    }
+
+    private boolean inProgress(AudioType audioType) {
+        return this.audioType == audioType;
+    }
+
+    public boolean isHeldByCurrentThread() {
+        return sync.isHeldByCurrentThread();
     }
 
     public void stop() {
+        audioType = null;
         sync.unlock();
     }
 
     public void completeSpeechRecognition() {
-        synchronize(() -> { //
-        }, "Waiting for speech recognition to complete");
+        if (inProgress(AudioType.Recognition)) {
+            synchronize(null, () -> { //
+            }, "Waiting for speech recognition to complete");
+        }
     }
 
     public void synchronizeTextToSpeech(Runnable runnable) {
         String logStart = "Waiting for speech recognition to finish";
-        synchronize(runnable, logStart);
+        synchronize(AudioType.Speech, runnable, logStart);
     }
 
     public void synchronizeSpeechRecognition(Runnable runnable) {
         String logStart = "Waiting for speech to complete";
-        synchronize(runnable, logStart);
+        synchronize(AudioType.Recognition, runnable, logStart);
     }
 
-    private void synchronize(Runnable runnable, String logStart) {
+    private void synchronize(AudioType audioType, Runnable runnable, String logStart) {
         try {
             boolean tryLocked = sync.tryLock();
             if (!tryLocked) {
                 logger.info(logStart);
                 sync.lockInterruptibly();
             }
+            this.audioType = audioType;
             try {
                 runnable.run();
             } finally {
+                this.audioType = null;
                 sync.unlock();
             }
         } catch (InterruptedException e) {

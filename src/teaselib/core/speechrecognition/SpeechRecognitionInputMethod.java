@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -179,7 +179,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             } else {
                 SpeechRecognition recognizer = getRecognizer(prompt);
                 try {
-                    if (audioSignalProblems.exceedLimits() && recognizer.audioSync.inProgress()) {
+                    if (audioSignalProblems.exceedLimits()) {
                         logTooManyAudioSignalProblems();
                         recognizer.restartRecognition();
                     } else {

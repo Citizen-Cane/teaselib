@@ -59,6 +59,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.PersistenceFilter;
+import teaselib.core.ui.AnimatedHost;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
@@ -130,12 +131,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     private final Image backgroundImage;
 
-    RenderState previousFrame = new RenderState();
-    RenderState newFrame = new RenderState();
+    RenderState currentFrame = new RenderState();
+    RenderState nextFrame = new RenderState();
     BufferedImageRenderer renderer;
 
     public static Host from(IScript script) {
-        return new SexScriptsHost(script);
+        return new AnimatedHost(new SexScriptsHost(script));
     }
 
     public SexScriptsHost(ss.IScript script) {
@@ -257,7 +258,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
             @Override
             public void componentResized(ComponentEvent e) {
-                previousFrame.displayImageResource = null;
+                currentFrame.displayImageResource = null;
                 show();
             }
 
@@ -408,67 +409,87 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     @Override
     public void showInterTitle(String text) {
-        newFrame.text = text;
-        newFrame.isIntertitle = true;
+        synchronized (nextFrame) {
+            nextFrame.text = text;
+            nextFrame.isIntertitle = true;
+        }
     }
 
     @Override
     public void show(AnnotatedImage displayImage, List<String> text) {
-        if (displayImage != null) {
-            if (!displayImage.resource.equals(newFrame.displayImageResource)) {
-                try {
-                    newFrame.displayImage = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
-                    newFrame.pose = displayImage.pose;
-                } catch (IOException e) {
-                    newFrame.displayImage = null;
-                    newFrame.pose = HumanPose.Estimation.NONE;
-                    logger.error(e.getMessage(), e);
+        synchronized (nextFrame) {
+            if (displayImage != null) {
+                if (!displayImage.resource.equals(nextFrame.displayImageResource)) {
+                    try {
+                        nextFrame.displayImage = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
+                        nextFrame.pose = displayImage.pose;
+                    } catch (IOException e) {
+                        nextFrame.displayImage = null;
+                        nextFrame.pose = HumanPose.Estimation.NONE;
+                        logger.error(e.getMessage(), e);
+                    }
+                    nextFrame.repaintSceneImage = true;
+                    nextFrame.displayImageResource = displayImage.resource;
                 }
-                newFrame.repaintSceneImage = true;
-                newFrame.displayImageResource = displayImage.resource;
+            } else if (nextFrame.displayImageResource != null) {
+                nextFrame.displayImageResource = null;
+                nextFrame.displayImage = null;
+                nextFrame.pose = HumanPose.Estimation.NONE;
+                nextFrame.repaintSceneImage = true;
             }
-        } else if (newFrame.displayImageResource != null) {
-            newFrame.displayImageResource = null;
-            newFrame.displayImage = null;
-            newFrame.pose = HumanPose.Estimation.NONE;
-            newFrame.repaintSceneImage = true;
+
+            nextFrame.text = text.stream().collect(Collectors.joining("\n"));
+            nextFrame.isIntertitle = false;
         }
-
-        newFrame.text = text.stream().collect(Collectors.joining("\n"));
-
-        newFrame.isIntertitle = false;
     }
 
     @Override
     public void setFocusLevel(float focusLevel) {
-        newFrame.focusLevel = focusLevel;
-    }
-
-    @Override
-    public void setActorProximity(HumanPose.Proximity proximity) {
-        if (newFrame.actorProximity != proximity) {
-            newFrame.actorProximity = proximity;
-            newFrame.repaintSceneImage = true;
+        synchronized (nextFrame) {
+            nextFrame.focusLevel = focusLevel;
         }
     }
 
     @Override
-    public synchronized void show() {
-        newFrame.updateFrom(previousFrame);
+    public void setActorZoom(double zoom) {
+        synchronized (nextFrame) {
+            if (nextFrame.actorZoom != zoom) {
+                nextFrame.actorZoom = zoom;
+                nextFrame.repaintSceneImage = true;
+            }
+        }
+    }
 
-        // Consider insets for pixel-correct (non-scaled) image size
+    // TODO resolve race condition between explicit and frame-based rendering
+    // - explicit here
+    // - frame-based only if the camera is enabled and the proximity sensor updates zoom and ui
+    // Without the wait, Host.show(image) would be rendered from multiple threads
+    // With a queue, the explicit render call (later on in Section renderer) would be too much
+
+    //
+
+    @Override
+    public void show() {
+        synchronized (nextFrame) {
+            nextFrame.updateFrom(currentFrame);
+            currentFrame = nextFrame;
+            show(currentFrame);
+            nextFrame = currentFrame.copy();
+        }
+    }
+
+    private void show(RenderState frame) {
+        // insets for pixel-correct (non-scaled) image size
         Rectangle bounds = getContentBounds();
+
         Insets insets = mainFrame.getInsets();
         int horizontalAdjustment = insets.left + insets.right;
-
         bounds.width += horizontalAdjustment;
-        renderer.renderBackgound(newFrame, bounds);
+        renderer.renderBackgound(frame, bounds);
         bounds.width -= horizontalAdjustment;
 
-        BufferedImage image = renderer.render(newFrame, bounds);
-        previousFrame = newFrame;
-        newFrame = newFrame.copy();
-        EventQueue.invokeLater(() -> showCurrentImage(image));
+        renderer.render(frame, bounds);
+        EventQueue.invokeLater(() -> showCurrentImage(frame.renderedImage));
     }
 
     private void showCurrentImage(BufferedImage image) {
@@ -477,14 +498,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         } else {
             backgroundImageIcon.setImage(backgroundImage);
         }
-        mainFrame.repaint(100);
+        mainFrame.repaint();
     }
 
     @Override
     public void endScene() {
-        // Keep the image, remove any text to provide some feedback
-        newFrame.text = "";
-        show();
+        synchronized (nextFrame) {
+            // Keep the image, remove any text to provide some feedback
+            nextFrame.text = "";
+            show();
+        }
     }
 
     @Override
@@ -635,7 +658,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     @Override
-    public void setup() {
+    public void setup() { //
     }
 
     @Override

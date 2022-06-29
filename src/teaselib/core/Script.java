@@ -35,6 +35,7 @@ import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
 import teaselib.core.ai.perception.PoseAspects;
+import teaselib.core.ai.perception.ProximitySensor;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
@@ -148,7 +149,7 @@ public abstract class Script {
     protected void stopProimitySensor(HumanPoseScriptInteraction humanPoseInteraction) {
         humanPoseInteraction.deviceInteraction.removeEventListener(actor,
                 humanPoseInteraction.deviceInteraction.proximitySensor);
-        teaseLib.host.setActorProximity(Proximity.FAR);
+        teaseLib.host.setActorZoom(ProximitySensor.zoom.get(Proximity.FAR));
     }
 
     private DeviceInteractionImplementations initDeviceInteractions() {
@@ -437,12 +438,6 @@ public abstract class Script {
         addMatchingImage(showAll);
         try {
             scriptRenderer.showAll(teaseLib, resources, actor, showAll, withoutSpeech());
-            // TODO resolve race condition between explicit and frame-based rendering
-            // - explicit here
-            // - frame-based only if the camera is enabled and the proximity sensor updates zoom and ui
-            // Without the wait, Host.show(image) would be rendered from multiple threads
-            // With a queue, the explicit render call (later on in Section renderer) would be too much
-            awaitMandatoryCompleted();
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
         }
@@ -586,10 +581,14 @@ public abstract class Script {
                     stopProimitySensor(humanPoseInteraction);
                 }
             } else {
+                teaseLib.host.setActorZoom(ProximitySensor.zoom.get(Proximity.FACE2FACE));
                 choice = getDistinctChoice(prompt);
+                teaseLib.host.setActorZoom(1.0);
             }
         } else {
+            teaseLib.host.setActorZoom(ProximitySensor.zoom.get(Proximity.FACE2FACE));
             choice = getDistinctChoice(prompt);
+            teaseLib.host.setActorZoom(1.0);
         }
 
         String answer = "< " + choice.display;
@@ -658,7 +657,7 @@ public abstract class Script {
         }
     }
 
-    private boolean face2face(PoseAspects pose) {
+    private static boolean face2face(PoseAspects pose) {
         return pose.is(Proximity.FACE2FACE);
     }
 

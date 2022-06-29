@@ -19,7 +19,6 @@ import teaselib.core.Closeable;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.Choice;
@@ -230,7 +229,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void setActorProximity(HumanPose.Proximity proximity) {
+    public void setActorZoom(double zoom) {
         // Ignore
     }
 

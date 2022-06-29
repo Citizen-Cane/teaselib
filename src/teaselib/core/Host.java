@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
 import teaselib.util.AnnotatedImage;
@@ -32,6 +31,8 @@ public interface Host {
     void show(AnnotatedImage actorImage, List<String> text);
 
     void setFocusLevel(float focusLevel);
+
+    void setActorZoom(double zoom);
 
     /**
      * Repaint the content area to show actor image and text.
@@ -94,5 +95,4 @@ public interface Host {
 
     File getLocation(Location folder);
 
-    void setActorProximity(HumanPose.Proximity proximity);
 }

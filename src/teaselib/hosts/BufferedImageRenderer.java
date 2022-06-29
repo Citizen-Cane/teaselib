@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
+import teaselib.core.ai.perception.ProximitySensor;
 
 /**
  * @author Citizen-Cane
@@ -42,21 +43,29 @@ public class BufferedImageRenderer {
 
     public void renderBackgound(RenderState frame, Rectangle bounds) {
         if (frame.repaintSceneImage) {
-            frame.sceneImage = newBufferedImage(bounds);
-            var g2d = frame.sceneImage.createGraphics();
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, //
-                    0, 0, backgroundImage.getWidth(null),
-                    backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
+            if (frame.sceneImage == null) {
+                frame.sceneImage = newBufferedImage(bounds);
+            } else if (bounds.width != frame.sceneImage.getWidth() || bounds.height != frame.sceneImage.getHeight()) {
+                frame.sceneImage = newBufferedImage(bounds);
+            }
+
+            boolean backgroundVisible = frame.displayImage == null || frame.pose.distance.isEmpty();
+            if (backgroundVisible) {
+                var g2d = frame.sceneImage.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.drawImage(backgroundImage,
+                        0, 0, bounds.width, bounds.height,
+                        0, 0, backgroundImage.getWidth(null), backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
+                g2d.dispose();
+            }
         }
     }
 
-    BufferedImage render(RenderState frame, Rectangle bounds) {
+    void render(RenderState frame, Rectangle bounds) {
         BufferedImage image = renderScene(frame, bounds);
         image = renderTextOverlay(image, bounds, frame.renderedText, frame.isIntertitle);
         image = renderOverlay(image, frame.focusLevel);
         frame.renderedImage = image;
-        return image;
     }
 
     public BufferedImage renderScene(RenderState currentFrame, Rectangle bounds) {
@@ -79,38 +88,28 @@ public class BufferedImageRenderer {
         return centerRegion;
     }
 
-    private static void renderDisplayImage(RenderState currentFrame, BufferedImage sceneImage, Rectangle bounds) {
-        if (currentFrame.displayImage != null) {
+    private static void renderDisplayImage(RenderState frame, BufferedImage sceneImage, Rectangle bounds) {
+        if (frame.repaintSceneImage && frame.displayImage != null) {
             var g2d = sceneImage.createGraphics();
-            renderDisplayImage(g2d, currentFrame.actorProximity, currentFrame.displayImage, currentFrame.pose,
-                    new Rectangle2D.Double(0, 0, bounds.width, bounds.height), currentFrame.isIntertitle);
+            BufferedImage displayImage = frame.displayImage;
+            var displayImageSize = Transform.dimension(displayImage);
+            var t = surfaceTransform(frame.actorZoom, displayImageSize, frame.pose, new Rectangle2D.Double(0, 0, bounds.width, bounds.height));
+            g2d.drawImage(displayImage, t, null);
+            renderDebugInfo(g2d, displayImageSize, frame.pose, t, bounds.getBounds(), frame.isIntertitle);
+            g2d.dispose();
         }
     }
 
-    private static void renderDisplayImage(Graphics2D g2d, Proximity actorProximity, BufferedImage displayImage,
-            HumanPose.Estimation pose, Rectangle2D bounds, boolean intertitleActive) {
-        var displayImageSize = Transform.dimension(displayImage);
-        var surfaceTransform = surfaceTransform(actorProximity, displayImageSize, pose, bounds);
-        g2d.drawImage(displayImage, surfaceTransform, null);
-        // renderDebugInfo(g2d, displayImageSize, pose, surfaceTransform, bounds.getBounds(), intertitleActive);
-    }
-
-    private static AffineTransform surfaceTransform(Proximity actorProximity, Dimension image,
+    private static AffineTransform surfaceTransform(double actorZoom, Dimension image,
             HumanPose.Estimation pose, Rectangle2D bounds) {
         AffineTransform surface;
-        if (actorProximity == Proximity.CLOSE) {
+        if (actorZoom > ProximitySensor.zoom.get(Proximity.FACE2FACE)) {
             // TODO make zoom depend on distance to focus solely on the region of interest
-            surface = surfaceTransform(image, bounds, pose.boobs(), 2.0);
-        } else if (actorProximity == Proximity.FACE2FACE) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.3);
-        } else if (actorProximity == Proximity.NEAR) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.1);
-        } else if (actorProximity == Proximity.FAR) {
-            surface = surfaceTransform(image, bounds, pose.face(), 1.0);
-        } else if (actorProximity == Proximity.AWAY) {
-            surface = surfaceTransform(image, bounds, Optional.empty(), 1.0);
+            surface = surfaceTransform(image, bounds, pose.boobs(), actorZoom);
+        } else if (actorZoom > ProximitySensor.zoom.get(Proximity.AWAY)) {
+            surface = surfaceTransform(image, bounds, pose.face(), actorZoom);
         } else {
-            throw new IllegalArgumentException(actorProximity.toString());
+            surface = surfaceTransform(image, bounds, Optional.empty(), actorZoom);
         }
         surface.preConcatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
         return surface;
@@ -120,10 +119,10 @@ public class BufferedImageRenderer {
             Optional<Rectangle2D> focusArea, double zoom) {
         var surface = Transform.maxImage(image, bounds, focusArea);
         if (focusArea.isPresent()) {
-            Rectangle2D focusAreaImage = Transform.scale(focusArea.get(), image);
-            surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, focusAreaImage);
+            Rectangle2D imageFocusArea = Transform.scale(focusArea.get(), image);
+            surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
             if (zoom > 1.0) {
-                surface = Transform.zoom(surface, focusAreaImage, zoom);
+                surface = Transform.zoom(surface, imageFocusArea, zoom);
             }
         }
         return surface;

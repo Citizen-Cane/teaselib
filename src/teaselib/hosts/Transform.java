@@ -52,16 +52,8 @@ public class Transform {
         Dimension size = bounds.getBounds().getSize();
         double aspect;
         if (focusArea.isPresent()) {
-            // fill screen estate while retaining same dpi for landscape and portrait images
-            // if (aspect(size) > 1.0) {
-            // aspect = fitOutside(aspect(image) >= 1.0 ? image : swap(image), size);
-            // } else {
-            // aspect = fitOutside(aspect(image) < 1.0 ? image : swap(image), size);
-            // }
-
             // fill screen area with image data - looks much better even if face distance might be different
             aspect = fitOutside(image, size);
-
         } else {
             // show the whole image
             aspect = fitInside(image, size);
@@ -91,16 +83,16 @@ public class Transform {
      * @return AffineTransform
      */
     public static AffineTransform matchGoldenRatioOrKeepVisible(AffineTransform surface, Dimension image, Rectangle2D bounds,
-            Rectangle2D focusArea) {
-        var rect = surface.createTransformedShape(focusArea).getBounds2D();
+            Rectangle2D imageFocusArea) {
+        var surfaceFocusArea = surface.createTransformedShape(imageFocusArea).getBounds2D();
         Point2D imageTopLeft = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
         Point2D imageBottomRight = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()),
                 new Point2D.Double());
 
         double ty = 0.0;
-        if (rect.getMinY() < bounds.getMinY() + bounds.getHeight() * goldenRatioFactorB) {
-            if (rect.getHeight() < bounds.getHeight()) {
-                double optimal = bounds.getHeight() * goldenRatioFactorB - rect.getCenterY();
+        if (surfaceFocusArea.getMinY() < bounds.getMinY() + bounds.getHeight() * goldenRatioFactorB) {
+            if (surfaceFocusArea.getHeight() < bounds.getHeight()) {
+                double optimal = bounds.getHeight() * goldenRatioFactorB - surfaceFocusArea.getCenterY();
                 if (optimal > 0) {
                     double limit = bounds.getMinY() - imageTopLeft.getY();
                     ty = Math.min(optimal, limit);
@@ -109,11 +101,11 @@ public class Transform {
                     ty = Math.max(optimal, limit);
                 }
             } else {
-                ty = -rect.getCenterY() + bounds.getHeight() / 2;
+                ty = -surfaceFocusArea.getCenterY() + bounds.getHeight() / 2;
             }
-        } else if (rect.getMaxY() > bounds.getMaxY() - bounds.getHeight() * goldenRatioFactorB) {
-            if (rect.getHeight() < bounds.getHeight()) {
-                double optimal = bounds.getHeight() * goldenRatioFactorB - rect.getCenterY();
+        } else if (surfaceFocusArea.getMaxY() > bounds.getMaxY() - bounds.getHeight() * goldenRatioFactorB) {
+            if (surfaceFocusArea.getHeight() < bounds.getHeight()) {
+                double optimal = bounds.getHeight() * goldenRatioFactorB - surfaceFocusArea.getCenterY();
                 if (optimal > 0) {
                     double limit = bounds.getMaxY() - imageBottomRight.getY();
                     ty = -Math.min(-optimal, -limit);
@@ -122,14 +114,14 @@ public class Transform {
                     ty = -Math.min(-optimal, limit);
                 }
             } else {
-                ty = -rect.getCenterY() + bounds.getHeight() / 2;
+                ty = -surfaceFocusArea.getCenterY() + bounds.getHeight() / 2;
             }
         }
 
         double tx = 0.0;
-        if (rect.getMinX() < bounds.getMinX() + bounds.getWidth() * goldenRatioFactorB) {
-            if (rect.getWidth() < bounds.getWidth()) {
-                double optimal = bounds.getWidth() * goldenRatioFactorB - rect.getCenterX();
+        if (surfaceFocusArea.getMinX() < bounds.getMinX() + bounds.getWidth() * goldenRatioFactorB) {
+            if (surfaceFocusArea.getWidth() < bounds.getWidth()) {
+                double optimal = bounds.getWidth() * goldenRatioFactorB - surfaceFocusArea.getCenterX();
                 if (optimal > 0) {
                     double limit = bounds.getMinX() - imageTopLeft.getX();
                     tx = Math.min(optimal, limit);
@@ -138,11 +130,11 @@ public class Transform {
                     tx = Math.max(optimal, limit);
                 }
             } else {
-                tx = -rect.getCenterX() + bounds.getWidth() / 2;
+                tx = -surfaceFocusArea.getCenterX() + bounds.getWidth() / 2;
             }
-        } else if (rect.getMaxX() > bounds.getMaxX() - bounds.getWidth() * goldenRatioFactorB) {
-            if (rect.getWidth() < bounds.getWidth()) {
-                double optimal = bounds.getWidth() * goldenRatioFactorB - rect.getCenterX();
+        } else if (surfaceFocusArea.getMaxX() > bounds.getMaxX() - bounds.getWidth() * goldenRatioFactorB) {
+            if (surfaceFocusArea.getWidth() < bounds.getWidth()) {
+                double optimal = bounds.getWidth() * goldenRatioFactorB - surfaceFocusArea.getCenterX();
                 if (optimal > 0) {
                     double limit = bounds.getMaxX() - imageBottomRight.getX();
                     tx = -Math.min(-optimal, -limit);
@@ -151,7 +143,7 @@ public class Transform {
                     tx = -Math.min(-optimal, limit);
                 }
             } else {
-                tx = -rect.getCenterX() + bounds.getWidth() / 2;
+                tx = -surfaceFocusArea.getCenterX() + bounds.getWidth() / 2;
             }
         }
 

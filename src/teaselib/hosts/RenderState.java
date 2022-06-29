@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
+import teaselib.core.ai.perception.ProximitySensor;
 
 /**
  * @author Citizen-Cane
@@ -14,7 +15,7 @@ class RenderState {
     String displayImageResource;
     BufferedImage displayImage;
     HumanPose.Estimation pose;
-    HumanPose.Proximity actorProximity;
+    double actorZoom;
 
     String text;
     boolean isIntertitle;
@@ -31,7 +32,7 @@ class RenderState {
         this.displayImageResource = "";
         this.displayImage = null;
         this.pose = HumanPose.Estimation.NONE;
-        this.actorProximity = Proximity.FAR;
+        this.actorZoom = ProximitySensor.zoom.get(Proximity.FAR);
 
         this.text = "";
         this.isIntertitle = false;
@@ -52,7 +53,7 @@ class RenderState {
         copy.displayImage = this.displayImage;
         copy.displayImageResource = this.displayImageResource;
         copy.pose = this.pose;
-        copy.actorProximity = this.actorProximity;
+        copy.actorZoom = this.actorZoom;
 
         copy.text = this.text;
         copy.isIntertitle = this.isIntertitle;
@@ -70,7 +71,7 @@ class RenderState {
 
     public void updateFrom(RenderState oldState) {
         repaintSceneImage = displayImageResource != oldState.displayImageResource //
-                || actorProximity != oldState.actorProximity//
+                || actorZoom != oldState.actorZoom//
                 || isIntertitle != oldState.isIntertitle;
 
         if (renderText()) {
@@ -81,7 +82,7 @@ class RenderState {
     }
 
     boolean renderText() {
-        return focusLevel == 1.0 && actorProximity != Proximity.CLOSE && !text.isBlank();
+        return focusLevel == 1.0 && actorZoom < ProximitySensor.zoom.get(Proximity.CLOSE) && !text.isBlank();
     }
 
 }

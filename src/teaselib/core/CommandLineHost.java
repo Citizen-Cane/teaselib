@@ -8,7 +8,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.FileUtilities;
@@ -101,7 +100,7 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public void setActorProximity(HumanPose.Proximity proximity) {
+    public void setActorZoom(double zoom) {
         // Ignore
     }
 }

@@ -23,6 +23,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptEventArgs.BeforeMessage.OutlineType;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
+import teaselib.core.functional.TriFunction;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.AnnotatedImage;
@@ -38,7 +39,7 @@ public class SectionRenderer implements Closeable {
 
     // TODO workaround to tell section renderer to add the proper delay for the next message
     public OutlineType nextOutlineType;
-    private MessageRenderer currentMessageRenderer;
+    private Batch currentMessageRenderer;
     private MediaRenderer.Threaded currentRenderer = MediaRenderer.None;
     private RenderSound backgroundSoundRenderer;
 
@@ -53,6 +54,18 @@ public class SectionRenderer implements Closeable {
         if (textToSpeechPlayer != null) {
             textToSpeechPlayer.close();
         }
+    }
+
+    public boolean append(List<RenderedMessage> messages) {
+        synchronized (messages) {
+            currentMessageRenderer.messages.addAll(messages);
+            boolean stillRunning = !currentMessageRenderer.hasCompletedMandatory();
+            return stillRunning;
+        }
+    }
+
+    @FunctionalInterface
+    public interface ConcatFunction extends TriFunction<Actor, List<RenderedMessage>, ResourceLoader, MediaRenderer> { //
     }
 
     public MediaRenderer.Threaded say(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
@@ -71,7 +84,7 @@ public class SectionRenderer implements Closeable {
         return createBatch(actor, messages, showAll, resources);
     }
 
-    private final class Batch extends MessageRenderer {
+    final class Batch extends MessageRenderer {
         private Batch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
             super(SectionRenderer.this.teaseLib, actor, resources, messages);
         }
@@ -135,18 +148,14 @@ public class SectionRenderer implements Closeable {
         private void renderAllMessages() throws IOException, InterruptedException {
             accumulatedText = new MessageTextAccumulator();
             currentMessage = 0;
-            render(messages);
-        }
-
-        private void renderFromCurrentMessage() throws IOException, InterruptedException {
-            render(messages.subList(currentMessage, messages.size()));
+            renderFromCurrentMessage();
         }
 
         private void renderFrom(int messageIndex) throws IOException, InterruptedException {
             accumulatedText = new MessageTextAccumulator();
             accumulatedText.addAll(messages.subList(0, messageIndex));
             currentMessage = messageIndex;
-            render(messages.subList(messageIndex, messages.size()));
+            renderFromCurrentMessage();
         }
 
         int lastTextMessage() {
@@ -159,15 +168,28 @@ public class SectionRenderer implements Closeable {
             return i;
         }
 
-        private void render(List<RenderedMessage> renderedMessges) throws IOException, InterruptedException {
-            for (var message : renderedMessges) {
-                currentMessage = this.messages.indexOf(message);
-                try {
-                    render(message);
-                } finally {
-                    currentMessage++;
+        private void renderFromCurrentMessage() throws IOException, InterruptedException {
+            while (true) {
+                int limit = messages.size();
+                while (currentMessage < limit) {
+                    RenderedMessage message = messages.get(currentMessage);
+                    try {
+                        render(message);
+                    } finally {
+                        currentMessage++;
+                    }
+                    // TODO not for last message - generate delay in append()
+                    renderOptionalDefaultDelayBetweenMultipleMessages();
                 }
-                renderOptionalDefaultDelayBetweenMultipleMessages();
+
+                synchronized (messages) {
+                    int size = messages.size();
+                    if (limit < size) {
+                        mandatoryCompletedAndContinue();
+                    } else {
+                        break;
+                    }
+                }
             }
         }
 
@@ -414,7 +436,7 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    private void appendMood(String mood, StringBuilder transcript) {
+    private static void appendMood(String mood, StringBuilder transcript) {
         if (!Mood.Neutral.equalsIgnoreCase(mood)) {
             transcript.append(mood);
             transcript.append(" ");

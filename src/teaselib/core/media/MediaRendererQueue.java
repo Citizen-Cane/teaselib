@@ -51,9 +51,27 @@ public class MediaRendererQueue {
 
     public void replay(List<MediaRenderer> renderers, Replay.Position position) {
         synchronized (activeRenderers) {
-            checkPreviousSetCompleted();
-            set(renderers, position);
-            play(renderers);
+            if (position == Replay.Position.FromCurrentPosition) {
+                var replayable = renderers.stream().filter(MediaRenderer.Threaded.class::isInstance).map(MediaRenderer.Threaded.class::cast)
+                        .filter(activeRenderers::containsKey).filter(Predicate.not(MediaRenderer.Threaded::hasCompletedAll)).toList();
+                replayable.stream().forEach(renderer -> {
+                    set(renderers, position);
+                    submit(renderer);
+                });
+            } else {
+                endAll();
+                var replayable = renderers.stream().filter(MediaRenderer.Threaded.class::isInstance).map(MediaRenderer.Threaded.class::cast).toList();
+                replayable.stream().forEach(renderer -> {
+                    set(renderers, position);
+                });
+                if (position == Replay.Position.FromStart) {
+                    play(renderers);
+                } else {
+                    replayable.stream().forEach(renderer -> {
+                        submit(renderer);
+                    });
+                }
+            }
         }
     }
 

@@ -1,11 +1,10 @@
 package teaselib.core;
 
+import static java.util.Collections.*;
 import static java.util.concurrent.TimeUnit.*;
-import static java.util.stream.Collectors.*;
 import static teaselib.core.concurrency.NamedExecutorService.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
@@ -17,10 +16,10 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Replay;
+import teaselib.Replay.Position;
 import teaselib.core.ScriptEventArgs.BeforeMessage;
 import teaselib.core.ScriptEventArgs.BeforeMessage.OutlineType;
 import teaselib.core.debug.CheckPoint;
-import teaselib.core.functional.TriFunction;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRendererQueue;
@@ -56,7 +55,7 @@ public class ScriptRenderer implements Closeable {
 
     ScriptRenderer(TeaseLib teaseLib) {
         this.sectionRenderer = new SectionRenderer(teaseLib, new MediaRendererQueue(renderQueue));
-        scriptEventInputMethod = new ScriptEventInputMethod(inputMethodExecutor);
+        this.scriptEventInputMethod = new ScriptEventInputMethod(inputMethodExecutor);
         this.events = new ScriptEvents(scriptEventInputMethod);
         this.audioSync = sectionRenderer.textToSpeechPlayer.audioSync;
     }
@@ -144,19 +143,19 @@ public class ScriptRenderer implements Closeable {
             throws InterruptedException {
         List<Message> prepended = new ArrayList<>(prependedMessages);
         prependedMessages.clear();
-        renderMessages(teaseLib, resources, actor, prepended, decorators);
+        startMessages(teaseLib, resources, actor, prepended, decorators);
     }
 
     boolean hasPrependedMessages() {
         return !prependedMessages.isEmpty();
     }
 
-    void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators)
+    void startMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators)
             throws InterruptedException {
-        renderMessages(teaseLib, resources, message.actor, Collections.singletonList(message), decorators);
+        startMessages(teaseLib, resources, message.actor, singletonList(message), decorators);
     }
 
-    void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
+    void startMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
             Decorator[] decorators) throws InterruptedException {
 
         // TODO run method of media renderer should start rendering
@@ -170,38 +169,34 @@ public class ScriptRenderer implements Closeable {
 
         // Workaround: keep it for now, renderer is started and queued, waited for and ended
 
-        renderMessage(teaseLib, resources, actor, messages, decorators, //
+        renderMessages(teaseLib, resources, actor, messages, decorators, //
                 sectionRenderer::say, BeforeMessage.OutlineType.NewSection);
-    }
-
-    @FunctionalInterface
-    public interface ConcatFunction extends TriFunction<Actor, List<RenderedMessage>, ResourceLoader, MediaRenderer> { //
     }
 
     void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) throws InterruptedException {
         if (!prependedMessages.isEmpty()) {
-            renderMessage(teaseLib, resources, message, decorators);
+            startMessage(teaseLib, resources, message, decorators);
         } else {
-            renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
-                    sectionRenderer::append, BeforeMessage.OutlineType.AppendParagraph);
+            List<RenderedMessage> renderedMessages = convertMessagesToRendered(singletonList(message), decorators);
+            appendMessagesToSection(actor, renderedMessages);
         }
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) throws InterruptedException {
-        renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
+        renderMessages(teaseLib, resources, actor, singletonList(message), decorators, //
                 sectionRenderer::replace, BeforeMessage.OutlineType.ReplaceParagraph);
     }
 
     void showAll(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message, Decorator[] decorators)
             throws InterruptedException {
-        renderMessage(teaseLib, resources, actor, Collections.singletonList(message), decorators, //
+        renderMessages(teaseLib, resources, actor, singletonList(message), decorators, //
                 sectionRenderer::showAll, BeforeMessage.OutlineType.ReplaceParagraph);
     }
 
-    private void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
-            Decorator[] decorators, ConcatFunction concatFunction, OutlineType outlineType)
+    private void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
+            Decorator[] decorators, SectionRenderer.ConcatFunction concatFunction, OutlineType outlineType)
             throws InterruptedException {
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
         MediaRenderer messageRenderer = concatFunction.apply(actor, renderedMessages, resources);
@@ -258,15 +253,14 @@ public class ScriptRenderer implements Closeable {
 
     private List<RenderedMessage> convertMessagesToRendered(List<Message> messages, Decorator[] decorators) {
         Stream<Message> all = Stream.concat(prependedMessages.stream(), messages.stream());
-        List<RenderedMessage> renderedMessages = all.map(message -> RenderedMessage.of(message, decorators))
-                .collect(toList());
+        List<RenderedMessage> renderedMessages = all.map(message -> RenderedMessage.of(message, decorators)).toList();
         prependedMessages.clear();
         return renderedMessages;
     }
 
     private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer messageRenderer, OutlineType outlineType)
             throws InterruptedException {
-        rememberActor(actor);
+        remember(actor);
 
         fireBeforeMessageEvent(teaseLib, actor, outlineType);
 
@@ -283,14 +277,13 @@ public class ScriptRenderer implements Closeable {
                 // clear queue for next set before completing the current set,
                 // to ensure the next set is empty when the current set is cancelled
                 queuedRenderers.clear();
-                sectionRenderer.nextOutlineType = outlineType;
 
+                sectionRenderer.nextOutlineType = outlineType;
                 // Now the current set can be completed, and canceling the
                 // current set will result in an empty next set
                 awaitAllCompleted();
                 // Start a new chapter in the transcript
                 teaseLib.transcript.info("");
-
                 renderQueue.start(nextSet);
             }
             startBackgroundRenderers();
@@ -298,7 +291,81 @@ public class ScriptRenderer implements Closeable {
         }
     }
 
-    private void rememberActor(Actor actor) {
+    // Used to define delay at the end of a section - before the beginning of a new section
+    // - look-ahead : either inject delay between paragraphs or before a new section
+    // + say(() starts playing a batch:
+    // + while playing append() copies & modifies the messages and starts a new batch at the "current"
+    // message
+    // + the batch ends with a paragraphs delay or a section delay
+
+    // Better:
+    // + one batch per say()
+    // +-- append rendered messages
+    // +-- replace last message and modify current message index
+    // -> usually continues rendering automatically
+    // when completed re-start batch at current position
+
+    // TODO prevent batch from running multiple times
+    // + append has appneded new messages here
+    // + either batch should continue, and nextOutlineType is wrong/obsolelte
+    // + or batch has finished here and can be restarted after await...()
+    // TODO must awaitCmpleteMandatory() before adding since we guarantee that
+    // : render*() returns as soon as the new message has been started
+    // -> extra rule for message renderer
+
+    // Multiple renderers, single message list?
+    // - does each renderer extend?
+    // - What does replay() do?
+    // -> Replay replays the last set of renderers
+    // + up to now replay() is used after recognitionRejected-Script to restore the showAll() state
+    // -> The last set is replayed from Position.Mandatory or Position.End
+
+    // TODO define what global renderer settings do
+    // + delay: delay for render set
+    // + sound etc. : plays at start of set
+    // -> replay multiple messages and sounds from start does not work
+    // because messages are appended via a new set
+
+    //
+    // Final solution:
+    //
+
+    // + say() & append() must work the same way as say(...)
+    // ->
+    // + play() to current limit, no matter what has been appended
+    // + append() appends to current message renderer
+    // + append() waits until the message renderer has played to its limit
+    // + append() re-plays() the current set from the current position
+    // -> message renderer continues execution, other renderers
+    // ---- continue execution as well or
+    // ---- are already finished
+    // queueRenderer can return because the current set continues execution
+    //
+    // render implementation
+    // + at the end of the limit, when there are no more appended entries,
+    // --- message renderer executes section delay (does not append)
+    // + append appends paragraph delay when message renderer has not completed mandatory
+    // + append ends section delay when replaying
+
+    private void appendMessagesToSection(Actor actor, List<RenderedMessage> messages)
+            throws InterruptedException {
+        remember(actor);
+
+        synchronized (renderQueue.activeRenderers) {
+            synchronized (queuedRenderers) {
+                boolean playing = sectionRenderer.append(messages);
+                if (!playing) {
+                    awaitAllCompleted();
+                    List<MediaRenderer> replay = new ArrayList<>(playedRenderers);
+                    replay(replay, Position.FromCurrentPosition);
+                } else {
+                    awaitMandatoryCompleted();
+                }
+            }
+        }
+    }
+
+    private void remember(Actor actor) {
         if (actor != currentActor) {
             currentActor = actor;
             events.actorChanged.fire(new ScriptEventArgs.ActorChanged(currentActor));

@@ -382,10 +382,10 @@ public abstract class Script {
         scriptRenderer.prependMessage(message);
     }
 
-    protected void renderMessage(Message message, boolean useTTS) {
+    protected void startMessage(Message message, boolean useTTS) {
         Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(useTTS);
         try {
-            scriptRenderer.renderMessage(teaseLib, resources, message, decorators(textToSpeech));
+            scriptRenderer.startMessage(teaseLib, resources, message, decorators(textToSpeech));
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
         } finally {

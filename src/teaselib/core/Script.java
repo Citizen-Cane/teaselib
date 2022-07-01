@@ -437,7 +437,7 @@ public abstract class Script {
         var showAll = new Message(actor);
         addMatchingImage(showAll);
         try {
-            scriptRenderer.showAll(teaseLib, resources, actor, showAll, withoutSpeech());
+            scriptRenderer.showAll();
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
         }

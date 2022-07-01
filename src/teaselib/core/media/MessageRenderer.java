@@ -21,6 +21,7 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
     static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(Arrays.asList(Message.Type.Text,
             Message.Type.Image, Message.Type.Mood, Message.Type.Sound, Message.Type.Speech, Message.Type.Delay));
 
+    // TODO blocks multiple actors in one batch
     final Actor actor;
     final ResourceLoader resources;
     final List<RenderedMessage> messages;

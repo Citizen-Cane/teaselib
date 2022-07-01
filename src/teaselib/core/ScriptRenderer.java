@@ -155,22 +155,14 @@ public class ScriptRenderer implements Closeable {
         startMessages(teaseLib, resources, message.actor, singletonList(message), decorators);
     }
 
+    // TODO run method of media renderer should start rendering
+    // -> currently it's started when say() is called
+
     void startMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
             Decorator[] decorators) throws InterruptedException {
-
-        // TODO run method of media renderer should start rendering
-        // -> currently it's started when say() is called
-
-        // TODO submitting new renderer internally -> old will be executed to end
-        // - original idea was to append to the existing if continue if possible,
-        // but in that case we can't return the original media renderer interface
-        // -> only return the batch, don't run yet -> queue in batch.run()
-        // TODO render section delay in queue, so it's not part of the paragraph anymore
-
-        // Workaround: keep it for now, renderer is started and queued, waited for and ended
-
-        renderMessages(teaseLib, resources, actor, messages, decorators, //
-                sectionRenderer::say, BeforeMessage.OutlineType.NewSection);
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
+        MediaRenderer messageRenderer = sectionRenderer.createStartBatch(actor, renderedMessages, resources);
+        renderMessage(teaseLib, actor, messageRenderer, OutlineType.NewSection);
     }
 
     void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
@@ -179,28 +171,21 @@ public class ScriptRenderer implements Closeable {
             startMessage(teaseLib, resources, message, decorators);
         } else {
             List<RenderedMessage> renderedMessages = convertMessagesToRendered(singletonList(message), decorators);
-            appendMessagesToSection(actor, renderedMessages);
+            appendMessagesToSection(teaseLib, actor, renderedMessages);
         }
     }
 
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) throws InterruptedException {
-        renderMessages(teaseLib, resources, actor, singletonList(message), decorators, //
-                sectionRenderer::replace, BeforeMessage.OutlineType.ReplaceParagraph);
+        replaceMessage(teaseLib, resources, actor, singletonList(message), decorators);
     }
 
-    void showAll(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message, Decorator[] decorators)
-            throws InterruptedException {
-        renderMessages(teaseLib, resources, actor, singletonList(message), decorators, //
-                sectionRenderer::showAll, BeforeMessage.OutlineType.ReplaceParagraph);
-    }
-
-    private void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
-            Decorator[] decorators, SectionRenderer.ConcatFunction concatFunction, OutlineType outlineType)
+    private void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
+            Decorator[] decorators)
             throws InterruptedException {
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
-        MediaRenderer messageRenderer = concatFunction.apply(actor, renderedMessages, resources);
-        renderMessage(teaseLib, actor, messageRenderer, outlineType);
+        MediaRenderer messageRenderer = sectionRenderer.createBatch(actor, renderedMessages, resources);
+        renderMessage(teaseLib, actor, messageRenderer, OutlineType.ReplaceParagraph);
     }
 
     boolean showsMultipleParagraphs() {
@@ -261,7 +246,6 @@ public class ScriptRenderer implements Closeable {
     private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer messageRenderer, OutlineType outlineType)
             throws InterruptedException {
         remember(actor);
-
         fireBeforeMessageEvent(teaseLib, actor, outlineType);
 
         synchronized (renderQueue.activeRenderers) {
@@ -278,7 +262,6 @@ public class ScriptRenderer implements Closeable {
                 // to ensure the next set is empty when the current set is cancelled
                 queuedRenderers.clear();
 
-                sectionRenderer.nextOutlineType = outlineType;
                 // Now the current set can be completed, and canceling the
                 // current set will result in an empty next set
                 awaitAllCompleted();
@@ -347,9 +330,10 @@ public class ScriptRenderer implements Closeable {
     // + append appends paragraph delay when message renderer has not completed mandatory
     // + append ends section delay when replaying
 
-    private void appendMessagesToSection(Actor actor, List<RenderedMessage> messages)
+    private void appendMessagesToSection(TeaseLib teaseLib, Actor actor, List<RenderedMessage> messages)
             throws InterruptedException {
         remember(actor);
+        fireBeforeMessageEvent(teaseLib, actor, OutlineType.AppendParagraph);
 
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
@@ -357,10 +341,22 @@ public class ScriptRenderer implements Closeable {
                 if (!playing) {
                     awaitAllCompleted();
                     List<MediaRenderer> replay = new ArrayList<>(playedRenderers);
+                    sectionRenderer.restoreCurrentRenderer(replay);
                     replay(replay, Position.FromCurrentPosition);
                 } else {
                     awaitMandatoryCompleted();
                 }
+            }
+        }
+    }
+
+    void showAll() throws InterruptedException {
+        synchronized (renderQueue.activeRenderers) {
+            synchronized (queuedRenderers) {
+                awaitAllCompleted();
+                List<MediaRenderer> replay = new ArrayList<>(playedRenderers);
+                sectionRenderer.restoreCurrentRenderer(replay);
+                replay(replay, Position.End);
             }
         }
     }

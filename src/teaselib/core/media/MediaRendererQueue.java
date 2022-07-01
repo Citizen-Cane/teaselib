@@ -51,19 +51,15 @@ public class MediaRendererQueue {
 
     public void replay(List<MediaRenderer> renderers, Replay.Position position) {
         synchronized (activeRenderers) {
+            var replayable = replayable(renderers);
             if (position == Replay.Position.FromCurrentPosition) {
-                var replayable = renderers.stream().filter(MediaRenderer.Threaded.class::isInstance).map(MediaRenderer.Threaded.class::cast)
-                        .filter(activeRenderers::containsKey).filter(Predicate.not(MediaRenderer.Threaded::hasCompletedAll)).toList();
+                set(replayable, position);
                 replayable.stream().forEach(renderer -> {
-                    set(renderers, position);
                     submit(renderer);
                 });
             } else {
                 endAll();
-                var replayable = renderers.stream().filter(MediaRenderer.Threaded.class::isInstance).map(MediaRenderer.Threaded.class::cast).toList();
-                replayable.stream().forEach(renderer -> {
-                    set(renderers, position);
-                });
+                set(replayable, position);
                 if (position == Replay.Position.FromStart) {
                     play(renderers);
                 } else {
@@ -73,13 +69,12 @@ public class MediaRendererQueue {
                 }
             }
         }
+
     }
 
-    private static void set(List<MediaRenderer> renderers, Replay.Position position) {
-        for (ReplayableMediaRenderer r : replayable(renderers)) {
-            if (r instanceof MediaRenderer.Threaded threaded) {
-                r.set(position);
-            }
+    private static void set(List<ReplayableMediaRenderer> replayable, Replay.Position position) {
+        for (ReplayableMediaRenderer r : replayable) {
+            r.set(position);
         }
     }
 
@@ -89,15 +84,11 @@ public class MediaRendererQueue {
         }
     }
 
-    private static List<ReplayableMediaRenderer> replayable(List<MediaRenderer> renderers) {
-        List<ReplayableMediaRenderer> elements = new ArrayList<>();
-        for (MediaRenderer r : renderers) {
-            if (r instanceof ReplayableMediaRenderer replayable) {
-                elements.add(replayable);
-
-            }
-        }
-        return elements;
+    private static List<ReplayableMediaRenderer> replayable(List<? extends MediaRenderer> renderers) {
+        return renderers.stream()
+                .filter(ReplayableMediaRenderer.class::isInstance)
+                .map(ReplayableMediaRenderer.class::cast)
+                .toList();
     }
 
     private void play(List<? extends MediaRenderer> mediaRenderers) {

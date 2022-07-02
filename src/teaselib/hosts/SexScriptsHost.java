@@ -485,7 +485,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         Insets insets = mainFrame.getInsets();
         int horizontalAdjustment = insets.left + insets.right;
         bounds.width += horizontalAdjustment;
-        renderer.renderBackgound(frame, bounds);
+        renderer.renderBackgound(frame, bounds, mainFrame.getBackground());
         bounds.width -= horizontalAdjustment;
 
         renderer.render(frame, bounds);

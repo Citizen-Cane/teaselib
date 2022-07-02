@@ -358,7 +358,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         return update;
     }
 
-    private Set<Interest> joinInterests(Set<Interest> actorInterests, Set<Interest> more) {
+    private static Set<Interest> joinInterests(Set<Interest> actorInterests, Set<Interest> more) {
         if (actorInterests.isEmpty()) {
             return more;
         } else if (more.isEmpty()) {

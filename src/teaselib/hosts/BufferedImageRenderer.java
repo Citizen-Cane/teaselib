@@ -41,7 +41,7 @@ public class BufferedImageRenderer {
         this.backgroundImage = backgroundImage;
     }
 
-    public void renderBackgound(RenderState frame, Rectangle bounds) {
+    public void renderBackgound(RenderState frame, Rectangle bounds, Color backgroundColor) {
         if (frame.repaintSceneImage) {
             if (frame.sceneImage == null) {
                 frame.sceneImage = newBufferedImage(bounds);
@@ -52,6 +52,8 @@ public class BufferedImageRenderer {
             boolean backgroundVisible = frame.displayImage == null || frame.pose.distance.isEmpty();
             if (backgroundVisible) {
                 var g2d = frame.sceneImage.createGraphics();
+                g2d.setBackground(backgroundColor);
+                g2d.clearRect(0, 0, bounds.width, bounds.height);
                 g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 g2d.drawImage(backgroundImage,
                         0, 0, bounds.width, bounds.height,
@@ -93,9 +95,9 @@ public class BufferedImageRenderer {
             var g2d = sceneImage.createGraphics();
             BufferedImage displayImage = frame.displayImage;
             var displayImageSize = Transform.dimension(displayImage);
-            var t = surfaceTransform(frame.actorZoom, displayImageSize, frame.pose, new Rectangle2D.Double(0, 0, bounds.width, bounds.height));
+            var t = surfaceTransform(frame.actorZoom, displayImageSize, frame.pose, new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height));
             g2d.drawImage(displayImage, t, null);
-            renderDebugInfo(g2d, displayImageSize, frame.pose, t, bounds.getBounds(), frame.isIntertitle);
+            renderDebugInfo(g2d, displayImageSize, frame.pose, t, bounds, frame.isIntertitle);
             g2d.dispose();
         }
     }
@@ -280,7 +282,7 @@ public class BufferedImageRenderer {
             // float fontSize = FONT_SIZE * textArea.width / TEXT_AREA_MAX_WIDTH;
 
             float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-            float fontSize = FONT_SIZE / dpi * 72.0f;
+            float fontSize = FONT_SIZE * dpi / 72.0f;
 
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);

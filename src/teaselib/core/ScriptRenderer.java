@@ -188,50 +188,6 @@ public class ScriptRenderer implements Closeable {
         renderMessage(teaseLib, actor, messageRenderer, OutlineType.ReplaceParagraph);
     }
 
-    boolean showsMultipleParagraphs() {
-        return sectionRenderer.showsMultipleParagraphs();
-    }
-
-    boolean showsActorImage() {
-        var current = sectionRenderer.lastParagraph();
-        if (current != null) {
-            var image = current.findLast(Message.Type.Image);
-            if (image == null) {
-                return false;
-            } else if (currentActor.images.contains(image.value)) {
-                return true;
-            } else if (Message.NoImage.equalsIgnoreCase(image.value)) {
-                return false;
-            } else if (Message.ActorImage.equalsIgnoreCase(image.value)) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    boolean showsInstructionalImage() {
-        var current = sectionRenderer.lastParagraph();
-        if (current != null) {
-            var image = current.findLast(Message.Type.Image);
-            if (image == null) {
-                return false;
-            } else if (currentActor.images.contains(image.value)) {
-                return false;
-            } else if (Message.NoImage.equalsIgnoreCase(image.value)) {
-                return false;
-            } else if (Message.ActorImage.equalsIgnoreCase(image.value)) {
-                return false;
-            } else {
-                return true;
-            }
-        } else {
-            return false;
-        }
-    }
-
     boolean isInterTitle() {
         return playedRenderers != null && playedRenderers.stream().anyMatch(RenderInterTitle.class::isInstance);
     }

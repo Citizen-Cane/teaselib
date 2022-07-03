@@ -103,34 +103,43 @@ public class SectionRenderer implements Closeable {
         private void play() throws IOException, InterruptedException {
             if (position == Position.FromStart) {
                 renderAllMessages();
+                if (haveMultipleParagraphs()) {
+                    showAll();
+                }
             } else if (position == Position.FromCurrentPosition) {
                 if (currentMessage < messages.size()) {
                     renderFromCurrentMessage();
                 } else {
-                    showAll(this);
+                    showAll();
                 }
             } else if (position == Position.FromLastParagraph) {
                 // say the last message (likely a paragraph?) again, including the final delay, showAll
                 renderFrom(lastTextMessage());
-                showAll(this);
+                if (haveMultipleParagraphs()) {
+                    showAll();
+                }
                 // TODO FromLastParagraph & FromMandatory are very similar -> get rid of one of them
             } else if (position == Position.FromMandatory) {
                 // Render the last paragraph, including the final delay, then showAll
                 render(lastParagraph);
-                showAll(this);
+                if (haveMultipleParagraphs()) {
+                    showAll();
+                }
             } else if (position == Position.End) {
                 // Just show the summary
-                showAll(this);
+                showAll();
             } else {
                 throw new IllegalStateException(position.toString());
             }
         }
 
-        private void showAll(MessageRenderer message) throws IOException, InterruptedException {
-            var mood = message.lastParagraph.findLast(Type.Mood);
-            var currentMood = mood != null ? mood.value : Mood.Neutral;
-            var image = getImage(message.actor, message.displayImage, currentMood);
-            show(image, message.accumulatedText.paragraphs);
+        private boolean haveMultipleParagraphs() {
+            return currentMessageRenderer.accumulatedText.paragraphs.size() > 1;
+        }
+
+        private void showAll() throws IOException, InterruptedException {
+            var image = getImage(actor, displayImage);
+            show(image, accumulatedText.paragraphs);
         }
 
         private void renderAllMessages() throws IOException, InterruptedException {
@@ -166,7 +175,6 @@ public class SectionRenderer implements Closeable {
                     } finally {
                         currentMessage++;
                     }
-                    // TODO not for last message - generate delay in append()
                     renderOptionalDefaultDelayBetweenMultipleMessages();
                 }
 
@@ -183,8 +191,7 @@ public class SectionRenderer implements Closeable {
 
         private void renderOptionalDefaultDelayBetweenMultipleMessages() throws InterruptedException {
             if (textToSpeechPlayer != null) {
-                // TODO replace obsolete nextOutlineType
-                boolean last = currentMessage == messages.size() /* && nextOutlineType != OutlineType.AppendParagraph */;
+                boolean last = currentMessage == messages.size();
                 if (!last && !lastParagraph.contains(Type.Delay)) {
                     renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
                 }
@@ -222,7 +229,7 @@ public class SectionRenderer implements Closeable {
 
                 if ((isDurationType && !previousPart.isAnyOf(Message.Type.DelayTypes))
                         || isDisplayTypeAtEnd) {
-                    show(getImage(actor, displayImage, mood), accumulatedText.getTail());
+                    show(getImage(actor, displayImage), accumulatedText.getTail());
                 }
 
                 if (part.type == Type.Text) {
@@ -264,7 +271,7 @@ public class SectionRenderer implements Closeable {
                     try {
                         showDesktopItem(part, resources);
                     } catch (IOException e) {
-                        showDesktopItemError(this, accumulatedText, mood, e);
+                        showDesktopItemError(this, accumulatedText, e);
                         throw e;
                     }
                 }
@@ -283,8 +290,6 @@ public class SectionRenderer implements Closeable {
 
     }
 
-    // TODO make sure batch renderers don't overlap to avoid race conditions with SectionRenderer fields
-
     public Batch createStartBatch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
         Batch batch = new Batch(actor, messages, resources);
         currentMessageRenderer = batch;
@@ -297,9 +302,7 @@ public class SectionRenderer implements Closeable {
 
     private void finalizeRendering(MessageRenderer messageRenderer) throws InterruptedException {
         awaitSectionMandatory();
-        // TODO replace obsolete nextOutlineType
-        if (/* nextOutlineType == OutlineType.NewSection && */ textToSpeechPlayer != null
-                && !messageRenderer.lastParagraph.contains(Type.Delay)) {
+        if (textToSpeechPlayer != null && !messageRenderer.lastParagraph.contains(Type.Delay)) {
             renderSectionEndDelay();
         }
         awaitSectionAll();
@@ -322,11 +325,11 @@ public class SectionRenderer implements Closeable {
         renderQueue.submit(renderDesktopItem);
     }
 
-    private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText,
-            String mood, IOException e) throws IOException, InterruptedException {
+    private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText, IOException e)
+            throws IOException, InterruptedException {
         accumulatedText.add(new MessagePart(Message.Type.Text, e.getMessage()));
         awaitSectionAll();
-        AnnotatedImage image = getImage(messageRenderer.actor, messageRenderer.displayImage, mood);
+        AnnotatedImage image = getImage(messageRenderer.actor, messageRenderer.displayImage);
         show(image, e.getMessage());
         messageRenderer.startCompleted();
     }
@@ -373,7 +376,7 @@ public class SectionRenderer implements Closeable {
         currentRenderer = MediaRenderer.None;
     }
 
-    private AnnotatedImage getImage(Actor actor, String displayImage, String mood)
+    private AnnotatedImage getImage(Actor actor, String displayImage)
             throws IOException, InterruptedException {
         if (actor.images.contains(displayImage)) {
             teaseLib.transcript.debug("image = '" + displayImage + "'");
@@ -499,16 +502,6 @@ public class SectionRenderer implements Closeable {
 
     private boolean isInstructionalImageOutputEnabled() {
         return Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages));
-    }
-
-    // TODO affected by new replace - displayImage type might be different after replace
-    public RenderedMessage lastParagraph() {
-        return currentMessageRenderer != null ? currentMessageRenderer.lastParagraph : null;
-    }
-
-    // TODO affected by new replace - must show current renderer accumulated text after replace()
-    public boolean showsMultipleParagraphs() {
-        return currentMessageRenderer != null ? currentMessageRenderer.accumulatedText.paragraphs.size() > 1 : false;
     }
 
 }

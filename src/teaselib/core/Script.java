@@ -22,7 +22,6 @@ import teaselib.Body;
 import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Message;
-import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.Resources;
@@ -433,24 +432,6 @@ public abstract class Script {
         }
     }
 
-    void showAll(double delaySeconds) {
-        var showAll = new Message(actor);
-        addMatchingImage(showAll);
-        try {
-            scriptRenderer.showAll();
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException(e);
-        }
-    }
-
-    private void addMatchingImage(Message message) {
-        if (scriptRenderer.showsActorImage()) {
-            message.add(Type.Image, displayImage);
-        } else if (!scriptRenderer.showsInstructionalImage()) {
-            message.add(Type.Image, Message.NoImage);
-        }
-    }
-
     protected final Answer showChoices(List<Answer> answers) {
         return showChoices(answers, null);
     }
@@ -496,7 +477,7 @@ public abstract class Script {
             // If we don't have a script function,
             // then the mandatory part of the renderers
             // must be completed before displaying the ui choices
-            completeSection();
+            awaitMandatoryCompleted();
         } else {
             completeSectionBeforeStarting(scriptFunction);
         }
@@ -522,14 +503,6 @@ public abstract class Script {
         scriptRenderer.events.afterPrompt.fire(new ScriptEventArgs());
         actor.images.advance(Next.Section);
         return answer;
-    }
-
-    private void completeSection() {
-        if (scriptRenderer.isInterTitle()) {
-            awaitMandatoryCompleted();
-        } else {
-            showAll(5.0);
-        }
     }
 
     private void completeSectionBeforeStarting(ScriptFunction scriptFunction) {

@@ -419,40 +419,48 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     public void show(AnnotatedImage displayImage, List<String> text) {
         BufferedImage image;
         HumanPose.Estimation pose;
+        boolean updateDisplayImage;
         if (displayImage != null) {
+            updateDisplayImage = !displayImage.resource.equals(nextFrame.displayImageResource);
             try {
                 // TODO only necessary when different from frame image but need to synchronize to test
                 // -> cache in AnnotatedImage but on the other hand the images is supposed to be different on each call
                 // + caching is good for random image sets where images of each take are displayed multiple times
                 // -> cache images here to avoid using java.awt.Image outside host impl.
-                image = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
-                pose = displayImage.pose;
+                if (updateDisplayImage) {
+                    image = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
+                    pose = displayImage.pose;
+                } else {
+                    image = null;
+                    pose = null;
+                }
             } catch (IOException e) {
                 image = null;
                 pose = HumanPose.Estimation.NONE;
                 logger.error(e.getMessage(), e);
             }
         } else {
+            updateDisplayImage = true;
             image = null;
             pose = HumanPose.Estimation.NONE;
         }
 
         synchronized (nextFrame) {
-            if (displayImage != null) {
-                if (!displayImage.resource.equals(nextFrame.displayImageResource)) {
+            if (updateDisplayImage) {
+                if (displayImage != null) {
+                    nextFrame.displayImageResource = displayImage.resource;
                     nextFrame.displayImage = image;
                     nextFrame.pose = pose;
-                    nextFrame.displayImageResource = displayImage.resource;
+                } else if (nextFrame.displayImageResource != null) {
+                    nextFrame.displayImageResource = null;
+                    nextFrame.displayImage = image;
+                    nextFrame.pose = pose;
                 }
-            } else if (nextFrame.displayImageResource != null) {
-                nextFrame.displayImageResource = null;
-                nextFrame.displayImage = image;
-                nextFrame.pose = pose;
             }
-
             nextFrame.text = text.stream().collect(Collectors.joining("\n"));
             nextFrame.isIntertitle = false;
         }
+
     }
 
     @Override

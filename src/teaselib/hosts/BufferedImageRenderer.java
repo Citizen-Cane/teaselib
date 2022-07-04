@@ -33,7 +33,8 @@ import teaselib.core.ai.perception.ProximitySensor;
  */
 public class BufferedImageRenderer {
 
-    private static final BufferedImageOp blurOp = ConvolveEdgeReflectOp.blur(17);
+    private static final BufferedImageOp BLUR_OP = ConvolveEdgeReflectOp.blur(17);
+    private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
     final Image backgroundImage;
 
@@ -43,12 +44,7 @@ public class BufferedImageRenderer {
 
     public void renderBackgound(RenderState frame, Rectangle bounds, Color backgroundColor) {
         if (frame.repaintSceneImage) {
-            if (frame.sceneImage == null) {
-                frame.sceneImage = newBufferedImage(bounds);
-            } else if (bounds.width != frame.sceneImage.getWidth() || bounds.height != frame.sceneImage.getHeight()) {
-                frame.sceneImage = newBufferedImage(bounds);
-            }
-
+            frame.sceneImage = newOrSameImage(frame.sceneImage, bounds);
             boolean backgroundVisible = frame.displayImage == null || frame.pose.distance.isEmpty();
             if (backgroundVisible) {
                 var g2d = frame.sceneImage.createGraphics();
@@ -64,10 +60,18 @@ public class BufferedImageRenderer {
     }
 
     void render(RenderState frame, Rectangle bounds) {
-        BufferedImage image = renderScene(frame, bounds);
-        image = renderTextOverlay(image, bounds, frame.renderedText, frame.isIntertitle);
-        image = renderOverlay(image, frame.focusLevel);
-        frame.renderedImage = image;
+        BufferedImage sceneImage = renderScene(frame, bounds);
+        BufferedImage textImage = renderText(frame, bounds);
+
+        frame.renderedImage = newOrSameImage(frame.renderedImage, bounds);
+        Graphics2D g2d = frame.renderedImage.createGraphics();
+        if (frame.focusLevel < 1.0) {
+            g2d.drawImage(sceneImage, BLUR_OP, 0, 0);
+        } else {
+            g2d.drawImage(sceneImage, 0, 0, null);
+        }
+        g2d.drawImage(textImage, 0, 0, null);
+        g2d.dispose();
     }
 
     public BufferedImage renderScene(RenderState currentFrame, Rectangle bounds) {
@@ -91,13 +95,18 @@ public class BufferedImageRenderer {
     }
 
     private static void renderDisplayImage(RenderState frame, BufferedImage sceneImage, Rectangle bounds) {
-        if (frame.repaintSceneImage && frame.displayImage != null) {
+        if (frame.repaintSceneImage) {
             var g2d = sceneImage.createGraphics();
-            BufferedImage displayImage = frame.displayImage;
-            var displayImageSize = Transform.dimension(displayImage);
-            var t = surfaceTransform(frame.actorZoom, displayImageSize, frame.pose, new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height));
-            g2d.drawImage(displayImage, t, null);
-            renderDebugInfo(g2d, displayImageSize, frame.pose, t, bounds, frame.isIntertitle);
+            if (frame.displayImage != null) {
+                BufferedImage displayImage = frame.displayImage;
+                var displayImageSize = Transform.dimension(displayImage);
+                var t = surfaceTransform(frame.actorZoom, displayImageSize, frame.pose, new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height));
+                g2d.drawImage(displayImage, t, null);
+                renderDebugInfo(g2d, displayImageSize, frame.pose, t, bounds, frame.isIntertitle);
+            } else {
+                g2d.setBackground(TRANSPARENT);
+                g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            }
             g2d.dispose();
         }
     }
@@ -211,18 +220,39 @@ public class BufferedImageRenderer {
     private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
     private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
 
-    private static BufferedImage renderTextOverlay(BufferedImage underlay, Rectangle bounds, String text,
-            boolean intertitleActive) {
+    private static BufferedImage renderText(RenderState frame, Rectangle bounds) {
+        if (frame.repaintTextImage) {
+            return renderText(frame, bounds, frame.text, frame.isIntertitle);
+        } else {
+            return frame.textImage;
+        }
+    }
+
+    private static BufferedImage renderText(RenderState frame, Rectangle bounds, String text, boolean intertitleActive) {
+        var textArea = intertitleActive ? intertitleTextArea(bounds) : spokenTextArea(bounds);
+        if (frame.textImage == null) {
+            frame.textImage = newBufferedImage(bounds);
+        } else if (bounds.width != frame.textImage.getWidth() || bounds.height != frame.textImage.getHeight()) {
+            frame.textImage = newBufferedImage(bounds);
+        }
+        frame.textImage = newOrSameImage(frame.textImage, bounds);
         if (!text.isBlank() || intertitleActive) {
-            var textArea = intertitleActive ? intertitleTextArea(bounds) : spokenTextArea(bounds);
-            BufferedImage image = newBufferedImage(underlay.getWidth(), underlay.getHeight());
-            Graphics2D g2d = image.createGraphics();
-            g2d.drawImage(underlay, 0, 0, null);
+            Graphics2D g2d = frame.textImage.createGraphics();
+            g2d.setBackground(TRANSPARENT);
+            g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
             renderText(g2d, text, bounds, textArea, intertitleActive);
             g2d.dispose();
-            return image;
+        }
+        return frame.textImage;
+    }
+
+    private static BufferedImage newOrSameImage(BufferedImage image, Rectangle bounds) {
+        if (image == null) {
+            return newBufferedImage(bounds);
+        } else if (bounds.width != image.getWidth() || bounds.height != image.getHeight()) {
+            return newBufferedImage(bounds);
         } else {
-            return underlay;
+            return image;
         }
     }
 
@@ -278,8 +308,6 @@ public class BufferedImageRenderer {
             Dimension2D textSize = new Dimension(0, 0);
             TextVisitor measureText = (TextLayout layout, float x, float y) -> textSize
                     .setSize(Math.max(textSize.getWidth(), layout.getAdvance()), y + layout.getDescent() - textArea.y);
-
-            // float fontSize = FONT_SIZE * textArea.width / TEXT_AREA_MAX_WIDTH;
 
             float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
             float fontSize = FONT_SIZE * dpi / 72.0f;
@@ -362,21 +390,6 @@ public class BufferedImageRenderer {
             if (measurer.getPosition() == limit) {
                 dy += layout.getAscent() * (PARAGRAPH_SPACING - 1.0f);
             }
-        }
-    }
-
-    //
-    // =====================
-    //
-
-    public BufferedImage renderOverlay(BufferedImage image, float focusLevel) {
-        if (focusLevel < 1.0) {
-            var blurred = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D blurredg2d = blurred.createGraphics();
-            blurredg2d.drawImage(image, blurOp, 0, 0);
-            return blurred;
-        } else {
-            return image;
         }
     }
 

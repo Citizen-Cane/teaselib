@@ -12,6 +12,7 @@ import teaselib.core.ai.perception.ProximitySensor;
  */
 class RenderState {
 
+    // Scene properties
     String displayImageResource;
     BufferedImage displayImage;
     HumanPose.Estimation pose;
@@ -22,11 +23,16 @@ class RenderState {
 
     float focusLevel;
 
+    //
+    // Composition stack
+
     boolean repaintSceneImage;
     BufferedImage sceneImage;
 
+    boolean repaintTextImage;
+    BufferedImage textImage;
+
     BufferedImage renderedImage;
-    String renderedText;
 
     RenderState() {
         this.displayImageResource = "";
@@ -42,16 +48,18 @@ class RenderState {
         this.repaintSceneImage = false;
         this.sceneImage = null;
 
+        this.repaintTextImage = false;
+        this.textImage = null;
+
         this.renderedImage = null;
-        this.renderedText = null;
 
     }
 
     RenderState copy() {
         RenderState copy = new RenderState();
 
-        copy.displayImage = this.displayImage;
         copy.displayImageResource = this.displayImageResource;
+        copy.displayImage = this.displayImage;
         copy.pose = this.pose;
         copy.actorZoom = this.actorZoom;
 
@@ -63,8 +71,10 @@ class RenderState {
         copy.repaintSceneImage = false;
         copy.sceneImage = this.sceneImage;
 
+        copy.repaintTextImage = false;
+        copy.textImage = this.textImage;
+
         copy.renderedImage = this.renderedImage;
-        copy.renderedText = this.renderedText;
 
         return copy;
     }
@@ -74,11 +84,14 @@ class RenderState {
                 || actorZoom != oldState.actorZoom//
                 || isIntertitle != oldState.isIntertitle;
 
-        if (renderText()) {
-            renderedText = text;
-        } else {
-            renderedText = "";
-        }
+        // TODO when rendering test overlay
+        // if (renderText()) {
+        // renderedText = text;
+        // } else {
+        // renderedText = "";
+        // }
+
+        repaintTextImage = text != oldState.text;
     }
 
     boolean renderText() {

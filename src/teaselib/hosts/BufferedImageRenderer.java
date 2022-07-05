@@ -16,7 +16,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Dimension2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
@@ -31,7 +30,7 @@ import teaselib.core.ai.perception.ProximitySensor;
  * @author Citizen-Cane
  *
  */
-public class BufferedImageRenderer {
+public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
 
     private static final BufferedImageOp BLUR_OP = ConvolveEdgeReflectOp.blur(17);
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
@@ -39,76 +38,58 @@ public class BufferedImageRenderer {
     final Image backgroundImage;
 
     public BufferedImageRenderer(Image backgroundImage) {
+        super();
         this.backgroundImage = backgroundImage;
     }
 
-    public void renderBackgound(RenderState frame, Rectangle bounds, Color backgroundColor) {
+    void render(Graphics2D g2d, RenderState frame, Rectangle bounds, Color backgroundColor) {
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+
+        boolean backgroundVisible = frame.displayImage == null || frame.pose.distance.isEmpty();
+        if (backgroundVisible) {
+            g2d.setBackground(backgroundColor);
+            g2d.clearRect(0, 0, bounds.width, bounds.height);
+            g2d.drawImage(backgroundImage,
+                    0, 0, bounds.width, bounds.height,
+                    0, 0, backgroundImage.getWidth(null), backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
+        }
+
         if (frame.repaintSceneImage) {
-            frame.sceneImage = newOrSameImage(frame.sceneImage, bounds);
-            boolean backgroundVisible = frame.displayImage == null || frame.pose.distance.isEmpty();
-            if (backgroundVisible) {
-                var g2d = frame.sceneImage.createGraphics();
-                g2d.setBackground(backgroundColor);
-                g2d.clearRect(0, 0, bounds.width, bounds.height);
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                g2d.drawImage(backgroundImage,
-                        0, 0, bounds.width, bounds.height,
-                        0, 0, backgroundImage.getWidth(null), backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
-                g2d.dispose();
+            updateSceneTransform(frame, bounds);
+        }
+
+        if (frame.displayImage != null) {
+            if (frame.focusLevel < 1.0) {
+                // TODO AffineTranaform
+                g2d.drawImage(frame.displayImage, BLUR_OP, 0, 0);
+            } else {
+                g2d.drawImage(frame.displayImage, frame.t, null);
+                renderDebugInfo(g2d, Transform.dimension(frame.displayImage), frame.pose, frame.t, bounds, frame.isIntertitle);
             }
         }
+
+        if (frame.repaintTextImage) {
+            renderText(frame, bounds);
+        }
+
+        if (!frame.text.isBlank() || frame.isIntertitle) {
+            g2d.drawImage(frame.textImage, 0, 0, null);
+        }
     }
 
-    void render(RenderState frame, Rectangle bounds) {
-        BufferedImage sceneImage = renderScene(frame, bounds);
-        BufferedImage textImage = renderText(frame, bounds);
-
-        frame.renderedImage = newOrSameImage(frame.renderedImage, bounds);
-        Graphics2D g2d = frame.renderedImage.createGraphics();
-        if (frame.focusLevel < 1.0) {
-            g2d.drawImage(sceneImage, BLUR_OP, 0, 0);
+    public void updateSceneTransform(RenderState frame, Rectangle bounds) {
+        if (frame.displayImage != null) {
+            var displayImageSize = Transform.dimension(frame.displayImage);
+            frame.t = surfaceTransform(frame.actorZoom, displayImageSize, frame.pose,
+                    new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height));
         } else {
-            g2d.drawImage(sceneImage, 0, 0, null);
+            frame.t = null;
         }
-        g2d.drawImage(textImage, 0, 0, null);
-        g2d.dispose();
-    }
-
-    public BufferedImage renderScene(RenderState currentFrame, Rectangle bounds) {
-        if (currentFrame.repaintSceneImage) {
-            renderDisplayImage(currentFrame, currentFrame.sceneImage, bounds);
-        }
-        return currentFrame.sceneImage;
-    }
-
-    public static BufferedImage newBufferedImage(Rectangle bounds) {
-        return newBufferedImage(bounds.width, bounds.height);
-    }
-
-    private static BufferedImage newBufferedImage(int width, int height) {
-        return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     }
 
     private static Rectangle interTitleCenterRegion(Rectangle bounds) {
         Rectangle centerRegion = new Rectangle(0, bounds.height * 1 / 4, bounds.width, bounds.height * 2 / 4);
         return centerRegion;
-    }
-
-    private static void renderDisplayImage(RenderState frame, BufferedImage sceneImage, Rectangle bounds) {
-        if (frame.repaintSceneImage) {
-            var g2d = sceneImage.createGraphics();
-            if (frame.displayImage != null) {
-                BufferedImage displayImage = frame.displayImage;
-                var displayImageSize = Transform.dimension(displayImage);
-                var t = surfaceTransform(frame.actorZoom, displayImageSize, frame.pose, new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height));
-                g2d.drawImage(displayImage, t, null);
-                renderDebugInfo(g2d, displayImageSize, frame.pose, t, bounds, frame.isIntertitle);
-            } else {
-                g2d.setBackground(TRANSPARENT);
-                g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
-            }
-            g2d.dispose();
-        }
     }
 
     private static AffineTransform surfaceTransform(double actorZoom, Dimension image,
@@ -220,39 +201,19 @@ public class BufferedImageRenderer {
     private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
     private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
 
-    private static BufferedImage renderText(RenderState frame, Rectangle bounds) {
-        if (frame.repaintTextImage) {
-            return renderText(frame, bounds, frame.text, frame.isIntertitle);
-        } else {
-            return frame.textImage;
-        }
+    private static void renderText(RenderState frame, Rectangle bounds) {
+        renderText(frame, bounds, frame.text, frame.isIntertitle);
     }
 
-    private static BufferedImage renderText(RenderState frame, Rectangle bounds, String text, boolean intertitleActive) {
-        var textArea = intertitleActive ? intertitleTextArea(bounds) : spokenTextArea(bounds);
-        if (frame.textImage == null) {
-            frame.textImage = newBufferedImage(bounds);
-        } else if (bounds.width != frame.textImage.getWidth() || bounds.height != frame.textImage.getHeight()) {
-            frame.textImage = newBufferedImage(bounds);
-        }
-        frame.textImage = newOrSameImage(frame.textImage, bounds);
+    private static void renderText(RenderState frame, Rectangle bounds, String text, boolean intertitleActive) {
         if (!text.isBlank() || intertitleActive) {
+            var textArea = intertitleActive ? intertitleTextArea(bounds) : spokenTextArea(bounds);
+            frame.textImage = newOrSameImage(frame.textImage, bounds);
             Graphics2D g2d = frame.textImage.createGraphics();
             g2d.setBackground(TRANSPARENT);
             g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
             renderText(g2d, text, bounds, textArea, intertitleActive);
             g2d.dispose();
-        }
-        return frame.textImage;
-    }
-
-    private static BufferedImage newOrSameImage(BufferedImage image, Rectangle bounds) {
-        if (image == null) {
-            return newBufferedImage(bounds);
-        } else if (bounds.width != image.getWidth() || bounds.height != image.getHeight()) {
-            return newBufferedImage(bounds);
-        } else {
-            return image;
         }
     }
 

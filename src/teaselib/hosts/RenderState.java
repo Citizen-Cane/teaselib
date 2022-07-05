@@ -1,5 +1,6 @@
 package teaselib.hosts;
 
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
 import teaselib.core.ai.perception.HumanPose;
@@ -27,12 +28,11 @@ class RenderState {
     // Composition stack
 
     boolean repaintSceneImage;
+    AffineTransform t;
     BufferedImage sceneImage;
 
     boolean repaintTextImage;
     BufferedImage textImage;
-
-    BufferedImage renderedImage;
 
     RenderState() {
         this.displayImageResource = "";
@@ -45,14 +45,12 @@ class RenderState {
 
         this.focusLevel = 1.0f;
 
+        this.t = null;
         this.repaintSceneImage = false;
         this.sceneImage = null;
 
         this.repaintTextImage = false;
         this.textImage = null;
-
-        this.renderedImage = null;
-
     }
 
     RenderState copy() {
@@ -68,32 +66,22 @@ class RenderState {
 
         copy.focusLevel = this.focusLevel;
 
+        copy.t = this.t;
         copy.repaintSceneImage = false;
         copy.sceneImage = this.sceneImage;
 
         copy.repaintTextImage = false;
         copy.textImage = this.textImage;
 
-        copy.renderedImage = this.renderedImage;
-
         return copy;
     }
 
     public void updateFrom(RenderState oldState) {
-        repaintSceneImage = displayImageResource != oldState.displayImageResource //
-                || actorZoom != oldState.actorZoom//
-                || isIntertitle != oldState.isIntertitle;
-
-        // TODO when rendering test overlay
-        // if (renderText()) {
-        // renderedText = text;
-        // } else {
-        // renderedText = "";
-        // }
-
-        repaintTextImage = text != oldState.text;
+        repaintSceneImage = displayImageResource != oldState.displayImageResource || actorZoom != oldState.actorZoom;
+        repaintTextImage = text != oldState.text || isIntertitle != oldState.isIntertitle;
     }
 
+    // TODO apply rules elsewhere
     boolean renderText() {
         return focusLevel == 1.0 && actorZoom < ProximitySensor.zoom.get(Proximity.CLOSE) && !text.isBlank();
     }

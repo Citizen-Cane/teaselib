@@ -7,10 +7,12 @@ import static teaselib.core.concurrency.NamedExecutorService.*;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Graphics2D;
 import java.awt.IllegalComponentStateException;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -473,10 +475,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public void setActorZoom(double zoom) {
         synchronized (nextFrame) {
-            if (nextFrame.actorZoom != zoom) {
-                nextFrame.actorZoom = zoom;
-                nextFrame.repaintSceneImage = true;
-            }
+            nextFrame.actorZoom = zoom;
         }
     }
 
@@ -486,39 +485,44 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     // Without the wait, Host.show(image) would be rendered from multiple threads
     // With a queue, the explicit render call (later on in Section renderer) would be too much
 
-    //
-
     @Override
     public void show() {
         synchronized (nextFrame) {
             nextFrame.updateFrom(currentFrame);
             currentFrame = nextFrame;
-            show(currentFrame);
+            var image = render(currentFrame);
             nextFrame = currentFrame.copy();
+            EventQueue.invokeLater(() -> show(image));
         }
     }
 
-    private void show(RenderState frame) {
-        // insets for pixel-correct (non-scaled) image size
+    private Image render(RenderState frame) {
         Rectangle bounds = getContentBounds();
-
-        Insets insets = mainFrame.getInsets();
-        int horizontalAdjustment = insets.left + insets.right;
+        int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
         bounds.width += horizontalAdjustment;
-        renderer.renderBackgound(frame, bounds, mainFrame.getBackground());
+        var image = renderer.nextBuffer(bounds);
         bounds.width -= horizontalAdjustment;
 
-        renderer.render(frame, bounds);
-        EventQueue.invokeLater(() -> showCurrentImage(frame.renderedImage));
+        Graphics2D g2d = image.createGraphics();
+        renderer.render(g2d, frame, bounds, mainFrame.getBackground());
+        g2d.dispose();
+        return image;
     }
 
-    private void showCurrentImage(BufferedImage image) {
+    private int getHorizontalAdjustmentForPixelCorrectImage() {
+        Insets insets = mainFrame.getInsets();
+        int horizontalAdjustment = insets.left + insets.right;
+        return horizontalAdjustment;
+    }
+
+    private void show(Image image) {
         if (image != null) {
             backgroundImageIcon.setImage(image);
         } else {
             backgroundImageIcon.setImage(backgroundImage);
         }
         mainFrame.repaint();
+        Toolkit.getDefaultToolkit().sync();
     }
 
     @Override

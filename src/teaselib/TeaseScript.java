@@ -1,7 +1,7 @@
 package teaselib;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static teaselib.core.ai.perception.HumanPose.Interest.Proximity;
+import static java.util.concurrent.TimeUnit.*;
+import static teaselib.core.ai.perception.HumanPose.Interest.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -684,7 +684,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel) {
         awaitMandatoryCompleted();
         try {
-            return teaseLib.host.showItems(caption, choices, values, allowCancel);
+            return teaseLib.host.showItems(expandTextVariables(caption), choices, values, allowCancel);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);

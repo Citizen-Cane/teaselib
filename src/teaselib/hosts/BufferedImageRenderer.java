@@ -97,7 +97,9 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         AffineTransform surface;
         if (actorZoom > ProximitySensor.zoom.get(Proximity.FACE2FACE)) {
             // TODO make zoom depend on distance to focus solely on the region of interest
-            surface = surfaceTransform(image, bounds, pose.boobs(), actorZoom);
+            // TODO image blending uses actor zoom but blocked by hard coded focus area
+            // -> set focus area from proximity sensor and animated host
+            surface = surfaceTransform(image, bounds, pose.face(), actorZoom);
         } else if (actorZoom > ProximitySensor.zoom.get(Proximity.AWAY)) {
             surface = surfaceTransform(image, bounds, pose.face(), actorZoom);
         } else {
@@ -228,9 +230,9 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     }
 
     private static Rectangle spokenTextArea(Rectangle2D bounds) {
-        int textAreaWidth = (int) Math.min(TEXT_AREA_MAX_WIDTH, bounds.getWidth() / 3.0);
+        int textAreaWidth = (int) Math.min(TEXT_AREA_MAX_WIDTH, bounds.getWidth() * Transform.goldenRatioFactorB);
         if (textAreaWidth < TEXT_AREA_MIN_WIDTH) {
-            textAreaWidth = Math.min(TEXT_AREA_MIN_WIDTH, (int) (bounds.getWidth() * 0.8f));
+            textAreaWidth = Math.min(TEXT_AREA_MIN_WIDTH, (int) (bounds.getWidth() / Transform.goldenRatio));
         }
 
         int scaledInset = TEXT_AREA_INSET * textAreaWidth / TEXT_AREA_MAX_WIDTH;
@@ -271,7 +273,8 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                     .setSize(Math.max(textSize.getWidth(), layout.getAdvance()), y + layout.getDescent() - textArea.y);
 
             float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-            float fontSize = FONT_SIZE * dpi / 72.0f;
+            float fontSize = FONT_SIZE * dpi / 72.0f
+                    * Math.min(1.0f, (float) (bounds.getWidth() * Transform.goldenRatioFactorB) / TEXT_AREA_MIN_WIDTH);
 
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);

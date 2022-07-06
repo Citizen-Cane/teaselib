@@ -28,7 +28,7 @@ public interface Host {
      * @param image
      * @param text
      */
-    void show(AnnotatedImage actorImage, List<String> text);
+    void show(AnnotatedImage image, List<String> text);
 
     void setFocusLevel(float focusLevel);
 

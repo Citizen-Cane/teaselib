@@ -10,6 +10,8 @@ import teaselib.core.Audio;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
+import teaselib.core.ai.perception.HumanPose;
+import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.configuration.Configuration;
 import teaselib.util.AnnotatedImage;
 
@@ -19,9 +21,12 @@ import teaselib.util.AnnotatedImage;
  */
 public class AnimatedHost implements Host, Closeable {
 
-    final Host host;
+    private final static long frameTimeMillis = 16;
 
+    final Host host;
     private final Thread animator;
+
+    private HumanPose.Estimation pose = Estimation.NONE;
     private double actual = 1.0;
     private double expected = 1.0;
     private AnimationPath path;
@@ -45,8 +50,6 @@ public class AnimatedHost implements Host, Closeable {
         }
     }
 
-    private final static long frameTimeMillis = 16;
-
     private void animate() {
         try {
             synchronized (animator) {
@@ -60,6 +63,7 @@ public class AnimatedHost implements Host, Closeable {
                         long finish = now;
                         long duration = frameTimeMillis - (finish - now);
                         if (duration > 0) {
+                            // TODO Sleep to be able to wait until finish
                             animator.wait(duration);
                         } else {
                             animator.wait(0);
@@ -83,8 +87,66 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     @Override
-    public void show(AnnotatedImage actorImage, List<String> text) {
-        host.show(actorImage, text);
+    public void show(AnnotatedImage image, List<String> text) {
+        float currentDistance = pose.distance.orElse(0.0f);
+        float newDistance = image.pose.distance.orElse(0.0f);
+
+        if (newDistance != 0.0f && newDistance < currentDistance) {
+            // New image nearer
+            if (actual > 1.0) {
+                // current image zoomed
+                skipUnzoomAfterPrompt(image, text);
+            } else {
+                zoomBeforeDisplayingNewImage(image, text, currentDistance, newDistance);
+            }
+        } else if (currentDistance != 0.0f && newDistance > currentDistance) {
+            // new image farer
+            displayImageWithZoomToMatchCurrentDistance(image, text, currentDistance, newDistance);
+        } else {
+            pose = image.pose;
+            host.show(image, text);
+        }
+    }
+
+    private void displayImageWithZoomToMatchCurrentDistance(AnnotatedImage image, List<String> text, float currentDistance, float newDistance) {
+        synchronized (animator) {
+            actual = newDistance / currentDistance;
+            path = new AnimationPath.Linear(actual, expected, System.currentTimeMillis(), 500);
+            animator.notifyAll();
+            pose = image.pose;
+            host.setActorZoom(actual);
+            host.show(image, text);
+        }
+    }
+
+    private void zoomBeforeDisplayingNewImage(AnnotatedImage image, List<String> text, float currentDistance, float newDistance) {
+        synchronized (animator) {
+            expected = currentDistance / newDistance;
+            path = new AnimationPath.Linear(actual, expected, System.currentTimeMillis(), 500);
+            animator.notifyAll();
+            while (actual != expected) {
+                try {
+                    animator.wait(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+            pose = image.pose;
+            host.setActorZoom(1.0);
+            host.show(image, text);
+        }
+    }
+
+    private void skipUnzoomAfterPrompt(AnnotatedImage image, List<String> text) {
+        synchronized (animator) {
+            actual = 1.0;
+            expected = 1.0;
+            animator.notifyAll();
+            pose = image.pose;
+            host.setActorZoom(actual);
+            host.show(image, text);
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,16 @@ public class CommandLineHost implements Host {
 
     @Override
     public void setFocusLevel(float focusLevel) {
+        // Ignore
+    }
+
+    @Override
+    public void setActorOffset(Point2D offset) {
+        // Ignore
+    }
+
+    @Override
+    public void setActorZoom(double zoom) {
         // Ignore
     }
 
@@ -99,8 +110,4 @@ public class CommandLineHost implements Host {
             throw new IllegalArgumentException(Objects.toString(folder));
     }
 
-    @Override
-    public void setActorZoom(double zoom) {
-        // Ignore
-    }
 }

@@ -1,5 +1,6 @@
 package teaselib.core.debug;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,6 +103,16 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
 
     @Override
     public void setFocusLevel(float focusLevel) {
+        // Ignore
+    }
+
+    @Override
+    public void setActorOffset(Point2D offset) {
+        // Ignore
+    }
+
+    @Override
+    public void setActorZoom(double zoom) {
         // Ignore
     }
 
@@ -226,11 +237,6 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
             return getLocation(Location.Host);
         else
             throw new IllegalArgumentException(Objects.toString(folder));
-    }
-
-    @Override
-    public void setActorZoom(double zoom) {
-        // Ignore
     }
 
     @Override

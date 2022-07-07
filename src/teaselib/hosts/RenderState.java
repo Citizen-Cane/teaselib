@@ -1,6 +1,7 @@
 package teaselib.hosts;
 
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 
 import teaselib.core.ai.perception.HumanPose;
@@ -17,6 +18,7 @@ class RenderState {
     String displayImageResource;
     BufferedImage displayImage;
     HumanPose.Estimation pose;
+    Point2D actorOffset;
     double actorZoom;
 
     String text;
@@ -38,6 +40,7 @@ class RenderState {
         this.displayImageResource = "";
         this.displayImage = null;
         this.pose = HumanPose.Estimation.NONE;
+        this.actorOffset = new Point2D.Double();
         this.actorZoom = ProximitySensor.zoom.get(Proximity.FAR);
 
         this.text = "";
@@ -59,6 +62,7 @@ class RenderState {
         copy.displayImageResource = this.displayImageResource;
         copy.displayImage = this.displayImage;
         copy.pose = this.pose;
+        copy.actorOffset = this.actorOffset;
         copy.actorZoom = this.actorZoom;
 
         copy.text = this.text;

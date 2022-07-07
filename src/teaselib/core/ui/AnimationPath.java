@@ -6,6 +6,13 @@ package teaselib.core.ui;
  */
 public abstract class AnimationPath {
 
+    final static AnimationPath NONE = new AnimationPath(0, 0, 0, 0) {
+        @Override
+        public double get(long timePoint) {
+            return 0;
+        }
+    };
+
     final double start;
     final double end;
 
@@ -29,9 +36,9 @@ public abstract class AnimationPath {
 
         @Override
         public double get(long timePoint) {
-            if (timePoint < startMillis)
+            if (timePoint <= startMillis)
                 return start;
-            if (timePoint > startMillis + durationMillis)
+            if (timePoint >= startMillis + durationMillis)
                 return end;
             double elapsed = timePoint - startMillis;
             return start + elapsed / durationMillis * (end - start);

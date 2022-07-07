@@ -42,10 +42,12 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         this.backgroundImage = backgroundImage;
     }
 
-    void render(Graphics2D g2d, RenderState frame, Rectangle bounds, Color backgroundColor) {
+    void render(Graphics2D g2d, RenderState frame, RenderState previousFrame, Rectangle bounds, Color backgroundColor) {
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
         boolean backgroundVisible = frame.displayImage == null || frame.pose.distance.isEmpty();
+        // TODO render previous image during focus transitions
+        backgroundVisible = true;
         if (backgroundVisible) {
             g2d.setBackground(backgroundColor);
             g2d.clearRect(0, 0, bounds.width, bounds.height);
@@ -58,13 +60,23 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             updateSceneTransform(frame, bounds);
         }
 
+        if (previousFrame.displayImage != null) {
+            if (frame.focusLevel < 1.0) {
+                // TODO AffineTranaform
+                g2d.drawImage(previousFrame.displayImage, BLUR_OP, 0, 0);
+            } else {
+                g2d.drawImage(previousFrame.displayImage, previousFrame.t, null);
+            }
+        }
+
         if (frame.displayImage != null) {
             if (frame.focusLevel < 1.0) {
                 // TODO AffineTranaform
                 g2d.drawImage(frame.displayImage, BLUR_OP, 0, 0);
             } else {
                 g2d.drawImage(frame.displayImage, frame.t, null);
-                renderDebugInfo(g2d, Transform.dimension(frame.displayImage), frame.pose, frame.t, bounds, frame.isIntertitle);
+                // renderDebugInfo(g2d, Transform.dimension(frame.displayImage), frame.pose, frame.t, bounds,
+                // frame.isIntertitle);
             }
         }
 
@@ -80,7 +92,12 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     public void updateSceneTransform(RenderState frame, Rectangle bounds) {
         if (frame.displayImage != null) {
             var displayImageSize = Transform.dimension(frame.displayImage);
-            frame.t = surfaceTransform(frame.actorZoom, displayImageSize, frame.pose,
+            var actorOffset = Transform.scale(frame.actorOffset, displayImageSize);
+            frame.t = surfaceTransform(
+                    actorOffset,
+                    frame.actorZoom,
+                    displayImageSize,
+                    frame.pose,
                     new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height));
         } else {
             frame.t = null;
@@ -92,29 +109,32 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         return centerRegion;
     }
 
-    private static AffineTransform surfaceTransform(double actorZoom, Dimension image,
+    private static AffineTransform surfaceTransform(Point2D actorOffset, double actorZoom, Dimension image,
             HumanPose.Estimation pose, Rectangle2D bounds) {
         AffineTransform surface;
         if (actorZoom > ProximitySensor.zoom.get(Proximity.FACE2FACE)) {
             // TODO make zoom depend on distance to focus solely on the region of interest
             // TODO image blending uses actor zoom but blocked by hard coded focus area
             // -> set focus area from proximity sensor and animated host
-            surface = surfaceTransform(image, bounds, pose.face(), actorZoom);
+            surface = surfaceTransform(actorOffset, image, bounds, pose.face(), actorZoom);
         } else if (actorZoom > ProximitySensor.zoom.get(Proximity.AWAY)) {
-            surface = surfaceTransform(image, bounds, pose.face(), actorZoom);
+            surface = surfaceTransform(actorOffset, image, bounds, pose.face(), actorZoom);
         } else {
-            surface = surfaceTransform(image, bounds, Optional.empty(), actorZoom);
+            surface = surfaceTransform(actorOffset, image, bounds, Optional.empty(), actorZoom);
         }
         surface.preConcatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
         return surface;
     }
 
-    private static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds,
+    private static AffineTransform surfaceTransform(Point2D actorOffset, Dimension image, Rectangle2D bounds,
             Optional<Rectangle2D> focusArea, double zoom) {
-        var surface = Transform.maxImage(image, bounds, focusArea);
+        var surface = new AffineTransform();
+        surface.concatenate(Transform.maxImage(image, bounds, focusArea));
+        surface.concatenate(AffineTransform.getTranslateInstance(actorOffset.getX(), actorOffset.getY()));
         if (focusArea.isPresent()) {
             Rectangle2D imageFocusArea = Transform.scale(focusArea.get(), image);
-            surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
+            // TODO breaks rendering since it conflicts with transitions
+            // surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
             if (zoom > 1.0) {
                 surface = Transform.zoom(surface, imageFocusArea, zoom);
             }
@@ -275,6 +295,9 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
             float fontSize = FONT_SIZE * dpi / 72.0f
                     * Math.min(1.0f, (float) (bounds.getWidth() * Transform.goldenRatioFactorB) / TEXT_AREA_MIN_WIDTH);
+
+            // TODO remove test code
+            fontSize = 10.0f;
 
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);

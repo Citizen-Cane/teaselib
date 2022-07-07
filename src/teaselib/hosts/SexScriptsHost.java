@@ -21,6 +21,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -417,6 +418,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         }
     }
 
+    RenderState previousImage = new RenderState();
+
     @Override
     public void show(AnnotatedImage displayImage, List<String> text) {
         BufferedImage image;
@@ -461,14 +464,22 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             }
             nextFrame.text = text.stream().collect(Collectors.joining("\n"));
             nextFrame.isIntertitle = false;
-        }
 
+            previousImage = currentFrame;
+        }
     }
 
     @Override
     public void setFocusLevel(float focusLevel) {
         synchronized (nextFrame) {
             nextFrame.focusLevel = focusLevel;
+        }
+    }
+
+    @Override
+    public void setActorOffset(Point2D offset) {
+        synchronized (nextFrame) {
+            nextFrame.actorOffset = offset;
         }
     }
 
@@ -504,7 +515,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         bounds.width -= horizontalAdjustment;
 
         Graphics2D g2d = image.createGraphics();
-        renderer.render(g2d, frame, bounds, mainFrame.getBackground());
+        renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
         g2d.dispose();
         return image;
     }

@@ -204,6 +204,10 @@ public class Transform {
         return new Dimension(dimension.height, dimension.width);
     }
 
+    static Point2D.Double scale(Point2D p, Dimension scale) {
+        return new Point2D.Double(p.getX() * scale.width, p.getY() * scale.height);
+    }
+
     static Rectangle2D.Double scale(Rectangle2D r, Dimension scale) {
         return new Rectangle2D.Double(r.getMinX() * scale.width, r.getMinY() * scale.height, r.getWidth() * scale.width,
                 r.getHeight() * scale.height);

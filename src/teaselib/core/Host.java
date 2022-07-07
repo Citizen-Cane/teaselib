@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +32,8 @@ public interface Host {
     void show(AnnotatedImage image, List<String> text);
 
     void setFocusLevel(float focusLevel);
+
+    void setActorOffset(Point2D offset);
 
     void setActorZoom(double zoom);
 

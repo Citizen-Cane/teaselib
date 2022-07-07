@@ -11,17 +11,11 @@ import java.util.Deque;
  */
 public class AbstractBufferedImageRenderer {
 
-    final Deque<BufferedImage> buffers = new ArrayDeque<>(2);
+    // TODO avoid flicker caused by slow EventQueue.invokeLater(() -> show(image))
+    // when awt is too slow to render the image, it will be reused and repainted while rendered to surface
+    private static final int BUFFER_CAPACITY = 10;
 
-    public static BufferedImage newOrSameImage(BufferedImage image, Rectangle bounds) {
-        if (image == null) {
-            return newImage(bounds);
-        } else if (bounds.width != image.getWidth() || bounds.height != image.getHeight()) {
-            return newImage(bounds);
-        } else {
-            return image;
-        }
-    }
+    final Deque<BufferedImage> buffers = new ArrayDeque<>(BUFFER_CAPACITY);
 
     // TODO Surprising in mid-script - should be filled once to capacity and then stay the same size
     // java.util.NoSuchElementException
@@ -44,13 +38,23 @@ public class AbstractBufferedImageRenderer {
 
     public BufferedImage nextBuffer(Rectangle bounds) {
         BufferedImage image;
-        if (buffers.size() >= 2) {
+        if (buffers.size() >= BUFFER_CAPACITY) {
             image = newOrSameImage(buffers.remove(), bounds);
         } else {
             image = newImage(bounds);
         }
         buffers.add(image);
         return image;
+    }
+
+    protected static BufferedImage newOrSameImage(BufferedImage image, Rectangle bounds) {
+        if (image == null) {
+            return newImage(bounds);
+        } else if (bounds.width != image.getWidth() || bounds.height != image.getHeight()) {
+            return newImage(bounds);
+        } else {
+            return image;
+        }
     }
 
     public static BufferedImage newImage(Rectangle bounds) {

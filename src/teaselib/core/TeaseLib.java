@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -186,7 +186,7 @@ public class TeaseLib implements Closeable {
             RunnableScript script = script(scriptClass);
             script.run();
         } catch (ScriptInterruptedException e) {
-            throw e;
+            // Ignore
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
             throw t;

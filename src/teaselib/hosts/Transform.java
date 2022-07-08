@@ -38,11 +38,12 @@ public class Transform {
      *            Bounding box
      * @return
      */
-    static AffineTransform maxImage(BufferedImage image, Rectangle2D bounds, Optional<Rectangle2D> focusArea) {
-        return maxImage(dimension(image), bounds, focusArea);
-    }
 
     static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea) {
+        return maxImage(image, bounds, focusArea, new Point2D.Double(0.0, 0.0));
+    }
+
+    static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea, Point2D offset) {
         // transforms are concatenated from bottom to top
         var t = new AffineTransform();
 
@@ -63,6 +64,9 @@ public class Transform {
 
         t.scale(image.getWidth(), image.getHeight());
         // scale back to image space
+
+        // t.concatenate(AffineTransform.getTranslateInstance(offset.getX(), offset.getY()));
+        // image offset for transitions
 
         t.translate(-0.5, -0.5);
         // move image center to 0,0

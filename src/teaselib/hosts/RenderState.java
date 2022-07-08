@@ -3,6 +3,7 @@ package teaselib.hosts;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.util.Objects;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
@@ -30,7 +31,7 @@ class RenderState {
     // Composition stack
 
     boolean repaintSceneImage;
-    AffineTransform t;
+    AffineTransform transform;
     BufferedImage sceneImage;
 
     boolean repaintTextImage;
@@ -48,7 +49,7 @@ class RenderState {
 
         this.focusLevel = 1.0f;
 
-        this.t = null;
+        this.transform = null;
         this.repaintSceneImage = false;
         this.sceneImage = null;
 
@@ -62,7 +63,7 @@ class RenderState {
         copy.displayImageResource = this.displayImageResource;
         copy.displayImage = this.displayImage;
         copy.pose = this.pose;
-        copy.actorOffset = this.actorOffset;
+        copy.actorOffset = new Point2D.Double(this.actorOffset.getX(), this.actorOffset.getY());
         copy.actorZoom = this.actorZoom;
 
         copy.text = this.text;
@@ -70,7 +71,7 @@ class RenderState {
 
         copy.focusLevel = this.focusLevel;
 
-        copy.t = this.t;
+        copy.transform = this.transform;
         copy.repaintSceneImage = false;
         copy.sceneImage = this.sceneImage;
 
@@ -81,8 +82,11 @@ class RenderState {
     }
 
     public void updateFrom(RenderState oldState) {
-        repaintSceneImage = displayImageResource != oldState.displayImageResource || actorZoom != oldState.actorZoom;
-        repaintTextImage = text != oldState.text || isIntertitle != oldState.isIntertitle;
+        repaintSceneImage = actorZoom != oldState.actorZoom ||
+                !Objects.equals(displayImageResource, oldState.displayImageResource) ||
+                !Objects.equals(actorOffset, oldState.actorOffset);
+        repaintTextImage = isIntertitle != oldState.isIntertitle ||
+                !Objects.equals(text, oldState.text);
     }
 
     // TODO apply rules elsewhere

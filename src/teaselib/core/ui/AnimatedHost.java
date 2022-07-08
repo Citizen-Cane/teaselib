@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.Audio;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
@@ -20,11 +23,14 @@ import teaselib.util.AnnotatedImage;
  */
 public class AnimatedHost implements Host, Closeable {
 
-    // code paths for transitions and zoom-ionly
-    private static final int ZOOM_DURATION = 400;
-    private static final int TRANSITION_DURATION = 1000;
+    static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
-    private final static long FRAMETIME_MILLIS = 16;
+    // code paths for transitions and zoom-ionly
+    private static final int ZOOM_DURATION = 200;
+    private static final int TRANSITION_DURATION = 500;
+
+    // TODO awt evnt loop may drop frames so 60fps cannot be guaranteed
+    private final static long FRAMETIME_MILLIS = 33; // 16;
 
     final Host host;
     private final Thread animator;
@@ -60,9 +66,9 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     private void animate() {
-        try {
-            synchronized (animator) {
-                while (!Thread.interrupted()) {
+        synchronized (animator) {
+            while (!Thread.interrupted()) {
+                try {
                     animator.wait();
                     animator.wait(FRAMETIME_MILLIS);
                     while (animationsRunning()) {
@@ -81,10 +87,12 @@ public class AnimatedHost implements Host, Closeable {
                             animator.wait(0);
                         }
                     }
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
                 }
             }
-        } catch (InterruptedException e) {
-            Thread.interrupted();
         }
     }
 
@@ -102,15 +110,13 @@ public class AnimatedHost implements Host, Closeable {
         return host.audio(resources, path);
     }
 
-    // Daisy WAtts: 3rd image with offset - does not cover surface
-
     @Override
     public void show(AnnotatedImage newImage, List<String> text) {
         synchronized (animator) {
             waitAnimationCompleted();
 
-            float currentDistance = currentImage.pose.distance.orElse(0.0f);
-            float newDistance = newImage.pose.distance.orElse(0.0f);
+            float currentDistance = currentImage != null ? currentImage.pose.distance.orElse(0.0f) : 0.0f;
+            float newDistance = newImage != null ? newImage.pose.distance.orElse(0.0f) : 0.0f;
 
             if (newDistance != 0.0f && newDistance < currentDistance) {
                 // New image nearer
@@ -118,17 +124,22 @@ public class AnimatedHost implements Host, Closeable {
                     // current image zoomed
                     skipUnzoomAfterPrompt(newImage);
                 } else {
-                    // TODO Results in the original image moved over the original image - looks stupid
-                    // TODO zoom actor farer away since this makes distance transitions more realistic
+                    // zoom-in existing image first for smooth focus region image change
+
+                    // For wide translations results in the original image moved over the original image
+                    // - looks stupid
+                    // zoom actor farer away since this makes distance transitions more realistic
+
+                    // TODO only if no or small transition
                     // zoomBeforeDisplayingNewImage(newImage, text, currentDistance, newDistance);
 
                     // expectedZoom = 1.0;
-                    zoomTo(newImage);
+                    translateToNearerDistance(newImage);
                     // TODO sofa test images: slide-in from tight does not work
                 }
             } else if (currentDistance != 0.0f && newDistance > currentDistance) {
                 // new image farer
-                displayImageWithZoomToMatchCurrentDistance(newImage, currentDistance, newDistance);
+                translateToFarerDistance(newImage, currentDistance, newDistance);
             } else {
                 translateToOrigin();
             }
@@ -138,16 +149,18 @@ public class AnimatedHost implements Host, Closeable {
         }
     }
 
-    private void displayImageWithZoomToMatchCurrentDistance(AnnotatedImage newImage, float currentDistance, float newDistance) {
+    private void translateToFarerDistance(AnnotatedImage newImage, float currentDistance, float newDistance) {
         actualZoom = newDistance / currentDistance;
-        zoomTo(newImage);
+        translateTo(newImage);
     }
 
     private void zoomBeforeDisplayingNewImage(AnnotatedImage newImage, List<String> text, float currentDistance, float newDistance) {
         // TODO any focus region
         Point2D newFocus = newImage.pose.head.get();
         Point2D currentFocus = currentImage.pose.head.get();
-        expectedOffset.setLocation(newFocus.getX() - currentFocus.getX(), newFocus.getY() - currentFocus.getY());
+        double x = newFocus.getX() - currentFocus.getX();
+        double y = newFocus.getY() - currentFocus.getY();
+        expectedOffset.setLocation(x, y);
         expectedZoom = currentDistance / newDistance;
 
         startAnimation(currentImage, text);
@@ -160,31 +173,37 @@ public class AnimatedHost implements Host, Closeable {
         expectedZoom = 1.0;
     }
 
+    private void translateToNearerDistance(AnnotatedImage newImage) {
+        translateTo(newImage);
+    }
+
     private void skipUnzoomAfterPrompt(AnnotatedImage newImage) {
         actualZoom = 1.0;
         expectedZoom = 1.0;
-        zoomTo(newImage);
-    }
-
-    private void zoomTo(AnnotatedImage newImage) {
-        // TODO any focus region
-        Point2D newFocus = newImage.pose.head.get();
-        Point2D currentFocus = currentImage.pose.head.get();
-        // TODO wrong : head on right sides in from too far left - heads don't match
-        actualOffset.setLocation(-(newFocus.getX() - currentFocus.getX()), -(newFocus.getY() - currentFocus.getY()));
-        expectedOffset = new Point2D.Double(0.0, 0.0);
+        translateTo(newImage);
     }
 
     private void translateToOrigin() {
         expectedOffset = new Point2D.Double(0.0, 0.0);
-        expectedZoom = 1.0;
+        // expectedZoom = 1.0;
+    }
+
+    private void translateTo(AnnotatedImage newImage) {
+        // TODO any focus region
+        Point2D newFocus = newImage.pose.head.get();
+        Point2D currentFocus = currentImage.pose.head.get();
+        double x = newFocus.getX() - currentFocus.getX();
+        double y = newFocus.getY() - currentFocus.getY();
+        actualOffset.setLocation(-x, -y);
+        expectedOffset = new Point2D.Double(0.0, 0.0);
     }
 
     private void startAnimation(AnnotatedImage image, List<String> text) {
         long currentTimeMillis = System.currentTimeMillis();
-        pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis, TRANSITION_DURATION);
-        pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis, TRANSITION_DURATION);
-        pathz = new AnimationPath.Linear(actualZoom, expectedZoom, currentTimeMillis, TRANSITION_DURATION);
+        int transitionDuration = actualOffset.equals(expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
+        pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis, transitionDuration);
+        pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis, transitionDuration);
+        pathz = new AnimationPath.Linear(actualZoom, expectedZoom, currentTimeMillis, transitionDuration);
         host.setActorOffset(actualOffset);
         host.setActorZoom(actualZoom);
         host.show(image, text);

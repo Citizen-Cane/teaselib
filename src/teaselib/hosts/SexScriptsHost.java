@@ -464,7 +464,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             }
             nextFrame.text = text.stream().collect(Collectors.joining("\n"));
             nextFrame.isIntertitle = false;
-
             previousImage = currentFrame;
         }
     }
@@ -479,7 +478,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public void setActorOffset(Point2D offset) {
         synchronized (nextFrame) {
-            nextFrame.actorOffset = offset;
+            nextFrame.actorOffset = new Point2D.Double(offset.getX(), offset.getY());
         }
     }
 
@@ -502,8 +501,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             nextFrame.updateFrom(currentFrame);
             currentFrame = nextFrame;
             var image = render(currentFrame);
-            nextFrame = currentFrame.copy();
             EventQueue.invokeLater(() -> show(image));
+            nextFrame = currentFrame.copy();
         }
     }
 

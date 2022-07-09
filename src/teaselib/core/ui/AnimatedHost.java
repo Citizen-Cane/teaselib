@@ -25,12 +25,9 @@ public class AnimatedHost implements Host, Closeable {
 
     static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
-    // code paths for transitions and zoom-ionly
     private static final int ZOOM_DURATION = 200;
     private static final int TRANSITION_DURATION = 500;
-
-    // TODO awt evnt loop may drop frames so 60fps cannot be guaranteed
-    private final static long FRAMETIME_MILLIS = 33; // 16;
+    private final static long FRAMETIME_MILLIS = 16;
 
     final Host host;
     private final Thread animator;

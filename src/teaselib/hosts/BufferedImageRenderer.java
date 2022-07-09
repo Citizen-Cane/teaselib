@@ -48,7 +48,8 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     }
 
     void render(Graphics2D g2d, RenderState frame, RenderState previousFrame, Rectangle bounds, Color backgroundColor) {
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        // Bicubic interpolation is an absolute performance killer for image transforming & scaling
+        // g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
         boolean backgroundVisible = frame.displayImage == null ||
                 frame.pose.distance.isEmpty() ||

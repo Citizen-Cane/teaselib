@@ -32,6 +32,7 @@ class RenderState {
 
     boolean repaintSceneImage;
     AffineTransform transform;
+    float alpha;
     BufferedImage sceneImage;
 
     boolean repaintTextImage;
@@ -50,6 +51,7 @@ class RenderState {
         this.focusLevel = 1.0f;
 
         this.transform = null;
+        this.alpha = 1.0f;
         this.repaintSceneImage = false;
         this.sceneImage = null;
 
@@ -72,6 +74,7 @@ class RenderState {
         copy.focusLevel = this.focusLevel;
 
         copy.transform = this.transform;
+        copy.alpha = 1.0f;
         copy.repaintSceneImage = false;
         copy.sceneImage = this.sceneImage;
 
@@ -83,6 +86,7 @@ class RenderState {
 
     public void updateFrom(RenderState oldState) {
         repaintSceneImage = actorZoom != oldState.actorZoom ||
+                alpha != oldState.alpha ||
                 !Objects.equals(displayImageResource, oldState.displayImageResource) ||
                 !Objects.equals(actorOffset, oldState.actorOffset);
         repaintTextImage = isIntertitle != oldState.isIntertitle ||

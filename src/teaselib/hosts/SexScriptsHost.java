@@ -497,6 +497,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     // With a queue, the explicit render call (later on in Section renderer) would be too much
 
     @Override
+    public void setActorAlpha(float alpha) {
+        synchronized (nextFrame) {
+            nextFrame.alpha = alpha;
+        }
+    }
+
+    @Override
     public void show() {
         synchronized (nextFrame) {
             nextFrame.updateFrom(currentFrame);

@@ -37,6 +37,8 @@ public interface Host {
 
     void setActorZoom(double zoom);
 
+    void setActorAlpha(float alpha);
+
     /**
      * Repaint the content area to show actor image and text.
      */

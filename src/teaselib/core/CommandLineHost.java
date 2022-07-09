@@ -62,6 +62,11 @@ public class CommandLineHost implements Host {
     }
 
     @Override
+    public void setActorAlpha(float alpha) {
+        // Ignore
+    }
+
+    @Override
     public void show() {
         // Ignore
     }

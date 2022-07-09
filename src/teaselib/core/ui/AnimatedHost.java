@@ -26,7 +26,7 @@ public class AnimatedHost implements Host, Closeable {
     static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
     private static final int ZOOM_DURATION = 200;
-    private static final int TRANSITION_DURATION = 500;
+    private static final int TRANSITION_DURATION = 700;
     private final static long FRAMETIME_MILLIS = 16;
 
     final Host host;
@@ -39,9 +39,14 @@ public class AnimatedHost implements Host, Closeable {
 
     private Point2D actualOffset = new Point2D.Double();
     private Point2D expectedOffset = new Point2D.Double();
+
+    private float actualAlpha = 1.0f;
+    private float expectedAlpha = 1.0f;
+
     private AnimationPath pathx = AnimationPath.NONE;
     private AnimationPath pathy = AnimationPath.NONE;
-    private AnimationPath pathz;
+    private AnimationPath pathz = AnimationPath.NONE;
+    private AnimationPath alpha = AnimationPath.NONE;
 
     public AnimatedHost(Host host) {
         this.host = host;
@@ -72,8 +77,10 @@ public class AnimatedHost implements Host, Closeable {
                         long now = System.currentTimeMillis();
                         actualOffset.setLocation(pathx.get(now), pathy.get(now));
                         actualZoom = pathz.get(now);
+                        actualAlpha = (float) alpha.get(now);
                         host.setActorOffset(actualOffset);
                         host.setActorZoom(actualZoom);
+                        host.setActorAlpha(actualAlpha);
                         host.show();
                         long finish = now;
                         long duration = FRAMETIME_MILLIS - (finish - now);
@@ -94,7 +101,10 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     private boolean animationsRunning() {
-        return expectedZoom != actualZoom || expectedOffset.getX() != actualOffset.getX() || expectedOffset.getY() != actualOffset.getY();
+        return expectedZoom != actualZoom ||
+                expectedAlpha != actualAlpha ||
+                expectedOffset.getX() != actualOffset.getX() ||
+                expectedOffset.getY() != actualOffset.getY();
     }
 
     @Override
@@ -141,6 +151,7 @@ public class AnimatedHost implements Host, Closeable {
                 translateToOrigin();
             }
 
+            actualAlpha = 0.0f;
             currentImage = newImage;
             startAnimation(currentImage, text);
         }
@@ -201,8 +212,10 @@ public class AnimatedHost implements Host, Closeable {
         pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis, transitionDuration);
         pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis, transitionDuration);
         pathz = new AnimationPath.Linear(actualZoom, expectedZoom, currentTimeMillis, transitionDuration);
+        alpha = new AnimationPath.Linear(actualAlpha, expectedAlpha, currentTimeMillis, transitionDuration);
         host.setActorOffset(actualOffset);
         host.setActorZoom(actualZoom);
+        host.setActorAlpha(actualAlpha);
         host.show(image, text);
         animator.notifyAll();
     }
@@ -234,6 +247,11 @@ public class AnimatedHost implements Host, Closeable {
             pathz = new AnimationPath.Linear(actualZoom, expectedZoom, System.currentTimeMillis(), ZOOM_DURATION);
             animator.notifyAll();
         }
+    }
+
+    @Override
+    public void setActorAlpha(float alpha) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

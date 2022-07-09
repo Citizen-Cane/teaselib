@@ -1,5 +1,6 @@
 package teaselib.hosts;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -69,6 +70,11 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
 
         if (frame.actorOffset.getX() != 0.0 || frame.actorOffset.getY() != 0.0) {
             drawImage(g2d, previousFrame, bounds);
+        }
+
+        if (frame.alpha < 1.0f) {
+            var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, frame.alpha);
+            g2d.setComposite(alphaComposite);
         }
         drawImage(g2d, frame, bounds);
 
@@ -317,7 +323,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                     * Math.min(1.0f, (float) (bounds.getWidth() * Transform.goldenRatioFactorB) / TEXT_AREA_MIN_WIDTH);
 
             // TODO remove test code
-            fontSize = 10.0f;
+            // fontSize = 10.0f;
 
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);

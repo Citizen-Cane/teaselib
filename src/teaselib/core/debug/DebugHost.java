@@ -117,6 +117,11 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
+    public void setActorAlpha(float alpha) {
+        // Ignore
+    }
+
+    @Override
     public void show() {
         // Ignore
     }

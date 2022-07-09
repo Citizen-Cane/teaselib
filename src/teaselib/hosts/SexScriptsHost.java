@@ -172,6 +172,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             backgroundImage = imageIcon.getImage();
         } else {
             backgroundImage = null;
+            throw new IllegalStateException("No background image icon");
         }
 
         renderer = new BufferedImageRenderer(backgroundImage);
@@ -500,23 +501,50 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         synchronized (nextFrame) {
             nextFrame.updateFrom(currentFrame);
             currentFrame = nextFrame;
-            var image = render(currentFrame);
-            EventQueue.invokeLater(() -> show(image));
+            render(currentFrame);
             nextFrame = currentFrame.copy();
         }
     }
 
-    private Image render(RenderState frame) {
+    // boolean createdBufferStrategy = false;
+    // Window window;
+
+    private void render(RenderState frame) {
         Rectangle bounds = getContentBounds();
         int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
         bounds.width += horizontalAdjustment;
+        // rendering scene take around 300ms
+        // - scaled background image takes about 100ms
+        // - transformed images takes about 100ms
+        // + text overlay takes 2ms -> avoid transform during animations
         var image = renderer.nextBuffer(bounds);
         bounds.width -= horizontalAdjustment;
+
+        var start = System.currentTimeMillis();
+
+        // Rendering takes around 1200ms, where each image takes round 300ms
+        // if (!createdBufferStrategy) {
+        // // window = mainFrame;
+        // window = new Window(mainFrame);
+        // window.setSize(bounds.width, bounds.height);
+        // window.setVisible(true);
+        // window.createBufferStrategy(3);
+        // createdBufferStrategy = true;
+        // }
+        // renderer.setGraphicsConfiguration(window.getGraphicsConfiguration());
+        // BufferStrategy bufferStrategy = window.getBufferStrategy();
+        // Graphics2D g2d = (Graphics2D) bufferStrategy.getDrawGraphics();
+        // renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
+        // g2d.dispose();
+        // bufferStrategy.show();
 
         Graphics2D g2d = image.createGraphics();
         renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
         g2d.dispose();
-        return image;
+        EventQueue.invokeLater(() -> show(image));
+
+        var end = System.currentTimeMillis();
+        logger.info("Frame time rendering to surface = " + (end - start) + "ms");
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {

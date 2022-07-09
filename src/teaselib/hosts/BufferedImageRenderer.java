@@ -22,6 +22,9 @@ import java.text.AttributedString;
 import java.text.CharacterIterator;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.ProximitySensor;
@@ -31,6 +34,8 @@ import teaselib.core.ai.perception.ProximitySensor;
  *
  */
 public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
+
+    static final Logger logger = LoggerFactory.getLogger(BufferedImageRenderer.class);
 
     private static final BufferedImageOp BLUR_OP = ConvolveEdgeReflectOp.blur(17);
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
@@ -45,9 +50,10 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     void render(Graphics2D g2d, RenderState frame, RenderState previousFrame, Rectangle bounds, Color backgroundColor) {
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
-        boolean backgroundVisible = frame.displayImage == null || frame.pose.distance.isEmpty();
-        // TODO render previous image during focus transitions
-        backgroundVisible = true;
+        boolean backgroundVisible = frame.displayImage == null ||
+                frame.pose.distance.isEmpty() ||
+                previousFrame.displayImage == null ||
+                previousFrame.pose.distance.isEmpty();
         if (backgroundVisible) {
             g2d.setBackground(backgroundColor);
             g2d.clearRect(0, 0, bounds.width, bounds.height);
@@ -60,7 +66,9 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             updateSceneTransform(frame, bounds);
         }
 
-        drawImage(g2d, previousFrame, bounds);
+        if (frame.actorOffset.getX() != 0.0 || frame.actorOffset.getY() != 0.0) {
+            drawImage(g2d, previousFrame, bounds);
+        }
         drawImage(g2d, frame, bounds);
 
         if (frame.repaintTextImage) {
@@ -68,7 +76,11 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         }
 
         if (!frame.text.isBlank() || frame.isIntertitle) {
+            var start = System.currentTimeMillis();
             g2d.drawImage(frame.textImage, 0, 0, null);
+            var end = System.currentTimeMillis();
+            logger.info("Frame time drawing text image = " + (end - start) + "ms");
+
         }
     }
 
@@ -78,6 +90,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                 // TODO AffineTranaform
                 g2d.drawImage(frame.displayImage, BLUR_OP, 0, 0);
             } else {
+                var start = System.currentTimeMillis();
                 g2d.drawImage(frame.displayImage, frame.transform, null);
                 // renderDebugInfo(g2d,
                 // Transform.dimension(frame.displayImage),
@@ -85,6 +98,8 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                 // frame.transform,
                 // bounds,
                 // frame.isIntertitle);
+                var end = System.currentTimeMillis();
+                logger.info("Frame time drawing actor image = " + (end - start) + "ms");
             }
         }
     }
@@ -227,11 +242,11 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
     private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
 
-    private static void renderText(RenderState frame, Rectangle bounds) {
+    private void renderText(RenderState frame, Rectangle bounds) {
         renderText(frame, bounds, frame.text, frame.isIntertitle);
     }
 
-    private static void renderText(RenderState frame, Rectangle bounds, String text, boolean intertitleActive) {
+    private void renderText(RenderState frame, Rectangle bounds, String text, boolean intertitleActive) {
         if (!text.isBlank() || intertitleActive) {
             var textArea = intertitleActive ? intertitleTextArea(bounds) : spokenTextArea(bounds);
             frame.textImage = newOrSameImage(frame.textImage, bounds);

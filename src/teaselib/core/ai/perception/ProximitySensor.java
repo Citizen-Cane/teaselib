@@ -28,8 +28,8 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
 
         {
             put(Proximity.CLOSE, 2.0);
-            put(Proximity.FACE2FACE, 1.2);
-            put(Proximity.NEAR, 1.1);
+            put(Proximity.FACE2FACE, 1.1);
+            put(Proximity.NEAR, 1.05);
             put(Proximity.FAR, 1.0);
             put(Proximity.AWAY, 0.0);
         }

@@ -5,6 +5,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ public class AnimatedHost implements Host, Closeable {
     static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
     private static final int ZOOM_DURATION = 200;
-    private static final int TRANSITION_DURATION = 700;
+    private static final int TRANSITION_DURATION = 500;
     private final static long FRAMETIME_MILLIS = 16;
 
     final Host host;
@@ -85,7 +86,6 @@ public class AnimatedHost implements Host, Closeable {
                         long finish = now;
                         long duration = FRAMETIME_MILLIS - (finish - now);
                         if (duration > 0) {
-                            // TODO Sleep to be able to wait until finish
                             animator.wait(duration);
                         } else {
                             animator.wait(0);
@@ -125,83 +125,61 @@ public class AnimatedHost implements Host, Closeable {
             float currentDistance = currentImage != null ? currentImage.pose.distance.orElse(0.0f) : 0.0f;
             float newDistance = newImage != null ? newImage.pose.distance.orElse(0.0f) : 0.0f;
 
-            if (newDistance != 0.0f && newDistance < currentDistance) {
-                // New image nearer
-                if (actualZoom > 1.0) {
-                    // current image zoomed
-                    skipUnzoomAfterPrompt(newImage);
+            Optional<Point2D> currentFocusRegion = currentImage != null ? currentImage.pose.head : Optional.empty();
+            Optional<Point2D> newFocusRegion = newImage != null ? newImage.pose.head : Optional.empty();
+            boolean sameRegion = true && currentFocusRegion.isPresent() && newFocusRegion.isPresent();
+            if (sameRegion) {
+                if (newDistance != 0.0f && newDistance < currentDistance) {
+                    // -> New image nearer
+                    if (actualZoom >= currentDistance / newDistance) {
+                        // -> current image zoomed and new image can can be zoomed to match current focus region size
+                        skipUnzoom(currentDistance, newDistance);
+                        translateFocus(currentFocusRegion.get(), newFocusRegion.get());
+                    } else {
+                        // -> starts blending in at zoom < 0 - background covered by previous image
+                        translateToNearerDistance(currentDistance, newDistance);
+                        translateFocus(currentFocusRegion.get(), newFocusRegion.get());
+                        // Better: zoom-in existing image first for smooth focus region image change
+                        // -> avoid image borders of new image visible (due to zoom < 1)
+                        // - requires moving on the same path as the new image
+                        // -- but doing so may make image borders of the current imagevisible
+                    }
+                } else if (currentDistance != 0.0f && newDistance > currentDistance) {
+                    // -> new image farer - translate new image starting as zoomed as current image
+                    translateToFarerDistance(currentDistance, newDistance);
+                    translateFocus(currentFocusRegion.get(), newFocusRegion.get());
                 } else {
-                    // zoom-in existing image first for smooth focus region image change
-
-                    // For wide translations results in the original image moved over the original image
-                    // - looks stupid
-                    // zoom actor farer away since this makes distance transitions more realistic
-
-                    // TODO only if no or small transition
-                    // zoomBeforeDisplayingNewImage(newImage, text, currentDistance, newDistance);
-
-                    // expectedZoom = 1.0;
-                    translateToNearerDistance(newImage);
-                    // TODO sofa test images: slide-in from tight does not work
+                    translateFocus(currentFocusRegion.get(), newFocusRegion.get());
                 }
-            } else if (currentDistance != 0.0f && newDistance > currentDistance) {
-                // new image farer
-                translateToFarerDistance(newImage, currentDistance, newDistance);
             } else {
-                translateToOrigin();
+                translateFocusToOrigin();
             }
-
             actualAlpha = 0.0f;
             currentImage = newImage;
             startAnimation(currentImage, text);
         }
     }
 
-    private void translateToFarerDistance(AnnotatedImage newImage, float currentDistance, float newDistance) {
+    private void skipUnzoom(float currentDistance, float newDistance) {
+        actualZoom = Math.min(1.0, actualZoom * newDistance / currentDistance);
+        expectedZoom = 1.0;
+    }
+
+    private void translateToNearerDistance(float currentDistance, float newDistance) {
         actualZoom = newDistance / currentDistance;
-        translateTo(newImage);
     }
 
-    private void zoomBeforeDisplayingNewImage(AnnotatedImage newImage, List<String> text, float currentDistance, float newDistance) {
-        // TODO any focus region
-        Point2D newFocus = newImage.pose.head.get();
-        Point2D currentFocus = currentImage.pose.head.get();
-        double x = newFocus.getX() - currentFocus.getX();
-        double y = newFocus.getY() - currentFocus.getY();
-        expectedOffset.setLocation(x, y);
-        expectedZoom = currentDistance / newDistance;
+    private void translateToFarerDistance(float currentDistance, float newDistance) {
+        actualZoom = newDistance / currentDistance;
+    }
 
-        startAnimation(currentImage, text);
-        animator.notifyAll();
-        waitAnimationCompleted();
-
-        actualOffset = new Point2D.Double(0.0, 0.0);
+    private void translateFocusToOrigin() {
         expectedOffset = new Point2D.Double(0.0, 0.0);
-        actualZoom = 1.0;
-        expectedZoom = 1.0;
     }
 
-    private void translateToNearerDistance(AnnotatedImage newImage) {
-        translateTo(newImage);
-    }
-
-    private void skipUnzoomAfterPrompt(AnnotatedImage newImage) {
-        actualZoom = 1.0;
-        expectedZoom = 1.0;
-        translateTo(newImage);
-    }
-
-    private void translateToOrigin() {
-        expectedOffset = new Point2D.Double(0.0, 0.0);
-        // expectedZoom = 1.0;
-    }
-
-    private void translateTo(AnnotatedImage newImage) {
-        // TODO any focus region
-        Point2D newFocus = newImage.pose.head.get();
-        Point2D currentFocus = currentImage.pose.head.get();
-        double x = newFocus.getX() - currentFocus.getX();
-        double y = newFocus.getY() - currentFocus.getY();
+    private void translateFocus(Point2D currentFocusRegion, Point2D newFocusRegion) {
+        double x = newFocusRegion.getX() - currentFocusRegion.getX();
+        double y = newFocusRegion.getY() - currentFocusRegion.getY();
         actualOffset.setLocation(-x, -y);
         expectedOffset = new Point2D.Double(0.0, 0.0);
     }

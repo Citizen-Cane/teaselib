@@ -23,9 +23,6 @@ import java.text.AttributedString;
 import java.text.CharacterIterator;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.ProximitySensor;
@@ -35,8 +32,6 @@ import teaselib.core.ai.perception.ProximitySensor;
  *
  */
 public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
-
-    static final Logger logger = LoggerFactory.getLogger(BufferedImageRenderer.class);
 
     private static final BufferedImageOp BLUR_OP = ConvolveEdgeReflectOp.blur(17);
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
@@ -57,14 +52,11 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                 previousFrame.displayImage == null ||
                 previousFrame.pose.distance.isEmpty();
         if (backgroundVisible) {
-            var start = System.currentTimeMillis();
             g2d.setBackground(backgroundColor);
             g2d.clearRect(0, 0, bounds.width, bounds.height);
             g2d.drawImage(backgroundImage,
                     0, 0, bounds.width, bounds.height,
                     0, 0, backgroundImage.getWidth(null), backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
-            var end = System.currentTimeMillis();
-            logger.info("Frame time rendering background image = " + (end - start) + "ms");
         }
 
         if (frame.repaintSceneImage) {
@@ -86,11 +78,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         }
 
         if (!frame.text.isBlank() || frame.isIntertitle) {
-            var start = System.currentTimeMillis();
             g2d.drawImage(frame.textImage, 0, 0, null);
-            var end = System.currentTimeMillis();
-            logger.info("Frame time drawing text image = " + (end - start) + "ms");
-
         }
     }
 
@@ -100,7 +88,6 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                 // TODO AffineTranaform
                 g2d.drawImage(frame.displayImage, BLUR_OP, 0, 0);
             } else {
-                var start = System.currentTimeMillis();
                 g2d.drawImage(frame.displayImage, frame.transform, null);
                 // renderDebugInfo(g2d,
                 // Transform.dimension(frame.displayImage),
@@ -108,8 +95,6 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                 // frame.transform,
                 // bounds,
                 // frame.isIntertitle);
-                var end = System.currentTimeMillis();
-                logger.info("Frame time drawing actor image = " + (end - start) + "ms");
             }
         }
     }
@@ -158,9 +143,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             Rectangle2D imageFocusArea = Transform.scale(focusArea.get(), image);
             surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
             surface.concatenate(getTranslateInstance(image, offset));
-            if (zoom > 1.0) {
-                surface = Transform.zoom(surface, imageFocusArea, zoom);
-            }
+            surface = Transform.zoom(surface, imageFocusArea, zoom);
         }
         return surface;
     }

@@ -527,8 +527,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         var image = renderer.nextBuffer(bounds);
         bounds.width -= horizontalAdjustment;
 
-        var start = System.currentTimeMillis();
-
         // Rendering takes around 1200ms, where each image takes round 300ms
         // if (!createdBufferStrategy) {
         // // window = mainFrame;
@@ -548,12 +546,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         Graphics2D g2d = image.createGraphics();
         renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
         g2d.dispose();
-        var now = System.currentTimeMillis();
-        logger.info("rendering done - calling event loop = " + (now - start) + "ms");
         EventQueue.invokeLater(() -> show(image));
-
-        var end = System.currentTimeMillis();
-        logger.info("Frame time rendering to surface = " + (end - start) + "ms");
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {

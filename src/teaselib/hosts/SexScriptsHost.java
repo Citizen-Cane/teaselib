@@ -548,6 +548,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         Graphics2D g2d = image.createGraphics();
         renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
         g2d.dispose();
+        var now = System.currentTimeMillis();
+        logger.info("rendering done - calling event loop = " + (now - start) + "ms");
         EventQueue.invokeLater(() -> show(image));
 
         var end = System.currentTimeMillis();

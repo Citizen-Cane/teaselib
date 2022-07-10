@@ -57,11 +57,14 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                 previousFrame.displayImage == null ||
                 previousFrame.pose.distance.isEmpty();
         if (backgroundVisible) {
+            var start = System.currentTimeMillis();
             g2d.setBackground(backgroundColor);
             g2d.clearRect(0, 0, bounds.width, bounds.height);
             g2d.drawImage(backgroundImage,
                     0, 0, bounds.width, bounds.height,
                     0, 0, backgroundImage.getWidth(null), backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
+            var end = System.currentTimeMillis();
+            logger.info("Frame time rendering background image = " + (end - start) + "ms");
         }
 
         if (frame.repaintSceneImage) {

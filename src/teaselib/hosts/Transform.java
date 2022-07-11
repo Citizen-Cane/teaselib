@@ -40,10 +40,6 @@ public class Transform {
      */
 
     static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea) {
-        return maxImage(image, bounds, focusArea, new Point2D.Double(0.0, 0.0));
-    }
-
-    static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea, Point2D offset) {
         // transforms are concatenated from bottom to top
         var t = new AffineTransform();
 
@@ -64,9 +60,6 @@ public class Transform {
 
         t.scale(image.getWidth(), image.getHeight());
         // scale back to image space
-
-        // t.concatenate(AffineTransform.getTranslateInstance(offset.getX(), offset.getY()));
-        // image offset for transitions
 
         t.translate(-0.5, -0.5);
         // move image center to 0,0
@@ -162,13 +155,10 @@ public class Transform {
 
     public static AffineTransform zoom(AffineTransform t, Rectangle2D focusArea, double zoom) {
         var zoomed = new AffineTransform();
-
-        Point2D focus = new Point2D.Double(focusArea.getCenterX(), focusArea.getCenterY());
-        t.translate(focus.getX(), focus.getY());
-        t.scale(zoom, zoom);
-        t.translate(-focus.getX(), -focus.getY());
-
-        zoomed.concatenate(t);
+        Point2D focusPoint = new Point2D.Double(focusArea.getCenterX(), focusArea.getCenterY());
+        zoomed.translate(focusPoint.getX(), focusPoint.getY());
+        zoomed.scale(zoom, zoom);
+        zoomed.translate(-focusPoint.getX(), -focusPoint.getY());
         return zoomed;
     }
 

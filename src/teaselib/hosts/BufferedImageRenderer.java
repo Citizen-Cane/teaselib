@@ -17,6 +17,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Dimension2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
@@ -74,7 +75,8 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         drawImage(g2d, frame, bounds);
 
         if (frame.repaintTextImage) {
-            renderText(frame, bounds);
+            Optional<Rectangle2D> focusRegion = frame.pose.face();
+            renderText(frame, bounds, focusRegion);
         }
 
         if (!frame.text.isBlank() || frame.isIntertitle) {
@@ -89,13 +91,8 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                 g2d.drawImage(frame.displayImage, BLUR_OP, 0, 0);
             } else {
                 g2d.drawImage(frame.displayImage, frame.transform, null);
-                // renderDebugInfo(g2d,
-                // Transform.dimension(frame.displayImage),
-                // frame.pose,
-                // frame.transform,
-                // bounds,
-                // frame.isIntertitle);
             }
+            // renderDebugInfo(g2d, frame.displayImage, frame.pose, frame.transform, bounds);
         }
     }
 
@@ -104,10 +101,10 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             var displayImageSize = Transform.dimension(frame.displayImage);
             frame.transform = surfaceTransform(
                     displayImageSize,
-                    frame.pose,
                     new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height),
                     frame.actorOffset,
-                    frame.actorZoom);
+                    frame.actorZoom,
+                    focusRegion(frame.pose, frame.actorZoom));
         } else {
             frame.transform = null;
         }
@@ -118,32 +115,27 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         return centerRegion;
     }
 
-    private static AffineTransform surfaceTransform(Dimension image, HumanPose.Estimation pose, Rectangle2D bounds,
-            Point2D offset, double actorZoom) {
-        AffineTransform surface;
+    private static Optional<Rectangle2D> focusRegion(HumanPose.Estimation pose, double actorZoom) {
         if (actorZoom > ProximitySensor.zoom.get(Proximity.FACE2FACE)) {
-            // TODO make zoom depend on distance to focus solely on the region of interest
-            // TODO image blending uses actor zoom but blocked by hard coded focus area
-            // -> set focus area from proximity sensor and animated host
-            surface = surfaceTransform(image, bounds, pose.face(), offset, actorZoom);
+            // TODO set focus area from proximity sensor to choose region depending on player state & position
+            return pose.face(); // should be head -> boobs, or shoes -> shoes, etc.
         } else if (actorZoom > ProximitySensor.zoom.get(Proximity.AWAY)) {
-            surface = surfaceTransform(image, bounds, pose.face(), offset, actorZoom);
+            return pose.face();
         } else {
-            surface = surfaceTransform(image, bounds, Optional.empty(), offset, actorZoom);
+            return pose.face();
         }
-        surface.preConcatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
-        return surface;
     }
 
-    private static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea,
-            Point2D offset, double zoom) {
+    private static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, Point2D offset,
+            double zoom, Optional<Rectangle2D> focusRegion) {
         var surface = new AffineTransform();
-        surface.concatenate(Transform.maxImage(image, bounds, focusArea, offset));
-        if (focusArea.isPresent()) {
-            Rectangle2D imageFocusArea = Transform.scale(focusArea.get(), image);
+        surface.concatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
+        surface.concatenate(Transform.maxImage(image, bounds, focusRegion));
+        if (focusRegion.isPresent()) {
+            Rectangle2D imageFocusArea = Transform.scale(focusRegion.get(), image);
             surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
             surface.concatenate(getTranslateInstance(image, offset));
-            surface = Transform.zoom(surface, imageFocusArea, zoom);
+            surface.concatenate(Transform.zoom(surface, imageFocusArea, zoom));
         }
         return surface;
     }
@@ -154,15 +146,13 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         return transition;
     }
 
-    static void renderDebugInfo(Graphics2D g2d, Dimension image, HumanPose.Estimation pose, AffineTransform surface,
-            Rectangle bounds, boolean intertitleActive) {
+    static void renderDebugInfo(Graphics2D g2d, BufferedImage image, HumanPose.Estimation pose, AffineTransform surface,
+            Rectangle bounds) {
         drawBackgroundImageIconVisibleBounds(g2d, bounds);
-        drawImageBounds(g2d, image, surface);
+        Dimension dimension = Transform.dimension(image);
+        drawImageBounds(g2d, dimension, surface);
         if (pose != HumanPose.Estimation.NONE) {
-            drawPosture(g2d, image, pose, surface);
-        }
-        if (!intertitleActive) {
-            fillTextArea(g2d, bounds, spokenTextArea(bounds).x);
+            drawPosture(g2d, dimension, pose, surface);
         }
         // drawPixelGrid(g2d, bounds);
     }
@@ -200,16 +190,15 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     }
 
     private static void drawRegion(Graphics2D g2d, Dimension image, AffineTransform surface, Rectangle2D region) {
-        var scale = AffineTransform.getScaleInstance(image.getWidth(), image.getHeight());
-        var rect = scale.createTransformedShape(region);
-        var r = surface.createTransformedShape(rect).getBounds2D();
+        var r = normalizedToGraphics(surface, image, region);
         g2d.setColor(Color.blue);
-        g2d.drawRect((int) r.getX(), (int) r.getY(), (int) r.getWidth(), (int) r.getHeight());
+        g2d.drawRect(r.x, r.y, r.width, r.height);
     }
 
-    private static void fillTextArea(Graphics2D g2d, Rectangle bounds, int textAreaInsetRight) {
-        g2d.setColor(new Color(128, 128, 128, 64));
-        g2d.fillRect(textAreaInsetRight, 0, bounds.width, bounds.height);
+    private static Rectangle normalizedToGraphics(AffineTransform surface, Dimension image, Rectangle2D region) {
+        var scale = AffineTransform.getScaleInstance(image.getWidth(), image.getHeight());
+        var rect = scale.createTransformedShape(region);
+        return surface.createTransformedShape(rect).getBounds();
     }
 
     static void drawPixelGrid(Graphics2D g2d, Rectangle bounds) {
@@ -226,7 +215,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     // =====================
     //
 
-    private static final float FONT_SIZE = 36;
+    private static final float FONT_SIZE = 18;
     private static final float MINIMAL_FONT_SIZE = 6;
     private static final float PARAGRAPH_SPACING = 1.5f;
     private static final int TEXT_AREA_BORDER = 10;
@@ -235,17 +224,30 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
     private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
 
-    private void renderText(RenderState frame, Rectangle bounds) {
-        renderText(frame, bounds, frame.text, frame.isIntertitle);
+    private void renderText(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+        Optional<Rectangle> focusArea = focusRegion.isPresent()
+                ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
+                : Optional.empty();
+        renderText(frame, bounds, frame.text, frame.isIntertitle, focusArea);
     }
 
-    private void renderText(RenderState frame, Rectangle bounds, String text, boolean intertitleActive) {
+    private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+        Dimension image = Transform.dimension(frame.displayImage);
+        var transform = surfaceTransform(image, bounds, new Point2D.Double(), 1.0, focusRegion);
+        return normalizedToGraphics(transform, image, focusRegion.get());
+    }
+
+    private void renderText(RenderState frame, Rectangle bounds, String text, boolean intertitleActive, Optional<Rectangle> focusArea) {
         if (!text.isBlank() || intertitleActive) {
-            var textArea = intertitleActive ? intertitleTextArea(bounds) : spokenTextArea(bounds);
             frame.textImage = newOrSameImage(frame.textImage, bounds);
             Graphics2D g2d = frame.textImage.createGraphics();
             g2d.setBackground(TRANSPARENT);
             g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
+
+            // Debug code
+            // focusArea.ifPresent(r -> g2d.fillRect(r.x, r.y, r.width, r.height));
+
+            var textArea = intertitleActive ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
             renderText(g2d, text, bounds, textArea, intertitleActive);
             g2d.dispose();
         }
@@ -261,14 +263,14 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         return r;
     }
 
-    private static Rectangle spokenTextArea(Rectangle2D bounds) {
-        int textAreaWidth = (int) Math.min(TEXT_AREA_MAX_WIDTH, bounds.getWidth() * Transform.goldenRatioFactorB);
+    private static Rectangle spokenTextArea(Rectangle bounds, Optional<Rectangle> focusArea) {
+        int textAreaWidth = Math.min(TEXT_AREA_MAX_WIDTH, (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
         if (textAreaWidth < TEXT_AREA_MIN_WIDTH) {
             textAreaWidth = Math.min(TEXT_AREA_MIN_WIDTH, (int) (bounds.getWidth() / Transform.goldenRatio));
         }
 
         int scaledInset = TEXT_AREA_INSET * textAreaWidth / TEXT_AREA_MAX_WIDTH;
-        if (bounds.getWidth() < textAreaWidth + 2 * scaledInset) {
+        if (bounds.width < textAreaWidth + 2 * scaledInset) {
             textAreaWidth = (int) (bounds.getWidth() * 0.9);
             scaledInset = (int) (bounds.getWidth() * 0.05);
         }
@@ -276,11 +278,19 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         int topInset = 2 * scaledInset;
         int bottomInset = 4 * scaledInset;
 
-        Rectangle textArea = new Rectangle((int) bounds.getX() + (int) bounds.getWidth() - textAreaWidth - scaledInset, //
-                topInset, //
-                textAreaWidth, //
-                (int) bounds.getHeight() - bottomInset - topInset);
-        return textArea;
+        int x;
+        int y;
+        var textRight = focusArea.isPresent() ? focusArea.get().getCenterX() < bounds.width / 2 : true;
+        if (textRight) {
+            x = bounds.x + bounds.width - textAreaWidth - scaledInset;
+        } else {
+            x = bounds.x + scaledInset;
+        }
+        y = topInset;
+
+        int width = textAreaWidth;
+        int height = bounds.height - bottomInset - y;
+        return new Rectangle(x, y, width, height);
     }
 
     interface TextVisitor {

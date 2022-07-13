@@ -219,8 +219,7 @@ extern "C"
 // TODO Presence, Face2Face & Head Gesture aspects require SinglePoseExact, tests and multiplayer require MultiPoseFast
 
 HumanPose::HumanPose()
-	: model(Movenet::Model::MultiposeFast)
-	, interests(Interest::Status | Interest::Proximity)
+	: interests(Interest::Status | Interest::Proximity)
 	, rotation(image::Rotation::None)
 	{}
 
@@ -323,11 +322,16 @@ Movenet* HumanPose::interpreter()
 {
 	// TODO Landscape/Portrait only for Multipose model -> implement model rotation vs camera rotation 
 	// TODO image rotation for sqaure sensors  / model selection and image rotation for non-square models
+	const Movenet::Model model = (interests & (UpperTorso + LowerTorso + LegsAndFeet)) != 0 && (interests & MultiPose) == 0
+		? Movenet::Model::SinglePoseExact
+		: Movenet::Model::MultiposeFast;
 	const image::Orientation orientation = rotation == aifx::image::Rotation::None || rotation == image::Rotation::Rotate_180 
-		? image::Orientation::Landscape : image::Orientation::Portrait;
-	auto pose_estimation = models.find(orientation);
+		? image::Orientation::Landscape 
+		: image::Orientation::Portrait;
+	auto key = static_cast<int>(model) + 16 * static_cast<int>(orientation);
+	auto pose_estimation = models.find(key);
 	if (pose_estimation == models.end()) {
-		return models[orientation]  = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);
+		return models[key]  = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);
 	}
 	return pose_estimation->second;
 }

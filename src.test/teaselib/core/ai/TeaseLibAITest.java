@@ -1,9 +1,7 @@
 package teaselib.core.ai;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.ai.TeaseLibAI.ExecutionType;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Estimation;
+import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.SceneCapture;
 import teaselib.core.ai.perception.SceneCapture.Rotation;
@@ -67,8 +66,9 @@ public class TeaseLibAITest {
             sceneCapture.start();
             Runnable test = () -> {
                 try (HumanPose humanPose = new HumanPose()) {
+                    humanPose.setInterests(Interest.AllPersons);
                     var timestamp = System.currentTimeMillis();
-                    List<HumanPose.Estimation> poses = humanPose.poses(sceneCapture, timestamp);
+                    var poses = humanPose.poses(sceneCapture, timestamp);
                     assertNotNull(poses);
                     assertEquals(2, poses.size());
                 }
@@ -131,6 +131,7 @@ public class TeaseLibAITest {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             Runnable test = () -> {
                 try (HumanPose humanPose = new HumanPose()) {
+                    humanPose.setInterests(Interest.AllPersons);
                     List<HumanPose.Estimation> poses1 = humanPose.poses(resource("images/p2_320x240_01.jpg"),
                             Rotation.None);
                     assertNotNull(poses1);
@@ -174,8 +175,13 @@ public class TeaseLibAITest {
         }
     }
 
-    private void pose1(HumanPose humnaPose) throws IOException {
-        List<Estimation> poses = humnaPose.poses(resource("images/p2_320x240_01.jpg"));
+    private void pose1(HumanPose humanPose) throws IOException {
+        humanPose.setInterests(Interest.Pose);
+        var poses = humanPose.poses(resource("images/p2_320x240_01.jpg"));
+        assertEquals(1, poses.size());
+
+        humanPose.setInterests(Interest.AllPersons);
+        poses = humanPose.poses(resource("images/p2_320x240_01.jpg"));
         assertEquals(2, poses.size());
         assertEquals(0.25, poses.get(0).head.orElseThrow().getX(), 0.02);
         assertEquals(0.09, poses.get(0).head.orElseThrow().getY(), 0.02);
@@ -183,18 +189,20 @@ public class TeaseLibAITest {
         assertEquals(0.10, poses.get(1).head.orElseThrow().getY(), 0.02);
     }
 
-    private void pose2(HumanPose humnaPose) throws IOException {
-        List<Estimation> poses = humnaPose.poses(resource("images/hand1.jpg"));
+    private void pose2(HumanPose humanPose) throws IOException {
+        humanPose.setInterests(Interest.Pose);
+        List<Estimation> poses = humanPose.poses(resource("images/hand1.jpg"));
         assertEquals(1, poses.size());
         assertEquals(0.51, poses.get(0).head.orElseThrow().getX(), 0.02);
         assertEquals(0.42, poses.get(0).head.orElseThrow().getY(), 0.02);
     }
 
-    private void pose3(HumanPose humnaPose) throws IOException {
-        List<Estimation> poses = humnaPose.poses(resource("images/hand2.jpg"));
+    private void pose3(HumanPose humanPose) throws IOException {
+        humanPose.setInterests(Interest.Pose);
+        List<Estimation> poses = humanPose.poses(resource("images/hand2.jpg"));
         assertEquals(1, poses.size());
         assertEquals(0.59, poses.get(0).head.orElseThrow().getX(), 0.02);
-        assertEquals(0.41, poses.get(0).head.orElseThrow().getY(), 0.02);
+        assertEquals(0.40, poses.get(0).head.orElseThrow().getY(), 0.02);
     }
 
     @Test(expected = NullPointerException.class)
@@ -279,10 +287,11 @@ public class TeaseLibAITest {
     public void testDistanceNear() throws InterruptedException {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             Runnable test = () -> {
-                try (HumanPose humnaPose = new HumanPose()) {
+                try (HumanPose humanPose = new HumanPose()) {
                     List<Estimation> poses;
                     try {
-                        poses = humnaPose.poses(resource("images/p2_320x240_01.jpg"));
+                        humanPose.setInterests(Interest.AllPersons);
+                        poses = humanPose.poses(resource("images/p2_320x240_01.jpg"));
                         assertEquals(2, poses.size());
                         assertEquals(Proximity.NEAR, poses.get(0).proximity());
                         assertEquals(Proximity.NEAR, poses.get(1).proximity());

@@ -187,15 +187,14 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     // TODO remove multiple cached models since HumanPose handles interests already
     HumanPose getModel(Set<Interest> interests) throws InterruptedException {
         throwIfUnsupported(interests);
+        // TODO cache models by interest or remove interest argument
         if (humanPoseCachedModel == null) {
             if (Thread.currentThread() == this.inferenceThread) {
                 humanPoseCachedModel = teaseLibAI.getModel(interests);
             } else {
-                // TODO fetch cached model directly - but right now only one model is supported and cached locally
                 humanPoseCachedModel = inferenceExecutor.submitAndGet(() -> teaseLibAI.getModel(interests));
             }
         }
-        humanPoseCachedModel.setInterests(interests);
         return humanPoseCachedModel;
     }
 
@@ -379,6 +378,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         wakeUpFromHibernate(device);
         try {
             HumanPose model = getModel(interests);
+            model.setInterests(interests);
             long timestamp = System.currentTimeMillis();
             Person.update(human, model, device, device.rotation().reverse().value, timestamp);
             var pose = human.pose();

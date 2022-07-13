@@ -34,7 +34,7 @@ public abstract class AbstractImages extends CachedImages implements ActorImages
         PoseAspects pose;
         try {
             // TODO implement HumanPose.Interest.Pose to get better results
-            pose = resources.teaseLib.deviceInteraction(HumanPoseDeviceInteraction.class).getPose(Interest.Head, image);
+            pose = resources.teaseLib.deviceInteraction(HumanPoseDeviceInteraction.class).getPose(Interest.Pose, image);
             return pose.is(Status.Available) ? pose.estimation : HumanPose.Estimation.NONE;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

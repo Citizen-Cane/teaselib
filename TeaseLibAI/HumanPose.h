@@ -27,6 +27,8 @@ public:
         UpperTorso = 8,
         LowerTorso = 16,
         LegsAndFeet = 32,
+
+        MultiPose = 256
     };
 
     void set(Interest interests);
@@ -37,9 +39,7 @@ public:
 
     static jobject estimation(JNIEnv* env, const aifx::pose::Pose& pose);
 private:
-    const aifx::pose::Movenet::Model model;
-
-    typedef std::map<aifx::image::Orientation, aifx::pose::Movenet*> Models;
+    typedef std::map<int, aifx::pose::Movenet*> Models;
     Models models;
     int interests;
 

@@ -2,6 +2,7 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -101,7 +102,9 @@ public class PoseCache {
             Path file = Paths.get(path.toString(), propertyFilename(resource));
             try {
                 Files.createDirectories(file.getParent());
-                new PersistedPoseEstimation(pose).store(Files.newOutputStream(file));
+                try (OutputStream os = Files.newOutputStream(file)) {
+                    new PersistedPoseEstimation(pose).store(os);
+                }
             } catch (IOException e) {
                 throw ExceptionUtil.asRuntimeException(e);
             }

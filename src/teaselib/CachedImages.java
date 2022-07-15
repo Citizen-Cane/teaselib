@@ -15,12 +15,12 @@ public abstract class CachedImages implements Images {
     private static final Logger logger = LoggerFactory.getLogger(Script.class);
 
     protected final Resources resources;
-    private final Prefetcher<AnnotatedImage> imageFetcher;
+    private final Prefetcher<AnnotatedImage> images;
 
     public CachedImages(Resources resources) {
         Objects.requireNonNull(resources);
         this.resources = resources;
-        this.imageFetcher = new Prefetcher<>(resources.prefetch, this::annotatedImage);
+        this.images = new Prefetcher<>(resources.prefetch, this::annotatedImage);
     }
 
     protected abstract AnnotatedImage annotatedImage(String resource) throws IOException;
@@ -33,7 +33,7 @@ public abstract class CachedImages implements Images {
     @Override
     public void fetch(String resource) {
         if (contains(resource)) {
-            imageFetcher.fetch(resource);
+            images.fetch(resource);
         } else {
             handleAssetNotFound(resource);
         }
@@ -47,7 +47,7 @@ public abstract class CachedImages implements Images {
     public AnnotatedImage annotated(String resource) throws IOException, InterruptedException {
         if (contains(resource)) {
             String path = resources.mapping.get(resource);
-            return imageFetcher.get(path);
+            return images.get(path);
         } else {
             handleAssetNotFound(resource);
             return AnnotatedImage.NoImage;

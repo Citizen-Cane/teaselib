@@ -4,10 +4,12 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.Objects;
+import java.util.Set;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.ProximitySensor;
+import teaselib.util.AnnotatedImage;
 
 /**
  * @author Citizen-Cane
@@ -19,6 +21,7 @@ class RenderState {
     String displayImageResource;
     BufferedImage displayImage;
     HumanPose.Estimation pose;
+    Set<AnnotatedImage.Annotation> annotations;
     Point2D actorOffset;
     double actorZoom;
 
@@ -42,6 +45,7 @@ class RenderState {
         this.displayImageResource = "";
         this.displayImage = null;
         this.pose = HumanPose.Estimation.NONE;
+        this.annotations = null;
         this.actorOffset = new Point2D.Double();
         this.actorZoom = ProximitySensor.zoom.get(Proximity.FAR);
 
@@ -65,6 +69,7 @@ class RenderState {
         copy.displayImageResource = this.displayImageResource;
         copy.displayImage = this.displayImage;
         copy.pose = this.pose;
+        copy.annotations = this.annotations;
         copy.actorOffset = new Point2D.Double(this.actorOffset.getX(), this.actorOffset.getY());
         copy.actorZoom = this.actorZoom;
 

@@ -14,12 +14,13 @@ import teaselib.core.ai.perception.HumanPose.Status;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
 import teaselib.core.ai.perception.PoseAspects;
 import teaselib.util.AnnotatedImage;
+import teaselib.util.AnnotatedImage.Annotation;
 
-public abstract class AbstractImages extends CachedImages implements ActorImages {
+public abstract class AbstractActorImages extends CachedImages implements ActorImages {
 
     public final PoseCache poseCache;
 
-    protected AbstractImages(Resources resources) {
+    protected AbstractActorImages(Resources resources) {
         super(resources);
         this.poseCache = new PoseCache(
                 Paths.get(resources.teaseLib.host.getLocation(Location.User).getAbsolutePath(), "Pose cache"),
@@ -45,7 +46,7 @@ public abstract class AbstractImages extends CachedImages implements ActorImages
     @Override
     protected AnnotatedImage annotatedImage(String resource) throws IOException {
         byte[] image = resources.getBytes(resource);
-        return poseCache.annotatedImage(resource, image);
+        return poseCache.annotatedImage(resource, image, Annotation.Person.Actor);
     }
 
     @Override

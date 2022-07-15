@@ -15,6 +15,7 @@ import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.util.AnnotatedImage;
+import teaselib.util.AnnotatedImage.Annotation;
 
 public class PoseCache {
 
@@ -76,8 +77,8 @@ public class PoseCache {
         return persisted.toPose();
     }
 
-    AnnotatedImage annotatedImage(String resource, byte[] image) {
-        return new AnnotatedImage(resource, image, getPose(resource, image));
+    AnnotatedImage annotatedImage(String resource, byte[] image, Annotation... annotations) {
+        return new AnnotatedImage(resource, image, getPose(resource, image), annotations);
     }
 
     private HumanPose.Estimation getPose(String resource, byte[] image) {

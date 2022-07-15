@@ -27,6 +27,7 @@ import java.util.Optional;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.ProximitySensor;
+import teaselib.util.AnnotatedImage.Annotation;
 
 /**
  * @author Citizen-Cane
@@ -65,14 +66,16 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         }
 
         if (frame.actorOffset.getX() != 0.0 || frame.actorOffset.getY() != 0.0) {
-            drawImage(g2d, previousFrame, bounds);
+            drawImage(g2d, previousFrame);
+            // renderDebugInfo(g2d, previousFrame, bounds);
         }
 
         if (frame.alpha < 1.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, frame.alpha);
             g2d.setComposite(alphaComposite);
         }
-        drawImage(g2d, frame, bounds);
+        drawImage(g2d, frame);
+        // renderDebugInfo(g2d, frame, bounds);
 
         if (frame.repaintTextImage) {
             Optional<Rectangle2D> focusRegion = frame.pose.face();
@@ -84,15 +87,14 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         }
     }
 
-    private static void drawImage(Graphics2D g2d, RenderState frame, Rectangle bounds) {
+    private static void drawImage(Graphics2D g2d, RenderState frame) {
         if (frame.displayImage != null) {
             if (frame.focusLevel < 1.0) {
-                // TODO AffineTranaform
+                // TODO AffineTranaform and copy
                 g2d.drawImage(frame.displayImage, BLUR_OP, 0, 0);
             } else {
                 g2d.drawImage(frame.displayImage, frame.transform, null);
             }
-            // renderDebugInfo(g2d, frame.displayImage, frame.pose, frame.transform, bounds);
         }
     }
 
@@ -104,15 +106,26 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                     new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height),
                     frame.actorOffset,
                     frame.actorZoom,
-                    focusRegion(frame.pose, frame.actorZoom));
+                    focusRegion(frame));
         } else {
             frame.transform = null;
         }
     }
 
-    private static Rectangle interTitleCenterRegion(Rectangle bounds) {
-        Rectangle centerRegion = new Rectangle(0, bounds.height * 1 / 4, bounds.width, bounds.height * 2 / 4);
-        return centerRegion;
+    private static Optional<Rectangle2D> focusRegion(RenderState frame) {
+        Optional<Rectangle2D> focusRegion;
+        if (frame.annotations.contains(Annotation.Person.Actor)) {
+            focusRegion = focusRegion(frame.pose, frame.actorZoom);
+            if (focusRegion.isEmpty()) {
+                focusRegion = Optional.of(new Rectangle2D.Double(0.4, 0.4, 0.2, 0.2));
+            }
+        } else if (frame.annotations.contains(Annotation.Person.Actor)) {
+            // TODO images with models may be focused on, but only the whole body -> pose.bounds
+            focusRegion = Optional.empty();
+        } else {
+            focusRegion = Optional.empty();
+        }
+        return focusRegion;
     }
 
     private static Optional<Rectangle2D> focusRegion(HumanPose.Estimation pose, double actorZoom) {
@@ -144,6 +157,10 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         var a = Transform.scale(offset, image);
         AffineTransform transition = AffineTransform.getTranslateInstance(a.getX(), a.getY());
         return transition;
+    }
+
+    static void renderDebugInfo(Graphics2D g2d, RenderState frame, Rectangle bounds) {
+        renderDebugInfo(g2d, frame.displayImage, frame.pose, frame.transform, bounds);
     }
 
     static void renderDebugInfo(Graphics2D g2d, BufferedImage image, HumanPose.Estimation pose, AffineTransform surface,
@@ -364,6 +381,11 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         g2d.fillRect(bounds.x, centerRegion.y + centerRegion.height, bounds.width,
                 bounds.height - centerRegion.height - centerRegion.y - bounds.y);
         g2d.setColor(Color.white);
+    }
+
+    private static Rectangle interTitleCenterRegion(Rectangle bounds) {
+        Rectangle centerRegion = new Rectangle(0, bounds.height * 1 / 4, bounds.width, bounds.height * 2 / 4);
+        return centerRegion;
     }
 
     private static void renderText(Rectangle textArea, AttributedCharacterIterator paragraph,

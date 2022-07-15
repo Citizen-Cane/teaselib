@@ -425,6 +425,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     public void show(AnnotatedImage displayImage, List<String> text) {
         BufferedImage image;
         HumanPose.Estimation pose;
+        Set<AnnotatedImage.Annotation> annotations;
         boolean updateDisplayImage;
         if (displayImage != null) {
             updateDisplayImage = !displayImage.resource.equals(nextFrame.displayImageResource);
@@ -436,19 +437,23 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                 if (updateDisplayImage) {
                     image = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
                     pose = displayImage.pose;
+                    annotations = displayImage.annotations;
                 } else {
                     image = null;
                     pose = null;
+                    annotations = null;
                 }
             } catch (IOException e) {
                 image = null;
                 pose = HumanPose.Estimation.NONE;
+                annotations = null;
                 logger.error(e.getMessage(), e);
             }
         } else {
             updateDisplayImage = true;
             image = null;
             pose = HumanPose.Estimation.NONE;
+            annotations = null;
         }
 
         synchronized (nextFrame) {
@@ -457,10 +462,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                     nextFrame.displayImageResource = displayImage.resource;
                     nextFrame.displayImage = image;
                     nextFrame.pose = pose;
+                    nextFrame.annotations = annotations;
                 } else if (nextFrame.displayImageResource != null) {
                     nextFrame.displayImageResource = null;
                     nextFrame.displayImage = image;
                     nextFrame.pose = pose;
+                    nextFrame.annotations = annotations;
                 }
             }
             nextFrame.text = text.stream().collect(Collectors.joining("\n"));

@@ -1,6 +1,7 @@
 package teaselib.core.util;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,8 +16,8 @@ public class Prefetcher<T> {
     private final Function<T> fetcher;
 
     private final Queue<String> queued = new ArrayDeque<>();
-    private final Map<String, Future<T>> scheduled = new HashMap<>();
-    private final Map<String, T> fetched = new HashMap<>();
+    private final Map<String, WeakReference<Future<T>>> scheduled = new HashMap<>();
+    private final Map<String, WeakReference<T>> fetched = new HashMap<>();
 
     public interface Function<T> {
         T apply(String key) throws IOException;
@@ -51,7 +52,7 @@ public class Prefetcher<T> {
     public void fetch(String key) {
         synchronized (this) {
             if (!fetched.containsKey(key) && !scheduled.containsKey(key)) {
-                scheduled.put(key, executorService.submit(() -> fetcher.apply(key)));
+                scheduled.put(key, new WeakReference<>(executorService.submit(() -> fetcher.apply(key))));
             }
         }
     }
@@ -59,13 +60,23 @@ public class Prefetcher<T> {
     public T get(String key) throws IOException, InterruptedException {
         synchronized (this) {
             if (fetched.containsKey(key)) {
-                return fetched.get(key);
+                T t = fetched.get(key).get();
+                if (t == null) {
+                    fetched.remove(key);
+                    return get(key);
+                } else {
+                    return t;
+                }
             } else if (scheduled.containsKey(key)) {
-                Future<T> future = scheduled.get(key);
+                Future<T> future = scheduled.get(key).get();
                 scheduled.remove(key);
-                T t = get(future);
-                fetched.put(key, t);
-                return t;
+                if (future == null) {
+                    return get(key);
+                } else {
+                    T t = get(future);
+                    fetched.put(key, new WeakReference<>(t));
+                    return t;
+                }
             } else {
                 fetch(key);
                 return get(key);
@@ -77,8 +88,11 @@ public class Prefetcher<T> {
         try {
             return future.get();
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof IOException io) {
-                throw io;
+            Throwable cause = e.getCause();
+            if (cause instanceof InterruptedException interruptedException) {
+                throw interruptedException;
+            } else if (cause instanceof IOException ioException) {
+                throw ioException;
             } else {
                 throw ExceptionUtil.asRuntimeException(e);
             }

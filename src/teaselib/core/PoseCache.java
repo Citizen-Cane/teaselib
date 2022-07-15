@@ -3,7 +3,6 @@ package teaselib.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,7 +25,6 @@ public class PoseCache {
     private final BiFunction<String, byte[], Estimation> computePose;
 
     private final Map<String, HumanPose.Estimation> poses = new HashMap<>();
-    private final Map<String, WeakReference<AnnotatedImage>> annotatedImages = new HashMap<>();
 
     public PoseCache(Path poseCache, ResourceLoader loader, BiFunction<String, byte[], Estimation> computePose) {
         this.path = poseCache;
@@ -79,20 +77,6 @@ public class PoseCache {
     }
 
     AnnotatedImage annotatedImage(String resource, byte[] image) {
-        WeakReference<AnnotatedImage> reference = annotatedImages.computeIfAbsent(resource, key -> {
-            return new WeakReference<>(createAnnotatedImage(key, image));
-        });
-        AnnotatedImage annotatedImage = reference.get();
-        if (annotatedImage != null) {
-            return annotatedImage;
-        } else {
-            annotatedImage = createAnnotatedImage(resource, image);
-            annotatedImages.put(resource, new WeakReference<>(annotatedImage));
-            return annotatedImage;
-        }
-    }
-
-    private AnnotatedImage createAnnotatedImage(String resource, byte[] image) {
         return new AnnotatedImage(resource, image, getPose(resource, image));
     }
 

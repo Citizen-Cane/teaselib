@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,19 +68,19 @@ public class SceneBasedImages implements teaselib.ActorImages {
     }
 
     private void loadPoses() {
-        var fetch = pictureSets.resources().filter(SceneBasedImages::loaded).toList();
+        var fetch = pictureSets.resources().filter(Predicate.not(SceneBasedImages::loaded)).toList();
         if (fetch.size() > 0) {
             logger.info("Computing poses for {} images", fetch.size());
-            fetch.forEach(this::fetch);
+            fetch.forEach(this::computePose);
             awaitPosesComputed();
         }
     }
 
     private static boolean loaded(Entry<String, Take> entry) {
-        return !entry.getValue().images.poseCache.loadPose(entry.getKey());
+        return entry.getValue().images.poseCache.loadPose(entry.getKey());
     }
 
-    private void fetch(Entry<String, Take> entry) {
+    private void computePose(Entry<String, Take> entry) {
         entry.getValue().images.fetch(entry.getKey());
     }
 

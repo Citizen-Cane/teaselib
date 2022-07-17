@@ -148,7 +148,6 @@ public abstract class Script {
     protected void stopProimitySensor(HumanPoseScriptInteraction humanPoseInteraction) {
         humanPoseInteraction.deviceInteraction.removeEventListener(actor,
                 humanPoseInteraction.deviceInteraction.proximitySensor);
-        teaseLib.host.setActorZoom(ProximitySensor.zoom.get(Proximity.FAR));
     }
 
     private DeviceInteractionImplementations initDeviceInteractions() {

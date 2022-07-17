@@ -154,6 +154,7 @@ public class AnimatedHost implements Host, Closeable {
             } else {
                 translateFocusToOrigin();
             }
+            expectedZoom = 1.0;
             actualAlpha = 0.0f;
             currentImage = newImage;
             startAnimation(currentImage, text);
@@ -162,7 +163,10 @@ public class AnimatedHost implements Host, Closeable {
 
     private void skipUnzoom(float currentDistance, float newDistance) {
         actualZoom = Math.min(1.0, actualZoom * newDistance / currentDistance);
-        expectedZoom = 1.0;
+        // actor zoom should only be reseted here, and when dismissing an answer
+        // - but without synchronization between script and animation
+        // - there's a small stutter caused by the script attempting to zoom out during animations
+        // -> reset zoom (see code above) as dismissing a prompt is followed by displaying a new image
     }
 
     private void translateToNearerDistance(float currentDistance, float newDistance) {

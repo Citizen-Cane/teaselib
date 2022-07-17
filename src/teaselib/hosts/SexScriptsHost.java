@@ -531,6 +531,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         // - scaled background image takes about 100ms
         // - transformed images takes about 100ms
         // + text overlay takes 2ms -> avoid transform during animations
+        renderer.setGraphicsConfiguration(mainFrame.getGraphicsConfiguration());
         var image = renderer.nextBuffer(bounds);
         bounds.width -= horizontalAdjustment;
 

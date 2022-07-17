@@ -169,7 +169,7 @@ extern "C"
 		try {
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 			auto millis = std::chrono::milliseconds(timestamp);
-			vector<Pose> poses = humanPose->estimate(millis);
+			const vector<Pose> poses = humanPose->estimate(millis);
 
 			vector<jobject> results;
 			for_each(poses.begin(), poses.end(), [&env, &results](const Pose& pose) {
@@ -216,11 +216,10 @@ extern "C"
 
 }
 
-// TODO Presence, Face2Face & Head Gesture aspects require SinglePoseExact, tests and multiplayer require MultiPoseFast
-
 HumanPose::HumanPose()
-	: interests(Interest::Status | Interest::Proximity)
+	: interests(0)
 	, rotation(image::Rotation::None)
+	, interpreter(nullptr)
 	{}
 
 HumanPose::~HumanPose()
@@ -264,11 +263,12 @@ bool HumanPose::acquire(const void* image, int size)
 	}
 }
 
-const vector<Pose>& HumanPose::estimate(const std::chrono::milliseconds timestamp)
+const vector<Pose> HumanPose::estimate(const std::chrono::milliseconds timestamp)
 {
-	Movenet& poseEstimation = *interpreter();
-	poses = poseEstimation(frame, rotation, timestamp);
-	return poses;
+	interpreter = getInterpreter();
+	if (interpreter) return (*interpreter)(frame, rotation, timestamp);
+	if (interests == 0) throw invalid_argument("no interests");
+	throw logic_error("no interpreter");
 }
 
 jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
@@ -283,17 +283,13 @@ jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
 			resultClass,
 			JNIClass::getMethodID(env, resultClass, "<init>", "()V")
 		);
-	}
-	else
-		if (isnan(head.x) || isnan(head.y)) {
+	} else if (isnan(head.x) || isnan(head.y)) {
 			jpose = env->NewObject(
 				resultClass,
 				JNIClass::getMethodID(env, resultClass, "<init>", "(F)V"),
 				pose.distance
 			);
-		}
-		else
-			if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
+		} else if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
 				jpose = env->NewObject(
 					resultClass,
 					JNIClass::getMethodID(env, resultClass, "<init>", "(FFF)V"),
@@ -301,8 +297,7 @@ jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
 					head.x,
 					head.y
 				);
-			}
-			else {
+			} else {
 				jpose = env->NewObject(
 					resultClass,
 					JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
@@ -318,17 +313,19 @@ jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
 	return jpose;
 }
 
-Movenet* HumanPose::interpreter()
+Movenet* HumanPose::getInterpreter()
 {
-	// TODO Landscape/Portrait only for Multipose model -> implement model rotation vs camera rotation 
-	// TODO image rotation for sqaure sensors  / model selection and image rotation for non-square models
 	const Movenet::Model model = (interests & (UpperTorso + LowerTorso + LegsAndFeet)) != 0 && (interests & MultiPose) == 0
 		? Movenet::Model::SinglePoseExact
 		: Movenet::Model::MultiposeFast;
-	const image::Orientation orientation = rotation == aifx::image::Rotation::None || rotation == image::Rotation::Rotate_180 
+	const bool portait_image = frame.cols < frame.rows;
+	const bool orientation_change = rotation == aifx::image::Rotation::None || rotation == image::Rotation::Rotate_180;
+	const image::Orientation orientation = orientation_change ^ portait_image
 		? image::Orientation::Landscape 
 		: image::Orientation::Portrait;
-	auto key = static_cast<int>(model) + 16 * static_cast<int>(orientation);
+
+	const int key = Movenet::resource(model, orientation);
+	//auto key = static_cast<int>(model) + 16 * static_cast<int>(orientation);
 	auto pose_estimation = models.find(key);
 	if (pose_estimation == models.end()) {
 		return models[key]  = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);

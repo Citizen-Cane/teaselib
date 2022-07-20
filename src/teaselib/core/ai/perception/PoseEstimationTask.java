@@ -231,12 +231,10 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
             while (!Thread.currentThread().isInterrupted()) {
                 Set<Interest> interests = awaitInterests();
                 device.start();
+                human.startTracking();
                 while (!Thread.currentThread().isInterrupted()) {
                     estimatePose(currentActor, poseAspects.get(), interests);
                     interests = awaitInterests();
-                    if (interests.isEmpty()) {
-                        break;
-                    }
                 }
                 device.stop();
             }
@@ -297,22 +295,25 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     }
 
     private Set<Interest> awaitInterests() throws InterruptedException {
-        Set<Interest> interests;
-        while (true) {
-            Set<Interest> poseInterests = awaitPoseInterests.get();
-            Set<Interest> actorInterests = currentActor == null ? Collections.emptySet()
-                    : interaction.definitions(currentActor).keySet();
-            interests = joinInterests(actorInterests, poseInterests);
-            if (interests.isEmpty()) {
-                awaitInterests(currentActor);
-            } else {
-                break;
-            }
+        Set<Interest> interests = gatherInterests();
+        if (interests.isEmpty()) {
+            do {
+                awaitInterestChange(currentActor);
+                interests = gatherInterests();
+            } while (interests.isEmpty());
+            human.startTracking();
         }
         return interests;
     }
 
-    private void awaitInterests(Actor actor) throws InterruptedException {
+    private Set<Interest> gatherInterests() {
+        Set<Interest> poseInterests = awaitPoseInterests.get();
+        Set<Interest> actorInterests = currentActor == null ? Collections.emptySet()
+                : interaction.definitions(currentActor).keySet();
+        return joinInterests(actorInterests, poseInterests);
+    }
+
+    private void awaitInterestChange(Actor actor) throws InterruptedException {
         if (poseAspects.get() != PoseAspects.Unavailable) {
             PoseAspects previous = poseAspects.get();
             poseAspects.set(PoseAspects.Unavailable);
@@ -380,7 +381,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
             HumanPose model = getModel(interests);
             model.setInterests(interests);
             long timestamp = System.currentTimeMillis();
-            Person.update(human, model, device, device.rotation().reverse().value, timestamp);
+            human.update(model, device, device.rotation().reverse().value, timestamp);
             var pose = human.pose();
             if (pose == HumanPose.Estimation.NONE) {
                 return PoseAspects.Unavailable;

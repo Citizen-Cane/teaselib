@@ -44,12 +44,38 @@ extern "C"
 	}
 
 	/*
- * Class:     teaselib_core_ai_perception_Person
- * Method:    update
- * Signature: (Lteaselib/core/ai/perception/Person;Lteaselib/core/ai/perception/HumanPose;Lteaselib/core/ai/perception/SceneCapture;J)V
- */
-	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_Person_update__Lteaselib_core_ai_perception_Person_2Lteaselib_core_ai_perception_HumanPose_2Lteaselib_core_ai_perception_SceneCapture_2IJ
-	(JNIEnv* env, jclass, jobject jperson, jobject jhumanPose, jobject jdevice, jint rotation, jlong timestamp)
+	 * Class:     teaselib_core_ai_perception_Person
+	 * Method:    startTracking
+	 * Signature: (J)V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_Person_startTracking
+	(JNIEnv* env, jobject jperson)
+	{
+		try {
+			Human* human = NativeInstance::get<Human>(env, jperson);
+			human->startTracking();
+		}
+		catch (invalid_argument& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (exception& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		}
+		catch (JNIException& e) {
+			e.rethrow();
+		}
+	}
+
+	/*
+	 * Class:     teaselib_core_ai_perception_Person
+	 * Method:    update
+	 * Signature: (Lteaselib/core/ai/perception/Person;Lteaselib/core/ai/perception/HumanPose;Lteaselib/core/ai/perception/SceneCapture;J)V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_Person_update__Lteaselib_core_ai_perception_HumanPose_2Lteaselib_core_ai_perception_SceneCapture_2IJ
+	(JNIEnv* env, jobject jperson, jobject jhumanPose, jobject jdevice, jint rotation, jlong timestamp)
 	{
 		try {
 			Human* human = NativeInstance::get<Human>(env, jperson);
@@ -121,6 +147,11 @@ extern "C"
 		}
 	}
 
+}
+
+void Human::startTracking()
+{
+	person.clearTimeline();
 }
 
 void Human::update(JNIEnv* env, jobject jperson, const aifx::pose::Pose& pose)

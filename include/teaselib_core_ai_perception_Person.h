@@ -17,11 +17,19 @@ JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_Person_newNativeInstanc
 
 /*
  * Class:     teaselib_core_ai_perception_Person
- * Method:    update
- * Signature: (Lteaselib/core/ai/perception/Person;Lteaselib/core/ai/perception/HumanPose;Lteaselib/core/ai/perception/SceneCapture;IJ)V
+ * Method:    startTracking
+ * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_Person_update__Lteaselib_core_ai_perception_Person_2Lteaselib_core_ai_perception_HumanPose_2Lteaselib_core_ai_perception_SceneCapture_2IJ
-  (JNIEnv *, jclass, jobject, jobject, jobject, jint, jlong);
+JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_Person_startTracking
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_core_ai_perception_Person
+ * Method:    update
+ * Signature: (Lteaselib/core/ai/perception/HumanPose;Lteaselib/core/ai/perception/SceneCapture;IJ)V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_Person_update__Lteaselib_core_ai_perception_HumanPose_2Lteaselib_core_ai_perception_SceneCapture_2IJ
+  (JNIEnv *, jobject, jobject, jobject, jint, jlong);
 
 /*
  * Class:     teaselib_core_ai_perception_Person

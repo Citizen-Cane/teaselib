@@ -230,10 +230,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         mainFrame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                currentFrame.displayImageResource = null;
-                show();
+                resize();
             }
-
         });
     }
 
@@ -467,6 +465,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         }
     }
 
+    private void resize() {
+        currentFrame.repaintSceneImage = true;
+        currentFrame.repaintTextImage = true;
+        show();
+    }
+
     @Override
     public void show() {
         synchronized (nextFrame) {
@@ -503,6 +507,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         } else {
             backgroundImageIcon.setImage(backgroundImage);
         }
+
         mainFrame.getRootPane().paintImmediately(getContentBounds());
         Toolkit.getDefaultToolkit().sync();
     }

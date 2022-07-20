@@ -232,7 +232,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     // =====================
     //
 
-    private static final float FONT_SIZE = 18;
+    private static final float FONT_SIZE = 36;
     private static final float MINIMAL_FONT_SIZE = 6;
     private static final float PARAGRAPH_SPACING = 1.5f;
     private static final int TEXT_AREA_BORDER = 10;
@@ -242,20 +242,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
 
     private void renderText(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
-        Optional<Rectangle> focusArea = focusRegion.isPresent()
-                ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
-                : Optional.empty();
-        renderText(frame, bounds, frame.text, frame.isIntertitle, focusArea);
-    }
-
-    private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
-        Dimension image = Transform.dimension(frame.displayImage);
-        var transform = surfaceTransform(image, bounds, new Point2D.Double(), 1.0, focusRegion);
-        return normalizedToGraphics(transform, image, focusRegion.get());
-    }
-
-    private void renderText(RenderState frame, Rectangle bounds, String text, boolean intertitleActive, Optional<Rectangle> focusArea) {
-        if (!text.isBlank() || intertitleActive) {
+        if (!frame.text.isBlank() || frame.isIntertitle) {
             frame.textImage = newOrSameImage(frame.textImage, bounds);
             Graphics2D g2d = frame.textImage.createGraphics();
             g2d.setBackground(TRANSPARENT);
@@ -264,10 +251,19 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             // Debug code
             // focusArea.ifPresent(r -> g2d.fillRect(r.x, r.y, r.width, r.height));
 
-            var textArea = intertitleActive ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
-            renderText(g2d, text, bounds, textArea, intertitleActive);
+            Optional<Rectangle> focusArea = focusRegion.isPresent()
+                    ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
+                    : Optional.empty();
+            var textArea = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
+            renderText(g2d, frame.text, bounds, textArea, frame.isIntertitle);
             g2d.dispose();
         }
+    }
+
+    private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+        Dimension image = Transform.dimension(frame.displayImage);
+        var transform = surfaceTransform(image, bounds, new Point2D.Double(), 1.0, focusRegion);
+        return normalizedToGraphics(transform, image, focusRegion.get());
     }
 
     private static Rectangle intertitleTextArea(Rectangle bounds) {

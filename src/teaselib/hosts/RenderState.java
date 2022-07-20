@@ -90,11 +90,13 @@ class RenderState {
     }
 
     public void updateFrom(RenderState oldState) {
-        repaintSceneImage = actorZoom != oldState.actorZoom ||
+        repaintSceneImage = oldState.repaintSceneImage ||
+                actorZoom != oldState.actorZoom ||
                 alpha != oldState.alpha ||
                 !Objects.equals(displayImageResource, oldState.displayImageResource) ||
                 !Objects.equals(actorOffset, oldState.actorOffset);
-        repaintTextImage = isIntertitle != oldState.isIntertitle ||
+        repaintTextImage = oldState.repaintTextImage ||
+                isIntertitle != oldState.isIntertitle ||
                 !Objects.equals(text, oldState.text);
     }
 

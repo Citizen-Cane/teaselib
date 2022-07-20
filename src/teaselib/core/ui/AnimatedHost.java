@@ -44,15 +44,16 @@ public class AnimatedHost implements Host, Closeable {
     private float actualAlpha = 1.0f;
     private float expectedAlpha = 1.0f;
 
-    private AnimationPath pathx = AnimationPath.NONE;
-    private AnimationPath pathy = AnimationPath.NONE;
-    private AnimationPath pathz = AnimationPath.NONE;
-    private AnimationPath alpha = AnimationPath.NONE;
+    private AnimationPath pathx;
+    private AnimationPath pathy;
+    private AnimationPath pathz;
+    private AnimationPath alpha;
 
     public AnimatedHost(Host host) {
         this.host = host;
         this.animator = new Thread(this::animate, "Animate UI");
         this.animator.start();
+        setAnimationPaths(0, 0);
     }
 
     @Override
@@ -83,12 +84,10 @@ public class AnimatedHost implements Host, Closeable {
                         host.setActorZoom(actualZoom);
                         host.setActorAlpha(actualAlpha);
                         host.show();
-                        long finish = now;
+                        long finish = System.currentTimeMillis();
                         long duration = FRAMETIME_MILLIS - (finish - now);
                         if (duration > 0) {
                             animator.wait(duration);
-                        } else {
-                            animator.wait(0);
                         }
                     }
                 } catch (InterruptedException e) {
@@ -191,15 +190,19 @@ public class AnimatedHost implements Host, Closeable {
     private void startAnimation(AnnotatedImage image, List<String> text) {
         long currentTimeMillis = System.currentTimeMillis();
         int transitionDuration = actualOffset.equals(expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
-        pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis, transitionDuration);
-        pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis, transitionDuration);
-        pathz = new AnimationPath.Linear(actualZoom, expectedZoom, currentTimeMillis, transitionDuration);
-        alpha = new AnimationPath.Linear(actualAlpha, expectedAlpha, currentTimeMillis, transitionDuration);
+        setAnimationPaths(currentTimeMillis, transitionDuration);
         host.setActorOffset(actualOffset);
         host.setActorZoom(actualZoom);
         host.setActorAlpha(actualAlpha);
         host.show(image, text);
         animator.notifyAll();
+    }
+
+    private void setAnimationPaths(long currentTimeMillis, int transitionDuration) {
+        pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis, transitionDuration);
+        pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis, transitionDuration);
+        pathz = new AnimationPath.Linear(actualZoom, expectedZoom, currentTimeMillis, transitionDuration);
+        alpha = new AnimationPath.Linear(actualAlpha, expectedAlpha, currentTimeMillis, transitionDuration);
     }
 
     private void waitAnimationCompleted() {

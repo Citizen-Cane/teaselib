@@ -15,10 +15,6 @@ import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.geom.Point2D;
@@ -231,35 +227,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         mainFrame.getJMenuBar().setVisible(false);
         setWindowState();
 
-        mainFrame.addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent e) { //
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) { //
-            }
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_F11) {
-                    toggleFullScreen();
-                }
-            }
-        });
-        mainFrame.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    toggleFullScreen();
-                } else {
-                    super.mouseClicked(e);
-                }
-            }
-        });
-
         mainFrame.addComponentListener(new ComponentAdapter() {
-
             @Override
             public void componentResized(ComponentEvent e) {
                 currentFrame.displayImageResource = null;
@@ -267,17 +235,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             }
 
         });
-    }
-
-    private void toggleFullScreen() {
-        // TODO ThreadDeath in main thread -> script ends
-        // EventQueue.invokeLater(() -> {
-        // try {
-        // setFullscreen(!isFullScreen());
-        // } catch (ThreadDeath t) {
-        // logger.warn(t.getMessage());
-        // }
-        // });
     }
 
     Rectangle normalWindowPosition;
@@ -520,36 +477,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         }
     }
 
-    // boolean createdBufferStrategy = false;
-    // Window window;
-
     private void render(RenderState frame) {
         Rectangle bounds = getContentBounds();
         int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
         bounds.width += horizontalAdjustment;
-        // rendering scene take around 300ms
-        // - scaled background image takes about 100ms
-        // - transformed images takes about 100ms
-        // + text overlay takes 2ms -> avoid transform during animations
         renderer.setGraphicsConfiguration(mainFrame.getGraphicsConfiguration());
         var image = renderer.nextBuffer(bounds);
         bounds.width -= horizontalAdjustment;
-
-        // Rendering takes around 1200ms, where each image takes round 300ms
-        // if (!createdBufferStrategy) {
-        // // window = mainFrame;
-        // window = new Window(mainFrame);
-        // window.setSize(bounds.width, bounds.height);
-        // window.setVisible(true);
-        // window.createBufferStrategy(3);
-        // createdBufferStrategy = true;
-        // }
-        // renderer.setGraphicsConfiguration(window.getGraphicsConfiguration());
-        // BufferStrategy bufferStrategy = window.getBufferStrategy();
-        // Graphics2D g2d = (Graphics2D) bufferStrategy.getDrawGraphics();
-        // renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
-        // g2d.dispose();
-        // bufferStrategy.show();
 
         Graphics2D g2d = image.createGraphics();
         renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
@@ -569,7 +503,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         } else {
             backgroundImageIcon.setImage(backgroundImage);
         }
-        mainFrame.repaint();
+        mainFrame.getRootPane().paintImmediately(getContentBounds());
         Toolkit.getDefaultToolkit().sync();
     }
 

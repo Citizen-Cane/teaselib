@@ -105,4 +105,9 @@ class RenderState {
         return focusLevel == 1.0 && actorZoom < ProximitySensor.zoom.get(Proximity.CLOSE) && !text.isBlank();
     }
 
+    boolean isBackgroundVisisble() {
+        return displayImage == null || pose.distance.isEmpty() ||
+                actorOffset.getX() != 0.0 || actorOffset.getY() != 0.0 || alpha < 1.0f || actorZoom < 1.0;
+    }
+
 }

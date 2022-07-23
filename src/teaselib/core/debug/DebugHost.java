@@ -107,7 +107,12 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void setActorOffset(Point2D offset) {
+    public void setActorOffset(Point2D previousImage, Point2D currentImage) {
+        // Ignore
+    }
+
+    @Override
+    public void setPreviousActorImageZoom(double zoom) {
         // Ignore
     }
 

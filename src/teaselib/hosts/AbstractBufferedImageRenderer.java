@@ -15,7 +15,7 @@ public class AbstractBufferedImageRenderer {
 
     // TODO avoid flicker caused by slow EventQueue.invokeLater(() -> show(image))
     // when awt is too slow to render the image, it will be reused and repainted while being rendered to surface
-    private static final int BUFFER_CAPACITY = 10;
+    private static final int BUFFER_CAPACITY = 2;
 
     final Deque<BufferedImage> buffers = new ArrayDeque<>(BUFFER_CAPACITY);
 

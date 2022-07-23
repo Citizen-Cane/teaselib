@@ -4,8 +4,12 @@ import java.awt.geom.Point2D;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -27,33 +31,85 @@ public class AnimatedHost implements Host, Closeable {
     static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
     private static final int ZOOM_DURATION = 200;
-    private static final int TRANSITION_DURATION = 500;
+    private static final int TRANSITION_DURATION = 1000;
     private final static long FRAMETIME_MILLIS = 16;
+
+    enum Animation {
+
+        None(),
+        BlendIn(Type.Blend),
+        Move(Type.Blend, Type.MoveNew, Type.Zoom),
+        MoveBoth(Type.Blend, Type.MovePrevious, Type.MoveNew, Type.Zoom)
+
+        ;
+
+        enum Type {
+            Blend,
+            MovePrevious,
+            MoveNew,
+            Zoom
+        }
+
+        Set<Type> type;
+
+        private Animation(Type... types) {
+            this.type = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(types)));
+        }
+    }
 
     final Host host;
     private final Thread animator;
 
     private AnnotatedImage currentImage = AnnotatedImage.NoImage;
 
-    private double actualZoom = 1.0;
-    private double expectedZoom = 1.0;
+    static class ActorPath {
+        double actualZoom = 1.0;
+        double expectedZoom = 1.0;
+        Point2D actualOffset = new Point2D.Double();
+        Point2D expectedOffset = new Point2D.Double();
 
-    private Point2D actualOffset = new Point2D.Double();
-    private Point2D expectedOffset = new Point2D.Double();
+        AnimationPath pathx;
+        AnimationPath pathy;
+        AnimationPath pathz;
+
+        void move(Animation animation, long currentTimeMillis, int transitionDuration) {
+            if (animation.type.contains(Animation.Type.MoveNew)) {
+                pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis, transitionDuration);
+                pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis, transitionDuration);
+            } else {
+                pathx = new AnimationPath.Constant(expectedOffset.getX());
+                pathy = new AnimationPath.Constant(expectedOffset.getY());
+            }
+        }
+
+        void zoom(Animation animation, long currentTimeMillis, int transitionDuration) {
+            if (animation.type.contains(Animation.Type.Zoom)) {
+                pathz = new AnimationPath.Linear(actualZoom, expectedZoom, currentTimeMillis, transitionDuration);
+            } else {
+                pathz = new AnimationPath.Constant(expectedZoom);
+            }
+        }
+
+        void advance(long now) {
+            actualOffset.setLocation(pathx.get(now), pathy.get(now));
+            actualZoom = pathz.get(now);
+        }
+
+    }
+
+    ActorPath previous = new ActorPath();
+    ActorPath current = new ActorPath();
 
     private float actualAlpha = 1.0f;
     private float expectedAlpha = 1.0f;
 
-    private AnimationPath pathx;
-    private AnimationPath pathy;
-    private AnimationPath pathz;
     private AnimationPath alpha;
 
     public AnimatedHost(Host host) {
         this.host = host;
         this.animator = new Thread(this::animate, "Animate UI");
         this.animator.start();
-        setAnimationPaths(0, 0);
+        setAnimationPaths(Animation.None, 0, 0);
     }
 
     @Override
@@ -77,11 +133,12 @@ public class AnimatedHost implements Host, Closeable {
                     animator.wait(FRAMETIME_MILLIS);
                     while (animationsRunning()) {
                         long now = System.currentTimeMillis();
-                        actualOffset.setLocation(pathx.get(now), pathy.get(now));
-                        actualZoom = pathz.get(now);
+                        previous.advance(now);
+                        current.advance(now);
                         actualAlpha = (float) alpha.get(now);
-                        host.setActorOffset(actualOffset);
-                        host.setActorZoom(actualZoom);
+                        host.setActorOffset(previous.actualOffset, current.actualOffset);
+                        host.setPreviousActorImageZoom(previous.actualZoom);
+                        host.setActorZoom(current.actualZoom);
                         host.setActorAlpha(actualAlpha);
                         host.show();
                         long finish = System.currentTimeMillis();
@@ -100,10 +157,10 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     private boolean animationsRunning() {
-        return expectedZoom != actualZoom ||
+        return current.expectedZoom != current.actualZoom ||
                 expectedAlpha != actualAlpha ||
-                expectedOffset.getX() != actualOffset.getX() ||
-                expectedOffset.getY() != actualOffset.getY();
+                current.expectedOffset.getX() != current.actualOffset.getX() ||
+                current.expectedOffset.getY() != current.actualOffset.getY();
     }
 
     @Override
@@ -115,6 +172,8 @@ public class AnimatedHost implements Host, Closeable {
     public Audio audio(ResourceLoader resources, String path) {
         return host.audio(resources, path);
     }
+
+    // TODO review transitions between Portait & Landscape and vice versa. Might be the cause of offset-images
 
     @Override
     public void show(AnnotatedImage newImage, List<String> text) {
@@ -130,79 +189,98 @@ public class AnimatedHost implements Host, Closeable {
             if (sameRegion) {
                 if (newDistance != 0.0f && newDistance < currentDistance) {
                     // -> New image nearer
-                    if (actualZoom >= currentDistance / newDistance) {
+                    if (current.actualZoom >= currentDistance / newDistance) {
                         // -> current image zoomed and new image can can be zoomed to match current focus region size
                         skipUnzoom(currentDistance, newDistance);
                         translateFocus(currentFocusRegion.get(), newFocusRegion.get());
                     } else {
-                        // -> starts blending in at zoom < 0 - background covered by previous image
                         translateToNearerDistance(currentDistance, newDistance);
                         translateFocus(currentFocusRegion.get(), newFocusRegion.get());
-                        // Better: zoom-in existing image first for smooth focus region image change
-                        // -> avoid image borders of new image visible (due to zoom < 1)
-                        // - requires moving on the same path as the new image
-                        // -- but doing so may make image borders of the current imagevisible
                     }
                 } else if (currentDistance != 0.0f && newDistance > currentDistance) {
                     // -> new image farer - translate new image starting as zoomed as current image
                     translateToFarerDistance(currentDistance, newDistance);
                     translateFocus(currentFocusRegion.get(), newFocusRegion.get());
                 } else {
+                    previous.actualZoom = current.actualZoom;
+                    previous.expectedZoom = current.expectedZoom;
                     translateFocus(currentFocusRegion.get(), newFocusRegion.get());
                 }
             } else {
                 translateFocusToOrigin();
             }
-            expectedZoom = 1.0;
+            current.expectedZoom = 1.0;
             actualAlpha = 0.0f;
             currentImage = newImage;
-            startAnimation(currentImage, text);
+            start(Animation.MoveBoth, currentImage, text);
         }
     }
 
     private void skipUnzoom(float currentDistance, float newDistance) {
-        actualZoom = Math.min(1.0, actualZoom * newDistance / currentDistance);
-        // actor zoom should only be reseted here, and when dismissing an answer
+        // previous.expectedZoom = currentDistance / newDistance;
+        current.actualZoom = Math.min(1.0, current.actualZoom * newDistance / currentDistance);
+        // TODO actor zoom should only be reseted here, and when dismissing an answer
         // - but without synchronization between script and animation
         // - there's a small stutter caused by the script attempting to zoom out during animations
         // -> reset zoom (see code above) as dismissing a prompt is followed by displaying a new image
     }
 
     private void translateToNearerDistance(float currentDistance, float newDistance) {
-        actualZoom = newDistance / currentDistance;
+        previous.actualZoom = current.actualZoom;
+        previous.expectedZoom = currentDistance / newDistance;
+        current.actualZoom = newDistance / currentDistance;
     }
 
     private void translateToFarerDistance(float currentDistance, float newDistance) {
-        actualZoom = newDistance / currentDistance;
+        previous.actualZoom = current.actualZoom;
+        previous.expectedZoom = currentDistance / newDistance;
+        current.actualZoom = newDistance / currentDistance;
     }
 
     private void translateFocusToOrigin() {
-        expectedOffset = new Point2D.Double(0.0, 0.0);
+        previous.expectedOffset = new Point2D.Double(0.0, 0.0);
+        current.expectedOffset = new Point2D.Double(0.0, 0.0);
     }
 
     private void translateFocus(Point2D currentFocusRegion, Point2D newFocusRegion) {
         double x = newFocusRegion.getX() - currentFocusRegion.getX();
         double y = newFocusRegion.getY() - currentFocusRegion.getY();
-        actualOffset.setLocation(-x, -y);
-        expectedOffset = new Point2D.Double(0.0, 0.0);
+        current.actualOffset = new Point2D.Double(-x, -y);
+        current.expectedOffset = new Point2D.Double(0.0, 0.0);
+        // previous location of focus region in current
+        previous.actualOffset = new Point2D.Double(0.0, 0.0);
+        previous.expectedOffset = new Point2D.Double(x, y);
     }
 
-    private void startAnimation(AnnotatedImage image, List<String> text) {
+    private void start(Animation animation, AnnotatedImage image, List<String> text) {
         long currentTimeMillis = System.currentTimeMillis();
-        int transitionDuration = actualOffset.equals(expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
-        setAnimationPaths(currentTimeMillis, transitionDuration);
-        host.setActorOffset(actualOffset);
-        host.setActorZoom(actualZoom);
+        int transitionDuration = current.actualOffset.equals(current.expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
+        setAnimationPaths(animation, currentTimeMillis, transitionDuration);
+        host.setActorOffset(previous.actualOffset, current.actualOffset);
+        host.setActorZoom(current.actualZoom);
         host.setActorAlpha(actualAlpha);
         host.show(image, text);
         animator.notifyAll();
     }
 
-    private void setAnimationPaths(long currentTimeMillis, int transitionDuration) {
-        pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis, transitionDuration);
-        pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis, transitionDuration);
-        pathz = new AnimationPath.Linear(actualZoom, expectedZoom, currentTimeMillis, transitionDuration);
-        alpha = new AnimationPath.Linear(actualAlpha, expectedAlpha, currentTimeMillis, transitionDuration);
+    private void setAnimationPaths(Animation animation, long currentTimeMillis, int transitionDuration) {
+        if (animation.type.contains(Animation.Type.MovePrevious)) {
+            previous.move(animation, currentTimeMillis, transitionDuration);
+            previous.zoom(animation, currentTimeMillis, transitionDuration);
+        } else {
+            previous.expectedOffset = new Point2D.Double(0.0, 0.0);
+            previous.expectedZoom = 1.0f;
+            previous.move(Animation.None, currentTimeMillis, transitionDuration);
+            previous.zoom(Animation.None, currentTimeMillis, transitionDuration);
+        }
+        current.move(animation, currentTimeMillis, transitionDuration);
+        current.zoom(animation, currentTimeMillis, transitionDuration);
+
+        if (animation.type.contains(Animation.Type.Blend)) {
+            alpha = new AnimationPath.Linear(actualAlpha, expectedAlpha, currentTimeMillis, transitionDuration);
+        } else {
+            alpha = new AnimationPath.Constant(expectedAlpha);
+        }
     }
 
     private void waitAnimationCompleted() {
@@ -221,15 +299,20 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     @Override
-    public void setActorOffset(Point2D offset) {
+    public void setActorOffset(Point2D previousImage, Point2D currentImage) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setPreviousActorImageZoom(double zoom) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void setActorZoom(double zoom) {
         synchronized (animator) {
-            expectedZoom = zoom;
-            pathz = new AnimationPath.Linear(actualZoom, expectedZoom, System.currentTimeMillis(), ZOOM_DURATION);
+            current.expectedZoom = zoom;
+            current.pathz = new AnimationPath.Linear(current.actualZoom, current.expectedZoom, System.currentTimeMillis(), ZOOM_DURATION);
             animator.notifyAll();
         }
     }

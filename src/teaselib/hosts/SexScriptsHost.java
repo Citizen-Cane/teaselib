@@ -439,9 +439,17 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     @Override
-    public void setActorOffset(Point2D offset) {
+    public void setActorOffset(Point2D previous_Image, Point2D currentImage) {
         synchronized (nextFrame) {
-            nextFrame.actorOffset = new Point2D.Double(offset.getX(), offset.getY());
+            previousImage.actorOffset = new Point2D.Double(previous_Image.getX(), previous_Image.getY());
+            nextFrame.actorOffset = new Point2D.Double(currentImage.getX(), currentImage.getY());
+        }
+    }
+
+    @Override
+    public void setPreviousActorImageZoom(double zoom) {
+        synchronized (nextFrame) {
+            previousImage.actorZoom = zoom;
         }
     }
 
@@ -492,7 +500,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         Graphics2D g2d = image.createGraphics();
         renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
         g2d.dispose();
-        EventQueue.invokeLater(() -> show(image));
+        synchronized (this) {
+            EventQueue.invokeLater(() -> show(image));
+        }
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {
@@ -502,14 +512,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     private void show(Image image) {
-        if (image != null) {
-            backgroundImageIcon.setImage(image);
-        } else {
-            backgroundImageIcon.setImage(backgroundImage);
-        }
+        synchronized (this) {
+            if (image != null) {
+                backgroundImageIcon.setImage(image);
+            } else {
+                backgroundImageIcon.setImage(backgroundImage);
+            }
 
-        mainFrame.getRootPane().paintImmediately(getContentBounds());
-        Toolkit.getDefaultToolkit().sync();
+            mainFrame.getRootPane().paintImmediately(getContentBounds());
+            Toolkit.getDefaultToolkit().sync();
+        }
     }
 
     @Override

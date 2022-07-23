@@ -33,7 +33,9 @@ public interface Host {
 
     void setFocusLevel(float focusLevel);
 
-    void setActorOffset(Point2D offset);
+    void setActorOffset(Point2D previousImage, Point2D currentImage);
+
+    void setPreviousActorImageZoom(double zoom);
 
     void setActorZoom(double zoom);
 

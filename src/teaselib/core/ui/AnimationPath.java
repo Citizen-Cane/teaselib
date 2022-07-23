@@ -21,6 +21,29 @@ public abstract class AnimationPath {
 
     public abstract double get(long timePoint);
 
+    @Override
+    public String toString() {
+        return start + "->" + end + " in " + durationMillis + "ms";
+    }
+
+    static class Constant extends AnimationPath {
+
+        public Constant(double value) {
+            super(value, value, 0, 0);
+        }
+
+        @Override
+        public double get(long timePoint) {
+            return end;
+        }
+
+        @Override
+        public String toString() {
+            return "" + end;
+        }
+
+    }
+
     static class Linear extends AnimationPath {
 
         public Linear(double start, double end, long startMillis, long durationMillis) {

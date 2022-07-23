@@ -45,14 +45,13 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         this.backgroundImage = backgroundImage;
     }
 
-    void render(Graphics2D g2d, RenderState frame, RenderState previousFrame, Rectangle bounds, Color backgroundColor) {
+    void render(Graphics2D g2d, RenderState frame, RenderState previousImage, Rectangle bounds, Color backgroundColor) {
         // Bicubic interpolation is an absolute performance killer for image transforming & scaling
         // g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
-        boolean backgroundVisible = frame.displayImage == null ||
-                frame.pose.distance.isEmpty() ||
-                previousFrame.displayImage == null ||
-                previousFrame.pose.distance.isEmpty();
+        boolean previousImageVisible = frame.isBackgroundVisisble();
+        boolean backgroundVisible = previousImageVisible ||
+                previousImage.isBackgroundVisisble();
         if (backgroundVisible) {
             g2d.setBackground(backgroundColor);
             g2d.clearRect(0, 0, bounds.width, bounds.height);
@@ -61,21 +60,49 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
                     0, 0, backgroundImage.getWidth(null), backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
         }
 
+        if (previousImageVisible) {
+            updateSceneTransform(previousImage, bounds);
+        }
+
         if (frame.repaintSceneImage) {
             updateSceneTransform(frame, bounds);
         }
 
-        if (frame.actorOffset.getX() != 0.0 || frame.actorOffset.getY() != 0.0) {
-            drawImage(g2d, previousFrame);
-            // renderDebugInfo(g2d, previousFrame, bounds);
+        // Choose the smaller image for blending in order to hide as much of the background image as possible
+
+        if (previousImage.actorZoom < frame.actorZoom) {
+            drawImageStack(g2d, frame, 1.0f - frame.alpha, previousImage, bounds);
+        } else {
+            drawImageStack(g2d, previousImage, frame.alpha, frame, bounds);
         }
 
-        if (frame.alpha < 1.0f) {
-            var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, frame.alpha);
-            g2d.setComposite(alphaComposite);
-        }
-        drawImage(g2d, frame);
+        // if (previousImage.actorZoom < frame.actorZoom) {
+        // drawImage(g2d, frame);
         // renderDebugInfo(g2d, frame, bounds);
+        //
+        // if (frame.alpha < 1.0f) {
+        // var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f - frame.alpha);
+        // g2d.setComposite(alphaComposite);
+        // }
+        //
+        // if (previousImageVisible) {
+        // drawImage(g2d, previousImage);
+        // renderDebugInfo(g2d, previousImage, bounds);
+        // }
+        //
+        // } else {
+        // if (previousImageVisible) {
+        // drawImage(g2d, previousImage);
+        // renderDebugInfo(g2d, previousImage, bounds);
+        // }
+        //
+        // if (frame.alpha < 1.0f) {
+        // var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, frame.alpha);
+        // g2d.setComposite(alphaComposite);
+        // }
+        // drawImage(g2d, frame);
+        // renderDebugInfo(g2d, frame, bounds);
+        // }
 
         if (frame.repaintTextImage) {
             Optional<Rectangle2D> focusRegion = frame.pose.face();
@@ -85,6 +112,20 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         if (!frame.text.isBlank() || frame.isIntertitle) {
             g2d.drawImage(frame.textImage, 0, 0, null);
         }
+    }
+
+    private static void drawImageStack(Graphics2D g2d, RenderState bottom, float alpha, RenderState top, Rectangle bounds) {
+        if (top.isBackgroundVisisble() || alpha < 1.0) {
+            drawImage(g2d, bottom);
+            renderDebugInfo(g2d, bottom, bounds);
+        }
+        if (alpha < 1.0f) {
+            var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
+            g2d.setComposite(alphaComposite);
+        }
+
+        drawImage(g2d, top);
+        renderDebugInfo(g2d, top, bounds);
     }
 
     private static void drawImage(Graphics2D g2d, RenderState frame) {
@@ -160,7 +201,9 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
     }
 
     static void renderDebugInfo(Graphics2D g2d, RenderState frame, Rectangle bounds) {
-        renderDebugInfo(g2d, frame.displayImage, frame.pose, frame.transform, bounds);
+        if (frame.displayImage != null) {
+            renderDebugInfo(g2d, frame.displayImage, frame.pose, frame.transform, bounds);
+        }
     }
 
     static void renderDebugInfo(Graphics2D g2d, BufferedImage image, HumanPose.Estimation pose, AffineTransform surface,

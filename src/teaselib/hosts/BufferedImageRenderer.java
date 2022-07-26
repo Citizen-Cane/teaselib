@@ -76,34 +76,6 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             drawImageStack(g2d, previousImage, frame.alpha, frame, bounds);
         }
 
-        // if (previousImage.actorZoom < frame.actorZoom) {
-        // drawImage(g2d, frame);
-        // renderDebugInfo(g2d, frame, bounds);
-        //
-        // if (frame.alpha < 1.0f) {
-        // var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f - frame.alpha);
-        // g2d.setComposite(alphaComposite);
-        // }
-        //
-        // if (previousImageVisible) {
-        // drawImage(g2d, previousImage);
-        // renderDebugInfo(g2d, previousImage, bounds);
-        // }
-        //
-        // } else {
-        // if (previousImageVisible) {
-        // drawImage(g2d, previousImage);
-        // renderDebugInfo(g2d, previousImage, bounds);
-        // }
-        //
-        // if (frame.alpha < 1.0f) {
-        // var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, frame.alpha);
-        // g2d.setComposite(alphaComposite);
-        // }
-        // drawImage(g2d, frame);
-        // renderDebugInfo(g2d, frame, bounds);
-        // }
-
         if (frame.repaintTextImage) {
             Optional<Rectangle2D> focusRegion = frame.pose.face();
             renderText(frame, bounds, focusRegion);
@@ -139,15 +111,17 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         }
     }
 
+    // TODO Add focus point update in order to control focus by animated host
+
     public void updateSceneTransform(RenderState frame, Rectangle bounds) {
         if (frame.displayImage != null) {
             var displayImageSize = Transform.dimension(frame.displayImage);
             frame.transform = surfaceTransform(
                     displayImageSize,
-                    new Rectangle2D.Double(0.0, 0.0, bounds.width, bounds.height),
-                    frame.actorOffset,
+                    bounds,
                     frame.actorZoom,
-                    focusRegion(frame));
+                    focusRegion(frame),
+                    frame.displayImageOffset);
         } else {
             frame.transform = null;
         }
@@ -180,24 +154,20 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         }
     }
 
-    private static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, Point2D offset,
-            double zoom, Optional<Rectangle2D> focusRegion) {
+    static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds,
+            double zoom, Optional<Rectangle2D> focusRegion, Point2D displayImageOffset) {
         var surface = new AffineTransform();
         surface.concatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
         surface.concatenate(Transform.maxImage(image, bounds, focusRegion));
         if (focusRegion.isPresent()) {
             Rectangle2D imageFocusArea = Transform.scale(focusRegion.get(), image);
             surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
-            surface.concatenate(getTranslateInstance(image, offset));
             surface.concatenate(Transform.zoom(surface, imageFocusArea, zoom));
         }
-        return surface;
-    }
 
-    private static AffineTransform getTranslateInstance(Dimension image, Point2D offset) {
-        var a = Transform.scale(offset, image);
-        AffineTransform transition = AffineTransform.getTranslateInstance(a.getX(), a.getY());
-        return transition;
+        surface.preConcatenate(AffineTransform.getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));
+
+        return surface;
     }
 
     static void renderDebugInfo(Graphics2D g2d, RenderState frame, Rectangle bounds) {
@@ -291,9 +261,6 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             g2d.setBackground(TRANSPARENT);
             g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
 
-            // Debug code
-            // focusArea.ifPresent(r -> g2d.fillRect(r.x, r.y, r.width, r.height));
-
             Optional<Rectangle> focusArea = focusRegion.isPresent()
                     ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
                     : Optional.empty();
@@ -305,7 +272,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
 
     private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
         Dimension image = Transform.dimension(frame.displayImage);
-        var transform = surfaceTransform(image, bounds, new Point2D.Double(), 1.0, focusRegion);
+        var transform = surfaceTransform(image, bounds, 1.0, focusRegion, new Point2D.Double());
         return normalizedToGraphics(transform, image, focusRegion.get());
     }
 

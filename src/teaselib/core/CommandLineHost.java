@@ -52,22 +52,12 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public void setActorOffset(Point2D previousImage, Point2D currentImage) {
-        // Ignore
-    }
-
-    @Override
-    public void setPreviousActorImageZoom(double zoom) {
-        // Ignore
-    }
-
-    @Override
     public void setActorZoom(double zoom) {
         // Ignore
     }
 
     @Override
-    public void setActorAlpha(float alpha) {
+    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float alpha) {
         // Ignore
     }
 

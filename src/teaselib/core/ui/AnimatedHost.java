@@ -20,6 +20,7 @@ import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.configuration.Configuration;
+import teaselib.hosts.SexScriptsHost;
 import teaselib.util.AnnotatedImage;
 
 /**
@@ -31,7 +32,7 @@ public class AnimatedHost implements Host, Closeable {
     static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
     private static final int ZOOM_DURATION = 200;
-    private static final int TRANSITION_DURATION = 1000;
+    private static final int TRANSITION_DURATION = 500;
     private final static long FRAMETIME_MILLIS = 16;
 
     enum Animation {
@@ -136,10 +137,11 @@ public class AnimatedHost implements Host, Closeable {
                         previous.advance(now);
                         current.advance(now);
                         actualAlpha = (float) alpha.get(now);
-                        host.setActorOffset(previous.actualOffset, current.actualOffset);
-                        host.setPreviousActorImageZoom(previous.actualZoom);
-                        host.setActorZoom(current.actualZoom);
-                        host.setActorAlpha(actualAlpha);
+                        // host.setActorOffset(previous.actualOffset, current.actualOffset);
+                        // host.setPreviousActorImageZoom(previous.actualZoom);
+                        // host.setActorZoom(current.actualZoom);
+                        // host.setActorAlpha(actualAlpha);
+                        host.setTransition(previous.actualOffset, previous.actualZoom, current.actualOffset, current.actualZoom, actualAlpha);
                         host.show();
                         long finish = System.currentTimeMillis();
                         long duration = FRAMETIME_MILLIS - (finish - now);
@@ -173,12 +175,15 @@ public class AnimatedHost implements Host, Closeable {
         return host.audio(resources, path);
     }
 
-    // TODO review transitions between Portait & Landscape and vice versa. Might be the cause of offset-images
-
     @Override
     public void show(AnnotatedImage newImage, List<String> text) {
         synchronized (animator) {
+            // TODO Nice for testing bit for production this breaks seamless anymation
+            // when resetting prompt-zoom from script
             waitAnimationCompleted();
+
+            // Must be set here in order to fetch resolution info later
+            host.show(newImage, text);
 
             float currentDistance = currentImage != null ? currentImage.pose.distance.orElse(0.0f) : 0.0f;
             float newDistance = newImage != null ? newImage.pose.distance.orElse(0.0f) : 0.0f;
@@ -212,12 +217,18 @@ public class AnimatedHost implements Host, Closeable {
             current.expectedZoom = 1.0;
             actualAlpha = 0.0f;
             currentImage = newImage;
-            start(Animation.MoveBoth, currentImage, text);
+            start(Animation.MoveBoth);
         }
     }
 
     private void skipUnzoom(float currentDistance, float newDistance) {
+        // TODO test with real animations - can probably be removed altogether since blending works
+
+        // float resolutionZoomCorrectionFactor = ((SexScriptsHost) host).resolutionZoomCorrectionFactor();
+        // previous.expectedZoom = currentDistance / newDistance * resolutionZoomCorrectionFactor;
+
         // previous.expectedZoom = currentDistance / newDistance;
+
         current.actualZoom = Math.min(1.0, current.actualZoom * newDistance / currentDistance);
         // TODO actor zoom should only be reseted here, and when dismissing an answer
         // - but without synchronization between script and animation
@@ -227,14 +238,16 @@ public class AnimatedHost implements Host, Closeable {
 
     private void translateToNearerDistance(float currentDistance, float newDistance) {
         previous.actualZoom = current.actualZoom;
-        previous.expectedZoom = currentDistance / newDistance;
-        current.actualZoom = newDistance / currentDistance;
+        float resolutionZoomCorrectionFactor = ((SexScriptsHost) host).resolutionZoomCorrectionFactor();
+        previous.expectedZoom = currentDistance / newDistance * resolutionZoomCorrectionFactor;
+        current.actualZoom = newDistance / currentDistance / resolutionZoomCorrectionFactor;
     }
 
     private void translateToFarerDistance(float currentDistance, float newDistance) {
         previous.actualZoom = current.actualZoom;
-        previous.expectedZoom = currentDistance / newDistance;
-        current.actualZoom = newDistance / currentDistance;
+        float resolutionZoomCorrectionFactor = ((SexScriptsHost) host).resolutionZoomCorrectionFactor();
+        previous.expectedZoom = currentDistance / newDistance * resolutionZoomCorrectionFactor;
+        current.actualZoom = newDistance / currentDistance / resolutionZoomCorrectionFactor;
     }
 
     private void translateFocusToOrigin() {
@@ -243,23 +256,19 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     private void translateFocus(Point2D currentFocusRegion, Point2D newFocusRegion) {
-        double x = newFocusRegion.getX() - currentFocusRegion.getX();
-        double y = newFocusRegion.getY() - currentFocusRegion.getY();
-        current.actualOffset = new Point2D.Double(-x, -y);
-        current.expectedOffset = new Point2D.Double(0.0, 0.0);
-        // previous location of focus region in current
         previous.actualOffset = new Point2D.Double(0.0, 0.0);
-        previous.expectedOffset = new Point2D.Double(x, y);
+        current.expectedOffset = new Point2D.Double(0.0, 0.0);
+        Point2D transition = ((SexScriptsHost) host).getTransitionVector(currentFocusRegion, newFocusRegion);
+        current.actualOffset = new Point2D.Double(-transition.getX(), -transition.getY());
+        previous.expectedOffset = transition;
+
     }
 
-    private void start(Animation animation, AnnotatedImage image, List<String> text) {
+    private void start(Animation animation) {
+        host.setTransition(previous.actualOffset, previous.actualZoom, current.actualOffset, current.actualZoom, actualAlpha);
         long currentTimeMillis = System.currentTimeMillis();
         int transitionDuration = current.actualOffset.equals(current.expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
         setAnimationPaths(animation, currentTimeMillis, transitionDuration);
-        host.setActorOffset(previous.actualOffset, current.actualOffset);
-        host.setActorZoom(current.actualZoom);
-        host.setActorAlpha(actualAlpha);
-        host.show(image, text);
         animator.notifyAll();
     }
 
@@ -299,16 +308,6 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     @Override
-    public void setActorOffset(Point2D previousImage, Point2D currentImage) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setPreviousActorImageZoom(double zoom) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void setActorZoom(double zoom) {
         synchronized (animator) {
             current.expectedZoom = zoom;
@@ -318,7 +317,7 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     @Override
-    public void setActorAlpha(float alpha) {
+    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float alpha) {
         throw new UnsupportedOperationException();
     }
 

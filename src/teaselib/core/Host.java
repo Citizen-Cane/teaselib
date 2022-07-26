@@ -33,13 +33,9 @@ public interface Host {
 
     void setFocusLevel(float focusLevel);
 
-    void setActorOffset(Point2D previousImage, Point2D currentImage);
-
-    void setPreviousActorImageZoom(double zoom);
-
     void setActorZoom(double zoom);
 
-    void setActorAlpha(float alpha);
+    void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float alpha);
 
     /**
      * Repaint the content area to show actor image and text.

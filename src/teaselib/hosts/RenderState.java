@@ -22,8 +22,8 @@ class RenderState {
     BufferedImage displayImage;
     HumanPose.Estimation pose;
     Set<AnnotatedImage.Annotation> annotations;
-    Point2D actorOffset;
     double actorZoom;
+    Point2D displayImageOffset;
 
     String text;
     boolean isIntertitle;
@@ -36,7 +36,6 @@ class RenderState {
     boolean repaintSceneImage;
     AffineTransform transform;
     float alpha;
-    BufferedImage sceneImage;
 
     boolean repaintTextImage;
     BufferedImage textImage;
@@ -46,7 +45,6 @@ class RenderState {
         this.displayImage = null;
         this.pose = HumanPose.Estimation.NONE;
         this.annotations = null;
-        this.actorOffset = new Point2D.Double();
         this.actorZoom = ProximitySensor.zoom.get(Proximity.FAR);
 
         this.text = "";
@@ -57,8 +55,7 @@ class RenderState {
         this.transform = null;
         this.alpha = 1.0f;
         this.repaintSceneImage = false;
-        this.sceneImage = null;
-
+        this.displayImageOffset = new Point2D.Double();
         this.repaintTextImage = false;
         this.textImage = null;
     }
@@ -70,7 +67,6 @@ class RenderState {
         copy.displayImage = this.displayImage;
         copy.pose = this.pose;
         copy.annotations = this.annotations;
-        copy.actorOffset = new Point2D.Double(this.actorOffset.getX(), this.actorOffset.getY());
         copy.actorZoom = this.actorZoom;
 
         copy.text = this.text;
@@ -81,7 +77,7 @@ class RenderState {
         copy.transform = this.transform;
         copy.alpha = 1.0f;
         copy.repaintSceneImage = false;
-        copy.sceneImage = this.sceneImage;
+        copy.displayImageOffset = this.displayImageOffset;
 
         copy.repaintTextImage = false;
         copy.textImage = this.textImage;
@@ -94,7 +90,7 @@ class RenderState {
                 actorZoom != oldState.actorZoom ||
                 alpha != oldState.alpha ||
                 !Objects.equals(displayImageResource, oldState.displayImageResource) ||
-                !Objects.equals(actorOffset, oldState.actorOffset);
+                !Objects.equals(displayImageOffset, oldState.displayImageOffset);
         repaintTextImage = oldState.repaintTextImage ||
                 isIntertitle != oldState.isIntertitle ||
                 !Objects.equals(text, oldState.text);
@@ -107,7 +103,7 @@ class RenderState {
 
     boolean isBackgroundVisisble() {
         return displayImage == null || pose.distance.isEmpty() ||
-                actorOffset.getX() != 0.0 || actorOffset.getY() != 0.0 || alpha < 1.0f || actorZoom < 1.0;
+                displayImageOffset.getX() != 0.0 || displayImageOffset.getY() != 0.0 || alpha < 1.0f || actorZoom < 1.0;
     }
 
 }

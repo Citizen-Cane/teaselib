@@ -35,10 +35,11 @@ class RenderState {
 
     boolean repaintSceneImage;
     AffineTransform transform;
-    float alpha;
+    float sceneBlend;
 
     boolean repaintTextImage;
     BufferedImage textImage;
+    float textBlend;
 
     RenderState() {
         this.displayImageResource = "";
@@ -53,11 +54,13 @@ class RenderState {
         this.focusLevel = 1.0f;
 
         this.transform = null;
-        this.alpha = 1.0f;
+        this.sceneBlend = 1.0f;
         this.repaintSceneImage = false;
         this.displayImageOffset = new Point2D.Double();
+
         this.repaintTextImage = false;
         this.textImage = null;
+        this.textBlend = 1.0f;
     }
 
     RenderState copy() {
@@ -75,12 +78,13 @@ class RenderState {
         copy.focusLevel = this.focusLevel;
 
         copy.transform = this.transform;
-        copy.alpha = 1.0f;
+        copy.sceneBlend = this.sceneBlend;
         copy.repaintSceneImage = false;
         copy.displayImageOffset = this.displayImageOffset;
 
         copy.repaintTextImage = false;
         copy.textImage = this.textImage;
+        copy.textBlend = this.textBlend;
 
         return copy;
     }
@@ -88,7 +92,7 @@ class RenderState {
     public void updateFrom(RenderState oldState) {
         repaintSceneImage = oldState.repaintSceneImage ||
                 actorZoom != oldState.actorZoom ||
-                alpha != oldState.alpha ||
+                sceneBlend != oldState.sceneBlend ||
                 !Objects.equals(displayImageResource, oldState.displayImageResource) ||
                 !Objects.equals(displayImageOffset, oldState.displayImageOffset);
         repaintTextImage = oldState.repaintTextImage ||
@@ -103,7 +107,7 @@ class RenderState {
 
     boolean isBackgroundVisisble() {
         return displayImage == null || pose.distance.isEmpty() ||
-                displayImageOffset.getX() != 0.0 || displayImageOffset.getY() != 0.0 || alpha < 1.0f || actorZoom < 1.0;
+                displayImageOffset.getX() != 0.0 || displayImageOffset.getY() != 0.0 || sceneBlend < 1.0f || actorZoom < 1.0;
     }
 
 }

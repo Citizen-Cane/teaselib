@@ -112,7 +112,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float alpha) {
+    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float blend, float textBLendIn, float textBlendOut) {
         // Ignore
     }
 

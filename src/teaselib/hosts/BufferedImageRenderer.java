@@ -71,9 +71,9 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         // Choose the smaller image for blending in order to hide as much of the background image as possible
 
         if (previousImage.actorZoom < frame.actorZoom) {
-            drawImageStack(g2d, frame, 1.0f - frame.alpha, previousImage, bounds);
+            drawImageStack(g2d, frame, 1.0f - frame.sceneBlend, previousImage, bounds);
         } else {
-            drawImageStack(g2d, previousImage, frame.alpha, frame, bounds);
+            drawImageStack(g2d, previousImage, frame.sceneBlend, frame, bounds);
         }
 
         if (frame.repaintTextImage) {
@@ -82,7 +82,19 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
         }
 
         if (!frame.text.isBlank() || frame.isIntertitle) {
-            g2d.drawImage(frame.textImage, 0, 0, null);
+            var textFrame = previousImage.textBlend > 0.0 ? previousImage : frame;
+            float textBlend = textFrame.textBlend;
+            if (textBlend < 1.0f) {
+                var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, textBlend);
+                g2d.setComposite(alphaComposite);
+            } else if (frame.sceneBlend < 1.0) {
+                var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
+                g2d.setComposite(alphaComposite);
+            } else {
+                var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
+                g2d.setComposite(alphaComposite);
+            }
+            g2d.drawImage(textFrame.textImage, 0, 0, null);
         }
     }
 
@@ -91,6 +103,7 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             drawImage(g2d, bottom);
             renderDebugInfo(g2d, bottom, bounds);
         }
+
         if (alpha < 1.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2d.setComposite(alphaComposite);

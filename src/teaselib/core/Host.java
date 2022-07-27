@@ -35,7 +35,7 @@ public interface Host {
 
     void setActorZoom(double zoom);
 
-    void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float alpha);
+    void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float blend, float textBLendIn, float textBlendOut);
 
     /**
      * Repaint the content area to show actor image and text.

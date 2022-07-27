@@ -482,13 +482,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     @Override
-    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float alpha) {
+    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float sceneBlend, float textBlendIn, float textBlendOut) {
         synchronized (nextFrame) {
             previousImage.displayImageOffset = new Point2D.Double(prev.getX(), prev.getY());
             previousImage.actorZoom = prevZoom;
             nextFrame.displayImageOffset = new Point2D.Double(cur.getX(), cur.getY());
             nextFrame.actorZoom = nextZoom;
-            nextFrame.alpha = alpha;
+            nextFrame.sceneBlend = sceneBlend;
+
+            previousImage.textBlend = textBlendOut;
+            nextFrame.textBlend = textBlendIn;
         }
     }
 

@@ -109,6 +109,9 @@ public class SectionRenderer implements Closeable {
             } else if (position == Position.FromCurrentPosition) {
                 if (currentMessage < messages.size()) {
                     renderFromCurrentMessage();
+                    if (haveMultipleParagraphs()) {
+                        showAll();
+                    }
                 } else {
                     showAll();
                 }
@@ -138,6 +141,7 @@ public class SectionRenderer implements Closeable {
         }
 
         private void showAll() throws IOException, InterruptedException {
+            awaitSectionMandatory();
             var image = getImage(actor, displayImage);
             show(image, accumulatedText.paragraphs);
         }

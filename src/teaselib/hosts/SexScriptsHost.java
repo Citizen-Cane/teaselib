@@ -372,6 +372,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         synchronized (nextFrame) {
             nextFrame.text = text;
             nextFrame.isIntertitle = true;
+            // TODO without = null, image about to fade in pops up at the start of the blend
+            nextFrame.textImage = null;
+
+            previousImage = currentFrame;
         }
     }
 
@@ -428,6 +432,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             }
             nextFrame.text = text.stream().collect(Collectors.joining("\n"));
             nextFrame.isIntertitle = false;
+            // TODO without = null, image about to fade in pops up at the start of the blend
+            nextFrame.textImage = null;
+
             previousImage = currentFrame;
         }
     }
@@ -558,7 +565,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         synchronized (nextFrame) {
             // Keep the image, remove any text to provide some feedback
             nextFrame.text = "";
-            show();
+            // TODO without = null, image about to fade in pops up at the start of the blend
+            nextFrame.textImage = null;
+            // necessary to prevent previous text popping up before blend out
+            previousImage = currentFrame;
         }
     }
 

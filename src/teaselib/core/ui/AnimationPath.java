@@ -44,6 +44,25 @@ public abstract class AnimationPath {
 
     }
 
+    static class Delay extends AnimationPath {
+
+        private final AnimationPath delayed;
+
+        public Delay(long durationMillis, AnimationPath path) {
+            super(0.0, 0.0, path.startMillis, durationMillis);
+            this.delayed = path;
+        }
+
+        @Override
+        public double get(long timePoint) {
+            if (timePoint - delayed.startMillis + durationMillis < 0) {
+                return delayed.start;
+            } else {
+                return delayed.get(timePoint - durationMillis);
+            }
+        }
+    }
+
     static class Linear extends AnimationPath {
 
         public Linear(double start, double end, long startMillis, long durationMillis) {

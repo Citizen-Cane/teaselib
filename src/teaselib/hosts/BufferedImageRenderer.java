@@ -81,21 +81,11 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             renderText(frame, bounds, focusRegion);
         }
 
-        if (!frame.text.isBlank() || frame.isIntertitle) {
-            var textFrame = previousImage.textBlend > 0.0 ? previousImage : frame;
-            float textBlend = textFrame.textBlend;
-            if (textBlend < 1.0f) {
-                var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, textBlend);
-                g2d.setComposite(alphaComposite);
-            } else if (frame.sceneBlend < 1.0) {
-                var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
-                g2d.setComposite(alphaComposite);
-            } else {
-                var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
-                g2d.setComposite(alphaComposite);
-            }
-            g2d.drawImage(textFrame.textImage, 0, 0, null);
+        // Avoid both overlays rendered at the same time when not blending over
+        if (frame.textBlend < 1.0) {
+            drawTextOverlay(g2d, previousImage);
         }
+        drawTextOverlay(g2d, frame);
     }
 
     private static void drawImageStack(Graphics2D g2d, RenderState bottom, float alpha, RenderState top, Rectangle bounds) {
@@ -121,6 +111,20 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
             } else {
                 g2d.drawImage(frame.displayImage, frame.transform, null);
             }
+        }
+    }
+
+    private static void drawTextOverlay(Graphics2D g2d, RenderState frame) {
+        if (!frame.text.isBlank() || frame.isIntertitle) {
+            drawTextOverlay(g2d, frame.textImage, frame.textBlend);
+        }
+    }
+
+    private static void drawTextOverlay(Graphics2D g2d, BufferedImage text, float alpha) {
+        if (alpha > 0.0f) {
+            var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
+            g2d.setComposite(alphaComposite);
+            g2d.drawImage(text, 0, 0, null);
         }
     }
 

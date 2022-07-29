@@ -498,6 +498,7 @@ public abstract class Script {
         } finally {
             endAll();
             teaseLib.host.endScene();
+            teaseLib.host.show();
         }
         scriptRenderer.events.afterPrompt.fire(new ScriptEventArgs());
         actor.images.advance(Next.Section);

@@ -31,8 +31,8 @@ public class AnimatedHost implements Host, Closeable {
 
     static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
-    private static final int ZOOM_DURATION = 300;
-    private static final int TRANSITION_DURATION = 1000;
+    private static final int ZOOM_DURATION = 400;
+    private static final int TRANSITION_DURATION = 1200;
     private final static long FRAMETIME_MILLIS = 16;
 
     enum Animation {
@@ -62,6 +62,7 @@ public class AnimatedHost implements Host, Closeable {
     private final Thread animator;
 
     private AnnotatedImage currentImage = AnnotatedImage.NoImage;
+    private boolean isIntertitle = false;
 
     static class ActorPath {
         double actualZoom = 1.0;
@@ -106,9 +107,18 @@ public class AnimatedHost implements Host, Closeable {
         float expected = 1.0f;
         private AnimationPath alphapath;
 
-        void blend(Animation animation, long currentTimeMillis, int transitionDuration) {
+        void blend(Animation animation, long currentTimeMillis, int blendMillis) {
             if (animation.type.contains(Animation.Type.Blend)) {
-                alphapath = new AnimationPath.Linear(actual, expected, currentTimeMillis, transitionDuration);
+                alphapath = new AnimationPath.Linear(actual, expected, currentTimeMillis, blendMillis);
+            } else {
+                alphapath = new AnimationPath.Constant(expected);
+            }
+        }
+
+        public void blend(Animation animation, long currentTimeMillis, int delayMillis, int blendMillis) {
+            if (animation.type.contains(Animation.Type.Blend)) {
+                alphapath = new AnimationPath.Delay(delayMillis,
+                        new AnimationPath.Linear(actual, expected, currentTimeMillis, blendMillis));
             } else {
                 alphapath = new AnimationPath.Constant(expected);
             }
@@ -120,7 +130,8 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     final AlphaBlend sceneBlend = new AlphaBlend();
-    final AlphaBlend textBlend = new AlphaBlend();
+    final AlphaBlend currentTextBlend = new AlphaBlend();
+    final AlphaBlend previoustextBlend = new AlphaBlend();
 
     public AnimatedHost(Host host) {
         this.host = host;
@@ -153,9 +164,9 @@ public class AnimatedHost implements Host, Closeable {
                         previous.advance(now);
                         current.advance(now);
                         sceneBlend.advance(now);
-                        textBlend.advance(now);
-                        host.setTransition(previous.actualOffset, previous.actualZoom, current.actualOffset, current.actualZoom, sceneBlend.actual,
-                                textBlend.actual, 0.0f);
+                        currentTextBlend.advance(now);
+                        previoustextBlend.advance(now);
+                        setTransition();
                         host.show();
                         long finish = System.currentTimeMillis();
                         long duration = FRAMETIME_MILLIS - (finish - now);
@@ -176,7 +187,8 @@ public class AnimatedHost implements Host, Closeable {
         return previous.expectedZoom != previous.actualZoom ||
                 current.expectedZoom != current.actualZoom ||
                 sceneBlend.actual != sceneBlend.expected ||
-                textBlend.actual != textBlend.expected ||
+                currentTextBlend.actual != currentTextBlend.expected ||
+                previoustextBlend.actual != previoustextBlend.expected ||
                 previous.expectedOffset.getX() != previous.actualOffset.getX() ||
                 current.expectedOffset.getY() != current.actualOffset.getY();
     }
@@ -198,7 +210,7 @@ public class AnimatedHost implements Host, Closeable {
             // when resetting prompt-zoom from script
             // waitAnimationCompleted();
 
-            // Must be set here in order to fetch resolution info later
+            // Must be set here in order to fetch transition vector
             host.show(newImage, text);
 
             float currentDistance = currentImage != null ? currentImage.pose.distance.orElse(0.0f) : 0.0f;
@@ -232,10 +244,19 @@ public class AnimatedHost implements Host, Closeable {
             }
             current.expectedZoom = 1.0;
             sceneBlend.actual = 0.0f;
-            textBlend.actual = 0.0f;
-            textBlend.expected = 1.0f;
+
+            previoustextBlend.actual = currentTextBlend.actual;
+            previoustextBlend.expected = 0.0f;
+            currentTextBlend.actual = 0.0f;
+            currentTextBlend.expected = 1.0f;
+            setTransition();
+
             currentImage = newImage;
-            start(Animation.MoveBoth);
+            isIntertitle = false;
+
+            long currentTimeMillis = System.currentTimeMillis();
+            int transitionDuration = current.actualOffset.equals(current.expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
+            setAnimationPaths(Animation.MoveBoth, currentTimeMillis, transitionDuration);
         }
     }
 
@@ -282,14 +303,6 @@ public class AnimatedHost implements Host, Closeable {
 
     }
 
-    private void start(Animation animation) {
-        host.setTransition(previous.actualOffset, previous.actualZoom, current.actualOffset, current.actualZoom, sceneBlend.actual, textBlend.actual, 0.0f);
-        long currentTimeMillis = System.currentTimeMillis();
-        int transitionDuration = current.actualOffset.equals(current.expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
-        setAnimationPaths(animation, currentTimeMillis, transitionDuration);
-        animator.notifyAll();
-    }
-
     private void setAnimationPaths(Animation animation, long currentTimeMillis, int transitionDuration) {
         if (animation.type.contains(Animation.Type.MovePrevious)) {
             previous.move(animation, currentTimeMillis, transitionDuration);
@@ -303,8 +316,14 @@ public class AnimatedHost implements Host, Closeable {
         current.move(animation, currentTimeMillis, transitionDuration);
         current.zoom(animation, currentTimeMillis, transitionDuration);
 
-        sceneBlend.blend(animation, currentTimeMillis, transitionDuration);
-        textBlend.blend(animation, currentTimeMillis, TRANSITION_DURATION);
+        if (transitionDuration > ZOOM_DURATION * 2) {
+            sceneBlend.blend(animation, currentTimeMillis, (TRANSITION_DURATION - ZOOM_DURATION * 2) / 2, ZOOM_DURATION * 2);
+        } else {
+            sceneBlend.blend(animation, currentTimeMillis, transitionDuration);
+        }
+
+        previoustextBlend.blend(animation, currentTimeMillis, ZOOM_DURATION);
+        currentTextBlend.blend(animation, currentTimeMillis, TRANSITION_DURATION - ZOOM_DURATION, ZOOM_DURATION);
     }
 
     void waitAnimationCompleted() {
@@ -327,7 +346,6 @@ public class AnimatedHost implements Host, Closeable {
         synchronized (animator) {
             current.expectedZoom = zoom;
             current.pathz = new AnimationPath.Linear(current.actualZoom, current.expectedZoom, System.currentTimeMillis(), ZOOM_DURATION);
-            animator.notifyAll();
         }
     }
 
@@ -338,22 +356,57 @@ public class AnimatedHost implements Host, Closeable {
 
     @Override
     public void show() {
-        host.show();
+        synchronized (animator) {
+            host.show();
+            animator.notifyAll();
+        }
     }
 
     @Override
     public void showInterTitle(String text) {
-        host.showInterTitle(text);
+        synchronized (animator) {
+            host.showInterTitle(text);
+            if (!isIntertitle) {
+
+                previoustextBlend.actual = currentTextBlend.actual;
+                previoustextBlend.expected = 0.0f;
+                currentTextBlend.actual = 0.0f;
+                currentTextBlend.expected = 1.0f;
+                setTransition();
+
+                long currentTimeMillis = System.currentTimeMillis();
+                previoustextBlend.blend(Animation.BlendIn, currentTimeMillis, ZOOM_DURATION);
+                currentTextBlend.blend(Animation.BlendIn, currentTimeMillis, ZOOM_DURATION, ZOOM_DURATION);
+
+                isIntertitle = true;
+            } else {
+                // TODO keep background and just blend over text
+            }
+
+        }
     }
 
     @Override
     public void endScene() {
         synchronized (animator) {
-            textBlend.actual = 1.0f;
-            textBlend.expected = 0.0f;
-            textBlend.blend(Animation.BlendIn, System.currentTimeMillis(), TRANSITION_DURATION);
-            animator.notifyAll();
+            host.endScene();
+
+            previoustextBlend.actual = currentTextBlend.actual;
+            previoustextBlend.expected = 0.0f;
+            currentTextBlend.expected = 0.0f;
+            setTransition();
+
+            long currentTimeMillis = System.currentTimeMillis();
+            previoustextBlend.blend(Animation.BlendIn, currentTimeMillis, ZOOM_DURATION);
+            currentTextBlend.blend(Animation.None, currentTimeMillis, 0);
         }
+    }
+
+    private void setTransition() {
+        host.setTransition(
+                previous.actualOffset, previous.actualZoom,
+                current.actualOffset, current.actualZoom,
+                sceneBlend.actual, currentTextBlend.actual, previoustextBlend.actual);
     }
 
     @Override

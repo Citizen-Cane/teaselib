@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -19,6 +20,8 @@ import teaselib.core.Audio;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
+import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.concurrency.NoFuture;
 import teaselib.core.configuration.Configuration;
 import teaselib.hosts.SexScriptsHost;
 import teaselib.util.AnnotatedImage;
@@ -59,7 +62,8 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     final Host host;
-    private final Thread animator;
+    private final NamedExecutorService animator;
+    private Future<?> animation = NoFuture.Void;
 
     private AnnotatedImage currentImage = AnnotatedImage.NoImage;
     private boolean isIntertitle = false;
@@ -135,19 +139,13 @@ public class AnimatedHost implements Host, Closeable {
 
     public AnimatedHost(Host host) {
         this.host = host;
-        this.animator = new Thread(this::animate, "Animate UI");
-        this.animator.start();
+        this.animator = NamedExecutorService.sameThread("Animate UI");
         setAnimationPaths(Animation.None, 0, 0);
     }
 
     @Override
     public void close() throws IOException {
-        animator.interrupt();
-        try {
-            animator.join();
-        } catch (InterruptedException e) {
-            Thread.interrupted();
-        }
+        animator.shutdown();
         if (host instanceof Closeable closeable) {
             closeable.close();
         }
@@ -155,30 +153,26 @@ public class AnimatedHost implements Host, Closeable {
 
     private void animate() {
         synchronized (animator) {
-            while (!Thread.interrupted()) {
-                try {
-                    animator.wait();
-                    animator.wait(FRAMETIME_MILLIS);
-                    while (animationsRunning()) {
-                        long now = System.currentTimeMillis();
-                        previous.advance(now);
-                        current.advance(now);
-                        sceneBlend.advance(now);
-                        currentTextBlend.advance(now);
-                        previoustextBlend.advance(now);
-                        setTransition();
-                        host.show();
-                        long finish = System.currentTimeMillis();
-                        long duration = FRAMETIME_MILLIS - (finish - now);
-                        if (duration > 0) {
-                            animator.wait(duration);
-                        }
+            try {
+                while (animationsRunning()) {
+                    long now = System.currentTimeMillis();
+                    previous.advance(now);
+                    current.advance(now);
+                    sceneBlend.advance(now);
+                    currentTextBlend.advance(now);
+                    previoustextBlend.advance(now);
+                    setTransition();
+                    host.show();
+                    long finish = System.currentTimeMillis();
+                    long duration = FRAMETIME_MILLIS - (finish - now);
+                    if (duration > 0) {
+                        animator.wait(duration);
                     }
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
                 }
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
             }
         }
     }
@@ -205,12 +199,13 @@ public class AnimatedHost implements Host, Closeable {
 
     @Override
     public void show(AnnotatedImage newImage, List<String> text) {
-        synchronized (animator) {
-            // TODO Nice for testing bit for production this breaks seamless anymation
-            // when resetting prompt-zoom from script
-            // waitAnimationCompleted();
+        // TODO Nice for testing bit for production this breaks seamless animation
+        // when resetting prompt-zoom from script
+        // waitAnimationCompleted();
 
-            // Must be set here in order to fetch transition vector
+        animation.cancel(true);
+        synchronized (animator) {
+            // Must be set first in order to fetch transition vector later on
             host.show(newImage, text);
 
             float currentDistance = currentImage != null ? currentImage.pose.distance.orElse(0.0f) : 0.0f;
@@ -257,8 +252,6 @@ public class AnimatedHost implements Host, Closeable {
             long currentTimeMillis = System.currentTimeMillis();
             int transitionDuration = current.actualOffset.equals(current.expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
             setAnimationPaths(Animation.MoveBoth, currentTimeMillis, transitionDuration);
-            
-            // TODO Stop animator before leaving synchronized block -> re-start after show() 
         }
     }
 
@@ -346,6 +339,7 @@ public class AnimatedHost implements Host, Closeable {
     @Override
     public void setActorZoom(double zoom) {
         synchronized (animator) {
+            animation.cancel(true);
             current.expectedZoom = zoom;
             current.pathz = new AnimationPath.Linear(current.actualZoom, current.expectedZoom, System.currentTimeMillis(), ZOOM_DURATION);
         }
@@ -358,18 +352,15 @@ public class AnimatedHost implements Host, Closeable {
 
     @Override
     public void show() {
-        synchronized (animator) {
-            host.show();
-            animator.notifyAll();
-        }
+        animation = animator.submit(this::animate);
     }
 
     @Override
     public void showInterTitle(String text) {
         synchronized (animator) {
+            animation.cancel(true);
             host.showInterTitle(text);
             if (!isIntertitle) {
-
                 previoustextBlend.actual = currentTextBlend.actual;
                 previoustextBlend.expected = 0.0f;
                 currentTextBlend.actual = 0.0f;
@@ -391,6 +382,7 @@ public class AnimatedHost implements Host, Closeable {
     @Override
     public void endScene() {
         synchronized (animator) {
+            animation.cancel(true);
             host.endScene();
 
             previoustextBlend.actual = currentTextBlend.actual;

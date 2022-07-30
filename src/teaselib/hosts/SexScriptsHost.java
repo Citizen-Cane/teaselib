@@ -372,9 +372,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         synchronized (nextFrame) {
             nextFrame.text = text;
             nextFrame.isIntertitle = true;
-            // TODO without = null, image about to fade in pops up at the start of the blend
-            nextFrame.textImage = null;
-
+            nextFrame.textImage = renderer.textOverlays.nextBuffer(getContentBounds());
             previousImage = currentFrame;
         }
     }
@@ -432,9 +430,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             }
             nextFrame.text = text.stream().collect(Collectors.joining("\n"));
             nextFrame.isIntertitle = false;
-            // TODO without = null, image about to fade in pops up at the start of the blend
-            nextFrame.textImage = null;
-
+            nextFrame.textImage = renderer.textOverlays.nextBuffer(getContentBounds());
             previousImage = currentFrame;
         }
     }
@@ -529,8 +525,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         Rectangle bounds = getContentBounds();
         int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
         bounds.width += horizontalAdjustment;
-        renderer.setGraphicsConfiguration(mainFrame.getGraphicsConfiguration());
-        var image = renderer.nextBuffer(bounds);
+        renderer.surfaces.setGraphicsConfiguration(mainFrame.getGraphicsConfiguration());
+        var image = renderer.surfaces.nextBuffer(bounds);
         bounds.width -= horizontalAdjustment;
 
         Graphics2D g2d = image.createGraphics();
@@ -565,10 +561,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         synchronized (nextFrame) {
             // Keep the image, remove any text to provide some feedback
             nextFrame.text = "";
-            // TODO without = null, image about to fade in pops up at the start of the blend
-            nextFrame.textImage = null;
-            // necessary to prevent previous text popping up before blend out
+            nextFrame.textImage = renderer.textOverlays.nextBuffer(getContentBounds());
             previousImage = currentFrame;
+            // necessary to prevent previous text popping up before blend out
         }
     }
 

@@ -33,12 +33,15 @@ import teaselib.util.AnnotatedImage.Annotation;
  * @author Citizen-Cane
  *
  */
-public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
+public class BufferedImageRenderer {
 
     private static final BufferedImageOp BLUR_OP = ConvolveEdgeReflectOp.blur(17);
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
     final Image backgroundImage;
+
+    final BufferedImageQueue surfaces = new BufferedImageQueue(10);
+    final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
 
     public BufferedImageRenderer(Image backgroundImage) {
         super();
@@ -116,15 +119,21 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
 
     private static void drawTextOverlay(Graphics2D g2d, RenderState frame) {
         if (!frame.text.isBlank() || frame.isIntertitle) {
-            drawTextOverlay(g2d, frame.textImage, frame.textBlend);
+            drawTextOverlay(g2d, frame.textImage, frame.textBlend, frame.textImageRegion);
         }
     }
 
-    private static void drawTextOverlay(Graphics2D g2d, BufferedImage text, float alpha) {
+    private static void drawTextOverlay(Graphics2D g2d, BufferedImage text, float alpha, Rectangle textArea) {
         if (alpha > 0.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2d.setComposite(alphaComposite);
-            g2d.drawImage(text, 0, 0, null);
+            var clip = g2d.getClip();
+            try {
+                g2d.setClip(textArea);
+                g2d.drawImage(text, 0, 0, null);
+            } finally {
+                g2d.setClip(clip);
+            }
         }
     }
 
@@ -273,17 +282,24 @@ public class BufferedImageRenderer extends AbstractBufferedImageRenderer {
 
     private void renderText(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
         if (!frame.text.isBlank() || frame.isIntertitle) {
-            frame.textImage = newOrSameImage(frame.textImage, bounds);
-            Graphics2D g2d = frame.textImage.createGraphics();
-            g2d.setBackground(TRANSPARENT);
-            g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            frame.textImage = textOverlays.newOrSameImage(frame.textImage, bounds);
+            // frame.textImage = textOverlays.nextBuffer(bounds);
 
             Optional<Rectangle> focusArea = focusRegion.isPresent()
                     ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
                     : Optional.empty();
             var textArea = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
+
+            Graphics2D g2d = frame.textImage.createGraphics();
+            var clip = g2d.getClip();
+            g2d.setClip(textArea);
+            g2d.setBackground(TRANSPARENT);
+            g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            g2d.setClip(clip);
             renderText(g2d, frame.text, bounds, textArea, frame.isIntertitle);
             g2d.dispose();
+
+            frame.textImageRegion = frame.isIntertitle ? bounds : textArea;
         }
     }
 

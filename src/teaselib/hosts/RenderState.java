@@ -1,5 +1,6 @@
 package teaselib.hosts;
 
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
@@ -39,6 +40,7 @@ class RenderState {
 
     boolean repaintTextImage;
     BufferedImage textImage;
+    Rectangle textImageRegion;
     float textBlend;
 
     RenderState() {
@@ -60,6 +62,7 @@ class RenderState {
 
         this.repaintTextImage = false;
         this.textImage = null;
+        this.textImageRegion = null;
         this.textBlend = 1.0f;
     }
 
@@ -84,6 +87,7 @@ class RenderState {
 
         copy.repaintTextImage = false;
         copy.textImage = this.textImage;
+        copy.textImageRegion = this.textImageRegion;
         copy.textBlend = this.textBlend;
 
         return copy;

@@ -11,13 +11,18 @@ import java.util.Deque;
  * @author Citizen-Cane
  *
  */
-public class AbstractBufferedImageRenderer {
+public class BufferedImageQueue {
 
     // TODO avoid flicker caused by slow EventQueue.invokeLater(() -> show(image))
     // when awt is too slow to render the image, it will be reused and repainted while being rendered to surface
     private static final int BUFFER_CAPACITY = 10;
 
+    final int capacity;
     final Deque<BufferedImage> buffers = new ArrayDeque<>(BUFFER_CAPACITY);
+
+    BufferedImageQueue(int capacity) {
+        this.capacity = capacity;
+    }
 
     public BufferedImage nextBuffer(Rectangle bounds) {
         BufferedImage image;
@@ -33,6 +38,9 @@ public class AbstractBufferedImageRenderer {
     private GraphicsConfiguration gc;
 
     public void setGraphicsConfiguration(GraphicsConfiguration gc) {
+        if (gc != this.gc) {
+            buffers.clear();
+        }
         this.gc = gc;
     }
 
@@ -56,13 +64,6 @@ public class AbstractBufferedImageRenderer {
         } else {
             return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         }
-    }
-
-    /**
-     * 
-     */
-    public AbstractBufferedImageRenderer() {
-        super();
     }
 
 }

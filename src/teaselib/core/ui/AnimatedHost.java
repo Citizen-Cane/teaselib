@@ -257,6 +257,8 @@ public class AnimatedHost implements Host, Closeable {
             long currentTimeMillis = System.currentTimeMillis();
             int transitionDuration = current.actualOffset.equals(current.expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
             setAnimationPaths(Animation.MoveBoth, currentTimeMillis, transitionDuration);
+            
+            // TODO Stop animator before leaving synchronized block -> re-start after show() 
         }
     }
 

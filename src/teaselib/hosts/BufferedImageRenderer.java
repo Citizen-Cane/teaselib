@@ -60,7 +60,8 @@ public class BufferedImageRenderer {
             g2d.clearRect(0, 0, bounds.width, bounds.height);
             g2d.drawImage(backgroundImage,
                     0, 0, bounds.width, bounds.height,
-                    0, 0, backgroundImage.getWidth(null), backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
+                    0, 0, backgroundImage.getWidth(null),
+                    backgroundImage.getHeight(null) * bounds.height / bounds.width, null);
         }
 
         if (previousImageVisible) {
@@ -94,7 +95,8 @@ public class BufferedImageRenderer {
         drawTextOverlay(g2d, frame);
     }
 
-    private static void drawImageStack(Graphics2D g2d, RenderState bottom, float alpha, RenderState top, Rectangle bounds) {
+    private static void drawImageStack(Graphics2D g2d, RenderState bottom, float alpha, RenderState top,
+            Rectangle bounds) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
             drawImage(g2d, bottom);
             // renderDebugInfo(g2d, bottom, bounds);
@@ -120,7 +122,8 @@ public class BufferedImageRenderer {
         }
     }
 
-    private static void renderIntertitle(Graphics2D g2d, RenderState frame, RenderState previousImage, Rectangle bounds) {
+    private static void renderIntertitle(Graphics2D g2d, RenderState frame, RenderState previousImage,
+            Rectangle bounds) {
         var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
         g2d.setComposite(alphaComposite);
 
@@ -209,7 +212,8 @@ public class BufferedImageRenderer {
             surface.concatenate(Transform.zoom(surface, imageFocusArea, zoom));
         }
 
-        surface.preConcatenate(AffineTransform.getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));
+        surface.preConcatenate(
+                AffineTransform.getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));
 
         return surface;
     }

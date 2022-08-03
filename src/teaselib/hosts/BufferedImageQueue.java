@@ -21,7 +21,7 @@ public class BufferedImageQueue {
         this.buffers = new ArrayDeque<>(capacity);
     }
 
-    public BufferedImage acquireBuffer(Rectangle bounds) {
+    private BufferedImage acquireBuffer(Rectangle bounds) {
         BufferedImage image;
         if (buffers.size() >= capacity) {
             image = newOrSameImage(buffers.remove(), bounds);

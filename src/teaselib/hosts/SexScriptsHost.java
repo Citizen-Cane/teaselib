@@ -484,7 +484,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     @Override
-    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float sceneBlend, float textBlendIn, float textBlendOut) {
+    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float sceneBlend,
+            float textBlendIn, float textBlendOut) {
         synchronized (nextFrame) {
             previousImage.displayImageOffset = new Point2D.Double(prev.getX(), prev.getY());
             previousImage.actorZoom = prevZoom;
@@ -514,9 +515,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     public void show() {
         synchronized (nextFrame) {
             nextFrame.updateFrom(currentFrame);
-            if (currentFrame.displayImage != null && currentFrame.displayImage != previousImage.displayImage) {
-                renderer.surfaces.buffers.add(currentFrame.displayImage);
-            }
             currentFrame = nextFrame;
             render(currentFrame);
             nextFrame = currentFrame.copy();
@@ -528,7 +526,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
         bounds.width += horizontalAdjustment;
         renderer.surfaces.setGraphicsConfiguration(mainFrame.getGraphicsConfiguration());
-        var image = renderer.surfaces.acquireBuffer(bounds);
+        var image = renderer.surfaces.rotateBuffer(bounds);
         bounds.width -= horizontalAdjustment;
 
         Graphics2D g2d = image.createGraphics();
@@ -575,10 +573,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     private void rememberPreviousImage() {
-        var image = previousImage.displayImage;
-        if (image != null && image != currentFrame.displayImage) {
-            renderer.surfaces.buffers.add(previousImage.displayImage);
-        }
         previousImage = currentFrame;
     }
 

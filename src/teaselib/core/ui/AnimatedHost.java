@@ -34,8 +34,8 @@ public class AnimatedHost implements Host, Closeable {
 
     static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
-    private static final int ZOOM_DURATION = 400;
-    private static final int TRANSITION_DURATION = 1200;
+    private static final int ZOOM_DURATION = 300;
+    private static final int TRANSITION_DURATION = 900;
     private final static long FRAMETIME_MILLIS = 16;
 
     enum Animation {
@@ -80,8 +80,10 @@ public class AnimatedHost implements Host, Closeable {
 
         void move(Animation animation, long currentTimeMillis, int transitionDuration) {
             if (animation.type.contains(Animation.Type.MoveNew)) {
-                pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis, transitionDuration);
-                pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis, transitionDuration);
+                pathx = new AnimationPath.Linear(actualOffset.getX(), expectedOffset.getX(), currentTimeMillis,
+                        transitionDuration);
+                pathy = new AnimationPath.Linear(actualOffset.getY(), expectedOffset.getY(), currentTimeMillis,
+                        transitionDuration);
             } else {
                 pathx = new AnimationPath.Constant(expectedOffset.getX());
                 pathy = new AnimationPath.Constant(expectedOffset.getY());
@@ -154,7 +156,8 @@ public class AnimatedHost implements Host, Closeable {
     private void animate() {
         synchronized (animator) {
             try {
-                while (animationsRunning()) {
+                animator.wait(FRAMETIME_MILLIS);
+                do {
                     long now = System.currentTimeMillis();
                     previous.advance(now);
                     current.advance(now);
@@ -168,7 +171,7 @@ public class AnimatedHost implements Host, Closeable {
                     if (duration > 0) {
                         animator.wait(duration);
                     }
-                }
+                } while (animationsRunning());
             } catch (InterruptedException e) {
                 Thread.interrupted();
             } catch (Exception e) {
@@ -246,7 +249,8 @@ public class AnimatedHost implements Host, Closeable {
             isIntertitle = false;
 
             long currentTimeMillis = System.currentTimeMillis();
-            int transitionDuration = current.actualOffset.equals(current.expectedOffset) ? ZOOM_DURATION : TRANSITION_DURATION;
+            int transitionDuration = current.actualOffset.equals(current.expectedOffset) ? ZOOM_DURATION
+                    : TRANSITION_DURATION;
             setAnimationPaths(Animation.MoveBoth, currentTimeMillis, transitionDuration);
         }
     }
@@ -308,7 +312,8 @@ public class AnimatedHost implements Host, Closeable {
         current.zoom(animation, currentTimeMillis, transitionDuration);
 
         if (transitionDuration > ZOOM_DURATION * 2) {
-            sceneBlend.blend(animation, currentTimeMillis, (TRANSITION_DURATION - ZOOM_DURATION * 2) / 2, ZOOM_DURATION * 2);
+            sceneBlend.blend(animation, currentTimeMillis, (TRANSITION_DURATION - ZOOM_DURATION * 2) / 2,
+                    ZOOM_DURATION * 2);
         } else {
             sceneBlend.blend(animation, currentTimeMillis, transitionDuration);
         }
@@ -327,12 +332,14 @@ public class AnimatedHost implements Host, Closeable {
         synchronized (animator) {
             animation.cancel(true);
             current.expectedZoom = zoom;
-            current.pathz = new AnimationPath.Linear(current.actualZoom, current.expectedZoom, System.currentTimeMillis(), ZOOM_DURATION);
+            current.pathz = new AnimationPath.Linear(current.actualZoom, current.expectedZoom,
+                    System.currentTimeMillis(), ZOOM_DURATION);
         }
     }
 
     @Override
-    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float blend, float textBLendIn, float textBlendOut) {
+    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float blend,
+            float textBLendIn, float textBlendOut) {
         throw new UnsupportedOperationException();
     }
 
@@ -398,7 +405,8 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     @Override
-    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel) throws InterruptedException {
+    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel)
+            throws InterruptedException {
         return host.showItems(caption, choices, values, allowCancel);
     }
 

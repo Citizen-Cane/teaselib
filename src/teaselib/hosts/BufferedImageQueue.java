@@ -3,7 +3,7 @@ package teaselib.hosts;
 import java.awt.GraphicsConfiguration;
 import java.awt.Rectangle;
 import java.awt.Transparency;
-import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -14,58 +14,47 @@ import java.util.Deque;
 public class BufferedImageQueue {
 
     final int capacity;
-    final Deque<BufferedImage> buffers;
+    final Deque<VolatileImage> buffers;
 
     BufferedImageQueue(int capacity) {
         this.capacity = capacity;
         this.buffers = new ArrayDeque<>(capacity);
     }
 
-    private BufferedImage acquireBuffer(Rectangle bounds) {
-        BufferedImage image;
+    private VolatileImage acquireBuffer(GraphicsConfiguration gc, Rectangle bounds) {
+        VolatileImage image;
         if (buffers.size() >= capacity) {
-            image = newOrSameImage(buffers.remove(), bounds);
+            image = newOrSameImage(gc, buffers.remove(), bounds);
         } else {
-            image = newImage(bounds);
+            image = newImage(gc, bounds);
         }
         return image;
     }
 
-    public BufferedImage rotateBuffer(Rectangle bounds) {
-        BufferedImage image = acquireBuffer(bounds);
+    public VolatileImage rotateBuffer(GraphicsConfiguration gc, Rectangle bounds) {
+        var image = acquireBuffer(gc, bounds);
         buffers.add(image);
         return image;
     }
 
-    private GraphicsConfiguration gc;
-
-    public void setGraphicsConfiguration(GraphicsConfiguration gc) {
-        if (gc != this.gc) {
-            buffers.clear();
-        }
-        this.gc = gc;
-    }
-
-    protected BufferedImage newOrSameImage(BufferedImage image, Rectangle bounds) {
+    protected VolatileImage newOrSameImage(GraphicsConfiguration gc, VolatileImage image, Rectangle bounds) {
         if (image == null) {
-            return newImage(bounds);
+            return newImage(gc, bounds);
         } else if (bounds.width != image.getWidth() || bounds.height != image.getHeight()) {
-            return newImage(bounds);
+            return newImage(gc, bounds);
+        } else if (image.validate(gc) != VolatileImage.IMAGE_OK) {
+            return newImage(gc, bounds);
         } else {
             return image;
         }
     }
 
-    public BufferedImage newImage(Rectangle bounds) {
-        return newImage(bounds.width, bounds.height);
+    public static VolatileImage newImage(GraphicsConfiguration gc, Rectangle bounds) {
+        return newImage(gc, bounds.width, bounds.height);
     }
 
-    private BufferedImage newImage(int width, int height) {
-        if (gc != null) {
-            return gc.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
-        } else {
-            return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        }
+    private static VolatileImage newImage(GraphicsConfiguration gc, int width, int height) {
+        return gc.createCompatibleVolatileImage(width, height, Transparency.TRANSLUCENT);
     }
 
 }

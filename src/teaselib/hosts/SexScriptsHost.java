@@ -1,5 +1,6 @@
 package teaselib.hosts;
 
+import static java.awt.Transparency.*;
 import static java.util.function.Predicate.*;
 import static java.util.stream.Collectors.*;
 import static teaselib.core.concurrency.NamedExecutorService.*;
@@ -8,6 +9,7 @@ import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
 import java.awt.IllegalComponentStateException;
 import java.awt.Image;
 import java.awt.Insets;
@@ -20,6 +22,7 @@ import java.awt.event.WindowListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -381,7 +384,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     @Override
     public void show(AnnotatedImage displayImage, List<String> text) {
-        BufferedImage image;
+        VolatileImage image;
         HumanPose.Estimation pose;
         Set<AnnotatedImage.Annotation> annotations;
         boolean updateDisplayImage;
@@ -393,7 +396,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                 // + caching is good for random image sets where images of each take are displayed multiple times
                 // -> cache images here to avoid using java.awt.Image outside host impl.
                 if (updateDisplayImage) {
-                    image = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
+                    image = createVolatileImage(displayImage.bytes);
+                    // TODO provide regeneration method for VolatileImage in order to recreate when validation fails
                     pose = displayImage.pose;
                     annotations = displayImage.annotations;
                 } else {
@@ -432,6 +436,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             rotateTextOverlayBuffer(text.stream().collect(Collectors.joining("\n")));
             rememberPreviousImage();
         }
+    }
+
+    private VolatileImage createVolatileImage(byte[] bytes) throws IOException {
+        BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(bytes));
+        GraphicsConfiguration gc = mainFrame.getGraphicsConfiguration();
+        var image = gc.createCompatibleVolatileImage(bufferedImage.getWidth(), bufferedImage.getHeight(), OPAQUE);
+        Graphics2D g2d = image.createGraphics();
+        g2d.drawImage(bufferedImage, 0, 0, null);
+        g2d.dispose();
+        return image;
     }
 
     @Override
@@ -475,11 +489,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private Point2D focusPoint(RenderState r, Rectangle bounds, Point2D focus) {
         renderer.updateSceneTransform(r, bounds);
         AffineTransform transform = r.transform;
-        BufferedImage image = r.displayImage;
+        VolatileImage image = r.displayImage;
         return focusPoint(transform, image, focus);
     }
 
-    private static Point2D focusPoint(AffineTransform transform, BufferedImage image, Point2D focus) {
+    private static Point2D focusPoint(AffineTransform transform, VolatileImage image, Point2D focus) {
         return transform.transform(Transform.scale(focus, Transform.dimension(image)), new Point2D.Double());
     }
 
@@ -525,16 +539,15 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         Rectangle bounds = getContentBounds();
         int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
         bounds.width += horizontalAdjustment;
-        renderer.surfaces.setGraphicsConfiguration(mainFrame.getGraphicsConfiguration());
-        var image = renderer.surfaces.rotateBuffer(bounds);
+        GraphicsConfiguration gc = mainFrame.getGraphicsConfiguration();
+        var image = renderer.surfaces.rotateBuffer(gc, bounds);
         bounds.width -= horizontalAdjustment;
 
         Graphics2D g2d = image.createGraphics();
         renderer.render(g2d, frame, previousImage, bounds, mainFrame.getBackground());
         g2d.dispose();
-        synchronized (this) {
-            EventQueue.invokeLater(() -> show(image));
-        }
+
+        EventQueue.invokeLater(() -> show(image));
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {
@@ -544,16 +557,14 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     private void show(Image image) {
-        synchronized (this) {
-            if (image != null) {
-                backgroundImageIcon.setImage(image);
-            } else {
-                backgroundImageIcon.setImage(backgroundImage);
-            }
-            JRootPane rootPane = mainFrame.getRootPane();
-            rootPane.paintImmediately(getContentBounds());
-            Toolkit.getDefaultToolkit().sync();
+        if (image != null) {
+            backgroundImageIcon.setImage(image);
+        } else {
+            backgroundImageIcon.setImage(backgroundImage);
         }
+        JRootPane rootPane = mainFrame.getRootPane();
+        rootPane.paintImmediately(getContentBounds());
+        Toolkit.getDefaultToolkit().sync();
     }
 
     @Override
@@ -569,7 +580,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private void rotateTextOverlayBuffer(String text) {
         nextFrame.text = text;
         // Okay since we just use two text buffers
-        nextFrame.textImage = renderer.textOverlays.rotateBuffer(getContentBounds());
+        nextFrame.textImage = renderer.textOverlays.rotateBuffer(mainFrame.getGraphicsConfiguration(),
+                getContentBounds());
+        // TODO provide regeneration method for VolatileImage in order to recreate text when validation fails
     }
 
     private void rememberPreviousImage() {

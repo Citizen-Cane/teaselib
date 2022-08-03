@@ -17,8 +17,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Dimension2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
+import java.awt.image.VolatileImage;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.CharacterIterator;
@@ -35,12 +34,12 @@ import teaselib.util.AnnotatedImage.Annotation;
  */
 public class BufferedImageRenderer {
 
-    private static final BufferedImageOp BLUR_OP = ConvolveEdgeReflectOp.blur(17);
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
     final Image backgroundImage;
 
-    final BufferedImageQueue surfaces = new BufferedImageQueue(3);
+    // TODO Too many buffers because no sync when showing
+    final BufferedImageQueue surfaces = new BufferedImageQueue(8);
     final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
 
     public BufferedImageRenderer(Image backgroundImage) {
@@ -95,6 +94,18 @@ public class BufferedImageRenderer {
         drawTextOverlay(g2d, frame);
     }
 
+    /**
+     * @param g2d
+     *            Graphics context
+     * @param bottom
+     *            Bottom image
+     * @param alpha
+     *            alpha blend factor
+     * @param top
+     *            Top image
+     * @param bounds
+     *            region
+     */
     private static void drawImageStack(Graphics2D g2d, RenderState bottom, float alpha, RenderState top,
             Rectangle bounds) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
@@ -114,8 +125,7 @@ public class BufferedImageRenderer {
     private static void drawImage(Graphics2D g2d, RenderState frame) {
         if (frame.displayImage != null) {
             if (frame.focusLevel < 1.0) {
-                // TODO AffineTranaform and copy
-                g2d.drawImage(frame.displayImage, BLUR_OP, 0, 0);
+                throw new UnsupportedOperationException("Blur-op not available for volatile images");
             } else {
                 g2d.drawImage(frame.displayImage, frame.transform, null);
             }
@@ -144,7 +154,7 @@ public class BufferedImageRenderer {
         }
     }
 
-    private static void drawTextOverlay(Graphics2D g2d, BufferedImage text, float alpha, Rectangle textArea) {
+    private static void drawTextOverlay(Graphics2D g2d, Image text, float alpha, Rectangle textArea) {
         if (alpha > 0.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2d.setComposite(alphaComposite);
@@ -209,7 +219,7 @@ public class BufferedImageRenderer {
         if (focusRegion.isPresent()) {
             Rectangle2D imageFocusArea = Transform.scale(focusRegion.get(), image);
             surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
-            surface.concatenate(Transform.zoom(surface, imageFocusArea, zoom));
+            surface.concatenate(Transform.zoom(imageFocusArea, zoom));
         }
 
         surface.preConcatenate(
@@ -224,7 +234,7 @@ public class BufferedImageRenderer {
         }
     }
 
-    static void renderDebugInfo(Graphics2D g2d, BufferedImage image, HumanPose.Estimation pose, AffineTransform surface,
+    static void renderDebugInfo(Graphics2D g2d, VolatileImage image, HumanPose.Estimation pose, AffineTransform surface,
             Rectangle bounds) {
         drawBackgroundImageIconVisibleBounds(g2d, bounds);
         Dimension dimension = Transform.dimension(image);
@@ -374,10 +384,6 @@ public class BufferedImageRenderer {
 
     private static void renderText(Graphics2D g2d, String string, Rectangle bounds, Rectangle textArea,
             boolean intertitleActive) {
-        // if (intertitleActive) {
-        // renderIntertitle(g2d, bounds);
-        // }
-
         if (!string.isBlank()) {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);

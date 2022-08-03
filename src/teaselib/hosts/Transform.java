@@ -4,7 +4,7 @@ import java.awt.Dimension;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.util.Optional;
 
 public class Transform {
@@ -79,8 +79,8 @@ public class Transform {
      * 
      * @return AffineTransform
      */
-    public static AffineTransform matchGoldenRatioOrKeepVisible(AffineTransform surface, Dimension image, Rectangle2D bounds,
-            Rectangle2D imageFocusArea) {
+    public static AffineTransform matchGoldenRatioOrKeepVisible(AffineTransform surface, Dimension image,
+            Rectangle2D bounds, Rectangle2D imageFocusArea) {
         var surfaceFocusArea = surface.createTransformedShape(imageFocusArea).getBounds2D();
         Point2D imageTopLeft = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
         Point2D imageBottomRight = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()),
@@ -153,7 +153,7 @@ public class Transform {
         }
     }
 
-    public static AffineTransform zoom(AffineTransform t, Rectangle2D focusArea, double zoom) {
+    public static AffineTransform zoom(Rectangle2D focusArea, double zoom) {
         var zoomed = new AffineTransform();
         Point2D focusPoint = new Point2D.Double(focusArea.getCenterX(), focusArea.getCenterY());
         zoomed.translate(focusPoint.getX(), focusPoint.getY());
@@ -190,7 +190,7 @@ public class Transform {
         return (double) size.width / size.height;
     }
 
-    static Dimension dimension(BufferedImage image) {
+    static Dimension dimension(VolatileImage image) {
         return new Dimension(image.getWidth(), image.getHeight());
     }
 

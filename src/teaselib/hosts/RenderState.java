@@ -3,7 +3,7 @@ package teaselib.hosts;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.util.Objects;
 import java.util.Set;
 
@@ -20,7 +20,7 @@ class RenderState {
 
     // Scene properties
     String displayImageResource;
-    BufferedImage displayImage;
+    VolatileImage displayImage;
     HumanPose.Estimation pose;
     Set<AnnotatedImage.Annotation> annotations;
     double actorZoom;
@@ -39,7 +39,7 @@ class RenderState {
     float sceneBlend;
 
     boolean repaintTextImage;
-    BufferedImage textImage;
+    VolatileImage textImage;
     Rectangle textImageRegion;
     float textBlend;
 
@@ -111,7 +111,8 @@ class RenderState {
 
     boolean isBackgroundVisisble() {
         return displayImage == null || pose.distance.isEmpty() ||
-                displayImageOffset.getX() != 0.0 || displayImageOffset.getY() != 0.0 || sceneBlend < 1.0f || actorZoom < 1.0;
+                displayImageOffset.getX() != 0.0 || displayImageOffset.getY() != 0.0 || sceneBlend < 1.0f
+                || actorZoom < 1.0;
     }
 
 }

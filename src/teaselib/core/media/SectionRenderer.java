@@ -40,6 +40,7 @@ public class SectionRenderer implements Closeable {
         this.teaseLib = teaseLib;
         this.renderQueue = renderQueue;
         this.textToSpeechPlayer = new TextToSpeechPlayer(teaseLib.config);
+        this.currentMessageRenderer = new Batch(null, Collections.emptyList(), null);
     }
 
     @Override
@@ -55,6 +56,10 @@ public class SectionRenderer implements Closeable {
             boolean stillRunning = !currentMessageRenderer.hasCompletedMandatory();
             return stillRunning;
         }
+    }
+
+    public boolean hasMultipleParagraphs() {
+        return currentMessageRenderer.accumulatedText.paragraphs.size() > 1;
     }
 
     public void restoreCurrentRenderer(List<MediaRenderer> replay) {
@@ -103,31 +108,17 @@ public class SectionRenderer implements Closeable {
         private void play() throws IOException, InterruptedException {
             if (position == Position.FromStart) {
                 renderAllMessages();
-                if (haveMultipleParagraphs()) {
-                    showAll();
-                }
             } else if (position == Position.FromCurrentPosition) {
                 if (currentMessage < messages.size()) {
                     renderFromCurrentMessage();
-                    if (haveMultipleParagraphs()) {
-                        showAll();
-                    }
-                } else {
-                    showAll();
                 }
             } else if (position == Position.FromLastParagraph) {
                 // say the last message (likely a paragraph?) again, including the final delay, showAll
                 renderFrom(lastTextMessage());
-                if (haveMultipleParagraphs()) {
-                    showAll();
-                }
                 // TODO FromLastParagraph & FromMandatory are very similar -> get rid of one of them
             } else if (position == Position.FromMandatory) {
                 // Render the last paragraph, including the final delay, then showAll
                 render(lastParagraph);
-                if (haveMultipleParagraphs()) {
-                    showAll();
-                }
             } else if (position == Position.End) {
                 // Just show the summary
                 showAll();
@@ -136,12 +127,7 @@ public class SectionRenderer implements Closeable {
             }
         }
 
-        private boolean haveMultipleParagraphs() {
-            return currentMessageRenderer.accumulatedText.paragraphs.size() > 1;
-        }
-
         private void showAll() throws IOException, InterruptedException {
-            awaitSectionMandatory();
             var image = getImage(actor, displayImage);
             show(image, accumulatedText.paragraphs);
         }

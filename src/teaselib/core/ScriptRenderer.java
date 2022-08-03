@@ -317,6 +317,10 @@ public class ScriptRenderer implements Closeable {
         }
     }
 
+    boolean haveMultipleParagraphs() {
+        return sectionRenderer.hasMultipleParagraphs();
+    }
+
     private void remember(Actor actor) {
         if (actor != currentActor) {
             currentActor = actor;

@@ -477,6 +477,7 @@ public abstract class Script {
             // then the mandatory part of the renderers
             // must be completed before displaying the ui choices
             awaitMandatoryCompleted();
+            showAll();
         } else {
             completeSectionBeforeStarting(scriptFunction);
         }
@@ -508,14 +509,25 @@ public abstract class Script {
     private void completeSectionBeforeStarting(ScriptFunction scriptFunction) {
         if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
             // A confirmation relates to the current message,
-            // and must appears like a normal button,
+            // and must appear as a normal button,
             // so in a way it is concatenated to the current message
             awaitMandatoryCompleted();
+            showAll();
         } else {
             // An autonomous script function does not relate to the current
             // message, therefore we'll wait until all of the last message
             // has been completed
             awaitAllCompleted();
+        }
+    }
+
+    private void showAll() {
+        if (scriptRenderer.haveMultipleParagraphs()) {
+            try {
+                scriptRenderer.showAll();
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException(e);
+            }
         }
     }
 

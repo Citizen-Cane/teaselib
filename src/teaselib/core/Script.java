@@ -555,10 +555,12 @@ public abstract class Script {
                 }
             } else {
                 teaseLib.host.setActorZoom(ProximitySensor.zoom.get(Proximity.FACE2FACE));
+                teaseLib.host.show();
                 choice = getDistinctChoice(prompt);
             }
         } else {
             teaseLib.host.setActorZoom(ProximitySensor.zoom.get(Proximity.FACE2FACE));
+            teaseLib.host.show();
             choice = getDistinctChoice(prompt);
         }
         // TODO manual zoom reset is a quick reaction, but looks weird when waiting for it in AnimatedHost

@@ -13,24 +13,26 @@ import java.util.Deque;
  */
 public class BufferedImageQueue {
 
-    // TODO avoid flicker caused by slow EventQueue.invokeLater(() -> show(image))
-    // when awt is too slow to render the image, it will be reused and repainted while being rendered to surface
-    private static final int BUFFER_CAPACITY = 10;
-
     final int capacity;
-    final Deque<BufferedImage> buffers = new ArrayDeque<>(BUFFER_CAPACITY);
+    final Deque<BufferedImage> buffers;
 
     BufferedImageQueue(int capacity) {
         this.capacity = capacity;
+        this.buffers = new ArrayDeque<>(capacity);
     }
 
-    public BufferedImage nextBuffer(Rectangle bounds) {
+    public BufferedImage acquireBuffer(Rectangle bounds) {
         BufferedImage image;
-        if (buffers.size() >= BUFFER_CAPACITY) {
+        if (buffers.size() >= capacity) {
             image = newOrSameImage(buffers.remove(), bounds);
         } else {
             image = newImage(bounds);
         }
+        return image;
+    }
+
+    public BufferedImage rotateBuffer(Rectangle bounds) {
+        BufferedImage image = acquireBuffer(bounds);
         buffers.add(image);
         return image;
     }

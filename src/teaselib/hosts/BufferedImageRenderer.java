@@ -40,7 +40,7 @@ public class BufferedImageRenderer {
 
     final Image backgroundImage;
 
-    final BufferedImageQueue surfaces = new BufferedImageQueue(10);
+    final BufferedImageQueue surfaces = new BufferedImageQueue(3);
     final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
 
     public BufferedImageRenderer(Image backgroundImage) {
@@ -72,11 +72,14 @@ public class BufferedImageRenderer {
         }
 
         // Choose the smaller image for blending in order to hide as much of the background image as possible
-
         if (previousImage.actorZoom < frame.actorZoom) {
             drawImageStack(g2d, frame, 1.0f - frame.sceneBlend, previousImage, bounds);
         } else {
             drawImageStack(g2d, previousImage, frame.sceneBlend, frame, bounds);
+        }
+
+        if (frame.isIntertitle) {
+            renderIntertitle(g2d, frame, previousImage, bounds);
         }
 
         if (frame.repaintTextImage) {
@@ -94,7 +97,7 @@ public class BufferedImageRenderer {
     private static void drawImageStack(Graphics2D g2d, RenderState bottom, float alpha, RenderState top, Rectangle bounds) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
             drawImage(g2d, bottom);
-            renderDebugInfo(g2d, bottom, bounds);
+            // renderDebugInfo(g2d, bottom, bounds);
         }
 
         if (alpha < 1.0f) {
@@ -103,7 +106,7 @@ public class BufferedImageRenderer {
         }
 
         drawImage(g2d, top);
-        renderDebugInfo(g2d, top, bounds);
+        // renderDebugInfo(g2d, top, bounds);
     }
 
     private static void drawImage(Graphics2D g2d, RenderState frame) {
@@ -115,6 +118,21 @@ public class BufferedImageRenderer {
                 g2d.drawImage(frame.displayImage, frame.transform, null);
             }
         }
+    }
+
+    private static void renderIntertitle(Graphics2D g2d, RenderState frame, RenderState previousImage, Rectangle bounds) {
+        var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
+        g2d.setComposite(alphaComposite);
+
+        float alpha;
+        if (frame.isIntertitle && previousImage.isIntertitle) {
+            alpha = 1.0f;
+        } else if (frame.isIntertitle) {
+            alpha = frame.textBlend;
+        } else {
+            alpha = previousImage.textBlend;
+        }
+        renderIntertitle(g2d, bounds, alpha);
     }
 
     private static void drawTextOverlay(Graphics2D g2d, RenderState frame) {
@@ -280,11 +298,8 @@ public class BufferedImageRenderer {
     private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
     private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
 
-    private void renderText(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+    private static void renderText(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
         if (!frame.text.isBlank() || frame.isIntertitle) {
-            frame.textImage = textOverlays.newOrSameImage(frame.textImage, bounds);
-            // frame.textImage = textOverlays.nextBuffer(bounds);
-
             Optional<Rectangle> focusArea = focusRegion.isPresent()
                     ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
                     : Optional.empty();
@@ -299,7 +314,7 @@ public class BufferedImageRenderer {
             renderText(g2d, frame.text, bounds, textArea, frame.isIntertitle);
             g2d.dispose();
 
-            frame.textImageRegion = frame.isIntertitle ? bounds : textArea;
+            frame.textImageRegion = textArea;
         }
     }
 
@@ -355,9 +370,9 @@ public class BufferedImageRenderer {
 
     private static void renderText(Graphics2D g2d, String string, Rectangle bounds, Rectangle textArea,
             boolean intertitleActive) {
-        if (intertitleActive) {
-            renderIntertitle(g2d, bounds);
-        }
+        // if (intertitleActive) {
+        // renderIntertitle(g2d, bounds);
+        // }
 
         if (!string.isBlank()) {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -398,6 +413,7 @@ public class BufferedImageRenderer {
                 renderTextBubble(g2d, adjustedTextArea);
             }
 
+            g2d.setColor(intertitleActive ? Color.white : Color.black);
             TextVisitor drawText = (TextLayout layout, float x, float y) -> layout.draw(g2d, x, y);
             renderText(textArea, paragraph, measurer, drawText);
         }
@@ -407,19 +423,17 @@ public class BufferedImageRenderer {
         int arcWidth = 40;
         g2d.setColor(new Color(224, 224, 224, 160));
         g2d.fillRoundRect(textArea.x, textArea.y, textArea.width, textArea.height, arcWidth, arcWidth);
-        g2d.setColor(Color.black);
     }
 
-    private static void renderIntertitle(Graphics2D g2d, Rectangle bounds) {
+    private static void renderIntertitle(Graphics2D g2d, Rectangle bounds, float alpha) {
         Rectangle centerRegion = interTitleCenterRegion(bounds);
-        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
+        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f * alpha));
         g2d.fillRect(bounds.x, bounds.y, bounds.width, centerRegion.y);
-        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f));
+        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f * alpha));
         g2d.fillRect(centerRegion.x, centerRegion.y, centerRegion.width, centerRegion.height);
-        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
+        g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f * alpha));
         g2d.fillRect(bounds.x, centerRegion.y + centerRegion.height, bounds.width,
                 bounds.height - centerRegion.height - centerRegion.y - bounds.y);
-        g2d.setColor(Color.white);
     }
 
     private static Rectangle interTitleCenterRegion(Rectangle bounds) {

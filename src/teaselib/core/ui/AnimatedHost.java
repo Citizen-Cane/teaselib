@@ -199,12 +199,8 @@ public class AnimatedHost implements Host, Closeable {
 
     @Override
     public void show(AnnotatedImage newImage, List<String> text) {
-        // TODO Nice for testing bit for production this breaks seamless animation
-        // when resetting prompt-zoom from script
-        // waitAnimationCompleted();
-
-        animation.cancel(true);
         synchronized (animator) {
+            animation.cancel(true);
             // Must be set first in order to fetch transition vector later on
             host.show(newImage, text);
 
@@ -321,16 +317,6 @@ public class AnimatedHost implements Host, Closeable {
         currentTextBlend.blend(animation, currentTimeMillis, TRANSITION_DURATION - ZOOM_DURATION, ZOOM_DURATION);
     }
 
-    void waitAnimationCompleted() {
-        while (animationsRunning()) {
-            try {
-                animator.wait(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
     @Override
     public void setFocusLevel(float focusLevel) {
         host.setFocusLevel(focusLevel);
@@ -352,7 +338,11 @@ public class AnimatedHost implements Host, Closeable {
 
     @Override
     public void show() {
-        animation = animator.submit(this::animate);
+        synchronized (animator) {
+            if (animation.isCancelled() || animation.isDone()) {
+                animation = animator.submit(this::animate);
+            }
+        }
     }
 
     @Override
@@ -373,9 +363,13 @@ public class AnimatedHost implements Host, Closeable {
 
                 isIntertitle = true;
             } else {
-                // TODO keep background and just blend over text
+                previoustextBlend.expected = 0.0f;
+                currentTextBlend.expected = 1.0f;
+                setTransition();
+                long currentTimeMillis = System.currentTimeMillis();
+                previoustextBlend.blend(Animation.None, currentTimeMillis, 0);
+                currentTextBlend.blend(Animation.None, currentTimeMillis, 0);
             }
-
         }
     }
 

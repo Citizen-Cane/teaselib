@@ -44,6 +44,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JRootPane;
 import javax.swing.WindowConstants;
 
 import org.slf4j.Logger;
@@ -370,10 +371,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     @Override
     public void showInterTitle(String text) {
         synchronized (nextFrame) {
-            nextFrame.text = text;
             nextFrame.isIntertitle = true;
-            nextFrame.textImage = renderer.textOverlays.nextBuffer(getContentBounds());
-            previousImage = currentFrame;
+            rotateTextOverlayBuffer(text);
+            rememberPreviousImage();
         }
     }
 
@@ -428,10 +428,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                     nextFrame.annotations = annotations;
                 }
             }
-            nextFrame.text = text.stream().collect(Collectors.joining("\n"));
             nextFrame.isIntertitle = false;
-            nextFrame.textImage = renderer.textOverlays.nextBuffer(getContentBounds());
-            previousImage = currentFrame;
+            rotateTextOverlayBuffer(text.stream().collect(Collectors.joining("\n")));
+            rememberPreviousImage();
         }
     }
 
@@ -515,6 +514,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     public void show() {
         synchronized (nextFrame) {
             nextFrame.updateFrom(currentFrame);
+            if (currentFrame.displayImage != null && currentFrame.displayImage != previousImage.displayImage) {
+                renderer.surfaces.buffers.add(currentFrame.displayImage);
+            }
             currentFrame = nextFrame;
             render(currentFrame);
             nextFrame = currentFrame.copy();
@@ -526,7 +528,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
         bounds.width += horizontalAdjustment;
         renderer.surfaces.setGraphicsConfiguration(mainFrame.getGraphicsConfiguration());
-        var image = renderer.surfaces.nextBuffer(bounds);
+        var image = renderer.surfaces.acquireBuffer(bounds);
         bounds.width -= horizontalAdjustment;
 
         Graphics2D g2d = image.createGraphics();
@@ -550,8 +552,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             } else {
                 backgroundImageIcon.setImage(backgroundImage);
             }
-
-            mainFrame.getRootPane().paintImmediately(getContentBounds());
+            JRootPane rootPane = mainFrame.getRootPane();
+            rootPane.paintImmediately(getContentBounds());
             Toolkit.getDefaultToolkit().sync();
         }
     }
@@ -560,11 +562,24 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     public void endScene() {
         synchronized (nextFrame) {
             // Keep the image, remove any text to provide some feedback
-            nextFrame.text = "";
-            nextFrame.textImage = renderer.textOverlays.nextBuffer(getContentBounds());
-            previousImage = currentFrame;
-            // necessary to prevent previous text popping up before blend out
+            String text = "";
+            rotateTextOverlayBuffer(text);
+            rememberPreviousImage();
         }
+    }
+
+    private void rotateTextOverlayBuffer(String text) {
+        nextFrame.text = text;
+        // Okay since we just use two text buffers
+        nextFrame.textImage = renderer.textOverlays.rotateBuffer(getContentBounds());
+    }
+
+    private void rememberPreviousImage() {
+        var image = previousImage.displayImage;
+        if (image != null && image != currentFrame.displayImage) {
+            renderer.surfaces.buffers.add(previousImage.displayImage);
+        }
+        previousImage = currentFrame;
     }
 
     @Override

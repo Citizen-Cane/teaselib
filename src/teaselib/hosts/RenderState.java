@@ -3,7 +3,6 @@ package teaselib.hosts;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.image.VolatileImage;
 import java.util.Objects;
 import java.util.Set;
 
@@ -20,7 +19,7 @@ class RenderState {
 
     // Scene properties
     String displayImageResource;
-    VolatileImage displayImage;
+    ValidatedVolatileImage displayImage;
     HumanPose.Estimation pose;
     Set<AnnotatedImage.Annotation> annotations;
     double actorZoom;
@@ -39,7 +38,7 @@ class RenderState {
     float sceneBlend;
 
     boolean repaintTextImage;
-    VolatileImage textImage;
+    ValidatedVolatileImage textImage;
     Rectangle textImageRegion;
     float textBlend;
 

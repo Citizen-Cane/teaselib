@@ -63,7 +63,7 @@ public class AnimatedHost implements Host, Closeable {
 
     final Host host;
     private final NamedExecutorService animator;
-    private Future<?> animation = NoFuture.Void;
+    private Future<?> animationTask = NoFuture.Void;
 
     private AnnotatedImage currentImage = AnnotatedImage.NoImage;
     private boolean isIntertitle = false;
@@ -109,7 +109,7 @@ public class AnimatedHost implements Host, Closeable {
     final ActorPath current = new ActorPath();
 
     static class AlphaBlend {
-        float actual = 1.0f;
+        float actual = 0.0f;
         float expected = 1.0f;
         private AnimationPath alphapath;
 
@@ -203,7 +203,7 @@ public class AnimatedHost implements Host, Closeable {
     @Override
     public void show(AnnotatedImage newImage, List<String> text) {
         synchronized (animator) {
-            animation.cancel(true);
+            animationTask.cancel(true);
             // Must be set first in order to fetch transition vector later on
             host.show(newImage, text);
 
@@ -330,7 +330,7 @@ public class AnimatedHost implements Host, Closeable {
     @Override
     public void setActorZoom(double zoom) {
         synchronized (animator) {
-            animation.cancel(true);
+            animationTask.cancel(true);
             current.expectedZoom = zoom;
             current.pathz = new AnimationPath.Linear(current.actualZoom, current.expectedZoom,
                     System.currentTimeMillis(), ZOOM_DURATION);
@@ -346,8 +346,8 @@ public class AnimatedHost implements Host, Closeable {
     @Override
     public void show() {
         synchronized (animator) {
-            if (animation.isCancelled() || animation.isDone()) {
-                animation = animator.submit(this::animate);
+            if (animationTask.isCancelled() || animationTask.isDone()) {
+                animationTask = animator.submit(this::animate);
             }
         }
     }
@@ -355,7 +355,7 @@ public class AnimatedHost implements Host, Closeable {
     @Override
     public void showInterTitle(String text) {
         synchronized (animator) {
-            animation.cancel(true);
+            animationTask.cancel(true);
             host.showInterTitle(text);
             if (!isIntertitle) {
                 previoustextBlend.actual = currentTextBlend.actual;
@@ -365,8 +365,8 @@ public class AnimatedHost implements Host, Closeable {
                 setTransition();
 
                 long currentTimeMillis = System.currentTimeMillis();
-                previoustextBlend.blend(Animation.BlendIn, currentTimeMillis, ZOOM_DURATION);
-                currentTextBlend.blend(Animation.BlendIn, currentTimeMillis, ZOOM_DURATION, ZOOM_DURATION);
+                Animation animation = Animation.BlendIn;
+                setIntertitleTextBlend(animation, currentTimeMillis);
 
                 isIntertitle = true;
             } else {
@@ -380,10 +380,20 @@ public class AnimatedHost implements Host, Closeable {
         }
     }
 
+    private void setIntertitleTextBlend(Animation animation, long currentTimeMillis) {
+        if (previoustextBlend.actual > 0.0) {
+            previoustextBlend.blend(animation, currentTimeMillis, ZOOM_DURATION);
+            currentTextBlend.blend(animation, currentTimeMillis, ZOOM_DURATION, ZOOM_DURATION);
+        } else {
+            previoustextBlend.blend(Animation.None, currentTimeMillis, 0);
+            currentTextBlend.blend(animation, currentTimeMillis, ZOOM_DURATION);
+        }
+    }
+
     @Override
     public void endScene() {
         synchronized (animator) {
-            animation.cancel(true);
+            animationTask.cancel(true);
             host.endScene();
 
             previoustextBlend.actual = currentTextBlend.actual;

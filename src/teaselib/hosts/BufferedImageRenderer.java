@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -39,7 +40,7 @@ public class BufferedImageRenderer {
     final Image backgroundImage;
 
     // TODO Too many buffers because no sync when showing
-    final BufferedImageQueue surfaces = new BufferedImageQueue(8);
+    final BufferedImageQueue surfaces = new BufferedImageQueue(2);
     final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
 
     public BufferedImageRenderer(Image backgroundImage) {
@@ -47,7 +48,7 @@ public class BufferedImageRenderer {
         this.backgroundImage = backgroundImage;
     }
 
-    void render(Graphics2D g2d, RenderState frame, RenderState previousImage, Rectangle bounds, Color backgroundColor) {
+    void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage, Rectangle bounds, Color backgroundColor) {
         // Bicubic interpolation is an absolute performance killer for image transforming & scaling
         // g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
@@ -73,25 +74,28 @@ public class BufferedImageRenderer {
 
         // Choose the smaller image for blending in order to hide as much of the background image as possible
         if (previousImage.actorZoom < frame.actorZoom) {
-            drawImageStack(g2d, frame, 1.0f - frame.sceneBlend, previousImage, bounds);
+            drawImageStack(g2d, gc, frame, 1.0f - frame.sceneBlend, previousImage, bounds);
         } else {
-            drawImageStack(g2d, previousImage, frame.sceneBlend, frame, bounds);
+            drawImageStack(g2d, gc, previousImage, frame.sceneBlend, frame, bounds);
         }
 
-        if (frame.isIntertitle) {
+        if (frame.isIntertitle || previousImage.isIntertitle) {
             renderIntertitle(g2d, frame, previousImage, bounds);
         }
 
         if (frame.repaintTextImage) {
             Optional<Rectangle2D> focusRegion = frame.pose.face();
-            renderText(frame, bounds, focusRegion);
+            VolatileImage textImage = frame.textImage.get(gc, bounds.width, bounds.height);
+            Graphics2D g2dt = textImage.createGraphics();
+            renderText(g2dt, frame, bounds, focusRegion);
+            g2dt.dispose();
         }
 
         // Avoid both overlays rendered at the same time when not blending over
         if (frame.textBlend < 1.0) {
-            drawTextOverlay(g2d, previousImage);
+            drawTextOverlay(g2d, gc, previousImage);
         }
-        drawTextOverlay(g2d, frame);
+        drawTextOverlay(g2d, gc, frame);
     }
 
     /**
@@ -106,10 +110,12 @@ public class BufferedImageRenderer {
      * @param bounds
      *            region
      */
-    private static void drawImageStack(Graphics2D g2d, RenderState bottom, float alpha, RenderState top,
+    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha, RenderState top,
             Rectangle bounds) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
-            drawImage(g2d, bottom);
+            var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
+            g2d.setComposite(alphaComposite);
+            drawImage(g2d, gc, bottom);
             // renderDebugInfo(g2d, bottom, bounds);
         }
 
@@ -118,16 +124,17 @@ public class BufferedImageRenderer {
             g2d.setComposite(alphaComposite);
         }
 
-        drawImage(g2d, top);
+        drawImage(g2d, gc, top);
         // renderDebugInfo(g2d, top, bounds);
     }
 
-    private static void drawImage(Graphics2D g2d, RenderState frame) {
+    private static void drawImage(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
         if (frame.displayImage != null) {
             if (frame.focusLevel < 1.0) {
                 throw new UnsupportedOperationException("Blur-op not available for volatile images");
             } else {
-                g2d.drawImage(frame.displayImage, frame.transform, null);
+                Image img = frame.displayImage.get(gc);
+                g2d.drawImage(img, frame.transform, null);
             }
         }
     }
@@ -136,7 +143,10 @@ public class BufferedImageRenderer {
             Rectangle bounds) {
         var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
         g2d.setComposite(alphaComposite);
+        renderIntertitle(g2d, bounds, getIntertitleAlphaBlend(frame, previousImage));
+    }
 
+    private static float getIntertitleAlphaBlend(RenderState frame, RenderState previousImage) {
         float alpha;
         if (frame.isIntertitle && previousImage.isIntertitle) {
             alpha = 1.0f;
@@ -145,12 +155,12 @@ public class BufferedImageRenderer {
         } else {
             alpha = previousImage.textBlend;
         }
-        renderIntertitle(g2d, bounds, alpha);
+        return alpha;
     }
 
-    private static void drawTextOverlay(Graphics2D g2d, RenderState frame) {
-        if (!frame.text.isBlank() || frame.isIntertitle) {
-            drawTextOverlay(g2d, frame.textImage, frame.textBlend, frame.textImageRegion);
+    private static void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
+        if (!frame.text.isBlank()) {
+            drawTextOverlay(g2d, frame.textImage.get(gc), frame.textBlend, frame.textImageRegion);
         }
     }
 
@@ -172,9 +182,8 @@ public class BufferedImageRenderer {
 
     public void updateSceneTransform(RenderState frame, Rectangle bounds) {
         if (frame.displayImage != null) {
-            var displayImageSize = Transform.dimension(frame.displayImage);
             frame.transform = surfaceTransform(
-                    displayImageSize,
+                    frame.displayImage.dimension(),
                     bounds,
                     frame.actorZoom,
                     focusRegion(frame),
@@ -234,13 +243,12 @@ public class BufferedImageRenderer {
         }
     }
 
-    static void renderDebugInfo(Graphics2D g2d, VolatileImage image, HumanPose.Estimation pose, AffineTransform surface,
+    static void renderDebugInfo(Graphics2D g2d, ValidatedVolatileImage image, HumanPose.Estimation pose, AffineTransform surface,
             Rectangle bounds) {
         drawBackgroundImageIconVisibleBounds(g2d, bounds);
-        Dimension dimension = Transform.dimension(image);
-        drawImageBounds(g2d, dimension, surface);
+        drawImageBounds(g2d, image.dimension(), surface);
         if (pose != HumanPose.Estimation.NONE) {
-            drawPosture(g2d, dimension, pose, surface);
+            drawPosture(g2d, image.dimension(), pose, surface);
         }
         // drawPixelGrid(g2d, bounds);
     }
@@ -312,28 +320,25 @@ public class BufferedImageRenderer {
     private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
     private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
 
-    private static void renderText(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
-        if (!frame.text.isBlank() || frame.isIntertitle) {
+    public static void renderText(Graphics2D g2d, RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+        if (!frame.text.isBlank()) {
             Optional<Rectangle> focusArea = focusRegion.isPresent()
                     ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
                     : Optional.empty();
             var textArea = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
 
-            Graphics2D g2d = frame.textImage.createGraphics();
             var clip = g2d.getClip();
             g2d.setClip(textArea);
             g2d.setBackground(TRANSPARENT);
             g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
             g2d.setClip(clip);
             renderText(g2d, frame.text, bounds, textArea, frame.isIntertitle);
-            g2d.dispose();
-
             frame.textImageRegion = textArea;
         }
     }
 
     private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
-        Dimension image = Transform.dimension(frame.displayImage);
+        Dimension image = frame.displayImage.dimension();
         var transform = surfaceTransform(image, bounds, 1.0, focusRegion, new Point2D.Double());
         return normalizedToGraphics(transform, image, focusRegion.get());
     }

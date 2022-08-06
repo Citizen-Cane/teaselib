@@ -84,11 +84,17 @@ public class BufferedImageRenderer {
         }
 
         if (frame.repaintTextImage) {
+            // frame.textImage.repaint(gc);
+            // TODO Duplicated code but replacing it causes text to pop up before blending in
+            // TODO above repaint call can be skipped - text is still updated (but with the popup-error)
+            // TODO also this code is faster (around 40ms which seems to be one drawImage-call less)
             Optional<Rectangle2D> focusRegion = frame.pose.face();
             VolatileImage textImage = frame.textImage.get(gc, bounds.width, bounds.height);
             Graphics2D g2dt = textImage.createGraphics();
             renderText(g2dt, frame, bounds, focusRegion);
             g2dt.dispose();
+            // Update: At last, the error also occurs the the duplicated code (makes sense since duplicated)
+            // But only sporadic - review this, not reproducible
         }
 
         // Avoid both overlays rendered at the same time when not blending over

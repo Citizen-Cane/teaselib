@@ -51,12 +51,21 @@ public class ValidatedVolatileImage {
     }
 
     VolatileImage get(GraphicsConfiguration gc) {
-        if (image == null
-                || width != image.getWidth()
-                || height != image.getHeight()
-                || image.validate(gc) != VolatileImage.IMAGE_OK) {
+        if (image == null) {
             image = newImage.create(gc, width, height, transparency);
             repaint(image);
+        } else if (width != image.getWidth()
+                || height != image.getHeight()) {
+            image = newImage.create(gc, width, height, transparency);
+            repaint(image);
+        } else {
+            int result = image.validate(gc);
+            if (result == VolatileImage.IMAGE_RESTORED) {
+                repaint(image);
+            } else if (result == VolatileImage.IMAGE_INCOMPATIBLE) {
+                image = newImage.create(gc, width, height, transparency);
+                repaint(image);
+            }
         }
         return image;
     }
@@ -70,8 +79,9 @@ public class ValidatedVolatileImage {
     public void repaint(GraphicsConfiguration gc) {
         var current = image;
         var newImage = get(gc);
-        if (newImage == current) {
-            repaint(current);
+        boolean repaintRequired = newImage == current;
+        if (repaintRequired) {
+            repaint(image);
         }
     }
 
@@ -87,9 +97,6 @@ public class ValidatedVolatileImage {
         return new Dimension(width, height);
     }
 
-    /**
-     * @return
-     */
     public boolean contentsLost() {
         return image != null && image.contentsLost();
     }

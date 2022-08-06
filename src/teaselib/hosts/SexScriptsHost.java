@@ -5,6 +5,7 @@ import static java.util.function.Predicate.*;
 import static java.util.stream.Collectors.*;
 import static teaselib.core.concurrency.NamedExecutorService.*;
 
+import java.awt.BufferCapabilities;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -240,7 +241,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
         if (isFullScreen()) {
             // Using three buffers seem to save 1 or 2ms
-            mainFrame.createBufferStrategy(3);
+            GraphicsConfiguration gc = mainFrame.getGraphicsConfiguration();
+            BufferCapabilities bufferCapabilities = gc.getBufferCapabilities();
+            mainFrame.createBufferStrategy(bufferCapabilities.isMultiBufferAvailable() ? 3 : 2);
+            if (bufferCapabilities.isFullScreenRequired()) {
+                gc.getDevice().setFullScreenWindow(mainFrame);
+            }
         }
 
         mainFrame.addComponentListener(new ComponentAdapter() {
@@ -280,8 +286,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             normalWindowPosition = mainFrame.getBounds();
             mainFrame.dispose();
             try {
-                mainFrame.setUndecorated(true);
                 mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
+                mainFrame.setUndecorated(true);
             } catch (IllegalComponentStateException e) {
                 logger.warn(e.getMessage(), e);
             } finally {
@@ -600,7 +606,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             frametimes.remove();
         }
         frametimes.add(frameTime);
-        logger.info("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / 100);
+        logger.info("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / frametimes.size());
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {
@@ -638,8 +644,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                     return renderer.textOverlays.rotateBuffer(mainFrame.getGraphicsConfiguration(),
                             getContentBounds());
                 }, g2d -> {
+                    Rectangle bounds = getContentBounds();
                     Optional<Rectangle2D> focusRegion = nextFrame.pose.face();
-                    BufferedImageRenderer.renderText(g2d, nextFrame, getContentBounds(), focusRegion);
+                    BufferedImageRenderer.renderText(g2d, nextFrame, bounds, focusRegion);
                 }, Transparency.TRANSLUCENT);
     }
 

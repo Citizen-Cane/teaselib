@@ -24,7 +24,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -38,12 +37,13 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -401,7 +401,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     @Override
     public void show(AnnotatedImage displayImage, List<String> text) {
-        ValidatedVolatileImage image;
+        AbstractValidatedImage<?> image;
         HumanPose.Estimation pose;
         Set<AnnotatedImage.Annotation> annotations;
         boolean updateDisplayImage;
@@ -414,7 +414,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                 // -> cache images here to avoid using java.awt.Image outside host impl.
                 if (updateDisplayImage) {
                     var gc = mainFrame.getGraphicsConfiguration();
-                    image = createVolatileDisplayImage(gc, displayImage);
+                    image = createDisplayImage(gc, displayImage);
 
                     pose = displayImage.pose;
                     annotations = displayImage.annotations;
@@ -456,13 +456,17 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         }
     }
 
-    private static ValidatedVolatileImage createVolatileDisplayImage(GraphicsConfiguration gc, AnnotatedImage displayImage) throws IOException {
-        BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
-        // Translucent seems to haves 2ms advantage over Opaque - because EventQueue.invoke is 4ms faster than Opaque
-        ValidatedVolatileImage image = new ValidatedVolatileImage(g2d -> g2d.drawImage(bufferedImage, 0, 0, null), TRANSLUCENT);
-        image.setSize(bufferedImage.getWidth(), bufferedImage.getHeight());
-        image.get(gc);
-        return image;
+    private static AbstractValidatedImage<?> createDisplayImage(GraphicsConfiguration gc, AnnotatedImage displayImage) throws IOException {
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
+        if (image.getColorModel().equals(gc.getColorModel())) {
+            return new ValidatedBufferedImage(image);
+        } else {
+            BufferedImage compatible = gc.createCompatibleImage(image.getWidth(), image.getHeight(), OPAQUE);
+            var g2d = compatible.createGraphics();
+            g2d.drawImage(image, 0, 0, null);
+            g2d.dispose();
+            return new ValidatedBufferedImage(compatible);
+        }
     }
 
     @Override
@@ -552,48 +556,70 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     private final Deque<Long> frametimes = new ArrayDeque<>(100);
+    private final Lock renderLock = new ReentrantLock();
 
     private void render(RenderState frame) {
         logFrameTimes(() -> {
-            Rectangle bounds = getContentBounds();
-            int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
-            bounds.width += horizontalAdjustment;
             GraphicsConfiguration gc = mainFrame.getGraphicsConfiguration();
-            var image = renderer.surfaces.rotateBuffer(gc, bounds);
-            bounds.width -= horizontalAdjustment;
-
+            Rectangle bounds = getContentBounds();
             if (isFullScreen()) {
-                // Halves frame times
-                BufferStrategy bufferStrategy = mainFrame.getBufferStrategy();
-                do {
-                    do {
-                        Graphics2D g2d = (Graphics2D) bufferStrategy.getDrawGraphics();
-                        renderer.render(g2d, gc, frame, previousImage, bounds, mainFrame.getBackground());
-                        g2d.dispose();
-                    } while (bufferStrategy.contentsRestored());
-                    bufferStrategy.show();
-                } while (bufferStrategy.contentsLost() || contentsLost(frame) || contentsLost(previousImage));
-                Set<JComponent> activeComponents = activeComponents();
-                if (!activeComponents.isEmpty()) {
-                    // PrettyButton edges show the background image, not rendered over surface
-                    activeComponents.stream().forEach(c -> c.repaint(100));
-                }
+                // Halves frame times in VM, but double times on Surface 4 Pro Hardware
+                // renderBufferStrategy(frame, gc, bounds);
+                renderImageIcon(gc, frame, bounds);
             } else {
-                Graphics2D g2d = image.createGraphics();
-                do {
-                    renderer.render(g2d, gc, frame, previousImage, bounds, mainFrame.getBackground());
-                } while (image.contentsLost() || contentsLost(frame) || contentsLost(previousImage));
-                g2d.dispose();
-                EventQueue.invokeLater(() -> show(image));
+                renderImageIcon(gc, frame, bounds);
             }
         });
+    }
+
+    @SuppressWarnings("unused")
+    private void renderBufferStrategy(RenderState frame, GraphicsConfiguration gc, Rectangle bounds) {
+        BufferStrategy bufferStrategy = mainFrame.getBufferStrategy();
+        do {
+            do {
+                Graphics2D g2d = (Graphics2D) bufferStrategy.getDrawGraphics();
+                renderer.render(g2d, gc, frame, previousImage, bounds, mainFrame.getBackground());
+                g2d.dispose();
+            } while (bufferStrategy.contentsRestored());
+            bufferStrategy.show();
+        } while (bufferStrategy.contentsLost() || contentsLost(frame) || contentsLost(previousImage));
+        Set<JComponent> activeComponents = activeComponents();
+        if (!activeComponents.isEmpty()) {
+            // PrettyButton edges show the background image, not rendered over surface
+            activeComponents.stream().forEach(c -> c.repaint(100));
+        }
+    }
+
+    private void renderImageIcon(GraphicsConfiguration gc, RenderState frame, Rectangle bounds) {
+        int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
+        bounds.width += horizontalAdjustment;
+        var image = renderer.surfaces.rotateBuffer(gc, bounds);
+        bounds.width -= horizontalAdjustment;
+        Graphics2D g2d = image.createGraphics();
+        do {
+            renderer.render(g2d, gc, frame, previousImage, bounds, mainFrame.getBackground());
+        } while (contentsLost(frame) || contentsLost(previousImage));
+        g2d.dispose();
+        renderLock.lock();
+        try {
+            EventQueue.invokeLater(() -> {
+                renderLock.lock();
+                try {
+                    show(image);
+                } finally {
+                    renderLock.unlock();
+                }
+            });
+        } finally {
+            renderLock.unlock();
+        }
     }
 
     public boolean contentsLost(RenderState frame) {
         return contentsLost(frame.displayImage) || contentsLost(frame.textImage);
     }
 
-    private static boolean contentsLost(ValidatedVolatileImage displayImage) {
+    private static boolean contentsLost(AbstractValidatedImage<?> displayImage) {
         return displayImage != null && displayImage.contentsLost();
     }
 
@@ -638,16 +664,15 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     private void rotateTextOverlayBuffer(String text) {
         nextFrame.text = text;
-        // Okay since we just use two text buffers
-        nextFrame.textImage = new ValidatedVolatileImage(
+        nextFrame.textImage = new ValidatedBufferedImage(
                 (gc, w, h, t) -> {
                     return renderer.textOverlays.rotateBuffer(mainFrame.getGraphicsConfiguration(),
                             getContentBounds());
-                }, g2d -> {
-                    Rectangle bounds = getContentBounds();
-                    Optional<Rectangle2D> focusRegion = nextFrame.pose.face();
-                    BufferedImageRenderer.renderText(g2d, nextFrame, bounds, focusRegion);
                 }, Transparency.TRANSLUCENT);
+
+        var bounds = getContentBounds();
+        nextFrame.textImage.setSize(bounds.width, bounds.height);
+
     }
 
     private void rememberPreviousImage() {

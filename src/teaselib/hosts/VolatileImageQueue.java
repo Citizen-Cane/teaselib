@@ -3,7 +3,7 @@ package teaselib.hosts;
 import java.awt.GraphicsConfiguration;
 import java.awt.Rectangle;
 import java.awt.Transparency;
-import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -11,18 +11,18 @@ import java.util.Deque;
  * @author Citizen-Cane
  *
  */
-public class BufferedImageQueue {
+public class VolatileImageQueue {
 
     final int capacity;
-    final Deque<BufferedImage> buffers;
+    final Deque<VolatileImage> buffers;
 
-    BufferedImageQueue(int capacity) {
+    VolatileImageQueue(int capacity) {
         this.capacity = capacity;
         this.buffers = new ArrayDeque<>(capacity);
     }
 
-    private BufferedImage acquireBuffer(GraphicsConfiguration gc, Rectangle bounds) {
-        BufferedImage image;
+    private VolatileImage acquireBuffer(GraphicsConfiguration gc, Rectangle bounds) {
+        VolatileImage image;
         if (buffers.size() >= capacity) {
             image = newOrSameImage(gc, buffers.remove(), bounds);
         } else {
@@ -31,28 +31,30 @@ public class BufferedImageQueue {
         return image;
     }
 
-    public BufferedImage rotateBuffer(GraphicsConfiguration gc, Rectangle bounds) {
+    public VolatileImage rotateBuffer(GraphicsConfiguration gc, Rectangle bounds) {
         var image = acquireBuffer(gc, bounds);
         buffers.add(image);
         return image;
     }
 
-    protected BufferedImage newOrSameImage(GraphicsConfiguration gc, BufferedImage image, Rectangle bounds) {
+    protected VolatileImage newOrSameImage(GraphicsConfiguration gc, VolatileImage image, Rectangle bounds) {
         if (image == null) {
             return newImage(gc, bounds);
         } else if (bounds.width != image.getWidth() || bounds.height != image.getHeight()) {
+            return newImage(gc, bounds);
+        } else if (image.validate(gc) != VolatileImage.IMAGE_OK) {
             return newImage(gc, bounds);
         } else {
             return image;
         }
     }
 
-    public static BufferedImage newImage(GraphicsConfiguration gc, Rectangle bounds) {
+    public static VolatileImage newImage(GraphicsConfiguration gc, Rectangle bounds) {
         return newImage(gc, bounds.width, bounds.height);
     }
 
-    private static BufferedImage newImage(GraphicsConfiguration gc, int width, int height) {
-        return gc.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
+    private static VolatileImage newImage(GraphicsConfiguration gc, int width, int height) {
+        return gc.createCompatibleVolatileImage(width, height, Transparency.TRANSLUCENT);
     }
 
 }

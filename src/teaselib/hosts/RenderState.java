@@ -19,7 +19,7 @@ class RenderState {
 
     // Scene properties
     String displayImageResource;
-    ValidatedVolatileImage displayImage;
+    AbstractValidatedImage displayImage;
     HumanPose.Estimation pose;
     Set<AnnotatedImage.Annotation> annotations;
     double actorZoom;
@@ -38,7 +38,7 @@ class RenderState {
     float sceneBlend;
 
     boolean repaintTextImage;
-    ValidatedVolatileImage textImage;
+    AbstractValidatedImage textImage;
     Rectangle textImageRegion;
     float textBlend;
 

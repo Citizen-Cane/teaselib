@@ -18,7 +18,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Dimension2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.VolatileImage;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.CharacterIterator;
@@ -39,8 +38,8 @@ public class BufferedImageRenderer {
 
     final Image backgroundImage;
 
-    // TODO Too many buffers because no sync when showing
     final BufferedImageQueue surfaces = new BufferedImageQueue(2);
+    // final VolatileImageQueue textOverlays = new VolatileImageQueue(2);
     final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
 
     public BufferedImageRenderer(Image backgroundImage) {
@@ -84,17 +83,10 @@ public class BufferedImageRenderer {
         }
 
         if (frame.repaintTextImage) {
-            // frame.textImage.repaint(gc);
-            // TODO Duplicated code but replacing it causes text to pop up before blending in
-            // TODO above repaint call can be skipped - text is still updated (but with the popup-error)
-            // TODO also this code is faster (around 40ms which seems to be one drawImage-call less)
-            Optional<Rectangle2D> focusRegion = frame.pose.face();
-            VolatileImage textImage = frame.textImage.get(gc, bounds.width, bounds.height);
-            Graphics2D g2dt = textImage.createGraphics();
-            renderText(g2dt, frame, bounds, focusRegion);
-            g2dt.dispose();
-            // Update: At last, the error also occurs the the duplicated code (makes sense since duplicated)
-            // But only sporadic - review this, not reproducible
+            frame.textImage.paint(gc, g2d2 -> {
+                Optional<Rectangle2D> focusRegion = frame.pose.face();
+                BufferedImageRenderer.renderText(g2d2, frame, bounds, focusRegion);
+            });
         }
 
         // Avoid both overlays rendered at the same time when not blending over
@@ -139,8 +131,7 @@ public class BufferedImageRenderer {
             if (frame.focusLevel < 1.0) {
                 throw new UnsupportedOperationException("Blur-op not available for volatile images");
             } else {
-                Image img = frame.displayImage.get(gc);
-                g2d.drawImage(img, frame.transform, null);
+                frame.displayImage.draw(g2d, gc, frame.transform);
             }
         }
     }
@@ -166,18 +157,18 @@ public class BufferedImageRenderer {
 
     private static void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
         if (!frame.text.isBlank()) {
-            drawTextOverlay(g2d, frame.textImage.get(gc), frame.textBlend, frame.textImageRegion);
+            drawTextOverlay(g2d, gc, frame.textImage, frame.textBlend, frame.textImageRegion);
         }
     }
 
-    private static void drawTextOverlay(Graphics2D g2d, Image text, float alpha, Rectangle textArea) {
+    private static void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha, Rectangle textArea) {
         if (alpha > 0.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2d.setComposite(alphaComposite);
             var clip = g2d.getClip();
             try {
                 g2d.setClip(textArea);
-                g2d.drawImage(text, 0, 0, null);
+                text.draw(g2d, gc, new AffineTransform());
             } finally {
                 g2d.setClip(clip);
             }
@@ -249,7 +240,7 @@ public class BufferedImageRenderer {
         }
     }
 
-    static void renderDebugInfo(Graphics2D g2d, ValidatedVolatileImage image, HumanPose.Estimation pose, AffineTransform surface,
+    static void renderDebugInfo(Graphics2D g2d, AbstractValidatedImage<?> image, HumanPose.Estimation pose, AffineTransform surface,
             Rectangle bounds) {
         drawBackgroundImageIconVisibleBounds(g2d, bounds);
         drawImageBounds(g2d, image.dimension(), surface);
@@ -331,9 +322,11 @@ public class BufferedImageRenderer {
             Optional<Rectangle> focusArea = focusRegion.isPresent()
                     ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
                     : Optional.empty();
+            // TODO locate the test bubble near the actor's face (if possible) - looks better on wide screen displays
             var textArea = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
 
             var clip = g2d.getClip();
+            // TODO Don't clip the text bubble
             g2d.setClip(textArea);
             g2d.setBackground(TRANSPARENT);
             g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);

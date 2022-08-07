@@ -108,8 +108,7 @@ public class BufferedImageRenderer {
      * @param bounds
      *            region
      */
-    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha, RenderState top,
-            Rectangle bounds) {
+    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha, RenderState top, Rectangle bounds) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
             g2d.setComposite(alphaComposite);
@@ -217,8 +216,7 @@ public class BufferedImageRenderer {
         }
     }
 
-    static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds,
-            double zoom, Optional<Rectangle2D> focusRegion, Point2D displayImageOffset) {
+    static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, double zoom, Optional<Rectangle2D> focusRegion, Point2D displayImageOffset) {
         var surface = new AffineTransform();
         surface.concatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
         surface.concatenate(Transform.maxImage(image, bounds, focusRegion));
@@ -240,8 +238,7 @@ public class BufferedImageRenderer {
         }
     }
 
-    static void renderDebugInfo(Graphics2D g2d, AbstractValidatedImage<?> image, HumanPose.Estimation pose, AffineTransform surface,
-            Rectangle bounds) {
+    static void renderDebugInfo(Graphics2D g2d, AbstractValidatedImage<?> image, HumanPose.Estimation pose, AffineTransform surface, Rectangle bounds) {
         drawBackgroundImageIconVisibleBounds(g2d, bounds);
         drawImageBounds(g2d, image.dimension(), surface);
         if (pose != HumanPose.Estimation.NONE) {
@@ -263,8 +260,7 @@ public class BufferedImageRenderer {
                 (int) (p1.getY() - p0.getY()) - 1);
     }
 
-    private static void drawPosture(Graphics2D g2d, Dimension image, HumanPose.Estimation pose,
-            AffineTransform surface) {
+    private static void drawPosture(Graphics2D g2d, Dimension image, HumanPose.Estimation pose, AffineTransform surface) {
         if (pose.head.isPresent()) {
             var face = pose.face();
             Point2D poseHead = pose.head.get();
@@ -324,15 +320,7 @@ public class BufferedImageRenderer {
                     : Optional.empty();
             // TODO locate the test bubble near the actor's face (if possible) - looks better on wide screen displays
             var textArea = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
-
-            var clip = g2d.getClip();
-            // TODO Don't clip the text bubble
-            g2d.setClip(textArea);
-            g2d.setBackground(TRANSPARENT);
-            g2d.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
-            g2d.setClip(clip);
-            renderText(g2d, frame.text, bounds, textArea, frame.isIntertitle);
-            frame.textImageRegion = textArea;
+            frame.textImageRegion = renderText(g2d, frame.text, bounds, textArea, frame.isIntertitle);
         }
     }
 
@@ -386,9 +374,10 @@ public class BufferedImageRenderer {
         void render(TextLayout textLayout, float x, float y);
     }
 
-    private static void renderText(Graphics2D g2d, String string, Rectangle bounds, Rectangle textArea,
-            boolean intertitleActive) {
-        if (!string.isBlank()) {
+    private static Rectangle renderText(Graphics2D g2d, String string, Rectangle bounds, Rectangle textArea, boolean intertitleActive) {
+        if (string.isBlank()) {
+            return textArea;
+        } else {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
@@ -420,16 +409,25 @@ public class BufferedImageRenderer {
                 fontSize /= 1.25f;
             }
 
-            if (!intertitleActive) {
-                var adjustedTextArea = new Rectangle(textArea.x - TEXT_AREA_BORDER, textArea.y - TEXT_AREA_BORDER,
+            Rectangle adjustedTextArea;
+            if (intertitleActive) {
+                adjustedTextArea = textArea;
+            } else {
+                adjustedTextArea = new Rectangle(textArea.x - TEXT_AREA_BORDER, textArea.y - TEXT_AREA_BORDER,
                         (int) textSize.getWidth() + 2 * TEXT_AREA_BORDER,
                         (int) textSize.getHeight() + 2 * TEXT_AREA_BORDER);
-                renderTextBubble(g2d, adjustedTextArea);
             }
 
+            g2d.setBackground(TRANSPARENT);
+            g2d.clearRect(adjustedTextArea.x, adjustedTextArea.y, adjustedTextArea.width, adjustedTextArea.height);
+            if (!intertitleActive) {
+                renderTextBubble(g2d, adjustedTextArea);
+            }
             g2d.setColor(intertitleActive ? Color.white : Color.black);
             TextVisitor drawText = (TextLayout layout, float x, float y) -> layout.draw(g2d, x, y);
             renderText(textArea, paragraph, measurer, drawText);
+
+            return adjustedTextArea;
         }
     }
 

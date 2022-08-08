@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
@@ -304,23 +305,20 @@ public class BufferedImageRenderer {
     // =====================
     //
 
-    private static final float FONT_SIZE = 36;
     private static final float MINIMAL_FONT_SIZE = 6;
     private static final float PARAGRAPH_SPACING = 1.5f;
     private static final int TEXT_AREA_BORDER = 10;
 
-    private static final int TEXT_AREA_INSET = 40;
-    private static final int TEXT_AREA_MAX_WIDTH = 12 * TEXT_AREA_INSET;
-    private static final int TEXT_AREA_MIN_WIDTH = 6 * TEXT_AREA_INSET;
+    private record TextInfo(Rectangle region, boolean rightAligned) { //
+    }
 
     public static void renderText(Graphics2D g2d, RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
         if (!frame.text.isBlank()) {
             Optional<Rectangle> focusArea = focusRegion.isPresent()
                     ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
                     : Optional.empty();
-            // TODO locate the test bubble near the actor's face (if possible) - looks better on wide screen displays
-            var textArea = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
-            frame.textImageRegion = renderText(g2d, frame.text, bounds, textArea, frame.isIntertitle);
+            var textInfo = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
+            frame.textImageRegion = renderText(g2d, frame.text, textInfo, frame.isIntertitle);
         }
     }
 
@@ -330,53 +328,46 @@ public class BufferedImageRenderer {
         return normalizedToGraphics(transform, image, focusRegion.get());
     }
 
-    private static Rectangle intertitleTextArea(Rectangle bounds) {
+    private static TextInfo intertitleTextArea(Rectangle bounds) {
         Rectangle r = interTitleCenterRegion(bounds);
         int inset = 20;
         r.x += inset;
         r.y += inset;
         r.width -= 2 * inset;
         r.height -= 2 * inset;
-        return r;
+        return new TextInfo(r, true);
     }
 
-    private static Rectangle spokenTextArea(Rectangle bounds, Optional<Rectangle> focusArea) {
-        int textAreaWidth = Math.min(TEXT_AREA_MAX_WIDTH, (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
-        if (textAreaWidth < TEXT_AREA_MIN_WIDTH) {
-            textAreaWidth = Math.min(TEXT_AREA_MIN_WIDTH, (int) (bounds.getWidth() / Transform.goldenRatio));
-        }
-
-        int scaledInset = TEXT_AREA_INSET * textAreaWidth / TEXT_AREA_MAX_WIDTH;
-        if (bounds.width < textAreaWidth + 2 * scaledInset) {
-            textAreaWidth = (int) (bounds.getWidth() * 0.9);
-            scaledInset = (int) (bounds.getWidth() * 0.05);
-        }
-
-        int topInset = 2 * scaledInset;
-        int bottomInset = 4 * scaledInset;
+    private static TextInfo spokenTextArea(Rectangle bounds, Optional<Rectangle> focusArea) {
+        float insetFactor = 0.05f;
+        Insets insets = new Insets((int) (bounds.width * insetFactor), (int) (bounds.height * insetFactor), (int) (bounds.width * insetFactor),
+                (int) (bounds.height * insetFactor) + 200);
 
         int x;
-        int y;
-        var textRight = focusArea.isPresent() ? focusArea.get().getCenterX() < bounds.width / 2 : true;
-        if (textRight) {
-            x = bounds.x + bounds.width - textAreaWidth - scaledInset;
+        int y = insets.top;
+        int textwidth = Math.max(300, (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
+        boolean enoughSpaceRight = bounds.width - focusArea.get().getMaxX() >= textwidth;
+        boolean moreSpaceOnRight = bounds.width - focusArea.get().getMaxX() > focusArea.get().getMinX();
+        var rightAlinged = focusArea.isPresent() ? enoughSpaceRight || moreSpaceOnRight : false;
+        if (rightAlinged) {
+            x = (int) focusArea.get().getMaxX() + insets.left;
         } else {
-            x = bounds.x + scaledInset;
+            x = (int) focusArea.get().getMinX() - textwidth - insets.right;
         }
-        y = topInset;
+        // TODO ensure text area stays inside screen bounds
 
-        int width = textAreaWidth;
-        int height = bounds.height - bottomInset - y;
-        return new Rectangle(x, y, width, height);
+        int width = textwidth;
+        int height = bounds.height - insets.bottom;
+        return new TextInfo(new Rectangle(x, y, width, height), rightAlinged);
     }
 
     interface TextVisitor {
         void render(TextLayout textLayout, float x, float y);
     }
 
-    private static Rectangle renderText(Graphics2D g2d, String string, Rectangle bounds, Rectangle textArea, boolean intertitleActive) {
+    private static Rectangle renderText(Graphics2D g2d, String string, TextInfo textInfo, boolean intertitleActive) {
         if (string.isBlank()) {
-            return textArea;
+            return textInfo.region;
         } else {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -386,15 +377,14 @@ public class BufferedImageRenderer {
             LineBreakMeasurer measurer;
             Dimension2D textSize = new Dimension(0, 0);
             TextVisitor measureText = (TextLayout layout, float x, float y) -> textSize
-                    .setSize(Math.max(textSize.getWidth(), layout.getAdvance()), y + layout.getDescent() - textArea.y);
+                    .setSize(Math.max(textSize.getWidth(), layout.getAdvance()), y + layout.getDescent() - textInfo.region.y);
 
             float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-            float fontSize = FONT_SIZE * dpi / 72.0f
-                    * Math.min(1.0f, (float) (bounds.getWidth() * Transform.goldenRatioFactorB) / TEXT_AREA_MIN_WIDTH);
+            float ptWidth = (float) textInfo.region.getWidth() / dpi * 72.0f;
+            float ptHeight = (float) textInfo.region.getHeight() / dpi * 72.0f;
+            float fontSize = Math.min(ptWidth, ptHeight) / 10f;
 
-            // TODO remove test code
-            // fontSize = 10.0f;
-
+            Rectangle2D renderedText;
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);
                 g2d.setFont(font);
@@ -402,20 +392,26 @@ public class BufferedImageRenderer {
                 text.addAttribute(TextAttribute.FONT, font);
                 paragraph = text.getIterator();
                 measurer = new LineBreakMeasurer(paragraph, frc);
-                renderText(textArea, paragraph, measurer, measureText);
-                if (textSize.getHeight() < textArea.height || fontSize <= MINIMAL_FONT_SIZE) {
+                renderedText = renderText(textInfo.region, paragraph, measurer, measureText);
+                if (textSize.getHeight() < textInfo.region.height || fontSize <= MINIMAL_FONT_SIZE) {
                     break;
                 }
                 fontSize /= 1.25f;
             }
 
+            if (!textInfo.rightAligned) {
+                textInfo.region.x += textInfo.region.width - renderedText.getWidth();
+            }
+
             Rectangle adjustedTextArea;
             if (intertitleActive) {
-                adjustedTextArea = textArea;
+                adjustedTextArea = textInfo.region;
             } else {
-                adjustedTextArea = new Rectangle(textArea.x - TEXT_AREA_BORDER, textArea.y - TEXT_AREA_BORDER,
-                        (int) textSize.getWidth() + 2 * TEXT_AREA_BORDER,
-                        (int) textSize.getHeight() + 2 * TEXT_AREA_BORDER);
+                adjustedTextArea = new Rectangle(
+                        (int) (textInfo.region.getX() - 4 * TEXT_AREA_BORDER),
+                        (int) (textInfo.region.getY() - 1 * TEXT_AREA_BORDER),
+                        (int) textSize.getWidth() + 5 * TEXT_AREA_BORDER,
+                        (int) textSize.getHeight() + 4 * TEXT_AREA_BORDER);
             }
 
             g2d.setBackground(TRANSPARENT);
@@ -425,15 +421,15 @@ public class BufferedImageRenderer {
             }
             g2d.setColor(intertitleActive ? Color.white : Color.black);
             TextVisitor drawText = (TextLayout layout, float x, float y) -> layout.draw(g2d, x, y);
-            renderText(textArea, paragraph, measurer, drawText);
+            renderText(textInfo.region, paragraph, measurer, drawText);
 
             return adjustedTextArea;
         }
     }
 
     private static void renderTextBubble(Graphics2D g2d, Rectangle textArea) {
-        int arcWidth = 40;
-        g2d.setColor(new Color(224, 224, 224, 160));
+        int arcWidth = 160;
+        g2d.setColor(new Color(224, 224, 224, 128));
         g2d.fillRoundRect(textArea.x, textArea.y, textArea.width, textArea.height, arcWidth, arcWidth);
     }
 
@@ -453,11 +449,12 @@ public class BufferedImageRenderer {
         return centerRegion;
     }
 
-    private static void renderText(Rectangle textArea, AttributedCharacterIterator paragraph,
+    private static Rectangle2D renderText(Rectangle textArea, AttributedCharacterIterator paragraph,
             LineBreakMeasurer measurer, TextVisitor render) {
         measurer.setPosition(paragraph.getBeginIndex());
         float wrappingWidth = (float) textArea.getWidth();
         float dy = textArea.y;
+        TextLayout layout = null;
         while (measurer.getPosition() < paragraph.getEndIndex()) {
             paragraph.setIndex(measurer.getPosition());
             char ch;
@@ -466,7 +463,6 @@ public class BufferedImageRenderer {
                     break;
                 }
             }
-            TextLayout layout;
             int limit = paragraph.getIndex();
             if (limit > 0) {
                 layout = measurer.nextLayout(wrappingWidth, limit, true);
@@ -486,6 +482,14 @@ public class BufferedImageRenderer {
             if (measurer.getPosition() == limit) {
                 dy += layout.getAscent() * (PARAGRAPH_SPACING - 1.0f);
             }
+        }
+        if (layout != null) {
+            // TODO Layout bounds have the width of the last paragraph or the last line
+            // -> paragraphs with multiple lines are offset by the last line's free trailing space,
+            // return layout.getBounds();
+            return textArea;
+        } else {
+            return null;
         }
     }
 

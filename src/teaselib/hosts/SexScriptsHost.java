@@ -669,6 +669,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
                     return renderer.textOverlays.rotateBuffer(mainFrame.getGraphicsConfiguration(),
                             getContentBounds());
                 }, Transparency.TRANSLUCENT);
+        // TODO Make transparency a parameter of the buffer queue, or queue validated images
 
         var bounds = getContentBounds();
         nextFrame.textImage.setSize(bounds.width, bounds.height);

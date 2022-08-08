@@ -167,7 +167,7 @@ public class BufferedImageRenderer {
             var clip = g2d.getClip();
             try {
                 g2d.setClip(textArea);
-                text.draw(g2d, gc, new AffineTransform());
+                text.draw(g2d, gc);
             } finally {
                 g2d.setClip(clip);
             }

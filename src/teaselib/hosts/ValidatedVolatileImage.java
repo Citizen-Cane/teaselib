@@ -68,12 +68,25 @@ public class ValidatedVolatileImage extends AbstractValidatedImage<VolatileImage
     }
 
     @Override
-    public void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t) {
+    public void draw(Graphics2D graphics, GraphicsConfiguration gc) {
         get(gc);
         if (invalidated && backBuffer != null) {
             paint(gc, g2d -> g2d.drawImage(backBuffer, 0, 0, null));
             invalidated = false;
-        } else if (!invalidated) {
+        }
+        if (!invalidated) {
+            graphics.drawImage(image, 0, 0, null);
+        }
+    }
+
+    @Override
+    public void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t) {
+        get(gc);
+        if (invalidated && backBuffer != null) {
+            paint(gc, g2d -> g2d.drawImage(backBuffer, t, null));
+            invalidated = false;
+        }
+        if (!invalidated) {
             graphics.drawImage(image, t, null);
         }
     }

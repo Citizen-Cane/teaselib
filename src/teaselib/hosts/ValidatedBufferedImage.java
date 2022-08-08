@@ -53,6 +53,13 @@ public class ValidatedBufferedImage extends AbstractValidatedImage<BufferedImage
     }
 
     @Override
+    public void draw(Graphics2D graphics, GraphicsConfiguration gc) {
+        if (!invalidated) {
+            graphics.drawImage(image, 0, 0, null);
+        }
+    }
+
+    @Override
     public void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t) {
         if (!invalidated) {
             graphics.drawImage(image, t, null);

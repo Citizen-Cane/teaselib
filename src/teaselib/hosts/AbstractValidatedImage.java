@@ -41,6 +41,8 @@ public abstract class AbstractValidatedImage<T extends Image> {
 
     public abstract boolean contentsLost();
 
+    public abstract void draw(Graphics2D graphics, GraphicsConfiguration gc);
+
     public abstract void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t);
 
     public abstract void paint(GraphicsConfiguration gc, Renderer renderer);

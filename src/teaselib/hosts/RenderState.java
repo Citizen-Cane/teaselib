@@ -93,14 +93,14 @@ class RenderState {
     }
 
     public void updateFrom(RenderState oldState) {
-        repaintSceneImage = oldState.repaintSceneImage ||
-                actorZoom != oldState.actorZoom ||
+        repaintSceneImage = actorZoom != oldState.actorZoom ||
                 sceneBlend != oldState.sceneBlend ||
                 !Objects.equals(displayImageResource, oldState.displayImageResource) ||
                 !Objects.equals(displayImageOffset, oldState.displayImageOffset);
-        repaintTextImage = oldState.repaintTextImage ||
+        // TODO Explicit update necessary if texts are the same - for instance with random.item(text)
+        repaintTextImage = // oldState.repaintTextImage ||
                 isIntertitle != oldState.isIntertitle ||
-                !Objects.equals(text, oldState.text);
+                        !Objects.equals(text, oldState.text);
     }
 
     // TODO apply rules elsewhere

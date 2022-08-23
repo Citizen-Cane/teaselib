@@ -139,20 +139,22 @@ public class TeaseLibAITest {
                             Rotation.None);
                     assertNotNull(poses1);
                     assertEquals(2, poses1.size());
+                    assertEquals(1.84, poses1.get(0).distance.get(), 0.01);
+                    assertEquals(1.67, poses1.get(1).distance.get(), 0.01);
 
                     humanPose.setInterests(Interest.Pose);
                     List<HumanPose.Estimation> poses2 = humanPose.poses(
                             resource("images/handsup1_camera_rotated_clockwise_01.jpg"), Rotation.CounterClockwise);
                     assertNotNull(poses2);
                     assertEquals(1, poses2.size());
-                    assertEquals(1.37, poses2.get(0).distance.get(), 0.02);
+                    assertEquals(1.40, poses2.get(0).distance.get(), 0.01);
 
                     humanPose.setInterests(Interest.Pose);
                     List<HumanPose.Estimation> poses3 = humanPose.poses(
                             resource("images/handsup1.jpg"), Rotation.None);
                     assertNotNull(poses3);
                     assertEquals(1, poses3.size());
-                    assertEquals(1.37, poses3.get(0).distance.get(), 0.02);
+                    assertEquals(1.40, poses3.get(0).distance.get(), 0.01);
                 } catch (IOException e) {
                     throw ExceptionUtil.asRuntimeException(e);
                 }
@@ -272,16 +274,16 @@ public class TeaseLibAITest {
                     var timestamp = System.currentTimeMillis();
                     List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture, timestamp);
                     assertEquals(1, poses1.size());
-                    assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.75f,
+                    assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.88f,
                             poses1.get(0).distance.orElseThrow(), 0.01f);
                     assertEquals(Proximity.FACE2FACE, poses1.get(0).proximity());
 
                     var timestamp2 = System.currentTimeMillis();
                     List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture, timestamp2);
                     assertEquals(1, poses2.size());
-                    assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 1.38,
+                    assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 1.00f,
                             poses2.get(0).distance.orElseThrow(), 0.1f);
-                    assertEquals(Proximity.NEAR, poses2.get(0).proximity());
+                    assertEquals(Proximity.FACE2FACE, poses2.get(0).proximity());
 
                     try {
                         var timestamp3 = System.currentTimeMillis();
@@ -307,12 +309,20 @@ public class TeaseLibAITest {
                         humanPose.setInterests(Interest.AllPersons);
                         poses = humanPose.poses(resource("images/p2_320x240_01.jpg"));
                         assertEquals(2, poses.size());
-                        assertEquals(Proximity.FAR, poses.get(0).proximity());
-                        assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 2.5,
-                                poses.get(0).distance.orElseThrow(), 0.1f);
+                        assertEquals(Proximity.NEAR, poses.get(0).proximity());
+                        assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 1.84,
+                                poses.get(0).distance.orElseThrow(), 0.01f);
                         assertEquals(Proximity.NEAR, poses.get(1).proximity());
-                        assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 2.27,
-                                poses.get(1).distance.orElseThrow(), 0.1f);
+                        assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 1.67,
+                                poses.get(1).distance.orElseThrow(), 0.01f);
+
+                        humanPose.setInterests(Interest.Pose);
+                        poses = humanPose.poses(resource("images/hand1.jpg"));
+                        assertEquals(1, poses.size());
+                        assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.88f,
+                                poses.get(0).distance.orElseThrow(), 0.01f);
+                        assertEquals(Proximity.FACE2FACE, poses.get(0).proximity());
+
                     } catch (IOException e) {
                         throw ExceptionUtil.asRuntimeException(e);
                     }

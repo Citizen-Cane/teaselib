@@ -325,7 +325,6 @@ Movenet* HumanPose::getInterpreter()
 		: image::Orientation::Portrait;
 
 	const int key = Movenet::resource(model, orientation);
-	//auto key = static_cast<int>(model) + 16 * static_cast<int>(orientation);
 	auto pose_estimation = models.find(key);
 	if (pose_estimation == models.end()) {
 		return models[key]  = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);

@@ -1,5 +1,11 @@
 package teaselib.hosts;
 
+import static java.awt.Color.cyan;
+import static java.awt.Color.orange;
+import static java.awt.Color.pink;
+import static java.awt.geom.AffineTransform.getScaleInstance;
+import static java.awt.geom.AffineTransform.getTranslateInstance;
+
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -47,7 +53,8 @@ public class BufferedImageRenderer {
         this.backgroundImage = backgroundImage;
     }
 
-    void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage, Rectangle bounds, Color backgroundColor) {
+    void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage,
+            Rectangle bounds, Color backgroundColor) {
         // Bicubic interpolation is an absolute performance killer for image transforming & scaling
         // g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
@@ -108,7 +115,8 @@ public class BufferedImageRenderer {
      * @param bounds
      *            region
      */
-    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha, RenderState top, Rectangle bounds) {
+    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha,
+            RenderState top, Rectangle bounds) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
             g2d.setComposite(alphaComposite);
@@ -160,7 +168,8 @@ public class BufferedImageRenderer {
         }
     }
 
-    private static void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha, Rectangle textArea) {
+    private static void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text,
+            float alpha, Rectangle textArea) {
         if (alpha > 0.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2d.setComposite(alphaComposite);
@@ -197,7 +206,8 @@ public class BufferedImageRenderer {
                 focusRegion = Optional.of(new Rectangle2D.Double(0.4, 0.4, 0.2, 0.2));
             }
         } else if (frame.annotations.contains(Annotation.Person.Actor)) {
-            // TODO images with non-actor models may be focused on, but only the whole body -> pose.bounds
+            // TODO images with non-actor models may be focused on as well,
+            // probably only the whole body -> pose.bounds
             focusRegion = Optional.empty();
         } else {
             focusRegion = Optional.empty();
@@ -216,7 +226,8 @@ public class BufferedImageRenderer {
         }
     }
 
-    static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, double zoom, Optional<Rectangle2D> focusRegion, Point2D displayImageOffset) {
+    static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, double zoom,
+            Optional<Rectangle2D> focusRegion, Point2D displayImageOffset) {
         var surface = new AffineTransform();
         surface.concatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
         surface.concatenate(Transform.maxImage(image, bounds, focusRegion));
@@ -225,10 +236,7 @@ public class BufferedImageRenderer {
             surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
             surface.concatenate(Transform.zoom(imageFocusArea, zoom));
         }
-
-        surface.preConcatenate(
-                AffineTransform.getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));
-
+        surface.preConcatenate(getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));
         return surface;
     }
 
@@ -238,7 +246,8 @@ public class BufferedImageRenderer {
         }
     }
 
-    static void renderDebugInfo(Graphics2D g2d, AbstractValidatedImage<?> image, HumanPose.Estimation pose, AffineTransform surface, Rectangle bounds) {
+    static void renderDebugInfo(Graphics2D g2d, AbstractValidatedImage<?> image, HumanPose.Estimation pose,
+            AffineTransform surface, Rectangle bounds) {
         drawBackgroundImageIconVisibleBounds(g2d, bounds);
         drawImageBounds(g2d, image.dimension(), surface);
         if (pose != HumanPose.Estimation.NONE) {
@@ -256,11 +265,13 @@ public class BufferedImageRenderer {
         g2d.setColor(Color.red);
         Point2D p0 = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
         Point2D p1 = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()), new Point2D.Double());
-        g2d.drawRect((int) p0.getX(), (int) p0.getY(), (int) (p1.getX() - p0.getX()) - 1,
+        g2d.drawRect(
+                (int) p0.getX(), (int) p0.getY(), (int) (p1.getX() - p0.getX()) - 1,
                 (int) (p1.getY() - p0.getY()) - 1);
     }
 
-    private static void drawPosture(Graphics2D g2d, Dimension image, HumanPose.Estimation pose, AffineTransform surface) {
+    private static void drawPosture(Graphics2D g2d, Dimension image, HumanPose.Estimation pose,
+            AffineTransform surface) {
         if (pose.head.isPresent()) {
             var face = pose.face();
             Point2D poseHead = pose.head.get();
@@ -268,9 +279,9 @@ public class BufferedImageRenderer {
                     new Point2D.Double(poseHead.getX() * image.getWidth(), poseHead.getY() * image.getHeight()),
                     new Point2D.Double());
             int radius = face.isPresent() ? (int) (image.getWidth() * face.get().getWidth() / 3.0f) : 2;
-            g2d.setColor(face.isPresent() ? Color.cyan : Color.orange);
+            g2d.setColor(face.isPresent() ? cyan : orange);
             g2d.drawOval((int) p.getX() - 2, (int) p.getY() - 2, 2 * 2, 2 * 2);
-            g2d.setColor(face.isPresent() ? Color.cyan.darker().darker() : Color.red.brighter().brighter());
+            g2d.setColor(face.isPresent() ? cyan.darker().darker() : pink);
             g2d.drawOval((int) p.getX() - radius, (int) p.getY() - radius, 2 * radius, 2 * radius);
         }
 
@@ -285,7 +296,7 @@ public class BufferedImageRenderer {
     }
 
     private static Rectangle normalizedToGraphics(AffineTransform surface, Dimension image, Rectangle2D region) {
-        var scale = AffineTransform.getScaleInstance(image.getWidth(), image.getHeight());
+        var scale = getScaleInstance(image.getWidth(), image.getHeight());
         var rect = scale.createTransformedShape(region);
         return surface.createTransformedShape(rect).getBounds();
     }
@@ -304,14 +315,21 @@ public class BufferedImageRenderer {
     // =====================
     //
 
-    private static final float MINIMAL_FONT_SIZE = 6;
-    private static final float PARAGRAPH_SPACING = 1.5f;
-    private static final int MINIMAL_TEXT_WIDTH = 300;
+    /**
+     * The minimum limits may cause text overflow but at small window size this looks more reasonable than incredibly
+     * small font size.
+     */
+    class FontLimits {
+        static final float MINIMAL_FONT_SIZE = 6.0f;
+        static final int MINIMAL_TEXT_WIDTH = 100;
+        static final int MINIMAL_TEXT_HEIGHT = 400;
+    }
 
     private record TextInfo(Rectangle region, boolean rightAligned) { //
     }
 
-    public static void renderText(Graphics2D g2d, RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+    public static void renderText(Graphics2D g2d, RenderState frame, Rectangle bounds,
+            Optional<Rectangle2D> focusRegion) {
         if (!frame.text.isBlank()) {
             Optional<Rectangle> focusArea = focusRegion.isPresent()
                     ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
@@ -339,24 +357,31 @@ public class BufferedImageRenderer {
 
     private static TextInfo spokenTextArea(Rectangle bounds, Optional<Rectangle> focusArea) {
         float insetFactor = 0.05f;
-        Insets insets = new Insets((int) (bounds.height * insetFactor), (int) (bounds.width * insetFactor),
-                (int) (bounds.height * insetFactor) + 200, (int) (bounds.width * insetFactor));
+        Insets insets = new Insets(
+                (int) (bounds.height * insetFactor),
+                (int) (bounds.width * insetFactor),
+                (int) (bounds.height * insetFactor) + 100,
+                (int) (bounds.width * insetFactor));
 
         int x;
         int y = insets.top;
-        int textwidth = Math.max(MINIMAL_TEXT_WIDTH, (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
+        int textwidth = Math.max(FontLimits.MINIMAL_TEXT_WIDTH,
+                (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
         boolean enoughSpaceRight = bounds.width - focusArea.get().getMaxX() >= textwidth;
         boolean moreSpaceOnRight = bounds.width - focusArea.get().getMaxX() > focusArea.get().getMinX();
         var rightAlinged = focusArea.isPresent() ? enoughSpaceRight || moreSpaceOnRight : false;
         if (rightAlinged) {
-            x = (int) focusArea.get().getMaxX() + insets.left;
+            x = (int) focusArea.get().getMaxX() + insets.left * 2;
         } else {
-            x = (int) focusArea.get().getMinX() - textwidth - insets.right;
+            x = (int) focusArea.get().getMinX() - textwidth - insets.right * 2;
         }
+
+        // TODO Limits do not always work because they are calculated before measuring the text
+        // -> measure text first, then position the text and honor inset distance from focus region
 
         int leftLimit = bounds.x + insets.left;
         if (x < leftLimit) {
-            int headroom = textwidth - MINIMAL_TEXT_WIDTH;
+            int headroom = textwidth - FontLimits.MINIMAL_TEXT_WIDTH;
             if (headroom > 0) {
                 int shift = Math.min(headroom, -x - leftLimit);
                 x += shift;
@@ -369,7 +394,7 @@ public class BufferedImageRenderer {
 
         int rightLimit = bounds.x + bounds.width - insets.right;
         if (x + textwidth > rightLimit) {
-            int headroom = textwidth - MINIMAL_TEXT_WIDTH;
+            int headroom = textwidth - FontLimits.MINIMAL_TEXT_WIDTH;
             if (headroom > 0) {
                 int shift = Math.min(headroom, x - rightLimit);
                 x -= shift;
@@ -381,16 +406,15 @@ public class BufferedImageRenderer {
         }
 
         // TODO if the text bubble covers the focus region, try to find a better matching region (e.g. below head ...)
-
         // TODO For large texts - e.g. showAll - it might make sense to align the bubble to the side
 
         int width = textwidth;
-        int height = bounds.height - insets.bottom;
+        int height = Math.max(FontLimits.MINIMAL_TEXT_HEIGHT, bounds.height - insets.bottom);
         return new TextInfo(new Rectangle(x, y, width, height), rightAlinged);
     }
 
     interface TextVisitor {
-        static final TextVisitor MeasureText = (TextLayout layout, float x, float y) -> { //
+        static final TextVisitor MeasureText = (layout, x, y) -> { //
         };
 
         void render(TextLayout textLayout, float x, float y);
@@ -402,25 +426,34 @@ public class BufferedImageRenderer {
         } else {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            // When enabled short texts are wrapped on multiple lines although the text bubble has enough space
+            // + longer texts are good - suggests that calculations are right
+            // + longer texts have correct bottom inset
+            // - for single word commands with trailing . the dot is renderer on the next line
+            // - short text does not seem to have any bottom inset
+            // - short text "Eins." is rendered in a single render call but the dot ends up on a new line.
+            // g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+
+            float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+            float rows = 8.0f;
+            float cols = 6.0f * rows;
+            float fontSize = (float) Math.min(textInfo.region.getWidth() / rows, textInfo.region.getHeight() / cols)
+                    * dpi / 72.0f;
 
             FontRenderContext frc = g2d.getFontRenderContext();
+            AttributedString text = new AttributedString(string);
+            text.addAttribute(TextAttribute.JUSTIFICATION, TextAttribute.JUSTIFICATION_FULL);
             AttributedCharacterIterator paragraph;
             LineBreakMeasurer measurer;
-            float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-            float ptWidth = (float) textInfo.region.getWidth() / dpi * 72.0f;
-            float ptHeight = (float) textInfo.region.getHeight() / dpi * 72.0f;
-            float fontSize = Math.min(ptWidth, ptHeight) / 10f;
-
             Rectangle layoutRegion;
             while (true) {
                 Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);
-                g2d.setFont(font);
-                AttributedString text = new AttributedString(string);
                 text.addAttribute(TextAttribute.FONT, font);
+                g2d.setFont(font);
                 paragraph = text.getIterator();
                 measurer = new LineBreakMeasurer(paragraph, frc);
                 layoutRegion = renderText(textInfo.region, paragraph, measurer, TextVisitor.MeasureText);
-                if (layoutRegion.getHeight() < textInfo.region.height || fontSize <= MINIMAL_FONT_SIZE) {
+                if (layoutRegion.getHeight() < textInfo.region.height || fontSize <= FontLimits.MINIMAL_FONT_SIZE) {
                     break;
                 }
                 fontSize /= 1.25f;
@@ -440,7 +473,7 @@ public class BufferedImageRenderer {
             }
 
             g2d.setColor(intertitleActive ? Color.white : Color.black);
-            TextVisitor drawText = (TextLayout layout, float x, float y) -> layout.draw(g2d, x, y);
+            TextVisitor drawText = (layout, x, y) -> layout.draw(g2d, x, y);
             renderText(layoutRegion, paragraph, measurer, drawText);
 
             return adjustedTextArea;
@@ -450,7 +483,6 @@ public class BufferedImageRenderer {
     private static Rectangle renderTextBubble(Graphics2D g2d, Rectangle layoutRegion, float fontSize) {
         int arcWidth = (int) fontSize * 2;
         int inset = (int) (fontSize / 2.0f);
-
         var bubble = new Insets(1 * inset, 1 * inset, 1 * inset, 1 * inset);
         var r = new Rectangle(
                 (int) (layoutRegion.getX() - bubble.left),
@@ -485,7 +517,6 @@ public class BufferedImageRenderer {
         measurer.setPosition(paragraph.getBeginIndex());
         float wrappingWidth = (float) textArea.getWidth();
         float dy = textArea.y;
-
         Rectangle layoutRegion = null;
         while (measurer.getPosition() < paragraph.getEndIndex()) {
             paragraph.setIndex(measurer.getPosition());
@@ -506,27 +537,20 @@ public class BufferedImageRenderer {
                 layout = measurer.nextLayout(wrappingWidth);
             }
 
-            dy += (layout.getAscent());
             float dx = layout.isLeftToRight() ? textArea.x : (wrappingWidth - layout.getAdvance());
-
-            if (layoutRegion == null) {
-                Rectangle2D layoutBounds = layout.getBounds();
-                layoutRegion = new Rectangle(textArea.x, textArea.y, (int) layoutBounds.getWidth(), (int) layoutBounds.getHeight());
-
-            } else {
-                layoutRegion.width = Math.max((int) layoutRegion.getWidth(), (int) layout.getAdvance());
-                layoutRegion.height = (int) (dy + layout.getDescent() - layoutRegion.y);
-            }
-
+            dy += (layout.getAscent());
             render.render(layout, dx, dy);
             dy += layout.getDescent() + layout.getLeading();
-
-            if (measurer.getPosition() == limit) {
-                dy += layout.getAscent() * (PARAGRAPH_SPACING - 1.0f);
+            if (layoutRegion == null) {
+                layoutRegion = new Rectangle(
+                        textArea.x, textArea.y,
+                        (int) layout.getAdvance(),
+                        (int) dy - textArea.y);
+            } else {
+                layoutRegion.width = Math.max((int) layoutRegion.getWidth(), (int) layout.getAdvance());
+                layoutRegion.height = (int) dy - layoutRegion.y;
             }
-
         }
-
         return layoutRegion != null ? layoutRegion : textArea;
     }
 

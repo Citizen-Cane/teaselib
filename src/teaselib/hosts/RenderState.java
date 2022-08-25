@@ -3,13 +3,16 @@ package teaselib.hosts;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.ProximitySensor;
 import teaselib.util.AnnotatedImage;
+import teaselib.util.AnnotatedImage.Annotation;
 
 /**
  * @author Citizen-Cane
@@ -19,7 +22,7 @@ class RenderState {
 
     // Scene properties
     String displayImageResource;
-    AbstractValidatedImage displayImage;
+    AbstractValidatedImage<?> displayImage;
     HumanPose.Estimation pose;
     Set<AnnotatedImage.Annotation> annotations;
     double actorZoom;
@@ -38,7 +41,7 @@ class RenderState {
     float sceneBlend;
 
     boolean repaintTextImage;
-    AbstractValidatedImage textImage;
+    AbstractValidatedImage<?> textImage;
     Rectangle textImageRegion;
     float textBlend;
 
@@ -103,15 +106,41 @@ class RenderState {
                         !Objects.equals(text, oldState.text);
     }
 
-    // TODO apply rules elsewhere
-    boolean renderText() {
-        return focusLevel == 1.0 && actorZoom < ProximitySensor.zoom.get(Proximity.CLOSE) && !text.isBlank();
+    boolean isBackgroundVisisble() {
+        return displayImage == null
+                || pose.distance.isEmpty()
+                || displayImageOffset.getX() != 0.0
+                || displayImageOffset.getY() != 0.0
+                || sceneBlend < 1.0f
+                || actorZoom < 1.0;
     }
 
-    boolean isBackgroundVisisble() {
-        return displayImage == null || pose.distance.isEmpty() ||
-                displayImageOffset.getX() != 0.0 || displayImageOffset.getY() != 0.0 || sceneBlend < 1.0f
-                || actorZoom < 1.0;
+    Optional<Rectangle2D> focusRegion() {
+        Optional<Rectangle2D> focusRegion;
+        if (annotations.contains(Annotation.Person.Actor)) {
+            focusRegion = focusRegion(pose, actorZoom);
+            if (focusRegion.isEmpty()) {
+                focusRegion = Optional.of(new Rectangle2D.Double(0.4, 0.4, 0.2, 0.2));
+            }
+        } else if (annotations.contains(Annotation.Person.Actor)) {
+            // TODO images with non-actor models may be focused on as well,
+            // probably only the whole body -> pose.bounds
+            focusRegion = Optional.empty();
+        } else {
+            focusRegion = Optional.empty();
+        }
+        return focusRegion;
+    }
+
+    private static Optional<Rectangle2D> focusRegion(HumanPose.Estimation pose, double actorZoom) {
+        if (actorZoom > ProximitySensor.zoom.get(Proximity.FACE2FACE)) {
+            // TODO set focus area from proximity sensor to choose region depending on player state & position
+            return pose.face(); // should be head -> boobs, or shoes -> shoes, etc.
+        } else if (actorZoom > ProximitySensor.zoom.get(Proximity.AWAY)) {
+            return pose.face();
+        } else {
+            return pose.face();
+        }
     }
 
 }

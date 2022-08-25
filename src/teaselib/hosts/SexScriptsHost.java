@@ -144,7 +144,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     RenderState currentFrame = new RenderState();
     RenderState nextFrame = new RenderState();
-    BufferedImageRenderer renderer;
+    SceneRenderer renderer;
 
     public static Host from(IScript script) {
         return new AnimatedHost(new SexScriptsHost(script));
@@ -183,7 +183,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             throw new IllegalStateException("No background image icon");
         }
 
-        renderer = new BufferedImageRenderer(backgroundImage);
+        renderer = new SceneRenderer(backgroundImage);
 
         this.originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {

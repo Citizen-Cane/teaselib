@@ -372,10 +372,12 @@ public class SectionRenderer implements Closeable {
             teaseLib.transcript.debug("image = '" + displayImage + "'");
             return actorImage(actor, displayImage);
         } else {
-            if (!Message.NoImage.equalsIgnoreCase(displayImage)) {
+            if (Message.NoImage.equalsIgnoreCase(displayImage)) {
+                return null;
+            } else {
                 teaseLib.transcript.info("image = '" + displayImage + "'");
+                return instructionalImage(actor, displayImage);
             }
-            return instructionalImage(actor, displayImage);
         }
     }
 

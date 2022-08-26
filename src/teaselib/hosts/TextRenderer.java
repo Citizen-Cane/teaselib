@@ -13,6 +13,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextLayout;
+import java.awt.geom.Rectangle2D;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.CharacterIterator;
@@ -69,7 +70,19 @@ class TextRenderer {
         return new TextInfo(r, true);
     }
 
+    private static final Rectangle2D DefaultFocusRegion = new Rectangle2D.Double(0.25, 0.25, 0.25, 0.25);
+
     private static TextRenderer.TextInfo spokenTextArea(Rectangle bounds, Optional<Rectangle> focusArea) {
+        return spokenTextArea(bounds, focusArea.isPresent()
+                ? focusArea.get()
+                : new Rectangle(
+                        (int) (bounds.x + bounds.width * DefaultFocusRegion.getX()),
+                        (int) (bounds.y + bounds.height * DefaultFocusRegion.getY()),
+                        (int) (bounds.width * DefaultFocusRegion.getWidth()),
+                        (int) (bounds.height * DefaultFocusRegion.getHeight())));
+    }
+
+    private static TextRenderer.TextInfo spokenTextArea(Rectangle bounds, Rectangle focusArea) {
         float insetFactor = 0.05f;
         Insets insets = new Insets(
                 (int) (bounds.height * insetFactor),
@@ -81,14 +94,21 @@ class TextRenderer {
         int y = insets.top;
         int textwidth = Math.max(FontLimits.MINIMAL_TEXT_WIDTH,
                 (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
-        boolean enoughSpaceRight = bounds.width - focusArea.get().getMaxX() >= textwidth;
-        boolean moreSpaceOnRight = bounds.width - focusArea.get().getMaxX() > focusArea.get().getMinX();
-        var rightAlinged = focusArea.isPresent() ? enoughSpaceRight || moreSpaceOnRight : false;
+        boolean enoughSpaceRight = bounds.width - focusArea.getMaxX() >= textwidth;
+        boolean moreSpaceOnRight = bounds.width - focusArea.getMaxX() > focusArea.getMinX();
+        var rightAlinged = enoughSpaceRight || moreSpaceOnRight;
         if (rightAlinged) {
-            x = (int) focusArea.get().getMaxX() + insets.left * 2;
+            x = (int) focusArea.getMaxX() + insets.left * 2;
         } else {
-            x = (int) focusArea.get().getMinX() - textwidth - insets.right * 2;
+            x = (int) focusArea.getMinX() - textwidth - insets.right * 2;
         }
+
+        // the text area may become smaller when shifted into the bounds -> text may also become smaller
+        // - very irritating when there is obviously enough space towards the borders
+        // This is As Designed but has to be improved -> see subsequent TODOs
+
+        // TODO find better areas to place text -> make text placing more natural
+        // - currently text is always placed at the top
 
         // TODO Limits do not always work because they are calculated before measuring the text
         // -> measure text first, then position the text and honor inset distance from focus region
@@ -97,7 +117,7 @@ class TextRenderer {
         if (x < leftLimit) {
             int headroom = textwidth - FontLimits.MINIMAL_TEXT_WIDTH;
             if (headroom > 0) {
-                int shift = Math.min(headroom, -x - leftLimit);
+                int shift = Math.min(headroom, leftLimit - x);
                 x += shift;
                 textwidth -= shift;
             }
@@ -110,7 +130,7 @@ class TextRenderer {
         if (x + textwidth > rightLimit) {
             int headroom = textwidth - FontLimits.MINIMAL_TEXT_WIDTH;
             if (headroom > 0) {
-                int shift = Math.min(headroom, x - rightLimit);
+                int shift = Math.min(headroom, x + textwidth - rightLimit);
                 x -= shift;
                 textwidth -= shift;
             }
@@ -170,8 +190,8 @@ class TextRenderer {
             // g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
             // RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 
-            float cols = 18.0f;
-            float rows = 6.0f;
+            float cols = 24.0f;
+            float rows = 12.0f;
             float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
             float fontSize = (float) Math.min(textInfo.region.getWidth() / cols, textInfo.region.getHeight() / rows) * dpi / 72.0f;
 

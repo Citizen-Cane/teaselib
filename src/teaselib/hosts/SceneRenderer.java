@@ -110,7 +110,7 @@ public class SceneRenderer {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
             g2d.setComposite(alphaComposite);
             drawImage(g2d, gc, bottom);
-            // renderDebugInfo(g2d, bottom, bounds);
+            // ImageRenderer.renderDebugInfo(g2d, bottom, bounds);
         }
 
         if (alpha < 1.0f) {
@@ -119,7 +119,7 @@ public class SceneRenderer {
         }
 
         drawImage(g2d, gc, top);
-        // renderDebugInfo(g2d, top, bounds);
+        // ImageRenderer.renderDebugInfo(g2d, top, bounds);
     }
 
     private static void drawImage(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {

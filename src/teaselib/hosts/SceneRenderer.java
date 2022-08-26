@@ -28,6 +28,8 @@ public class SceneRenderer {
     // final VolatileImageQueue textOverlays = new VolatileImageQueue(2);
     final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
 
+    final TextRenderer textRenderer = new TextRenderer();
+
     public SceneRenderer(Image backgroundImage) {
         super();
         this.backgroundImage = backgroundImage;
@@ -75,7 +77,7 @@ public class SceneRenderer {
                 Optional<Rectangle> focusArea = focusRegion.isPresent()
                         ? Optional.of(focusPixelArea(frame, bounds, focusRegion))
                         : Optional.empty();
-                TextRenderer.renderText(g2d2, frame, bounds, focusArea);
+                textRenderer.drawText(g2d2, frame, bounds, focusArea);
             });
         }
 
@@ -162,9 +164,23 @@ public class SceneRenderer {
         return alpha;
     }
 
-    private static void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
+    private void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
         if (!frame.text.isBlank()) {
-            TextRenderer.draw(g2d, gc, frame.textImage, frame.textBlend, frame.textImageRegion);
+            draw(g2d, gc, frame.textImage, frame.textBlend, frame.textImageRegion);
+        }
+    }
+
+    void draw(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha, Rectangle textArea) {
+        if (alpha > 0.0f) {
+            var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
+            g2d.setComposite(alphaComposite);
+            var clip = g2d.getClip();
+            try {
+                g2d.setClip(textArea);
+                text.draw(g2d, gc);
+            } finally {
+                g2d.setClip(clip);
+            }
         }
     }
 

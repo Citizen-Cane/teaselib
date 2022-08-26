@@ -33,29 +33,17 @@ class TextRenderer {
         static final int MINIMAL_TEXT_HEIGHT = 100;
     }
 
-    private record TextInfo(Rectangle region, boolean rightAligned) { //
+    private record TextInfo(Rectangle region, boolean rightAligned, boolean isIntertitle) { //
     }
 
     void drawText(Graphics2D g2d, RenderState frame, Rectangle bounds, Optional<Rectangle> focusArea) {
         if (!frame.text.isBlank()) {
             var textInfo = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
-            layoutText(g2d, frame.text, textInfo);
-            frame.textImageRegion = drawTextRegion(g2d, frame, textInfo);
+            var layoutRegion = layoutText(g2d, frame.text, textInfo, bounds);
+            frame.textImageRegion = drawTextRegion(g2d, frame, layoutRegion);
             g2d.setColor(frame.isIntertitle ? Color.white : Color.black);
-            renderText(g2d);
+            renderText(g2d, layoutRegion);
         }
-    }
-
-    private Rectangle drawTextRegion(Graphics2D g2d, RenderState frame, TextInfo textInfo) {
-        Rectangle adjustedTextArea;
-        if (frame.isIntertitle) {
-            adjustedTextArea = textInfo.region;
-            g2d.setBackground(SceneRenderer.TRANSPARENT);
-            g2d.clearRect(textInfo.region.x, textInfo.region.y, textInfo.region.width, textInfo.region.height);
-        } else {
-            adjustedTextArea = drawTextBubble(g2d, region.getBounds(), fontSize);
-        }
-        return adjustedTextArea;
     }
 
     private static TextRenderer.TextInfo intertitleTextArea(Rectangle bounds) {
@@ -65,7 +53,19 @@ class TextRenderer {
         r.y += inset;
         r.width -= 2 * inset;
         r.height -= 2 * inset;
-        return new TextInfo(r, true);
+        return new TextInfo(r, true, true);
+    }
+
+    private Rectangle drawTextRegion(Graphics2D g2d, RenderState frame, Rectangle region) {
+        Rectangle adjustedTextArea;
+        if (frame.isIntertitle) {
+            adjustedTextArea = region;
+            g2d.setBackground(SceneRenderer.TRANSPARENT);
+            g2d.clearRect(region.x, region.y, region.width, region.height);
+        } else {
+            adjustedTextArea = drawTextBubble(g2d, region.getBounds(), fontSize);
+        }
+        return adjustedTextArea;
     }
 
     static Rectangle interTitleCenterRegion(Rectangle bounds) {
@@ -95,8 +95,7 @@ class TextRenderer {
 
         int x;
         int y = insets.top;
-        int textwidth = Math.max(FontLimits.MINIMAL_TEXT_WIDTH,
-                (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
+        int textwidth = textWidth(bounds);
         boolean enoughSpaceRight = bounds.width - focusArea.getMaxX() >= textwidth;
         boolean moreSpaceOnRight = bounds.width - focusArea.getMaxX() > focusArea.getMinX();
         var rightAlinged = enoughSpaceRight || moreSpaceOnRight;
@@ -148,7 +147,13 @@ class TextRenderer {
 
         int width = textwidth;
         int height = Math.max(FontLimits.MINIMAL_TEXT_HEIGHT, bounds.height - insets.bottom);
-        return new TextInfo(new Rectangle(x, y, width, height), rightAlinged);
+        return new TextInfo(new Rectangle(x, y, width, height), rightAlinged, false);
+    }
+
+    private static int textWidth(Rectangle bounds) {
+        int textwidth = Math.max(FontLimits.MINIMAL_TEXT_WIDTH,
+                (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
+        return textwidth;
     }
 
     private static Rectangle drawTextBubble(Graphics2D g2d, Rectangle layoutRegion, float fontSize) {
@@ -197,16 +202,19 @@ class TextRenderer {
     float fontSize;
     AttributedCharacterIterator paragraph;
     LineBreakMeasurer measurer;
-    Rectangle region;
 
-    private void layoutText(Graphics2D g2d, String string, TextRenderer.TextInfo textInfo) {
-        float cols = 24.0f;
-        float rows = 12.0f;
+    private Rectangle layoutText(Graphics2D g2d, String string, TextRenderer.TextInfo textInfo, Rectangle bounds) {
+        float cols = 48.0f;
+        float rows = textInfo.isIntertitle ? 12.0f : 24.0f;
         float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-        fontSize = (float) Math.min(textInfo.region.getWidth() / cols, textInfo.region.getHeight() / rows) * dpi / 72.0f;
+        fontSize = (float) Math.min(
+                bounds.width / cols,
+                textInfo.region.getHeight() / rows)
+                * dpi / 72.0f;
         FontRenderContext frc = g2d.getFontRenderContext();
         AttributedString text = new AttributedString(string);
         text.addAttribute(TextAttribute.JUSTIFICATION, TextAttribute.JUSTIFICATION_FULL);
+        Rectangle region;
         while (true) {
             Font font = new Font(Font.SANS_SERIF, Font.PLAIN, (int) fontSize);
             text.addAttribute(TextAttribute.FONT, font);
@@ -221,12 +229,19 @@ class TextRenderer {
             }
             fontSize /= 1.25f;
         }
-        if (!textInfo.rightAligned) {
+        if (textInfo.rightAligned) {
+            if (region.width < textInfo.region.width && textInfo.region.width < textWidth(bounds)) {
+                // adjust shifted text area when there's some spare space due to line breaking
+                region.x += textWidth(bounds) - textInfo.region.width;
+            }
+        } else {
+            // Align to the left
             region.x += textInfo.region.width - region.getWidth();
         }
+        return region;
     }
 
-    private void renderText(Graphics2D g2d) {
+    private void renderText(Graphics2D g2d, Rectangle region) {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         // When enabled short texts are wrapped on multiple lines although the text bubble has enough space

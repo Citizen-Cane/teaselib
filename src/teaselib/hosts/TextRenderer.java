@@ -205,12 +205,11 @@ class TextRenderer {
 
     private Rectangle layoutText(Graphics2D g2d, String string, TextRenderer.TextInfo textInfo, Rectangle bounds) {
         float cols = 48.0f;
-        float rows = textInfo.isIntertitle ? 12.0f : 24.0f;
+        float rows = textInfo.isIntertitle ? 18.0f : 36.0f;
         float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-        fontSize = (float) Math.min(
-                bounds.width / cols,
-                textInfo.region.getHeight() / rows)
-                * dpi / 72.0f;
+        float fontSizeByCols = bounds.width / cols;
+        float fontSizeByRows = (float) textInfo.region.getHeight() / rows;
+        fontSize = (float) Math.min(fontSizeByCols, fontSizeByRows) * dpi / 72.0f;
         FontRenderContext frc = g2d.getFontRenderContext();
         AttributedString text = new AttributedString(string);
         text.addAttribute(TextAttribute.JUSTIFICATION, TextAttribute.JUSTIFICATION_FULL);

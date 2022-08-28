@@ -174,7 +174,7 @@ class TextRenderer {
     }
 
     private static Rectangle drawTextBubble(Graphics2D g2d, Rectangle layoutRegion, float fontSize) {
-        int arcWidth = (int) fontSize * 2;
+        int arcRadius = (int) fontSize * 2;
         int inset = (int) (fontSize / 2.0f);
         var bubble = new Insets(1 * inset, 1 * inset, 1 * inset, 1 * inset);
         var r = new Rectangle(
@@ -185,7 +185,7 @@ class TextRenderer {
         g2d.setBackground(SceneRenderer.TRANSPARENT);
         g2d.clearRect(r.x, r.y, r.width, r.height);
         g2d.setColor(new Color(224, 224, 224, 128));
-        g2d.fillRoundRect(r.x, r.y, r.width, r.height, arcWidth, arcWidth);
+        g2d.fillRoundRect(r.x, r.y, r.width, r.height, arcRadius, arcRadius);
         return r;
     }
 
@@ -218,7 +218,7 @@ class TextRenderer {
 
     private Rectangle layoutText(Graphics2D g2d, String string, Rectangle bounds) {
         float cols = 48.0f;
-        float rows = layoutInfo.isIntertitle ? 18.0f : 36.0f;
+        float rows = layoutInfo.isIntertitle ? 24.0f : 48.0f;
         float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
         float fontSizeByCols = bounds.width / cols;
         float fontSizeByRows = (float) layoutInfo.region.getHeight() / rows;
@@ -285,7 +285,7 @@ class TextRenderer {
 
             float dx = layout.isLeftToRight() ? textArea.x : (wrappingWidth - layout.getAdvance());
             dy += (layout.getAscent());
-            textVisitor.run(layout, dx, dy);
+            textVisitor.run(layout, dx, dy - layout.getDescent() - layout.getLeading());
             dy += layout.getDescent() + layout.getLeading();
         }
     }

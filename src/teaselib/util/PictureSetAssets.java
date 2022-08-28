@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import teaselib.Resources;
-import teaselib.core.AbstractImages;
+import teaselib.core.AbstractActorImages;
 import teaselib.core.PoseCache;
 import teaselib.core.ResourceLoader;
 
@@ -373,13 +373,13 @@ class PictureSetAssets {
         }
 
         private final Map<String, String> mapping;
-        final AbstractImages images;
+        final AbstractActorImages images;
 
         public Take(String key, Resources resources) {
             super(key, new ArrayList<>());
             this.mapping = new HashMap<>();
             if (attributes.contains(Attribute.Linear)) {
-                this.images = new AbstractImages(new Resources(resources, this.assets, this.mapping)) {
+                this.images = new AbstractActorImages(new Resources(resources, this.assets, this.mapping)) {
 
                     int index = 0;
 

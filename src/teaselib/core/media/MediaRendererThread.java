@@ -63,6 +63,11 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
      */
     protected abstract void renderMedia() throws InterruptedException, IOException;
 
+    protected void mandatoryCompletedAndContinue() {
+        completedMandatory.countDown();
+        completedMandatory = new CountDownLatch(1);
+    }
+
     public void set(Replay.Position position) {
         this.position = position;
         adjustCompletionState();
@@ -86,27 +91,24 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     }
 
     private void replayFromStart() {
-        clearCurrentLatches();
+        completedStart.countDown();
+        completedMandatory.countDown();
+        completedAll.countDown();
         completedStart = new CountDownLatch(1);
         completedMandatory = new CountDownLatch(1);
         completedAll = new CountDownLatch(1);
     }
 
     private void replayFromCurrent() {
-        clearCurrentLatches();
+        completedMandatory.countDown();
+        completedAll.countDown();
         completedMandatory = new CountDownLatch(1);
         completedAll = new CountDownLatch(1);
     }
 
     private void replayEnd() {
-        clearCurrentLatches();
-        completedAll = new CountDownLatch(1);
-    }
-
-    private void clearCurrentLatches() {
-        completedStart.countDown();
-        completedMandatory.countDown();
         completedAll.countDown();
+        completedAll = new CountDownLatch(1);
     }
 
     protected final void startCompleted() {

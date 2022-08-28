@@ -81,17 +81,17 @@ public class TransformTest {
         Dimension image = new Dimension(240, 320);
         Rectangle bounds = new Rectangle(0, 0, 320, 120);
         var t = Transform.maxImage(image, bounds, Optional.of(top));
-        Rectangle2D.Double focusAreaImage = Transform.scale(top, image);
+        Rectangle2D.Double imageFocusArea = Transform.scale(top, image);
 
-        Point2D focusTop = t.transform(new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()),
+        Point2D focusTop = t.transform(new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMinY()),
                 new Point2D.Double());
         assertTrue(focusTop.getY() < 0.0);
 
-        t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, focusAreaImage);
+        t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, imageFocusArea);
         assertEquals(t, p(0.0, -7.497), p(0.0, 0.0)); //
         assertEquals(t, p(320.0, 419.169), p(240.0, 320.0));
-        assertEquals(t, p(160.0, -7.497), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()));
-        assertEquals(t, p(160.0, 99.169), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMaxY()));
+        assertEquals(t, p(160.0, -7.497), new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMinY()));
+        assertEquals(t, p(160.0, 99.169), new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMaxY()));
         // upper bounds transformed to y == 0
     }
 
@@ -100,17 +100,17 @@ public class TransformTest {
         Dimension image = new Dimension(240, 320);
         Rectangle bounds = new Rectangle(0, 0, 320, 120);
         var t = Transform.maxImage(image, bounds, Optional.of(bottom));
-        Rectangle2D.Double focusAreaImage = Transform.scale(bottom, image);
+        Rectangle2D.Double imageFocusArea = Transform.scale(bottom, image);
 
-        Point2D focusBottom = t.transform(new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMaxY()),
+        Point2D focusBottom = t.transform(new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMaxY()),
                 new Point2D.Double());
         assertTrue(focusBottom.getY() > bounds.height);
 
-        t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, focusAreaImage);
+        t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, imageFocusArea);
         assertEquals(t, p(0.0, -306.666), p(0.0, 0.0));
         assertEquals(t, p(320.0, 120.0), p(240.0, 320.0));
-        assertEquals(t, p(160.0, 13.333), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()));
-        assertEquals(t, p(160.0, 120.0), new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMaxY()));
+        assertEquals(t, p(160.0, 13.333), new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMinY()));
+        assertEquals(t, p(160.0, 120.0), new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMaxY()));
     }
 
     @Test
@@ -118,11 +118,11 @@ public class TransformTest {
         Dimension image = new Dimension(320, 240);
         Rectangle bounds = new Rectangle(32, 32, 320, 120);
         var t = Transform.maxImage(image, bounds, Optional.of(left));
-        Rectangle2D.Double focusAreaImage = Transform.scale(left, image);
+        Rectangle2D.Double imageFocusArea = Transform.scale(left, image);
         assertEquals(t, new Point2D.Double(0.0, 60.0),
-                new Point2D.Double(focusAreaImage.getMinX(), focusAreaImage.getCenterY()));
+                new Point2D.Double(imageFocusArea.getMinX(), imageFocusArea.getCenterY()));
         assertEquals(t, new Point2D.Double(bounds.width * left.width, 60.0),
-                new Point2D.Double(focusAreaImage.getMaxX(), focusAreaImage.getCenterY()));
+                new Point2D.Double(imageFocusArea.getMaxX(), imageFocusArea.getCenterY()));
         // Portrait image already scaled to horizontal bounds<
     }
 

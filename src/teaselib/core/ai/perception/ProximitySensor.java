@@ -1,5 +1,7 @@
 package teaselib.core.ai.perception;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -20,6 +22,18 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
 
     private PoseAspects pose = PoseAspects.Unavailable;
     private Proximity previous = Proximity.FACE2FACE;
+
+    public static final Map<Proximity, Double> zoom = new HashMap<>() {
+        private static final long serialVersionUID = 1L;
+
+        {
+            put(Proximity.CLOSE, 2.0);
+            put(Proximity.FACE2FACE, 1.1);
+            put(Proximity.NEAR, 1.05);
+            put(Proximity.FAR, 1.0);
+            put(Proximity.AWAY, 0.0);
+        }
+    };
 
     ProximitySensor(TeaseLib teaseLib, Set<Interest> interests) {
         super(interests);
@@ -46,7 +60,7 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
         // TODO proximity and blur visualization is out-of-sync with script-rendering
         // - when presence is false because pose estimation has not started or is just starting up
         // -> may result in blurred actor images before prompt
-        teaseLib.host.setActorProximity(proximity);
+        teaseLib.host.setActorZoom(zoom.get(proximity));
         teaseLib.host.setFocusLevel(focusLevel);
         teaseLib.globals.get(Shower.class).updateUI(new InputMethod.UiEvent(speechProximity));
 

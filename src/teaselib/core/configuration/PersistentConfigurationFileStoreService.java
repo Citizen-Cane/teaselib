@@ -9,10 +9,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import teaselib.core.Closeable;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.concurrency.NoFuture;
 import teaselib.core.util.ExceptionUtil;
 
 public class PersistentConfigurationFileStoreService implements Closeable {
@@ -21,33 +21,7 @@ public class PersistentConfigurationFileStoreService implements Closeable {
     private final NamedExecutorService fileWriterService = NamedExecutorService.newFixedThreadPool(1,
             "Configuration file writer service");
 
-    private static final Future<Void> Done = new Future<>() {
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return true;
-        }
-
-        @Override
-        public Void get() throws InterruptedException, ExecutionException {
-            return null;
-        }
-
-        @Override
-        public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return null;
-        }
-    };
-
+    private static final Future<Void> Done = NoFuture.Void;
     private Future<Void> writeAll = Done;
 
     ConfigurationFile open(Path path) throws IOException {

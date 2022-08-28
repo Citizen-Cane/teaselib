@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +9,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.FileUtilities;
@@ -48,6 +48,16 @@ public class CommandLineHost implements Host {
 
     @Override
     public void setFocusLevel(float focusLevel) {
+        // Ignore
+    }
+
+    @Override
+    public void setActorZoom(double zoom) {
+        // Ignore
+    }
+
+    @Override
+    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float blend, float textBLendIn, float textBlendOut) {
         // Ignore
     }
 
@@ -100,8 +110,4 @@ public class CommandLineHost implements Host {
             throw new IllegalArgumentException(Objects.toString(folder));
     }
 
-    @Override
-    public void setActorProximity(HumanPose.Proximity proximity) {
-        // Ignore
-    }
 }

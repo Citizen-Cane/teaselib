@@ -44,7 +44,7 @@ public class MessagePartInjectionTest {
         }
 
         public void renderMessage(Message message) {
-            super.renderMessage(message, false);
+            super.startMessage(message, false);
         }
 
         RenderedMessage decorate(Message message) {

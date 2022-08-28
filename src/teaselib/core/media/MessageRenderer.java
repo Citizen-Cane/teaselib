@@ -1,6 +1,8 @@
 package teaselib.core.media;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +22,7 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
     static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(Arrays.asList(Message.Type.Text,
             Message.Type.Image, Message.Type.Mood, Message.Type.Sound, Message.Type.Speech, Message.Type.Delay));
 
+    // TODO blocks multiple actors in one batch
     final Actor actor;
     final ResourceLoader resources;
     final List<RenderedMessage> messages;
@@ -36,8 +39,13 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
         super(teaseLib);
         this.actor = actor;
         this.resources = resources;
-        this.messages = messages;
-        this.lastParagraph = RenderedMessage.getLastParagraph(getLastMessage());
+        if (messages.isEmpty()) {
+            this.messages = Collections.emptyList();
+            this.lastParagraph = new RenderedMessage();
+        } else {
+            this.messages = new ArrayList<>(messages);
+            this.lastParagraph = RenderedMessage.getLastParagraph(getLastMessage());
+        }
     }
 
     RenderedMessage getLastMessage() {

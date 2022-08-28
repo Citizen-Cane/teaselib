@@ -1,5 +1,6 @@
 package teaselib.core.debug;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +20,6 @@ import teaselib.core.Closeable;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.Choice;
@@ -103,6 +103,16 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
 
     @Override
     public void setFocusLevel(float focusLevel) {
+        // Ignore
+    }
+
+    @Override
+    public void setActorZoom(double zoom) {
+        // Ignore
+    }
+
+    @Override
+    public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float blend, float textBLendIn, float textBlendOut) {
         // Ignore
     }
 
@@ -227,11 +237,6 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
             return getLocation(Location.Host);
         else
             throw new IllegalArgumentException(Objects.toString(folder));
-    }
-
-    @Override
-    public void setActorProximity(HumanPose.Proximity proximity) {
-        // Ignore
     }
 
     @Override

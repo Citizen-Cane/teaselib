@@ -22,7 +22,6 @@ import teaselib.Body;
 import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Message;
-import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.Resources;
@@ -35,6 +34,7 @@ import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
 import teaselib.core.ai.perception.PoseAspects;
+import teaselib.core.ai.perception.ProximitySensor;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.release.KeyReleaseDeviceInteraction;
 import teaselib.core.devices.remote.LocalNetworkDevice;
@@ -148,7 +148,6 @@ public abstract class Script {
     protected void stopProimitySensor(HumanPoseScriptInteraction humanPoseInteraction) {
         humanPoseInteraction.deviceInteraction.removeEventListener(actor,
                 humanPoseInteraction.deviceInteraction.proximitySensor);
-        teaseLib.host.setActorProximity(Proximity.FAR);
     }
 
     private DeviceInteractionImplementations initDeviceInteractions() {
@@ -381,10 +380,10 @@ public abstract class Script {
         scriptRenderer.prependMessage(message);
     }
 
-    protected void renderMessage(Message message, boolean useTTS) {
+    protected void startMessage(Message message, boolean useTTS) {
         Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(useTTS);
         try {
-            scriptRenderer.renderMessage(teaseLib, resources, message, decorators(textToSpeech));
+            scriptRenderer.startMessage(teaseLib, resources, message, decorators(textToSpeech));
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
         } finally {
@@ -429,30 +428,6 @@ public abstract class Script {
             scriptRenderer.replaceMessage(teaseLib, resources, actor, message, decorators(getTextToSpeech()));
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
-        }
-    }
-
-    void showAll(double delaySeconds) {
-        var showAll = new Message(actor);
-        addMatchingImage(showAll);
-        try {
-            scriptRenderer.showAll(teaseLib, resources, actor, showAll, withoutSpeech());
-            // TODO resolve race condition between explicit and frame-based rendering
-            // - explicit here
-            // - frame-based only if the camera is enabled and the proximity sensor updates zoom and ui
-            // Without the wait, Host.show(image) would be rendered from multiple threads
-            // With a queue, the explicit render call (later on in Section renderer) would be too much
-            awaitMandatoryCompleted();
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException(e);
-        }
-    }
-
-    private void addMatchingImage(Message message) {
-        if (scriptRenderer.showsActorImage()) {
-            message.add(Type.Image, displayImage);
-        } else if (!scriptRenderer.showsInstructionalImage()) {
-            message.add(Type.Image, Message.NoImage);
         }
     }
 
@@ -501,7 +476,8 @@ public abstract class Script {
             // If we don't have a script function,
             // then the mandatory part of the renderers
             // must be completed before displaying the ui choices
-            completeSection();
+            awaitMandatoryCompleted();
+            showAll();
         } else {
             completeSectionBeforeStarting(scriptFunction);
         }
@@ -523,31 +499,35 @@ public abstract class Script {
         } finally {
             endAll();
             teaseLib.host.endScene();
+            teaseLib.host.show();
         }
         scriptRenderer.events.afterPrompt.fire(new ScriptEventArgs());
         actor.images.advance(Next.Section);
         return answer;
     }
 
-    private void completeSection() {
-        if (scriptRenderer.isInterTitle()) {
-            awaitMandatoryCompleted();
-        } else {
-            showAll(5.0);
-        }
-    }
-
     private void completeSectionBeforeStarting(ScriptFunction scriptFunction) {
         if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
             // A confirmation relates to the current message,
-            // and must appears like a normal button,
+            // and must appear as a normal button,
             // so in a way it is concatenated to the current message
             awaitMandatoryCompleted();
+            showAll();
         } else {
             // An autonomous script function does not relate to the current
             // message, therefore we'll wait until all of the last message
             // has been completed
             awaitAllCompleted();
+        }
+    }
+
+    private void showAll() {
+        if (scriptRenderer.haveMultipleParagraphs()) {
+            try {
+                scriptRenderer.showAll();
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException(e);
+            }
         }
     }
 
@@ -586,11 +566,20 @@ public abstract class Script {
                     stopProimitySensor(humanPoseInteraction);
                 }
             } else {
+                teaseLib.host.setActorZoom(ProximitySensor.zoom.get(Proximity.FACE2FACE));
+                teaseLib.host.show();
                 choice = getDistinctChoice(prompt);
             }
         } else {
+            teaseLib.host.setActorZoom(ProximitySensor.zoom.get(Proximity.FACE2FACE));
+            teaseLib.host.show();
             choice = getDistinctChoice(prompt);
         }
+        // TODO manual zoom reset is a quick reaction, but looks weird when waiting for it in AnimatedHost
+        // + There will always be a short delay between answering the prompt and displaying the next animation
+        // - must be tested with quick animation duration, and there might be a small hickup in the animations
+        // -> TODO don't wait for in AnimatedHost, just change the direction
+        // teaseLib.host.setActorZoom(1.0);
 
         String answer = "< " + choice.display;
         logger.info("{}", answer);
@@ -658,7 +647,7 @@ public abstract class Script {
         }
     }
 
-    private boolean face2face(PoseAspects pose) {
+    private static boolean face2face(PoseAspects pose) {
         return pose.is(Proximity.FACE2FACE);
     }
 

@@ -176,7 +176,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public void say(Message message) {
-        renderMessage(message, true);
+        startMessage(message, true);
     }
 
     public final void append(String... message) {
@@ -219,7 +219,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public void show(Message message) {
-        renderMessage(message, false);
+        startMessage(message, false);
     }
 
     /**

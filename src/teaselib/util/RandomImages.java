@@ -3,9 +3,8 @@ package teaselib.util;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import teaselib.ActorImages;
 import teaselib.Resources;
-import teaselib.core.AbstractImages;
+import teaselib.core.AbstractActorImages;
 import teaselib.util.math.Random;
 
 /**
@@ -13,7 +12,7 @@ import teaselib.util.math.Random;
  * 
  * @author Citizen-Cane
  */
-public class RandomImages extends AbstractImages implements ActorImages {
+public class RandomImages extends AbstractActorImages {
 
     private final Random random = new Random();
     private String current;

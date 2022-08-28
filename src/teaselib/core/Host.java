@@ -1,11 +1,11 @@
 package teaselib.core;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
 import teaselib.util.AnnotatedImage;
@@ -29,9 +29,13 @@ public interface Host {
      * @param image
      * @param text
      */
-    void show(AnnotatedImage actorImage, List<String> text);
+    void show(AnnotatedImage image, List<String> text);
 
     void setFocusLevel(float focusLevel);
+
+    void setActorZoom(double zoom);
+
+    void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float blend, float textBLendIn, float textBlendOut);
 
     /**
      * Repaint the content area to show actor image and text.
@@ -94,5 +98,4 @@ public interface Host {
 
     File getLocation(Location folder);
 
-    void setActorProximity(HumanPose.Proximity proximity);
 }

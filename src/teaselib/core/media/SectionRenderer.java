@@ -1,11 +1,9 @@
 package teaselib.core.media;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.BinaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +14,9 @@ import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
 import teaselib.Mood;
-import teaselib.Replay;
 import teaselib.Replay.Position;
 import teaselib.core.Closeable;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ScriptEventArgs.BeforeMessage.OutlineType;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -36,9 +32,7 @@ public class SectionRenderer implements Closeable {
     // TODO Handle message decorator processing here in order to make textToSpeechPlayer private
     public final TextToSpeechPlayer textToSpeechPlayer;
 
-    // TODO workaround to tell section renderer to add the proper delay for the next message
-    public OutlineType nextOutlineType;
-    private MessageRenderer currentMessageRenderer;
+    private Batch currentMessageRenderer;
     private MediaRenderer.Threaded currentRenderer = MediaRenderer.None;
     private RenderSound backgroundSoundRenderer;
 
@@ -46,6 +40,7 @@ public class SectionRenderer implements Closeable {
         this.teaseLib = teaseLib;
         this.renderQueue = renderQueue;
         this.textToSpeechPlayer = new TextToSpeechPlayer(teaseLib.config);
+        this.currentMessageRenderer = new Batch(null, Collections.emptyList(), null);
     }
 
     @Override
@@ -55,23 +50,33 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    public MediaRenderer.Threaded say(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
-        return createBatch(actor, messages, say, resources);
+    public boolean append(List<RenderedMessage> messages) {
+        synchronized (messages) {
+            currentMessageRenderer.messages.addAll(messages);
+            boolean stillRunning = !currentMessageRenderer.hasCompletedMandatory();
+            return stillRunning;
+        }
     }
 
-    public MediaRenderer.Threaded append(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
-        return createBatch(actor, messages, append, resources);
+    public boolean hasMultipleParagraphs() {
+        return currentMessageRenderer.accumulatedText.paragraphs.size() > 1;
     }
 
-    public MediaRenderer.Threaded replace(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
-        return createBatch(actor, messages, replace, resources);
+    public void restoreCurrentRenderer(List<MediaRenderer> replay) {
+        for (int i = 0; i < replay.size(); i++) {
+            if (replay.get(i) instanceof MessageRenderer m) {
+                if (m != currentMessageRenderer) {
+                    replay.remove(i);
+                    break;
+                }
+            }
+        }
+        if (!replay.contains(currentMessageRenderer)) {
+            replay.add(currentMessageRenderer);
+        }
     }
 
-    public MediaRenderer.Threaded showAll(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
-        return createBatch(actor, messages, showAll, resources);
-    }
-
-    private final class Batch extends MessageRenderer {
+    final class Batch extends MessageRenderer {
         private Batch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
             super(SectionRenderer.this.teaseLib, actor, resources, messages);
         }
@@ -106,47 +111,38 @@ public class SectionRenderer implements Closeable {
             } else if (position == Position.FromCurrentPosition) {
                 if (currentMessage < messages.size()) {
                     renderFromCurrentMessage();
-                } else {
-                    showAll(this);
                 }
             } else if (position == Position.FromLastParagraph) {
-                // say the last paragraph again, including the delay, showAll
+                // say the last message (likely a paragraph?) again, including the final delay, showAll
                 renderFrom(lastTextMessage());
-                showAll(this);
+                // TODO FromLastParagraph & FromMandatory are very similar -> get rid of one of them
             } else if (position == Position.FromMandatory) {
-                // Render the last paragraph, includes final delay, then showAll
+                // Render the last paragraph, including the final delay, then showAll
                 render(lastParagraph);
-                showAll(this);
             } else if (position == Position.End) {
                 // Just show the summary
-                showAll(this);
+                showAll();
             } else {
                 throw new IllegalStateException(position.toString());
             }
         }
 
-        private void showAll(MessageRenderer message) throws IOException, InterruptedException {
-            var mood = message.lastParagraph.findLast(Type.Mood);
-            var currentMood = mood != null ? mood.value : Mood.Neutral;
-            var image = getImage(message.actor, message.displayImage, currentMood);
-            show(image, message.accumulatedText.paragraphs);
+        private void showAll() throws IOException, InterruptedException {
+            var image = getImage(actor, displayImage);
+            show(image, accumulatedText.paragraphs);
         }
 
         private void renderAllMessages() throws IOException, InterruptedException {
             accumulatedText = new MessageTextAccumulator();
             currentMessage = 0;
-            render(messages);
-        }
-
-        private void renderFromCurrentMessage() throws IOException, InterruptedException {
-            render(messages.subList(currentMessage, messages.size()));
+            renderFromCurrentMessage();
         }
 
         private void renderFrom(int messageIndex) throws IOException, InterruptedException {
             accumulatedText = new MessageTextAccumulator();
             accumulatedText.addAll(messages.subList(0, messageIndex));
             currentMessage = messageIndex;
-            render(messages.subList(messageIndex, messages.size()));
+            renderFromCurrentMessage();
         }
 
         int lastTextMessage() {
@@ -159,21 +155,33 @@ public class SectionRenderer implements Closeable {
             return i;
         }
 
-        private void render(List<RenderedMessage> renderedMessges) throws IOException, InterruptedException {
-            for (var message : renderedMessges) {
-                currentMessage = this.messages.indexOf(message);
-                try {
-                    render(message);
-                } finally {
-                    currentMessage++;
+        private void renderFromCurrentMessage() throws IOException, InterruptedException {
+            while (true) {
+                int limit = messages.size();
+                while (currentMessage < limit) {
+                    RenderedMessage message = messages.get(currentMessage);
+                    try {
+                        render(message);
+                    } finally {
+                        currentMessage++;
+                    }
+                    renderOptionalDefaultDelayBetweenMultipleMessages();
                 }
-                renderOptionalDefaultDelayBetweenMultipleMessages();
+
+                synchronized (messages) {
+                    int size = messages.size();
+                    if (limit < size) {
+                        mandatoryCompletedAndContinue();
+                    } else {
+                        break;
+                    }
+                }
             }
         }
 
         private void renderOptionalDefaultDelayBetweenMultipleMessages() throws InterruptedException {
             if (textToSpeechPlayer != null) {
-                boolean last = currentMessage == messages.size() && nextOutlineType != OutlineType.AppendParagraph;
+                boolean last = currentMessage == messages.size();
                 if (!last && !lastParagraph.contains(Type.Delay)) {
                     renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
                 }
@@ -211,7 +219,7 @@ public class SectionRenderer implements Closeable {
 
                 if ((isDurationType && !previousPart.isAnyOf(Message.Type.DelayTypes))
                         || isDisplayTypeAtEnd) {
-                    show(getImage(actor, displayImage, mood), accumulatedText.getTail());
+                    show(getImage(actor, displayImage), accumulatedText.getTail());
                 }
 
                 if (part.type == Type.Text) {
@@ -253,7 +261,7 @@ public class SectionRenderer implements Closeable {
                     try {
                         showDesktopItem(part, resources);
                     } catch (IOException e) {
-                        showDesktopItemError(this, accumulatedText, mood, e);
+                        showDesktopItemError(this, accumulatedText, e);
                         throw e;
                     }
                 }
@@ -272,62 +280,19 @@ public class SectionRenderer implements Closeable {
 
     }
 
-    // TODO make sure batch renderers don't overlap to avoid race conditions with SectionRenderer fields
-
-    Batch createBatch(Actor actor, List<RenderedMessage> messages, BinaryOperator<MessageRenderer> operator,
-            ResourceLoader resources) {
-        var next = new Batch(actor, messages, resources);
-        applyOperator(currentMessageRenderer, next, operator);
-        currentMessageRenderer = next;
-        return next;
+    public Batch createStartBatch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
+        Batch batch = new Batch(actor, messages, resources);
+        currentMessageRenderer = batch;
+        return batch;
     }
 
-    static MessageRenderer applyOperator(MessageRenderer currentMessageRenderer, MessageRenderer nextMessageRenderer,
-            BinaryOperator<MessageRenderer> operator) {
-        return currentMessageRenderer == null ? nextMessageRenderer
-                : operator.apply(currentMessageRenderer, nextMessageRenderer);
-    }
-
-    static BinaryOperator<MessageRenderer> say = (current, next) -> {
-        next.previousLastParagraph = next.lastParagraph;
-        return next;
-    };
-
-    static BinaryOperator<MessageRenderer> append = (current, next) -> {
-        next.previousLastParagraph = current.lastParagraph;
-        prepend(current.messages, next);
-        next.position = Replay.Position.FromCurrentPosition;
-        next.currentMessage = current.messages.size();
-        return next;
-    };
-
-    static BinaryOperator<MessageRenderer> replace = (current, next) -> {
-        next.previousLastParagraph = current.lastParagraph;
-        List<RenderedMessage> messages = new ArrayList<>(current.messages);
-        messages.remove(messages.size() - 1);
-        prepend(messages, next);
-        next.position = Replay.Position.FromCurrentPosition;
-        next.currentMessage = next.messages.size() - 1;
-        return next;
-    };
-
-    static BinaryOperator<MessageRenderer> showAll = (current, next) -> {
-        next.previousLastParagraph = current.lastParagraph;
-        prepend(current.messages, next);
-        next.position = Replay.Position.FromMandatory;
-        next.currentMessage = next.messages.size();
-        return next;
-    };
-
-    private static void prepend(List<RenderedMessage> messages, MessageRenderer next) {
-        messages.forEach(m -> m.forEach(next.accumulatedText::add));
-        next.messages.addAll(0, messages);
+    public Batch createBatch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
+        return new Batch(actor, messages, resources);
     }
 
     private void finalizeRendering(MessageRenderer messageRenderer) throws InterruptedException {
         awaitSectionMandatory();
-        if (nextOutlineType == OutlineType.NewSection && textToSpeechPlayer != null
-                && !messageRenderer.lastParagraph.contains(Type.Delay)) {
+        if (textToSpeechPlayer != null && !messageRenderer.lastParagraph.contains(Type.Delay)) {
             renderSectionEndDelay();
         }
         awaitSectionAll();
@@ -350,11 +315,11 @@ public class SectionRenderer implements Closeable {
         renderQueue.submit(renderDesktopItem);
     }
 
-    private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText,
-            String mood, IOException e) throws IOException, InterruptedException {
+    private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText, IOException e)
+            throws IOException, InterruptedException {
         accumulatedText.add(new MessagePart(Message.Type.Text, e.getMessage()));
         awaitSectionAll();
-        AnnotatedImage image = getImage(messageRenderer.actor, messageRenderer.displayImage, mood);
+        AnnotatedImage image = getImage(messageRenderer.actor, messageRenderer.displayImage);
         show(image, e.getMessage());
         messageRenderer.startCompleted();
     }
@@ -401,20 +366,22 @@ public class SectionRenderer implements Closeable {
         currentRenderer = MediaRenderer.None;
     }
 
-    private AnnotatedImage getImage(Actor actor, String displayImage, String mood)
+    private AnnotatedImage getImage(Actor actor, String displayImage)
             throws IOException, InterruptedException {
         if (actor.images.contains(displayImage)) {
             teaseLib.transcript.debug("image = '" + displayImage + "'");
             return actorImage(actor, displayImage);
         } else {
-            if (!Message.NoImage.equalsIgnoreCase(displayImage)) {
+            if (Message.NoImage.equalsIgnoreCase(displayImage)) {
+                return null;
+            } else {
                 teaseLib.transcript.info("image = '" + displayImage + "'");
+                return instructionalImage(actor, displayImage);
             }
-            return instructionalImage(actor, displayImage);
         }
     }
 
-    private void appendMood(String mood, StringBuilder transcript) {
+    private static void appendMood(String mood, StringBuilder transcript) {
         if (!Mood.Neutral.equalsIgnoreCase(mood)) {
             transcript.append(mood);
             transcript.append(" ");
@@ -529,11 +496,4 @@ public class SectionRenderer implements Closeable {
         return Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages));
     }
 
-    public RenderedMessage lastParagraph() {
-        return currentMessageRenderer != null ? currentMessageRenderer.lastParagraph : null;
-    }
-
-    public boolean showsMultipleParagraphs() {
-        return currentMessageRenderer != null ? currentMessageRenderer.accumulatedText.paragraphs.size() > 1 : false;
-    }
 }

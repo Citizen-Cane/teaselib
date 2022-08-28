@@ -27,26 +27,27 @@ public:
         UpperTorso = 8,
         LowerTorso = 16,
         LegsAndFeet = 32,
+
+        MultiPose = 256
     };
 
     void set(Interest interests);
     void set(const aifx::image::Rotation rotation);
     bool acquire(aifx::video::VideoCapture* capture);
     bool acquire(const void* image, int size);
-    const std::vector<aifx::pose::Pose>& estimate(const std::chrono::milliseconds timestamp = 0ms);
+    const std::vector<aifx::pose::Pose> estimate(const std::chrono::milliseconds timestamp = 0ms);
 
     static jobject estimation(JNIEnv* env, const aifx::pose::Pose& pose);
 private:
-    const aifx::pose::Movenet::Model model;
-
-    typedef std::map<aifx::image::Orientation, aifx::pose::Movenet*> Models;
+    typedef std::map<int, aifx::pose::Movenet*> Models;
     Models models;
     int interests;
+    aifx::pose::Movenet* interpreter;
 
     aifx::image::Rotation rotation;
     cv::UMat frame;
 
-    aifx::pose::Movenet* interpreter();
-    std::vector<aifx::pose::Pose> poses;
-};
+    aifx::pose::Movenet* getInterpreter();
+}
+;
 

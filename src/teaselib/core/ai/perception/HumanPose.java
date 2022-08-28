@@ -37,6 +37,8 @@ public class HumanPose extends NativeObject.Disposible {
         LowerTorso(16),
         LegsAndFeet(32),
 
+        MultiPose(256), //
+
         ;
 
         final int bit;
@@ -45,13 +47,10 @@ public class HumanPose extends NativeObject.Disposible {
             this.bit = bit;
         }
 
-        public static final Set<Interest> supported = asSet(Interest.Status, Interest.Proximity, Interest.HeadGestures);
-
-        public static final Set<Interest> Head = asSet(Interest.Status, Interest.Proximity);
-
-        public static final Set<Interest> Pose = asSet(Interest.Status, Interest.Proximity, Interest.UpperTorso,
-                Interest.LowerTorso, Interest.LegsAndFeet);
-
+        public static final Set<Interest> supported = asSet(Status, Proximity, HeadGestures, UpperTorso, LowerTorso, LegsAndFeet, MultiPose);
+        public static final Set<Interest> Head = asSet(Status, Proximity, UpperTorso);
+        public static final Set<Interest> AllPersons = asSet(Status, Proximity, MultiPose);
+        public static final Set<Interest> Pose = asSet(Status, Proximity, UpperTorso, LowerTorso, LegsAndFeet);
     }
 
     @SafeVarargs

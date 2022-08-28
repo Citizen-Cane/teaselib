@@ -207,10 +207,10 @@ class TextRenderer {
                 region = new Rectangle(
                         textArea.x, textArea.y,
                         (int) textLayout.getAdvance(),
-                        (int) y - textArea.y);
+                        (int) (y - textArea.y + textLayout.getDescent()));
             } else {
                 region.width = Math.max((int) region.getWidth(), (int) textLayout.getAdvance());
-                region.height = (int) y - region.y;
+                region.height = (int) (y - region.y + textLayout.getDescent());
             }
         }
 
@@ -285,7 +285,7 @@ class TextRenderer {
 
             float dx = layout.isLeftToRight() ? textArea.x : (wrappingWidth - layout.getAdvance());
             dy += (layout.getAscent());
-            textVisitor.run(layout, dx, dy - layout.getDescent() - layout.getLeading());
+            textVisitor.run(layout, dx, dy - layout.getLeading());
             dy += layout.getDescent() + layout.getLeading();
         }
     }

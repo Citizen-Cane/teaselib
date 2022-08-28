@@ -38,7 +38,7 @@ class TextRenderer {
             alignLayout(layoutRegion, bounds, focusArea);
             frame.textImageRegion = drawTextRegion(g2d, frame, layoutRegion);
             g2d.setColor(frame.isIntertitle ? Color.white : Color.black);
-            renderText(g2d, layoutRegion);
+            drawText(g2d, layoutRegion);
         }
     }
 
@@ -127,10 +127,6 @@ class TextRenderer {
                 x = rightLimit - textwidth;
             }
         }
-
-        // TODO if the text bubble covers the focus region, try to find a better matching region (e.g. below head
-        // ...)
-        // TODO For large texts - e.g. showAll - it might make sense to align the bubble to the side
 
         int width = textwidth;
         int height = Math.max(FontLimits.MINIMAL_TEXT_HEIGHT, bounds.height - insets.bottom);
@@ -244,18 +240,11 @@ class TextRenderer {
         return region;
     }
 
-    private void renderText(Graphics2D g2d, Rectangle region) {
+    private void drawText(Graphics2D g2d, Rectangle region) {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-        // When enabled short texts are wrapped on multiple lines although the text bubble has enough space
-        // + longer texts are good - suggests that calculations are right
-        // + longer texts have correct bottom inset
-        // - for single word commands with trailing . the dot is renderer on the next line
-        // - short text does not seem to have any bottom inset
-        // - short text "Eins." is rendered in a single render call but the dot ends up on a new line.
-        // g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        paragraph.setIndex(paragraph.getBeginIndex());
         layoutText(region, paragraph, measurer, (layout, x, y) -> layout.draw(g2d, x, y));
     }
 
@@ -265,14 +254,7 @@ class TextRenderer {
         float wrappingWidth = (float) textArea.getWidth();
         float dy = textArea.y;
         while (measurer.getPosition() < paragraph.getEndIndex()) {
-            paragraph.setIndex(measurer.getPosition());
-            char ch;
-            while ((ch = paragraph.next()) != CharacterIterator.DONE) {
-                if (ch == '\n') {
-                    break;
-                }
-            }
-            int limit = paragraph.getIndex();
+            int limit = advanceLimitToNextNewLine(measurer, paragraph);
             TextLayout layout = null;
             if (limit > 0) {
                 layout = measurer.nextLayout(wrappingWidth, limit, true);
@@ -287,7 +269,28 @@ class TextRenderer {
             dy += (layout.getAscent());
             textVisitor.run(layout, dx, dy - layout.getLeading());
             dy += layout.getDescent() + layout.getLeading();
+
+            boolean moreTextFollows = measurer.getPosition() < paragraph.getEndIndex();
+            if (moreTextFollows) {
+                boolean endOfParagraph = measurer.getPosition() == limit;
+                if (endOfParagraph) {
+                    dy += layout.getAscent() * 0.5f;
+                }
+            }
         }
+    }
+
+    private static int advanceLimitToNextNewLine(LineBreakMeasurer measurer,
+            AttributedCharacterIterator paragraph) {
+        paragraph.setIndex(measurer.getPosition());
+        char ch;
+        while ((ch = paragraph.next()) != CharacterIterator.DONE) {
+            if (ch == '\n') {
+                break;
+            }
+        }
+        int limit = paragraph.getIndex();
+        return limit;
     }
 
     void drawDebugInfo(Graphics2D g2d) {

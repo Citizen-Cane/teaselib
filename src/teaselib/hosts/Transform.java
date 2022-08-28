@@ -71,6 +71,7 @@ public class Transform {
     }
 
     static final double goldenRatio = 1.618033988749;
+    static final double goldenRatioFactorA = goldenRatio - 1.0;
     static final double goldenRatioFactorB = 2.0 - goldenRatio;
 
     /**

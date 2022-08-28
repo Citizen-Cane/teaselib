@@ -1,6 +1,6 @@
 package teaselib.hosts;
 
-import static java.awt.geom.AffineTransform.*;
+import static java.awt.geom.AffineTransform.getTranslateInstance;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -112,7 +112,7 @@ public class SceneRenderer {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
             g2d.setComposite(alphaComposite);
             drawImage(g2d, gc, bottom);
-            // ImageRenderer.renderDebugInfo(g2d, bottom, bounds);
+            // ImageRenderer.drawDebugInfo(g2d, bottom, bounds);
         }
 
         if (alpha < 1.0f) {
@@ -121,7 +121,7 @@ public class SceneRenderer {
         }
 
         drawImage(g2d, gc, top);
-        // ImageRenderer.renderDebugInfo(g2d, top, bounds);
+        // ImageRenderer.drawDebugInfo(g2d, top, bounds);
     }
 
     private static void drawImage(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
@@ -167,10 +167,12 @@ public class SceneRenderer {
     private void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
         if (!frame.text.isBlank()) {
             draw(g2d, gc, frame.textImage, frame.textBlend, frame.textImageRegion);
+            // textRenderer.drawDebugInfo(g2d);
         }
     }
 
-    void draw(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha, Rectangle textArea) {
+    void draw(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha,
+            Rectangle textArea) {
         if (alpha > 0.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2d.setComposite(alphaComposite);

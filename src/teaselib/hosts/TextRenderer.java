@@ -23,37 +23,142 @@ import java.util.Optional;
  */
 class TextRenderer {
 
-    /**
-     * The minimum limits may cause text overflow but at small window size this looks more reasonable than incredibly
-     * small font size.
-     */
-    class FontLimits {
-        static final float MINIMAL_FONT_SIZE = 6.0f;
-        static final int MINIMAL_TEXT_WIDTH = 100;
-        static final int MINIMAL_TEXT_HEIGHT = 100;
+    private record LayoutInfo(Rectangle region, Insets insets, boolean rightAligned, boolean isIntertitle) { //
     }
 
-    private record TextInfo(Rectangle region, boolean rightAligned, boolean isIntertitle) { //
-    }
+    LayoutInfo layoutInfo;
+    float fontSize;
+    AttributedCharacterIterator paragraph;
+    LineBreakMeasurer measurer;
 
     void drawText(Graphics2D g2d, RenderState frame, Rectangle bounds, Optional<Rectangle> focusArea) {
         if (!frame.text.isBlank()) {
-            var textInfo = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
-            var layoutRegion = layoutText(g2d, frame.text, textInfo, bounds);
+            layoutInfo = frame.isIntertitle ? intertitleTextArea(bounds) : spokenTextArea(bounds, focusArea);
+            var layoutRegion = layoutText(g2d, frame.text, bounds);
+            alignLayout(layoutRegion, bounds, focusArea);
             frame.textImageRegion = drawTextRegion(g2d, frame, layoutRegion);
             g2d.setColor(frame.isIntertitle ? Color.white : Color.black);
             renderText(g2d, layoutRegion);
         }
     }
 
-    private static TextRenderer.TextInfo intertitleTextArea(Rectangle bounds) {
+    private static TextRenderer.LayoutInfo intertitleTextArea(Rectangle bounds) {
         Rectangle r = interTitleCenterRegion(bounds);
         int inset = 20;
-        r.x += inset;
-        r.y += inset;
-        r.width -= 2 * inset;
-        r.height -= 2 * inset;
-        return new TextInfo(r, true, true);
+        Insets insets = new Insets(inset, inset, inset, inset);
+        r.x += insets.left;
+        r.y += insets.top;
+        r.width -= insets.left + insets.right;
+        r.height -= insets.top + insets.bottom;
+        return new LayoutInfo(r, insets, true, true);
+    }
+
+    static Rectangle interTitleCenterRegion(Rectangle bounds) {
+        Rectangle centerRegion = new Rectangle(0, bounds.height * 1 / 4, bounds.width, bounds.height * 2 / 4);
+        return centerRegion;
+    }
+
+    private static final Rectangle2D DefaultFocusRegion = new Rectangle2D.Double(0.25, 0.25, 0.25, 0.25);
+
+    /**
+     * The minimum limits may cause text overflow but at small window size this looks more reasonable than incredibly
+     * small font size.
+     */
+    static class FontLimits {
+        static final float MINIMAL_FONT_SIZE = 6.0f;
+        static final int MINIMAL_TEXT_WIDTH = 100;
+        static final int MINIMAL_TEXT_HEIGHT = 100;
+    }
+
+    private static TextRenderer.LayoutInfo spokenTextArea(Rectangle bounds, Optional<Rectangle> focusArea) {
+        return spokenTextArea(bounds, focusArea.isPresent()
+                ? focusArea.get()
+                : new Rectangle(
+                        (int) (bounds.x + bounds.width * DefaultFocusRegion.getX()),
+                        (int) (bounds.y + bounds.height * DefaultFocusRegion.getY()),
+                        (int) (bounds.width * DefaultFocusRegion.getWidth()),
+                        (int) (bounds.height * DefaultFocusRegion.getHeight())));
+    }
+
+    private static TextRenderer.LayoutInfo spokenTextArea(Rectangle bounds, Rectangle focusArea) {
+        float insetFactor = 0.05f;
+        Insets insets = new Insets(
+                (int) (bounds.height * insetFactor),
+                (int) (bounds.width * insetFactor),
+                (int) (bounds.height * insetFactor) + 100,
+                (int) (bounds.width * insetFactor));
+
+        int x;
+        int y = insets.top;
+        int textwidth = textWidth(bounds, Transform.goldenRatioFactorA);
+        int minimalTextWidth = textWidth(bounds, Transform.goldenRatioFactorB);
+        boolean enoughSpaceRight = bounds.width - focusArea.getMaxX() >= textwidth;
+        boolean moreSpaceOnRight = bounds.width - focusArea.getMaxX() > focusArea.getMinX();
+        var rightAlinged = enoughSpaceRight || moreSpaceOnRight;
+        if (rightAlinged) {
+            x = (int) focusArea.getMaxX() + insets.left * 2;
+        } else {
+            x = (int) focusArea.getMinX() - textwidth - insets.right * 2;
+        }
+
+        // Shrink left up to minimal text width
+        int leftLimit = bounds.x + insets.left;
+        if (x < leftLimit) {
+            int headroom = textwidth - minimalTextWidth;
+            if (headroom > 0) {
+                int shift = Math.min(headroom, leftLimit - x);
+                x += shift;
+                textwidth -= shift; // Don't make smaller, text box might become too small
+            }
+            if (x < leftLimit) {
+                x = leftLimit;
+            }
+        }
+
+        // Shrink right up to minimal text width
+        int rightLimit = bounds.x + bounds.width - insets.right;
+        if (x + textwidth > rightLimit) {
+            int headroom = textwidth - minimalTextWidth;
+            if (headroom > 0) {
+                int shift = Math.min(headroom, x + textwidth - rightLimit);
+                textwidth -= shift;
+            }
+            if (x + textwidth > rightLimit - textwidth) {
+                x = rightLimit - textwidth;
+            }
+        }
+
+        // TODO if the text bubble covers the focus region, try to find a better matching region (e.g. below head
+        // ...)
+        // TODO For large texts - e.g. showAll - it might make sense to align the bubble to the side
+
+        int width = textwidth;
+        int height = Math.max(FontLimits.MINIMAL_TEXT_HEIGHT, bounds.height - insets.bottom);
+        return new LayoutInfo(new Rectangle(x, y, width, height), insets, rightAlinged, false);
+    }
+
+    private static int textWidth(Rectangle bounds, double factor) {
+        return Math.max(FontLimits.MINIMAL_TEXT_WIDTH, (int) (bounds.getWidth() * factor));
+    }
+
+    private void alignLayout(Rectangle layoutRegion, Rectangle bounds, Optional<Rectangle> focusArea) {
+        if (layoutInfo.rightAligned) {
+            if (layoutRegion.width < layoutInfo.region.width) {
+                // adjust left/right alignment of text layout when line breaking resulted in smaller text area
+                if (focusArea.isPresent()) {
+                    double focusAreaRight = focusArea.get().getMaxX();
+                    if (layoutRegion.x < focusAreaRight) {
+                        layoutRegion.x += Math.min(
+                                focusAreaRight - layoutRegion.x + layoutInfo.insets.left,
+                                (bounds.x + bounds.width) - (layoutRegion.x + layoutRegion.width));
+                    }
+                }
+            }
+        } else { // Align spare space to the left
+            if (layoutInfo.region.width - layoutRegion.getWidth() > 0) {
+                layoutRegion.x += layoutInfo.region.width - layoutRegion.getWidth();
+            }
+        }
     }
 
     private Rectangle drawTextRegion(Graphics2D g2d, RenderState frame, Rectangle region) {
@@ -66,94 +171,6 @@ class TextRenderer {
             adjustedTextArea = drawTextBubble(g2d, region.getBounds(), fontSize);
         }
         return adjustedTextArea;
-    }
-
-    static Rectangle interTitleCenterRegion(Rectangle bounds) {
-        Rectangle centerRegion = new Rectangle(0, bounds.height * 1 / 4, bounds.width, bounds.height * 2 / 4);
-        return centerRegion;
-    }
-
-    private static final Rectangle2D DefaultFocusRegion = new Rectangle2D.Double(0.25, 0.25, 0.25, 0.25);
-
-    private static TextRenderer.TextInfo spokenTextArea(Rectangle bounds, Optional<Rectangle> focusArea) {
-        return spokenTextArea(bounds, focusArea.isPresent()
-                ? focusArea.get()
-                : new Rectangle(
-                        (int) (bounds.x + bounds.width * DefaultFocusRegion.getX()),
-                        (int) (bounds.y + bounds.height * DefaultFocusRegion.getY()),
-                        (int) (bounds.width * DefaultFocusRegion.getWidth()),
-                        (int) (bounds.height * DefaultFocusRegion.getHeight())));
-    }
-
-    private static TextRenderer.TextInfo spokenTextArea(Rectangle bounds, Rectangle focusArea) {
-        float insetFactor = 0.05f;
-        Insets insets = new Insets(
-                (int) (bounds.height * insetFactor),
-                (int) (bounds.width * insetFactor),
-                (int) (bounds.height * insetFactor) + 100,
-                (int) (bounds.width * insetFactor));
-
-        int x;
-        int y = insets.top;
-        int textwidth = textWidth(bounds);
-        boolean enoughSpaceRight = bounds.width - focusArea.getMaxX() >= textwidth;
-        boolean moreSpaceOnRight = bounds.width - focusArea.getMaxX() > focusArea.getMinX();
-        var rightAlinged = enoughSpaceRight || moreSpaceOnRight;
-        if (rightAlinged) {
-            x = (int) focusArea.getMaxX() + insets.left * 2;
-        } else {
-            x = (int) focusArea.getMinX() - textwidth - insets.right * 2;
-        }
-
-        // the text area may become smaller when shifted into the bounds -> text may also become smaller
-        // - very irritating when there is obviously enough space towards the borders
-        // This is As Designed but has to be improved -> see subsequent TODOs
-
-        // TODO find better areas to place text -> make text placing more natural
-        // - currently text is always placed at the top
-
-        // TODO Limits do not always work because they are calculated before measuring the text
-        // -> measure text first, then position the text and honor inset distance from focus region
-
-        int leftLimit = bounds.x + insets.left;
-        if (x < leftLimit) {
-            int headroom = textwidth - FontLimits.MINIMAL_TEXT_WIDTH;
-            if (headroom > 0) {
-                int shift = Math.min(headroom, leftLimit - x);
-                x += shift;
-                textwidth -= shift;
-            }
-            if (x < leftLimit) {
-                x = leftLimit;
-            }
-        }
-
-        int rightLimit = bounds.x + bounds.width - insets.right;
-        if (x + textwidth > rightLimit) {
-            int headroom = textwidth - FontLimits.MINIMAL_TEXT_WIDTH;
-            if (headroom > 0) {
-                int shift = Math.min(headroom, x + textwidth - rightLimit);
-                x -= shift;
-                textwidth -= shift;
-            }
-            if (x > rightLimit - textwidth) {
-                x = rightLimit - textwidth;
-            }
-        }
-
-        // TODO if the text bubble covers the focus region, try to find a better matching region (e.g. below head
-        // ...)
-        // TODO For large texts - e.g. showAll - it might make sense to align the bubble to the side
-
-        int width = textwidth;
-        int height = Math.max(FontLimits.MINIMAL_TEXT_HEIGHT, bounds.height - insets.bottom);
-        return new TextInfo(new Rectangle(x, y, width, height), rightAlinged, false);
-    }
-
-    private static int textWidth(Rectangle bounds) {
-        int textwidth = Math.max(FontLimits.MINIMAL_TEXT_WIDTH,
-                (int) (bounds.getWidth() * Transform.goldenRatioFactorB));
-        return textwidth;
     }
 
     private static Rectangle drawTextBubble(Graphics2D g2d, Rectangle layoutRegion, float fontSize) {
@@ -199,16 +216,12 @@ class TextRenderer {
 
     }
 
-    float fontSize;
-    AttributedCharacterIterator paragraph;
-    LineBreakMeasurer measurer;
-
-    private Rectangle layoutText(Graphics2D g2d, String string, TextRenderer.TextInfo textInfo, Rectangle bounds) {
+    private Rectangle layoutText(Graphics2D g2d, String string, Rectangle bounds) {
         float cols = 48.0f;
-        float rows = textInfo.isIntertitle ? 18.0f : 36.0f;
+        float rows = layoutInfo.isIntertitle ? 18.0f : 36.0f;
         float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
         float fontSizeByCols = bounds.width / cols;
-        float fontSizeByRows = (float) textInfo.region.getHeight() / rows;
+        float fontSizeByRows = (float) layoutInfo.region.getHeight() / rows;
         fontSize = (float) Math.min(fontSizeByCols, fontSizeByRows) * dpi / 72.0f;
         FontRenderContext frc = g2d.getFontRenderContext();
         AttributedString text = new AttributedString(string);
@@ -220,22 +233,13 @@ class TextRenderer {
             g2d.setFont(font);
             paragraph = text.getIterator();
             measurer = new LineBreakMeasurer(paragraph, frc);
-            Measurer textAreaNeasurer = new Measurer(textInfo.region);
-            layoutText(textInfo.region, paragraph, measurer, textAreaNeasurer);
+            Measurer textAreaNeasurer = new Measurer(layoutInfo.region);
+            layoutText(layoutInfo.region, paragraph, measurer, textAreaNeasurer);
             region = textAreaNeasurer.region;
-            if (region.getHeight() < textInfo.region.height || fontSize <= FontLimits.MINIMAL_FONT_SIZE) {
+            if (region.getHeight() < layoutInfo.region.height || fontSize <= FontLimits.MINIMAL_FONT_SIZE) {
                 break;
             }
             fontSize /= 1.25f;
-        }
-        if (textInfo.rightAligned) {
-            if (region.width < textInfo.region.width && textInfo.region.width < textWidth(bounds)) {
-                // adjust shifted text area when there's some spare space due to line breaking
-                region.x += textWidth(bounds) - textInfo.region.width;
-            }
-        } else {
-            // Align to the left
-            region.x += textInfo.region.width - region.getWidth();
         }
         return region;
     }
@@ -243,14 +247,15 @@ class TextRenderer {
     private void renderText(Graphics2D g2d, Rectangle region) {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
         // When enabled short texts are wrapped on multiple lines although the text bubble has enough space
         // + longer texts are good - suggests that calculations are right
         // + longer texts have correct bottom inset
         // - for single word commands with trailing . the dot is renderer on the next line
         // - short text does not seem to have any bottom inset
         // - short text "Eins." is rendered in a single render call but the dot ends up on a new line.
-        // g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
-        // RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        // g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+
         layoutText(region, paragraph, measurer, (layout, x, y) -> layout.draw(g2d, x, y));
     }
 
@@ -283,6 +288,14 @@ class TextRenderer {
             textVisitor.run(layout, dx, dy);
             dy += layout.getDescent() + layout.getLeading();
         }
+    }
+
+    void drawDebugInfo(Graphics2D g2d) {
+        g2d.setColor(Color.magenta);
+        var r = layoutInfo.region;
+        g2d.drawRect(r.x, r.y, r.width, r.height);
+        g2d.drawLine(r.x, r.y, r.x + r.width, r.y + r.height);
+        g2d.drawLine(r.x, r.y + r.height, r.x + r.width, r.y);
     }
 
 }

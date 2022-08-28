@@ -19,13 +19,13 @@ import teaselib.core.ai.perception.HumanPose;
  */
 class ImageRenderer {
 
-    static void renderDebugInfo(Graphics2D g2d, RenderState frame, Rectangle bounds) {
+    static void drawDebugInfo(Graphics2D g2d, RenderState frame, Rectangle bounds) {
         if (frame.displayImage != null) {
-            renderDebugInfo(g2d, frame.displayImage, frame.pose, frame.transform, bounds);
+            drawDebugInfo(g2d, frame.displayImage, frame.pose, frame.transform, bounds);
         }
     }
 
-    private static void renderDebugInfo(Graphics2D g2d, AbstractValidatedImage<?> image, HumanPose.Estimation pose,
+    private static void drawDebugInfo(Graphics2D g2d, AbstractValidatedImage<?> image, HumanPose.Estimation pose,
             AffineTransform surface, Rectangle bounds) {
         drawBackgroundImageIconVisibleBounds(g2d, bounds);
         drawImageBounds(g2d, image.dimension(), surface);

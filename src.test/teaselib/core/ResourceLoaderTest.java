@@ -1,10 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,8 +34,8 @@ public class ResourceLoaderTest {
     }
 
     @Test
-    public void testRResourceLoadingFromFile() throws IOException {
-        try (TestScript script = new TestScript()) {
+    public void testResourceLoadingFromFile() throws IOException {
+        try (TestScript script = new TestScript(getClass())) {
             String name = absolutePath() + RESOURCE_1;
             loadResource(script, name);
         }
@@ -55,7 +51,7 @@ public class ResourceLoaderTest {
 
     @Test
     public void testAbsoluteResourceLoadingFromZip() throws IOException {
-        try (TestScript script = new TestScript()) {
+        try (TestScript script = new TestScript(getClass())) {
             script.resources.addAssets("teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
             loadResource(script, absolutePath() + RESOURCE_1);
         }
@@ -146,7 +142,7 @@ public class ResourceLoaderTest {
 
     @Test
     public void testUnpackFileRelativeToResourceRoot() throws IOException {
-        try (TestScript script = new TestScript("/teaselib/core/UnpackResourcesTestData")) {
+        try (TestScript script = new TestScript(getClass(), "/teaselib/core/UnpackResourcesTestData")) {
             script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
             String path = RESOURCE_1;
@@ -185,9 +181,9 @@ public class ResourceLoaderTest {
 
     @Test
     public void testThatPathsAreCompatibleBetweenDifferentResourceLoaders() throws IOException {
-        try (TestScript script1 = new TestScript(getClass()); TestScript script2 = new TestScript()) {
+        try (TestScript script1 = new TestScript(getClass()); TestScript script2 = new TestScript(getClass(), ResourceLoader.ResourcesInProjectFolder)) {
             assertFalse(script1.resources.equals(script2.resources));
-            assertFalse(script1.resources.getAssetPath("").equals(script2.resources.getAssetPath("")));
+            assertNotEquals(script1.resources.getAssetPath(""), script2.resources.getAssetPath(""));
 
             Resources itemsFromRelative = script1.resources("util/Foo*.txt");
             Resources itemsFromAbsolute = script2.resources("/teaselib/core/util/Foo*.txt");
@@ -199,7 +195,7 @@ public class ResourceLoaderTest {
 
     @Test
     public void testUnpackFolderAbsolute() throws IOException {
-        try (TestScript script = new TestScript()) {
+        try (TestScript script = new TestScript(getClass(), "/")) {
             script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
             String resourcesFolder = "/" + "UnpackResourcesTestData" + "/";
             testUnpackResourcesToFolder(script, resourcesFolder);
@@ -208,7 +204,7 @@ public class ResourceLoaderTest {
 
     @Test
     public void testUnpackFolderRelative() throws IOException {
-        try (TestScript script = new TestScript()) {
+        try (TestScript script = new TestScript(getClass(), "/")) {
             script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
             String resourcesFolder = "UnpackResourcesTestData" + "/";
             testUnpackResourcesToFolder(script, resourcesFolder);
@@ -217,7 +213,7 @@ public class ResourceLoaderTest {
 
     @Test
     public void testUnpackFolderRelativeToResourceRoot() throws IOException {
-        try (TestScript script = new TestScript("/teaselib/core/")) {
+        try (TestScript script = new TestScript(getClass(), "/teaselib/core/")) {
             script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
             String resourcesFolder = "UnpackResourcesTestData/";
             testUnpackResourcesToFolder(script, resourcesFolder);
@@ -298,8 +294,8 @@ public class ResourceLoaderTest {
 
     @Test
     public void testScriptRelativeResources() throws IOException {
-        try (TestScript script = new TestScript()) {
-            assertEquals(ResourceLoader.ResourcesInProjectFolder, script.resources.getRoot());
+        try (TestScript script = new TestScript(getClass())) {
+            // assertEquals(ResourceLoader.ResourcesInProjectFolder, script.resources.getRoot());
             String relativePath = RESOURCE_1;
             try (InputStream resourceStream = script.resources.getResource(relativePath, getClass());) {
                 assertNotNull(resourceStream);

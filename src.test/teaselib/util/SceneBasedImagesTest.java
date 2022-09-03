@@ -1,8 +1,6 @@
 package teaselib.util;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +30,7 @@ public class SceneBasedImagesTest {
 
     @Test
     public void testStripteaseSets() throws IOException {
-        try (TestScript testScript = new TestScript()) {
+        try (TestScript testScript = new TestScript(getClass())) {
             Resources resources = testScript.resources(PictureSetAssetsTest.TEST_PICTURE_SET_FOLDER, Resources.Images);
             assertEquals(12, resources.size());
             var images = new SceneBasedImages(resources, testScript.randomNumbers(0, 1, 2, 3, 4));

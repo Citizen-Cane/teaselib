@@ -221,22 +221,31 @@ pip-log.txt
 .mr.developer.cfg
 
 #TeaseLib
-lib/TeaseLib.jar
-lib/TeaseLib_tests.jar
+lib/*.jar
 lib/*.lib
 lib/*.dll
 lib/*.so
 lib/*.exp
-lib/deepspeech
 lib/coqui-ai
 
 bin.test/
 bin.test.interactive/
+/bin.test.devices.unattended/
+/bin.test.sapi/
+/bin.test.tools/
+
+# vscode
 .vs/
 .vscode/
 
 # Particle workbench
 devices/particle/**/target/
 *.bin
-/bin.test.devices.unattended/
-/bin.test.sapi/
+
+# Ignore Gradle project-specific cache directory
+.gradle
+gradlew*
+gradle/
+
+# Ignore Gradle build output directory
+build

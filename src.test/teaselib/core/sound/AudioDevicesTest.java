@@ -2,9 +2,14 @@ package teaselib.core.sound;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import java.io.IOException;
+import java.io.InputStream;
 
-import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
+
+import org.junit.Test;
 
 public class AudioDevicesTest {
 
@@ -27,8 +32,19 @@ public class AudioDevicesTest {
     }
 
     @Test
-    public void testReadMp3() {
-        MpegAudioFileReader reader = new MpegAudioFileReader();
+    public void testReadMp3SpeechShort() throws IOException, UnsupportedAudioFileException {
+        InputStream mp3 = getClass().getResource("0.mp3").openStream();
+        assertNotNull(mp3);
+        AudioInputStream in = AudioSystem.getAudioInputStream(mp3);
+        assertNotNull(in.getFormat());
+    }
+
+    @Test
+    public void testReadMp3SpeechLong() throws IOException, UnsupportedAudioFileException {
+        InputStream mp3 = getClass().getResource("1.mp3").openStream();
+        assertNotNull(mp3);
+        AudioInputStream in = AudioSystem.getAudioInputStream(mp3);
+        assertNotNull(in.getFormat());
     }
 
 }

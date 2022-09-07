@@ -34,14 +34,9 @@
 	<classpathentry kind="lib" path="/SexScripts/sexscripts.jar"/>
 	<classpathentry kind="lib" path="/SexScripts/lib/slf4j-api-1.7.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
-	<classpathentry kind="lib" path="lib/jlayer-1.0.1.jar"/>
-	<classpathentry kind="lib" path="lib/jump3r-1.0.5.jar"/>
-	<classpathentry kind="lib" path="lib/mp3spi-1.9.11.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/slf4j-api-1.7.25.jar"/>
-	<classpathentry kind="lib" path="lib/tritonus-remaining-0.3.11.jar"/>
-	<classpathentry kind="lib" path="lib/tritonus-share-0.3.11.jar"/>
-	<classpathentry kind="lib" path="lib/vavi-commons-1.1.6.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.7.25.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-simple-1.7.25.jar"/>
-	<classpathentry kind="lib" path="lib/juniversalchardet-2.4.0.jar"/>
+	<classpathentry kind="lib" path="lib/jump3r-1.0.5.jar"/>
+	<classpathentry kind="lib" path="lib/ffsampledsp-complete-0.9.46.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

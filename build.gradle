@@ -4,13 +4,6 @@ allprojects {
 	repositories {
 		mavenCentral()
 		maven { url 'https://jitpack.io' }
-		maven {
-			url 'https://maven.pkg.github.com/umjammer/tritonus'
-	        credentials {
-	             username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-	             password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
-	        }
-		 }
 	}
 }
 
@@ -36,14 +29,8 @@ dependencies {
 	runtime 'org.slf4j:slf4j-api:1.7.25'
 	runtime 'org.slf4j:slf4j-simple:1.7.25'
 
-	runtime 'org.tritonus:tritonus-share:0.3.11'
-	runtime 'org.tritonus:tritonus-remaining:0.3.11'
-	runtime 'com.github.umjammer:jlayer:1.0.1'
-	runtime 'com.github.albfernandez:juniversalchardet:2.4.0'
-	runtime 'com.github.umjammer.vavi-commons:vavi-commons:1.1.6'
-
-	runtime 'net.javazoom:mp3spi:1.9.11'
     runtime 'de.sciss:jump3r:1.0.5'   
+    runtime 'com.tagtraum:ffsampledsp-complete:0.9.46'   
 }
 
 task copyLibs(type: Copy) {

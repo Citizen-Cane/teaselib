@@ -1,11 +1,17 @@
 package teaselib.core.sound;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
+import static org.junit.Assume.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import javax.sound.sampled.AudioSystem;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.BooleanControl;
 import javax.sound.sampled.CompoundControl;
 import javax.sound.sampled.Control;
@@ -15,20 +21,17 @@ import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Port;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
-/**
- * @author Citizen-Cane
- *
- */
-public class AudioDevices {
+import org.junit.Test;
 
-    public static List<String> inputs() {
-        Mixer.Info[] mixers = AudioSystem.getMixerInfo();
+public class AudioSystemTest {
+
+    public static List<String> printDevices() {
         List<Line.Info> availablePorts = new ArrayList<>();
         List<Line.Info> availableLines = new ArrayList<>();
-
-        for (Mixer.Info mixerInfo : mixers) {
-            Mixer mixer = AudioSystem.getMixer(mixerInfo);
+        for (Mixer.Info mixerInfo : javax.sound.sampled.AudioSystem.getMixerInfo()) {
+            Mixer mixer = javax.sound.sampled.AudioSystem.getMixer(mixerInfo);
             System.out.println("\nFound " + mixer.getClass().getSimpleName() + ": " + "\"" + mixerInfo.getName() + "\""
                     + " (\"" + mixerInfo.getDescription() + "\", " + mixerInfo.getVendor() + ", " + mixerInfo.getVersion() + ")");
             try {
@@ -80,7 +83,6 @@ public class AudioDevices {
         System.out.println("\nAvailable ports:\n" + availablePorts.stream().map(Line.Info::toString).collect(Collectors.joining("\n")));
         System.out.println("\nAvailable lines:\n" + availableLines.stream().map(Line.Info::toString).collect(Collectors.joining("\n")));
         return availableLines.stream().map(Line.Info::toString).toList();
-
     }
 
     public static String AnalyzeControl(Control thisControl) {
@@ -108,8 +110,66 @@ public class AudioDevices {
         return "    Control: unknown type";
     }
 
-    public static List<String> outputs() {
-        return Collections.emptyList();
+    @Test
+    public void printAudioDevices() {
+        var lines = printDevices();
+        assertNotNull(lines);
+        assumeTrue(lines.size() > 0);
+    }
+
+    // Audio-Service-Provider:
+    // https://www.tagtraum.com/ffsampledsp/
+    // https://www.tagtraum.com/ffmpeg/
+
+    @Test
+    public void testAudioAudioFormats() {
+        var formats = Stream.of(javax.sound.sampled.AudioSystem.getAudioFileTypes()).map(Type::toString).toList();
+        assertNotNull(formats);
+        assertEquals(3, formats.size());
+        assertTrue(formats.contains("WAVE"));
+        assertTrue(formats.contains("AU"));
+        assertTrue(formats.contains("AIFF"));
+        // ffsampledsp does not add explicit audio formats
+    }
+
+    @Test
+    public void testAudioOutputDevices() {
+        AudioSystem audioSystem = new AudioSystem();
+
+        var speakers = audioSystem.output.devices();
+        assertNotNull(speakers);
+        assumeTrue(speakers.size() > 0);
+        assertNotNull(audioSystem.defaultOutput());
+        assertFalse(speakers.contains(audioSystem.defaultOutput()));
+
+        var mics = audioSystem.input.devices();
+        assertNotNull(mics);
+        assumeTrue(mics.size() > 0);
+        assertNotNull(audioSystem.defaultInput());
+        assertFalse(mics.contains(audioSystem.defaultInput()));
+    }
+
+    @Test
+    public void testAudioSystemReadMp3SpeechShort()
+            throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException, ExecutionException {
+        testMP3("0.mp3", 34654);
+    }
+
+    @Test
+    public void testAudioSystemReadMp3SpeechLong()
+            throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException, ExecutionException {
+        testMP3("1.mp3", 758110);
+    }
+
+    private void testMP3(String name, int s)
+            throws IOException, LineUnavailableException, UnsupportedAudioFileException, InterruptedException, ExecutionException {
+        InputStream mp3 = getClass().getResource(name).openStream();
+        AudioSystem audioSystem = new AudioSystem();
+        var output = audioSystem.output.primary;
+        var line = output.play(mp3);
+        var playing = line.start();
+        int samples = playing.get();
+        assertEquals(s, samples);
     }
 
 }

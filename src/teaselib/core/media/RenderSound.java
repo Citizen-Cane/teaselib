@@ -5,9 +5,9 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Audio;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
+import teaselib.host.Host.Audio;
 
 public class RenderSound extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderSound.class);
@@ -18,8 +18,7 @@ public class RenderSound extends MediaRendererThread {
     public RenderSound(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
         super(teaseLib);
         this.soundFile = soundFile;
-        this.audio = teaseLib.host.audio(resources, soundFile);
-
+        this.audio = teaseLib.audioSystem.getSound(resources, soundFile);
         try {
             audio.load();
         } catch (IOException e) {

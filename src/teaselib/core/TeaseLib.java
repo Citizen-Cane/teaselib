@@ -38,7 +38,6 @@ import teaselib.Duration;
 import teaselib.Sexuality.Gender;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
-import teaselib.core.Host.Location;
 import teaselib.core.StateMaps.StateMapCache;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.Setup;
@@ -56,6 +55,9 @@ import teaselib.core.util.QualifiedName;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
+import teaselib.host.Host;
+import teaselib.host.Host.Location;
+import teaselib.host.TeaseLibAudioSystem;
 import teaselib.util.Daytime;
 import teaselib.util.Item;
 import teaselib.util.Items;
@@ -72,6 +74,7 @@ public class TeaseLib implements Closeable {
     private static final String TranscriptLogFileName = "TeaseLib session transcript.log";
 
     public final Host host;
+    public final Host.AudioSystem audioSystem;
     final Persistence persistence;
     final UserItems userItems;
     public final TeaseLibLogger transcript;
@@ -106,6 +109,7 @@ public class TeaseLib implements Closeable {
 
         this.config = new Configuration(setup);
         this.host = host;
+        this.audioSystem = new TeaseLibAudioSystem(); // host.audioSystem();
         this.persistence = new ConfigFileMapping(config, host.persistence(config));
 
         this.userItems = new UserItemsImpl(this);

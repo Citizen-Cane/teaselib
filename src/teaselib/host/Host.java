@@ -1,4 +1,4 @@
-package teaselib.core;
+package teaselib.host;
 
 import java.awt.geom.Point2D;
 import java.io.File;
@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
+import teaselib.core.Closeable;
+import teaselib.core.Persistence;
+import teaselib.core.ResourceLoader;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
 import teaselib.util.AnnotatedImage;
@@ -19,9 +22,50 @@ import teaselib.util.AnnotatedImage;
  */
 public interface Host {
 
-    Persistence persistence(Configuration configuration) throws IOException;
+    public interface Audio extends Closeable {
 
-    Audio audio(ResourceLoader resources, String path);
+        void load() throws IOException;
+
+        void play() throws InterruptedException;
+
+        void stop();
+    }
+
+    public interface AudioSystem {
+
+        public final AudioSystem None = new AudioSystem() {
+            @Override
+            public Audio getSound(ResourceLoader resources, String path) {
+                return new Audio() {
+                    @Override
+                    public void load() {
+                        // Ignore
+                    }
+
+                    @Override
+                    public void play() {
+                        // Ignore
+                    }
+
+                    @Override
+                    public void stop() {
+                        // Ignore
+                    }
+
+                    @Override
+                    public void close() {
+                        // Ignore
+                    }
+                };
+            }
+        };
+
+        Host.Audio getSound(ResourceLoader resources, String path);
+    }
+
+    AudioSystem audioSystem();
+
+    Persistence persistence(Configuration configuration) throws IOException;
 
     /**
      * Show text and image. Since text and image determine the layout, they must be set simultanously.

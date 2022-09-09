@@ -15,11 +15,8 @@ import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Audio;
 import teaselib.core.Closeable;
-import teaselib.core.Host;
 import teaselib.core.Persistence;
-import teaselib.core.ResourceLoader;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.Choice;
@@ -29,6 +26,7 @@ import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.InputMethod.UiEvent;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.host.Host;
 import teaselib.util.AnnotatedImage;
 
 /**
@@ -67,28 +65,13 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public Persistence persistence(Configuration configuration) {
-        return persistenceSupplier.apply(persistence);
+    public AudioSystem audioSystem() {
+        return Host.AudioSystem.None;
     }
 
     @Override
-    public Audio audio(ResourceLoader resources, String path) {
-        return new Audio() {
-            @Override
-            public void load() {
-                // Ignore
-            }
-
-            @Override
-            public void play() {
-                // Ignore
-            }
-
-            @Override
-            public void stop() {
-                // Ignore
-            }
-        };
+    public Persistence persistence(Configuration configuration) {
+        return persistenceSupplier.apply(persistence);
     }
 
     @Override

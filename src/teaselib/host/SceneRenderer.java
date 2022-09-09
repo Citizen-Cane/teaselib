@@ -1,6 +1,6 @@
-package teaselib.hosts;
+package teaselib.host;
 
-import static java.awt.geom.AffineTransform.getTranslateInstance;
+import static java.awt.geom.AffineTransform.*;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -24,9 +24,9 @@ public class SceneRenderer {
 
     final Image backgroundImage;
 
-    final BufferedImageQueue surfaces = new BufferedImageQueue(2);
+    public final BufferedImageQueue surfaces = new BufferedImageQueue(2);
     // final VolatileImageQueue textOverlays = new VolatileImageQueue(2);
-    final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
+    public final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
 
     final TextRenderer textRenderer = new TextRenderer();
 
@@ -35,7 +35,7 @@ public class SceneRenderer {
         this.backgroundImage = backgroundImage;
     }
 
-    void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage,
+    public void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage,
             Rectangle bounds, Color backgroundColor) {
         // Bicubic interpolation is an absolute performance killer for image transforming & scaling
         // g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
@@ -188,7 +188,7 @@ public class SceneRenderer {
 
     // TODO Add focus point update in order to control focus by animated host
 
-    void updateSceneTransform(RenderState frame, Rectangle bounds) {
+    public void updateSceneTransform(RenderState frame, Rectangle bounds) {
         if (frame.displayImage != null) {
             frame.transform = surfaceTransform(
                     frame.displayImage.dimension(),

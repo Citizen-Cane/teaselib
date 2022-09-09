@@ -1,40 +1,18 @@
 package teaselib.core.media;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import teaselib.core.concurrency.AbstractFuture;
 import teaselib.core.media.MediaRenderer.Threaded;
 
-final class MediaRendererFutureTask implements Future<Object> {
+final class MediaRendererFutureTask extends AbstractFuture<Void> {
 
     private final Threaded mediaRenderer;
-    private final Future<?> future;
 
+    @SuppressWarnings("unchecked")
     MediaRendererFutureTask(Threaded mediaRenderer, Future<?> future) {
+        super((Future<Void>) future);
         this.mediaRenderer = mediaRenderer;
-        this.future = future;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return future.isCancelled();
-    }
-
-    @Override
-    public boolean isDone() {
-        return future.isDone();
-    }
-
-    @Override
-    public Object get() throws InterruptedException, ExecutionException {
-        return future.get();
-    }
-
-    @Override
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return future.get(timeout, unit);
     }
 
     @Override

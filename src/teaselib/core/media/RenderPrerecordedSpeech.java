@@ -2,11 +2,12 @@ package teaselib.core.media;
 
 import java.io.IOException;
 
-import teaselib.core.Audio;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
+import teaselib.host.Host.Audio;
 
 public class RenderPrerecordedSpeech extends RenderSpeech {
+
     private final String speechSoundFile;
     private final Audio audio;
 
@@ -14,9 +15,12 @@ public class RenderPrerecordedSpeech extends RenderSpeech {
             throws IOException {
         super(teaseLib);
         this.speechSoundFile = speechSoundFile;
-        this.audio = teaseLib.host.audio(resources, speechSoundFile);
-
-        audio.load();
+        this.audio = teaseLib.audioSystem.getSound(resources, speechSoundFile);
+        try {
+            audio.load();
+        } catch (IOException e) {
+            handleIOException(e);
+        }
     }
 
     @Override
@@ -33,4 +37,5 @@ public class RenderPrerecordedSpeech extends RenderSpeech {
     public String toString() {
         return speechSoundFile;
     }
+
 }

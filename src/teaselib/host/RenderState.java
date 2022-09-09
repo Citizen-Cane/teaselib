@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
@@ -18,34 +18,34 @@ import teaselib.util.AnnotatedImage.Annotation;
  * @author Citizen-Cane
  *
  */
-class RenderState {
+public class RenderState {
 
     // Scene properties
-    String displayImageResource;
-    AbstractValidatedImage<?> displayImage;
-    HumanPose.Estimation pose;
-    Set<AnnotatedImage.Annotation> annotations;
-    double actorZoom;
-    Point2D displayImageOffset;
+    public String displayImageResource;
+    public AbstractValidatedImage<?> displayImage;
+    public HumanPose.Estimation pose;
+    public Set<AnnotatedImage.Annotation> annotations;
+    public double actorZoom;
+    public Point2D displayImageOffset;
 
-    String text;
-    boolean isIntertitle;
+    public String text;
+    public boolean isIntertitle;
 
-    float focusLevel;
+    public float focusLevel;
 
     //
     // Composition stack
 
-    boolean repaintSceneImage;
-    AffineTransform transform;
-    float sceneBlend;
+    public boolean repaintSceneImage;
+    public AffineTransform transform;
+    public float sceneBlend;
 
-    boolean repaintTextImage;
-    AbstractValidatedImage<?> textImage;
-    Rectangle textImageRegion;
-    float textBlend;
+    public boolean repaintTextImage;
+    public AbstractValidatedImage<?> textImage;
+    public Rectangle textImageRegion;
+    public float textBlend;
 
-    RenderState() {
+    public RenderState() {
         this.displayImageResource = "";
         this.displayImage = null;
         this.pose = HumanPose.Estimation.NONE;
@@ -68,7 +68,7 @@ class RenderState {
         this.textBlend = 1.0f;
     }
 
-    RenderState copy() {
+    public RenderState copy() {
         RenderState copy = new RenderState();
 
         copy.displayImageResource = this.displayImageResource;

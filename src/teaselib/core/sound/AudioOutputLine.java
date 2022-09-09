@@ -8,6 +8,8 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
+import teaselib.core.concurrency.AbstractFuture;
+
 /**
  * @author Citizen-Cane
  *
@@ -33,30 +35,37 @@ public class AudioOutputLine {
     }
 
     public Future<Integer> start() {
-        return executor.submit(this::play);
+        return new AbstractFuture<>(executor.submit(this::play)) {
+            @Override
+            public boolean cancel(boolean interrupt) {
+                boolean result = future.cancel(interrupt);
+                line.flush();
+                line.stop();
+                line.close();
+                return result;
+            }
+        };
     }
 
+    private static final int FrameSize = 256;
+
     private int play() throws IOException, LineUnavailableException {
-        int frameSize = pcm.getFormat().getFrameSize();
-
-        frameSize = 256;
-        if (frameSize <= 0) {
-            frameSize = 2048;
-        }
-        byte[] myData = new byte[frameSize * 16];
+        byte[] myData = new byte[FrameSize];
         int total = 0;
-
         line.open();
         line.start();
         try {
-            while (!Thread.interrupted()) {
+            boolean interrupted = false;
+            while (!(interrupted = Thread.currentThread().isInterrupted())) {
                 int numBytesRead = pcm.read(myData, 0, myData.length);
                 if (numBytesRead <= 0)
                     break;
                 total += numBytesRead;
                 line.write(myData, 0, numBytesRead);
             }
-            line.drain();
+            if (!interrupted) {
+                line.drain();
+            }
         } finally {
             line.stop();
             line.close();

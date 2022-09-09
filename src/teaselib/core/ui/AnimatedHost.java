@@ -16,14 +16,12 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Audio;
-import teaselib.core.Host;
 import teaselib.core.Persistence;
-import teaselib.core.ResourceLoader;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.concurrency.NoFuture;
 import teaselib.core.configuration.Configuration;
-import teaselib.hosts.SexScriptsHost;
+import teaselib.host.Host;
+import teaselib.host.sexscripts.SexScriptsHost;
 import teaselib.util.AnnotatedImage;
 
 /**
@@ -191,13 +189,13 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     @Override
-    public Persistence persistence(Configuration configuration) throws IOException {
-        return host.persistence(configuration);
+    public AudioSystem audioSystem() {
+        return host.audioSystem();
     }
 
     @Override
-    public Audio audio(ResourceLoader resources, String path) {
-        return host.audio(resources, path);
+    public Persistence persistence(Configuration configuration) throws IOException {
+        return host.persistence(configuration);
     }
 
     @Override

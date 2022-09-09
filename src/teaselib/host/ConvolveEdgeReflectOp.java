@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;

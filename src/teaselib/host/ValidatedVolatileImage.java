@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -36,7 +36,7 @@ public class ValidatedVolatileImage extends AbstractValidatedImage<VolatileImage
     }
 
     @Override
-    protected VolatileImage get(GraphicsConfiguration gc) {
+    VolatileImage get(GraphicsConfiguration gc) {
         if (image == null) {
             image = newImage.create(gc, width, height, transparency);
             invalidated = true;
@@ -59,7 +59,7 @@ public class ValidatedVolatileImage extends AbstractValidatedImage<VolatileImage
     }
 
     @Override
-    public void paint(GraphicsConfiguration gc, Renderer renderer) {
+    void paint(GraphicsConfiguration gc, Renderer renderer) {
         get(gc);
         var g2d = image.createGraphics();
         renderer.paint(g2d);
@@ -68,7 +68,7 @@ public class ValidatedVolatileImage extends AbstractValidatedImage<VolatileImage
     }
 
     @Override
-    public void draw(Graphics2D graphics, GraphicsConfiguration gc) {
+    void draw(Graphics2D graphics, GraphicsConfiguration gc) {
         get(gc);
         if (invalidated && backBuffer != null) {
             paint(gc, g2d -> g2d.drawImage(backBuffer, 0, 0, null));
@@ -80,7 +80,7 @@ public class ValidatedVolatileImage extends AbstractValidatedImage<VolatileImage
     }
 
     @Override
-    public void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t) {
+    void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t) {
         get(gc);
         if (invalidated && backBuffer != null) {
             paint(gc, g2d -> g2d.drawImage(backBuffer, t, null));

@@ -4,10 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
-import teaselib.core.Host;
-import teaselib.core.Host.Location;
 import teaselib.core.UserItemsImpl;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.host.Host;
+import teaselib.host.Host.Location;
 
 /**
  * @author Citizen-Cane

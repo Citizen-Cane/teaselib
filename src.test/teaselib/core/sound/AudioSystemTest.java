@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,7 +24,10 @@ import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Port;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import org.junit.Ignore;
 import org.junit.Test;
+
+import teaselib.test.TestScript;
 
 public class AudioSystemTest {
 
@@ -156,14 +160,45 @@ public class AudioSystemTest {
     }
 
     @Test
+    @Ignore
     public void testAudioSystemReadMp3SpeechLong()
             throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException, ExecutionException {
         testMP3("1.mp3", 758110);
     }
 
+    @Test
+    public void testInterruptAudioStream()
+            throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
+        AudioSystem audioSystem = new AudioSystem();
+        var output = audioSystem.output.primary;
+        InputStream mp3 = getClass().getResource("1.mp3").openStream();
+        var line = output.play(mp3);
+        var playing = line.start();
+        Thread.sleep(1000);
+        playing.cancel(true);
+        assertThrows(CancellationException.class, () -> playing.get());
+    }
+
+    @Test
+    public void testZippeAudioResource()
+            throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException, ExecutionException {
+        try (TestScript script = new TestScript(getClass())) {
+            script.resources.addAssets("teaselib/core/sound/audio.zip");
+            InputStream mp3 = script.resources.get("/2.mp3");
+            assertNotNull(mp3);
+            testMP3(mp3, 34654);
+        }
+    }
+
     private void testMP3(String name, int s)
             throws IOException, LineUnavailableException, UnsupportedAudioFileException, InterruptedException, ExecutionException {
         InputStream mp3 = getClass().getResource(name).openStream();
+        testMP3(mp3, s);
+    }
+
+    private static void testMP3(InputStream mp3, int s)
+            throws LineUnavailableException, UnsupportedAudioFileException, IOException, InterruptedException, ExecutionException {
+        assertNotNull(mp3);
         AudioSystem audioSystem = new AudioSystem();
         var output = audioSystem.output.primary;
         var line = output.play(mp3);

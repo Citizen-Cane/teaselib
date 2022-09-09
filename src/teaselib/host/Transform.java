@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import java.awt.Dimension;
 import java.awt.geom.AffineTransform;
@@ -199,7 +199,7 @@ public class Transform {
         return new Dimension(dimension.height, dimension.width);
     }
 
-    static Point2D.Double scale(Point2D p, Dimension scale) {
+    public static Point2D.Double scale(Point2D p, Dimension scale) {
         return new Point2D.Double(p.getX() * scale.width, p.getY() * scale.height);
     }
 

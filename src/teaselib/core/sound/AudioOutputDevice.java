@@ -1,5 +1,6 @@
 package teaselib.core.sound;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +25,7 @@ public class AudioOutputDevice extends AudioDevice {
     }
 
     public AudioOutputLine play(InputStream audio) throws LineUnavailableException, UnsupportedAudioFileException, IOException {
-        return play(javax.sound.sampled.AudioSystem.getAudioInputStream(audio));
+        return play(javax.sound.sampled.AudioSystem.getAudioInputStream(new BufferedInputStream(audio)));
     }
 
     public AudioOutputLine play(javax.sound.sampled.AudioInputStream audio) throws LineUnavailableException {

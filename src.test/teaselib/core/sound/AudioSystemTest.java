@@ -170,10 +170,25 @@ public class AudioSystemTest {
     public void testInterruptAudioStream()
             throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
         AudioSystem audioSystem = new AudioSystem();
-        var output = audioSystem.output.primary;
+        var device = audioSystem.output.primary;
         InputStream mp3 = getClass().getResource("1.mp3").openStream();
-        var line = output.play(mp3);
-        var playing = line.start();
+        var audio = device.play(mp3);
+        var playing = audio.start();
+        Thread.sleep(1000);
+        playing.cancel(true);
+        assertThrows(CancellationException.class, () -> playing.get());
+    }
+
+    @Test
+    public void testBalance()
+            throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
+        AudioSystem audioSystem = new AudioSystem();
+        var device = audioSystem.output.primary;
+        InputStream mp3 = getClass().getResource("1.mp3").openStream();
+        var audio = device.play(mp3);
+        audio.setVolume(1.0f);
+        audio.setBalance(0.0f);
+        var playing = audio.start();
         Thread.sleep(1000);
         playing.cancel(true);
         assertThrows(CancellationException.class, () -> playing.get());
@@ -200,9 +215,9 @@ public class AudioSystemTest {
             throws LineUnavailableException, UnsupportedAudioFileException, IOException, InterruptedException, ExecutionException {
         assertNotNull(mp3);
         AudioSystem audioSystem = new AudioSystem();
-        var output = audioSystem.output.primary;
-        var line = output.play(mp3);
-        var playing = line.start();
+        var device = audioSystem.output.primary;
+        var audio = device.play(mp3);
+        var playing = audio.start();
         int samples = playing.get();
         assertEquals(s, samples);
     }

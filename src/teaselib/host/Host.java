@@ -24,7 +24,26 @@ public interface Host {
 
     public interface Audio extends Closeable {
 
+        enum Control {
+            /**
+             * Set channel balance from -1.0 to 1.0.
+             */
+            Balance,
+
+            /**
+             * Set fade seconds in [0, oo[.Applies to volume and balance.
+             */
+            Fade,
+
+            /**
+             * Set the volume from 0.0 to 1.0.
+             */
+            Volume,
+        }
+
         void load() throws IOException;
+
+        void set(Control control, float value);
 
         void play() throws InterruptedException;
 
@@ -38,24 +57,19 @@ public interface Host {
             public Audio getSound(ResourceLoader resources, String path) {
                 return new Audio() {
                     @Override
-                    public void load() {
-                        // Ignore
-                    }
+                    public void load() { /* Ignore */ }
 
                     @Override
-                    public void play() {
-                        // Ignore
-                    }
+                    public void set(Control control, float value) { /* Ignore */ }
 
                     @Override
-                    public void stop() {
-                        // Ignore
-                    }
+                    public void play() { /* Ignore */ }
 
                     @Override
-                    public void close() {
-                        // Ignore
-                    }
+                    public void stop() { /* Ignore */ }
+
+                    @Override
+                    public void close() { /* Ignore */ }
                 };
             }
         };

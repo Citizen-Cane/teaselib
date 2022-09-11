@@ -340,7 +340,7 @@ public class SectionRenderer implements Closeable {
 
     private void playSound(MessagePart part, ResourceLoader resources) throws IOException, InterruptedException {
         if (isSoundOutputEnabled()) {
-            renderTimeSpannedPart(new RenderSound(resources, part.value, teaseLib));
+            renderTimeSpannedPart(new RenderSound.Foreground(resources, part.value, teaseLib));
         }
     }
 
@@ -351,7 +351,7 @@ public class SectionRenderer implements Closeable {
             if (backgroundSoundRenderer != null) {
                 renderQueue.cancel(backgroundSoundRenderer);
             }
-            backgroundSoundRenderer = new RenderSound(resources, part.value, teaseLib);
+            backgroundSoundRenderer = new RenderSound.Background(resources, part.value, teaseLib);
             renderQueue.submit(backgroundSoundRenderer);
             // use awaitSoundCompletion keyword to wait for background sound completion
         }

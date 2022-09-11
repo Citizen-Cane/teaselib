@@ -26,6 +26,9 @@ final class SexScriptsAudio implements Audio {
     }
 
     @Override
+    public void set(Control control, float value) { /* Ignore */ }
+
+    @Override
     public void play() throws InterruptedException {
         // TODO interrupting the thread has no effect
         // TODO Doesn't react to stopSoundThreads() either

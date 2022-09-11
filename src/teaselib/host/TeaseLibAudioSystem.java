@@ -49,8 +49,28 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
             }
 
             @Override
+            public void set(Control control, float value) {
+                switch (control) {
+                case Balance:
+                    line.setBalance(value);
+                    break;
+                case Fade:
+                    throw new UnsupportedOperationException(control.name());
+                case Volume:
+                    line.setBalance(value);
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            @Override
             public void play() throws InterruptedException {
-                playing = line.start();
+                try {
+                    playing = line.start();
+                } catch (LineUnavailableException e) {
+                    throw asRuntimeException(e);
+                }
                 try {
                     playing.get();
                 } catch (CancellationException e) {
@@ -62,7 +82,6 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
 
             @Override
             public void stop() {
-                // TODO Cancelled audio stream continues to play - works in test - Future does not receive interrupt
                 playing.cancel(true);
             }
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -324,15 +325,17 @@ public class SectionRenderer implements Closeable {
         messageRenderer.startCompleted();
     }
 
+    private static final Supplier<Float> AUDIO_BALANCE_DEFAULT = () -> 0.0f;
+
     private void playSpeech(Actor actor, MessagePart part, String mood, ResourceLoader resources)
             throws IOException, InterruptedException {
         if (Message.Type.isSound(part.value)) {
-            renderTimeSpannedPart(new RenderPrerecordedSpeech(part.value, resources, teaseLib));
+            renderTimeSpannedPart(new RenderPrerecordedSpeech(part.value, resources, teaseLib, AUDIO_BALANCE_DEFAULT));
         } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
             renderTimeSpannedPart(
                     new RenderSpeechDelay(TextToSpeechPlayer.getSimulatedSpeechText(part.value), teaseLib));
         } else if (isSpeechOutputEnabled() && textToSpeechPlayer != null) {
-            renderTimeSpannedPart(new RenderTTSSpeech(textToSpeechPlayer, actor, part.value, mood, teaseLib));
+            renderTimeSpannedPart(new RenderTTSSpeechStream(textToSpeechPlayer, actor, part.value, mood, teaseLib, AUDIO_BALANCE_DEFAULT));
         } else {
             renderTimeSpannedPart(new RenderSpeechDelay(part.value, teaseLib));
         }

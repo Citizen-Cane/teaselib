@@ -91,7 +91,7 @@ public class TextToSpeechRecorderTest {
 
         for (int i = 0; i < n; i++) {
             File testFile = new File(path, Integer.toString(i));
-            futures.add(executor.submit(() -> tts.speak(actor, "This is a test.", Mood.Neutral, testFile)));
+            futures.add(executor.submit(() -> tts.speak(actor, "This is a test.", testFile, Mood.Neutral)));
         }
 
         List<String> fileNames = new ArrayList<>(n);

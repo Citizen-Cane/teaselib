@@ -20,7 +20,6 @@ public class RenderSound extends MediaRendererThread {
         public Background(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
             super(resources, soundFile, teaseLib);
             audio.set(Control.Volume, DEFAULT_VOLUME);
-            audio.set(Control.Balance, 0.0f);
         }
     }
 
@@ -30,7 +29,6 @@ public class RenderSound extends MediaRendererThread {
         public Foreground(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
             super(resources, soundFile, teaseLib);
             audio.set(Control.Volume, DEFAULT_VOLUME);
-            audio.set(Control.Balance, 0.0f);
         }
     }
 
@@ -54,6 +52,7 @@ public class RenderSound extends MediaRendererThread {
             teaseLib.transcript.info("Sound = " + soundFile);
             logger.info("{} started", soundFile);
             startCompleted();
+            audio.set(Control.Balance, 0.0f);
             audio.play();
             logger.info("{} completed", soundFile);
         } catch (InterruptedException e) {

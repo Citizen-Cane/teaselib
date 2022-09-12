@@ -368,7 +368,7 @@ public class TextToSpeechRecorder implements Closeable {
 
     private String recordMultithreadingIncompatible(Actor actor, String mood, String text) {
         var filename = createTempFileName(SpeechResourceTempFilePrefix + "_", SpeechResourceFileUncompressedFormat);
-        return ttsPlayer.speak(actor, text, mood, filename);
+        return ttsPlayer.speak(actor, text, filename, mood);
     }
 
     private static String storageSoundFile(String name) {

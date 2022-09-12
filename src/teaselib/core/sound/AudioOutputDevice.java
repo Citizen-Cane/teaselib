@@ -6,8 +6,10 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
+import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import teaselib.core.concurrency.NamedExecutorService;
@@ -24,24 +26,39 @@ public class AudioOutputDevice extends AudioDevice {
         super(name, mixer, port);
     }
 
-    public AudioOutputLine play(InputStream audio) throws LineUnavailableException, UnsupportedAudioFileException, IOException {
-        return play(javax.sound.sampled.AudioSystem.getAudioInputStream(new BufferedInputStream(audio)));
+    public AudioOutputLine addLine(InputStream audio) throws LineUnavailableException, UnsupportedAudioFileException, IOException {
+        return addLine(javax.sound.sampled.AudioSystem.getAudioInputStream(new BufferedInputStream(audio)));
     }
 
-    public AudioOutputLine play(javax.sound.sampled.AudioInputStream audio) throws LineUnavailableException {
+    public AudioOutputLine addLine(javax.sound.sampled.AudioInputStream audio) throws LineUnavailableException {
         var mp3Format = audio.getFormat();
         var pcmFormat = new AudioFormat(
                 AudioFormat.Encoding.PCM_SIGNED,
                 mp3Format.getSampleRate(),
                 16,
                 mp3Format.getChannels(),
-                16 * mp3Format.getChannels() / 8,
+                2 * mp3Format.getChannels(),
                 mp3Format.getSampleRate(),
                 mp3Format.isBigEndian());
-        var pcm = javax.sound.sampled.AudioSystem.getAudioInputStream(pcmFormat, audio);
-        var line = javax.sound.sampled.AudioSystem.getSourceDataLine(pcmFormat, mixerInfo);
-        return new AudioOutputLine(line, pcm, audioService);
-        // TODO remember lines until played or remove collection in base class
+        AudioFormat stereoFormat = pcmFormat.getChannels() == 1 // && EnableStereoUpmix
+                ? new AudioFormat(
+                        AudioFormat.Encoding.PCM_SIGNED,
+                        mp3Format.getSampleRate(),
+                        16,
+                        2,
+                        4,
+                        mp3Format.getSampleRate(),
+                        mp3Format.isBigEndian())
+                : pcmFormat;
+        AudioInputStream pcmStream = javax.sound.sampled.AudioSystem.getAudioInputStream(pcmFormat, audio);
+        SourceDataLine stereoLine = javax.sound.sampled.AudioSystem.getSourceDataLine(stereoFormat, mixerInfo);
+        AudioOutputLine line = new AudioOutputLine(pcmStream, stereoLine, audioService);
+        lines.add(line);
+        return line;
+    }
+
+    public void remove(AudioOutputLine line) {
+        lines.remove(line);
     }
 
 }

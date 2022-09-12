@@ -3,6 +3,7 @@ package teaselib.host;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -23,6 +24,25 @@ import teaselib.util.AnnotatedImage;
 public interface Host {
 
     public interface Audio extends Closeable {
+
+        public static final Audio None = new Audio() {
+
+            @Override
+            public void load() { /* Ignore */ }
+
+            @Override
+            public void set(Control control, float value) { /* Ignore */ }
+
+            @Override
+            public void play() { /* Ignore */ }
+
+            @Override
+            public void stop() { /* Ignore */ }
+
+            @Override
+            public void close() { /* Ignore */ }
+
+        };
 
         enum Control {
             /**
@@ -53,28 +73,22 @@ public interface Host {
     public interface AudioSystem {
 
         public final AudioSystem None = new AudioSystem() {
+
             @Override
             public Audio getSound(ResourceLoader resources, String path) {
-                return new Audio() {
-                    @Override
-                    public void load() { /* Ignore */ }
-
-                    @Override
-                    public void set(Control control, float value) { /* Ignore */ }
-
-                    @Override
-                    public void play() { /* Ignore */ }
-
-                    @Override
-                    public void stop() { /* Ignore */ }
-
-                    @Override
-                    public void close() { /* Ignore */ }
-                };
+                return Audio.None;
             }
+
+            @Override
+            public Audio getSound(InputStream inputStream) {
+                return Audio.None;
+            }
+
         };
 
         Host.Audio getSound(ResourceLoader resources, String path);
+
+        Host.Audio getSound(InputStream inputStream);
     }
 
     AudioSystem audioSystem();

@@ -1,5 +1,7 @@
 package teaselib.host.sexscripts;
 
+import java.io.InputStream;
+
 import ss.IScript;
 import teaselib.core.ResourceLoader;
 import teaselib.host.Host;
@@ -20,6 +22,11 @@ public class SexScriptsAudioSystem implements Host.AudioSystem {
     @Override
     public Audio getSound(ResourceLoader resources, String path) {
         return new SexScriptsAudio(ss, resources, path);
+    }
+
+    @Override
+    public Audio getSound(InputStream inputStream) {
+        throw new UnsupportedOperationException();
     }
 
 }

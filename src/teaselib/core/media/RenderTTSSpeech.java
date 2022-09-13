@@ -35,7 +35,11 @@ public class RenderTTSSpeech extends RenderSpeech {
 
     @Override
     public String toString() {
-        return mood.equalsIgnoreCase(Mood.Neutral) ? "" : mood + ": " + "\"" + (prompt.length() > 20 ? prompt.substring(0, 20) + "..." : prompt) + "\"";
+        return mood.equalsIgnoreCase(Mood.Neutral)
+                ? ""
+                : mood + ": " + "\"" + (prompt.length() > 20
+                        ? prompt.substring(0, 20) + "..."
+                        : prompt) + "\"";
     }
 
 }

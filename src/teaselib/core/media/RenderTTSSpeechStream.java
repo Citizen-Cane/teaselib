@@ -39,8 +39,8 @@ public class RenderTTSSpeechStream extends RenderSpeech {
     protected void renderSpeech() throws InterruptedException {
         try {
             audio.set(Control.Volume, DEFAULT_VOLUME);
-            audio.play();
             audio.set(Control.Balance, balance.get());
+            audio.play();
         } catch (InterruptedException e) {
             audio.stop();
             throw e;
@@ -51,7 +51,11 @@ public class RenderTTSSpeechStream extends RenderSpeech {
 
     @Override
     public String toString() {
-        return mood.equalsIgnoreCase(Mood.Neutral) ? "" : mood + ": " + "\"" + (prompt.length() > 20 ? prompt.substring(0, 20) + "..." : prompt) + "\"";
+        return mood.equalsIgnoreCase(Mood.Neutral)
+                ? ""
+                : mood + ": " + "\"" + (prompt.length() > 20
+                        ? prompt.substring(0, 20) + "..."
+                        : prompt) + "\"";
     }
 
 }

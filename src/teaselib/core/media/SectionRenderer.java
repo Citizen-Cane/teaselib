@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,9 +127,8 @@ public class SectionRenderer implements Closeable {
             }
         }
 
-        private void showAll() throws IOException, InterruptedException {
-            var image = getImage(actor, displayImage);
-            show(image, accumulatedText.paragraphs);
+        private void showAll() {
+            show(displayImage, accumulatedText.paragraphs);
         }
 
         private void renderAllMessages() throws IOException, InterruptedException {
@@ -220,7 +218,7 @@ public class SectionRenderer implements Closeable {
 
                 if ((isDurationType && !previousPart.isAnyOf(Message.Type.DelayTypes))
                         || isDisplayTypeAtEnd) {
-                    show(getImage(actor, displayImage), accumulatedText.getTail());
+                    show(displayImage, accumulatedText.getTail());
                 }
 
                 if (part.type == Type.Text) {
@@ -250,7 +248,8 @@ public class SectionRenderer implements Closeable {
 
         private void render(MessagePart part, String mood) throws IOException, InterruptedException {
             if (part.type == Message.Type.Image) {
-                displayImage = part.value;
+                displayImageName = part.value;
+                displayImage = getImage(actor, displayImageName);
             } else if (part.type == Message.Type.BackgroundSound) {
                 playSoundAsynchronous(part, resources);
             } else if (part.type == Message.Type.Sound) {
@@ -317,28 +316,34 @@ public class SectionRenderer implements Closeable {
     }
 
     private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText, IOException e)
-            throws IOException, InterruptedException {
+            throws InterruptedException {
         accumulatedText.add(new MessagePart(Message.Type.Text, e.getMessage()));
         awaitSectionAll();
-        AnnotatedImage image = getImage(messageRenderer.actor, messageRenderer.displayImage);
-        show(image, e.getMessage());
+        show(messageRenderer.displayImage, e.getMessage());
         messageRenderer.startCompleted();
     }
-
-    private static final Supplier<Float> AUDIO_BALANCE_DEFAULT = () -> 0.0f;
 
     private void playSpeech(Actor actor, MessagePart part, String mood, ResourceLoader resources)
             throws IOException, InterruptedException {
         if (Message.Type.isSound(part.value)) {
-            renderTimeSpannedPart(new RenderPrerecordedSpeech(part.value, resources, teaseLib, AUDIO_BALANCE_DEFAULT));
-        } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
-            renderTimeSpannedPart(
-                    new RenderSpeechDelay(TextToSpeechPlayer.getSimulatedSpeechText(part.value), teaseLib));
+            renderTimeSpannedPart(new RenderPrerecordedSpeech(part.value, resources, teaseLib, this::stereoBalance));
         } else if (isSpeechOutputEnabled() && textToSpeechPlayer != null) {
-            renderTimeSpannedPart(new RenderTTSSpeechStream(textToSpeechPlayer, actor, part.value, mood, teaseLib, AUDIO_BALANCE_DEFAULT));
+            renderTimeSpannedPart(new RenderTTSSpeechStream(textToSpeechPlayer, actor, part.value, mood, teaseLib, this::stereoBalance));
+        } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
+            renderTimeSpannedPart(new RenderSpeechDelay(TextToSpeechPlayer.getSimulatedSpeechText(part.value), teaseLib));
         } else {
             renderTimeSpannedPart(new RenderSpeechDelay(part.value, teaseLib));
         }
+    }
+
+    private float stereoBalance() {
+        var pose = currentMessageRenderer.displayImage.pose;
+        if (pose != null) {
+            if (pose.head.isPresent()) {
+                return (float) pose.head.get().getX() * 2.0f - 1.0f;
+            }
+        }
+        return 0.0f;
     }
 
     private void playSound(MessagePart part, ResourceLoader resources) throws IOException, InterruptedException {

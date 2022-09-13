@@ -1,6 +1,6 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -174,6 +174,25 @@ public class MessagePartInjectionTest {
             assertEquals(new MessagePart(Type.Mood, Mood.Happy), parsed.get(n++));
             assertEquals(Type.Text, parsed.get(n++).type);
 
+            assertEquals(parsed.size(), n);
+        }
+    }
+
+    @Test
+    public void testThatActorImageAppearsBeforeSpeechPart() throws IOException {
+        try (DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput())) {
+            script.actor.images = new ActorTestImage("actor.jpg");
+
+            Message message = new Message(script.actor);
+            message.add("Actor's peech stereo position can be derived from annotated image pose.");
+            RenderedMessage parsed = script.decorate(message);
+            int n = 0;
+
+            assertEquals(Type.Mood, parsed.get(n).type);
+            assertEquals(Mood.Neutral, parsed.get(n++).value);
+            assertEquals(Type.Image, parsed.get(n).type);
+            assertEquals("actor.jpg", parsed.get(n++).value);
+            assertEquals(Type.Text, parsed.get(n++).type);
             assertEquals(parsed.size(), n);
         }
     }

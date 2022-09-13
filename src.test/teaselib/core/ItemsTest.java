@@ -692,7 +692,7 @@ public class ItemsTest {
     }
 
     @Test
-    public void testMatchingDifferentItemsOfAKIndDontInterferShort() throws IOException {
+    public void testMatchingDifferentItemsOfAKindDontInterferShort() throws IOException {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 

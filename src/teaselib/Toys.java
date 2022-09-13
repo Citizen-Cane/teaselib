@@ -80,7 +80,9 @@ public enum Toys {
 
         public enum Features implements Item.Attribute {
             Dilator,
-            AccessibleGlans
+            AccessibleGlans,
+            HingedRing,
+            MultipleRingSizes
         }
     }
 

@@ -191,8 +191,10 @@ public class AudioSystemTest {
         InputStream mp3 = getClass().getResource("1.mp3").openStream();
         var audio = device.addLine(mp3);
         audio.setVolume(1.0f);
-        audio.setBalance(0.0f);
+        audio.setBalance(-1.0f);
         var playing = audio.start();
+        Thread.sleep(1000);
+        audio.setBalance(1.0f);
         Thread.sleep(1000);
         playing.cancel(true);
         assertThrows(CancellationException.class, () -> playing.get());

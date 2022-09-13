@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.Mixer.Info;
 import javax.sound.sampled.SourceDataLine;
 
 import teaselib.core.concurrency.AbstractFuture;
@@ -17,16 +19,29 @@ import teaselib.core.concurrency.AbstractFuture;
  */
 public class AudioOutputLine {
 
-    private final SourceDataLine line;
     private final AudioInputStream pcm;
-    private final ExecutorService executor;
+    private final SourceDataLine line;
     private final boolean stereoUpmix;
+    private final ExecutorService executor;
 
-    public AudioOutputLine(AudioInputStream pcm, SourceDataLine line, ExecutorService executor) {
-        this.line = line;
-        this.pcm = pcm;
-        this.executor = executor;
+    /**
+     * @param stream
+     *            AudioInputStream
+     * @param stereoFormat
+     *            The audio format for the source data line.
+     * @param mixer
+     *            The mixer for this audio line.
+     * @param streamingExecutor
+     *            Executor for streaming the audio data to the source line
+     * @throws LineUnavailableException
+     */
+    public AudioOutputLine(AudioInputStream stream, AudioFormat format, Info mixer, ExecutorService streamingExecutor)
+            throws LineUnavailableException {
+        this.pcm = stream;
+        this.line = javax.sound.sampled.AudioSystem.getSourceDataLine(format, mixer);
+        line.open();
         this.stereoUpmix = line.getFormat().getChannels() == 2 && pcm.getFormat().getChannels() == 1;
+        this.executor = streamingExecutor;
     }
 
     public void setVolume(float value) {
@@ -50,15 +65,13 @@ public class AudioOutputLine {
         }
     }
 
-    public Future<Integer> start() throws LineUnavailableException {
-        line.open();
+    public Future<Integer> start() {
         return new AbstractFuture<>(executor.submit(this::stream)) {
             @Override
             public boolean cancel(boolean interrupt) {
                 boolean result = future.cancel(interrupt);
-                line.flush();
                 line.stop();
-                line.close();
+                line.flush();
                 return result;
             }
         };
@@ -99,9 +112,13 @@ public class AudioOutputLine {
             }
         } finally {
             line.stop();
-            line.close();
+            line.flush();
         }
         return total;
+    }
+
+    public void close() {
+        line.close();
     }
 
 }

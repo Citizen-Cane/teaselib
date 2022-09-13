@@ -73,11 +73,7 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
 
         @Override
         public void play() throws InterruptedException {
-            try {
-                playing = line.start();
-            } catch (LineUnavailableException e) {
-                throw asRuntimeException(e);
-            }
+            playing = line.start();
             try {
                 playing.get();
             } catch (CancellationException e) {

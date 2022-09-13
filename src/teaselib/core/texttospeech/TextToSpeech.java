@@ -164,10 +164,6 @@ public class TextToSpeech implements Closeable {
         return BlackList.contains(voice.guid());
     }
 
-    public void speak(Voice voice, String prompt) {
-        speak(voice, prompt, new String[] {});
-    }
-
     /**
      * @param voice
      * @param prompt

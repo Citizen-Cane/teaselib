@@ -36,10 +36,11 @@ public class Stream {
         int i;
         int bufferSize = 1024 * 1024;
         byte[] b = new byte[bufferSize];
-        while ((i = is.read(b, 0, Math.min(bufferSize, (int) s))) != -1) {
-            s -= i;
+        long reamaining = s;
+        while ((i = is.read(b, 0, Math.min(bufferSize, (int) reamaining))) != -1) {
+            reamaining -= i;
             os.write(b, 0, i);
-            if (s == 0) {
+            if (reamaining == 0) {
                 break;
             }
         }

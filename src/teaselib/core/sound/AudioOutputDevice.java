@@ -9,7 +9,6 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
-import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import teaselib.core.concurrency.NamedExecutorService;
@@ -32,33 +31,48 @@ public class AudioOutputDevice extends AudioDevice {
 
     public AudioOutputLine addLine(javax.sound.sampled.AudioInputStream audio) throws LineUnavailableException {
         var mp3Format = audio.getFormat();
-        var pcmFormat = new AudioFormat(
-                AudioFormat.Encoding.PCM_SIGNED,
-                mp3Format.getSampleRate(),
-                16,
-                mp3Format.getChannels(),
-                2 * mp3Format.getChannels(),
-                mp3Format.getSampleRate(),
-                mp3Format.isBigEndian());
-        AudioFormat stereoFormat = pcmFormat.getChannels() == 1 // && EnableStereoUpmix
-                ? new AudioFormat(
-                        AudioFormat.Encoding.PCM_SIGNED,
-                        mp3Format.getSampleRate(),
-                        16,
-                        2,
-                        4,
-                        mp3Format.getSampleRate(),
-                        mp3Format.isBigEndian())
-                : pcmFormat;
+        var pcmFormat = pcmFormat(mp3Format);
         AudioInputStream pcmStream = javax.sound.sampled.AudioSystem.getAudioInputStream(pcmFormat, audio);
-        SourceDataLine stereoLine = javax.sound.sampled.AudioSystem.getSourceDataLine(stereoFormat, mixerInfo);
-        AudioOutputLine line = new AudioOutputLine(pcmStream, stereoLine, audioService);
+
+        AudioFormat stereoFormat;
+        if (pcmFormat.getChannels() == 1 /* && EnableStereoUpmix */) {
+            stereoFormat = stereoFormat(pcmFormat);
+        } else {
+            stereoFormat = pcmFormat;
+        }
+        AudioOutputLine line = new AudioOutputLine(pcmStream, stereoFormat, mixerInfo, audioService);
         lines.add(line);
         return line;
     }
 
+    private static AudioFormat pcmFormat(AudioFormat sourcemp3Format) {
+        var pcmFormat = new AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED,
+                sourcemp3Format.getSampleRate(),
+                16,
+                sourcemp3Format.getChannels(),
+                16 * sourcemp3Format.getChannels() / 8,
+                sourcemp3Format.getSampleRate(),
+                sourcemp3Format.isBigEndian());
+        return pcmFormat;
+    }
+
+    private static AudioFormat stereoFormat(AudioFormat monoFormat) {
+        AudioFormat stereoFormat;
+        stereoFormat = new AudioFormat(
+                monoFormat.getEncoding(),
+                monoFormat.getSampleRate(),
+                monoFormat.getSampleSizeInBits(),
+                2,
+                2 * monoFormat.getFrameSize(),
+                monoFormat.getSampleRate(),
+                monoFormat.isBigEndian());
+        return stereoFormat;
+    }
+
     public void remove(AudioOutputLine line) {
         lines.remove(line);
+        line.close();
     }
 
 }

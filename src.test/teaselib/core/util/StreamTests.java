@@ -12,18 +12,31 @@ import java.io.IOException;
 import org.junit.Test;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class StreamTests {
 
-    @Test
-    public void testCopySize() throws IOException {
+    private static byte[] testArray() {
         byte[] test = new byte[6666666];
+        for (int i = 0; i < test.length; ++i) {
+            test[i] = (byte) i;
+        }
+        return test;
+    }
+
+    @Test
+    public void testCopy() throws IOException {
+        byte[] test = testArray();
         testCopy(test);
-        testCopySize(test, 5555555);
-        testCopySize(test, 75434);
-        testCopySize(test, 47);
+    }
+
+    @Test
+    public void testSize() throws IOException {
+        byte[] test = testArray();
+        testSize(test, 5555555);
+        testSize(test, 75434);
+        testSize(test, 47);
     }
 
     public void testCopy(byte[] test) throws IOException {
@@ -31,9 +44,10 @@ public class StreamTests {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Stream.copy(bis, bos);
         assertEquals(test.length, bos.toByteArray().length);
+        assertArrayEquals(test, bos.toByteArray());
     }
 
-    public void testCopySize(byte[] test, int s) throws IOException {
+    public void testSize(byte[] test, int s) throws IOException {
         ByteArrayInputStream bis = new ByteArrayInputStream(test);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Stream.copy(bis, bos, s);

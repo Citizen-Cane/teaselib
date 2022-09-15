@@ -8,17 +8,20 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Mixer.Info;
 
+import teaselib.core.Closeable;
+
 /**
  * @author Citizen-Cane
  *
  */
-public class AudioDevice {
+public class AudioDevice<T extends Closeable> {
 
     protected final String name;
     protected final Info mixerInfo;
     protected final Info port;
 
-    protected final List<AudioOutputLine> lines;
+    // TODO generalize!
+    protected final List<T> lines;
     protected Mixer mixer;
 
     public AudioDevice(String name, Info mixer, Info port) {

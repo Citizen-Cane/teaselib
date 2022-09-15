@@ -11,13 +11,14 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer.Info;
 import javax.sound.sampled.SourceDataLine;
 
+import teaselib.core.Closeable;
 import teaselib.core.concurrency.AbstractFuture;
 
 /**
  * @author Citizen-Cane
  *
  */
-public class AudioOutputLine {
+public class AudioOutputLine implements Closeable {
 
     private final AudioInputStream pcm;
     private final SourceDataLine line;
@@ -117,6 +118,7 @@ public class AudioOutputLine {
         return total;
     }
 
+    @Override
     public void close() {
         line.close();
     }

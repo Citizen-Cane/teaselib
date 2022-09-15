@@ -17,7 +17,7 @@ import teaselib.core.concurrency.NamedExecutorService;
  * @author Citizen-Cane
  *
  */
-public class AudioOutputDevice extends AudioDevice {
+public class AudioOutputDevice extends AudioDevice<AudioOutputLine> {
 
     NamedExecutorService audioService = NamedExecutorService.newUnlimitedThreadPool("Audio-Service", 1, TimeUnit.HOURS);
 

@@ -337,10 +337,13 @@ public class SectionRenderer implements Closeable {
     }
 
     private float stereoBalance() {
-        var pose = currentMessageRenderer.displayImage.pose;
-        if (pose != null) {
-            if (pose.head.isPresent()) {
-                return (float) pose.head.get().getX() * 2.0f - 1.0f;
+        AnnotatedImage displayImage = currentMessageRenderer.displayImage;
+        if (displayImage != null) {
+            var pose = displayImage.pose;
+            if (pose != null) {
+                if (pose.head.isPresent()) {
+                    return (float) pose.head.get().getX() * 2.0f - 1.0f;
+                }
             }
         }
         return 0.0f;

@@ -244,6 +244,12 @@ public class TeaseLib implements Closeable {
             logger.error(t.getMessage(), t);
         }
 
+        try {
+            audioSystem.close();
+        } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
+        }
+
         if (host instanceof Closeable) {
             try {
                 ((Closeable) host).close();

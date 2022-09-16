@@ -14,19 +14,16 @@ final class SexScriptsAudio implements Audio {
 
     String audioHandle = null;
 
-    SexScriptsAudio(IScript ss, ResourceLoader resources, String path) {
+    SexScriptsAudio(IScript ss, ResourceLoader resources, String path) throws IOException {
         this.resources = resources;
         this.path = path;
         this.ss = ss;
-    }
-
-    @Override
-    public void load() throws IOException {
         this.audioHandle = resources.unpackToFile(path).getAbsolutePath();
     }
 
     @Override
-    public void set(Control control, float value) { /* Ignore */ }
+    public void set(Control control, float value) {
+        /* Ignore */ }
 
     @Override
     public void play() throws InterruptedException {

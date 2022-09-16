@@ -1,6 +1,8 @@
 package teaselib.core.sound;
 
 import java.io.IOException;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -13,6 +15,8 @@ import javax.sound.sampled.SourceDataLine;
 
 import teaselib.core.Closeable;
 import teaselib.core.concurrency.AbstractFuture;
+import teaselib.core.concurrency.NoFuture;
+import teaselib.core.util.ExceptionUtil;
 
 /**
  * @author Citizen-Cane
@@ -20,14 +24,14 @@ import teaselib.core.concurrency.AbstractFuture;
  */
 public class AudioOutputLine implements Closeable {
 
-    private final AudioInputStream pcm;
     private final SourceDataLine line;
-    private final boolean stereoUpmix;
     private final ExecutorService executor;
 
+    private AudioInputStream stream;
+    private boolean stereoUpmix;
+    private Future<Integer> future = NoFuture.Integer;
+
     /**
-     * @param stream
-     *            AudioInputStream
      * @param stereoFormat
      *            The audio format for the source data line.
      * @param mixer
@@ -36,13 +40,38 @@ public class AudioOutputLine implements Closeable {
      *            Executor for streaming the audio data to the source line
      * @throws LineUnavailableException
      */
-    public AudioOutputLine(AudioInputStream stream, AudioFormat format, Info mixer, ExecutorService streamingExecutor)
+    public AudioOutputLine(AudioFormat format, Info mixer, ExecutorService streamingExecutor)
             throws LineUnavailableException {
-        this.pcm = stream;
         this.line = javax.sound.sampled.AudioSystem.getSourceDataLine(format, mixer);
         line.open();
-        this.stereoUpmix = line.getFormat().getChannels() == 2 && pcm.getFormat().getChannels() == 1;
         this.executor = streamingExecutor;
+    }
+
+    /**
+     * @param format
+     *            Indicates whether this AudioLine's format matches the one specified.
+     * @return {@code true} if this format matches the one specified, {@code false} otherwise
+     * @see {@link AudioFormat#matches}
+     */
+    public boolean matches(AudioFormat format) {
+        return format.matches(line.getFormat());
+    }
+
+    /**
+     * @param newStream
+     *            A pcm mono or stereo stream. If the line has been used before, check if the stream {@link #matches}
+     *            the audio line format.
+     */
+    public void load(AudioInputStream newStream) {
+        if (this.stream != null) {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                // Ignore
+            }
+        }
+        this.stream = newStream;
+        this.stereoUpmix = line.getFormat().getChannels() == 2 && this.stream.getFormat().getChannels() == 1;
     }
 
     public void setVolume(float value) {
@@ -67,7 +96,8 @@ public class AudioOutputLine implements Closeable {
     }
 
     public Future<Integer> start() {
-        return new AbstractFuture<>(executor.submit(this::stream)) {
+        line.start();
+        future = new AbstractFuture<>(executor.submit(this::stream)) {
             @Override
             public boolean cancel(boolean interrupt) {
                 boolean result = future.cancel(interrupt);
@@ -76,6 +106,22 @@ public class AudioOutputLine implements Closeable {
                 return result;
             }
         };
+        return future;
+    }
+
+    boolean isActive() {
+        return line.isActive();
+    }
+
+    void awaitCompletion() throws InterruptedException {
+        try {
+            future.get();
+        } catch (CancellationException e) {
+            // Ignore
+        } catch (ExecutionException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
+
     }
 
     private static final int FrameSize = 256;
@@ -85,11 +131,10 @@ public class AudioOutputLine implements Closeable {
         byte[] samples = new byte[FrameSize];
         byte[] processed = stereoUpmix ? new byte[FrameSize * 2] : null;
         int total = 0;
-        line.start();
         try {
             boolean interrupted = false;
             while (!(interrupted = Thread.currentThread().isInterrupted())) {
-                int numBytesRead = pcm.read(samples, 0, samples.length);
+                int numBytesRead = stream.read(samples, 0, samples.length);
                 if (numBytesRead <= 0)
                     break;
                 total += numBytesRead;

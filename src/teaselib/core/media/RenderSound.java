@@ -18,7 +18,7 @@ public class RenderSound extends MediaRendererThread {
         private static final float DEFAULT_VOLUME = 0.5f;
 
         public Background(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
-            super(resources, soundFile, teaseLib);
+            super(Audio.Type.Background, resources, soundFile, teaseLib);
             audio.set(Control.Volume, DEFAULT_VOLUME);
         }
     }
@@ -27,7 +27,7 @@ public class RenderSound extends MediaRendererThread {
         private static final float DEFAULT_VOLUME = 1.0f;
 
         public Foreground(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
-            super(resources, soundFile, teaseLib);
+            super(Audio.Type.Sound, resources, soundFile, teaseLib);
             audio.set(Control.Volume, DEFAULT_VOLUME);
         }
     }
@@ -35,15 +35,10 @@ public class RenderSound extends MediaRendererThread {
     final String soundFile;
     final Audio audio;
 
-    private RenderSound(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
+    private RenderSound(Audio.Type type, ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
         super(teaseLib);
         this.soundFile = soundFile;
-        this.audio = teaseLib.audioSystem.getSound(resources, soundFile);
-        try {
-            audio.load();
-        } catch (IOException e) {
-            handleIOException(e);
-        }
+        this.audio = teaseLib.audioSystem.getSound(type, resources.get(soundFile));
     }
 
     @Override

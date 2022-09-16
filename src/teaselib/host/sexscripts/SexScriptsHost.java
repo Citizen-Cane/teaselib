@@ -606,13 +606,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private void logFrameTimes(Runnable task) {
         long start = System.currentTimeMillis();
         task.run();
-        long now = System.currentTimeMillis();
-        long frameTime = now - start;
-        if (frametimes.size() > 100) {
-            frametimes.remove();
+
+        if (logger.isDebugEnabled()) {
+            long now = System.currentTimeMillis();
+            long frameTime = now - start;
+            if (frametimes.size() > 100) {
+                frametimes.remove();
+            }
+            frametimes.add(frameTime);
+            logger.debug("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / frametimes.size());
         }
-        frametimes.add(frameTime);
-        logger.info("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / frametimes.size());
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {

@@ -261,7 +261,6 @@ public class TextToSpeech implements Closeable {
 
     public void stop(Voice voice) {
         TextToSpeechImplementation tts = voice.tts();
-
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             tts.stop();
         } else {

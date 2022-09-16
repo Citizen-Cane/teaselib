@@ -11,11 +11,12 @@ import java.util.concurrent.Future;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import teaselib.core.ResourceLoader;
+import teaselib.core.concurrency.NoFuture;
 import teaselib.core.sound.AudioOutputDevice;
 import teaselib.core.sound.AudioOutputLine;
 import teaselib.core.sound.AudioSystem;
 import teaselib.host.Host.Audio;
+import teaselib.host.Host.Audio.Type;
 
 /**
  * @author Citizen-Cane
@@ -25,31 +26,14 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
 
     private static final class AudioImpl implements Audio {
 
-        private final AudioOutputDevice output;
-        InputStreamProvider inputStreamProvider;
-        InputStream data = null;
+        InputStream audio = null;
         AudioOutputLine line = null;
-        Future<Integer> playing = null;
+        Future<Integer> playing = NoFuture.Integer;
 
-        private AudioImpl(ResourceLoader resources, String path, AudioOutputDevice output) {
-            this.output = output;
-            this.inputStreamProvider = () -> resources.get(path);
-        }
-
-        private AudioImpl(InputStream inputStream, AudioOutputDevice output) {
-            this.output = output;
-            this.inputStreamProvider = () -> inputStream;
-        }
-
-        interface InputStreamProvider {
-            InputStream get() throws IOException;
-        }
-
-        @Override
-        public void load() throws IOException {
-            data = inputStreamProvider.get();
+        private AudioImpl(Audio.Type type, InputStream audio, AudioOutputDevice output) throws IOException {
+            this.audio = audio;
             try {
-                line = output.addLine(data);
+                line = output.getLine(type, audio);
             } catch (LineUnavailableException | UnsupportedAudioFileException e) {
                 throw asRuntimeException(e);
             }
@@ -77,7 +61,7 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
             try {
                 playing.get();
             } catch (CancellationException e) {
-                // Ignore
+                // Excepted & ignored
             } catch (ExecutionException e) {
                 throw asRuntimeException(e);
             }
@@ -91,11 +75,10 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
         @Override
         public void close() {
             try {
-                data.close();
+                audio.close();
             } catch (IOException e) {
                 // Ignore
             }
-            output.remove(line);
         }
 
     }
@@ -107,14 +90,13 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
     }
 
     @Override
-    public Audio getSound(ResourceLoader resources, String path) {
-        return new AudioImpl(resources, path, audioSystem.defaultOutput());
-
+    public Audio getSound(Type type, InputStream inputStream) throws IOException {
+        return new AudioImpl(type, inputStream, audioSystem.defaultOutput());
     }
 
     @Override
-    public Audio getSound(InputStream inputStream) {
-        return new AudioImpl(inputStream, audioSystem.defaultOutput());
+    public void close() {
+        audioSystem.defaultOutput().close();
     }
 
 }

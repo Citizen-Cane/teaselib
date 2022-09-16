@@ -12,6 +12,7 @@ import java.util.concurrent.TimeoutException;
 public class NoFuture<T> implements Future<T> {
 
     public static final NoFuture<Void> Void = new NoFuture<>();
+    public static final NoFuture<Integer> Integer = new NoFuture<>();
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {

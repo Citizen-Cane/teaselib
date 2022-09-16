@@ -446,14 +446,10 @@ public class TextToSpeechPlayer implements Closeable {
         }
     }
 
-    public InputStream stream(Actor actor, String prompt, String... hints) {
+    public InputStream stream(Actor actor, String prompt, String... hints) throws IOException {
         var voice = getVoiceFor(actor);
         if (voice != TextToSpeech.None) {
-            try {
-                return textToSpeech.stream(voice, pronunciationDictionary.correct(voice, prompt), hints);
-            } catch (IOException e) {
-                throw ExceptionUtil.asRuntimeException(e);
-            }
+            return textToSpeech.stream(voice, pronunciationDictionary.correct(voice, prompt), hints);
         } else {
             throw new IllegalArgumentException(actor.toString());
         }

@@ -27,6 +27,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import teaselib.host.Host.Audio;
 import teaselib.test.TestScript;
 
 public class AudioSystemTest {
@@ -176,7 +177,7 @@ public class AudioSystemTest {
         AudioSystem audioSystem = new AudioSystem();
         var device = audioSystem.output.primary;
         InputStream mp3 = getClass().getResource("1.mp3").openStream();
-        var audio = device.addLine(mp3);
+        var audio = device.getLine(Audio.Type.Speech, mp3);
         var playing = audio.start();
         Thread.sleep(1000);
         playing.cancel(true);
@@ -189,7 +190,7 @@ public class AudioSystemTest {
         AudioSystem audioSystem = new AudioSystem();
         var device = audioSystem.output.primary;
         InputStream mp3 = getClass().getResource("1.mp3").openStream();
-        var audio = device.addLine(mp3);
+        var audio = device.getLine(Audio.Type.Speech, mp3);
         audio.setVolume(1.0f);
         audio.setBalance(-1.0f);
         var playing = audio.start();
@@ -222,7 +223,7 @@ public class AudioSystemTest {
         assertNotNull(mp3);
         AudioSystem audioSystem = new AudioSystem();
         var device = audioSystem.output.primary;
-        var audio = device.addLine(mp3);
+        var audio = device.getLine(Audio.Type.Speech, mp3);
         var playing = audio.start();
         int samples = playing.get();
         assertEquals(s, samples);

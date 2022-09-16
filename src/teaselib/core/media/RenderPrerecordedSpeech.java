@@ -17,12 +17,7 @@ public class RenderPrerecordedSpeech extends RenderSpeech {
             throws IOException {
         super(teaseLib, balance);
         this.speechSoundFile = speechSoundFile;
-        this.audio = teaseLib.audioSystem.getSound(resources, speechSoundFile);
-        try {
-            audio.load();
-        } catch (IOException e) {
-            handleIOException(e);
-        }
+        this.audio = teaseLib.audioSystem.getSound(Audio.Type.Speech, resources.get(speechSoundFile));
     }
 
     @Override

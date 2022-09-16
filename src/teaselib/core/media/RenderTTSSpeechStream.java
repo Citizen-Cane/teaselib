@@ -9,6 +9,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.host.Host.Audio;
 import teaselib.host.Host.Audio.Control;
+import teaselib.host.Host.Audio.Type;
 
 public class RenderTTSSpeechStream extends RenderSpeech {
 
@@ -26,13 +27,7 @@ public class RenderTTSSpeechStream extends RenderSpeech {
         this.actor = actor;
         this.prompt = prompt;
         this.mood = mood;
-        this.audio = teaseLib.audioSystem.getSound(ttsPlayer.stream(actor, prompt, mood));
-        try {
-            audio.load();
-        } catch (IOException e) {
-            handleIOException(e);
-        }
-
+        this.audio = teaseLib.audioSystem.getSound(Type.Speech, ttsPlayer.stream(actor, prompt, mood));
     }
 
     @Override

@@ -200,7 +200,11 @@ public class SectionRenderer implements Closeable {
                 if (part.type == Message.Type.Mood) {
                     mood = part.value;
                 } else {
-                    render(part, mood);
+                    try {
+                        render(part, mood);
+                    } catch (IOException e) {
+                        handleIOException(e);
+                    }
                 }
 
                 boolean isDurationType = part.isAnyOf(Message.Type.DelayTypes);

@@ -9,9 +9,9 @@ import java.util.function.Consumer;
 
 import teaselib.core.Closeable;
 import teaselib.core.Persistence;
-import teaselib.core.ResourceLoader;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
+import teaselib.host.Host.Audio.Type;
 import teaselib.util.AnnotatedImage;
 
 /**
@@ -25,22 +25,29 @@ public interface Host {
 
     public interface Audio extends Closeable {
 
+        enum Type {
+            Speech,
+            Sound,
+            Background
+        }
+
         public static final Audio None = new Audio() {
 
             @Override
-            public void load() { /* Ignore */ }
+            public void set(Control control, float value) {
+                /* Ignore */ }
 
             @Override
-            public void set(Control control, float value) { /* Ignore */ }
+            public void play() {
+                /* Ignore */ }
 
             @Override
-            public void play() { /* Ignore */ }
+            public void stop() {
+                /* Ignore */ }
 
             @Override
-            public void stop() { /* Ignore */ }
-
-            @Override
-            public void close() { /* Ignore */ }
+            public void close() {
+                /* Ignore */ }
 
         };
 
@@ -61,8 +68,6 @@ public interface Host {
             Volume,
         }
 
-        void load() throws IOException;
-
         void set(Control control, float value);
 
         void play() throws InterruptedException;
@@ -70,25 +75,21 @@ public interface Host {
         void stop();
     }
 
-    public interface AudioSystem {
+    public interface AudioSystem extends Closeable {
 
         public final AudioSystem None = new AudioSystem() {
 
             @Override
-            public Audio getSound(ResourceLoader resources, String path) {
+            public Audio getSound(Type type, InputStream inputStream) {
                 return Audio.None;
             }
 
             @Override
-            public Audio getSound(InputStream inputStream) {
-                return Audio.None;
-            }
+            public void close() { /* Ignore */ }
 
         };
 
-        Host.Audio getSound(ResourceLoader resources, String path);
-
-        Host.Audio getSound(InputStream inputStream);
+        Host.Audio getSound(Type type, InputStream inputStream) throws IOException;
     }
 
     AudioSystem audioSystem();

@@ -15,31 +15,30 @@ import javax.sound.sampled.Port;
  * @author Citizen-Cane
  *
  */
-class AudioMixer {
+class MixerInfo {
 
     final String name;
     final Mixer.Info info;
 
-    AudioMixer(String name, Mixer.Info info) {
+    MixerInfo(String name, Mixer.Info info) {
         this.name = name;
         this.info = info;
-
     }
 
     static final Function<String, String> PortNamingRule = name -> name.substring(5);
 
-    static List<AudioMixer> getInputPorts() {
-        return AudioMixer.get(AudioMixer::isInputPort, PortNamingRule);
+    static List<MixerInfo> getInputPorts() {
+        return MixerInfo.get(MixerInfo::isInputPort, PortNamingRule);
     }
 
-    static List<AudioMixer> getOutputPorts() {
-        return AudioMixer.get(AudioMixer::isOutputPort, PortNamingRule);
+    static List<MixerInfo> getOutputPorts() {
+        return MixerInfo.get(MixerInfo::isOutputPort, PortNamingRule);
     }
 
     static final Function<String, String> DeviceNamingRule = name -> name;
 
-    static List<AudioMixer> getInputDevices() {
-        return AudioMixer.get(AudioMixer::isInputDevice, DeviceNamingRule);
+    static List<MixerInfo> getInputDevices() {
+        return MixerInfo.get(MixerInfo::isInputDevice, DeviceNamingRule);
     }
 
     private static boolean isInputDevice(Mixer.Info info) {
@@ -51,8 +50,8 @@ class AudioMixer {
         }
     }
 
-    static List<AudioMixer> getOutputDevices() {
-        return AudioMixer.get(AudioMixer::isOutputDevice, DeviceNamingRule);
+    static List<MixerInfo> getOutputDevices() {
+        return MixerInfo.get(MixerInfo::isOutputDevice, DeviceNamingRule);
     }
 
     private static boolean isOutputDevice(Mixer.Info info) {
@@ -67,13 +66,13 @@ class AudioMixer {
     private static boolean isInputPort(Mixer.Info info) {
         Mixer mixer = javax.sound.sampled.AudioSystem.getMixer(info);
         Info[] lineInfo = mixer.getSourceLineInfo();
-        return isPort(info, lineInfo, AudioMixer::isInputPort);
+        return isPort(info, lineInfo, MixerInfo::isInputPort);
     }
 
     private static boolean isOutputPort(Mixer.Info info) {
         Mixer mixer = javax.sound.sampled.AudioSystem.getMixer(info);
         Info[] lineInfo = mixer.getTargetLineInfo();
-        return isPort(info, lineInfo, AudioMixer::isOutputPort);
+        return isPort(info, lineInfo, MixerInfo::isOutputPort);
     }
 
     private static boolean isInputPort(Line.Info info) {
@@ -95,17 +94,17 @@ class AudioMixer {
         return info.getClass().getSimpleName().contains("Port");
     }
 
-    private static List<AudioMixer> get(Predicate<Mixer.Info> matching, Function<String, String> namingRule) {
-        List<AudioMixer> ports = new ArrayList<>();
+    private static List<MixerInfo> get(Predicate<Mixer.Info> matching, Function<String, String> namingRule) {
+        List<MixerInfo> ports = new ArrayList<>();
         for (Mixer.Info mixer : javax.sound.sampled.AudioSystem.getMixerInfo()) {
             if (matching.test(mixer)) {
-                ports.add(new AudioMixer(namingRule.apply(mixer.getName()), mixer));
+                ports.add(new MixerInfo(namingRule.apply(mixer.getName()), mixer));
             }
         }
         return ports;
     }
 
-    boolean isDefaultDevice(List<AudioMixer> ports) {
+    boolean isDefaultDevice(List<MixerInfo> ports) {
         return !isPort(this.info) && ports.stream().noneMatch(port -> this.name.startsWith(port.name));
     }
 

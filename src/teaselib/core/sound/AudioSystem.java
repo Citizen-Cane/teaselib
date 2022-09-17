@@ -37,10 +37,10 @@ public class AudioSystem {
         input.devices = new ArrayList<>();
         output.devices = new ArrayList<>();
 
-        var inputPorts = AudioMixer.getInputPorts();
-        var outputPorts = AudioMixer.getOutputPorts();
-        var inputDevices = AudioMixer.getInputDevices();
-        var outputDevices = AudioMixer.getOutputDevices();
+        var inputPorts = MixerInfo.getInputPorts();
+        var outputPorts = MixerInfo.getOutputPorts();
+        var inputDevices = MixerInfo.getInputDevices();
+        var outputDevices = MixerInfo.getOutputDevices();
 
         for (var mixer : inputDevices) {
             if (mixer.isDefaultDevice(inputPorts)) {
@@ -50,7 +50,7 @@ public class AudioSystem {
                     throw new IllegalStateException("Multiple default devices");
                 }
             } else {
-                AudioMixer port = findMatchingPort(mixer, inputPorts);
+                MixerInfo port = findMatchingPort(mixer, inputPorts);
                 input.devices.add(new AudioInputDevice(mixer.name, mixer.info, port.info));
             }
         }
@@ -63,13 +63,13 @@ public class AudioSystem {
                     throw new IllegalStateException("Multiple default devices");
                 }
             } else {
-                AudioMixer port = findMatchingPort(mixer, outputPorts);
+                MixerInfo port = findMatchingPort(mixer, outputPorts);
                 output.devices.add(new AudioOutputDevice(mixer.name, mixer.info, port.info));
             }
         }
     }
 
-    private static AudioMixer findMatchingPort(AudioMixer mixer, List<AudioMixer> ports) {
+    private static MixerInfo findMatchingPort(MixerInfo mixer, List<MixerInfo> ports) {
         return ports.stream().filter(port -> mixer.name.startsWith(port.name)).findFirst().orElseThrow();
     }
 

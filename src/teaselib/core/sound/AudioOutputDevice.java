@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -32,20 +31,21 @@ public class AudioOutputDevice extends AudioDevice implements Closeable {
         this.lines = new HashMap<>();
     }
 
-    public AudioOutputLine getLine(Audio.Type type, InputStream audio) throws LineUnavailableException, UnsupportedAudioFileException, IOException {
-        return getLine(type, javax.sound.sampled.AudioSystem.getAudioInputStream(new BufferedInputStream(audio)));
+    public AudioOutputStream newStream(Audio.Type type, InputStream audio) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
+        return newStream(type, javax.sound.sampled.AudioSystem.getAudioInputStream(new BufferedInputStream(audio)));
     }
 
-    public AudioOutputLine getLine(Audio.Type type, javax.sound.sampled.AudioInputStream audio) throws LineUnavailableException {
+    public AudioOutputStream newStream(Audio.Type type, javax.sound.sampled.AudioInputStream audio) throws LineUnavailableException {
         var mp3Format = audio.getFormat();
         var pcmFormat = pcmFormat(mp3Format);
-        AudioInputStream pcmStream = javax.sound.sampled.AudioSystem.getAudioInputStream(pcmFormat, audio);
-        AudioFormat stereoFormat = stereoFormat(pcmFormat);
-        return getLine(type, pcmStream, stereoFormat);
+        var pcmStream = javax.sound.sampled.AudioSystem.getAudioInputStream(pcmFormat, audio);
+        var stereoFormat = stereoFormat(pcmFormat);
+        var line = getLine(type, stereoFormat);
+        return new AudioOutputStream(pcmStream, line, audioService);
     }
 
     private static AudioFormat pcmFormat(AudioFormat sourcemp3Format) {
-        var pcmFormat = new AudioFormat(
+        return new AudioFormat(
                 AudioFormat.Encoding.PCM_SIGNED,
                 sourcemp3Format.getSampleRate(),
                 16,
@@ -53,7 +53,6 @@ public class AudioOutputDevice extends AudioDevice implements Closeable {
                 16 * sourcemp3Format.getChannels() / 8,
                 sourcemp3Format.getSampleRate(),
                 sourcemp3Format.isBigEndian());
-        return pcmFormat;
     }
 
     private static AudioFormat stereoFormat(AudioFormat pcmFormat) {
@@ -67,8 +66,7 @@ public class AudioOutputDevice extends AudioDevice implements Closeable {
     }
 
     private static AudioFormat createstereoFormat(AudioFormat monoFormat) {
-        AudioFormat stereoFormat;
-        stereoFormat = new AudioFormat(
+        return new AudioFormat(
                 monoFormat.getEncoding(),
                 monoFormat.getSampleRate(),
                 monoFormat.getSampleSizeInBits(),
@@ -76,32 +74,27 @@ public class AudioOutputDevice extends AudioDevice implements Closeable {
                 2 * monoFormat.getFrameSize(),
                 monoFormat.getSampleRate(),
                 monoFormat.isBigEndian());
-        return stereoFormat;
     }
 
-    private AudioOutputLine getLine(Audio.Type type, AudioInputStream pcmStream, AudioFormat stereoFormat)
+    private AudioOutputLine getLine(Audio.Type type, AudioFormat stereoFormat)
             throws LineUnavailableException {
         AudioOutputLine line = lines.get(type);
-        if (line == null) {
+        if (line == null || !line.matches(stereoFormat)) {
             line = newAudioLine(type, stereoFormat);
-        } else if (!line.matches(stereoFormat)) {
-            line.close();
-            line = newAudioLine(type, stereoFormat);
-        } else if (line.isActive()) {
-            try {
-                line.awaitCompletion();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
         }
-        line.load(pcmStream);
         return line;
     }
 
     private AudioOutputLine newAudioLine(Audio.Type type, AudioFormat stereoFormat) throws LineUnavailableException {
-        var line = new AudioOutputLine(stereoFormat, mixerInfo, audioService);
+        var line = new AudioOutputLine(this, stereoFormat);
         lines.put(type, line);
         return line;
+    }
+
+    public void release(AudioOutputLine line) {
+        if (!lines.values().contains(line)) {
+            line.close();
+        }
     }
 
     @Override

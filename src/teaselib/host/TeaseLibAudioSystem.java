@@ -13,7 +13,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 import teaselib.core.concurrency.NoFuture;
 import teaselib.core.sound.AudioOutputDevice;
-import teaselib.core.sound.AudioOutputLine;
+import teaselib.core.sound.AudioOutputStream;
 import teaselib.core.sound.AudioSystem;
 import teaselib.host.Host.Audio;
 import teaselib.host.Host.Audio.Type;
@@ -26,14 +26,12 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
 
     private static final class AudioImpl implements Audio {
 
-        InputStream audio = null;
-        AudioOutputLine line = null;
+        final AudioOutputStream stream;
         Future<Integer> playing = NoFuture.Integer;
 
         private AudioImpl(Audio.Type type, InputStream audio, AudioOutputDevice output) throws IOException {
-            this.audio = audio;
             try {
-                line = output.getLine(type, audio);
+                stream = output.newStream(type, audio);
             } catch (LineUnavailableException | UnsupportedAudioFileException e) {
                 throw asRuntimeException(e);
             }
@@ -43,12 +41,12 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
         public void set(Control control, float value) {
             switch (control) {
             case Balance:
-                line.setBalance(value);
+                stream.setBalance(value);
                 break;
             case Fade:
                 throw new UnsupportedOperationException(control.name());
             case Volume:
-                line.setBalance(value);
+                stream.setBalance(value);
                 break;
             default:
                 break;
@@ -57,7 +55,7 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
 
         @Override
         public void play() throws InterruptedException {
-            playing = line.start();
+            playing = stream.start();
             try {
                 playing.get();
             } catch (CancellationException e) {
@@ -74,11 +72,7 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
 
         @Override
         public void close() {
-            try {
-                audio.close();
-            } catch (IOException e) {
-                // Ignore
-            }
+            stream.close();
         }
 
     }

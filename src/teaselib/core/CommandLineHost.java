@@ -12,33 +12,19 @@ import java.util.function.Consumer;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.FileUtilities;
+import teaselib.host.Host;
 import teaselib.util.AnnotatedImage;
 
 public class CommandLineHost implements Host {
 
     @Override
-    public Persistence persistence(Configuration configuration) {
-        throw new UnsupportedOperationException();
+    public AudioSystem audioSystem() {
+        return Host.AudioSystem.None;
     }
 
     @Override
-    public Audio audio(ResourceLoader resources, String path) {
-        return new Audio() {
-            @Override
-            public void load() {
-                // Ignore
-            }
-
-            @Override
-            public void play() {
-                // Ignore
-            }
-
-            @Override
-            public void stop() {
-                // Ignore
-            }
-        };
+    public Persistence persistence(Configuration configuration) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

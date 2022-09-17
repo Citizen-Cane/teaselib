@@ -1,9 +1,14 @@
 package teaselib.core.texttospeech;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import teaselib.core.util.Stream;
 
 public abstract class TextToSpeechImplementation implements teaselib.core.Closeable {
     public static final String IPA = "ipa";
@@ -26,6 +31,12 @@ public abstract class TextToSpeechImplementation implements teaselib.core.Closea
     public abstract void speak(String prompt);
 
     public abstract String speak(String prompt, String wav) throws IOException;
+
+    public InputStream stream(String prompt) throws IOException {
+        Path file = Files.createTempFile("speech", ".wav");
+        speak(prompt, file.toString());
+        return Stream.temporaryFileInputStream(file);
+    }
 
     /**
      * Stop current speech (if any)

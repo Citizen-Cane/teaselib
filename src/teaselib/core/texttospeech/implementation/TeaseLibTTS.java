@@ -1,7 +1,6 @@
 package teaselib.core.texttospeech.implementation;
 
-import static teaselib.core.jni.NativeLibraries.TEASELIB;
-import static teaselib.core.jni.NativeLibraries.TEASELIB_TTS;
+import static teaselib.core.jni.NativeLibraries.*;
 
 import java.util.List;
 
@@ -67,11 +66,6 @@ public abstract class TeaseLibTTS extends TextToSpeechImplementation {
         @Override
         public String phonemeAlphabetName() {
             return IPA;
-        }
-
-        @Override
-        public void speak(String prompt) {
-            super.speak(prompt.replace("ss", "ß"));
         }
 
     }

@@ -1,35 +1,46 @@
 package teaselib.core.media;
 
+import java.io.IOException;
 import java.util.function.Supplier;
 
 import teaselib.Actor;
 import teaselib.Mood;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.host.Host.Audio;
+import teaselib.host.Host.Audio.Control;
+import teaselib.host.Host.Audio.Type;
 
-public class RenderTTSSpeech extends RenderSpeech {
-
-    private final TextToSpeechPlayer ttsPlayer;
+public class RenderTTSSpeechStream extends RenderSpeech {
 
     protected final Actor actor;
     private final String prompt;
     private final String mood;
 
-    public RenderTTSSpeech(TextToSpeechPlayer ttsPlayer, Actor actor, String prompt, String mood, TeaseLib teaseLib, Supplier<Float> balance) {
+    private final Audio audio;
+
+    public RenderTTSSpeechStream(
+            TextToSpeechPlayer ttsPlayer,
+            Actor actor, String prompt, String mood,
+            TeaseLib teaseLib, Supplier<Float> balance) throws IOException {
         super(teaseLib, balance);
-        this.ttsPlayer = ttsPlayer;
         this.actor = actor;
         this.prompt = prompt;
         this.mood = mood;
+        this.audio = teaseLib.audioSystem.getSound(Type.Speech, ttsPlayer.stream(actor, prompt, mood));
     }
 
     @Override
     protected void renderSpeech() throws InterruptedException {
         try {
-            ttsPlayer.speak(actor, prompt, mood);
+            audio.set(Control.Volume, DEFAULT_VOLUME);
+            audio.set(Control.Balance, balance.get());
+            audio.play();
         } catch (InterruptedException e) {
-            ttsPlayer.stop(actor);
+            audio.stop();
             throw e;
+        } finally {
+            audio.close();
         }
     }
 

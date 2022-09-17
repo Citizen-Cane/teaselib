@@ -9,34 +9,37 @@ import java.util.concurrent.TimeoutException;
  * @author Citizen-Cane
  *
  */
-public class NoFuture<T> implements Future<T> {
+public abstract class AbstractFuture<T> implements Future<T> {
 
-    public static final NoFuture<Void> Void = new NoFuture<>();
-    public static final NoFuture<Integer> Integer = new NoFuture<>();
+    protected final Future<T> future;
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
+    public boolean cancel(boolean interrupt) {
+        return future.cancel(interrupt);
+    }
+
+    public AbstractFuture(Future<T> future) {
+        this.future = future;
     }
 
     @Override
     public boolean isCancelled() {
-        return false;
+        return future.isCancelled();
     }
 
     @Override
     public boolean isDone() {
-        return true;
+        return future.isDone();
     }
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
-        return null;
+        return future.get();
     }
 
     @Override
     public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return null;
+        return future.get(timeout, unit);
     }
 
 }

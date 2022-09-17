@@ -3,6 +3,7 @@ package teaselib.core.texttospeech;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -412,7 +413,7 @@ public class TextToSpeechPlayer implements Closeable {
      * @param teaseLib
      *            instance to call sleep on
      */
-    public void speak(Actor actor, String prompt, String mood) throws InterruptedException {
+    public void speak(Actor actor, String prompt, String... hints) throws InterruptedException {
         ensureNotPrerecordedVoice(actor);
 
         var voice = getVoiceFor(actor);
@@ -420,7 +421,7 @@ public class TextToSpeechPlayer implements Closeable {
             try {
                 // TODO consuming exception renders TextToSpeechPlayerTest.testTextTOSpeechPlayerPhonemeDictionarySetup
                 // useless
-                textToSpeech.speak(voice, pronunciationDictionary.correct(voice, prompt), new String[] { mood });
+                textToSpeech.speak(voice, pronunciationDictionary.correct(voice, prompt), hints);
             } catch (IOException e) {
                 logger.warn(e.getMessage(), e);
             } catch (RuntimeException e) {
@@ -432,12 +433,11 @@ public class TextToSpeechPlayer implements Closeable {
         }
     }
 
-    public String speak(Actor actor, String prompt, String mood, File file) {
+    public String speak(Actor actor, String prompt, File file, String... hints) {
         var voice = getVoiceFor(actor);
         if (voice != TextToSpeech.None) {
             try {
-                return textToSpeech.speak(voice, pronunciationDictionary.correct(voice, prompt), file,
-                        new String[] { mood });
+                return textToSpeech.speak(voice, pronunciationDictionary.correct(voice, prompt), file, hints);
             } catch (IOException e) {
                 throw ExceptionUtil.asRuntimeException(e);
             }
@@ -446,10 +446,18 @@ public class TextToSpeechPlayer implements Closeable {
         }
     }
 
+    public InputStream stream(Actor actor, String prompt, String... hints) throws IOException {
+        var voice = getVoiceFor(actor);
+        if (voice != TextToSpeech.None) {
+            return textToSpeech.stream(voice, pronunciationDictionary.correct(voice, prompt), hints);
+        } else {
+            throw new IllegalArgumentException(actor.toString());
+        }
+    }
+
     public void stop(Actor actor) {
         if (textToSpeech != null) {
             ensureNotPrerecordedVoice(actor);
-
             textToSpeech.stop(getVoiceFor(actor));
         }
     }

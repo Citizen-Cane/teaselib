@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host.sexscripts;
 
 import static java.awt.Transparency.*;
 import static java.util.function.Predicate.*;
@@ -62,9 +62,7 @@ import org.slf4j.LoggerFactory;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
-import teaselib.core.Audio;
 import teaselib.core.Closeable;
-import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ai.perception.HumanPose;
@@ -82,6 +80,12 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.PropertyNameMappingPersistence;
 import teaselib.core.util.QualifiedName;
+import teaselib.host.AbstractValidatedImage;
+import teaselib.host.Host;
+import teaselib.host.RenderState;
+import teaselib.host.SceneRenderer;
+import teaselib.host.Transform;
+import teaselib.host.ValidatedBufferedImage;
 import teaselib.util.AnnotatedImage;
 import teaselib.util.Interval;
 
@@ -318,6 +322,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     @Override
+    public AudioSystem audioSystem() {
+        return new SexScriptsAudioSystem(ss);
+    }
+
+    @Override
     public Persistence persistence(Configuration configuration) throws IOException {
         var path = configuration.getScriptSettingsFolder().resolve("common.properties");
         var common = configuration.createGlobalSettingsFile(path);
@@ -329,35 +338,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
         Predicate<QualifiedName> allButInventory = name -> !name.name.endsWith(".Available");
         return new PersistenceFilter(allButInventory, commonState, inventoryState);
-    }
-
-    @Override
-    public Audio audio(ResourceLoader resources, String path) {
-        return new Audio() {
-            String audioHandle = null;
-
-            @Override
-            public void load() throws IOException {
-                this.audioHandle = resources.unpackToFile(path).getAbsolutePath();
-            }
-
-            @Override
-            public void play() throws InterruptedException {
-                // TODO interrupting the thread has no effect
-                // TODO Doesn't react to stopSoundThreads() either
-                // TODO sometimes displays dialog telling "Sleep Interrupted" (when playing mp3 sound)
-                ss.playSound(audioHandle);
-            }
-
-            @Override
-            public void stop() {
-                try {
-                    ss.stopSoundThreads();
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        };
     }
 
     enum ActorPart {
@@ -626,13 +606,16 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private void logFrameTimes(Runnable task) {
         long start = System.currentTimeMillis();
         task.run();
-        long now = System.currentTimeMillis();
-        long frameTime = now - start;
-        if (frametimes.size() > 100) {
-            frametimes.remove();
+
+        if (logger.isDebugEnabled()) {
+            long now = System.currentTimeMillis();
+            long frameTime = now - start;
+            if (frametimes.size() > 100) {
+                frametimes.remove();
+            }
+            frametimes.add(frameTime);
+            logger.debug("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / frametimes.size());
         }
-        frametimes.add(frameTime);
-        logger.info("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / frametimes.size());
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {

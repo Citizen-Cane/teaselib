@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -31,7 +31,7 @@ public class ValidatedBufferedImage extends AbstractValidatedImage<BufferedImage
     }
 
     @Override
-    protected BufferedImage get(GraphicsConfiguration gc) {
+    BufferedImage get(GraphicsConfiguration gc) {
         if (image == null) {
             image = newImage.create(gc, width, height, transparency);
             invalidated = true;
@@ -44,7 +44,7 @@ public class ValidatedBufferedImage extends AbstractValidatedImage<BufferedImage
     }
 
     @Override
-    public void paint(GraphicsConfiguration gc, Renderer renderer) {
+    void paint(GraphicsConfiguration gc, Renderer renderer) {
         get(gc);
         var g2d = image.createGraphics();
         renderer.paint(g2d);
@@ -53,14 +53,14 @@ public class ValidatedBufferedImage extends AbstractValidatedImage<BufferedImage
     }
 
     @Override
-    public void draw(Graphics2D graphics, GraphicsConfiguration gc) {
+    void draw(Graphics2D graphics, GraphicsConfiguration gc) {
         if (!invalidated) {
             graphics.drawImage(image, 0, 0, null);
         }
     }
 
     @Override
-    public void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t) {
+    void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t) {
         if (!invalidated) {
             graphics.drawImage(image, t, null);
         }

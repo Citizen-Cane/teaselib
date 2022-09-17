@@ -14,6 +14,7 @@ import teaselib.Actor;
 import teaselib.Message;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
+import teaselib.util.AnnotatedImage;
 
 public abstract class MessageRenderer extends MediaRendererThread implements ReplayableMediaRenderer {
 
@@ -30,7 +31,8 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
     MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
 
     int currentMessage = 0;
-    String displayImage = null;
+    String displayImageName = null;
+    AnnotatedImage displayImage = null;
     RenderedMessage previousLastParagraph;
     RenderedMessage lastParagraph;
 

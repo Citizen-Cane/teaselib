@@ -351,7 +351,7 @@ public class TextToSpeechRecorder implements Closeable {
                             SpeechResourceFileTypeExtension);
                     String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
                     logger.info("Recording part {}", storageSoundFile);
-                    var mp3Encoder = new mp3.Main();
+                    var mp3Encoder = new de.sciss.jump3r.Main();
                     mp3Encoder.run(argv);
                     return storage.storeRecordedSoundFile(actor, voice, hash, encodedSoundFile, storageSoundFile).get();
                 } finally {
@@ -368,7 +368,7 @@ public class TextToSpeechRecorder implements Closeable {
 
     private String recordMultithreadingIncompatible(Actor actor, String mood, String text) {
         var filename = createTempFileName(SpeechResourceTempFilePrefix + "_", SpeechResourceFileUncompressedFormat);
-        return ttsPlayer.speak(actor, text, mood, filename);
+        return ttsPlayer.speak(actor, text, filename, mood);
     }
 
     private static String storageSoundFile(String name) {

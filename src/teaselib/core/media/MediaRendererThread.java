@@ -1,5 +1,7 @@
 package teaselib.core.media;
 
+import static teaselib.core.util.ExceptionUtil.*;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
@@ -41,12 +43,17 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
             // Expected
             Thread.interrupted();
         } catch (ScriptInterruptedException e) {
-            throw new IllegalAccessError();
+            Thread.interrupted();
             // Expected
         } catch (IOException e) {
-            ExceptionUtil.handleAssetNotFound(e, teaseLib.config, logger);
+            try {
+                ExceptionUtil.handleIOException(e, teaseLib.config, logger);
+            } catch (IOException io) {
+                throw asRuntimeException(io);
+            }
         } catch (Exception e) {
-            throw ExceptionUtil.asRuntimeException(e);
+            logger.error(e.getMessage(), e);
+            throw asRuntimeException(e);
         } finally {
             startCompleted();
             mandatoryCompleted();

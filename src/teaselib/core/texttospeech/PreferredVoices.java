@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -14,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -61,17 +63,16 @@ public class PreferredVoices {
         return sortByValue(list).keySet();
     }
 
-    @SuppressWarnings("unchecked")
-    private <K, V extends Comparable<? super V>> List<Map.Entry<K, V>> get(Filter filter) {
-        List<Map.Entry<K, V>> list = new LinkedList<>();
+    private List<Map.Entry<String, String>> get(Filter filter) {
+        List<Map.Entry<String, String>> list = new LinkedList<>();
         for (Entry<Object, Object> entry : voices.entrySet()) {
             if (filter.equals(Filter.Ignored)) {
                 if (Integer.parseInt(entry.getValue().toString()) < 0) {
-                    list.add((Map.Entry<K, V>) entry);
+                    list.add(new AbstractMap.SimpleImmutableEntry<>(Objects.toString(entry.getKey()), Objects.toString(entry.getValue())));
                 }
             } else if (filter.equals(Filter.Preferred)) {
                 if (Integer.parseInt(entry.getValue().toString()) >= 0) {
-                    list.add((Map.Entry<K, V>) entry);
+                    list.add(new AbstractMap.SimpleImmutableEntry<>(Objects.toString(entry.getKey()), Objects.toString(entry.getValue())));
                 }
             }
         }

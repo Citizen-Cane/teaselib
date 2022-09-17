@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -12,7 +12,7 @@ import java.awt.geom.AffineTransform;
  */
 public abstract class AbstractValidatedImage<T extends Image> {
 
-    protected interface ImageSupplier<T> {
+    public interface ImageSupplier<T> {
         T create(GraphicsConfiguration gc, int width, int height, int transparency);
     }
 
@@ -28,7 +28,7 @@ public abstract class AbstractValidatedImage<T extends Image> {
     protected int height;
     protected boolean invalidated = true;
 
-    public AbstractValidatedImage(ImageSupplier<T> newImage, int transparency) {
+    AbstractValidatedImage(ImageSupplier<T> newImage, int transparency) {
         this.newImage = newImage;
         this.transparency = transparency;
         this.width = -1;
@@ -37,30 +37,30 @@ public abstract class AbstractValidatedImage<T extends Image> {
 
     }
 
-    protected abstract T get(GraphicsConfiguration gc);
+    abstract T get(GraphicsConfiguration gc);
 
     public abstract boolean contentsLost();
 
-    public abstract void draw(Graphics2D graphics, GraphicsConfiguration gc);
+    abstract void draw(Graphics2D graphics, GraphicsConfiguration gc);
 
-    public abstract void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t);
+    abstract void draw(Graphics2D graphics, GraphicsConfiguration gc, AffineTransform t);
 
-    public abstract void paint(GraphicsConfiguration gc, Renderer renderer);
+    abstract void paint(GraphicsConfiguration gc, Renderer renderer);
 
-    protected void setSize(int width, int height) {
+    public void setSize(int width, int height) {
         this.width = width;
         this.height = height;
     }
 
-    protected int getWidth() {
+    public int getWidth() {
         return width;
     }
 
-    protected int getHeight() {
+    public int getHeight() {
         return height;
     }
 
-    public Dimension dimension() {
+    Dimension dimension() {
         return new Dimension(width, height);
     }
 

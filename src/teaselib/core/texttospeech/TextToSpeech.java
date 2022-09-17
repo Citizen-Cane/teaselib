@@ -2,6 +2,7 @@ package teaselib.core.texttospeech;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.Sexuality.Gender;
 import teaselib.core.AudioSync;
@@ -162,10 +164,6 @@ public class TextToSpeech implements Closeable {
         return BlackList.contains(voice.guid());
     }
 
-    public void speak(Voice voice, String prompt) {
-        speak(voice, prompt, new String[] {});
-    }
-
     /**
      * @param voice
      * @param prompt
@@ -221,6 +219,32 @@ public class TextToSpeech implements Closeable {
         return soundFilePath.toString();
     }
 
+    public InputStream stream(Voice voice, String prompt, String[] hints) throws IOException {
+        AtomicReference<InputStream> speech = new AtomicReference<>(null);
+        TextToSpeechImplementation tts = voice.tts();
+        if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
+            try {
+                run(tts, () -> {
+                    try {
+                        tts.setVoice(voice);
+                        tts.setHints(hints);
+                        var stream = tts.stream(prompt);
+                        speech.set(stream);
+                    } catch (IOException e) {
+                        throw ExceptionUtil.asRuntimeException(e);
+                    } finally {
+                        tts.setHints(NoHints);
+                    }
+                });
+            } catch (RuntimeException e) {
+                throwIOException(e);
+            }
+        } else {
+            ttsEngineNotInitialized();
+        }
+        return speech.get();
+    }
+
     private static void throwIOException(RuntimeException e) throws IOException {
         Throwable cause = e.getCause();
         if (cause instanceof IOException) {
@@ -237,7 +261,6 @@ public class TextToSpeech implements Closeable {
 
     public void stop(Voice voice) {
         TextToSpeechImplementation tts = voice.tts();
-
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             tts.stop();
         } else {

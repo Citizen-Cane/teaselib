@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import static java.awt.Color.*;
 import static java.awt.geom.AffineTransform.*;

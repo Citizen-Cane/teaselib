@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import static org.junit.Assert.*;
 
@@ -11,6 +11,8 @@ import java.util.Optional;
 
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
+
+import teaselib.host.Transform;
 
 public class TransformTest {
 

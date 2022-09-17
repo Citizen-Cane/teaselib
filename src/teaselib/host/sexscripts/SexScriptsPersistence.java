@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host.sexscripts;
 
 import java.io.File;
 import java.io.FileInputStream;

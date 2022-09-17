@@ -1,13 +1,17 @@
-package teaselib.core;
+package teaselib.host;
 
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.function.Consumer;
 
+import teaselib.core.Closeable;
+import teaselib.core.Persistence;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.ui.InputMethod;
+import teaselib.host.Host.Audio.Type;
 import teaselib.util.AnnotatedImage;
 
 /**
@@ -19,9 +23,78 @@ import teaselib.util.AnnotatedImage;
  */
 public interface Host {
 
-    Persistence persistence(Configuration configuration) throws IOException;
+    public interface Audio extends Closeable {
 
-    Audio audio(ResourceLoader resources, String path);
+        enum Type {
+            Speech,
+            Sound,
+            Background
+        }
+
+        public static final Audio None = new Audio() {
+
+            @Override
+            public void set(Control control, float value) {
+                /* Ignore */ }
+
+            @Override
+            public void play() {
+                /* Ignore */ }
+
+            @Override
+            public void stop() {
+                /* Ignore */ }
+
+            @Override
+            public void close() {
+                /* Ignore */ }
+
+        };
+
+        enum Control {
+            /**
+             * Set channel balance from -1.0 to 1.0.
+             */
+            Balance,
+
+            /**
+             * Set fade seconds in [0, oo[.Applies to volume and balance.
+             */
+            Fade,
+
+            /**
+             * Set the volume from 0.0 to 1.0.
+             */
+            Volume,
+        }
+
+        void set(Control control, float value);
+
+        void play() throws InterruptedException;
+
+        void stop();
+    }
+
+    public interface AudioSystem extends Closeable {
+
+        public final AudioSystem None = new AudioSystem() {
+
+            @Override
+            public Audio getSound(Type type, InputStream inputStream) {
+                return Audio.None;
+            }
+
+            @Override
+            public void close() { /* Ignore */ }
+
+        };
+
+        Host.Audio getSound(Type type, InputStream inputStream) throws IOException;
+    }
+
+    AudioSystem audioSystem();
+
+    Persistence persistence(Configuration configuration) throws IOException;
 
     /**
      * Show text and image. Since text and image determine the layout, they must be set simultanously.

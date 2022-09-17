@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host.sexscripts;
 
 import static org.junit.Assert.*;
 
@@ -15,6 +15,7 @@ import teaselib.core.TeaseLib.PersistentBoolean;
 import teaselib.core.TeaseLib.PersistentEnum;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedName;
+import teaselib.host.sexscripts.SexScriptsPropertyNameMapping;
 import teaselib.test.TestScript;
 
 public class SexScriptsPropertyNameMappingTest {

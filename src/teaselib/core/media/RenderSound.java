@@ -5,26 +5,40 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Audio;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
+import teaselib.host.Host.Audio;
+import teaselib.host.Host.Audio.Control;
 
 public class RenderSound extends MediaRendererThread {
+
     private static final Logger logger = LoggerFactory.getLogger(RenderSound.class);
 
-    private final String soundFile;
-    private final Audio audio;
+    public static class Background extends RenderSound {
+        private static final float DEFAULT_VOLUME = 0.5f;
 
-    public RenderSound(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
+        public Background(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
+            super(Audio.Type.Background, resources, soundFile, teaseLib);
+            audio.set(Control.Volume, DEFAULT_VOLUME);
+        }
+    }
+
+    public static class Foreground extends RenderSound {
+        private static final float DEFAULT_VOLUME = 1.0f;
+
+        public Foreground(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
+            super(Audio.Type.Sound, resources, soundFile, teaseLib);
+            audio.set(Control.Volume, DEFAULT_VOLUME);
+        }
+    }
+
+    final String soundFile;
+    final Audio audio;
+
+    private RenderSound(Audio.Type type, ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
         super(teaseLib);
         this.soundFile = soundFile;
-        this.audio = teaseLib.host.audio(resources, soundFile);
-
-        try {
-            audio.load();
-        } catch (IOException e) {
-            handleIOException(e);
-        }
+        this.audio = teaseLib.audioSystem.getSound(type, resources.get(soundFile));
     }
 
     @Override
@@ -33,6 +47,7 @@ public class RenderSound extends MediaRendererThread {
             teaseLib.transcript.info("Sound = " + soundFile);
             logger.info("{} started", soundFile);
             startCompleted();
+            audio.set(Control.Balance, 0.0f);
             audio.play();
             logger.info("{} completed", soundFile);
         } catch (InterruptedException e) {

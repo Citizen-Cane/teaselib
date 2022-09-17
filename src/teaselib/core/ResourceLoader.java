@@ -169,7 +169,8 @@ public class ResourceLoader {
      */
     private String addAssetsImpl(String path) {
         try {
-            resourceCache.add(ResourceCache.location(path, resourceRoot));
+            var location = ResourceCache.location(path, resourceRoot);
+            resourceCache.add(location);
         } catch (IOException e) {
             throw new IllegalArgumentException("Cannot add assets " + path + " - " + e.getMessage(), e);
         }
@@ -189,8 +190,8 @@ public class ResourceLoader {
         if (absoluteResourcePath != null) {
             return inputStreamOrThrow(path, resource(absoluteResourcePath));
         } else {
-            // TODO probably not used anymore - review
-            absoluteResourcePath = absolute(ReflectionUtils.packagePath(clazz) + path);
+            String packagePath = ReflectionUtils.packagePath(clazz);
+            absoluteResourcePath = absolute(packagePath + path);
             InputStream inputStream = resourceCache.get(absoluteResourcePath);
             if (inputStream != null) {
                 return inputStream;

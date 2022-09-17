@@ -127,9 +127,8 @@ public class SectionRenderer implements Closeable {
             }
         }
 
-        private void showAll() throws IOException, InterruptedException {
-            var image = getImage(actor, displayImage);
-            show(image, accumulatedText.paragraphs);
+        private void showAll() {
+            show(displayImage, accumulatedText.paragraphs);
         }
 
         private void renderAllMessages() throws IOException, InterruptedException {
@@ -201,7 +200,11 @@ public class SectionRenderer implements Closeable {
                 if (part.type == Message.Type.Mood) {
                     mood = part.value;
                 } else {
-                    render(part, mood);
+                    try {
+                        render(part, mood);
+                    } catch (IOException e) {
+                        handleIOException(e);
+                    }
                 }
 
                 boolean isDurationType = part.isAnyOf(Message.Type.DelayTypes);
@@ -219,7 +222,7 @@ public class SectionRenderer implements Closeable {
 
                 if ((isDurationType && !previousPart.isAnyOf(Message.Type.DelayTypes))
                         || isDisplayTypeAtEnd) {
-                    show(getImage(actor, displayImage), accumulatedText.getTail());
+                    show(displayImage, accumulatedText.getTail());
                 }
 
                 if (part.type == Type.Text) {
@@ -249,7 +252,8 @@ public class SectionRenderer implements Closeable {
 
         private void render(MessagePart part, String mood) throws IOException, InterruptedException {
             if (part.type == Message.Type.Image) {
-                displayImage = part.value;
+                displayImageName = part.value;
+                displayImage = getImage(actor, displayImageName);
             } else if (part.type == Message.Type.BackgroundSound) {
                 playSoundAsynchronous(part, resources);
             } else if (part.type == Message.Type.Sound) {
@@ -316,31 +320,42 @@ public class SectionRenderer implements Closeable {
     }
 
     private void showDesktopItemError(MessageRenderer messageRenderer, MessageTextAccumulator accumulatedText, IOException e)
-            throws IOException, InterruptedException {
+            throws InterruptedException {
         accumulatedText.add(new MessagePart(Message.Type.Text, e.getMessage()));
         awaitSectionAll();
-        AnnotatedImage image = getImage(messageRenderer.actor, messageRenderer.displayImage);
-        show(image, e.getMessage());
+        show(messageRenderer.displayImage, e.getMessage());
         messageRenderer.startCompleted();
     }
 
     private void playSpeech(Actor actor, MessagePart part, String mood, ResourceLoader resources)
             throws IOException, InterruptedException {
         if (Message.Type.isSound(part.value)) {
-            renderTimeSpannedPart(new RenderPrerecordedSpeech(part.value, resources, teaseLib));
-        } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
-            renderTimeSpannedPart(
-                    new RenderSpeechDelay(TextToSpeechPlayer.getSimulatedSpeechText(part.value), teaseLib));
+            renderTimeSpannedPart(new RenderPrerecordedSpeech(part.value, resources, teaseLib, this::stereoBalance));
         } else if (isSpeechOutputEnabled() && textToSpeechPlayer != null) {
-            renderTimeSpannedPart(new RenderTTSSpeech(textToSpeechPlayer, actor, part.value, mood, teaseLib));
+            renderTimeSpannedPart(new RenderTTSSpeechStream(textToSpeechPlayer, actor, part.value, mood, teaseLib, this::stereoBalance));
+        } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
+            renderTimeSpannedPart(new RenderSpeechDelay(TextToSpeechPlayer.getSimulatedSpeechText(part.value), teaseLib));
         } else {
             renderTimeSpannedPart(new RenderSpeechDelay(part.value, teaseLib));
         }
     }
 
+    private float stereoBalance() {
+        AnnotatedImage displayImage = currentMessageRenderer.displayImage;
+        if (displayImage != null) {
+            var pose = displayImage.pose;
+            if (pose != null) {
+                if (pose.head.isPresent()) {
+                    return (float) pose.head.get().getX() * 2.0f - 1.0f;
+                }
+            }
+        }
+        return 0.0f;
+    }
+
     private void playSound(MessagePart part, ResourceLoader resources) throws IOException, InterruptedException {
         if (isSoundOutputEnabled()) {
-            renderTimeSpannedPart(new RenderSound(resources, part.value, teaseLib));
+            renderTimeSpannedPart(new RenderSound.Foreground(resources, part.value, teaseLib));
         }
     }
 
@@ -351,7 +366,7 @@ public class SectionRenderer implements Closeable {
             if (backgroundSoundRenderer != null) {
                 renderQueue.cancel(backgroundSoundRenderer);
             }
-            backgroundSoundRenderer = new RenderSound(resources, part.value, teaseLib);
+            backgroundSoundRenderer = new RenderSound.Background(resources, part.value, teaseLib);
             renderQueue.submit(backgroundSoundRenderer);
             // use awaitSoundCompletion keyword to wait for background sound completion
         }

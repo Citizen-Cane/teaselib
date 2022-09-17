@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import java.awt.GraphicsConfiguration;
 import java.awt.Rectangle;

@@ -10,7 +10,7 @@ final class RenderSpeechDelay extends RenderSpeech {
     private final String prompt;
 
     RenderSpeechDelay(String prompt, TeaseLib teaseLib) {
-        super(teaseLib);
+        super(teaseLib, null);
         this.prompt = prompt;
     }
 

@@ -109,7 +109,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public void setBackgroundSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
             try {
-                scriptRenderer.queueBackgroundRenderer(new RenderSound(resources, path, teaseLib));
+                scriptRenderer.queueBackgroundRenderer(new RenderSound.Background(resources, path, teaseLib));
             } catch (IOException e) {
                 handleAssetNotFound(e);
             }
@@ -119,22 +119,11 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public void setSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
             try {
-                scriptRenderer.queueRenderer(new RenderSound(resources, path, teaseLib));
+                scriptRenderer.queueRenderer(new RenderSound.Foreground(resources, path, teaseLib));
             } catch (IOException e) {
                 handleAssetNotFound(e);
             }
         }
-    }
-
-    public MediaRenderer.Threaded getSound(String path) {
-        if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-            try {
-                return new RenderSound(resources, path, teaseLib);
-            } catch (IOException e) {
-                handleAssetNotFound(e);
-            }
-        }
-        return new RenderDelay(0, teaseLib);
     }
 
     private void handleAssetNotFound(IOException e) {

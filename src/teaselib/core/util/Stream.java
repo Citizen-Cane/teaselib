@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.stream.Collectors;
 
 /**
@@ -15,8 +17,7 @@ import java.util.stream.Collectors;
 // TODO Rename to IOStream to resolve name collision with java.util.stream.Stream
 public class Stream {
 
-    private Stream() {
-    }
+    private Stream() {}
 
     public static void copy(byte[] buf, OutputStream os) throws IOException {
         os.write(buf, 0, buf.length);
@@ -35,10 +36,11 @@ public class Stream {
         int i;
         int bufferSize = 1024 * 1024;
         byte[] b = new byte[bufferSize];
-        while ((i = is.read(b, 0, Math.min(bufferSize, (int) s))) != -1) {
-            s -= i;
+        long reamaining = s;
+        while ((i = is.read(b, 0, Math.min(bufferSize, (int) reamaining))) != -1) {
+            reamaining -= i;
             os.write(b, 0, i);
-            if (s == 0) {
+            if (reamaining == 0) {
                 break;
             }
         }
@@ -85,4 +87,80 @@ public class Stream {
         }
     }
 
+    public static InputStream temporaryFileInputStream(Path file) throws IOException {
+        var stream = Files.newInputStream(file);
+        return new InputStream() {
+            @Override
+            public void close() throws IOException {
+                Files.delete(file);
+                stream.close();
+            }
+
+            @Override
+            public int read() throws IOException {
+                return stream.read();
+            }
+
+            @Override
+            public int read(byte[] b) throws IOException {
+                return stream.read(b);
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                return stream.read(b, off, len);
+            }
+
+            @Override
+            public byte[] readAllBytes() throws IOException {
+                return stream.readAllBytes();
+            }
+
+            @Override
+            public byte[] readNBytes(int len) throws IOException {
+                return stream.readNBytes(len);
+            }
+
+            @Override
+            public int readNBytes(byte[] b, int off, int len) throws IOException {
+                return stream.readNBytes(b, off, len);
+            }
+
+            @Override
+            public long skip(long n) throws IOException {
+                return stream.skip(n);
+            }
+
+            @Override
+            public void skipNBytes(long n) throws IOException {
+                stream.skipNBytes(n);
+            }
+
+            @Override
+            public int available() throws IOException {
+                return stream.available();
+            }
+
+            @Override
+            public synchronized void mark(int readlimit) {
+                stream.mark(readlimit);
+            }
+
+            @Override
+            public synchronized void reset() throws IOException {
+                stream.reset();
+            }
+
+            @Override
+            public boolean markSupported() {
+                return stream.markSupported();
+            }
+
+            @Override
+            public long transferTo(OutputStream out) throws IOException {
+                return stream.transferTo(out);
+            }
+
+        };
+    }
 }

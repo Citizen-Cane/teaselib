@@ -239,7 +239,8 @@ public class MediaRendererQueue {
 
     public Future<?> submit(MediaRenderer.Threaded mediaRenderer) {
         synchronized (activeRenderers) {
-            Future<?> future = new MediaRendererFutureTask(mediaRenderer, executor.submit(mediaRenderer));
+            Future<?> task = executor.submit(mediaRenderer);
+            Future<?> future = new MediaRendererFutureTask(mediaRenderer, task);
             activeRenderers.put(mediaRenderer, future);
             return future;
         }

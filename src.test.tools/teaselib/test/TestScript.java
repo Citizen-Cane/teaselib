@@ -70,12 +70,36 @@ public class TestScript extends TeaseScript implements Closeable {
                 new DebugSetup(), actor);
     }
 
+    /**
+     * @param resourceRoot
+     *            The class to use as the root path for all resources. Also selects the package folder.
+     *            <p>
+     *            Note that the TestScript class is usually in a different source folder than the test. As a result ,
+     *            this constructor must be used to access the resources.
+     * @throws IOException
+     */
     public TestScript(Class<?> resourceRoot) throws IOException {
         this(new DebugHost(), new ResourceLoader(resourceRoot), new DebugSetup(), newActor());
     }
 
+    /**
+     * @param resourceRoot
+     *            The root path for all resources. Also selects the package folder.
+     *            <p>
+     *            Note that the TestScript class is usually in a different source folder than the test. As a result ,
+     *            this constructor must be used to access the resources.
+     * @throws IOException
+     */
     public TestScript(String resourceRoot) throws IOException {
         this(new DebugHost(), new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup(), newActor());
+    }
+
+    /**
+     * @param class1
+     * @param string
+     */
+    public TestScript(Class<?> mainScript, String resourceRoot) throws IOException {
+        this(new DebugHost(), new ResourceLoader(mainScript, resourceRoot), new DebugSetup(), newActor());
     }
 
     TestScript(DebugHost host, ResourceLoader resourceLoader, Setup setup, Actor actor) throws IOException {

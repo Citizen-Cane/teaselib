@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.host;
 
 import java.awt.Color;
 import java.awt.Font;

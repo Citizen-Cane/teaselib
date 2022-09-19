@@ -471,16 +471,7 @@ public abstract class Script {
         }
 
         var prompt = getPrompt(answers, intention, scriptFunction);
-
-        if (scriptFunction == null) {
-            // If we don't have a script function,
-            // then the mandatory part of the renderers
-            // must be completed before displaying the ui choices
-            awaitMandatoryCompleted();
-            showAll();
-        } else {
-            completeSectionBeforeStarting(scriptFunction);
-        }
+        completeSectionBeforeStarting(scriptFunction);
 
         if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             scriptRenderer.stopBackgroundRenderers();
@@ -507,7 +498,13 @@ public abstract class Script {
     }
 
     private void completeSectionBeforeStarting(ScriptFunction scriptFunction) {
-        if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
+        if (scriptFunction == null) {
+            // If we don't have a script function,
+            // then the mandatory part of the renderers
+            // must be completed before displaying the ui choices
+            awaitMandatoryCompleted();
+            showAll();
+        } else if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
             // A confirmation relates to the current message,
             // and must appear as a normal button,
             // so in a way it is concatenated to the current message
@@ -524,7 +521,7 @@ public abstract class Script {
     private void showAll() {
         if (scriptRenderer.haveMultipleParagraphs()) {
             try {
-                scriptRenderer.showAll();
+                scriptRenderer.showAllParagraphs();
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException(e);
             }

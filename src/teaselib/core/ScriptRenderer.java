@@ -306,7 +306,7 @@ public class ScriptRenderer implements Closeable {
         }
     }
 
-    void showAll() throws InterruptedException {
+    void showAllParagraphs() throws InterruptedException {
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
                 awaitAllCompleted();

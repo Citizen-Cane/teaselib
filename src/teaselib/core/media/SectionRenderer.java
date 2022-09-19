@@ -51,11 +51,7 @@ public class SectionRenderer implements Closeable {
     }
 
     public boolean append(List<RenderedMessage> messages) {
-        synchronized (messages) {
-            currentMessageRenderer.messages.addAll(messages);
-            boolean stillRunning = !currentMessageRenderer.hasCompletedMandatory();
-            return stillRunning;
-        }
+        return currentMessageRenderer.append(messages);
     }
 
     public boolean hasMultipleParagraphs() {
@@ -156,15 +152,30 @@ public class SectionRenderer implements Closeable {
 
         private void renderFromCurrentMessage() throws IOException, InterruptedException {
             while (true) {
-                int limit = messages.size();
+                RenderedMessage message;
+                int limit;
+                synchronized (messages) {
+                    message = messages.get(currentMessage);
+                    limit = messages.size();
+                }
                 while (currentMessage < limit) {
-                    RenderedMessage message = messages.get(currentMessage);
                     try {
                         render(message);
                     } finally {
                         currentMessage++;
                     }
-                    renderOptionalDefaultDelayBetweenMultipleMessages();
+
+                    boolean renderOptionalDefaultDelayBetweenMultipleMessages;
+                    synchronized (messages) {
+                        boolean last = currentMessage == messages.size();
+                        if (!last) {
+                            message = messages.get(currentMessage);
+                        }
+                        renderOptionalDefaultDelayBetweenMultipleMessages = !last && !lastParagraph.contains(Type.Delay) && textToSpeechPlayer != null;
+                    }
+                    if (renderOptionalDefaultDelayBetweenMultipleMessages) {
+                        renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
+                    }
                 }
 
                 synchronized (messages) {
@@ -178,12 +189,11 @@ public class SectionRenderer implements Closeable {
             }
         }
 
-        private void renderOptionalDefaultDelayBetweenMultipleMessages() throws InterruptedException {
-            if (textToSpeechPlayer != null) {
-                boolean last = currentMessage == messages.size();
-                if (!last && !lastParagraph.contains(Type.Delay)) {
-                    renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
-                }
+        public boolean append(List<RenderedMessage> newMessages) {
+            synchronized (messages) {
+                messages.addAll(newMessages);
+                boolean stillRunning = !currentMessageRenderer.hasCompletedMandatory();
+                return stillRunning;
             }
         }
 

@@ -100,10 +100,14 @@ public class RenderState {
                 sceneBlend != oldState.sceneBlend ||
                 !Objects.equals(displayImageResource, oldState.displayImageResource) ||
                 !Objects.equals(displayImageOffset, oldState.displayImageOffset);
-        // TODO Explicit update necessary if texts are the same - for instance with random.item(text)
         repaintTextImage = // oldState.repaintTextImage ||
                 isIntertitle != oldState.isIntertitle ||
-                        !Objects.equals(text, oldState.text);
+                // Demand text string to be the same,
+                // in order to display existing text when just changing the image
+                // -> single paragraph when showing prompt with new image
+                        text != oldState.text;
+        // TODO Re-activate oldState.repaintTextImage for such purposes
+        // !Objects.equals(text, oldState.text);
     }
 
     boolean isBackgroundVisisble() {

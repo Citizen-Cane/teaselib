@@ -22,6 +22,7 @@ import teaselib.Body;
 import teaselib.Config;
 import teaselib.Duration;
 import teaselib.Message;
+import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.Resources;
@@ -470,13 +471,13 @@ public abstract class Script {
             }
         }
 
-        var prompt = getPrompt(answers, intention, scriptFunction);
+        showAllParagraphs();
+        var prompt = createPrompt(answers, intention, scriptFunction);
         completeSectionBeforeStarting(scriptFunction);
 
         if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             scriptRenderer.stopBackgroundRenderers();
         }
-
         if (scriptFunction == null) {
             speechRecognitioneRejectedScript().ifPresent(script -> addRecognitionRejectedAction(prompt, script));
         }
@@ -497,34 +498,30 @@ public abstract class Script {
         return answer;
     }
 
+    private void showAllParagraphs() {
+        if (scriptRenderer.haveMultipleParagraphs()) {
+            Message promptImage = new Message(actor);
+            promptImage.add(Type.Image, Message.ActorImage);
+            appendMessage(promptImage);
+        }
+    }
+
     private void completeSectionBeforeStarting(ScriptFunction scriptFunction) {
         if (scriptFunction == null) {
             // If we don't have a script function,
             // then the mandatory part of the renderers
-            // must be completed before displaying the ui choices
+            // must be completed before displaying the UI choices
             awaitMandatoryCompleted();
-            showAll();
         } else if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
             // A confirmation relates to the current message,
             // and must appear as a normal button,
             // so in a way it is concatenated to the current message
             awaitMandatoryCompleted();
-            showAll();
         } else {
             // An autonomous script function does not relate to the current
             // message, therefore we'll wait until all of the last message
             // has been completed
             awaitAllCompleted();
-        }
-    }
-
-    private void showAll() {
-        if (scriptRenderer.haveMultipleParagraphs()) {
-            try {
-                scriptRenderer.showAllParagraphs();
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException(e);
-            }
         }
     }
 
@@ -608,7 +605,7 @@ public abstract class Script {
         return teaseLib.globals.get(Shower.class).show(prompt);
     }
 
-    private Prompt getPrompt(List<Answer> answers, Intention intention, ScriptFunction scriptFunction) {
+    private Prompt createPrompt(List<Answer> answers, Intention intention, ScriptFunction scriptFunction) {
         var choices = choices(answers, intention);
         var inputMethods = teaseLib.globals.get(InputMethods.class);
         var prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.Distinct,

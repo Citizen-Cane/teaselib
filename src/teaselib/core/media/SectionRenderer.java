@@ -55,7 +55,7 @@ public class SectionRenderer implements Closeable {
     }
 
     public boolean hasMultipleParagraphs() {
-        return currentMessageRenderer.accumulatedText.paragraphs.size() > 1;
+        return currentMessageRenderer.messages.size() > 1;
     }
 
     public void restoreCurrentRenderer(List<MediaRenderer> replay) {
@@ -230,9 +230,10 @@ public class SectionRenderer implements Closeable {
                     awaitSectionMandatory();
                 }
 
-                if ((isDurationType && !previousPart.isAnyOf(Message.Type.DelayTypes))
-                        || isDisplayTypeAtEnd) {
+                if ((isDurationType && !previousPart.isAnyOf(Message.Type.DelayTypes))) {
                     show(displayImage, accumulatedText.getTail());
+                } else if (isDisplayTypeAtEnd) {
+                    show(displayImage, accumulatedText.paragraphs);
                 }
 
                 if (part.type == Type.Text) {

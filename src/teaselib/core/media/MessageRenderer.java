@@ -2,7 +2,6 @@ package teaselib.core.media;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,11 +40,10 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
         super(teaseLib);
         this.actor = actor;
         this.resources = resources;
+        this.messages = new ArrayList<>(messages);
         if (messages.isEmpty()) {
-            this.messages = Collections.emptyList();
             this.lastParagraph = new RenderedMessage();
         } else {
-            this.messages = new ArrayList<>(messages);
             this.lastParagraph = RenderedMessage.getLastParagraph(getLastMessage());
         }
     }

@@ -202,7 +202,7 @@ public class ScriptRenderer implements Closeable {
     private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer messageRenderer, OutlineType outlineType)
             throws InterruptedException {
         remember(actor);
-        fireBeforeMessageEvent(teaseLib, actor, outlineType);
+        fireBeforeMessageEvent(teaseLib, outlineType);
 
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
@@ -230,66 +230,10 @@ public class ScriptRenderer implements Closeable {
         }
     }
 
-    // Used to define delay at the end of a section - before the beginning of a new section
-    // - look-ahead : either inject delay between paragraphs or before a new section
-    // + say(() starts playing a batch:
-    // + while playing append() copies & modifies the messages and starts a new batch at the "current"
-    // message
-    // + the batch ends with a paragraphs delay or a section delay
-
-    // Better:
-    // + one batch per say()
-    // +-- append rendered messages
-    // +-- replace last message and modify current message index
-    // -> usually continues rendering automatically
-    // when completed re-start batch at current position
-
-    // TODO prevent batch from running multiple times
-    // + append has appneded new messages here
-    // + either batch should continue, and nextOutlineType is wrong/obsolelte
-    // + or batch has finished here and can be restarted after await...()
-    // TODO must awaitCmpleteMandatory() before adding since we guarantee that
-    // : render*() returns as soon as the new message has been started
-    // -> extra rule for message renderer
-
-    // Multiple renderers, single message list?
-    // - does each renderer extend?
-    // - What does replay() do?
-    // -> Replay replays the last set of renderers
-    // + up to now replay() is used after recognitionRejected-Script to restore the showAll() state
-    // -> The last set is replayed from Position.Mandatory or Position.End
-
-    // TODO define what global renderer settings do
-    // + delay: delay for render set
-    // + sound etc. : plays at start of set
-    // -> replay multiple messages and sounds from start does not work
-    // because messages are appended via a new set
-
-    //
-    // Final solution:
-    //
-
-    // + say() & append() must work the same way as say(...)
-    // ->
-    // + play() to current limit, no matter what has been appended
-    // + append() appends to current message renderer
-    // + append() waits until the message renderer has played to its limit
-    // + append() re-plays() the current set from the current position
-    // -> message renderer continues execution, other renderers
-    // ---- continue execution as well or
-    // ---- are already finished
-    // queueRenderer can return because the current set continues execution
-    //
-    // render implementation
-    // + at the end of the limit, when there are no more appended entries,
-    // --- message renderer executes section delay (does not append)
-    // + append appends paragraph delay when message renderer has not completed mandatory
-    // + append ends section delay when replaying
-
     private void appendMessagesToSection(TeaseLib teaseLib, Actor actor, List<RenderedMessage> messages)
             throws InterruptedException {
         remember(actor);
-        fireBeforeMessageEvent(teaseLib, actor, OutlineType.AppendParagraph);
+        fireBeforeMessageEvent(teaseLib, OutlineType.AppendParagraph);
 
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
@@ -306,17 +250,6 @@ public class ScriptRenderer implements Closeable {
         }
     }
 
-    void showAllParagraphs() throws InterruptedException {
-        synchronized (renderQueue.activeRenderers) {
-            synchronized (queuedRenderers) {
-                awaitAllCompleted();
-                List<MediaRenderer> replay = new ArrayList<>(playedRenderers);
-                sectionRenderer.restoreCurrentRenderer(replay);
-                replay(replay, Position.End);
-            }
-        }
-    }
-
     boolean haveMultipleParagraphs() {
         return sectionRenderer.hasMultipleParagraphs();
     }
@@ -328,7 +261,7 @@ public class ScriptRenderer implements Closeable {
         }
     }
 
-    private void fireBeforeMessageEvent(TeaseLib teaseLib, Actor actor, BeforeMessage.OutlineType outlineType) {
+    private void fireBeforeMessageEvent(TeaseLib teaseLib, BeforeMessage.OutlineType outlineType) {
         teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
         events.beforeMessage.fire(new ScriptEventArgs.BeforeMessage(outlineType));
     }

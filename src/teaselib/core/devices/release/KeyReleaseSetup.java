@@ -16,6 +16,13 @@ import teaselib.util.Items;
  */
 public class KeyReleaseSetup implements ScriptInteraction {
 
+    /**
+     * The default instruction actually don't instruct anything.
+     * <p>
+     * Instead the release actuator is activated when applying items.
+     */
+    public static final Consumer<Items> DefaultInstructions = KeyReleaseDeviceInteraction.DefaultInstructions;
+
     private final Script script;
     public final KeyReleaseDeviceInteraction deviceInteraction;
 

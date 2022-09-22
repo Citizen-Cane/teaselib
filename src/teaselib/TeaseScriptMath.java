@@ -14,7 +14,7 @@ import teaselib.util.Daytime;
  * @author Citizen-Cane
  *
  */
-public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
+public abstract class TeaseScriptMath extends TeaseScriptPersistence {
 
     protected TeaseScriptMath(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         super(teaseLib, resources, actor, namespace);
@@ -65,4 +65,5 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
     public TimeOfDay timeOfDay() {
         return teaseLib.timeOfDay();
     }
+
 }

@@ -18,7 +18,7 @@ public class GenderAndSexTest {
     @Test
     public void testSexualityEnum() throws IOException {
         try (TestScript script = new TestScript()) {
-            PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
+            PersistentEnum<Sex> sex = script.persistence.newEnum(Sex.class);
             assertEquals(Sex.Male, sex.value());
             sex.set(Sex.Female);
             assertEquals(Sex.Female, sex.value());
@@ -26,7 +26,7 @@ public class GenderAndSexTest {
             assertEquals(Sex.Female.name(),
                     script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "Sexuality", "Sex")));
 
-            PersistentEnum<Gender> gender = script.persistentEnum(Gender.class).defaultValue(Gender.Feminine);
+            PersistentEnum<Gender> gender = script.persistence.newEnum(Gender.class).defaultValue(Gender.Feminine);
             assertEquals(Gender.Feminine, gender.value());
         }
     }

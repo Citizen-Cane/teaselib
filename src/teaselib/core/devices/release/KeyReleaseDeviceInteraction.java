@@ -169,8 +169,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
                 teaseLib.items(TeaseLib.DefaultDomain, Bondage.Chains) //
         );
 
-        prepare(actor, handcuffs, 1, TimeUnit.HOURS, defaultInstructions);
-        prepare(actor, cuffs, 2, TimeUnit.HOURS, defaultInstructions);
+        prepare(actor, handcuffs, 1, TimeUnit.HOURS, DefaultInstructions);
+        prepare(actor, cuffs, 2, TimeUnit.HOURS, DefaultInstructions);
     }
 
     static class ItemsAlreadyPreparedException extends RuntimeException {
@@ -201,9 +201,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
                 new Instructions(actor, items, duration, unit, instructions, instructionsAgain));
     }
 
-    private Consumer<Items> defaultInstructions = items -> {
-        // No verbose default instruction - actuator is activated when applying items
-    };
+    static final Consumer<Items> DefaultInstructions = items -> { /**/ };
 
     // TODO prefer lockable items as long as a key release device is available
 
@@ -292,8 +290,8 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
         }
     }
 
-    private boolean isDefault(Instructions definition) {
-        return definition.acquireKeys == defaultInstructions;
+    private static boolean isDefault(Instructions definition) {
+        return definition.acquireKeys == DefaultInstructions;
     }
 
     @Override
@@ -346,7 +344,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     public boolean prepare(Actor actor, Item item) {
-        return prepare(actor, new ItemsImpl(item), defaultInstructions);
+        return prepare(actor, new ItemsImpl(item), DefaultInstructions);
     }
 
     public boolean prepare(Actor actor, Item item, Consumer<Items> instructions) {
@@ -376,7 +374,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
     }
 
     public boolean prepare(Actor actor, Items items) {
-        return prepare(actor, items, defaultInstructions);
+        return prepare(actor, items, DefaultInstructions);
     }
 
     /**
@@ -634,7 +632,7 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
                 } else {
                     unbind(actuator);
                     // doesn't work on restore() but this is code path is not called at startup
-                    prepare(definition.get().actor, items, defaultInstructions);
+                    prepare(definition.get().actor, items, DefaultInstructions);
                 }
             }
         });

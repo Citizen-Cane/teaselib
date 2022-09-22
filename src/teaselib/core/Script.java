@@ -61,7 +61,6 @@ import teaselib.core.util.WildcardPattern;
 import teaselib.util.Item;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
-import teaselib.util.math.Random;
 
 public abstract class Script {
 
@@ -72,7 +71,6 @@ public abstract class Script {
 
     public final Actor actor;
     public final String namespace;
-    public final Random random;
 
     public final ScriptRenderer scriptRenderer;
 
@@ -305,7 +303,6 @@ public abstract class Script {
         this.actor = actor;
         this.scriptRenderer = scriptRenderer;
         this.namespace = namespace.replace(" ", "_");
-        this.random = teaseLib.random;
 
         Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech();
         if (textToSpeech.isPresent()) {
@@ -510,7 +507,7 @@ public abstract class Script {
         if (scriptFunction == null) {
             // If we don't have a script function,
             // then the mandatory part of the renderers
-            // must be completed before displaying the UI choices
+            // must be completed before displaying the ui choices
             awaitMandatoryCompleted();
         } else if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
             // A confirmation relates to the current message,
@@ -525,11 +522,7 @@ public abstract class Script {
         }
     }
 
-    private Optional<SpeechRecognitionRejectedScript> speechRecognitioneRejectedScript() {
-        return actor.speechRecognitionRejectedScript != null
-                ? Optional.of(new SpeechRecognitionRejectedScriptAdapter(this))
-                : Optional.empty();
-    }
+    protected abstract Optional<SpeechRecognitionRejectedScript> speechRecognitioneRejectedScript();
 
     private static void addRecognitionRejectedAction(Prompt prompt, SpeechRecognitionRejectedScript script) {
         prompt.when(SpeechRecognitionInputMethod.Notification.RecognitionRejected).then(new Action() {

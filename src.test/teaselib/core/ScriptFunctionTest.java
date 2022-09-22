@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,7 +57,7 @@ public class ScriptFunctionTest {
             super(teaseLib, new ResourceLoader(RunnableTestScript.class), TestScript.newActor(), TestScript.NAMESPACE);
         }
 
-        public RunnableTestScript(Script script) {
+        public RunnableTestScript(TeaseScript script) {
             super(script);
         }
 

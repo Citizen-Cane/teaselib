@@ -48,7 +48,7 @@ public class ShowChoicesAbstractTest {
     }
 
     abstract static class RunnableTestScript extends TeaseScript implements Runnable {
-        RunnableTestScript(Script script) {
+        RunnableTestScript(TeaseScript script) {
             super(script);
         }
 

@@ -15,7 +15,6 @@ import teaselib.core.TeaseLib.PersistentBoolean;
 import teaselib.core.TeaseLib.PersistentEnum;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedName;
-import teaselib.host.sexscripts.SexScriptsPropertyNameMapping;
 import teaselib.test.TestScript;
 
 public class SexScriptsPropertyNameMappingTest {
@@ -54,7 +53,7 @@ public class SexScriptsPropertyNameMappingTest {
     @Test
     public void testSexScriptsSexMapping_Read() throws IOException {
         try (TestScript script = new TestScript(new SexScriptsPropertyNameMapping())) {
-            PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
+            PersistentEnum<Sex> sex = script.persistence.newEnum(Sex.class);
             assertFalse(sex.available());
 
             script.storage.put(SexScriptsPropertyNameMapping.INTRO_FEMALE, "true");
@@ -74,7 +73,7 @@ public class SexScriptsPropertyNameMappingTest {
     @Test
     public void testSexScriptsSexMapping_Write() throws IOException {
         try (TestScript script = new TestScript(new SexScriptsPropertyNameMapping())) {
-            PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
+            PersistentEnum<Sex> sex = script.persistence.newEnum(Sex.class);
             assertFalse(sex.available());
             assertFalse(script.storage.containsKey(SexScriptsPropertyNameMapping.INTRO_FEMALE));
 
@@ -93,7 +92,7 @@ public class SexScriptsPropertyNameMappingTest {
     @Test
     public void testSexScriptsSexualOrientationMappingAndMappingOfNestedEnums_Read() throws IOException {
         try (TestScript script = new TestScript(new SexScriptsPropertyNameMapping())) {
-            PersistentBoolean likesMales = script.persistentBoolean(Sexuality.Orientation.LikesMales);
+            PersistentBoolean likesMales = script.persistence.newBoolean(Sexuality.Orientation.LikesMales);
             assertFalse(likesMales.available());
             assertEquals(false, likesMales.value());
 
@@ -104,7 +103,7 @@ public class SexScriptsPropertyNameMappingTest {
             likesMales.set(false);
             assertEquals("false", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "intro", "likemale")));
 
-            PersistentBoolean likesFemales = script.persistentBoolean(Sexuality.Orientation.LikesFemales);
+            PersistentBoolean likesFemales = script.persistence.newBoolean(Sexuality.Orientation.LikesFemales);
             assertFalse(likesFemales.available());
             assertEquals(false, likesFemales.value());
 
@@ -117,11 +116,11 @@ public class SexScriptsPropertyNameMappingTest {
     @Test
     public void testSexScriptsSexualOrientationMappingAndMappingOfNestedEnums_Write() throws IOException {
         try (TestScript script = new TestScript(new SexScriptsPropertyNameMapping())) {
-            PersistentBoolean likesMales = script.persistentBoolean(Sexuality.Orientation.LikesMales);
+            PersistentBoolean likesMales = script.persistence.newBoolean(Sexuality.Orientation.LikesMales);
             likesMales.set(true);
             assertEquals("true", script.storage.get(new QualifiedName("", "intro", "likemale")));
 
-            PersistentBoolean likesFemales = script.persistentBoolean(Sexuality.Orientation.LikesFemales);
+            PersistentBoolean likesFemales = script.persistence.newBoolean(Sexuality.Orientation.LikesFemales);
             likesFemales.set(true);
             assertEquals("true", script.storage.get(new QualifiedName("", "intro", "likefemale")));
 

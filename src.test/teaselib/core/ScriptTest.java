@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import teaselib.Message;
 import teaselib.Message.Type;
+import teaselib.TeaseScript;
 import teaselib.core.media.RenderedMessage;
 import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.test.TestScript;
@@ -84,8 +85,8 @@ public class ScriptTest {
         }
     }
 
-    public static class FoobarScript extends Script {
-        public FoobarScript(Script script) {
+    public static class FoobarScript extends TeaseScript {
+        public FoobarScript(TeaseScript script) {
             super(script, script.actor);
         }
     }
@@ -102,8 +103,8 @@ public class ScriptTest {
         }
     }
 
-    public class NotAStaticClassScript extends Script {
-        public NotAStaticClassScript(Script script) {
+    public class NotAStaticClassScript extends TeaseScript {
+        public NotAStaticClassScript(TeaseScript script) {
             super(script, script.actor);
         }
     }
@@ -124,13 +125,13 @@ public class ScriptTest {
         }
     }
 
-    static class StaticTestScript extends Script {
+    static class StaticTestScript extends TeaseScript {
         public StaticTestScript(TestScript script) {
             super(script, script.actor);
         }
 
-        public class NestedScriptClass extends Script {
-            public NestedScriptClass(Script script) {
+        public class NestedScriptClass extends TeaseScript {
+            public NestedScriptClass(TeaseScript script) {
                 super(script, script.actor);
             }
         }
@@ -156,16 +157,16 @@ public class ScriptTest {
         private NestedScriptCaching() { //
         }
 
-        public static class FooScript extends Script {
+        public static class FooScript extends TeaseScript {
             final Script baz = script(BazScript.class);
 
-            public FooScript(Script script) {
+            public FooScript(TeaseScript script) {
                 super(script, script.actor);
             }
         }
 
-        public static class BazScript extends Script {
-            public BazScript(Script script) {
+        public static class BazScript extends TeaseScript {
+            public BazScript(TeaseScript script) {
                 super(script, script.actor);
             }
         }

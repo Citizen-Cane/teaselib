@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Replay;
+import teaselib.TeaseScript;
 import teaselib.core.ScriptEventArgs.BeforeMessage;
 import teaselib.core.ScriptEvents.ScriptEventAction;
 import teaselib.util.SpeechRecognitionRejectedScript;
@@ -14,7 +15,7 @@ public final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognit
     private Script script;
     private boolean finishedWithPrompt = false;
 
-    SpeechRecognitionRejectedScriptAdapter(Script script) {
+    public SpeechRecognitionRejectedScriptAdapter(TeaseScript script) {
         super(script);
         this.script = script;
     }

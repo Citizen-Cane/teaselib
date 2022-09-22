@@ -1,9 +1,6 @@
 package teaselib.core.configuration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,7 +28,7 @@ public class PersistentConfigurationFileTest {
             File settingsFolder = new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS);
             File file = new File(settingsFolder, script.namespace + Configuration.PROPERTIES_EXTENSION);
 
-            script.persistentBoolean("testVariableName").set(true);
+            script.persistence.newBoolean("testVariableName").set(true);
             assertFalse(file.exists());
             script.teaseLib.config.close(); // flush files
             assertTrue(file.exists());
@@ -68,7 +65,7 @@ public class PersistentConfigurationFileTest {
             File file = new File(new File(folder.getRoot(), Configuration.SCRIPT_SETTINGS),
                     script.namespace + ".properties");
 
-            script.persistentBoolean("testVariableName").set(true);
+            script.persistence.newBoolean("testVariableName").set(true);
             assertFalse(file.exists());
             script.say("Write async on say");
             script.teaseLib.config.close(); // flush files
@@ -76,11 +73,11 @@ public class PersistentConfigurationFileTest {
         }
 
         try (TestScript script = new TestScript(new DebugSetup())) {
-            assertFalse(script.persistentBoolean("testVariableName").value());
+            assertFalse(script.persistence.newBoolean("testVariableName").value());
         }
 
         try (TestScript script = new TestScript(setupWithUerPath)) {
-            assertTrue(script.persistentBoolean("testVariableName").value());
+            assertTrue(script.persistence.newBoolean("testVariableName").value());
         }
     }
 
@@ -108,21 +105,21 @@ public class PersistentConfigurationFileTest {
         DebugSetup setup = new DebugSetup().withUserPath(folder.getRoot());
 
         try (TestScript script = new TestScript(setup)) {
-            script.persistentBoolean("testVariableName").set(true);
-            assertTrue(script.persistentBoolean("testVariableName").value());
-            assertTrue(script.persistentBoolean("TESTVARIABLENAME").value());
-            assertTrue(script.persistentBoolean("testvariablename").value());
+            script.persistence.newBoolean("testVariableName").set(true);
+            assertTrue(script.persistence.newBoolean("testVariableName").value());
+            assertTrue(script.persistence.newBoolean("TESTVARIABLENAME").value());
+            assertTrue(script.persistence.newBoolean("testvariablename").value());
             script.teaseLib.config.close(); // flush files
         }
 
         try (TestScript script = new TestScript(new DebugSetup())) {
-            assertFalse(script.persistentBoolean("testVariableName").value());
+            assertFalse(script.persistence.newBoolean("testVariableName").value());
         }
 
         try (TestScript script = new TestScript(setup)) {
-            assertTrue(script.persistentBoolean("testVariableName").value());
-            assertTrue(script.persistentBoolean("TESTVARIABLENAME").value());
-            assertTrue(script.persistentBoolean("testvariablename").value());
+            assertTrue(script.persistence.newBoolean("testVariableName").value());
+            assertTrue(script.persistence.newBoolean("TESTVARIABLENAME").value());
+            assertTrue(script.persistence.newBoolean("testvariablename").value());
         }
     }
 
@@ -131,18 +128,18 @@ public class PersistentConfigurationFileTest {
         DebugSetup setup = new DebugSetup().withUserPath(folder.getRoot());
 
         try (TestScript script = new TestScript(setup)) {
-            script.persistentBoolean("testVariableName").set(true);
+            script.persistence.newBoolean("testVariableName").set(true);
             script.teaseLib.config.close(); // flush files
         }
 
         try (TestScript script = new TestScript(setup)) {
-            assertTrue(script.persistentBoolean("testVariableName").value());
-            script.persistentBoolean("testVariableName").clear();
-            assertFalse(script.persistentBoolean("testVariableName").value());
+            assertTrue(script.persistence.newBoolean("testVariableName").value());
+            script.persistence.newBoolean("testVariableName").clear();
+            assertFalse(script.persistence.newBoolean("testVariableName").value());
         }
 
         try (TestScript script = new TestScript(setup)) {
-            assertFalse(script.persistentBoolean("testVariableName").value());
+            assertFalse(script.persistence.newBoolean("testVariableName").value());
         }
     }
 

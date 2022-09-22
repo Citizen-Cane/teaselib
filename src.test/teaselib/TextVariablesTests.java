@@ -70,7 +70,7 @@ public class TextVariablesTests {
     @Test
     public void testDefaultsMasculineEn() throws IOException {
         try (TestScript script = new TestScript(TestScript.newActor(Gender.Feminine, Locale.UK))) {
-            script.persistentEnum(Gender.class).set(Gender.Masculine);
+            script.persistence.newEnum(Gender.class).set(Gender.Masculine);
 
             assertEquals("en", script.actor.locale().getLanguage());
             assertEquals("slave", script.expandTextVariables("#slave"));
@@ -83,7 +83,7 @@ public class TextVariablesTests {
     @Test
     public void testDefaultsFeminineEn() throws IOException {
         try (TestScript script = new TestScript(TestScript.newActor(Gender.Masculine, Locale.UK))) {
-            script.persistentEnum(Gender.class).set(Gender.Feminine);
+            script.persistence.newEnum(Gender.class).set(Gender.Feminine);
 
             assertEquals("en", script.actor.locale().getLanguage());
             assertEquals("slave-girl", script.expandTextVariables("#slave"));
@@ -96,7 +96,7 @@ public class TextVariablesTests {
     @Test
     public void testDefaultsMasculineDe() throws IOException {
         try (TestScript script = new TestScript(TestScript.newActor(Gender.Feminine, Locale.GERMAN))) {
-            script.persistentEnum(Gender.class).set(Gender.Masculine);
+            script.persistence.newEnum(Gender.class).set(Gender.Masculine);
 
             assertEquals("de", script.actor.locale().getLanguage());
             assertEquals("Sklave", script.expandTextVariables("#slave"));
@@ -109,7 +109,7 @@ public class TextVariablesTests {
     @Test
     public void testDefaultsFemimineDe() throws IOException {
         try (TestScript script = new TestScript(TestScript.newActor(Gender.Masculine, Locale.GERMAN))) {
-            script.persistentEnum(Gender.class).set(Gender.Feminine);
+            script.persistence.newEnum(Gender.class).set(Gender.Feminine);
 
             assertEquals("de", script.actor.locale().getLanguage());
             assertEquals("Sklavin", script.expandTextVariables("#slave"));

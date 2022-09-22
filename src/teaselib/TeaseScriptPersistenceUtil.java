@@ -1,8 +1,6 @@
 package teaselib;
 
-import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.Script;
 
 /**
  * @author Citizen-Cane
@@ -10,14 +8,14 @@ import teaselib.core.Script;
  *         Implements non-object oriented persistence helpers.
  */
 
-public class TeaseScriptPersistenceUtil extends TeaseScriptPersistence {
-    protected TeaseScriptPersistenceUtil(TeaseLib teaseLib, ResourceLoader resources, Actor actor,
-            String namespace) {
-        super(teaseLib, resources, actor, namespace);
-    }
+public class TeaseScriptPersistenceUtil {
 
-    protected TeaseScriptPersistenceUtil(Script script, Actor actor) {
-        super(script, actor);
+    private final TeaseLib teaseLib;
+    private final String namespace;
+
+    protected TeaseScriptPersistenceUtil(TeaseLib teaseLib, String namespace) {
+        this.teaseLib = teaseLib;
+        this.namespace = namespace;
     }
 
     public void clear(String name) {
@@ -107,4 +105,45 @@ public class TeaseScriptPersistenceUtil extends TeaseScriptPersistence {
     public String getString(Enum<?> name) {
         return teaseLib.getString(TeaseLib.DefaultDomain, name);
     }
+
+    public TeaseLib.PersistentBoolean newBoolean(String name) {
+        return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, namespace, name);
+    }
+
+    public TeaseLib.PersistentBoolean newBoolean(Enum<?> name) {
+        return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, name);
+    }
+
+    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> newEnum(String name, Class<T> enumClass) {
+        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, namespace, name, enumClass);
+    }
+
+    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> newEnum(Enum<?> name, Class<T> enumClass) {
+        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, name, enumClass);
+    }
+
+    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> newEnum(Class<T> enumClass) {
+        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, enumClass);
+    }
+
+    public TeaseLib.PersistentInteger newInteger(String name) {
+        return teaseLib.new PersistentInteger(TeaseLib.DefaultDomain, namespace, name);
+    }
+
+    public TeaseLib.PersistentLong newLong(String name) {
+        return teaseLib.new PersistentLong(TeaseLib.DefaultDomain, namespace, name);
+    }
+
+    public TeaseLib.PersistentFloat newFloat(String name) {
+        return teaseLib.new PersistentFloat(TeaseLib.DefaultDomain, namespace, name);
+    }
+
+    public TeaseLib.PersistentString newString(String name) {
+        return teaseLib.new PersistentString(TeaseLib.DefaultDomain, namespace, name);
+    }
+
+    public <T extends Enum<T>> TeaseLib.PersistentSequence<T> newSequence(String name, T[] values) {
+        return teaseLib.new PersistentSequence<>(TeaseLib.DefaultDomain, namespace, name, values);
+    }
+
 }

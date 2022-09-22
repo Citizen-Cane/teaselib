@@ -1,7 +1,6 @@
 package teaselib.util;
 
 import teaselib.TeaseScript;
-import teaselib.core.Script;
 import teaselib.functional.RunnableScript;
 
 /**
@@ -10,7 +9,7 @@ import teaselib.functional.RunnableScript;
  */
 public abstract class SpeechRecognitionRejectedScript extends TeaseScript implements RunnableScript {
 
-    public SpeechRecognitionRejectedScript(Script script) {
+    public SpeechRecognitionRejectedScript(TeaseScript script) {
         super(script);
     }
 

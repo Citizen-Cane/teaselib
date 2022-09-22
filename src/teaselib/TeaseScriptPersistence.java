@@ -237,46 +237,6 @@ public abstract class TeaseScriptPersistence extends Script {
         return () -> new States(Arrays.stream(values).map(this::state).toList());
     }
 
-    public TeaseLib.PersistentBoolean persistentBoolean(String name) {
-        return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, namespace, name);
-    }
-
-    public TeaseLib.PersistentBoolean persistentBoolean(Enum<?> name) {
-        return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, name);
-    }
-
-    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(String name, Class<T> enumClass) {
-        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, namespace, name, enumClass);
-    }
-
-    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(Enum<?> name, Class<T> enumClass) {
-        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, name, enumClass);
-    }
-
-    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(Class<T> enumClass) {
-        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, enumClass);
-    }
-
-    public TeaseLib.PersistentInteger persistentInteger(String name) {
-        return teaseLib.new PersistentInteger(TeaseLib.DefaultDomain, namespace, name);
-    }
-
-    public TeaseLib.PersistentLong persistentLong(String name) {
-        return teaseLib.new PersistentLong(TeaseLib.DefaultDomain, namespace, name);
-    }
-
-    public TeaseLib.PersistentFloat persistentFloat(String name) {
-        return teaseLib.new PersistentFloat(TeaseLib.DefaultDomain, namespace, name);
-    }
-
-    public TeaseLib.PersistentString persistentString(String name) {
-        return teaseLib.new PersistentString(TeaseLib.DefaultDomain, namespace, name);
-    }
-
-    public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(String name, T[] values) {
-        return teaseLib.new PersistentSequence<>(TeaseLib.DefaultDomain, namespace, name, values);
-    }
-
     public State state(Enum<?> value) {
         return defaultDomain.state(value);
     }

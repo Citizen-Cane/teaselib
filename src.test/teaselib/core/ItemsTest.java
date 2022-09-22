@@ -1,17 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static teaselib.Body.OnNipples;
-import static teaselib.Bondage.Ankle_Restraints;
-import static teaselib.Bondage.Chains;
-import static teaselib.Bondage.Wrist_Restraints;
-import static teaselib.Toys.Collar;
-import static teaselib.Toys.Nipple_Clamps;
+import static org.junit.Assert.*;
+import static teaselib.Body.*;
+import static teaselib.Bondage.*;
+import static teaselib.Toys.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1191,7 +1183,7 @@ public class ItemsTest {
 
             assertEquals(items.size(), handled.size());
             assertEquals(script.defaultDomain.toString(), AbstractProxy.itemImpl(items.get()).domain);
-            assertEquals(domain.toString(), AbstractProxy.itemImpl(script.random.item(handled)).domain);
+            handled.stream().allMatch(x -> domain.toString().equals(AbstractProxy.itemImpl(x).domain));
         }
     }
 

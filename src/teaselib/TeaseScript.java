@@ -1,15 +1,12 @@
 package teaselib;
 
-import static java.util.concurrent.TimeUnit.*;
-import static teaselib.core.ai.perception.HumanPose.Interest.*;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BooleanSupplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +14,9 @@ import org.slf4j.LoggerFactory;
 import teaselib.ScriptFunction.AnswerOverride;
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
-import teaselib.core.Script;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.SpeechRecognitionRejectedScriptAdapter;
 import teaselib.core.TeaseLib;
-import teaselib.core.ai.perception.HumanPose;
-import teaselib.core.ai.perception.HumanPoseScriptInteraction;
-import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.core.media.MediaRenderer;
@@ -39,9 +33,22 @@ import teaselib.functional.CallableScript;
 import teaselib.functional.RunnableScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
+import teaselib.util.SpeechRecognitionRejectedScript;
+import teaselib.util.math.Random;
 
 public abstract class TeaseScript extends TeaseScriptMath {
     private static final Logger logger = LoggerFactory.getLogger(TeaseScript.class);
+
+    protected final TeaseScriptPerformActions perform;
+    public final TeaseScriptPersistenceUtil persistence;
+    protected final Random random;
+
+    @Override
+    protected Optional<SpeechRecognitionRejectedScript> speechRecognitioneRejectedScript() {
+        return actor.speechRecognitionRejectedScript != null
+                ? Optional.of(new SpeechRecognitionRejectedScriptAdapter(this))
+                : Optional.empty();
+    }
 
     /**
      * Create a sub-script with the same actor as the parent.
@@ -49,8 +56,8 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @param script
      *            The script to share resources with
      */
-    public TeaseScript(Script script) {
-        super(script, script.actor);
+    public TeaseScript(TeaseScript script) {
+        this(script, script.actor);
     }
 
     /**
@@ -63,6 +70,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
      */
     public TeaseScript(TeaseScript script, Actor actor) {
         super(script, actor);
+        this.perform = script.perform;
+        this.persistence = script.persistence;
+        this.random = script.random;
+
     }
 
     /**
@@ -74,6 +85,9 @@ public abstract class TeaseScript extends TeaseScriptMath {
      */
     public TeaseScript(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         super(teaseLib, resources, actor, namespace);
+        this.perform = new TeaseScriptPerformActions(this);
+        this.persistence = new TeaseScriptPersistenceUtil(teaseLib, this.namespace);
+        this.random = teaseLib.random;
     }
 
     /**
@@ -700,209 +714,6 @@ public abstract class TeaseScript extends TeaseScriptMath {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Fetch items, but don't apply them (yet)
-     */
-    public void fetch(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
-            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
-            Answer completionConfirmation, Answer prolongationExcuse) {
-        fetch(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse);
-    }
-
-    public void fetch(Item item, Message firstCommand, Answer command1stConfirmation, Message secondCommand,
-            Answer command2ndConfirmation, Message progressInstructions, Message completionQuestion,
-            Answer completionConfirmation, Answer prolongationExcuse, Message prolongationComment) {
-        fetch(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, prolongationComment);
-    }
-
-    public void fetch(Items items, Message firstCommand, Answer command1stConfirmation, Message progressInstructions,
-            Message completionQuestion, Answer completionConfirmation, Answer prolongationExcuse) {
-        fetch(items, firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, firstCommand);
-    }
-
-    public void fetch(Items items, Message firstCommand, Answer command1stConfirmation, Message progressInstructions,
-            Message completionQuestion, Answer completionConfirmation, Answer prolongationExcuse,
-            Message prolongationComment) {
-        show(items);
-        perform(items, firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, prolongationComment);
-    }
-
-    /**
-     * Apply items at the end of the call
-     */
-    public final State.Options apply(Item item, Message firstCommand, Answer command1stConfirmation,
-            Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
-            Answer prolongationExcuse) {
-        return apply(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, firstCommand);
-    }
-
-    public final State.Options apply(Item item, Message firstCommand, Answer command1stConfirmation,
-            Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
-            Answer prolongationExcuse, Message prolongationComment) {
-        return apply(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, prolongationComment);
-    }
-
-    public State.Options apply(Items items, Message firstCommand, Answer command1stConfirmation,
-            Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
-            Answer prolongationExcuse) {
-        return apply(items, firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, firstCommand);
-    }
-
-    public State.Options apply(Items items, Message firstCommand, Answer command1stConfirmation,
-            Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
-            Answer prolongationExcuse, Message prolongationComment) {
-
-        KeyReleaseSetup keyRelease = interaction(KeyReleaseSetup.class);
-        if (keyRelease != null) {
-            if (!keyRelease.isPrepared(items) && keyRelease.canPrepare(items)) {
-                keyRelease.prepare(items, all -> {
-                });
-            } else {
-                show(items);
-            }
-        } else {
-            show(items);
-        }
-
-        perform(items, firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, prolongationComment);
-
-        return items.apply();
-    }
-
-    /**
-     * Remove the items at the start of the call
-     */
-    public final void remove(Item item, Message firstCommand, Answer command1stConfirmation,
-            Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
-            Answer prolongationExcuse) {
-        remove(item, firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, firstCommand);
-    }
-
-    public final void remove(Item item, Message firstCommand, Answer command1stConfirmation,
-            Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
-            Answer prolongationExcuse, Message prolongationComment) {
-        remove(items(item), firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, prolongationComment);
-    }
-
-    public final void remove(Items items, Message firstCommand, Answer command1stConfirmation,
-            Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
-            Answer prolongationExcuse) {
-        remove(items, firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, firstCommand);
-    }
-
-    public void remove(Items items, Message firstCommand, Answer command1stConfirmation, Message progressInstructions,
-            Message completionQuestion, Answer completionConfirmation, Answer prolongationExcuse,
-            Message prolongationComment) {
-
-        items.remove();
-        perform(items, firstCommand, command1stConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, prolongationComment);
-    }
-
-    protected void perform(Items items, Message firstCommand, Answer command1stConfirmation,
-            Message progressInstructions, Message completionQuestion, Answer completionConfirmation,
-            Answer prolongationExcuse, Message prolongationComment) {
-        awaitMandatoryCompleted();
-
-        HumanPoseScriptInteraction poseEstimation = interaction(HumanPoseScriptInteraction.class);
-        if (poseEstimation.deviceInteraction.isActive()) {
-            BooleanSupplier faceToFace = () -> poseEstimation.getPose(Proximity).is(HumanPose.Proximity.FACE2FACE,
-                    HumanPose.Proximity.CLOSE);
-            var untilFaceToFace = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.FACE2FACE,
-                    HumanPose.Proximity.CLOSE);
-            var untilNotFaceToFaceOr5s = poseEstimation.autoConfirm(Proximity, 5, SECONDS,
-                    // TODO and not HumanPose.Proximity.CLOSE
-                    HumanPose.Proximity.NotFace2Face);
-            var untilNotFaceToFace = poseEstimation.autoConfirm(Proximity,
-                    // TODO and not HumanPose.Proximity.CLOSE
-                    HumanPose.Proximity.NotFace2Face);
-
-            var untilNotFaceToFaceOver5s = new ScriptFunction(() -> {
-                Answer notFace2Face;
-                while ((notFace2Face = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.NotFace2Face)
-                        .call()) != Answer.Timeout) {
-                    if (poseEstimation.autoConfirm(Proximity, 3, SECONDS, HumanPose.Proximity.FACE2FACE)
-                            .call() == Answer.Timeout) {
-                        break;
-                    }
-                }
-                return notFace2Face;
-            });
-
-            untilFaceToFace.call();
-            say(firstCommand);
-            awaitMandatoryCompleted();
-
-            boolean explainAll;
-            if (faceToFace.getAsBoolean()) {
-                if (chat(untilNotFaceToFace, command1stConfirmation)) {
-                    // prompt dismissed, still face2face
-                    explainAll = true;
-                } else {
-                    // prompt timed out, not face2face anymore
-                    explainAll = false;
-                }
-            } else {
-                // already performing, stop when back
-                explainAll = false;
-            }
-
-            while (true) {
-                show(items);
-                if (explainAll) {
-                    say(progressInstructions);
-                    awaitMandatoryCompleted();
-                    untilFaceToFace.call();
-                } else {
-                    append(progressInstructions);
-                    untilFaceToFace.call();
-                    endAll();
-                }
-
-                show(items);
-                append(completionQuestion);
-                // Wait to show the prompt
-                untilFaceToFace.call();
-                Answer answer = reply(untilNotFaceToFaceOver5s, completionConfirmation, prolongationExcuse);
-                if (answer == Answer.Timeout) {
-                    explainAll = true;
-                    continue;
-                } else if (answer == completionConfirmation) {
-                    break;
-                } else {
-                    say(prolongationComment);
-                    explainAll = untilNotFaceToFaceOr5s.call() == Answer.Timeout;
-                }
-            }
-        } else {
-            say(firstCommand);
-            chat(timeoutWithAutoConfirmation(5), command1stConfirmation);
-            while (true) {
-                append(progressInstructions);
-                show(items);
-                append(completionQuestion);
-                Answer answer = reply(completionConfirmation, prolongationExcuse);
-                if (answer == completionConfirmation) {
-                    break;
-                } else {
-                    say(prolongationComment);
-                    append(Message.Delay5to10s);
-                }
-            }
-        }
     }
 
 }

@@ -468,7 +468,9 @@ public abstract class Script {
             }
         }
 
-        showAllParagraphs();
+        if (scriptFunction == null || scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
+            showAllParagraphs();
+        }
         var prompt = createPrompt(answers, intention, scriptFunction);
         completeSectionBeforeStarting(scriptFunction);
 

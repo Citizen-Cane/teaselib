@@ -42,7 +42,7 @@ public class RenderState {
 
     public boolean repaintTextImage;
     public AbstractValidatedImage<?> textImage;
-    public Rectangle textImageRegion;
+    Rectangle textImageRegion;
     public float textBlend;
 
     public RenderState() {
@@ -116,7 +116,8 @@ public class RenderState {
                 || displayImageOffset.getX() != 0.0
                 || displayImageOffset.getY() != 0.0
                 || sceneBlend < 1.0f
-                || actorZoom < 1.0;
+                || actorZoom < 1.0
+                || true; // TODO remove test code;
     }
 
     Optional<Rectangle2D> focusRegion() {

@@ -50,7 +50,19 @@ public class Transform {
         double aspect;
         if (focusArea.isPresent()) {
             // fill screen area with image data - looks much better even if face distance might be different
-            aspect = fitOutside(image, size);
+            // aspect = fitOutside(image, size);
+
+            // TODO compromise between image and display size
+            // - zoom on wide screen display looks "too much"
+            // + Portrait images in Landscape mode are centered
+            // + Landscape images in Landscape mode are centered
+            // Changes:
+            // - Landscape images in Portrait mode stick to the top
+            // - Portrait images in portrait window stick to the top
+            // - background update missing because the update condition was made for fitOutside()
+            // - sometimes previous image visible even if background is always repainted
+            // - TODO what to do with the background
+            aspect = fitInside(image, size);
         } else {
             // show the whole image
             aspect = fitInside(image, size);

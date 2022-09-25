@@ -1,9 +1,9 @@
 package teaselib.host.sexscripts;
 
-import static java.awt.Transparency.*;
-import static java.util.function.Predicate.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.concurrency.NamedExecutorService.*;
+import static java.awt.Transparency.OPAQUE;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
+import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
 
 import java.awt.BufferCapabilities;
 import java.awt.Container;
@@ -438,7 +438,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         }
     }
 
-    private static AbstractValidatedImage<?> createDisplayImage(GraphicsConfiguration gc, AnnotatedImage displayImage) throws IOException {
+    private static AbstractValidatedImage<?> createDisplayImage(GraphicsConfiguration gc, AnnotatedImage displayImage)
+            throws IOException {
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
         if (image.getColorModel().equals(gc.getColorModel())) {
             return new ValidatedBufferedImage(image);
@@ -459,12 +460,12 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     public float resolutionZoomCorrectionFactor() {
-        Rectangle bounds = getContentBounds();
-        if (nextFrame.displayImage != null && previousImage.displayImage != null) {
-            if (bounds.width > bounds.height) {
-                return (float) (previousImage.displayImage.getWidth()) / nextFrame.displayImage.getWidth();
-            }
-        }
+        // Rectangle bounds = getContentBounds();
+        // if (nextFrame.displayImage != null && previousImage.displayImage != null) {
+        // if (bounds.width > bounds.height) {
+        // return (float) (previousImage.displayImage.getWidth()) / nextFrame.displayImage.getWidth();
+        // }
+        // }
         return 1.0f;
     }
 
@@ -608,16 +609,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private void logFrameTimes(Runnable task) {
         long start = System.currentTimeMillis();
         task.run();
-
-        if (logger.isDebugEnabled()) {
-            long now = System.currentTimeMillis();
-            long frameTime = now - start;
-            if (frametimes.size() > 100) {
-                frametimes.remove();
-            }
-            frametimes.add(frameTime);
-            logger.debug("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / frametimes.size());
+        long now = System.currentTimeMillis();
+        long frameTime = now - start;
+        if (frametimes.size() > 100) {
+            frametimes.remove();
         }
+        frametimes.add(frameTime);
+        logger.info("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / frametimes.size());
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {

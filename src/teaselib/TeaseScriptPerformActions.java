@@ -94,6 +94,35 @@ public class TeaseScriptPerformActions extends TeaseScript {
                 completionConfirmation, prolongationExcuse, prolongationComment);
     }
 
+    /**
+     * Perform an item-related task. The Items may be, for instance, fetched, applied or removed. The items and
+     * perform-task are explained via the various message arguments.
+     * <p>
+     * The performance is usually preceded with an introduction about the purpose of the task.
+     * 
+     * @param items
+     *            The items to perfrom with.
+     * @param command
+     *            The initial command to start the action. It might mention the items, or how to perform the task, e.g.
+     *            to hurry, or to crawl.
+     * @param commandConfirmation
+     *            Confirmation - dismissed when the slave starts performing, e.g. leaving face2face proximity.
+     * @param progressInstructions
+     *            The detailed instructions how to perform the task. Repeated when the slave demands more time. The
+     *            items to interact with should be mentioned either here, or in the command and the prolongation
+     *            message.
+     * @param completionQuestion
+     *            Asked when the slave returns into face2face proximity.
+     * @param completionConfirmation
+     *            To confirm completion of the task.
+     * @param prolongationExcuse
+     *            To ask for more time to complete the task.
+     * @param prolongationComment
+     *            Message to comment task prolongation.
+     * 
+     *            The function does not require AI vision. Without a scene capture device, the function falls back to a
+     *            simplified version without proximity tracking.
+     */
     protected void perform(Items items,
             Message command, Answer commandConfirmation,
             Message progressInstructions,
@@ -136,22 +165,25 @@ public class TeaseScriptPerformActions extends TeaseScript {
                     // prompt dismissed, still face2face
                     explainAll = true;
                 } else {
-                    // prompt timed out, not face2face anymore
+                    // prompt timed out, not face2face anymore -> performing
                     explainAll = false;
                 }
             } else {
-                // already performing, stop when back
+                // already performing, stop when back -> Listening
                 explainAll = false;
             }
 
             while (true) {
                 show(items);
+                // TODO pause instructions when the slave is away
+                append(progressInstructions);
                 if (explainAll) {
-                    say(progressInstructions);
+                    // player listening
                     awaitMandatoryCompleted();
                     untilFaceToFace.call();
                 } else {
-                    append(progressInstructions);
+                    // player performing
+                    // TODO increase delays between message paragraphs to avoid repeating too much
                     untilFaceToFace.call();
                     endAll();
                 }
@@ -169,6 +201,7 @@ public class TeaseScriptPerformActions extends TeaseScript {
                 } else {
                     say(prolongationComment);
                     explainAll = untilNotFaceToFaceOr5s.call() == Answer.Timeout;
+                    // True if player is still looking at top -> repeat instructions
                 }
             }
         } else {

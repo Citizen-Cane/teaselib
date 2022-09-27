@@ -492,4 +492,43 @@ public class SpeechRecognitionComplexTest {
         assertRecognized(choices, "A B3 C2 D", new Prompt.Result(3));
     }
 
+    @Test
+    public void testSRGSBuilderSpecialCharaters() throws InterruptedException {
+        Choices choices = new Choices(Locale.ENGLISH, Intention.Decide,
+                new Choice("Mistress choice - 5050-5088"),
+                new Choice("Skip to judgement section - 7600"),
+                new Choice("(simple hogtie) - 5401"),
+                new Choice("(indefinate hogtie) - 5402"),
+                new Choice("(diana simple) - 5404"),
+                new Choice("(diana complete) - 5403"),
+                new Choice("(nipple-torture game) - 5801"),
+                new Choice("(light weight drop from balls) - 5802"),
+                new Choice("(medium weight drop from balls) - 5803"),
+                new Choice("(heavy weight drop from balls) - 5804"),
+                new Choice("(light cardio nips) - 5806"),
+                new Choice("(quick pins) - 5814"),
+                new Choice("(15 pins) - 5815"),
+                new Choice("(nipple-clamp weight lifting) - 5818"),
+                new Choice("(shake those titties) - 5819"),
+                new Choice("(shower #1) - 5201"),
+                new Choice("(shower #2) - 5202"),
+                new Choice("(shower #3) - 5203"),
+                new Choice("(paddle x40) - 5601"),
+                new Choice("(paddle x60) - 5602"),
+                new Choice("(paddle x100) - 5603"),
+                new Choice("(MISSKRISS-style wanking) - 6001"),
+                new Choice("(T&J #16-21) - 6002"),
+                new Choice("(Carolyn #1) - 6003"),
+                new Choice("(light wanking) - 6004"),
+                new Choice("(med. wanking 1) - 6005"),
+                new Choice("(med. wanking 2) - 6006"),
+                new Choice("(slavesinlove beeads kneel clamps) - 6014"),
+                new Choice("(dildo worshping) - 5054-5056"),
+                new Choice("(mine-maid.sbd) - 5070"));
+
+        for (int i = 0; i < choices.size(); ++i) {
+            assertRecognized(choices, withoutPunctation(choices.get(i).answer.text.get(0)), new Prompt.Result(i));
+        }
+    }
+
 }

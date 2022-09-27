@@ -76,8 +76,7 @@ public class SpeechRecognitionTestUtils {
         return config;
     }
 
-    private SpeechRecognitionTestUtils() {
-    }
+    private SpeechRecognitionTestUtils() {}
 
     public static List<Rule> assertRecognized(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {

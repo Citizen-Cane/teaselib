@@ -1,5 +1,7 @@
 package teaselib.core;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Duration;
@@ -49,6 +51,11 @@ public abstract class AbstractDuration implements Duration {
     }
 
     @Override
+    public TimeOfDay start() {
+        return timeOfDay(start);
+    }
+
+    @Override
     public long remaining(TimeUnit unit) {
         return limit(unit) - elapsed(unit);
     }
@@ -56,6 +63,11 @@ public abstract class AbstractDuration implements Duration {
     @Override
     public long limit(TimeUnit unit) {
         return convertToUnit(limit, unit);
+    }
+
+    @Override
+    public TimeOfDay limit() {
+        return timeOfDay(start + limit);
     }
 
     @Override
@@ -67,6 +79,20 @@ public abstract class AbstractDuration implements Duration {
         } else {
             return s + e;
         }
+    }
+
+    @Override
+    public TimeOfDay end() {
+        return timeOfDay(end(TeaseLib.DURATION_TIME_UNIT));
+    }
+
+    private TimeOfDay timeOfDay(long time) {
+        var fromDate = TeaseLib.localDateTime(teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT), TeaseLib.DURATION_TIME_UNIT);
+        var toDate = TeaseLib.localDateTime(time, TeaseLib.DURATION_TIME_UNIT);
+        long days = ChronoUnit.DAYS.between(
+                LocalDate.ofYearDay(fromDate.getYear(), fromDate.getDayOfYear()),
+                LocalDate.ofYearDay(toDate.getYear(), toDate.getDayOfYear()));
+        return TeaseLib.timeOfDay(toDate, days);
     }
 
     @Override

@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static teaselib.core.TimeOfDayImpl.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
 import java.util.NoSuchElementException;
@@ -22,47 +24,55 @@ import teaselib.util.Daytime;
 public class TimeOfDayImplTest {
     @Test
     public void testDefaultTable() {
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(4, 0), Daytime.Night));
+        assertTrue(is(LocalTime.of(4, 0), Daytime.Night));
         // 5 o'clock is also still night, but only from the previous evening's view
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(5, 0), Daytime.Night));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(6, 0), Daytime.Night));
+        assertTrue(is(LocalTime.of(5, 0), Daytime.Night));
+        assertTrue(is(LocalTime.of(6, 0), Daytime.Night));
 
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(5, 0), Daytime.Morning));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(6, 0), Daytime.Morning));
+        assertTrue(is(LocalTime.of(5, 0), Daytime.Morning));
+        assertTrue(is(LocalTime.of(6, 0), Daytime.Morning));
 
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(8, 0), Daytime.Morning));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(8, 0), Daytime.Forenoon));
+        assertTrue(is(LocalTime.of(8, 0), Daytime.Morning));
+        assertTrue(is(LocalTime.of(8, 0), Daytime.Forenoon));
 
-        assertFalse(TimeOfDayImpl.is(LocalTime.of(10, 0), Daytime.Morning));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(10, 0), Daytime.Forenoon));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(11, 0), Daytime.Forenoon));
+        assertFalse(is(LocalTime.of(10, 0), Daytime.Morning));
+        assertTrue(is(LocalTime.of(10, 0), Daytime.Forenoon));
+        assertTrue(is(LocalTime.of(11, 0), Daytime.Forenoon));
 
         // forenoon and noon don't intersect because at 12 o'clock it's not forenoon anymore
-        assertFalse(TimeOfDayImpl.is(LocalTime.of(12, 0), Daytime.Forenoon));
+        assertFalse(is(LocalTime.of(12, 0), Daytime.Forenoon));
 
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(12, 0), Daytime.Noon));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(13, 0), Daytime.Noon));
+        assertTrue(is(LocalTime.of(12, 0), Daytime.Noon));
+        assertTrue(is(LocalTime.of(13, 0), Daytime.Noon));
         // Noon ends before 2pn
-        assertFalse(TimeOfDayImpl.is(LocalTime.of(14, 0), Daytime.Noon));
+        assertFalse(is(LocalTime.of(14, 0), Daytime.Noon));
 
-        assertFalse(TimeOfDayImpl.is(LocalTime.of(13, 0), Daytime.Afternoon));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(14, 0), Daytime.Afternoon));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(18, 0), Daytime.Afternoon));
-        assertFalse(TimeOfDayImpl.is(LocalTime.of(19, 0), Daytime.Afternoon));
+        assertFalse(is(LocalTime.of(13, 0), Daytime.Afternoon));
+        assertTrue(is(LocalTime.of(14, 0), Daytime.Afternoon));
+        assertTrue(is(LocalTime.of(18, 0), Daytime.Afternoon));
+        assertFalse(is(LocalTime.of(19, 0), Daytime.Afternoon));
 
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(18, 0), Daytime.Evening));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(19, 0), Daytime.Evening));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(23, 0), Daytime.Evening));
-        assertFalse(TimeOfDayImpl.is(LocalTime.of(0, 0), Daytime.Evening));
+        assertTrue(is(LocalTime.of(18, 0), Daytime.Evening));
+        assertTrue(is(LocalTime.of(19, 0), Daytime.Evening));
+        assertTrue(is(LocalTime.of(23, 0), Daytime.Evening));
+        assertFalse(is(LocalTime.of(0, 0), Daytime.Evening));
 
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(22, 0), Daytime.Night));
-        assertTrue(TimeOfDayImpl.is(LocalTime.of(0, 0), Daytime.Night));
+        assertTrue(is(LocalTime.of(22, 0), Daytime.Night));
+        assertTrue(is(LocalTime.of(0, 0), Daytime.Night));
+    }
+
+    static boolean is(LocalTime localTime, Daytime dayTime) {
+        // TODO finds always the first interval,
+        // but for overlapping intervals the first interval may not be the right one
+        var interval = hours(dayTime);
+        return TimeOfDayImpl.is(localTime, interval);
     }
 
     @Test
     public void testAnyOf() {
-        assertTrue(new TimeOfDayImpl(LocalTime.of(4, 0)).isAnyOf(Daytime.Night, Daytime.Forenoon));
-        assertFalse(new TimeOfDayImpl(LocalTime.of(4, 0)).isAnyOf(Daytime.Morning, Daytime.Forenoon));
+        LocalDate today = LocalDate.now();
+        assertTrue(new TimeOfDayImpl(LocalDateTime.of(today, LocalTime.of(4, 0)), 0).isAnyOf(Daytime.Night, Daytime.Forenoon));
+        assertFalse(new TimeOfDayImpl(LocalDateTime.of(today, LocalTime.of(4, 0)), 0).isAnyOf(Daytime.Morning, Daytime.Forenoon));
     }
 
     @Test
@@ -187,25 +197,21 @@ public class TimeOfDayImplTest {
     }
 
     @Test
-    public void testDaytimeLaterThan() throws IOException {
+    public void testDaytimeLaterThanTomorrow() throws IOException {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            assertTrue(timeOfDay(script, Daytime.Forenoon).isLaterThan(Daytime.Morning));
-            assertTrue(timeOfDay(script, Daytime.Noon).isLaterThan(Daytime.Forenoon));
-            assertTrue(timeOfDay(script, Daytime.Afternoon).isLaterThan(Daytime.Noon));
-            assertTrue(timeOfDay(script, Daytime.Evening).isLaterThan(Daytime.Afternoon));
-            assertTrue(timeOfDay(script, Daytime.Night).isLaterThan(Daytime.Evening));
+            {
+                var duration = script.duration(Daytime.Morning, 1);
+                var nextMorning = duration.limit();
+                assertTrue(nextMorning.isLaterThan(Daytime.Night));
+            }
 
-            // TODO which one is right?
-            // assertTrue(timeOfDay(script, Daytime.Morning).isLaterThan(Daytime.Night));
-            assertTrue(timeOfDay(script, Daytime.Night).isLaterThan(Daytime.Morning));
-
-            script.debugger.setTime(Daytime.Night);
-            script.debugger.advanceTime(1, DAYS);
-            TimeOfDay night = script.timeOfDay();
-            assertTrue(night.is(Daytime.Night));
-            assertTrue(night.isLaterThan(Daytime.Morning));
+            {
+                var duration = script.duration(Daytime.Noon, 1);
+                var nextNoon = duration.limit();
+                assertTrue(nextNoon.isLaterThan(Daytime.Night));
+            }
         }
     }
 
@@ -226,6 +232,24 @@ public class TimeOfDayImplTest {
 
             // around 8pm + 6h -> 2 o'clock in the morning
             assertEquals(6, script.duration(Daytime.Night).remaining(TimeUnit.HOURS));
+        }
+    }
+
+    @Test
+    public void testDurationDaytime() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.debugger.freezeTime();
+            script.debugger.setTime(Daytime.Morning);
+
+            var duration = script.duration(Daytime.Noon);
+            assertTrue(duration.start().is(Daytime.Morning));
+            assertTrue(duration.end().is(Daytime.Morning));
+            assertTrue(duration.limit().is(Daytime.Noon));
+
+            script.debugger.advanceTime(8, HOURS);
+            assertTrue(duration.start().is(Daytime.Morning));
+            assertTrue(duration.end().is(Daytime.Afternoon));
+            assertTrue(duration.limit().is(Daytime.Noon));
         }
     }
 

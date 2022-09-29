@@ -2,6 +2,8 @@ package teaselib;
 
 import java.util.concurrent.TimeUnit;
 
+import teaselib.core.TimeOfDay;
+
 public interface Duration {
 
     static final long INFINITE = Long.MAX_VALUE;
@@ -14,8 +16,18 @@ public interface Duration {
         }
 
         @Override
+        public TimeOfDay start() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public long limit(TimeUnit unit) {
             return 0;
+        }
+
+        @Override
+        public TimeOfDay limit() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -39,6 +51,11 @@ public interface Duration {
         }
 
         @Override
+        public TimeOfDay end() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public long since(TimeUnit unit) {
             return Long.MAX_VALUE;
         }
@@ -58,6 +75,13 @@ public interface Duration {
     long start(TimeUnit unit);
 
     /**
+     * The time of day this duration has started.
+     * 
+     * @return {@link TimeOfDay} instance describing the start of this duration.
+     */
+    TimeOfDay start();
+
+    /**
      * The supposed time span of the duration.
      * 
      * @param unit
@@ -66,7 +90,14 @@ public interface Duration {
     long limit(TimeUnit unit);
 
     /**
-     * The elapsed time since the start.
+     * The time of day this duration will expire.
+     * 
+     * @return {@link TimeOfDay} instance describing the end of this duration.
+     */
+    TimeOfDay limit();
+
+    /**
+     * The elapsed time span since the start.
      * 
      * @param unit
      * @return
@@ -74,7 +105,7 @@ public interface Duration {
     long elapsed(TimeUnit unit);
 
     /**
-     * The remaining time units until this duration expires.
+     * The remaining time span until this duration expires.
      * 
      * @param unit
      * @return
@@ -100,10 +131,17 @@ public interface Duration {
     long end(TimeUnit unit);
 
     /**
+     * The time of day this duration has ended.
+     * 
+     * @return {@link TimeOfDay} instance describing the end of this duration.
+     */
+    TimeOfDay end();
+
+    /**
      * The time passed since the end of the duration.
      * 
      * @param unit
-     * @return For elapsing durations, returns always 0 because the elapsing durations never end.
+     * @return For elapsing durations, returns always 0 because an elapsing duration has not ended yet.
      *         <p>
      *         However if the duration has elapsed, e.g. the process it describes has come to an end, since() returns
      *         the passed time since the end of the process.

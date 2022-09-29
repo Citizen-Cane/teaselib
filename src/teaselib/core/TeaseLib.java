@@ -9,7 +9,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -383,12 +382,21 @@ public class TeaseLib implements Closeable {
     }
 
     public TimeOfDay timeOfDay() {
-        var now = localTime(getTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS);
-        return new TimeOfDayImpl(now);
+        TimeUnit unit = TimeUnit.MILLISECONDS;
+        long milis = getTime(unit);
+        return timeOfDay(milis, unit);
     }
 
-    private static LocalTime localTime(long time, TimeUnit unit) {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(unit.toMillis(time)), ZoneId.systemDefault()).toLocalTime();
+    static TimeOfDay timeOfDay(LocalDateTime time, long days) {
+        return new TimeOfDayImpl(time, days);
+    }
+
+    private static TimeOfDay timeOfDay(long time, TimeUnit unit) {
+        return new TimeOfDayImpl(localDateTime(time, unit), 0);
+    }
+
+    static LocalDateTime localDateTime(long time, TimeUnit unit) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(unit.toMillis(time)), ZoneId.systemDefault());
     }
 
     static final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;
@@ -407,10 +415,11 @@ public class TeaseLib implements Closeable {
 
     public Duration duration(Daytime dayTime, long daysInTheFuture) {
         var start = TimeOfDayImpl.getTime(timeOfDay());
-        var end = localTime((long) TimeOfDayImpl.hours(dayTime).average() * 60L, TimeUnit.MINUTES);
+        var end = localDateTime((long) TimeOfDayImpl.hours(dayTime).average() * 60L, TimeUnit.MINUTES);
 
-        long durationMinutes = end.getHour() * 60 + end.getMinute() //
-                - start.getHour() * 60 - start.getMinute();
+        long durationMinutes = //
+                end.getHour() * 60 + end.getMinute() -
+                        start.getHour() * 60 - start.getMinute();
 
         if (durationMinutes < 0) {
             durationMinutes += 24 * 60 * Math.max(1, daysInTheFuture);

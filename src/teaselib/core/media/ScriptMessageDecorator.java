@@ -178,7 +178,7 @@ public class ScriptMessageDecorator {
                 }
             }
 
-            MessagePart lastPart = message.get(message.size() - 1);
+            MessagePart lastPart = message.last();
             if (lastPart.type.isAnyOf(Message.Type.DisplayTypes)) {
                 // Inject mood if changed
                 String currentMood;

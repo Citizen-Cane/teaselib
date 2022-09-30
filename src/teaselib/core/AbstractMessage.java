@@ -11,8 +11,7 @@ import teaselib.MessagePart;
 public class AbstractMessage implements Iterable<MessagePart> {
     private final List<MessagePart> parts = new ArrayList<>();
 
-    public AbstractMessage() {
-    }
+    public AbstractMessage() {}
 
     public AbstractMessage(List<MessagePart> parts) {
         this.parts.addAll(parts);
@@ -144,6 +143,10 @@ public class AbstractMessage implements Iterable<MessagePart> {
 
     public MessagePart get(int index) {
         return parts.get(index);
+    }
+
+    public MessagePart last() {
+        return get(size() - 1);
     }
 
     @Override

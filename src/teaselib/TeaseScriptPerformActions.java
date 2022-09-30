@@ -4,7 +4,10 @@ import static java.util.concurrent.TimeUnit.*;
 import static teaselib.core.ai.perception.HumanPose.Interest.*;
 
 import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import teaselib.Message.Type;
 import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
 import teaselib.core.devices.release.KeyReleaseSetup;
@@ -12,6 +15,34 @@ import teaselib.util.Item;
 import teaselib.util.Items;
 
 public class TeaseScriptPerformActions extends TeaseScript {
+
+    private static final float DELAY_INSTRUCTIONS_EXTEND_FACTOR = 1.5f;
+    private static final float DELAY_PROLONGATION_COMMENT_EXTEND_FACTOR = 1.25f;
+    private static final double DELAY_INSTRUCTIONS_SECONDS = 5.0f;
+    private static final double DELAY_PROLONGATION_COMMENT_SECONDS = 2.0f;
+
+    private final HumanPoseScriptInteraction poseEstimation = interaction(HumanPoseScriptInteraction.class);
+
+    private final BooleanSupplier faceToFace = () -> poseEstimation.getPose(Proximity).is(HumanPose.Proximity.FACE2FACE, HumanPose.Proximity.CLOSE);
+    private final ScriptFunction untilFaceToFace = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.FACE2FACE, HumanPose.Proximity.CLOSE);
+
+    // TODO and not HumanPose.Proximity.CLOSE
+    private final ScriptFunction untilNotFaceToFaceOr2s = poseEstimation.autoConfirm(Proximity, 2, SECONDS, HumanPose.Proximity.NotFace2Face);
+
+    // TODO and not HumanPose.Proximity.CLOSE
+    private final ScriptFunction untilNotFaceToFace = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.NotFace2Face);
+
+    private final ScriptFunction untilNotFaceToFaceOver5s = new ScriptFunction(() -> {
+        Answer notFace2Face;
+        while ((notFace2Face = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.NotFace2Face)
+                .call()) != Answer.Timeout) {
+            if (poseEstimation.autoConfirm(Proximity, 3, SECONDS, HumanPose.Proximity.FACE2FACE)
+                    .call() == Answer.Timeout) {
+                break;
+            }
+        }
+        return notFace2Face;
+    });
 
     public TeaseScriptPerformActions(TeaseScript script) {
         super(script);
@@ -56,7 +87,13 @@ public class TeaseScriptPerformActions extends TeaseScript {
             Message progressInstructions,
             Message completionQuestion, Answer completionConfirmation,
             Answer prolongationExcuse, Message prolongationComment) {
+        prepare(items);
+        perform(items, command, commandConfirmation, progressInstructions, completionQuestion,
+                completionConfirmation, prolongationExcuse, prolongationComment);
+        return items.apply();
+    }
 
+    private void prepare(Items items) {
         KeyReleaseSetup keyRelease = interaction(KeyReleaseSetup.class);
         if (keyRelease != null) {
             if (!keyRelease.isPrepared(items) && keyRelease.canPrepare(items)) {
@@ -67,11 +104,6 @@ public class TeaseScriptPerformActions extends TeaseScript {
         } else {
             show(items);
         }
-
-        perform(items, command, commandConfirmation, progressInstructions, completionQuestion,
-                completionConfirmation, prolongationExcuse, prolongationComment);
-
-        return items.apply();
     }
 
     public final void remove(Item item,
@@ -88,7 +120,6 @@ public class TeaseScriptPerformActions extends TeaseScript {
             Message progressInstructions, Message completionQuestion,
             Answer completionConfirmation, Answer prolongationExcuse,
             Message prolongationComment) {
-
         items.remove();
         perform(items, command, command1stConfirmation, progressInstructions, completionQuestion,
                 completionConfirmation, prolongationExcuse, prolongationComment);
@@ -130,60 +161,39 @@ public class TeaseScriptPerformActions extends TeaseScript {
             Message prolongationComment) {
         awaitMandatoryCompleted();
 
-        HumanPoseScriptInteraction poseEstimation = interaction(HumanPoseScriptInteraction.class);
         if (poseEstimation.deviceInteraction.isActive()) {
-            BooleanSupplier faceToFace = () -> poseEstimation.getPose(Proximity).is(HumanPose.Proximity.FACE2FACE,
-                    HumanPose.Proximity.CLOSE);
-            var untilFaceToFace = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.FACE2FACE,
-                    HumanPose.Proximity.CLOSE);
-            var untilNotFaceToFaceOr5s = poseEstimation.autoConfirm(Proximity, 5, SECONDS,
-                    // TODO and not HumanPose.Proximity.CLOSE
-                    HumanPose.Proximity.NotFace2Face);
-            var untilNotFaceToFace = poseEstimation.autoConfirm(Proximity,
-                    // TODO and not HumanPose.Proximity.CLOSE
-                    HumanPose.Proximity.NotFace2Face);
-
-            var untilNotFaceToFaceOver5s = new ScriptFunction(() -> {
-                Answer notFace2Face;
-                while ((notFace2Face = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.NotFace2Face)
-                        .call()) != Answer.Timeout) {
-                    if (poseEstimation.autoConfirm(Proximity, 3, SECONDS, HumanPose.Proximity.FACE2FACE)
-                            .call() == Answer.Timeout) {
-                        break;
-                    }
-                }
-                return notFace2Face;
-            });
-
             untilFaceToFace.call();
             say(command);
             awaitMandatoryCompleted();
 
-            boolean explainAll;
+            boolean playerListening;
             if (faceToFace.getAsBoolean()) {
                 if (chat(untilNotFaceToFace, commandConfirmation)) {
                     // prompt dismissed, still face2face
-                    explainAll = true;
+                    playerListening = true;
                 } else {
                     // prompt timed out, not face2face anymore -> performing
-                    explainAll = false;
+                    playerListening = false;
                 }
             } else {
                 // already performing, stop when back -> Listening
-                explainAll = false;
+                playerListening = false;
             }
+
+            Message progressInstructionsWithDelay = playerListening
+                    ? progressInstructions
+                    : extendMessageDelays(progressInstructions, DELAY_INSTRUCTIONS_SECONDS, DELAY_INSTRUCTIONS_EXTEND_FACTOR);
+            Message prolongationCommentWithDelay = prolongationComment;
 
             while (true) {
                 show(items);
                 // TODO pause instructions when the slave is away
-                append(progressInstructions);
-                if (explainAll) {
-                    // player listening
+                if (playerListening) {
+                    append(progressInstructions);
                     awaitMandatoryCompleted();
                     untilFaceToFace.call();
                 } else {
-                    // player performing
-                    // TODO increase delays between message paragraphs to avoid repeating too much
+                    append(progressInstructionsWithDelay);
                     untilFaceToFace.call();
                     endAll();
                 }
@@ -194,31 +204,72 @@ public class TeaseScriptPerformActions extends TeaseScript {
                 untilFaceToFace.call();
                 Answer answer = reply(untilNotFaceToFaceOver5s, completionConfirmation, prolongationExcuse);
                 if (answer == Answer.Timeout) {
-                    explainAll = true;
+                    playerListening = true;
                     continue;
                 } else if (answer == completionConfirmation) {
                     break;
                 } else {
                     say(prolongationComment);
-                    explainAll = untilNotFaceToFaceOr5s.call() == Answer.Timeout;
+                    awaitMandatoryCompleted();
                     // True if player is still looking at top -> repeat instructions
+                    playerListening = untilNotFaceToFaceOr2s.call() == Answer.Timeout;
+                    if (!playerListening) {
+                        progressInstructionsWithDelay = extendMessageDelays(progressInstructionsWithDelay, DELAY_INSTRUCTIONS_SECONDS,
+                                DELAY_INSTRUCTIONS_EXTEND_FACTOR);
+                        prolongationCommentWithDelay = extendMessageDelays(prolongationCommentWithDelay, DELAY_PROLONGATION_COMMENT_SECONDS,
+                                DELAY_PROLONGATION_COMMENT_EXTEND_FACTOR);
+                    }
                 }
             }
         } else {
             say(command);
             chat(timeoutWithAutoConfirmation(5), commandConfirmation);
             while (true) {
-                append(progressInstructions);
                 show(items);
+                append(progressInstructions);
                 append(completionQuestion);
                 Answer answer = reply(completionConfirmation, prolongationExcuse);
                 if (answer == completionConfirmation) {
                     break;
                 } else {
                     say(prolongationComment);
-                    append(Message.Delay5to10s);
                 }
             }
         }
+    }
+
+    private static Message extendMessageDelays(Message message, double seconds, float factor) {
+        Message extended = new Message(message.actor);
+        boolean injectMissingDelay = false;
+        for (var part : message) {
+            if (part.type == Type.Text) {
+                if (injectMissingDelay) {
+                    extended.add(Type.Delay, DELAY_INSTRUCTIONS_SECONDS);
+                } else {
+                    injectMissingDelay = true;
+                }
+                extended.add(part);
+            } else if (part.type == Type.Delay) {
+                injectMissingDelay = false;
+                String[] values = part.value.split(" ");
+                if (values.length > 0 && values.length < 3) {
+                    String value = Stream.of(values).map(Float::parseFloat).filter(f -> f > 0.0f).map(f -> f * factor).map(f -> Float.toString(f))
+                            .collect(Collectors.joining(" "));
+                    extended.add(Type.Delay, value);
+                } else {
+                    extended.add(part);
+                }
+            } else {
+                if (injectMissingDelay) {
+                    injectMissingDelay = false;
+                    extended.add(Type.Delay, DELAY_INSTRUCTIONS_SECONDS);
+                }
+                extended.add(part);
+            }
+        }
+        if (extended.last().type != Type.Delay) {
+            extended.add(Type.Delay, DELAY_INSTRUCTIONS_SECONDS);
+        }
+        return extended;
     }
 }

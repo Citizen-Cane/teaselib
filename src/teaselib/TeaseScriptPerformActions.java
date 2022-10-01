@@ -214,10 +214,10 @@ public class TeaseScriptPerformActions extends TeaseScript {
                     // True if player is still looking at top -> repeat instructions
                     playerListening = untilNotFaceToFaceOr2s.call() == Answer.Timeout;
                     if (!playerListening) {
-                        progressInstructionsWithDelay = extendMessageDelays(progressInstructionsWithDelay, DELAY_INSTRUCTIONS_SECONDS,
-                                DELAY_INSTRUCTIONS_EXTEND_FACTOR);
-                        prolongationCommentWithDelay = extendMessageDelays(prolongationCommentWithDelay, DELAY_PROLONGATION_COMMENT_SECONDS,
-                                DELAY_PROLONGATION_COMMENT_EXTEND_FACTOR);
+                        progressInstructionsWithDelay = extendMessageDelays(
+                                progressInstructionsWithDelay, DELAY_INSTRUCTIONS_SECONDS, DELAY_INSTRUCTIONS_EXTEND_FACTOR);
+                        prolongationCommentWithDelay = extendMessageDelays(
+                                prolongationCommentWithDelay, DELAY_PROLONGATION_COMMENT_SECONDS, DELAY_PROLONGATION_COMMENT_EXTEND_FACTOR);
                     }
                 }
             }
@@ -262,13 +262,13 @@ public class TeaseScriptPerformActions extends TeaseScript {
             } else {
                 if (injectMissingDelay) {
                     injectMissingDelay = false;
-                    extended.add(Type.Delay, DELAY_INSTRUCTIONS_SECONDS);
+                    extended.add(Type.Delay, seconds);
                 }
                 extended.add(part);
             }
         }
         if (extended.last().type != Type.Delay) {
-            extended.add(Type.Delay, DELAY_INSTRUCTIONS_SECONDS);
+            extended.add(Type.Delay, seconds);
         }
         return extended;
     }

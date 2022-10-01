@@ -63,11 +63,13 @@ public class SceneRenderer {
             updateSceneTransform(frame, bounds);
         }
 
-        // Choose the smaller image for blending in order to hide as much of the background image as possible
-        if (previousImage.actorZoom < frame.actorZoom) {
-            drawImageStack(g2d, gc, frame, 1.0f - frame.sceneBlend, previousImage, bounds);
-        } else {
-            drawImageStack(g2d, gc, previousImage, frame.sceneBlend, frame, bounds);
+        var clip = g2d.getClip();
+        var r = createBlendClip(frame, previousImage, bounds);
+        g2d.setClip(r.x, r.y, r.width, r.height);
+        try {
+            drawScene(g2d, gc, frame, previousImage, bounds);
+        } finally {
+            g2d.setClip(clip);
         }
 
         if (frame.isIntertitle || previousImage.isIntertitle) {
@@ -91,10 +93,36 @@ public class SceneRenderer {
         drawTextOverlay(g2d, gc, frame);
     }
 
-    private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
-        Dimension image = frame.displayImage.dimension();
-        var transform = surfaceTransform(image, bounds, 1.0, focusRegion, new Point2D.Double());
-        return ImageRenderer.normalizedToGraphics(transform, image, focusRegion.get());
+    private static Rectangle createBlendClip(RenderState rs1, RenderState rs2, Rectangle bounds) {
+        var t1 = createBlendClipTransform(rs1, bounds);
+        var r1 = Transform.transform(t1, 0.0, 0.0, rs1.displayImage.getWidth(), rs1.displayImage.getHeight());
+        var t2 = createBlendClipTransform(rs2, bounds);
+        var r2 = Transform.transform(t2, 0.0, 0.0, rs2.displayImage.getWidth(), rs2.displayImage.getHeight());
+        return r1.union(r2);
+    }
+
+    private static AffineTransform createBlendClipTransform(RenderState rs, Rectangle bounds) {
+        var t1 = surfaceTransform(
+                rs.displayImage.dimension(),
+                bounds,
+                1.0,
+                rs.focusRegion(),
+                new Point2D.Double(0.0, 0.0));
+        return t1;
+    }
+
+    private static void drawScene(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage, Rectangle bounds) {
+        if (previousImage.sceneBlend > 0.0f) {
+            // Choose the smaller image for blending in order to hide as much of the background image as possible
+            if (previousImage.actorZoom < frame.actorZoom) {
+                drawImageStack(g2d, gc, frame, 1.0f - frame.sceneBlend, previousImage, bounds);
+            } else {
+                drawImageStack(g2d, gc, previousImage, frame.sceneBlend, frame, bounds);
+            }
+        } else {
+            drawImage(g2d, gc, frame);
+            // ImageRenderer.drawDebugInfo(g2d, frame, bounds);
+        }
     }
 
     /**
@@ -109,8 +137,7 @@ public class SceneRenderer {
      * @param bounds
      *            region
      */
-    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha,
-            RenderState top, Rectangle bounds) {
+    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha, RenderState top, Rectangle bounds) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
             g2d.setComposite(alphaComposite);
@@ -135,6 +162,12 @@ public class SceneRenderer {
                 frame.displayImage.draw(g2d, gc, frame.transform);
             }
         }
+    }
+
+    private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+        Dimension image = frame.displayImage.dimension();
+        var transform = surfaceTransform(image, bounds, 1.0, focusRegion, new Point2D.Double());
+        return ImageRenderer.normalizedToGraphics(transform, image, focusRegion.get());
     }
 
     private static void renderIntertitle(Graphics2D g2d, RenderState frame, RenderState previousImage,

@@ -1,6 +1,7 @@
 package teaselib.host;
 
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -9,8 +10,7 @@ import java.util.Optional;
 
 public class Transform {
 
-    private Transform() {
-    }
+    private Transform() {}
 
     /**
      * Maximize image size within the bounds while maintaining the same size for landscape and portrait images:
@@ -218,6 +218,12 @@ public class Transform {
     static Rectangle2D.Double scale(Rectangle2D r, Dimension scale) {
         return new Rectangle2D.Double(r.getMinX() * scale.width, r.getMinY() * scale.height, r.getWidth() * scale.width,
                 r.getHeight() * scale.height);
+    }
+
+    static Rectangle transform(AffineTransform t, double x, double y, double width, double height) {
+        var lt = t.transform(new Point2D.Double(x, y), new Point2D.Double());
+        var rb = t.transform(new Point2D.Double(width, height), new Point2D.Double());
+        return new Rectangle((int) lt.getX(), (int) lt.getY(), (int) (rb.getX() - lt.getX()), (int) (rb.getY() - lt.getY()));
     }
 
 }

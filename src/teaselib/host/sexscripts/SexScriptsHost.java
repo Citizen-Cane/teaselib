@@ -1,9 +1,9 @@
 package teaselib.host.sexscripts;
 
-import static java.awt.Transparency.OPAQUE;
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toSet;
-import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
+import static java.awt.Transparency.*;
+import static java.util.function.Predicate.*;
+import static java.util.stream.Collectors.*;
+import static teaselib.core.concurrency.NamedExecutorService.*;
 
 import java.awt.BufferCapabilities;
 import java.awt.Container;
@@ -504,11 +504,13 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float sceneBlend,
             float textBlendIn, float textBlendOut) {
         synchronized (nextFrame) {
+            // TODO next and previousImage render state logic belongs to scene renderer -> refactor out
             previousImage.displayImageOffset = new Point2D.Double(prev.getX(), prev.getY());
             previousImage.actorZoom = prevZoom;
             nextFrame.displayImageOffset = new Point2D.Double(cur.getX(), cur.getY());
             nextFrame.actorZoom = nextZoom;
             nextFrame.sceneBlend = sceneBlend;
+            previousImage.sceneBlend = 1.0f - sceneBlend;
 
             previousImage.textBlend = textBlendOut;
             nextFrame.textBlend = textBlendIn;

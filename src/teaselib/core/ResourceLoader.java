@@ -246,11 +246,7 @@ public class ResourceLoader {
             // relative to wildcard path
             String basePath = basePath(wildcardPattern);
             int length = basePath.length();
-            elements.forEach(element -> {
-                if (element.startsWith(basePath)) {
-                    mapping.put(element.substring(length), element);
-                }
-            });
+            elements.stream().filter(element -> element.startsWith(basePath)).forEach(element -> mapping.put(element.substring(length), element));
         }
 
         public static String basePath(String wildcardPattern) {
@@ -275,7 +271,7 @@ public class ResourceLoader {
         return info;
     }
 
-    private String classRelative(String wildcardPattern, Class<?> clazz) {
+    private static String classRelative(String wildcardPattern, Class<?> clazz) {
         return ReflectionUtils.absolutePath(clazz.getPackage()) + wildcardPattern;
     }
 

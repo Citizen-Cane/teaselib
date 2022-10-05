@@ -246,7 +246,11 @@ public class ResourceLoader {
             // relative to wildcard path
             String basePath = basePath(wildcardPattern);
             int length = basePath.length();
-            elements.forEach(element -> mapping.put(element.substring(length), element));
+            elements.forEach(element -> {
+                if (element.startsWith(basePath)) {
+                    mapping.put(element.substring(length), element);
+                }
+            });
         }
 
         public static String basePath(String wildcardPattern) {

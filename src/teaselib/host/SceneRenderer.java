@@ -24,15 +24,18 @@ public class SceneRenderer {
 
     final Image backgroundImage;
 
-    public final BufferedImageQueue surfaces = new BufferedImageQueue(2);
-    // final VolatileImageQueue textOverlays = new VolatileImageQueue(2);
-    public final BufferedImageQueue textOverlays = new BufferedImageQueue(2);
+    public final BufferedImageQueue surfaces;
+    // final VolatileImageQueue textOverlays;
+    public final BufferedImageQueue textOverlays;
 
     final TextRenderer textRenderer = new TextRenderer();
 
-    public SceneRenderer(Image backgroundImage) {
+    public SceneRenderer(Image backgroundImage, int surfaceBuffers) {
         super();
         this.backgroundImage = backgroundImage;
+        this.surfaces = new BufferedImageQueue(surfaceBuffers);
+        // this.textOverlays = new VolatileImageQueue(2);
+        this.textOverlays = new BufferedImageQueue(2);
     }
 
     public void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage,

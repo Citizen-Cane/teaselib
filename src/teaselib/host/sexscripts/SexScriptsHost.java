@@ -187,7 +187,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             throw new IllegalStateException("No background image icon");
         }
 
-        renderer = new SceneRenderer(backgroundImage);
+        // With only 2 buffers, there is flicker during transitions,
+        // and BufferStrategy results in rendering glitches
+        renderer = new SceneRenderer(backgroundImage, 8);
 
         this.originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {

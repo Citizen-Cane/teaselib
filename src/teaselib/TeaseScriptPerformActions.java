@@ -224,15 +224,21 @@ public class TeaseScriptPerformActions extends TeaseScript {
         } else {
             say(command);
             chat(timeoutWithAutoConfirmation(5), commandConfirmation);
+            Message progressInstructionsWithDelay = extendMessageDelays(progressInstructions, DELAY_INSTRUCTIONS_SECONDS, DELAY_INSTRUCTIONS_EXTEND_FACTOR);
+            Message prolongationCommentWithDelay = prolongationComment;
             while (true) {
                 show(items);
-                append(progressInstructions);
+                append(progressInstructionsWithDelay);
                 append(completionQuestion);
                 Answer answer = reply(completionConfirmation, prolongationExcuse);
                 if (answer == completionConfirmation) {
                     break;
                 } else {
-                    say(prolongationComment);
+                    say(prolongationCommentWithDelay);
+                    progressInstructionsWithDelay = extendMessageDelays(
+                            progressInstructionsWithDelay, DELAY_INSTRUCTIONS_SECONDS, DELAY_INSTRUCTIONS_EXTEND_FACTOR);
+                    prolongationCommentWithDelay = extendMessageDelays(
+                            prolongationCommentWithDelay, DELAY_PROLONGATION_COMMENT_SECONDS, DELAY_PROLONGATION_COMMENT_EXTEND_FACTOR);
                 }
             }
         }

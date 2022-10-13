@@ -95,6 +95,7 @@ public class HumanPose extends NativeObject.Disposible {
 
         public static class Gaze {
 
+            public static final Gaze None = new Gaze(0.0f, 0.0f, 0.0f);
             public final float nod;
             public final float shake;
             public final float tilt;
@@ -105,6 +106,9 @@ public class HumanPose extends NativeObject.Disposible {
                 this.tilt = tilt;
             }
 
+            /**
+             * Maximum detectable gaze values
+             */
             static final class Limits {
 
                 private Limits() { //
@@ -115,8 +119,6 @@ public class HumanPose extends NativeObject.Disposible {
             }
 
             public boolean isFace2Face() {
-                // TODO require both ears to be present in the estimation data
-                // - currently this is ensured by the maximum shake angle of 25° implicitly
                 return Math.abs(nod) < Limits.NOD && Math.abs(shake) < Limits.SHAKE;
             }
 
@@ -175,11 +177,11 @@ public class HumanPose extends NativeObject.Disposible {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.4f * distanceFactor) {
+                if (z < 0.5f * distanceFactor) {
                     proximity = Proximity.CLOSE;
-                } else if (z < 1.2f * distanceFactor) {
-                    proximity = Proximity.FACE2FACE;
-                } else if (z < 2.4f * distanceFactor) {
+                } else if (z < 1.5f * distanceFactor) {
+                    proximity = gaze.map(Gaze::isFace2Face).orElse(false) ? Proximity.FACE2FACE : Proximity.NEAR;
+                } else if (z < 3.0f * distanceFactor) {
                     proximity = Proximity.NEAR;
                 } else {
                     proximity = Proximity.FAR;

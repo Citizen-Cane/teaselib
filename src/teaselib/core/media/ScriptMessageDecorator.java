@@ -1,7 +1,10 @@
 package teaselib.core.media;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
@@ -123,7 +126,7 @@ public class ScriptMessageDecorator {
             String nextImage = null;
             String lastMood = null;
             String nextMood = null;
-            MessagePart text = null;
+            List<MessagePart> text = null;
             MessagePart previousDurationPart = null;
 
             for (MessagePart part : message) {
@@ -132,12 +135,18 @@ public class ScriptMessageDecorator {
                     previousDurationPart = null;
                 } else if (part.type == Message.Type.Keyword) {
                     parsedMessage.add(part);
-                    // previousDurationPart = null;
                 } else if (part.type == Message.Type.Mood) {
                     nextMood = part.value;
                     previousDurationPart = null;
                 } else if (part.type.isAnyOf(Message.Type.TextTypes)) {
-                    text = part;
+                    if (text == null) {
+                        text = Collections.singletonList(part);
+                    } else {
+                        List<MessagePart> all = new ArrayList<>(2);
+                        all.addAll(text);
+                        all.add(part);
+                        text = all;
+                    }
                     previousDurationPart = null;
                 } else if (part.type.isAnyOf(Message.Type.DelayTypes)) {
                     if (previousDurationPart == null) {
@@ -161,7 +170,7 @@ public class ScriptMessageDecorator {
                         }
                         // Optional text
                         if (text != null) {
-                            parsedMessage.add(text);
+                            parsedMessage.addAll(text);
                             text = null;
                         }
                         // All rendered with DurationType
@@ -198,7 +207,7 @@ public class ScriptMessageDecorator {
                 }
                 // Optional text
                 if (text != null) {
-                    parsedMessage.add(text);
+                    parsedMessage.addAll(text);
                     text = null;
                 }
             }

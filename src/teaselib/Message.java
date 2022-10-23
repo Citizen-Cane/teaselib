@@ -205,7 +205,7 @@ public class Message extends AbstractMessage {
      */
     public Message(Actor actor, List<String> paragraphs) {
         this.actor = actor;
-        addAll(paragraphs);
+        paragraphs.stream().map(MessagePart::new).forEach(this::add);
     }
 
     public Message(Actor actor, AbstractMessage message) {

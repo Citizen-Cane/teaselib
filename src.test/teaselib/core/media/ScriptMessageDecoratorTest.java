@@ -60,6 +60,30 @@ public class ScriptMessageDecoratorTest {
     }
 
     @Test
+    public void testBullet() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
+
+            Message m = new Message(script.actor);
+            m.add(Type.Image, Message.ActorImage);
+            m.add(Type.Item, "°");
+            m.add(Type.Text, "FooBar");
+
+            ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
+                    Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
+            RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
+            assertEquals(r.toString(), 4, r.size());
+
+            // Renders correctly -> TODO Item should be placed right before text part
+            assertEquals(r.toString(), Type.Mood, r.get(0).type);
+            assertEquals(r.toString(), Type.Image, r.get(1).type);
+            assertEquals(r.toString(), Type.Item, r.get(2).type);
+            assertEquals(r.toString(), Type.Text, r.get(3).type);
+            assertEquals(r.toString(), "FooBar", r.get(3).value);
+        }
+    }
+
+    @Test
     public void testImageAfterDelay() throws IOException {
         try (TestScript script = new TestScript()) {
             List<String> fetched = new ArrayList<>();

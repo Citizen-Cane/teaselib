@@ -25,12 +25,6 @@ public class AbstractMessage implements Iterable<MessagePart> {
         parts.clear();
     }
 
-    public void addAll(List<String> paragraphs) {
-        for (String s : paragraphs) {
-            add(s);
-        }
-    }
-
     public void addAll(String[] paragraphs) {
         for (String s : paragraphs) {
             add(s);
@@ -58,6 +52,10 @@ public class AbstractMessage implements Iterable<MessagePart> {
 
     public Stream<MessagePart> stream() {
         return parts.stream();
+    }
+
+    public void addAll(List<MessagePart> messageParts) {
+        messageParts.stream().forEach(this::add);
     }
 
     /**

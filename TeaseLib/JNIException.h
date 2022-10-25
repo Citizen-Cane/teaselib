@@ -16,10 +16,11 @@ public:
 	static void rethrow(JNIEnv* env, std::invalid_argument& e);
 	static void rethrow(JNIEnv* env, std::exception& e);
 	static void rethrow(JNIEnv* env, std::exception& e, const char* runtimeClass);
+	static void rethrow(JNIEnv* env, const char* message, const char* runtimeClass);
 	static void rethrow(JNIEnv* env, NativeException& e);
 	
 	JNIException(JNIEnv *env);
-	JNIException(JNIEnv *env, jthrowable throwable);
+	JNIException(JNIEnv* env, jthrowable throwable);
 	void rethrow() const;
 	JNIString getMessage() const;
 	void printStacktrace() const;

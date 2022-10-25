@@ -21,9 +21,14 @@ void JNIException::rethrow(JNIEnv* env, std::exception& e)
 
 void JNIException::rethrow(JNIEnv* env, std::exception& e, const char* runtimeClass)
 {
+	rethrow(env, e.what(), runtimeClass);
+}
+
+void JNIException::rethrow(JNIEnv* env, const char* what, const char* runtimeClass)
+{
 	assert(!env->ExceptionCheck());
 	jclass jruntimeClass = env->FindClass(runtimeClass);
-	JNIStringUTF8 message(env, e.what());
+	JNIStringUTF8 message(env, what);
 
 	jmethodID methodId = env->GetMethodID(jruntimeClass, "<init>", "(Ljava/lang/String;)V");
 	assert(methodId);

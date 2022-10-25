@@ -24,6 +24,7 @@ import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
+import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 
@@ -81,7 +82,7 @@ public class HumanPoseDeviceInteraction extends
             long timestamp = System.currentTimeMillis();
             HumanPose model = getModel(interests);
             model.setInterests(interests);
-            List<Estimation> poses = model.poses(image);
+            List<Estimation> poses = model.poses(image, Rotation.None);
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
             } else {

@@ -83,15 +83,18 @@ extern "C"
 			aifx::video::VideoCapture* device = NativeInstance::get<VideoCapture>(env, jdevice);
 
 			humanPose->set(static_cast<aifx::image::Rotation>(rotation));
-			humanPose->acquire(device);
-			auto millis = std::chrono::milliseconds(timestamp);
-			vector<aifx::pose::Pose> poses = humanPose->estimate(millis);
+			if (humanPose->acquire(device)) {
+				auto millis = std::chrono::milliseconds(timestamp);
+				const vector<aifx::pose::Pose> poses = humanPose->estimate(millis);
 
-			if (poses.empty()) {
-				Human::update(env, jperson, human->person.estimated(chrono::milliseconds(timestamp)));
+				if (poses.empty()) {
+					Human::update(env, jperson, human->person.estimated(chrono::milliseconds(timestamp)));
+				} else {
+					human->person.update(poses.at(0));
+					Human::update(env, jperson, human->person.pose());
+				}
 			} else {
-				human->person.update(poses.at(0));
-				Human::update(env, jperson, human->person.pose());
+				throw NativeException(0, L"Scene capture failed", "teaselib/core/ai/perception/SceneCapture$DeviceLost");
 			}
 		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);

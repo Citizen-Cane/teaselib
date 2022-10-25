@@ -111,6 +111,11 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return PoseAspects.Unavailable;
+        } catch (SceneCapture.DeviceLost e) {
+            return PoseAspects.Unavailable;
+        } catch (Throwable e) {
+            logger.error(e.getMessage(), e);
+            return PoseAspects.Unavailable;
         }
     }
 
@@ -241,7 +246,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         } catch (InterruptedException e) {
             throw e;
         } catch (SceneCapture.DeviceLost e) {
-            HumanPoseDeviceInteraction.logger.warn(e.getMessage());
+            logger.warn(e.getMessage());
         } catch (Throwable e) {
             logger.error(e.getMessage(), e);
         }

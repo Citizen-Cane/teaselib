@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Color;
 import teaselib.Household;
 import teaselib.Material;
 import teaselib.State;
@@ -406,6 +407,30 @@ public class StateTests {
 
             script.debugger.clearStateMaps();
             assertEquals(20, script.state(Body.OnNipples).duration().remaining(TimeUnit.MINUTES));
+        }
+    }
+
+    @Test
+    public void testThatTemporaryStatesRemainTemporaryWhenAppliedToPersistedItems() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.teaseLib.freezeTime();
+
+            script.state(PeerlessState.Test1).apply().over(20, TimeUnit.HOURS).remember(Until.Expired);
+            script.state(Color.Black).applyTo(PeerlessState.Test1).over(20, TimeUnit.HOURS).remember(Until.Expired);
+            assertTrue(script.state(PeerlessState.Test1).applied());
+            assertTrue(script.state(Color.Black).applied());
+            assertFalse(script.state(Color.White).applied());
+
+            script.debugger.clearStateMaps();
+            assertTrue(script.state(PeerlessState.Test1).applied());
+            assertTrue(script.state(Color.Black).applied()); // persisted
+            assertFalse(script.state(Color.White).applied()); // temporary
+
+            script.debugger.advanceTime(21, TimeUnit.HOURS);
+            script.triggerAutoRemove();
+            assertFalse(script.state(PeerlessState.Test1).applied());
+            assertFalse(script.state(Color.Black).applied()); // persisted
+            assertFalse(script.state(Color.White).applied()); // temporary
         }
     }
 

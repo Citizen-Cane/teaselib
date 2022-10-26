@@ -5,6 +5,7 @@ package teaselib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -234,7 +235,11 @@ public abstract class TeaseScriptPersistence extends Script {
     }
 
     public States.Query states(Enum<?>... values) {
-        return () -> new States(Arrays.stream(values).map(this::state).toList());
+        return states(Arrays.asList(values));
+    }
+
+    public States.Query states(Collection<? extends Enum<?>> values) {
+        return () -> new States(values.stream().map(this::state).toList());
     }
 
     public State state(Enum<?> value) {

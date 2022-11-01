@@ -395,7 +395,7 @@ public class MessagePartInjectionTest {
 
             assertEquals(parsed.size(), n);
 
-            assertMessageDuration(script, message, 120);
+            assertMessageDuration(script, message, 122);
         }
     }
 
@@ -633,7 +633,7 @@ public class MessagePartInjectionTest {
 
         long start = script.teaseLib.getTime(TimeUnit.SECONDS);
         script.renderMessage(message);
-        script.awaitMandatoryCompleted();
+        script.awaitAllCompleted();
         long end = script.teaseLib.getTime(TimeUnit.SECONDS);
 
         long duration = end - start;

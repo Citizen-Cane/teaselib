@@ -225,13 +225,29 @@ public class TimeOfDayImplTest {
         try (TestScript script = new TestScript()) {
             script.debugger.freezeTime();
 
-            // Around 8 o'clock
+            // Around 8 o'clock -> same day
+            script.debugger.setTime(Daytime.Noon);
+            // Fails on transition dates (e.g. European Summer Time) since such days will have different lengths
+            assertEquals(8, script.duration(Daytime.Evening).remaining(TimeUnit.HOURS));
+            assertEquals(32, script.duration(Daytime.Evening, 1).remaining(TimeUnit.HOURS));
+            assertEquals(56, script.duration(Daytime.Evening, 2).remaining(TimeUnit.HOURS));
+
+            // Around 8 o'clock -> same day
             script.debugger.setTime(Daytime.Evening);
             // Fails on transition dates (e.g. European Summer Time) since such days will have different lengths
             assertEquals(0, script.duration(Daytime.Evening).remaining(TimeUnit.HOURS));
+            assertEquals(24, script.duration(Daytime.Evening, 1).remaining(TimeUnit.HOURS));
+            assertEquals(48, script.duration(Daytime.Evening, 2).remaining(TimeUnit.HOURS));
 
-            // around 8pm + 6h -> 2 o'clock in the morning
+            // around 8pm + 6h -> 2 o'clock in the morning -> next day
             assertEquals(6, script.duration(Daytime.Night).remaining(TimeUnit.HOURS));
+            assertEquals(6, script.duration(Daytime.Night, 1).remaining(TimeUnit.HOURS));
+            assertEquals(30, script.duration(Daytime.Night, 2).remaining(TimeUnit.HOURS));
+
+            // around 8pm + 11h -> 7 o'clock in the morning -> next day
+            assertEquals(11, script.duration(Daytime.Morning).remaining(TimeUnit.HOURS));
+            assertEquals(11, script.duration(Daytime.Morning, 1).remaining(TimeUnit.HOURS));
+            assertEquals(35, script.duration(Daytime.Morning, 2).remaining(TimeUnit.HOURS));
         }
     }
 

@@ -968,7 +968,7 @@ public class TeaseLib implements Closeable {
     public Items.Query items(Items.Query... items) {
         return new ItemsQueryImpl() {
             @Override
-            public Items.Collection inventory() {
+            public ItemsImpl inventory() {
                 return new ItemsImpl(Arrays.stream(items).map(Items.Query::inventory).flatMap(Items::stream).toList());
             }
         };

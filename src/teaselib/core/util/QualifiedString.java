@@ -1,5 +1,6 @@
 package teaselib.core.util;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class QualifiedString {
@@ -29,6 +30,7 @@ public class QualifiedString {
     private final String guid;
 
     public QualifiedString(String value) {
+        Objects.requireNonNull(value);
         this.value = valueWithoutGuid(value);
         if (this.value != value) {
             this.guid = value.substring(this.value.length() + 1);
@@ -38,11 +40,15 @@ public class QualifiedString {
     }
 
     public QualifiedString(String namespace, String name) {
+        Objects.requireNonNull(namespace);
+        Objects.requireNonNull(name);
         this.value = ReflectionUtils.qualified(namespace, name);
         this.guid = null;
     }
 
     public QualifiedString(String namespace, String name, String guid) {
+        Objects.requireNonNull(namespace);
+        Objects.requireNonNull(name);
         this.value = ReflectionUtils.qualified(namespace, name);
         this.guid = guid;
     }
@@ -63,6 +69,17 @@ public class QualifiedString {
         result = prime * result + ((guid == null) ? 0 : guid.toLowerCase().hashCode());
         result = prime * result + ((value == null) ? 0 : value.toLowerCase().hashCode());
         return result;
+    }
+
+    public boolean equals(QualifiedString obj) {
+        if (this == obj)
+            return true;
+        if (guid == null) {
+            if (obj.guid != null)
+                return false;
+        } else if (!guid.equalsIgnoreCase(obj.guid))
+            return false;
+        return value.equalsIgnoreCase(obj.value);
     }
 
     @Override
@@ -115,6 +132,10 @@ public class QualifiedString {
         return equals(QualifiedString.of(object));
     }
 
+    public boolean is(QualifiedString object) {
+        return equals(object);
+    }
+
     public Optional<String> guid() {
         return guid != null ? Optional.of(guid) : Optional.empty();
     }
@@ -125,6 +146,10 @@ public class QualifiedString {
 
     public static boolean isItemGuid(Object obj) {
         return obj instanceof QualifiedString && ((QualifiedString) obj).guid().isPresent();
+    }
+
+    public static boolean isItemGuid(QualifiedString obj) {
+        return obj.guid().isPresent();
     }
 
     @Override

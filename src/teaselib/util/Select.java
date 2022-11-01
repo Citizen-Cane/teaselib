@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import teaselib.core.ItemsImpl;
 import teaselib.core.ItemsQueryImpl;
 
 public class Select {
@@ -32,8 +33,8 @@ public class Select {
     public static Items.Query select(Items.Query items, List<Clause<Items>> statements) {
         Items.Query selected = new ItemsQueryImpl() {
             @Override
-            public Items.Collection inventory() {
-                return (Items.Collection) select(items.inventory(), statements);
+            public ItemsImpl inventory() {
+                return (ItemsImpl) select(items.inventory(), statements);
             }
 
         };
@@ -50,13 +51,13 @@ public class Select {
 
     @SafeVarargs
     public static States.Query select(States.Query states, Clause<States>... statements) {
-        return () -> {
+        return new States.QueryImpl(() -> {
             var result = states.get();
             for (Clause<States> statement : statements) {
                 result = statement.apply(result);
             }
             return result;
-        };
+        });
     }
 
     public static Statement items(Enum<?>[]... values) {

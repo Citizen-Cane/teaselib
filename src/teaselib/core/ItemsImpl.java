@@ -1,8 +1,6 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -377,12 +375,12 @@ public class ItemsImpl implements Items.Collection, Items.Set {
      */
     @Override
     public ItemsImpl prefer(Enum<?>... attributes) {
-        return preferredItems((Object[]) attributes);
+        return preferredItems(attributes);
     }
 
     @Override
     public ItemsImpl prefer(String... attributes) {
-        return preferredItems((Object[]) attributes);
+        return preferredItems(attributes);
     }
 
     static class Preferred {
@@ -491,8 +489,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     private boolean isVariety(List<Item> combination) {
-        return Varieties.isVariety(combination.stream().map(AbstractProxy::itemImpl).map(itemImpl -> itemImpl.kind())
-                .map(QualifiedString::toString).toList());
+        return Varieties.isVariety(combination.stream().map(AbstractProxy::itemImpl).map(ItemImpl::kind).toList());
     }
 
     private int getVariety() {
@@ -538,6 +535,10 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
     @Override
     public State.Options apply() {
+        if (elements.contains(Item.NotFound)) {
+            Item.NotFound.apply();
+        }
+
         List<State.Options> options = oneOfEachKind().stream().map(Item::apply).toList();
         return new State.Options() {
             @Override
@@ -561,8 +562,14 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
     @Override
     public void remove() {
-        for (Item item : oneOfEachKind()) {
-            item.remove();
+        if (elements.contains(Item.NotFound)) {
+            Item.NotFound.remove();
+        }
+
+        if (!elements.isEmpty()) {
+            for (Item item : oneOfEachKind()) {
+                item.remove();
+            }
         }
     }
 
@@ -570,23 +577,28 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         List<Item> firstOfEachKind = new ArrayList<>();
         java.util.Set<QualifiedString> kinds = new HashSet<>();
 
-        for (QualifiedString item : this.valueSet()) {
-            var kind = QualifiedString.of(item);
+        for (QualifiedString kind : this.elementSet()) {
             if (!kinds.contains(kind)) {
                 kinds.add(kind);
-                firstOfEachKind.add(getAppliedOrRandomAvailableOrNotFound(item));
+                firstOfEachKind.add(getAppliedOrRandomAvailableOrNotFound(kind));
             }
         }
+
         return firstOfEachKind;
     }
 
-    private Item getAppliedOrRandomAvailableOrNotFound(QualifiedString item) {
-        Item available = getApplied().findFirst(item);
+    private Item getAppliedOrRandomAvailableOrNotFound(QualifiedString kind) {
+        Item applied = getApplied().findFirst(kind);
+        if (applied == Item.NotFound) {
+            return availableOrInventoryItem(kind);
+        }
+        return applied;
+    }
+
+    private Item availableOrInventoryItem(QualifiedString kind) {
+        var available = getAvailable().random(kind);
         if (available == Item.NotFound) {
-            available = getAvailable().random(item);
-            if (available == Item.NotFound) {
-                available = random(item);
-            }
+            available = random(kind);
         }
         return available;
     }
@@ -624,6 +636,10 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return itemsImpl((Object[]) anyItemOrAttribute);
     }
 
+    public ItemsImpl items(QualifiedString... anyItemOrAttribute) {
+        return itemsImpl((Object[]) anyItemOrAttribute);
+    }
+
     @Override
     public ItemsImpl items(Select.Statement... queries) {
         return new ItemsImpl(Stream.of(queries).map(query -> query.get(this)).flatMap(Items::stream).toList());
@@ -656,14 +672,16 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return elements.stream();
     }
 
-    /**
-     * return distinct item values.
-     * 
-     * @return
-     */
-    @Override
-    public java.util.Set<QualifiedString> valueSet() {
-        return elements.stream().filter(AbstractProxy.class::isInstance).map(AbstractProxy::itemImpl)
+    public java.util.Set<QualifiedString> elementSet() {
+        return qualifiedSet(elements);
+    }
+
+    java.util.Set<QualifiedString> inventorySet() {
+        return qualifiedSet(inventory);
+    }
+
+    java.util.Set<QualifiedString> qualifiedSet(List<Item> items) {
+        return items.stream().filter(AbstractProxy.class::isInstance).map(AbstractProxy::itemImpl)
                 .map(ItemImpl::kind).collect(toCollection(LinkedHashSet::new));
     }
 
@@ -707,37 +725,49 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
     @Override
     public ItemsImpl orElseItems(Enum<?>... items) {
-        return anyAvailable() ? this : new ItemsImpl(inventory).items(items);
+        return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).items(items);
     }
 
     @Override
     public ItemsImpl orElseItems(String... items) {
-        return anyAvailable() ? this : new ItemsImpl(inventory).items(items);
+        return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).items(items);
     }
 
     @Override
     public ItemsImpl orElsePrefer(Enum<?>... attributes) {
-        return anyAvailable() ? this : new ItemsImpl(inventory).prefer(attributes);
+        return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).prefer(attributes);
     }
 
     @Override
     public ItemsImpl orElsePrefer(String... attributes) {
-        return anyAvailable() ? this : new ItemsImpl(inventory).prefer(attributes);
+        return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).prefer(attributes);
     }
 
     @Override
     public ItemsImpl orElseMatching(Enum<?>... attributes) {
-        return anyAvailable() ? this : new ItemsImpl(inventory).matching(attributes);
+        return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).matching(attributes);
     }
 
     @Override
     public ItemsImpl orElseMatching(String... attributes) {
-        return anyAvailable() ? this : new ItemsImpl(inventory).matching(attributes);
+        return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).matching(attributes);
     }
 
     @Override
     public ItemsImpl orElse(Supplier<Items> items) {
-        return anyAvailable() ? this : (ItemsImpl) items.get();
+        return inventoryMatch(Item::isAvailable) ? this : (ItemsImpl) items.get();
+    }
+
+    private boolean inventoryMatch(Predicate<? super Item> predicate) {
+        return allKindsMatch(inventorySet(), predicate);
+    }
+
+    private boolean allKindsMatch(java.util.Set<QualifiedString> kinds, Predicate<? super Item> predicate) {
+        if (isEmpty()) {
+            return false;
+        }
+        // all inventory items are tested for applied() and isAvailable() through Items.item()
+        return kinds.stream().map(this::items).map(ItemsImpl::get).allMatch(predicate);
     }
 
     @Override
@@ -752,7 +782,17 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     private ItemsImpl withoutImpl(Object... values) {
-        return new ItemsImpl(stream().filter(item -> Arrays.stream(values).noneMatch(item::is)).toList(), inventory);
+        var qualifiedValues = Arrays.stream(values).map(QualifiedString::of).toList();
+        List<Item> elementsWithout = filter(item -> Arrays.stream(values).noneMatch(item::is)).toList();
+        List<Item> inventoryWithout = inventory.stream().filter(
+                item -> qualifiedValues.stream().noneMatch(
+                        value -> {
+                            return value.isItem()
+                                    ? AbstractProxy.itemImpl(item).name.is(value)
+                                    : AbstractProxy.itemImpl(item).name.kind().is(value);
+                        }))
+                .toList();
+        return new ItemsImpl(elementsWithout, inventoryWithout);
     }
 
     @Override
@@ -770,7 +810,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return new ItemsImpl(items);
     }
 
-    private Item withAdditionalDefaultPeers(Item item, Object... additionalPeers) {
+    private static Item withAdditionalDefaultPeers(Item item, Object... additionalPeers) {
         return item.to(additionalPeers);
     }
 

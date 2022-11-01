@@ -3,8 +3,7 @@ package teaselib.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static teaselib.util.Select.items;
-import static teaselib.util.Select.select;
+import static teaselib.util.Select.*;
 
 import java.io.IOException;
 
@@ -18,6 +17,8 @@ import teaselib.Clothes;
 import teaselib.Sexuality;
 import teaselib.Shoes;
 import teaselib.Toys;
+import teaselib.core.ItemsImpl;
+import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 
 public class SelectTest {
@@ -119,7 +120,7 @@ public class SelectTest {
     public void testValueSelection() {
         Select.Statement query = Clothes.Male.items(Clothes.Shirt, Clothes.Trousers);
         Items attire = test.items(query).inventory();
-        assertEquals(2, attire.valueSet().size());
+        assertEquals(2, elementSet(attire).size());
     }
 
     Select.Statement[] attire = { //
@@ -136,9 +137,13 @@ public class SelectTest {
 
     @Test
     public void testStatementPlusStatementValueSet() {
-        assertEquals(2, test.items(Clothes.Male.items(Clothes.Shirt, Clothes.Trousers)).inventory().valueSet().size());
-        assertEquals(1, test.items(Select.items(Toys.Collar)).inventory().valueSet().size());
-        assertEquals(3, test.items(attire).inventory().valueSet().size());
+        assertEquals(2, elementSet(test.items(Clothes.Male.items(Clothes.Shirt, Clothes.Trousers)).inventory()).size());
+        assertEquals(1, elementSet(test.items(Select.items(Toys.Collar)).inventory()).size());
+        assertEquals(3, elementSet(test.items(attire).inventory()).size());
+    }
+
+    private static java.util.Set<QualifiedString> elementSet(Items items) {
+        return ((ItemsImpl) items).elementSet();
     }
 
     @Test
@@ -173,6 +178,8 @@ public class SelectTest {
         assertFalse(test.items(analDildo).allApplied());
 
         test.items(plugs).getAvailable().items(Toys.Dildo).to(Body.InButt).get().apply();
+        assertEquals(3, test.items(plugs).getAvailable().size());
+        assertEquals(1, test.items(analDildo).getAvailable().size());
         assertTrue(test.items(analDildo).anyApplied());
         assertTrue(test.items(analDildo).allApplied());
 

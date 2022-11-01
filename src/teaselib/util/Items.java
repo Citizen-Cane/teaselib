@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 
 import teaselib.State.Options;
 import teaselib.core.ItemsImpl;
-import teaselib.core.util.QualifiedString;
 
 public interface Items extends Iterable<Item>, Inventory {
 
@@ -32,8 +31,26 @@ public interface Items extends Iterable<Item>, Inventory {
 
         Query matchingAny(String... values);
 
+        /**
+         * Remove items that match any of the value arguments. If a value matches the item name or kind, the item will
+         * also be removed from this ItemQuery's inventory. As a result, orElse() will not replace the query, because
+         * the elements are complete, e.g. their value set matches the inventory set of the originally requested items.
+         * 
+         * @param values
+         *            values for which matching items should be removed.
+         * @return A new Items collection with the remaining items.
+         */
         Query without(Enum<?>... values);
 
+        /**
+         * Remove items that match any of the value arguments. If a value matches the item name or kind, the item will
+         * also be removed from this ItemQuery's inventory. As a result, orElse() will not replace the query, because
+         * the elements are complete, e.g. their value set matches the inventory set of the originally requested items.
+         * 
+         * @param values
+         *            values for which matching items should be removed.
+         * @return A new Items collection with the remaining items.
+         */
         Query without(String... values);
 
         Query orElseItems(Enum<?>... items);
@@ -48,6 +65,15 @@ public interface Items extends Iterable<Item>, Inventory {
 
         Query orElseMatching(String... attributes);
 
+        /**
+         * Specifies a different query when the current query does not yield all requested kinds. REsults are always
+         * replaced, never extended.
+         * <p>
+         * To extend results, better use prefer(), or to start over, use orElsePtefer().
+         * 
+         * @param items
+         * @return
+         */
         Query orElse(Items.Query items);
 
         Query filter(Predicate<? super Item> predicate);
@@ -132,13 +158,6 @@ public interface Items extends Iterable<Item>, Inventory {
 
     Items filter(Predicate<? super Item> predicate);
 
-    /**
-     * return distinct item values.
-     * 
-     * @return
-     */
-    java.util.Set<QualifiedString> valueSet();
-
     List<Item> toList();
 
     /**
@@ -178,16 +197,52 @@ public interface Items extends Iterable<Item>, Inventory {
 
     Items matchingAny(String... attributes);
 
+    /**
+     * Remove items that match any of the value arguments. If value matches the item name or kind, the item will also be
+     * removed from this Items instance's inventory. As a result, orElse() will not replace the selected items, because
+     * the elements are complete, e.g. their value set matches the inventory set of the originally requested items.
+     * 
+     * @param values
+     *            values for which matching items should be removed.
+     * @return A new Items collection with the remaining items.
+     */
     Items without(Enum<?>... values);
 
+    /**
+     * Remove items that match any of the value arguments. If value matches the item name or kind, the item will also be
+     * removed from this Items instance's inventory. As a result, orElse() will not replace the selected items, because
+     * the elements are complete, e.g. their value set matches the inventory set of the originally requested items.
+     * 
+     * @param values
+     *            values for which matching items should be removed.
+     * @return A new Items collection with the remaining items.
+     */
     Items without(String... values);
 
     Items orElseItems(Enum<?>... items);
 
     Items orElseItems(String... items);
 
+    /**
+     * When the current query contains all items, return the current query. Otherwise return a new query preferring
+     * inventory items with the specified attributes.
+     * 
+     * @param attributes
+     *            Preferred attributes
+     * @return New query selecting inventory items with the specified attributes.
+     * 
+     */
     Items orElsePrefer(Enum<?>... attributes);
 
+    /**
+     * When the current query contains all items, return the current query. Otherwise return a new query preferring
+     * inventory items with the specified attributes.
+     * 
+     * @param attributes
+     *            Preferred attributes
+     * @return New query selecting inventory items with the specified attributes.
+     * 
+     */
     Items orElsePrefer(String... attributes);
 
     Items orElseMatching(Enum<?>... attributes);

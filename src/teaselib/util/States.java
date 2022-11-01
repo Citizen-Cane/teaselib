@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
@@ -12,7 +13,28 @@ import teaselib.State;
 public class States extends ArrayList<State> {
 
     public interface Query extends Supplier<States> {
-        // tag interface
+        @Override
+        States get();
+
+        void forEach(Consumer<? super State> function);
+    }
+
+    public static class QueryImpl implements Query {
+        private final Supplier<States> states;
+
+        public QueryImpl(Supplier<States> states) {
+            this.states = states;
+        }
+
+        @Override
+        public States get() {
+            return states.get();
+        }
+
+        @Override
+        public void forEach(Consumer<? super State> function) {
+            states.get().forEach(function);
+        }
     }
 
     public static Collector<State, States, States> toStates() {

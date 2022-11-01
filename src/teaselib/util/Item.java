@@ -25,7 +25,7 @@ public interface Item extends State {
 
         @Override
         public State.Options apply() {
-            throw new UnsupportedOperationException("Cannot apply when item not found");
+            throw new UnsupportedOperationException("Item.NotFound: only available items can be applied");
         }
 
         @Override
@@ -40,7 +40,7 @@ public interface Item extends State {
 
         @Override
         public State.Options applyTo(Object... peers) {
-            throw new UnsupportedOperationException();
+            return apply();
         }
 
         @Override
@@ -60,12 +60,12 @@ public interface Item extends State {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            throw new IllegalStateException("Item.NotFound: only available and applied items can be removed");
         }
 
         @Override
         public void removeFrom(Object... peers) {
-            throw new UnsupportedOperationException();
+            remove();
         }
 
         @Override

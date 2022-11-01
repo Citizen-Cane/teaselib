@@ -18,8 +18,8 @@ public abstract class ItemsQueryImpl implements Items.Query {
 
     public static final Query None = new ItemsQueryImpl() {
         @Override
-        public Items.Collection inventory() {
-            return (Items.Collection) Items.None;
+        public ItemsImpl inventory() {
+            return (ItemsImpl) Items.None;
         }
     };
 
@@ -75,45 +75,45 @@ public abstract class ItemsQueryImpl implements Items.Query {
 
     @Override
     public Query orElseItems(Enum<?>... values) {
-        return query(items -> items.orElseItems(values));
+        return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElseItems(values));
     }
 
     @Override
     public Query orElseItems(String... values) {
-        return query(items -> items.orElseItems(values));
+        return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElseItems(values));
     }
 
     @Override
     public Query orElsePrefer(Enum<?>... values) {
-        return query(items -> items.orElsePrefer(values));
+        return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElsePrefer(values));
     }
 
     @Override
     public Query orElsePrefer(String... values) {
-        return query(items -> items.orElsePrefer(values));
+        return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElsePrefer(values));
     }
 
     @Override
     public Query orElseMatching(Enum<?>... values) {
-        return query(items -> items.orElseMatching(values));
+        return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElseMatching(values));
     }
 
     @Override
     public Query orElseMatching(String... values) {
-        return query(items -> items.orElseMatching(values));
+        return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElseMatching(values));
     }
 
     @Override
     public Query orElse(Items.Query otherItems) {
-        return anyAvailable() ? this : otherItems;
+        return inventoryMatch(Item::isAvailable) ? this : otherItems;
     }
 
     @SuppressWarnings("static-method")
-    private Query query(Function<Items, Items> function) {
+    private Query query(Function<ItemsImpl, ItemsImpl> function) {
         return new ItemsQueryImpl() {
             @Override
-            public Items.Collection inventory() {
-                return (Items.Collection) function.apply(ItemsQueryImpl.this.inventory());
+            public ItemsImpl inventory() {
+                return function.apply(ItemsQueryImpl.this.inventory());
             }
         };
     }
@@ -122,8 +122,8 @@ public abstract class ItemsQueryImpl implements Items.Query {
     public Query filter(Predicate<? super Item> predicate) {
         return new ItemsQueryImpl() {
             @Override
-            public Items.Collection inventory() {
-                return (Items.Collection) ItemsQueryImpl.this.inventory().filter(predicate);
+            public ItemsImpl inventory() {
+                return ItemsQueryImpl.this.inventory().filter(predicate);
             }
         };
     }
@@ -173,14 +173,21 @@ public abstract class ItemsQueryImpl implements Items.Query {
         return allKindsMatch(Item::isAvailable);
     }
 
+    private boolean inventoryMatch(Predicate<? super Item> predicate) {
+        return allKindsMatch(inventory().inventorySet(), predicate);
+    }
+
     private boolean allKindsMatch(Predicate<? super Item> predicate) {
-        Items.Collection items = inventory();
+        return allKindsMatch(inventory().elementSet(), predicate);
+    }
+
+    private boolean allKindsMatch(java.util.Set<QualifiedString> kinds, Predicate<? super Item> predicate) {
+        ItemsImpl items = inventory();
         if (items.isEmpty()) {
             return false;
         }
         // all inventory items are tested for applied() and isAvailable() through Items.item()
-        return items.valueSet().stream().map(QualifiedString::toString).map(e -> items.items(e).get())
-                .allMatch(predicate);
+        return kinds.stream().map(items::items).map(ItemsImpl::get).allMatch(predicate);
     }
 
     @Override
@@ -219,5 +226,6 @@ public abstract class ItemsQueryImpl implements Items.Query {
     }
 
     @Override
-    abstract public Items.Collection inventory();
+    abstract public ItemsImpl inventory();
+
 }

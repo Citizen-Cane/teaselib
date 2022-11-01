@@ -90,11 +90,11 @@ public abstract class TeaseScriptPersistence extends Script {
         public Items.Query items(Enum<?>... values) {
             return new ItemsQueryImpl() {
                 @Override
-                public Items.Collection inventory() {
+                public ItemsImpl inventory() {
                     if (values.length > 0) {
-                        return (Items.Collection) proxiesOf(teaseLib.items(name, (Object[]) values));
+                        return (ItemsImpl) proxiesOf(teaseLib.items(name, (Object[]) values));
                     } else {
-                        return (Items.Collection) Items.None;
+                        return (ItemsImpl) Items.None;
                     }
                 }
             };
@@ -103,11 +103,11 @@ public abstract class TeaseScriptPersistence extends Script {
         public Items.Query items(String... values) {
             return new ItemsQueryImpl() {
                 @Override
-                public Items.Collection inventory() {
+                public ItemsImpl inventory() {
                     if (values.length > 0) {
-                        return (Items.Collection) proxiesOf(teaseLib.items(name, (Object[]) values));
+                        return (ItemsImpl) proxiesOf(teaseLib.items(name, (Object[]) values));
                     } else {
-                        return (Items.Collection) Items.None;
+                        return (ItemsImpl) Items.None;
                     }
                 }
             };
@@ -120,7 +120,7 @@ public abstract class TeaseScriptPersistence extends Script {
         public Items.Query items(Select.AbstractStatement... statements) {
             return new ItemsQueryImpl() {
                 @Override
-                public Items.Collection inventory() {
+                public ItemsImpl inventory() {
                     Function<? super Select.AbstractStatement, Items.Query> mapper = statement -> statement
                             .get(Domain.this.items(statement.values));
                     List<Item> items = Arrays.stream(statements).map(mapper).map(Items.Query::inventory)
@@ -239,7 +239,7 @@ public abstract class TeaseScriptPersistence extends Script {
     }
 
     public States.Query states(Collection<? extends Enum<?>> values) {
-        return () -> new States(values.stream().map(this::state).toList());
+        return new States.QueryImpl(() -> new States(values.stream().map(this::state).toList()));
     }
 
     public State state(Enum<?> value) {

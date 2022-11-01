@@ -118,8 +118,9 @@ public enum Clothes {
      * Feminine underwear
      */
     public static final Select.Statement Lingerie = new Select.Statement(
-            items(Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Pantyhose, Socks, Stockings, Underpants)
-                    .where(Items::matching, Category.Lingerie).and(Items::without, Sexuality.Gender.Masculine));
+            items(Babydoll, Body, Bra, Catsuit, Corset, Garter_Belt, Leotard, Pantyhose, Socks, Stockings, Underpants)
+                    .where(Items::matching, Category.Lingerie)
+                    .and(Items::without, Sexuality.Gender.Masculine));
 
     /**
      * Masculine underwear
@@ -134,8 +135,9 @@ public enum Clothes {
             items(Clothes.values()).where(Items::matching, Category.Sleepwear));
 
     public static final Select.Statement Female = new Select.Statement(
-            items(Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers, Vest).where(Items::without,
-                    Sexuality.Gender.Masculine));
+            items(Blouse, Catsuit, Corset, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers, Vest)
+                    .where(Items::without, Category.Lingerie)
+                    .and(Items::without, Sexuality.Gender.Masculine));
 
     public static final Select.Statement Male = new Select.Statement(
             items(Shirt, Suit, Sweater, Trousers, Vest).where(Items::without, Sexuality.Gender.Feminine));

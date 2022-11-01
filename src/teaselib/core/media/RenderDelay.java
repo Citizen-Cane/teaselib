@@ -27,14 +27,15 @@ public class RenderDelay extends MediaRendererThread {
     public void renderMedia() throws InterruptedException {
         startCompleted();
         if (seconds > 0) {
+            String formattedSeconds = String.format("%.2f", seconds);
             if (logToTransscript) {
-                teaseLib.transcript.info("Delay=" + seconds + "s");
+                teaseLib.transcript.info("Delay=" + formattedSeconds + "s");
             }
 
-            logger.info("Sleeping {} seconds", seconds);
+            logger.info("Sleeping {} seconds", formattedSeconds);
             teaseLib.sleep((long) (seconds * 1000), TimeUnit.MILLISECONDS);
         } else {
-            logger.info("skipped sleeping {} seconds", +seconds);
+            logger.info("skipped sleeping {} seconds", seconds);
         }
     }
 

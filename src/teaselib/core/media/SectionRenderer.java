@@ -237,7 +237,7 @@ public class SectionRenderer implements Closeable {
                 }
 
                 if (part.type == Type.Text) {
-                    logTextToTranscript(accumulatedText.getTail(), mood);
+                    logTextToTranscript(part.value, mood);
                 }
 
                 if (Thread.currentThread().isInterrupted()) {
@@ -259,6 +259,13 @@ public class SectionRenderer implements Closeable {
                 transcript.append(text);
             }
             teaseLib.transcript.info(transcript.toString());
+        }
+
+        private static void appendMood(String mood, StringBuilder transcript) {
+            if (!Mood.Neutral.equalsIgnoreCase(mood)) {
+                transcript.append(mood);
+                transcript.append(" ");
+            }
         }
 
         private void render(MessagePart part, String mood) throws IOException, InterruptedException {
@@ -404,13 +411,6 @@ public class SectionRenderer implements Closeable {
                 teaseLib.transcript.info("image = '" + displayImage + "'");
                 return instructionalImage(actor, displayImage);
             }
-        }
-    }
-
-    private static void appendMood(String mood, StringBuilder transcript) {
-        if (!Mood.Neutral.equalsIgnoreCase(mood)) {
-            transcript.append(mood);
-            transcript.append(" ");
         }
     }
 

@@ -24,6 +24,12 @@ public class Random {
         this.generator = generator;
     }
 
+    public void chance(Runnable script) {
+        if (chance()) {
+            script.run();
+        }
+    }
+
     public boolean chance() {
         return chance(0.5f);
     }

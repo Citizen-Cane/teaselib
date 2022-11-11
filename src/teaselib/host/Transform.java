@@ -7,8 +7,13 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.VolatileImage;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 public class Transform {
+
+    public interface FitFunction extends BiFunction<Dimension, Dimension, Double> {
+        // Tag interface
+    }
 
     private Transform() {}
 
@@ -38,8 +43,8 @@ public class Transform {
      *            Bounding box
      * @return
      */
-
-    static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea) {
+    static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea,
+            BiFunction<Dimension, Dimension, Double> fitFunction) {
         // transforms are concatenated from bottom to top
         var t = new AffineTransform();
 
@@ -49,20 +54,19 @@ public class Transform {
         Dimension size = bounds.getBounds().getSize();
         double aspect;
         if (focusArea.isPresent()) {
-            // fill screen area with image data - looks much better even if face distance might be different
-            // aspect = fitOutside(image, size);
+            // TODO choose fit/zoom based on focus area instead of assuming actor
+            aspect = fitFunction.apply(image, size);
 
-            // TODO compromise between image and display size
-            // - zoom on wide screen display looks "too much"
-            // + Portrait images in Landscape mode are centered
-            // + Landscape images in Landscape mode are centered
-            // Changes:
-            // - Landscape images in Portrait mode stick to the top
-            // - Portrait images in portrait window stick to the top
-            // - background update missing because the update condition was made for fitOutside()
-            // - sometimes previous image visible even if background is always repainted
-            // - TODO what to do with the background
-            aspect = fitInside(image, size);
+            // TODO choose fit function for compromise between image and display size
+            // + fitOutside zooms in too much on wide displays
+            // + fitInside leaves too much spare space if the image aspect doesn't match the screen aspect
+            //
+            // What looks good:
+            // + stick to aspect of image, e.g. on 21:9 displays zoom in to match aspect between 4:3 and 21:9
+            // + align new image to top - aligning to center doesn't look right, especially when actor is standing
+            // -> on portrait display, landscape images may be zoomed as long as actor/focus region stays visible
+            //
+            // So we shouldn't just use the aspect but also the focus area to choose the right zoom or fit.
         } else {
             // show the whole image
             aspect = fitInside(image, size);
@@ -180,7 +184,7 @@ public class Transform {
      * 
      * @return A double value to scale the image onto the bounding box.
      */
-    static double fitOutside(Dimension size, Dimension onto) {
+    public static double fitOutside(Dimension size, Dimension onto) {
         return Math.max((double) onto.width / size.width, (double) onto.height / size.height);
     }
 
@@ -189,7 +193,7 @@ public class Transform {
      * 
      * @return A double value to scale the image into the bounding box.
      */
-    static double fitInside(Dimension size, Dimension into) {
+    public static double fitInside(Dimension size, Dimension into) {
         return Math.min((double) into.width / size.width, (double) into.height / size.height);
     }
 

@@ -12,8 +12,6 @@ import java.util.Optional;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
-import teaselib.host.Transform;
-
 public class TransformTest {
 
     static final Rectangle2D.Double top = new Rectangle2D.Double(0.25, 0.0, 0.5, 0.25);
@@ -43,7 +41,7 @@ public class TransformTest {
         Dimension image = new Dimension(320, 240);
         Rectangle2D bounds = new Rectangle(16, 16, 320, 240);
 
-        var t = Transform.maxImage(image, bounds, Optional.empty());
+        var t = Transform.maxImage(image, bounds, Optional.empty(), Transform::fitOutside);
         assertEquals(t, p(0.0, 0.0), p(0.0, 0.0));
         assertEquals(t, p(320.0, 240.0), p(320.0, 240.0));
     }
@@ -53,7 +51,7 @@ public class TransformTest {
         Dimension image = new Dimension(320, 240);
         Rectangle bounds = new Rectangle(16, 16, 320, 240);
 
-        var t = Transform.maxImage(image, bounds, Optional.of(head));
+        var t = Transform.maxImage(image, bounds, Optional.of(head), Transform::fitOutside);
         assertEquals(t, p(0.0, 0.0), p(0.0, 0.0));
         assertEquals(t, p(320.0, 240.0), p(320.0, 240.0));
     }
@@ -63,7 +61,7 @@ public class TransformTest {
         Dimension image = new Dimension(320, 240);
         Rectangle bounds = new Rectangle(16, 16, 320, 120);
 
-        var t = Transform.maxImage(image, bounds, Optional.of(head));
+        var t = Transform.maxImage(image, bounds, Optional.of(head), Transform::fitOutside);
         assertEquals(t, p(0.0, -60.0), p(0.0, 0.0));
         assertEquals(t, p(320.0, 180.0), p(320.0, 240.0));
     }
@@ -73,7 +71,7 @@ public class TransformTest {
         Dimension image = new Dimension(240, 320);
         Rectangle bounds = new Rectangle(32, 32, 320, 120);
 
-        var t = Transform.maxImage(image, bounds, Optional.of(head));
+        var t = Transform.maxImage(image, bounds, Optional.of(head), Transform::fitOutside);
         assertEquals(t, p(0.0, -153.333), p(0.0, 0.0));
         assertEquals(t, p(320.0, 273.333), p(240.0, 320.0));
     }
@@ -82,7 +80,7 @@ public class TransformTest {
     public void testVisibleFocusLandscapePortraitTop() {
         Dimension image = new Dimension(240, 320);
         Rectangle bounds = new Rectangle(0, 0, 320, 120);
-        var t = Transform.maxImage(image, bounds, Optional.of(top));
+        var t = Transform.maxImage(image, bounds, Optional.of(top), Transform::fitOutside);
         Rectangle2D.Double imageFocusArea = Transform.scale(top, image);
 
         Point2D focusTop = t.transform(new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMinY()),
@@ -101,7 +99,7 @@ public class TransformTest {
     public void testVisibleFocusLandscapePortraitBottom() {
         Dimension image = new Dimension(240, 320);
         Rectangle bounds = new Rectangle(0, 0, 320, 120);
-        var t = Transform.maxImage(image, bounds, Optional.of(bottom));
+        var t = Transform.maxImage(image, bounds, Optional.of(bottom), Transform::fitOutside);
         Rectangle2D.Double imageFocusArea = Transform.scale(bottom, image);
 
         Point2D focusBottom = t.transform(new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMaxY()),
@@ -119,7 +117,7 @@ public class TransformTest {
     public void testVisibleFocusLandscapePortraitLeftScaledToBorder() {
         Dimension image = new Dimension(320, 240);
         Rectangle bounds = new Rectangle(32, 32, 320, 120);
-        var t = Transform.maxImage(image, bounds, Optional.of(left));
+        var t = Transform.maxImage(image, bounds, Optional.of(left), Transform::fitOutside);
         Rectangle2D.Double imageFocusArea = Transform.scale(left, image);
         assertEquals(t, new Point2D.Double(0.0, 60.0),
                 new Point2D.Double(imageFocusArea.getMinX(), imageFocusArea.getCenterY()));
@@ -132,7 +130,7 @@ public class TransformTest {
     public void testVisibleFocusLandscapePortraitRightScaledToBorder() {
         Dimension image = new Dimension(320, 240);
         Rectangle bounds = new Rectangle(32, 32, 320, 120);
-        var t = Transform.maxImage(image, bounds, Optional.of(right));
+        var t = Transform.maxImage(image, bounds, Optional.of(right), Transform::fitOutside);
         Rectangle2D.Double focusAreaImage = Transform.scale(right, image);
 
         assertEquals(t, new Point2D.Double(bounds.width * (1.0 - left.width), 60.0),
@@ -146,7 +144,7 @@ public class TransformTest {
     public void testVisibleFocusLandscapePortraitHead() {
         Dimension image = new Dimension(240, 320);
         Rectangle bounds = new Rectangle(32, 32, 320, 120);
-        var t = Transform.maxImage(image, bounds, Optional.of(head));
+        var t = Transform.maxImage(image, bounds, Optional.of(head), Transform::fitOutside);
         Rectangle2D.Double focusAreaImage = Transform.scale(head, image);
 
         Point2D focusTop = t.transform(new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()),

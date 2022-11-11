@@ -23,6 +23,7 @@ public class SceneRenderer {
     static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
     final Image backgroundImage;
+    final Transform.FitFunction fitFunction;
 
     public final BufferedImageQueue surfaces;
     // final VolatileImageQueue textOverlays;
@@ -30,16 +31,15 @@ public class SceneRenderer {
 
     final TextRenderer textRenderer = new TextRenderer();
 
-    public SceneRenderer(Image backgroundImage, int surfaceBuffers) {
-        super();
+    public SceneRenderer(Image backgroundImage, int surfaceBuffers, Transform.FitFunction fitFunction) {
         this.backgroundImage = backgroundImage;
+        this.fitFunction = fitFunction;
         this.surfaces = new BufferedImageQueue(surfaceBuffers);
         // this.textOverlays = new VolatileImageQueue(2);
         this.textOverlays = new BufferedImageQueue(2);
     }
 
-    public void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage,
-            Rectangle bounds, Color backgroundColor) {
+    public void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage, Rectangle bounds, Color backgroundColor) {
         // Bicubic interpolation is an absolute performance killer for image transforming & scaling
         // g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
@@ -65,11 +65,15 @@ public class SceneRenderer {
 
         var clip = g2d.getClip();
         var r = createBlendClip(frame, previousImage, bounds);
-        g2d.setClip(r.x, r.y, r.width, r.height);
+        if (r != null) {
+            g2d.setClip(r.x, r.y, r.width, r.height);
+        }
         try {
             drawScene(g2d, gc, frame, previousImage, bounds);
         } finally {
-            g2d.setClip(clip);
+            if (r != null) {
+                g2d.setClip(clip);
+            }
         }
 
         if (frame.isIntertitle || previousImage.isIntertitle) {
@@ -90,25 +94,33 @@ public class SceneRenderer {
         if (frame.textBlend < 1.0) {
             drawTextOverlay(g2d, gc, previousImage);
         }
+
         drawTextOverlay(g2d, gc, frame);
     }
 
-    private static Rectangle createBlendClip(RenderState rs1, RenderState rs2, Rectangle bounds) {
-        var t1 = createBlendClipTransform(rs1, bounds);
-        var r1 = Transform.transform(t1, 0.0, 0.0, rs1.displayImage.getWidth(), rs1.displayImage.getHeight());
-        var t2 = createBlendClipTransform(rs2, bounds);
-        var r2 = Transform.transform(t2, 0.0, 0.0, rs2.displayImage.getWidth(), rs2.displayImage.getHeight());
+    private Rectangle createBlendClip(RenderState rs1, RenderState rs2, Rectangle bounds) {
+        Rectangle r1 = getBlendClipRect(rs1, bounds);
+        Rectangle r2 = getBlendClipRect(rs2, bounds);
+        if (r1 == null)
+            return r2;
+        if (r2 == null)
+            return r1;
         return r1.union(r2);
     }
 
-    private static AffineTransform createBlendClipTransform(RenderState rs, Rectangle bounds) {
-        var t1 = surfaceTransform(
-                rs.displayImage.dimension(),
-                bounds,
-                1.0,
-                rs.focusRegion(),
-                new Point2D.Double(0.0, 0.0));
-        return t1;
+    private Rectangle getBlendClipRect(RenderState renderState, Rectangle bounds) {
+        var image = renderState.displayImage;
+        if (image != null) {
+            var t = surfaceTransform(
+                    image.dimension(),
+                    bounds,
+                    1.0,
+                    renderState.focusRegion(),
+                    new Point2D.Double(0.0, 0.0));
+            return Transform.transform(t, 0.0, 0.0, renderState.displayImage.getWidth(), renderState.displayImage.getHeight());
+        } else {
+            return null;
+        }
     }
 
     private static void drawScene(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage, Rectangle bounds) {
@@ -164,7 +176,7 @@ public class SceneRenderer {
         }
     }
 
-    private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+    private Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
         Dimension image = frame.displayImage.dimension();
         var transform = surfaceTransform(image, bounds, 1.0, focusRegion, new Point2D.Double());
         return ImageRenderer.normalizedToGraphics(transform, image, focusRegion.get());
@@ -237,11 +249,11 @@ public class SceneRenderer {
         }
     }
 
-    private static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, double zoom,
+    private AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, double zoom,
             Optional<Rectangle2D> focusRegion, Point2D displayImageOffset) {
         var surface = new AffineTransform();
         surface.concatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
-        surface.concatenate(Transform.maxImage(image, bounds, focusRegion));
+        surface.concatenate(Transform.maxImage(image, bounds, focusRegion, fitFunction));
         if (focusRegion.isPresent()) {
             Rectangle2D imageFocusArea = Transform.scale(focusRegion.get(), image);
             surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
@@ -249,6 +261,17 @@ public class SceneRenderer {
         }
         surface.preConcatenate(getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));
         return surface;
+    }
+
+    public float resolutionZoomCorrectionFactor(Rectangle bounds, RenderState nextFrame, RenderState previousImage) {
+        if (nextFrame.displayImage == null || previousImage.displayImage == null) {
+            return 1.0f;
+        } else {
+            Dimension region = bounds.getSize();
+            double next = fitFunction.apply(nextFrame.displayImage.dimension(), region);
+            double previous = fitFunction.apply(previousImage.displayImage.dimension(), region);
+            return (float) (next / previous);
+        }
     }
 
 }

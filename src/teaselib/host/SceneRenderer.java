@@ -99,9 +99,9 @@ public class SceneRenderer {
         drawTextOverlay(g2d, gc, frame);
     }
 
-    private Rectangle createBlendClip(RenderState rs1, RenderState rs2, Rectangle bounds) {
-        Rectangle r1 = getBlendClipRect(rs1, bounds);
-        Rectangle r2 = getBlendClipRect(rs2, bounds);
+    private Rectangle createBlendClip(RenderState current, RenderState previous, Rectangle bounds) {
+        Rectangle r1 = getBlendClipRect(current, bounds, current.actorZoom);
+        Rectangle r2 = getBlendClipRect(previous, bounds, 1.0);
         if (r1 == null)
             return r2;
         if (r2 == null)
@@ -109,16 +109,16 @@ public class SceneRenderer {
         return r1.union(r2);
     }
 
-    private Rectangle getBlendClipRect(RenderState renderState, Rectangle bounds) {
+    private Rectangle getBlendClipRect(RenderState renderState, Rectangle bounds, double zoom) {
         var image = renderState.displayImage;
         if (image != null) {
             var t = surfaceTransform(
                     image.dimension(),
                     bounds,
-                    1.0,
+                    zoom,
                     renderState.focusRegion(),
                     new Point2D.Double(0.0, 0.0));
-            return Transform.transform(t, 0.0, 0.0, renderState.displayImage.getWidth(), renderState.displayImage.getHeight());
+            return Transform.transform(t, 0.0, 0.0, image.getWidth(), image.getHeight());
         } else {
             return null;
         }

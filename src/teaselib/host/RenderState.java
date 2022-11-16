@@ -127,7 +127,7 @@ public class RenderState {
             if (focusRegion.isEmpty()) {
                 focusRegion = Optional.of(new Rectangle2D.Double(0.4, 0.4, 0.2, 0.2));
             }
-        } else if (annotations.contains(Annotation.Person.Actor)) {
+        } else if (annotations.contains(Annotation.Person.Model)) {
             // TODO images with non-actor models may be focused on as well,
             // probably only the whole body -> pose.bounds
             focusRegion = Optional.empty();

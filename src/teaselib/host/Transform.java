@@ -7,12 +7,11 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.VolatileImage;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 public class Transform {
 
-    public interface FitFunction extends BiFunction<Dimension, Dimension, Double> {
-        // Tag interface
+    public interface FitFunction {
+        double apply(Dimension image, Dimension bounds);
     }
 
     private Transform() {}
@@ -43,8 +42,8 @@ public class Transform {
      *            Bounding box
      * @return
      */
-    static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusArea,
-            BiFunction<Dimension, Dimension, Double> fitFunction) {
+    static AffineTransform maxImage(Dimension image, Rectangle2D bounds, Optional<Rectangle2D> focusRegion,
+            FitFunction fitFunction) {
         // transforms are concatenated from bottom to top
         var t = new AffineTransform();
 
@@ -53,23 +52,13 @@ public class Transform {
 
         Dimension size = bounds.getBounds().getSize();
         double aspect;
-        if (focusArea.isPresent()) {
-            // TODO choose fit/zoom based on focus area instead of assuming actor
+        if (focusRegion.isPresent()) {
             aspect = fitFunction.apply(image, size);
-
-            // TODO choose fit function for compromise between image and display size
-            // + fitOutside zooms in too much on wide displays
-            // + fitInside leaves too much spare space if the image aspect doesn't match the screen aspect
-            //
-            // What looks good:
-            // + stick to aspect of image, e.g. on 21:9 displays zoom in to match aspect between 4:3 and 21:9
-            // + align new image to top - aligning to center doesn't look right, especially when actor is standing
-            // -> on portrait display, landscape images may be zoomed as long as actor/focus region stays visible
-            //
-            // So we shouldn't just use the aspect but also the focus area to choose the right zoom or fit.
+            // fit outside or inside or attempt to zoom in a little more
+            // in order fill the screen without cropping
         } else {
-            // show the whole image
             aspect = fitInside(image, size);
+            // show the whole image
         }
         t.scale(aspect, aspect);
         // scale to user space
@@ -96,7 +85,7 @@ public class Transform {
      * 
      * @return AffineTransform
      */
-    public static AffineTransform matchGoldenRatioOrKeepVisible(AffineTransform surface, Dimension image,
+    static AffineTransform matchGoldenRatioOrKeepVisible(AffineTransform surface, Dimension image,
             Rectangle2D bounds, Rectangle2D imageFocusArea) {
         var surfaceFocusArea = surface.createTransformedShape(imageFocusArea).getBounds2D();
         Point2D imageTopLeft = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
@@ -170,7 +159,7 @@ public class Transform {
         }
     }
 
-    public static AffineTransform zoom(Rectangle2D focusArea, double zoom) {
+    static AffineTransform zoom(Rectangle2D focusArea, double zoom) {
         var zoomed = new AffineTransform();
         Point2D focusPoint = new Point2D.Double(focusArea.getCenterX(), focusArea.getCenterY());
         zoomed.translate(focusPoint.getX(), focusPoint.getY());
@@ -182,9 +171,15 @@ public class Transform {
     /**
      * The scale factor to fill the bounding box
      * 
+     * @param focusArea
+     * 
      * @return A double value to scale the image onto the bounding box.
      */
-    public static double fitOutside(Dimension size, Dimension onto) {
+    static double fitOutside(Dimension size, Optional<Rectangle2D> focusArea, Dimension onto) {
+        return Math.max((double) onto.width / size.width, (double) onto.height / size.height);
+    }
+
+    static double fitOutside(Dimension size, Dimension onto) {
         return Math.max((double) onto.width / size.width, (double) onto.height / size.height);
     }
 
@@ -193,15 +188,32 @@ public class Transform {
      * 
      * @return A double value to scale the image into the bounding box.
      */
-    public static double fitInside(Dimension size, Dimension into) {
+    static double fitInside(Dimension size, Dimension into) {
         return Math.min((double) into.width / size.width, (double) into.height / size.height);
+    }
+
+    private static final double MAXIMUM_INSET_ZOOM_FACTOR = 0.25;
+
+    static double fitAspected(Dimension image, Dimension into) {
+        var fit = fitInside(image, into);
+
+        double width = image.width * fit;
+        double horizontalInset = into.getWidth() - width;
+        double height = image.height * fit;
+        double verticalInset = into.getHeight() - height;
+
+        double fillWidth = width + horizontalInset * MAXIMUM_INSET_ZOOM_FACTOR;
+        double fillHeight = height + verticalInset * MAXIMUM_INSET_ZOOM_FACTOR;
+        double reducedInset = Math.max(fillWidth / width, fillHeight / height);
+
+        return fit * reducedInset;
     }
 
     /**
      * Return the aspect of the given size.
      * 
      * @param size
-     * @return How much dimension is wider than high
+     * @return How much the dimension is wider than high.
      */
     static double aspect(Dimension size) {
         return (double) size.width / size.height;

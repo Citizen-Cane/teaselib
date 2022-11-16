@@ -22,18 +22,17 @@ public class SceneRenderer {
 
     static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
-    final Image backgroundImage;
-    final Transform.FitFunction fitFunction;
+    final Transform.FitFunction fitFunction = Transform::fitAspected;
 
+    final Image backgroundImage;
     public final BufferedImageQueue surfaces;
     // final VolatileImageQueue textOverlays;
     public final BufferedImageQueue textOverlays;
 
     final TextRenderer textRenderer = new TextRenderer();
 
-    public SceneRenderer(Image backgroundImage, int surfaceBuffers, Transform.FitFunction fitFunction) {
+    public SceneRenderer(Image backgroundImage, int surfaceBuffers) {
         this.backgroundImage = backgroundImage;
-        this.fitFunction = fitFunction;
         this.surfaces = new BufferedImageQueue(surfaceBuffers);
         // this.textOverlays = new VolatileImageQueue(2);
         this.textOverlays = new BufferedImageQueue(2);
@@ -69,7 +68,9 @@ public class SceneRenderer {
             g2d.setClip(r.x, r.y, r.width, r.height);
         }
         try {
-            drawScene(g2d, gc, frame, previousImage, bounds);
+            drawScene(g2d, gc, frame, previousImage);
+            // ImageRenderer.drawDebugInfo(g2d, previousImage, bounds);
+            // ImageRenderer.drawDebugInfo(g2d, frame, bounds);
         } finally {
             if (r != null) {
                 g2d.setClip(clip);
@@ -123,38 +124,24 @@ public class SceneRenderer {
         }
     }
 
-    private static void drawScene(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage, Rectangle bounds) {
+    private static void drawScene(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage) {
         if (previousImage.sceneBlend > 0.0f) {
             // Choose the smaller image for blending in order to hide as much of the background image as possible
             if (previousImage.actorZoom < frame.actorZoom) {
-                drawImageStack(g2d, gc, frame, 1.0f - frame.sceneBlend, previousImage, bounds);
+                drawImageStack(g2d, gc, frame, 1.0f - frame.sceneBlend, previousImage);
             } else {
-                drawImageStack(g2d, gc, previousImage, frame.sceneBlend, frame, bounds);
+                drawImageStack(g2d, gc, previousImage, frame.sceneBlend, frame);
             }
         } else {
             drawImage(g2d, gc, frame);
-            // ImageRenderer.drawDebugInfo(g2d, frame, bounds);
         }
     }
 
-    /**
-     * @param g2d
-     *            Graphics context
-     * @param bottom
-     *            Bottom image
-     * @param alpha
-     *            alpha blend factor
-     * @param top
-     *            Top image
-     * @param bounds
-     *            region
-     */
-    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha, RenderState top, Rectangle bounds) {
+    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha, RenderState top) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
             g2d.setComposite(alphaComposite);
             drawImage(g2d, gc, bottom);
-            // ImageRenderer.drawDebugInfo(g2d, bottom, bounds);
         }
 
         if (alpha < 1.0f) {
@@ -163,7 +150,6 @@ public class SceneRenderer {
         }
 
         drawImage(g2d, gc, top);
-        // ImageRenderer.drawDebugInfo(g2d, top, bounds);
     }
 
     private static void drawImage(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
@@ -256,7 +242,11 @@ public class SceneRenderer {
         surface.concatenate(Transform.maxImage(image, bounds, focusRegion, fitFunction));
         if (focusRegion.isPresent()) {
             Rectangle2D imageFocusArea = Transform.scale(focusRegion.get(), image);
-            surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
+            // moving theimage may result in extensive panning when the image and screen aspect don't match,
+            // and the image is moved to avoid text over focus region
+            // -> implement more places for text bubbles, or just place the text over the face
+            // surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
+            // TODO investigate moving only vertically to keep the focus region visible
             surface.concatenate(Transform.zoom(imageFocusArea, zoom));
         }
         surface.preConcatenate(getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));

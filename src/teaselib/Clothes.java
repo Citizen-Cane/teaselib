@@ -67,10 +67,6 @@ public enum Clothes {
         Thong,
     }
 
-    public enum SkirtType implements Item.Attribute {
-        MiniSkirt,
-    }
-
     public enum TrouwsersType implements Item.Attribute {
         Jeans,
         Shorts,

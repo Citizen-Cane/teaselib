@@ -83,13 +83,20 @@
 		<Item item="Chastity_Device" guid="chastity_belt" displayName="Chastity belt">
 			<Attribute> Toys.Chastity_Devices.Belt </Attribute>
 		</Item>
+		<Item item="Chastity_Device" guid="cock_crimper" displayName="Penis-Crimper">
+			<Attribute> Toys.Chastity_Devices.Crimper </Attribute>
+			<Attribute> Sexuality.Sex.Male </Attribute>
+			<Attribute> Toys.Chastity_Devices.Features.AccessibleGlans </Attribute>
+		</Item>
 		<Item item="Chastity_Device" guid="gates_of_hell" displayName="Gates Of Hell">
 			<Attribute> Toys.Chastity_Devices.Gates_of_Hell </Attribute>
 			<Attribute> Sexuality.Sex.Male </Attribute>
+			<Attribute> Toys.Chastity_Devices.Features.AccessibleGlans </Attribute>
 		</Item>
 		<Item item="Chastity_Device" guid="cone_of_shame" displayName="Cone Of Shame">
 			<Attribute> Toys.Chastity_Devices.Cone_of_Shame </Attribute>
 			<Attribute> Sexuality.Sex.Male </Attribute>
+			<Attribute> Toys.Chastity_Devices.Features.AccessibleGlans </Attribute>
 		</Item>
 
 		<Item item="Cock_Ring" guid="cockring" displayName="Cock ring">
@@ -376,7 +383,6 @@
 			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>
 		<Item item="Skirt" guid="miniskirt" displayName="Miniskirt">
-			<Attribute> Clothes.SkirtType.Miniskirt </Attribute>
 			<Attribute> Length.Short </Attribute>
 			<Attribute> Sexuality.Gender.Feminine </Attribute>
 		</Item>

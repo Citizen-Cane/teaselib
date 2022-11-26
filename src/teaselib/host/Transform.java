@@ -14,6 +14,10 @@ public class Transform {
         double apply(Dimension image, Dimension bounds);
     }
 
+    public interface FocusFunction {
+        AffineTransform apply(AffineTransform surface, Dimension image, Rectangle2D bounds, Rectangle2D imageFocusArea);
+    }
+
     private Transform() {}
 
     /**
@@ -85,42 +89,36 @@ public class Transform {
      * 
      * @return AffineTransform
      */
-    static AffineTransform matchGoldenRatioOrKeepVisible(AffineTransform surface, Dimension image,
-            Rectangle2D bounds, Rectangle2D imageFocusArea) {
+    static AffineTransform matchGoldenRatioOrKeepVisible(AffineTransform surface, Dimension image, Rectangle2D bounds, Rectangle2D imageFocusArea) {
         var surfaceFocusArea = surface.createTransformedShape(imageFocusArea).getBounds2D();
         Point2D imageTopLeft = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
-        Point2D imageBottomRight = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()),
-                new Point2D.Double());
+        Point2D imageBottomRight = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()), new Point2D.Double());
+        double tx = fitHorizontally(bounds, surfaceFocusArea, imageTopLeft, imageBottomRight);
+        double ty = fitVertically(bounds, surfaceFocusArea, imageTopLeft, imageBottomRight);
+        return translatedSurface(surface, tx, ty);
+    }
 
+    /**
+     * Adjust image so that the focus area is completely inside the visible bounds and its center matches the golden
+     * ratio.
+     * 
+     * @return AffineTransform
+     */
+    static AffineTransform matchFocusRegion(AffineTransform surface, Dimension image, Rectangle2D bounds, Rectangle2D imageFocusArea) {
+        var surfaceFocusArea = surface.createTransformedShape(imageFocusArea).getBounds2D();
+        Point2D imageTopLeft = surface.transform(new Point2D.Double(0.0, 0.0), new Point2D.Double());
+        Point2D imageBottomRight = surface.transform(new Point2D.Double(image.getWidth(), image.getHeight()), new Point2D.Double());
+        double tx = 0.0;
         double ty = 0.0;
-        if (surfaceFocusArea.getMinY() < bounds.getMinY() + bounds.getHeight() * goldenRatioFactorB) {
-            if (surfaceFocusArea.getHeight() < bounds.getHeight()) {
-                double optimal = bounds.getHeight() * goldenRatioFactorB - surfaceFocusArea.getCenterY();
-                if (optimal > 0) {
-                    double limit = bounds.getMinY() - imageTopLeft.getY();
-                    ty = Math.min(optimal, limit);
-                } else {
-                    double limit = bounds.getMaxY() - imageBottomRight.getY();
-                    ty = Math.max(optimal, limit);
-                }
-            } else {
-                ty = -surfaceFocusArea.getCenterY() + bounds.getHeight() / 2;
-            }
-        } else if (surfaceFocusArea.getMaxY() > bounds.getMaxY() - bounds.getHeight() * goldenRatioFactorB) {
-            if (surfaceFocusArea.getHeight() < bounds.getHeight()) {
-                double optimal = bounds.getHeight() * goldenRatioFactorB - surfaceFocusArea.getCenterY();
-                if (optimal > 0) {
-                    double limit = bounds.getMaxY() - imageBottomRight.getY();
-                    ty = -Math.min(-optimal, -limit);
-                } else {
-                    double limit = bounds.getMinY() - imageTopLeft.getY();
-                    ty = -Math.min(-optimal, limit);
-                }
-            } else {
-                ty = -surfaceFocusArea.getCenterY() + bounds.getHeight() / 2;
-            }
+        if (aspect(image) > aspect(bounds.getBounds().getSize())) {
+            tx = fitHorizontally(bounds, surfaceFocusArea, imageTopLeft, imageBottomRight);
+        } else {
+            ty = fitVertically(bounds, surfaceFocusArea, imageTopLeft, imageBottomRight);
         }
+        return translatedSurface(surface, tx, ty);
+    }
 
+    private static double fitHorizontally(Rectangle2D bounds, Rectangle2D surfaceFocusArea, Point2D imageTopLeft, Point2D imageBottomRight) {
         double tx = 0.0;
         if (surfaceFocusArea.getMinX() < bounds.getMinX() + bounds.getWidth() * goldenRatioFactorB) {
             if (surfaceFocusArea.getWidth() < bounds.getWidth()) {
@@ -149,11 +147,46 @@ public class Transform {
                 tx = -surfaceFocusArea.getCenterX() + bounds.getWidth() / 2;
             }
         }
+        return tx;
+    }
 
+    private static double fitVertically(Rectangle2D bounds, Rectangle2D surfaceFocusArea, Point2D imageTopLeft, Point2D imageBottomRight) {
+        double ty = 0.0;
+        if (surfaceFocusArea.getMinY() < bounds.getMinY() + bounds.getHeight() * goldenRatioFactorB) {
+            if (surfaceFocusArea.getHeight() < bounds.getHeight()) {
+                double optimal = bounds.getHeight() * goldenRatioFactorB - surfaceFocusArea.getCenterY();
+                if (optimal > 0) {
+                    double limit = bounds.getMinY() - imageTopLeft.getY();
+                    ty = Math.min(optimal, limit);
+                } else {
+                    double limit = bounds.getMaxY() - imageBottomRight.getY();
+                    ty = Math.max(optimal, limit);
+                }
+            } else {
+                ty = -surfaceFocusArea.getCenterY() + bounds.getHeight() / 2;
+            }
+        } else if (surfaceFocusArea.getMaxY() > bounds.getMaxY() - bounds.getHeight() * goldenRatioFactorB) {
+            if (surfaceFocusArea.getHeight() < bounds.getHeight()) {
+                double optimal = bounds.getHeight() * goldenRatioFactorB - surfaceFocusArea.getCenterY();
+                if (optimal > 0) {
+                    double limit = bounds.getMaxY() - imageBottomRight.getY();
+                    ty = -Math.min(-optimal, -limit);
+                } else {
+                    double limit = bounds.getMinY() - imageTopLeft.getY();
+                    ty = -Math.min(-optimal, limit);
+                }
+            } else {
+                ty = -surfaceFocusArea.getCenterY() + bounds.getHeight() / 2;
+            }
+        }
+        return ty;
+    }
+
+    private static AffineTransform translatedSurface(AffineTransform surface, double tx, double ty) {
         if (tx != 0.0 || ty != 0.0) {
-            var keepFocusAreaVisible = AffineTransform.getTranslateInstance(tx, ty);
-            keepFocusAreaVisible.concatenate(surface);
-            return keepFocusAreaVisible;
+            var translate = AffineTransform.getTranslateInstance(tx, ty);
+            translate.concatenate(surface);
+            return translate;
         } else {
             return surface;
         }

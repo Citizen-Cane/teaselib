@@ -14,6 +14,9 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Optional;
 
+import teaselib.host.Transform.FitFunction;
+import teaselib.host.Transform.FocusFunction;
+
 /**
  * @author Citizen-Cane
  *
@@ -22,7 +25,12 @@ public class SceneRenderer {
 
     static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
-    final Transform.FitFunction fitFunction = Transform::fitAspected;
+    record View(FitFunction fit, FocusFunction focus) {
+        static final View FitOutside = new View(Transform::fitOutside, Transform::matchGoldenRatioOrKeepVisible);
+        static final View FitAspected = new View(Transform::fitAspected, Transform::matchFocusRegion);
+    }
+
+    final View view = View.FitAspected;
 
     final Image backgroundImage;
     public final BufferedImageQueue surfaces;
@@ -239,14 +247,10 @@ public class SceneRenderer {
             Optional<Rectangle2D> focusRegion, Point2D displayImageOffset) {
         var surface = new AffineTransform();
         surface.concatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
-        surface.concatenate(Transform.maxImage(image, bounds, focusRegion, fitFunction));
+        surface.concatenate(Transform.maxImage(image, bounds, focusRegion, view.fit));
         if (focusRegion.isPresent()) {
             Rectangle2D imageFocusArea = Transform.scale(focusRegion.get(), image);
-            // moving theimage may result in extensive panning when the image and screen aspect don't match,
-            // and the image is moved to avoid text over focus region
-            // -> implement more places for text bubbles, or just place the text over the face
-            // surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
-            // TODO investigate moving only vertically to keep the focus region visible
+            surface = view.focus.apply(surface, image, bounds, imageFocusArea);
             surface.concatenate(Transform.zoom(imageFocusArea, zoom));
         }
         surface.preConcatenate(getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));
@@ -258,8 +262,8 @@ public class SceneRenderer {
             return 1.0f;
         } else {
             Dimension region = bounds.getSize();
-            double next = fitFunction.apply(nextFrame.displayImage.dimension(), region);
-            double previous = fitFunction.apply(previousImage.displayImage.dimension(), region);
+            double next = view.fit.apply(nextFrame.displayImage.dimension(), region);
+            double previous = view.fit.apply(previousImage.displayImage.dimension(), region);
             return (float) (next / previous);
         }
     }

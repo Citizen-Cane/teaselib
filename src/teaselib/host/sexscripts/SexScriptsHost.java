@@ -7,7 +7,6 @@ import static teaselib.core.concurrency.NamedExecutorService.*;
 
 import java.awt.BufferCapabilities;
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics2D;
@@ -22,7 +21,6 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
@@ -84,7 +82,6 @@ import teaselib.host.AbstractValidatedImage;
 import teaselib.host.Host;
 import teaselib.host.RenderState;
 import teaselib.host.SceneRenderer;
-import teaselib.host.Transform;
 import teaselib.host.ValidatedBufferedImage;
 import teaselib.util.AnnotatedImage;
 import teaselib.util.Interval;
@@ -459,10 +456,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         }
     }
 
-    public float resolutionZoomCorrectionFactor() {
-        return renderer.resolutionZoomCorrectionFactor(getContentBounds(), nextFrame, previousImage);
-    }
-
     /**
      * Start point for blending images while moving from one focus region to the next. The start point for the
      * transition will be the focus region center point of the current actor image, assuming that both images feature
@@ -479,19 +472,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     public Point2D getTransitionVector(Point2D currentFocus, Point2D newFocus) {
         var bounds = getContentBounds();
-        var p0 = focusPoint(previousImage, bounds, currentFocus);
-        var p1 = focusPoint(nextFrame, bounds, newFocus);
+        var p0 = renderer.focusPoint(previousImage, bounds, currentFocus);
+        var p1 = renderer.focusPoint(nextFrame, bounds, newFocus);
         return new Point2D.Double(p1.getX() - p0.getX(), p1.getY() - p0.getY());
-    }
-
-    private Point2D focusPoint(RenderState r, Rectangle bounds, Point2D focus) {
-        renderer.updateSceneTransform(r, bounds);
-        AffineTransform transform = r.transform;
-        return focusPoint(transform, new Dimension(r.displayImage.getWidth(), r.displayImage.getHeight()), focus);
-    }
-
-    private static Point2D focusPoint(AffineTransform transform, Dimension image, Point2D focus) {
-        return transform.transform(Transform.scale(focus, image), new Point2D.Double());
     }
 
     @Override

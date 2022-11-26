@@ -176,6 +176,11 @@ public class SceneRenderer {
         return ImageRenderer.normalizedToGraphics(transform, image, focusRegion.get());
     }
 
+    public Point2D focusPoint(RenderState renderState, Rectangle bounds, Point2D focus) {
+        updateSceneTransform(renderState, bounds);
+        return renderState.transform.transform(Transform.scale(focus, renderState.displayImage.dimension()), new Point2D.Double());
+    }
+
     private static void renderIntertitle(Graphics2D g2d, RenderState frame, RenderState previousImage,
             Rectangle bounds) {
         var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
@@ -206,15 +211,14 @@ public class SceneRenderer {
         return alpha;
     }
 
-    private void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
+    private static void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
         if (!frame.text.isBlank()) {
             draw(g2d, gc, frame.textImage, frame.textBlend, frame.textImageRegion);
             // textRenderer.drawDebugInfo(g2d);
         }
     }
 
-    void draw(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha,
-            Rectangle textArea) {
+    private static void draw(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha, Rectangle textArea) {
         if (alpha > 0.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2d.setComposite(alphaComposite);
@@ -228,9 +232,7 @@ public class SceneRenderer {
         }
     }
 
-    // TODO Add focus point update in order to control focus by animated host
-
-    public void updateSceneTransform(RenderState frame, Rectangle bounds) {
+    private void updateSceneTransform(RenderState frame, Rectangle bounds) {
         if (frame.displayImage != null) {
             frame.transform = surfaceTransform(
                     frame.displayImage.dimension(),
@@ -255,17 +257,6 @@ public class SceneRenderer {
         }
         surface.preConcatenate(getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));
         return surface;
-    }
-
-    public float resolutionZoomCorrectionFactor(Rectangle bounds, RenderState nextFrame, RenderState previousImage) {
-        if (nextFrame.displayImage == null || previousImage.displayImage == null) {
-            return 1.0f;
-        } else {
-            Dimension region = bounds.getSize();
-            double next = view.fit.apply(nextFrame.displayImage.dimension(), region);
-            double previous = view.fit.apply(previousImage.displayImage.dimension(), region);
-            return (float) (next / previous);
-        }
     }
 
 }

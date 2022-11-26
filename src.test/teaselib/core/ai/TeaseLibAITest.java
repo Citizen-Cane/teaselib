@@ -19,6 +19,7 @@ import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.ai.perception.SceneCapture;
+import teaselib.core.ai.perception.SceneCapture.DeviceLost;
 import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.jni.NativeObjectList;
 import teaselib.core.util.ExceptionUtil;
@@ -219,42 +220,26 @@ public class TeaseLibAITest {
         assertEquals(0.40, poses.get(0).head.orElseThrow().getY(), 0.02);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testImageStabilityNullByteArray() throws InterruptedException {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            Runnable test = () -> {
-                try (HumanPose humnaPose = new HumanPose()) {
-                    byte[] nullptr = null;
-                    humnaPose.poses(nullptr, Rotation.None);
-                }
-            };
-            runAccelerated(teaseLibAI, test);
-        }
+    public void testImageStabilityNullByteArray() {
+        testIllegalArgument(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testImageStabilityEmptyByteArray() throws InterruptedException {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
-            Runnable test = () -> {
-                try (HumanPose humnaPose = new HumanPose()) {
-                    byte[] empty = new byte[0];
-                    humnaPose.poses(empty, Rotation.None);
-                }
-            };
-            runAccelerated(teaseLibAI, test);
-        }
+    public void testImageStabilityEmptyByteArray() {
+        testIllegalArgument(new byte[0]);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testImageStabilityNotAnImage() throws InterruptedException {
+    public void testImageStabilityNotAnImage() {
+        testIllegalArgument(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+    }
+
+    private static void testIllegalArgument(byte[] image) throws UnsatisfiedLinkError {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             Runnable test = () -> {
                 try (HumanPose humnaPose = new HumanPose()) {
-                    byte[] garbage = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-                    humnaPose.poses(garbage, Rotation.None);
+                    humnaPose.poses(image, Rotation.None);
                 }
             };
-            runAccelerated(teaseLibAI, test);
+            assertThrows(IllegalArgumentException.class, () -> runAccelerated(teaseLibAI, test));
         }
     }
 
@@ -282,21 +267,20 @@ public class TeaseLibAITest {
                     List<HumanPose.Estimation> poses2 = humanPose2.poses(sceneCapture, timestamp2);
                     assertEquals(1, poses2.size());
                     assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 1.00f,
-                            poses2.get(0).distance.orElseThrow(), 0.1f);
-                    assertEquals(Proximity.FACE2FACE, poses2.get(0).proximity());
+                            poses2.get(0).distance.orElseThrow(), 0.01f);
+                    // FACE2FACE distance but looking aside
+                    assertEquals(Proximity.NEAR, poses2.get(0).proximity());
 
-                    try {
-                        var timestamp3 = System.currentTimeMillis();
-                        humanPose2.poses(sceneCapture, timestamp3);
-                        fail("Expected device lost since image sequence doesn't contain any more images");
-                    } catch (SceneCapture.DeviceLost exception) {
-                        return;
-                    }
-
+                    var timestamp3 = System.currentTimeMillis();
+                    assertThrows(
+                            "Expected Device Lost since cacpture sequence doesn't contain any more images",
+                            DeviceLost.class,
+                            () -> humanPose2.poses(sceneCapture, timestamp3));
                 }
             };
             runAccelerated(teaseLibAI, test);
         }
+
     }
 
     @Test

@@ -21,6 +21,7 @@ import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.concurrency.NoFuture;
 import teaselib.core.configuration.Configuration;
 import teaselib.host.Host;
+import teaselib.host.SceneRenderer;
 import teaselib.host.sexscripts.SexScriptsHost;
 import teaselib.util.AnnotatedImage;
 
@@ -137,8 +138,11 @@ public class AnimatedHost implements Host, Closeable {
     final AlphaBlend currentTextBlend = new AlphaBlend();
     final AlphaBlend previoustextBlend = new AlphaBlend();
 
-    public AnimatedHost(Host host) {
+    private final SceneRenderer renderer;
+
+    public AnimatedHost(Host host, SceneRenderer renderer) {
         this.host = host;
+        this.renderer = renderer;
         this.animator = NamedExecutorService.sameThread("Animate UI");
         setAnimationPaths(Animation.None, 0, 0);
     }

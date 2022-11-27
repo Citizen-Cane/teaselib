@@ -19,8 +19,8 @@ import java.awt.Toolkit;
 import java.awt.Transparency;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
@@ -148,7 +148,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     SceneRenderer renderer;
 
     public static Host from(IScript script) {
-        return new AnimatedHost(new SexScriptsHost(script));
+        SexScriptsHost sexScriptsHost = new SexScriptsHost(script);
+        return new AnimatedHost(sexScriptsHost, sexScriptsHost.renderer);
     }
 
     public SexScriptsHost(ss.IScript script) {
@@ -189,53 +190,10 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         renderer = new SceneRenderer(backgroundImage, 8);
 
         this.originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
-        mainFrame.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {
-                // Ignore
-            }
-
-            @Override
-            public void windowIconified(WindowEvent e) {
-                // Ignore
-            }
-
-            @Override
-            public void windowDeiconified(WindowEvent e) {
-                // Ignore
-            }
-
-            @Override
-            public void windowDeactivated(WindowEvent e) {
-                // Ignore
-            }
-
+        mainFrame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
-                if (onQuitHandler != null) {
-                    try {
-                        mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-                        logger.info("Running quit handler {}", onQuitHandler.getClass().getName());
-                        ScriptInterruptedEvent reason = new ScriptInterruptedEvent(
-                                ScriptInterruptedEvent.Reason.WindowClosing);
-                        onQuitHandler.accept(reason);
-                    } finally {
-                        onQuitHandler = null;
-                    }
-                } else {
-                    mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
-                    mainThread.interrupt();
-                }
-            }
-
-            @Override
-            public void windowClosed(WindowEvent e) {
-                // Ignore
-            }
-
-            @Override
-            public void windowActivated(WindowEvent e) {
-                // Ignore
+                executeOnQuitHandler();
             }
         });
 
@@ -259,6 +217,23 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             }
         });
     }
+
+    private void executeOnQuitHandler() {
+            if (onQuitHandler != null) {
+                try {
+                    mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+                    logger.info("Running quit handler {}", onQuitHandler.getClass().getName());
+                    ScriptInterruptedEvent reason = new ScriptInterruptedEvent(
+                            ScriptInterruptedEvent.Reason.WindowClosing);
+                    onQuitHandler.accept(reason);
+                } finally {
+                    onQuitHandler = null;
+                }
+            } else {
+                mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
+                mainThread.interrupt();
+            }
+        }
 
     Rectangle normalWindowPosition;
 

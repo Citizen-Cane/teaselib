@@ -176,7 +176,26 @@ public class SceneRenderer {
         return ImageRenderer.normalizedToGraphics(transform, image, focusRegion.get());
     }
 
-    public Point2D focusPoint(RenderState renderState, Rectangle bounds, Point2D focus) {
+    /**
+     * Start point for blending images while moving from one focus region to the next. The start point for the
+     * transition will be the focus region center point of the current actor image, assuming that both images feature
+     * the same focus region type (for instance the face).
+     * 
+     * @param currentFocus
+     * @param newFocus
+     * 
+     * @throws NullPointerException
+     *             When either current or new image is null
+     * 
+     * @return The start position of the new actor image.
+     */
+    public Point2D getTransitionVector(RenderState previousImage, Point2D currentFocus, RenderState nextFrame, Point2D newFocus, Rectangle bounds) {
+        var p0 = focusPoint(previousImage, bounds, currentFocus);
+        var p1 = focusPoint(nextFrame, bounds, newFocus);
+        return new Point2D.Double(p1.getX() - p0.getX(), p1.getY() - p0.getY());
+    }
+
+    private Point2D focusPoint(RenderState renderState, Rectangle bounds, Point2D focus) {
         updateSceneTransform(renderState, bounds);
         return renderState.transform.transform(Transform.scale(focus, renderState.displayImage.dimension()), new Point2D.Double());
     }
@@ -232,7 +251,7 @@ public class SceneRenderer {
         }
     }
 
-    private void updateSceneTransform(RenderState frame, Rectangle bounds) {
+    public void updateSceneTransform(RenderState frame, Rectangle bounds) {
         if (frame.displayImage != null) {
             frame.transform = surfaceTransform(
                     frame.displayImage.dimension(),

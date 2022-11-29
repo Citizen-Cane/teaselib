@@ -21,8 +21,7 @@ import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.concurrency.NoFuture;
 import teaselib.core.configuration.Configuration;
 import teaselib.host.Host;
-import teaselib.host.SceneRenderer;
-import teaselib.host.sexscripts.SexScriptsHost;
+import teaselib.host.Scene;
 import teaselib.util.AnnotatedImage;
 
 /**
@@ -138,11 +137,11 @@ public class AnimatedHost implements Host, Closeable {
     final AlphaBlend currentTextBlend = new AlphaBlend();
     final AlphaBlend previoustextBlend = new AlphaBlend();
 
-    private final SceneRenderer renderer;
+    private final Scene scene;
 
-    public AnimatedHost(Host host, SceneRenderer renderer) {
+    public AnimatedHost(Host host, Scene scene) {
         this.host = host;
-        this.renderer = renderer;
+        this.scene = scene;
         this.animator = NamedExecutorService.sameThread("Animate UI");
         setAnimationPaths(Animation.None, 0, 0);
     }
@@ -259,10 +258,9 @@ public class AnimatedHost implements Host, Closeable {
     private void translateFocus(Point2D currentFocusRegion, Point2D newFocusRegion) {
         previous.actualOffset = new Point2D.Double(0.0, 0.0);
         current.expectedOffset = new Point2D.Double(0.0, 0.0);
-        Point2D transition = ((SexScriptsHost) host).getTransitionVector(currentFocusRegion, newFocusRegion);
+        Point2D transition = scene.getTransitionVector(currentFocusRegion, newFocusRegion);
         current.actualOffset = new Point2D.Double(-transition.getX(), -transition.getY());
         previous.expectedOffset = transition;
-
     }
 
     private void setAnimationPaths(Animation animation, long currentTimeMillis, int transitionDuration) {

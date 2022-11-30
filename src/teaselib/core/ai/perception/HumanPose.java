@@ -202,8 +202,20 @@ public class HumanPose extends NativeObject.Disposible {
                 return Optional.empty();
             } else {
                 Point2D h = head.get();
-                float r = 1.0f / distance.orElse(1.0f) * 0.1f;
+                float r = 1.0f / distance.orElse(1.0f) * 0.2f;
                 return Optional.of(new Rectangle2D.Double(h.getX() - r, h.getY() - r, 2 * r, 2 * r));
+            }
+        }
+
+        // TODO actual bounding box
+        public Optional<Rectangle2D> body() {
+            if (head.isEmpty()) {
+                return Optional.empty();
+            } else {
+                Point2D p = head.get();
+                float r = 1.0f / distance.orElse(1.0f) * 0.4f;
+                double h = p.getY() - r;
+                return Optional.of(new Rectangle2D.Double(p.getX() - r, h, 2 * r, 1.0 - h));
             }
         }
 

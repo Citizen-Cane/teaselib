@@ -14,6 +14,9 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Optional;
 
+import teaselib.host.Transform.FitFunction;
+import teaselib.host.Transform.FocusFunction;
+
 /**
  * @author Citizen-Cane
  *
@@ -22,8 +25,14 @@ public class SceneRenderer {
 
     static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
-    final Image backgroundImage;
+    record View(FitFunction fit, FocusFunction focus) {
+        static final View FitOutside = new View(Transform::fitOutside, Transform::matchGoldenRatioOrKeepVisible);
+        static final View FitAspected = new View(Transform::fitAspected, Transform::matchFocusRegion);
+    }
 
+    final View view = View.FitAspected;
+
+    final Image backgroundImage;
     public final BufferedImageQueue surfaces;
     // final VolatileImageQueue textOverlays;
     public final BufferedImageQueue textOverlays;
@@ -31,15 +40,13 @@ public class SceneRenderer {
     final TextRenderer textRenderer = new TextRenderer();
 
     public SceneRenderer(Image backgroundImage, int surfaceBuffers) {
-        super();
         this.backgroundImage = backgroundImage;
         this.surfaces = new BufferedImageQueue(surfaceBuffers);
         // this.textOverlays = new VolatileImageQueue(2);
         this.textOverlays = new BufferedImageQueue(2);
     }
 
-    public void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage,
-            Rectangle bounds, Color backgroundColor) {
+    public void render(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage, Rectangle bounds, Color backgroundColor) {
         // Bicubic interpolation is an absolute performance killer for image transforming & scaling
         // g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
@@ -63,11 +70,19 @@ public class SceneRenderer {
             updateSceneTransform(frame, bounds);
         }
 
-        // Choose the smaller image for blending in order to hide as much of the background image as possible
-        if (previousImage.actorZoom < frame.actorZoom) {
-            drawImageStack(g2d, gc, frame, 1.0f - frame.sceneBlend, previousImage, bounds);
-        } else {
-            drawImageStack(g2d, gc, previousImage, frame.sceneBlend, frame, bounds);
+        var clip = g2d.getClip();
+        var r = createBlendClip(frame, previousImage, bounds);
+        if (r != null) {
+            g2d.setClip(r.x, r.y, r.width, r.height);
+        }
+        try {
+            drawScene(g2d, gc, frame, previousImage);
+            // ImageRenderer.drawDebugInfo(g2d, previousImage, bounds);
+            // ImageRenderer.drawDebugInfo(g2d, frame, bounds);
+        } finally {
+            if (r != null) {
+                g2d.setClip(clip);
+            }
         }
 
         if (frame.isIntertitle || previousImage.isIntertitle) {
@@ -88,34 +103,53 @@ public class SceneRenderer {
         if (frame.textBlend < 1.0) {
             drawTextOverlay(g2d, gc, previousImage);
         }
+
         drawTextOverlay(g2d, gc, frame);
     }
 
-    private static Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
-        Dimension image = frame.displayImage.dimension();
-        var transform = surfaceTransform(image, bounds, 1.0, focusRegion, new Point2D.Double());
-        return ImageRenderer.normalizedToGraphics(transform, image, focusRegion.get());
+    private Rectangle createBlendClip(RenderState current, RenderState previous, Rectangle bounds) {
+        Rectangle r1 = getBlendClipRect(current, bounds, current.actorZoom);
+        Rectangle r2 = getBlendClipRect(previous, bounds, 1.0);
+        if (r1 == null)
+            return r2;
+        if (r2 == null)
+            return r1;
+        return r1.union(r2);
     }
 
-    /**
-     * @param g2d
-     *            Graphics context
-     * @param bottom
-     *            Bottom image
-     * @param alpha
-     *            alpha blend factor
-     * @param top
-     *            Top image
-     * @param bounds
-     *            region
-     */
-    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha,
-            RenderState top, Rectangle bounds) {
+    private Rectangle getBlendClipRect(RenderState renderState, Rectangle bounds, double zoom) {
+        var image = renderState.displayImage;
+        if (image != null) {
+            var t = surfaceTransform(
+                    image.dimension(),
+                    bounds,
+                    zoom,
+                    renderState.focusRegion(),
+                    new Point2D.Double(0.0, 0.0));
+            return Transform.transform(t, 0.0, 0.0, image.getWidth(), image.getHeight());
+        } else {
+            return null;
+        }
+    }
+
+    private static void drawScene(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame, RenderState previousImage) {
+        if (previousImage.sceneBlend > 0.0f) {
+            // Choose the smaller image for blending in order to hide as much of the background image as possible
+            if (previousImage.actorZoom < frame.actorZoom) {
+                drawImageStack(g2d, gc, frame, 1.0f - frame.sceneBlend, previousImage);
+            } else {
+                drawImageStack(g2d, gc, previousImage, frame.sceneBlend, frame);
+            }
+        } else {
+            drawImage(g2d, gc, frame);
+        }
+    }
+
+    private static void drawImageStack(Graphics2D g2d, GraphicsConfiguration gc, RenderState bottom, float alpha, RenderState top) {
         if (top.isBackgroundVisisble() || alpha < 1.0) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f);
             g2d.setComposite(alphaComposite);
             drawImage(g2d, gc, bottom);
-            // ImageRenderer.drawDebugInfo(g2d, bottom, bounds);
         }
 
         if (alpha < 1.0f) {
@@ -124,7 +158,6 @@ public class SceneRenderer {
         }
 
         drawImage(g2d, gc, top);
-        // ImageRenderer.drawDebugInfo(g2d, top, bounds);
     }
 
     private static void drawImage(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
@@ -135,6 +168,36 @@ public class SceneRenderer {
                 frame.displayImage.draw(g2d, gc, frame.transform);
             }
         }
+    }
+
+    private Rectangle focusPixelArea(RenderState frame, Rectangle bounds, Optional<Rectangle2D> focusRegion) {
+        Dimension image = frame.displayImage.dimension();
+        var transform = surfaceTransform(image, bounds, 1.0, focusRegion, new Point2D.Double());
+        return ImageRenderer.normalizedToGraphics(transform, image, focusRegion.get());
+    }
+
+    /**
+     * Start point for blending images while moving from one focus region to the next. The start point for the
+     * transition will be the focus region center point of the current actor image, assuming that both images feature
+     * the same focus region type (for instance the face).
+     * 
+     * @param currentFocus
+     * @param newFocus
+     * 
+     * @throws NullPointerException
+     *             When either current or new image is null
+     * 
+     * @return The start position of the new actor image.
+     */
+    public Point2D getTransitionVector(RenderState previousImage, Point2D currentFocus, RenderState nextFrame, Point2D newFocus, Rectangle bounds) {
+        var p0 = focusPoint(previousImage, bounds, currentFocus);
+        var p1 = focusPoint(nextFrame, bounds, newFocus);
+        return new Point2D.Double(p1.getX() - p0.getX(), p1.getY() - p0.getY());
+    }
+
+    private Point2D focusPoint(RenderState renderState, Rectangle bounds, Point2D focus) {
+        updateSceneTransform(renderState, bounds);
+        return renderState.transform.transform(Transform.scale(focus, renderState.displayImage.dimension()), new Point2D.Double());
     }
 
     private static void renderIntertitle(Graphics2D g2d, RenderState frame, RenderState previousImage,
@@ -167,15 +230,14 @@ public class SceneRenderer {
         return alpha;
     }
 
-    private void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
+    private static void drawTextOverlay(Graphics2D g2d, GraphicsConfiguration gc, RenderState frame) {
         if (!frame.text.isBlank()) {
             draw(g2d, gc, frame.textImage, frame.textBlend, frame.textImageRegion);
             // textRenderer.drawDebugInfo(g2d);
         }
     }
 
-    void draw(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha,
-            Rectangle textArea) {
+    private static void draw(Graphics2D g2d, GraphicsConfiguration gc, AbstractValidatedImage<?> text, float alpha, Rectangle textArea) {
         if (alpha > 0.0f) {
             var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2d.setComposite(alphaComposite);
@@ -188,8 +250,6 @@ public class SceneRenderer {
             }
         }
     }
-
-    // TODO Add focus point update in order to control focus by animated host
 
     public void updateSceneTransform(RenderState frame, Rectangle bounds) {
         if (frame.displayImage != null) {
@@ -204,14 +264,14 @@ public class SceneRenderer {
         }
     }
 
-    private static AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, double zoom,
+    private AffineTransform surfaceTransform(Dimension image, Rectangle2D bounds, double zoom,
             Optional<Rectangle2D> focusRegion, Point2D displayImageOffset) {
         var surface = new AffineTransform();
         surface.concatenate(AffineTransform.getTranslateInstance(bounds.getMinX(), bounds.getMinY()));
-        surface.concatenate(Transform.maxImage(image, bounds, focusRegion));
+        surface.concatenate(Transform.maxImage(image, bounds, focusRegion, view.fit));
         if (focusRegion.isPresent()) {
             Rectangle2D imageFocusArea = Transform.scale(focusRegion.get(), image);
-            surface = Transform.matchGoldenRatioOrKeepVisible(surface, image, bounds, imageFocusArea);
+            surface = view.focus.apply(surface, image, bounds, imageFocusArea);
             surface.concatenate(Transform.zoom(imageFocusArea, zoom));
         }
         surface.preConcatenate(getTranslateInstance(displayImageOffset.getX(), displayImageOffset.getY()));

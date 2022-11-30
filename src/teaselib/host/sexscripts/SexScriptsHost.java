@@ -1,13 +1,11 @@
 package teaselib.host.sexscripts;
 
-import static java.awt.Transparency.*;
 import static java.util.function.Predicate.*;
 import static java.util.stream.Collectors.*;
 import static teaselib.core.concurrency.NamedExecutorService.*;
 
-import java.awt.BufferCapabilities;
+import java.awt.Color;
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics2D;
@@ -17,23 +15,17 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.Transparency;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -46,9 +38,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-import javax.imageio.ImageIO;
 import javax.swing.ComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -65,9 +55,9 @@ import ss.desktop.MainFrame;
 import teaselib.core.Closeable;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.PersistenceFilter;
+import teaselib.core.debug.DurationLogger;
 import teaselib.core.ui.AnimatedHost;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -80,12 +70,9 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.PropertyNameMappingPersistence;
 import teaselib.core.util.QualifiedName;
-import teaselib.host.AbstractValidatedImage;
 import teaselib.host.Host;
-import teaselib.host.RenderState;
+import teaselib.host.Scene;
 import teaselib.host.SceneRenderer;
-import teaselib.host.Transform;
-import teaselib.host.ValidatedBufferedImage;
 import teaselib.util.AnnotatedImage;
 import teaselib.util.Interval;
 
@@ -128,7 +115,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private final IScript ss;
     private final Thread mainThread;
     private final int originalDefaultCloseoperation;
-    Consumer<ScriptInterruptedEvent> onQuitHandler = null;
+    private Consumer<ScriptInterruptedEvent> onQuitHandler = null;
 
     private final MainFrame mainFrame;
     private final ImageIcon backgroundImageIcon;
@@ -145,13 +132,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     private final InputMethod inputMethod = new HostInputMethod(singleThreadedQueue(getClass().getSimpleName()), this);
 
     private final Image backgroundImage;
-
-    RenderState currentFrame = new RenderState();
-    RenderState nextFrame = new RenderState();
-    SceneRenderer renderer;
+    private final Scene scene;
 
     public static Host from(IScript script) {
-        return new AnimatedHost(new SexScriptsHost(script));
+        SexScriptsHost sexScriptsHost = new SexScriptsHost(script);
+        return new AnimatedHost(sexScriptsHost, sexScriptsHost.scene);
     }
 
     public SexScriptsHost(ss.IScript script) {
@@ -189,78 +174,43 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
         // With only 2 buffers, there is flicker during transitions,
         // and BufferStrategy results in rendering glitches
-        renderer = new SceneRenderer(backgroundImage, 8);
+        scene = new Scene(new SceneRenderer(backgroundImage, 8));
 
         this.originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
-        mainFrame.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {
-                // Ignore
-            }
-
-            @Override
-            public void windowIconified(WindowEvent e) {
-                // Ignore
-            }
-
-            @Override
-            public void windowDeiconified(WindowEvent e) {
-                // Ignore
-            }
-
-            @Override
-            public void windowDeactivated(WindowEvent e) {
-                // Ignore
-            }
-
+        mainFrame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
-                if (onQuitHandler != null) {
-                    try {
-                        mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-                        logger.info("Running quit handler {}", onQuitHandler.getClass().getName());
-                        ScriptInterruptedEvent reason = new ScriptInterruptedEvent(
-                                ScriptInterruptedEvent.Reason.WindowClosing);
-                        onQuitHandler.accept(reason);
-                    } finally {
-                        onQuitHandler = null;
-                    }
-                } else {
-                    mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
-                    mainThread.interrupt();
-                }
+                executeOnQuitHandler();
             }
+        });
 
+        mainFrame.addComponentListener(new ComponentAdapter() {
             @Override
-            public void windowClosed(WindowEvent e) {
-                // Ignore
-            }
-
-            @Override
-            public void windowActivated(WindowEvent e) {
-                // Ignore
+            public void componentResized(ComponentEvent e) {
+                scene.resize();
+                show();
             }
         });
 
         mainFrame.getJMenuBar().setVisible(false);
         setWindowState();
+    }
 
-        if (isFullScreen()) {
-            // Using three buffers seem to save 1 or 2ms
-            GraphicsConfiguration gc = mainFrame.getGraphicsConfiguration();
-            BufferCapabilities bufferCapabilities = gc.getBufferCapabilities();
-            mainFrame.createBufferStrategy(bufferCapabilities.isMultiBufferAvailable() ? 3 : 2);
-            if (bufferCapabilities.isFullScreenRequired()) {
-                gc.getDevice().setFullScreenWindow(mainFrame);
+    private void executeOnQuitHandler() {
+        if (onQuitHandler != null) {
+            try {
+                mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+                logger.info("Running quit handler {}", onQuitHandler.getClass().getName());
+                ScriptInterruptedEvent reason = new ScriptInterruptedEvent(
+                        ScriptInterruptedEvent.Reason.WindowClosing);
+                onQuitHandler.accept(reason);
+            } finally {
+                onQuitHandler = null;
             }
+        } else {
+            mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
+            mainThread.interrupt();
         }
-
-        mainFrame.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                resize();
-            }
-        });
     }
 
     Rectangle normalWindowPosition;
@@ -372,216 +322,48 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
     @Override
     public void showInterTitle(String text) {
-        synchronized (nextFrame) {
-            nextFrame.isIntertitle = true;
-            rotateTextOverlayBuffer(text);
-            rememberPreviousImage();
-        }
+        scene.showInterTitle(text, getContentBounds());
     }
-
-    RenderState previousImage = new RenderState();
 
     @Override
     public void show(AnnotatedImage displayImage, List<String> text) {
-        AbstractValidatedImage<?> image;
-        HumanPose.Estimation pose;
-        Set<AnnotatedImage.Annotation> annotations;
-        boolean updateDisplayImage;
-        if (displayImage != null) {
-            updateDisplayImage = !displayImage.resource.equals(nextFrame.displayImageResource);
-            try {
-                // TODO only necessary when different from frame image but need to synchronize to test
-                // -> cache in AnnotatedImage but on the other hand the images is supposed to be different on each call
-                // + caching is good for random image sets where images of each take are displayed multiple times
-                // -> cache images here to avoid using java.awt.Image outside host impl.
-                if (updateDisplayImage) {
-                    var gc = mainFrame.getGraphicsConfiguration();
-                    image = createDisplayImage(gc, displayImage);
-
-                    pose = displayImage.pose;
-                    annotations = displayImage.annotations;
-                } else {
-                    image = null;
-                    pose = null;
-                    annotations = null;
-                }
-            } catch (IOException e) {
-                image = null;
-                pose = HumanPose.Estimation.NONE;
-                annotations = null;
-                logger.error(e.getMessage(), e);
-            }
-        } else {
-            updateDisplayImage = true;
-            image = null;
-            pose = HumanPose.Estimation.NONE;
-            annotations = null;
-        }
-
-        synchronized (nextFrame) {
-            if (updateDisplayImage) {
-                if (displayImage != null) {
-                    nextFrame.displayImageResource = displayImage.resource;
-                    nextFrame.displayImage = image;
-                    nextFrame.pose = pose;
-                    nextFrame.annotations = annotations;
-                } else if (nextFrame.displayImageResource != null) {
-                    nextFrame.displayImageResource = null;
-                    nextFrame.displayImage = image;
-                    nextFrame.pose = pose;
-                    nextFrame.annotations = annotations;
-                }
-            }
-            nextFrame.isIntertitle = false;
-            rotateTextOverlayBuffer(text.stream().collect(Collectors.joining("\n")));
-            rememberPreviousImage();
-        }
-    }
-
-    private static AbstractValidatedImage<?> createDisplayImage(GraphicsConfiguration gc, AnnotatedImage displayImage) throws IOException {
-        BufferedImage image = ImageIO.read(new ByteArrayInputStream(displayImage.bytes));
-        if (image.getColorModel().equals(gc.getColorModel())) {
-            return new ValidatedBufferedImage(image);
-        } else {
-            BufferedImage compatible = gc.createCompatibleImage(image.getWidth(), image.getHeight(), OPAQUE);
-            var g2d = compatible.createGraphics();
-            g2d.drawImage(image, 0, 0, null);
-            g2d.dispose();
-            return new ValidatedBufferedImage(compatible);
-        }
+        scene.show(displayImage, text, mainFrame.getGraphicsConfiguration(), getContentBounds());
     }
 
     @Override
     public void setFocusLevel(float focusLevel) {
-        synchronized (nextFrame) {
-            nextFrame.focusLevel = focusLevel;
-        }
+        scene.setFocusLevel(focusLevel);
     }
 
-    public float resolutionZoomCorrectionFactor() {
-        Rectangle bounds = getContentBounds();
-        if (nextFrame.displayImage != null && previousImage.displayImage != null) {
-            if (bounds.width > bounds.height) {
-                return (float) (previousImage.displayImage.getWidth()) / nextFrame.displayImage.getWidth();
-            }
-        }
-        return 1.0f;
-    }
-
-    /**
-     * Start point for blending images while moving from one focus region to the next. The start point for the
-     * transition will be the focus region center point of the current actor image, assuming that both images feature
-     * the same focus region type (for instance the face).
-     * 
-     * @param newFocus
-     * @param currentFocus
-     *
-     * @throws NullPointerException
-     *             When either current or new image is null
-     * 
-     * @return The start position of the new actor image.
-     */
-
-    public Point2D getTransitionVector(Point2D currentFocus, Point2D newFocus) {
-        var bounds = getContentBounds();
-        var p0 = focusPoint(previousImage, bounds, currentFocus);
-        var p1 = focusPoint(nextFrame, bounds, newFocus);
-        return new Point2D.Double(p1.getX() - p0.getX(), p1.getY() - p0.getY());
-    }
-
-    private Point2D focusPoint(RenderState r, Rectangle bounds, Point2D focus) {
-        renderer.updateSceneTransform(r, bounds);
-        AffineTransform transform = r.transform;
-        return focusPoint(transform, new Dimension(r.displayImage.getWidth(), r.displayImage.getHeight()), focus);
-    }
-
-    private static Point2D focusPoint(AffineTransform transform, Dimension image, Point2D focus) {
-        return transform.transform(Transform.scale(focus, image), new Point2D.Double());
+    @Override
+    public void setActorZoom(double zoom) {
+        scene.setActorZoom(zoom);
     }
 
     @Override
     public void setTransition(Point2D prev, double prevZoom, Point2D cur, double nextZoom, float sceneBlend,
             float textBlendIn, float textBlendOut) {
-        synchronized (nextFrame) {
-            previousImage.displayImageOffset = new Point2D.Double(prev.getX(), prev.getY());
-            previousImage.actorZoom = prevZoom;
-            nextFrame.displayImageOffset = new Point2D.Double(cur.getX(), cur.getY());
-            nextFrame.actorZoom = nextZoom;
-            nextFrame.sceneBlend = sceneBlend;
-
-            previousImage.textBlend = textBlendOut;
-            nextFrame.textBlend = textBlendIn;
-        }
+        scene.setTransition(prev, prevZoom, cur, nextZoom, sceneBlend, textBlendIn, textBlendOut);
     }
 
     @Override
-    public void setActorZoom(double zoom) {
-        synchronized (nextFrame) {
-            nextFrame.actorZoom = zoom;
-        }
+    public void endScene() {
+        scene.endScene(getContentBounds());
     }
 
-    private void resize() {
-        currentFrame.repaintSceneImage = true;
-        currentFrame.repaintTextImage = true;
-        show();
-    }
+    private DurationLogger frameTimesLogger = new DurationLogger(logger);
 
     @Override
     public void show() {
-        synchronized (nextFrame) {
-            nextFrame.updateFrom(currentFrame);
-            currentFrame = nextFrame;
-            render(currentFrame);
-            nextFrame = currentFrame.copy();
-        }
+        frameTimesLogger.trace(this::renderAndShowScene);
     }
 
-    private final Deque<Long> frametimes = new ArrayDeque<>(100);
     private final Lock renderLock = new ReentrantLock();
 
-    private void render(RenderState frame) {
-        logFrameTimes(() -> {
-            GraphicsConfiguration gc = mainFrame.getGraphicsConfiguration();
-            Rectangle bounds = getContentBounds();
-            if (isFullScreen()) {
-                // Halves frame times in VM, but double times on Surface 4 Pro Hardware
-                // renderBufferStrategy(frame, gc, bounds);
-                renderImageIcon(gc, frame, bounds);
-            } else {
-                renderImageIcon(gc, frame, bounds);
-            }
-        });
-    }
-
-    @SuppressWarnings("unused")
-    private void renderBufferStrategy(RenderState frame, GraphicsConfiguration gc, Rectangle bounds) {
-        BufferStrategy bufferStrategy = mainFrame.getBufferStrategy();
-        do {
-            do {
-                Graphics2D g2d = (Graphics2D) bufferStrategy.getDrawGraphics();
-                renderer.render(g2d, gc, frame, previousImage, bounds, mainFrame.getBackground());
-                g2d.dispose();
-            } while (bufferStrategy.contentsRestored());
-            bufferStrategy.show();
-        } while (bufferStrategy.contentsLost() || contentsLost(frame) || contentsLost(previousImage));
-        Set<JComponent> activeComponents = activeComponents();
-        if (!activeComponents.isEmpty()) {
-            // PrettyButton edges show the background image, not rendered over surface
-            activeComponents.stream().forEach(c -> c.repaint(100));
-        }
-    }
-
-    private void renderImageIcon(GraphicsConfiguration gc, RenderState frame, Rectangle bounds) {
-        int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
-        bounds.width += horizontalAdjustment;
-        var image = renderer.surfaces.rotateBuffer(gc, bounds);
-        bounds.width -= horizontalAdjustment;
-        Graphics2D g2d = image.createGraphics();
-        do {
-            renderer.render(g2d, gc, frame, previousImage, bounds, mainFrame.getBackground());
-        } while (contentsLost(frame) || contentsLost(previousImage));
-        g2d.dispose();
+    private void renderAndShowScene() {
+        var gc = mainFrame.getGraphicsConfiguration();
+        var bounds = getContentBounds();
+        var image = renderImageIcon(gc, bounds);
         renderLock.lock();
         try {
             EventQueue.invokeLater(() -> {
@@ -597,27 +379,17 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         }
     }
 
-    public boolean contentsLost(RenderState frame) {
-        return contentsLost(frame.displayImage) || contentsLost(frame.textImage);
-    }
-
-    private static boolean contentsLost(AbstractValidatedImage<?> displayImage) {
-        return displayImage != null && displayImage.contentsLost();
-    }
-
-    private void logFrameTimes(Runnable task) {
-        long start = System.currentTimeMillis();
-        task.run();
-
-        if (logger.isDebugEnabled()) {
-            long now = System.currentTimeMillis();
-            long frameTime = now - start;
-            if (frametimes.size() > 100) {
-                frametimes.remove();
-            }
-            frametimes.add(frameTime);
-            logger.debug("Frame time: {}ms", frametimes.stream().reduce(0L, Math::addExact) / frametimes.size());
+    private BufferedImage renderImageIcon(GraphicsConfiguration gc, Rectangle bounds) {
+        int horizontalAdjustment = getHorizontalAdjustmentForPixelCorrectImage();
+        bounds.width += horizontalAdjustment;
+        var image = scene.renderer.surfaces.rotateBuffer(gc, bounds);
+        bounds.width -= horizontalAdjustment;
+        Graphics2D g2d = image.createGraphics();
+        Color background = mainFrame.getBackground();
+        while (!scene.render(g2d, bounds, gc, background)) { // repeat
         }
+        g2d.dispose();
+        return image;
     }
 
     private int getHorizontalAdjustmentForPixelCorrectImage() {
@@ -635,34 +407,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         JRootPane rootPane = mainFrame.getRootPane();
         rootPane.paintImmediately(getContentBounds());
         Toolkit.getDefaultToolkit().sync();
-    }
-
-    @Override
-    public void endScene() {
-        synchronized (nextFrame) {
-            // Keep the image, remove any text to provide some feedback
-            String text = "";
-            rotateTextOverlayBuffer(text);
-            rememberPreviousImage();
-        }
-    }
-
-    private void rotateTextOverlayBuffer(String text) {
-        nextFrame.text = text;
-        nextFrame.textImage = new ValidatedBufferedImage(
-                (gc, w, h, t) -> {
-                    return renderer.textOverlays.rotateBuffer(mainFrame.getGraphicsConfiguration(),
-                            getContentBounds());
-                }, Transparency.TRANSLUCENT);
-        // TODO Make transparency a parameter of the buffer queue, or queue validated images
-
-        var bounds = getContentBounds();
-        nextFrame.textImage.setSize(bounds.width, bounds.height);
-
-    }
-
-    private void rememberPreviousImage() {
-        previousImage = currentFrame;
     }
 
     @Override

@@ -42,7 +42,7 @@ public class RenderState {
 
     public boolean repaintTextImage;
     public AbstractValidatedImage<?> textImage;
-    public Rectangle textImageRegion;
+    Rectangle textImageRegion;
     public float textBlend;
 
     public RenderState() {
@@ -116,7 +116,8 @@ public class RenderState {
                 || displayImageOffset.getX() != 0.0
                 || displayImageOffset.getY() != 0.0
                 || sceneBlend < 1.0f
-                || actorZoom < 1.0;
+                || actorZoom < 1.0
+                || true; // TODO remove test code;
     }
 
     Optional<Rectangle2D> focusRegion() {
@@ -126,7 +127,7 @@ public class RenderState {
             if (focusRegion.isEmpty()) {
                 focusRegion = Optional.of(new Rectangle2D.Double(0.4, 0.4, 0.2, 0.2));
             }
-        } else if (annotations.contains(Annotation.Person.Actor)) {
+        } else if (annotations.contains(Annotation.Person.Model)) {
             // TODO images with non-actor models may be focused on as well,
             // probably only the whole body -> pose.bounds
             focusRegion = Optional.empty();

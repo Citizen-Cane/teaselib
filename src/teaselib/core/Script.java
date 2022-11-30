@@ -564,11 +564,7 @@ public abstract class Script {
             teaseLib.host.show();
             choice = getDistinctChoice(prompt);
         }
-        // TODO manual zoom reset is a quick reaction, but looks weird when waiting for it in AnimatedHost
-        // + There will always be a short delay between answering the prompt and displaying the next animation
-        // - must be tested with quick animation duration, and there might be a small hickup in the animations
-        // -> TODO don't wait for in AnimatedHost, just change the direction
-        // teaseLib.host.setActorZoom(1.0);
+        // actor zoom will be reset automatically when displaying the next actor image
 
         String answer = "< " + choice.display;
         logger.info("{}", answer);

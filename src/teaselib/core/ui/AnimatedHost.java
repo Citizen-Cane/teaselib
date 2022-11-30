@@ -21,7 +21,7 @@ import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.concurrency.NoFuture;
 import teaselib.core.configuration.Configuration;
 import teaselib.host.Host;
-import teaselib.host.sexscripts.SexScriptsHost;
+import teaselib.host.Scene;
 import teaselib.util.AnnotatedImage;
 
 /**
@@ -137,8 +137,11 @@ public class AnimatedHost implements Host, Closeable {
     final AlphaBlend currentTextBlend = new AlphaBlend();
     final AlphaBlend previoustextBlend = new AlphaBlend();
 
-    public AnimatedHost(Host host) {
+    private final Scene scene;
+
+    public AnimatedHost(Host host, Scene scene) {
         this.host = host;
+        this.scene = scene;
         this.animator = NamedExecutorService.sameThread("Animate UI");
         setAnimationPaths(Animation.None, 0, 0);
     }
@@ -212,25 +215,13 @@ public class AnimatedHost implements Host, Closeable {
             Optional<Point2D> newFocusRegion = newImage != null ? newImage.pose.head : Optional.empty();
             boolean sameRegion = true && currentFocusRegion.isPresent() && newFocusRegion.isPresent();
             if (sameRegion) {
-                if (newDistance != 0.0f && newDistance < currentDistance) {
-                    // -> New image nearer
-                    if (current.actualZoom >= currentDistance / newDistance) {
-                        // -> current image zoomed and new image can can be zoomed to match current focus region size
-                        skipUnzoom(currentDistance, newDistance);
-                        translateFocus(currentFocusRegion.get(), newFocusRegion.get());
-                    } else {
-                        translateToNearerDistance(currentDistance, newDistance);
-                        translateFocus(currentFocusRegion.get(), newFocusRegion.get());
-                    }
-                } else if (currentDistance != 0.0f && newDistance > currentDistance) {
-                    // -> new image farer - translate new image starting as zoomed as current image
-                    translateToFarerDistance(currentDistance, newDistance);
-                    translateFocus(currentFocusRegion.get(), newFocusRegion.get());
+                if (newDistance != 0.0f && currentDistance != 0.0f) {
+                    zoomToDistance(currentDistance, newDistance);
                 } else {
                     previous.actualZoom = current.actualZoom;
                     previous.expectedZoom = current.expectedZoom;
-                    translateFocus(currentFocusRegion.get(), newFocusRegion.get());
                 }
+                translateFocus(currentFocusRegion.get(), newFocusRegion.get());
             } else {
                 translateFocusToOrigin();
             }
@@ -253,33 +244,10 @@ public class AnimatedHost implements Host, Closeable {
         }
     }
 
-    private void skipUnzoom(float currentDistance, float newDistance) {
-        // TODO test with real animations - can probably be removed altogether since blending works
-
-        // float resolutionZoomCorrectionFactor = ((SexScriptsHost) host).resolutionZoomCorrectionFactor();
-        // previous.expectedZoom = currentDistance / newDistance * resolutionZoomCorrectionFactor;
-
-        // previous.expectedZoom = currentDistance / newDistance;
-
-        current.actualZoom = Math.min(1.0, current.actualZoom * newDistance / currentDistance);
-        // TODO actor zoom should only be reseted here, and when dismissing an answer
-        // - but without synchronization between script and animation
-        // - there's a small stutter caused by the script attempting to zoom out during animations
-        // -> reset zoom (see code above) as dismissing a prompt is followed by displaying a new image
-    }
-
-    private void translateToNearerDistance(float currentDistance, float newDistance) {
+    private void zoomToDistance(float currentDistance, float newDistance) {
         previous.actualZoom = current.actualZoom;
-        float resolutionZoomCorrectionFactor = ((SexScriptsHost) host).resolutionZoomCorrectionFactor();
-        previous.expectedZoom = currentDistance / newDistance * resolutionZoomCorrectionFactor;
-        current.actualZoom = newDistance / currentDistance / resolutionZoomCorrectionFactor;
-    }
-
-    private void translateToFarerDistance(float currentDistance, float newDistance) {
-        previous.actualZoom = current.actualZoom;
-        float resolutionZoomCorrectionFactor = ((SexScriptsHost) host).resolutionZoomCorrectionFactor();
-        previous.expectedZoom = currentDistance / newDistance * resolutionZoomCorrectionFactor;
-        current.actualZoom = newDistance / currentDistance / resolutionZoomCorrectionFactor;
+        previous.expectedZoom = currentDistance / newDistance;
+        current.actualZoom = newDistance / currentDistance;
     }
 
     private void translateFocusToOrigin() {
@@ -290,10 +258,9 @@ public class AnimatedHost implements Host, Closeable {
     private void translateFocus(Point2D currentFocusRegion, Point2D newFocusRegion) {
         previous.actualOffset = new Point2D.Double(0.0, 0.0);
         current.expectedOffset = new Point2D.Double(0.0, 0.0);
-        Point2D transition = ((SexScriptsHost) host).getTransitionVector(currentFocusRegion, newFocusRegion);
+        Point2D transition = scene.getTransitionVector(currentFocusRegion, newFocusRegion);
         current.actualOffset = new Point2D.Double(-transition.getX(), -transition.getY());
         previous.expectedOffset = transition;
-
     }
 
     private void setAnimationPaths(Animation animation, long currentTimeMillis, int transitionDuration) {
@@ -328,10 +295,13 @@ public class AnimatedHost implements Host, Closeable {
     @Override
     public void setActorZoom(double zoom) {
         synchronized (animator) {
-            animationTask.cancel(true);
-            current.expectedZoom = zoom;
-            current.pathz = new AnimationPath.Linear(current.actualZoom, current.expectedZoom,
-                    System.currentTimeMillis(), ZOOM_DURATION);
+            if (zoom != current.expectedZoom) {
+                animationTask.cancel(true);
+                current.expectedZoom = zoom;
+                current.pathz = new AnimationPath.Linear(
+                        current.actualZoom, current.expectedZoom,
+                        System.currentTimeMillis(), ZOOM_DURATION);
+            }
         }
     }
 

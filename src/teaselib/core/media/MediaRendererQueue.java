@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -198,7 +199,7 @@ public class MediaRendererQueue {
         return futures;
     }
 
-    public boolean hasCompletedStarts() {
+    public boolean hasCompletedStart() {
         synchronized (activeRenderers) {
             if (!activeRenderers.isEmpty()) {
                 for (MediaRenderer.Threaded renderer : activeRenderers.keySet()) {
@@ -237,40 +238,60 @@ public class MediaRendererQueue {
         return true;
     }
 
-    public Future<?> submit(MediaRenderer.Threaded mediaRenderer) {
+    public void submit(MediaRenderer.Threaded mediaRenderer) {
         synchronized (activeRenderers) {
             Future<?> task = executor.submit(mediaRenderer);
             Future<?> future = new MediaRendererFutureTask(mediaRenderer, task);
             activeRenderers.put(mediaRenderer, future);
-            return future;
         }
     }
 
-    public List<Future<?>> cancel(List<MediaRenderer.Threaded> mediaRenderers,
+    public void cancel(List<MediaRenderer.Threaded> mediaRenderers,
             Predicate<MediaRenderer.Threaded> matching) {
         synchronized (activeRenderers) {
             List<Future<?>> futures = drain(mediaRenderers.stream().filter(matching).toList());
             cancel(futures);
-            return futures;
         }
     }
 
-    public Future<?> cancel(MediaRenderer.Threaded mediaRenderer) {
+    public void cancel(MediaRenderer.Threaded mediaRenderer) {
         synchronized (activeRenderers) {
             Future<?> future = activeRenderers.remove(mediaRenderer);
-            return cancel(future);
+            if (future == null) {
+                throw noSuchElementExecption(mediaRenderer);
+            } else {
+                cancel(future);
+            }
         }
+    }
+
+    public void join(MediaRenderer.Threaded mediaRenderer) throws InterruptedException {
+        if (mediaRenderer == MediaRenderer.None) {
+            return;
+        } else {
+            synchronized (activeRenderers) {
+                var future = activeRenderers.remove(mediaRenderer);
+                if (future == null) {
+                    throw noSuchElementExecption(mediaRenderer);
+                } else {
+                    join(future);
+                }
+            }
+        }
+    }
+
+    private static NoSuchElementException noSuchElementExecption(MediaRenderer.Threaded mediaRenderer) {
+        return new NoSuchElementException("MediaRenderer " + mediaRenderer + " not managed by this render queue");
     }
 
     private void cancel(List<Future<?>> futures) {
         futures.stream().forEach(this::cancel);
     }
 
-    private Future<?> cancel(Future<?> future) {
+    private void cancel(Future<?> future) {
         if (!future.isDone() && !future.isCancelled()) {
             future.cancel(true);
         }
-        return future;
     }
 
     private static void join(List<Future<?>> futures) throws InterruptedException {

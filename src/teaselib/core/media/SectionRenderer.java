@@ -91,8 +91,10 @@ public class SectionRenderer implements Closeable {
                 mandatoryCompleted();
                 finalizeRendering(this);
             } catch (InterruptedException | ScriptInterruptedException e) {
-                renderQueue.cancel(currentRenderer);
-                currentRenderer = MediaRenderer.None;
+                if (currentRenderer != MediaRenderer.None) {
+                    renderQueue.cancel(currentRenderer);
+                    currentRenderer = MediaRenderer.None;
+                }
                 if (backgroundSoundRenderer != null) {
                     renderQueue.cancel(backgroundSoundRenderer);
                     backgroundSoundRenderer = null;
@@ -327,6 +329,7 @@ public class SectionRenderer implements Closeable {
 
     private void renderTimeSpannedPart(MediaRenderer.Threaded renderer) throws InterruptedException {
         awaitSectionMandatory();
+        renderQueue.join(currentRenderer);
         renderQueue.submit(renderer);
         this.currentRenderer = renderer;
     }
@@ -396,6 +399,7 @@ public class SectionRenderer implements Closeable {
 
     private void awaitSectionAll() throws InterruptedException {
         currentRenderer.awaitAllCompleted();
+        renderQueue.join(currentRenderer);
         currentRenderer = MediaRenderer.None;
     }
 

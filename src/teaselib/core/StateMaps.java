@@ -17,7 +17,7 @@ public class StateMaps {
         private static final long serialVersionUID = 1L;
     }
 
-    final TeaseLib teaseLib;
+    public final TeaseLib teaseLib;
     final Domains cache = new Domains();
 
     StateMaps(TeaseLib teaseLib) {

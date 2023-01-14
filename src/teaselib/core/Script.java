@@ -1,7 +1,6 @@
 package teaselib.core;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -172,6 +171,7 @@ public abstract class Script {
     private static final float UNTIL_EXPIRED_LIMIT_FACTOR = 1.0f;
 
     protected void handleAutoRemove() {
+        teaseLib.itemLogger.log("Auto-Remove persisted items");
         long startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
         var persistedDomains = teaseLib.state(TeaseLib.DefaultDomain, StateImpl.Internal.PERSISTED_DOMAINS_STATE);
         List<String> domains = ((StateImpl) persistedDomains).peers().stream().map(QualifiedString::toString).toList();
@@ -179,7 +179,8 @@ public abstract class Script {
             if (domain.equalsIgnoreCase(StateImpl.Domain.LAST_USED)) {
                 continue;
             } else {
-                domain = domain.equalsIgnoreCase(StateImpl.Internal.DEFAULT_DOMAIN_NAME) ? TeaseLib.DefaultDomain
+                domain = domain.equalsIgnoreCase(StateImpl.Internal.DEFAULT_DOMAIN_NAME)
+                        ? TeaseLib.DefaultDomain
                         : domain;
                 boolean allRemoved = !handleUntilRemoved(domain, startupTimeSeconds).applied();
                 boolean allExpired = !handleUntilExpired(domain, startupTimeSeconds).applied();
@@ -204,26 +205,35 @@ public abstract class Script {
             float expirationFactor) {
         var untilState = (StateImpl) teaseLib.state(domain, until);
         Set<QualifiedString> peers = untilState.peers();
-        for (QualifiedString peer : new ArrayList<>(peers)) {
-            if (peer.isItem()) {
-                Item candidate = teaseLib.item(domain, peer);
-                if (candidate == Item.NotFound) {
-                    continue;
-                } else {
-                    var item = AbstractProxy.removeProxy(candidate);
-                    if (allUserItemReferencesRemoved(item)) {
-                        remove(item);
-                    } else if (autoRemovalLimitReached(item, startupTimeSeconds, minimumDuration, expirationFactor)) {
-                        remove(item);
-                    }
-                }
+
+        var items = peers.stream()
+                .filter(QualifiedString::isItem)
+                .map(peer -> teaseLib.findItem(domain, peer.kind(), peer.guid().get()))
+                .map(AbstractProxy::undecorate)
+                .filter(ItemImpl.class::isInstance)
+                .map(ItemImpl.class::cast)
+                .toList();
+        for (ItemImpl item : items) {
+            if (item == Item.NotFound) {
+                continue;
             } else {
-                var state = (StateImpl) teaseLib.state(domain, peer);
-                if (allUserItemReferencesRemoved(state)) {
-                    remove(state);
-                } else if (autoRemovalLimitReached(state, startupTimeSeconds, minimumDuration, expirationFactor)) {
-                    remove(state);
+                if (allUserItemReferencesRemoved(item)) {
+                    remove(item);
+                } else if (autoRemovalLimitReached(item, startupTimeSeconds, minimumDuration, expirationFactor)) {
+                    remove(item);
                 }
+            }
+        }
+
+        var states = peers.stream()
+                .filter(Predicate.not(QualifiedString::isItem))
+                .map(peer -> (StateImpl) teaseLib.state(domain, peer))
+                .map(StateImpl.class::cast).toList();
+        for (StateImpl state : states) {
+            if (allUserItemReferencesRemoved(state)) {
+                remove(state);
+            } else if (autoRemovalLimitReached(state, startupTimeSeconds, minimumDuration, expirationFactor)) {
+                remove(state);
             }
         }
         return untilState;

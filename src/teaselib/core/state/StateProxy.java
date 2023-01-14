@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.Duration;
 import teaselib.State;
+import teaselib.core.ItemLogger;
 import teaselib.core.ScriptEvents;
 import teaselib.core.StateImpl;
 import teaselib.core.util.QualifiedString;
@@ -17,25 +18,34 @@ import teaselib.core.util.QualifiedString;
  *
  */
 public class StateProxy extends AbstractProxy<State> implements State, State.Attributes {
-    final ScriptEvents events;
+
+    private final ScriptEvents events;
+    private ItemLogger itemLogger;
 
     public StateProxy(String namespace, State state, ScriptEvents events) {
         super(namespace, state);
         this.events = events;
+        this.itemLogger = ((StateImpl) state).cache.teaseLib.itemLogger;
     }
 
     @Override
     public Options apply() {
+        var stateImpl = (StateImpl) state;
+
         injectNamespace();
-        StateOptionsProxy options = new StateOptionsProxy(namespace, state.apply(), events);
+        var options = new StateOptionsProxy(stateImpl, namespace, state.apply(), itemLogger);
+        itemLogger.log(stateImpl, "apply");
+
         events.stateApplied.fire(new ScriptEvents.StateChangedEventArgs(state));
         return options;
     }
 
     @Override
-    public Options applyTo(Object... items) {
+    public Options applyTo(Object... peers) {
         injectNamespace();
-        StateOptionsProxy options = new StateOptionsProxy(namespace, state.applyTo(items), events);
+        var options = new StateOptionsProxy((StateImpl) state, namespace, state.applyTo(peers), itemLogger);
+        itemLogger.log((StateImpl) state, "applyTo", peers);
+
         events.stateApplied.fire(new ScriptEvents.StateChangedEventArgs(state));
         return options;
     }
@@ -50,18 +60,24 @@ public class StateProxy extends AbstractProxy<State> implements State, State.Att
     }
 
     @Override
-    public boolean is(Object... objects) {
-        return state.is(objects);
+    public boolean is(Object... attributes) {
+        boolean is = state.is(attributes);
+        itemLogger.log((StateImpl) state, "is", attributes, is);
+        return is;
     }
 
     @Override
     public boolean applied() {
-        return state.applied();
+        boolean applied = state.applied();
+        itemLogger.log((StateImpl) state, "applied", applied);
+        return applied;
     }
 
     @Override
     public boolean expired() {
-        return state.expired();
+        boolean expired = state.expired();
+        itemLogger.log((StateImpl) state, "expired", expired);
+        return expired;
     }
 
     @Override
@@ -73,22 +89,29 @@ public class StateProxy extends AbstractProxy<State> implements State, State.Att
     public void remove() {
         events.stateRemoved.fire(new ScriptEvents.StateChangedEventArgs(state));
         state.remove();
+        itemLogger.log((StateImpl) state, "remove");
     }
 
     @Override
     public void removeFrom(Object... peers) {
         events.stateRemoved.fire(new ScriptEvents.StateChangedEventArgs(state));
         state.removeFrom(peers);
+        itemLogger.log((StateImpl) state, "removeFRom", peers);
+
     }
 
     @Override
     public boolean removed() {
-        return state.removed();
+        boolean removed = state.removed();
+        itemLogger.log((StateImpl) state, "removed", removed);
+        return removed;
     }
 
     @Override
     public long removed(TimeUnit unit) {
-        return state.removed(unit);
+        long removed = state.removed(unit);
+        itemLogger.log((StateImpl) state, "removed", removed, unit);
+        return removed;
     }
 
     @Override

@@ -49,6 +49,15 @@ public class AbstractProxy<T> {
         return stateImpl(item);
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T undecorate(T item) {
+        if (item instanceof AbstractProxy<?> proxy) {
+            return (T) proxy.state;
+        } else {
+            return item;
+        }
+    }
+
     private static <T> Object removeProxy(T item) {
         if (item instanceof Item) {
             return itemImpl((Item) item);

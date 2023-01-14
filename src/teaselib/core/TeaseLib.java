@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,6 +66,7 @@ import teaselib.util.math.Random;
 
 public class TeaseLib implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLib.class);
+    private static final Logger itemLoggerLog = LoggerFactory.getLogger("Items");
 
     public static final String DefaultDomain = "";
     public static final String DefaultName = "";
@@ -77,6 +78,7 @@ public class TeaseLib implements Closeable {
     final Persistence persistence;
     final UserItems userItems;
     public final TeaseLibLogger transcript;
+    public final ItemLogger itemLogger;
 
     public final Configuration config;
     public final ObjectMap globals = new ObjectMap();
@@ -113,6 +115,7 @@ public class TeaseLib implements Closeable {
 
         this.userItems = new UserItemsImpl(this);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
+        this.itemLogger = new ItemLogger(itemLoggerLog::info);
 
         this.stateMaps = new StateMaps(this);
         this.devices = new Devices(config);
@@ -387,12 +390,12 @@ public class TeaseLib implements Closeable {
         return timeOfDay(milis, unit);
     }
 
-    static TimeOfDay timeOfDay(LocalDateTime time, long days) {
-        return new TimeOfDayImpl(time, days);
+    TimeOfDay timeOfDay(LocalDateTime time, long days) {
+        return new TimeOfDayImpl(time, days, itemLogger);
     }
 
-    private static TimeOfDay timeOfDay(long time, TimeUnit unit) {
-        return new TimeOfDayImpl(localDateTime(time, unit), 0);
+    private TimeOfDay timeOfDay(long time, TimeUnit unit) {
+        return new TimeOfDayImpl(localDateTime(time, unit), 0, itemLogger);
     }
 
     static LocalDateTime localDateTime(long time, TimeUnit unit) {

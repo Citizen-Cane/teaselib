@@ -49,7 +49,7 @@ public class QualifiedStringMapping {
             ItemImpl item = (ItemImpl) object;
             return item.name;
         } else {
-            throw new UnsupportedOperationException(object.toString());
+            throw new UnsupportedOperationException(object.getClass().getSimpleName() + " " + object);
         }
     }
 
@@ -62,7 +62,7 @@ public class QualifiedStringMapping {
         return mapper.apply(precondition.apply(removeProxies(flatten(peers))));
     }
 
-    private static Collection<Object> flatten(Object... peers) {
+    public static Collection<Object> flatten(Object... peers) {
         List<Object> flattenedPeers = new ArrayList<>(peers.length);
         for (Object peer : peers) {
             if (peer instanceof ItemsImpl items) {

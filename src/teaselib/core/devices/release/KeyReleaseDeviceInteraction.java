@@ -156,18 +156,16 @@ public class KeyReleaseDeviceInteraction extends DeviceInteractionImplementation
      */
     public void setDefaults(Actor actor) {
 
-        var cuffs = teaseLib.items(//
+        var cuffs = teaseLib.items(
                 teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wrist_Restraints, Bondage.Ankle_Restraints)
-                        .matching(Features.Lockable).matching(Features.Detachable), //
-                teaseLib.items(TeaseLib.DefaultDomain, Toys.Collar, Toys.Humbler) //
-                        .matching(Features.Lockable) //
-        );
+                        .matching(Features.Lockable).matching(Features.Detachable),
+                teaseLib.items(TeaseLib.DefaultDomain, Toys.Collar, Toys.Humbler)
+                        .matching(Features.Lockable));
 
-        var handcuffs = new ItemsImpl( //
+        var handcuffs = teaseLib.items(
                 teaseLib.items(TeaseLib.DefaultDomain, Bondage.Wrist_Restraints, Bondage.Ankle_Restraints)
-                        .matching(Features.Lockable).without(Features.Detachable), //
-                teaseLib.items(TeaseLib.DefaultDomain, Bondage.Chains) //
-        );
+                        .matching(Features.Lockable).without(Features.Detachable),
+                teaseLib.items(TeaseLib.DefaultDomain, Bondage.Chains));
 
         prepare(actor, handcuffs, 1, TimeUnit.HOURS, DefaultInstructions);
         prepare(actor, cuffs, 2, TimeUnit.HOURS, DefaultInstructions);

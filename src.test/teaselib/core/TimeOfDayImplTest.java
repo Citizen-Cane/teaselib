@@ -1,12 +1,13 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static teaselib.core.TimeOfDayImpl.*;
+import static teaselib.core.TimeOfDayImpl.hours;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -71,8 +72,8 @@ public class TimeOfDayImplTest {
     @Test
     public void testAnyOf() {
         LocalDate today = LocalDate.now();
-        assertTrue(new TimeOfDayImpl(LocalDateTime.of(today, LocalTime.of(4, 0)), 0).isAnyOf(Daytime.Night, Daytime.Forenoon));
-        assertFalse(new TimeOfDayImpl(LocalDateTime.of(today, LocalTime.of(4, 0)), 0).isAnyOf(Daytime.Morning, Daytime.Forenoon));
+        assertTrue(new TimeOfDayImpl(LocalDateTime.of(today, LocalTime.of(4, 0)), 0, ItemLogger.None).isAnyOf(Daytime.Night, Daytime.Forenoon));
+        assertFalse(new TimeOfDayImpl(LocalDateTime.of(today, LocalTime.of(4, 0)), 0, ItemLogger.None).isAnyOf(Daytime.Morning, Daytime.Forenoon));
     }
 
     @Test

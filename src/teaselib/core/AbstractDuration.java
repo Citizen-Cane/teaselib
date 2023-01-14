@@ -92,7 +92,7 @@ public abstract class AbstractDuration implements Duration {
         long days = ChronoUnit.DAYS.between(
                 LocalDate.ofYearDay(fromDate.getYear(), fromDate.getDayOfYear()),
                 LocalDate.ofYearDay(toDate.getYear(), toDate.getDayOfYear()));
-        return TeaseLib.timeOfDay(toDate, days);
+        return teaseLib.timeOfDay(toDate, days);
     }
 
     @Override

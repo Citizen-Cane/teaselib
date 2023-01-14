@@ -1,7 +1,5 @@
 package teaselib.core;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -15,13 +13,6 @@ import teaselib.util.Items.Query;
 
 // TODO package private - requires moving a bunch of other classes
 public abstract class ItemsQueryImpl implements Items.Query {
-
-    public static final Query None = new ItemsQueryImpl() {
-        @Override
-        public ItemsImpl inventory() {
-            return (ItemsImpl) Items.None;
-        }
-    };
 
     @Override
     public Query prefer(Enum<?>... values) {
@@ -199,15 +190,13 @@ public abstract class ItemsQueryImpl implements Items.Query {
     public Items.Set getApplicableSet() {
         // TODO match best set according to prefer() and matching already applied items
         Map<QualifiedString, Item> items = new LinkedHashMap<>();
-        Iterator<Item> iterator = inventory().iterator();
-        while (iterator.hasNext()) {
-            var item = iterator.next();
+        for (var item : inventory()) {
             ItemImpl impl = AbstractProxy.removeProxy(item);
-            if (item.canApply() && !items.containsKey(impl.kind())) {
+            if (impl.canApply() && !items.containsKey(impl.kind())) {
                 items.put(impl.kind(), item);
             }
         }
-        return new ItemsImpl(new ArrayList<>(items.values()));
+        return new ItemsImpl(items.values());
     }
 
     @Override

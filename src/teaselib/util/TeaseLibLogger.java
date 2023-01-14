@@ -18,7 +18,7 @@ public class TeaseLibLogger {
     private final static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
 
     public enum Level {
-        None,
+        Error,
         Info,
         Debug
     }
@@ -27,9 +27,7 @@ public class TeaseLibLogger {
         return new TeaseLibLogger(Level.Info).logToConsole(true);
     }
 
-    public static TeaseLibLogger getDummyLogger() {
-        return new TeaseLibLogger(Level.None);
-    }
+    public final static TeaseLibLogger None = new TeaseLibLogger(Level.Error);
 
     public TeaseLibLogger(Level level) {
         this.log = null;
@@ -47,7 +45,6 @@ public class TeaseLibLogger {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                BufferedWriter log = TeaseLibLogger.this.log;
                 if (log != null) {
                     try {
                         log.flush();

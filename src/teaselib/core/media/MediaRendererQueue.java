@@ -23,13 +23,11 @@ public class MediaRendererQueue {
 
     private static final Logger logger = LoggerFactory.getLogger(MediaRendererQueue.class);
 
-    static final String RenderTaskBaseName = "RenderTask ";
-
     public final Map<MediaRenderer.Threaded, Future<?>> activeRenderers = new HashMap<>();
     private final ExecutorService executor;
 
     public MediaRendererQueue() {
-        executor = NamedExecutorService.newUnlimitedThreadPool(RenderTaskBaseName, 1, TimeUnit.HOURS);
+        executor = NamedExecutorService.newUnlimitedThreadPool("RenderTask", 1, TimeUnit.HOURS);
     }
 
     public MediaRendererQueue(MediaRendererQueue mediaRendererQueue) {

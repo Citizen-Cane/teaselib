@@ -32,7 +32,7 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
 
     public static final String Available = "Available";
 
-    final TeaseLib teaseLib;
+    public final TeaseLib teaseLib;
 
     public final String domain;
     public final QualifiedString name;
@@ -132,16 +132,16 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
             return true;
         } else if (attribute.name().equals(QualifiedString.ANY) && // Item class attributes
                 (StateImpl.haveClass(attributes, attribute))) {
-            return true;
-        } else {
-            if (isMyGuid) { // Item identity
-                if (myState.isImpl(myState.getAttributes(), attribute)) { // State attributes
                     return true;
-                } else if (myState.isImpl(myState.peers(), attribute)) { // State peers
-                    return true;
+                } else {
+                    if (isMyGuid) { // Item identity
+                        if (myState.isImpl(myState.getAttributes(), attribute)) { // State attributes
+                            return true;
+                        } else if (myState.isImpl(myState.peers(), attribute)) { // State peers
+                            return true;
+                        }
+                    }
                 }
-            }
-        }
 
         // Test whether this items guid is referenced by the item denoted by the attribute
         // -> resolves applying items to each other before applying to peers
@@ -166,21 +166,24 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
     @Override
     public boolean applied() {
         StateImpl state = state();
+        boolean applied;
         if (state.applied()) {
             if (defaultPeers.isEmpty()) {
-                return containsMyGuid(state);
+                applied = containsMyGuid(state);
             } else {
                 var peers = state.peers().stream().filter(Predicate.not(QualifiedString::isItem));
-                return peers.map(this::state).anyMatch(this::containsMyGuid);
+                applied = peers.map(this::state).anyMatch(this::containsMyGuid);
             }
         } else {
-            return false;
+            applied = false;
         }
+        return applied;
     }
 
     @Override
     public boolean expired() {
-        return state().expired();
+        boolean expired = state().expired();
+        return expired;
     }
 
     @Override

@@ -1,8 +1,8 @@
 package teaselib.host.sexscripts;
 
-import static java.util.function.Predicate.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.concurrency.NamedExecutorService.*;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
+import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
 
 import java.awt.Color;
 import java.awt.Container;
@@ -143,7 +143,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
         this.ss = script;
         this.mainThread = Thread.currentThread();
         // Should be set by the host, but SexScript doesn't, so we do
-        this.mainThread.setName("TeaseScript main thread");
+        this.mainThread.setName("Script");
 
         // Initialize rendering via background image
         ImageIcon imageIcon;

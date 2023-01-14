@@ -1,11 +1,13 @@
 package teaselib.core;
 
-import static java.util.Collections.*;
-import static java.util.concurrent.TimeUnit.*;
-import static java.util.stream.Collectors.*;
-import static teaselib.core.StateImpl.Internal.*;
-import static teaselib.core.TeaseLib.*;
-import static teaselib.core.util.QualifiedStringMapping.*;
+import static java.util.Collections.unmodifiableSet;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toSet;
+import static teaselib.core.StateImpl.Internal.DEFAULT_DOMAIN_NAME;
+import static teaselib.core.StateImpl.Internal.PERSISTED_DOMAINS_STATE;
+import static teaselib.core.TeaseLib.DefaultDomain;
+import static teaselib.core.util.QualifiedStringMapping.map;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -92,7 +94,7 @@ public class StateImpl implements State, State.Options, State.Attributes {
         }
     }
 
-    final StateMaps cache;
+    public final StateMaps cache;
     public final String domain;
     public final QualifiedString name;
     final StateStorage storage;

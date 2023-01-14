@@ -35,7 +35,7 @@ public class TimeOfDayImpl implements TimeOfDay {
 
     static final Map<Daytime, Interval> timeOfDayTable = defaultTimeOfDayTable();
 
-    static boolean is(LocalDateTime localDateTime, Daytime dayTime) {
+    private static boolean is(LocalDateTime localDateTime, Daytime dayTime) {
         // TODO finds always the first interval,
         // but for overlapping intervals the first interval may not be the right one
         var interval = hours(dayTime);
@@ -58,44 +58,58 @@ public class TimeOfDayImpl implements TimeOfDay {
     // the number of days after now, e.g. today = 0; tomorrow = 1; yesterday = -1
     private final long days;
     private final LocalDateTime localDateTime;
+    private final ItemLogger logger;
 
-    TimeOfDayImpl(LocalDateTime localTime, long days) {
+    TimeOfDayImpl(LocalDateTime localTime, long days, ItemLogger logger) {
         this.days = days;
         this.localDateTime = localTime;
+        this.logger = logger;
     }
 
     @Override
     public boolean is(Daytime dayTime) {
-        return is(localDateTime, dayTime);
+        boolean value = is(localDateTime, dayTime);
+        logger.log(this, "is", dayTime, value);
+        return value;
     }
 
     @Override
     public boolean isEarlierThan(Daytime dayTime) {
         var thisDayTime = dayTimeEarly();
-        return days * 24 + hours(thisDayTime).average() < hours(dayTime).average();
+        boolean value = days * 24 + hours(thisDayTime).average() < hours(dayTime).average();
+        logger.log(this, "isEarlierThan", dayTime, value);
+        return value;
     }
 
     @Override
     public boolean isLaterThan(Daytime dayTime) {
         var thisDayTime = dayTimeLater();
-        return days * 24 + hours(thisDayTime).average() > hours(dayTime).average();
+        boolean value = days * 24 + hours(thisDayTime).average() > hours(dayTime).average();
+        logger.log(this, "isLaterThan", dayTime, value);
+        return value;
     }
 
     @Override
-    public boolean isAnyOf(Daytime... daytimes) {
-        return Arrays.asList(daytimes).stream().anyMatch(this::is);
+    public boolean isAnyOf(Daytime... dayTimes) {
+        boolean value = Arrays.asList(dayTimes).stream().anyMatch(this::is);
+        logger.log(this, "isAnyOf", dayTimes, value);
+        return value;
     }
 
     private Daytime dayTimeEarly() {
-        return timeOfDayTable.entrySet().stream().filter(entry -> is(localDateTime, entry.getValue())).map(Entry::getKey)
+        return timeOfDayTable.entrySet().stream()
+                .filter(entry -> is(localDateTime, entry.getValue()))
+                .map(Entry::getKey)
                 .findFirst().orElseThrow();
     }
 
     private Daytime dayTimeLater() {
         List<Entry<Daytime, Interval>> entries = new ArrayList<>(timeOfDayTable.entrySet());
         Collections.reverse(entries);
-        return entries.stream().filter(entry -> is(localDateTime, entry.getValue())).map(Entry::getKey).findFirst()
-                .orElseThrow();
+        return entries.stream()
+                .filter(entry -> is(localDateTime, entry.getValue()))
+                .map(Entry::getKey)
+                .findFirst().orElseThrow();
     }
 
     public static LocalDateTime getTime(TimeOfDay timeOfDay) {

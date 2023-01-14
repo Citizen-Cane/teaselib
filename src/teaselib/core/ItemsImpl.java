@@ -1,6 +1,8 @@
 package teaselib.core;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toCollection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -21,6 +24,7 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.State.Persistence;
 import teaselib.core.state.AbstractProxy;
+import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedString;
 import teaselib.util.Item;
 import teaselib.util.Items;
@@ -52,13 +56,15 @@ import teaselib.util.math.Varieties;
  */
 public class ItemsImpl implements Items.Collection, Items.Set {
 
+    // TODO instance with logger, for orElse(...)
     public static final ItemsImpl None = new ItemsImpl(Collections.emptyList());
 
+    final List<Item> elements;
+    final List<Item> inventory;
     final Random random;
-    private final List<Item> elements;
-    private final List<Item> inventory;
+    private final ItemLogger logger;
 
-    public ItemsImpl(ItemsImpl items) {
+    private ItemsImpl(ItemsImpl items) {
         this(new ArrayList<>(items.elements), items.inventory);
     }
 
@@ -70,7 +76,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         this(Arrays.stream(items).flatMap(Items::stream).toList());
     }
 
-    public ItemsImpl(java.util.Set<Item> items) {
+    public ItemsImpl(java.util.Collection<Item> items) {
         this(Collections.unmodifiableList(new ArrayList<>(items)),
                 Collections.unmodifiableList(new ArrayList<>(items)));
     }
@@ -81,31 +87,38 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     private ItemsImpl(List<Item> elements, List<Item> inventory) {
-        this.random = random(elements, inventory);
         this.elements = elements;
         this.inventory = inventory;
+        var teaseLib = teaseLib(elements, inventory);
+        if (teaseLib != null) {
+            this.random = teaseLib.random;
+            this.logger = teaseLib.itemLogger;
+        } else {
+            this.random = null;
+            this.logger = ItemLogger.None;
+        }
     }
 
-    private static Random random(List<Item> elements, List<Item> inventory) {
+    private static TeaseLib teaseLib(List<Item> elements, List<Item> inventory) {
         return Stream.concat(elements.stream(), inventory.stream()).filter(Predicate.not(Item.NotFound::equals))
                 .map(AbstractProxy::removeProxy).filter(ItemImpl.class::isInstance).map(ItemImpl.class::cast)
-                .map(item -> item.teaseLib.random).findFirst().orElse(null);
+                .map(item -> item.teaseLib).findFirst().orElse(null);
     }
 
     @Override
     public ItemsImpl filter(Predicate<? super Item> predicate) {
-        List<Item> list = elements.stream().filter(predicate).toList();
-        return new ItemsImpl(list, inventory);
+        var filteredElements = elements.stream().filter(predicate).map(i -> (Item) i).toList();
+        return new ItemsImpl(filteredElements, inventory);
     }
 
     @Override
     public boolean noneAvailable() {
-        return elements.stream().noneMatch(Item::isAvailable);
+        return log("noneAvailable", test(elements, Match.none, Item::isAvailable));
     }
 
     @Override
     public boolean anyAvailable() {
-        return elements.stream().anyMatch(Item::isAvailable);
+        return log("anyAvailable", test(elements, Match.any, Item::isAvailable));
     }
 
     @Override
@@ -113,17 +126,17 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         if (elements.isEmpty()) {
             return false;
         }
-        return elements.stream().allMatch(Item::isAvailable);
+        return log("allAvailable", test(elements, Match.all, Item::isAvailable));
     }
 
     @Override
     public boolean noneApplicable() {
-        return elements.stream().noneMatch(Item::canApply);
+        return log("noneApplicable", test(elements, Match.none, Item::canApply));
     }
 
     @Override
     public boolean anyApplicable() {
-        return elements.stream().anyMatch(Item::canApply);
+        return log("anyApplicable", test(elements, Match.any, Item::canApply));
     }
 
     @Override
@@ -131,17 +144,17 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         if (elements.isEmpty()) {
             return false;
         }
-        return elements.stream().allMatch(Item::canApply);
+        return log("allApplicable", test(elements, Match.all, Item::canApply));
     }
 
     @Override
     public boolean noneApplied() {
-        return elements.stream().noneMatch(Item::applied);
+        return log("noneApplied", test(elements, Match.none, Item::applied));
     }
 
     @Override
     public boolean anyApplied() {
-        return elements.stream().anyMatch(Item::applied);
+        return log("anyApplied", test(elements, Match.any, Item::applied));
     }
 
     @Override
@@ -149,17 +162,21 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         if (elements.isEmpty()) {
             return false;
         }
-        return elements.stream().allMatch(Item::applied);
+        return log("allApplied", test(elements, Match.all, Item::applied));
     }
 
     @Override
     public long removed(TimeUnit unit) {
-        return elements.stream().map(item -> item.removed(unit)).reduce(Math::min).orElse(666L);
+        long removed = elements.stream()
+                .map(AbstractProxy::undecorate)
+                .map(item -> item.removed(unit))
+                .reduce(Math::min).orElse(Long.MAX_VALUE);
+        return log("removed", removed, unit);
     }
 
     @Override
     public boolean anyAre(Object... attributes) {
-        return elements.stream().anyMatch(item -> item.is(attributes));
+        return log("anyAre", test(elements, Match.any, item -> item.is(attributes)));
     }
 
     @Override
@@ -167,7 +184,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         if (elements.isEmpty()) {
             return false;
         }
-        return elements.stream().allMatch(item -> item.is(attributes));
+        return log("allAre", test(elements, Match.all, item -> item.is(attributes)));
     }
 
     @Override
@@ -175,37 +192,79 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         if (elements.isEmpty()) {
             return true;
         }
-        return elements.stream().anyMatch(Item::expired);
+        return log("anyExpired", test(elements, Match.any, Item::expired));
     }
 
     @Override
     public boolean allExpired() {
-        return elements.stream().allMatch(Item::expired);
+        return log("allExpired", test(elements, Match.all, Item::expired));
+    }
+
+    private static class Match {
+        static BiFunction<Stream<Item>, Predicate<Item>, Boolean> none = (s, p) -> s.noneMatch(p);
+        static BiFunction<Stream<Item>, Predicate<Item>, Boolean> any = (s, p) -> s.anyMatch(p);
+        static BiFunction<Stream<Item>, Predicate<Item>, Boolean> all = (s, p) -> s.allMatch(p);
+    }
+
+    private static boolean test(List<Item> elements, BiFunction<Stream<Item>, Predicate<Item>, Boolean> match, Predicate<Item> predicate) {
+        return match.apply(elements.stream().map(AbstractProxy::undecorate), predicate);
+    }
+
+    private boolean log(String name, boolean value) {
+        if (logger != null) {
+            logger.log(elements, name, value);
+        }
+        return value;
+    }
+
+    private long log(String name, long value, TimeUnit unit) {
+        if (logger != null) {
+            logger.log(elements, name, value, unit);
+        }
+        return value;
     }
 
     @Override
     public ItemsImpl getAvailable() {
-        return new ItemsImpl(filter(Item::isAvailable));
+        ItemsImpl available = filterSkipSingleItemLogging(Item::isAvailable);
+        logger.log("getAvailable", available);
+        return available;
     }
 
     @Override
     public ItemsImpl getApplicable() {
-        return new ItemsImpl(filter(Item::canApply));
+        ItemsImpl applicable = filterSkipSingleItemLogging(Item::canApply);
+        logger.log("getApplicable", applicable);
+        return applicable;
     }
 
     @Override
     public ItemsImpl getApplied() {
-        return new ItemsImpl(filter(Item::applied));
+        ItemsImpl applied = filterSkipSingleItemLogging(Item::applied);
+        logger.log("getApplied", applied);
+        return applied;
     }
 
     @Override
     public ItemsImpl getFree() {
-        return new ItemsImpl(filter(Predicate.not(Item::applied)));
+        ItemsImpl free = filterSkipSingleItemLogging(Predicate.not(Item::applied));
+        logger.log("getFree", free);
+        return free;
     }
 
     @Override
     public ItemsImpl getExpired() {
-        return new ItemsImpl(filter(Item::expired));
+        ItemsImpl expired = filterSkipSingleItemLogging(Item::expired);
+        logger.log("getExpired", expired);
+        return expired;
+    }
+
+    private ItemsImpl filterSkipSingleItemLogging(Predicate<? super Item> predicate) {
+        return filter(item -> predicate.test(withoutLogging(item)));
+    }
+
+    private static Item withoutLogging(Item t) {
+        return t instanceof ItemProxy ? AbstractProxy.itemImpl(t) : t;
     }
 
     /**
@@ -215,7 +274,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
      */
     @Override
     public Item get() {
-        return getAppliedOrApplicableOrNotFound(random);
+        return getAppliedOrApplicableOrNotFound();
     }
 
     @Override
@@ -244,32 +303,36 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return result;
     }
 
-    private Item getAppliedOrApplicableOrNotFound(Random random) {
+    private Item getAppliedOrApplicableOrNotFound() {
         List<Item> applied = getApplied().elements;
         if (!applied.isEmpty()) {
             return applied.get(0);
         } else {
-            return getApplicableOrNotFound(random);
+            return getApplicableOrNotFound();
         }
     }
 
-    private Item getApplicableOrNotFound(Random random) {
+    private Item getApplicableOrNotFound() {
         List<Item> applicable = getApplicable().elements;
         if (!applicable.isEmpty()) {
             if (random != null) {
-                return random.item(applicable);
+                return chooseItem(applicable);
             } else {
                 return applicable.get(0);
             }
         } else if (!elements.isEmpty()) {
             if (random != null) {
-                return random.item(elements);
+                return chooseItem(elements);
             } else {
                 return elements.get(0);
             }
         } else {
             return Item.NotFound;
         }
+    }
+
+    private Item chooseItem(List<Item> items) {
+        return random.item(items);
     }
 
     /**
@@ -289,13 +352,14 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return matching(Arrays.asList(attributes));
     }
 
+    // TODO decide how to log matching/is
+
     private ItemsImpl matching(List<? extends Object> attributes) {
         ItemsImpl matchingItems;
         if (attributes.isEmpty()) {
             matchingItems = new ItemsImpl(this);
         } else {
-            List<Item> matching = elements.stream().filter(item -> item.is(attributes)).toList();
-            matchingItems = new ItemsImpl(matching, inventory);
+            matchingItems = filterSkipSingleItemLogging(item -> item.is(attributes));
         }
         return matchingItems;
     }
@@ -310,13 +374,14 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return matchingAny(Arrays.asList(attributes));
     }
 
+    // TODO decide how to log matching/is
+
     private ItemsImpl matchingAny(List<? extends Object> attributes) {
         ItemsImpl matchingItems;
         if (attributes.isEmpty()) {
             matchingItems = new ItemsImpl(this);
         } else {
-            List<Item> matching = elements.stream().filter(item -> isAny(item, attributes)).toList();
-            matchingItems = new ItemsImpl(matching, inventory);
+            matchingItems = filterSkipSingleItemLogging(item -> isAny(item, attributes));
         }
         return matchingItems;
     }
@@ -454,6 +519,8 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         return avoidedItems(attributes);
     }
 
+    // TODO decide how to handle logging for is(attributes), isAvailable8)
+
     private ItemsImpl preferredItems(Object[] attributes) {
         return preferredItems(item -> item.is(attributes));
     }
@@ -484,7 +551,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     Varieties<Items.Set> varieties() {
         int variety = getVariety();
         Combinations<Item[]> combinations = Combinations.combinationsK(variety, toArray());
-        return combinations.stream().map(Arrays::asList).filter(this::isVariety).map(ItemsImpl::new)
+        return combinations.stream().map(Arrays::asList).filter(this::isVariety).map(items -> new ItemsImpl(items))
                 .collect(Varieties.toVarieties());
     }
 
@@ -539,6 +606,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
             Item.NotFound.apply();
         }
 
+        // TODO apply without logging, log single line here, but collect options from proxy to preserve event handling
         List<State.Options> options = oneOfEachKind().stream().map(Item::apply).toList();
         return new State.Options() {
             @Override
@@ -617,7 +685,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         if (items.isEmpty()) {
             return Item.NotFound;
         } else {
-            return random.item(items);
+            return chooseItem(items);
         }
     }
 
@@ -649,7 +717,7 @@ public class ItemsImpl implements Items.Collection, Items.Set {
         List<Item> items = new ArrayList<>();
         for (Item item : elements) {
             for (Object any : anyItemOrAttribute) {
-                if (item.is(any)) {
+                if (AbstractProxy.undecorate(item).is(any)) {
                     items.add(item);
                 }
             }
@@ -783,15 +851,16 @@ public class ItemsImpl implements Items.Collection, Items.Set {
 
     private ItemsImpl withoutImpl(Object... values) {
         var qualifiedValues = Arrays.stream(values).map(QualifiedString::of).toList();
-        List<Item> elementsWithout = filter(item -> Arrays.stream(values).noneMatch(item::is)).toList();
-        List<Item> inventoryWithout = inventory.stream().filter(
+        List<Item> elementsWithout = filterSkipSingleItemLogging(
+                item -> Arrays.stream(values).noneMatch(item::is)).toList();
+        List<Item> inventoryWithout = filterSkipSingleItemLogging(
                 item -> qualifiedValues.stream().noneMatch(
                         value -> {
                             return value.isItem()
                                     ? AbstractProxy.itemImpl(item).name.is(value)
                                     : AbstractProxy.itemImpl(item).name.kind().is(value);
                         }))
-                .toList();
+                                .toList();
         return new ItemsImpl(elementsWithout, inventoryWithout);
     }
 

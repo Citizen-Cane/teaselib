@@ -2,6 +2,7 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -469,6 +470,10 @@ public abstract class Script {
      *         value set by the script function.
      */
     protected Answer showChoices(List<Answer> answers, ScriptFunction scriptFunction, Intention intention) {
+        Objects.requireNonNull(answers);
+        if (answers.isEmpty()) throw new IllegalArgumentException("Empty Answer list");
+        Objects.requireNonNull(intention);
+
         if (scriptRenderer.hasPrependedMessages()) {
             Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
             try {

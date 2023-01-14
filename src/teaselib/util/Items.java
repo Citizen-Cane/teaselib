@@ -53,10 +53,6 @@ public interface Items extends Iterable<Item>, Inventory {
          */
         Query without(String... values);
 
-        Query orElseItems(Enum<?>... items);
-
-        Query orElseItems(String... items);
-
         Query orElsePrefer(Enum<?>... attributes);
 
         Query orElsePrefer(String... attributes);
@@ -219,10 +215,6 @@ public interface Items extends Iterable<Item>, Inventory {
      */
     Items without(String... values);
 
-    Items orElseItems(Enum<?>... items);
-
-    Items orElseItems(String... items);
-
     /**
      * When the current query contains all items, return the current query. Otherwise return a new query preferring
      * inventory items with the specified attributes.
@@ -250,6 +242,8 @@ public interface Items extends Iterable<Item>, Inventory {
     Items orElseMatching(String... attributes);
 
     Items orElse(Supplier<Items> items);
+
+    Items orElse(Items.Query items);
 
     /**
      * Applies each item. If the list contains multiple items of the same kind, only the first of each kind is applied.
@@ -318,12 +312,6 @@ public interface Items extends Iterable<Item>, Inventory {
 
         @Override
         Collection without(String... values);
-
-        @Override
-        Collection orElseItems(Enum<?>... items);
-
-        @Override
-        Collection orElseItems(String... items);
 
         @Override
         Collection orElsePrefer(Enum<?>... attributes);
@@ -420,12 +408,6 @@ public interface Items extends Iterable<Item>, Inventory {
 
         @Override
         Set without(String... values);
-
-        @Override
-        Set orElseItems(Enum<?>... items);
-
-        @Override
-        Set orElseItems(String... items);
 
         @Override
         Set orElsePrefer(Enum<?>... attributes);

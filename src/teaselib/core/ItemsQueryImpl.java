@@ -65,16 +65,6 @@ public abstract class ItemsQueryImpl implements Items.Query {
     }
 
     @Override
-    public Query orElseItems(Enum<?>... values) {
-        return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElseItems(values));
-    }
-
-    @Override
-    public Query orElseItems(String... values) {
-        return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElseItems(values));
-    }
-
-    @Override
     public Query orElsePrefer(Enum<?>... values) {
         return inventoryMatch(Item::isAvailable) ? this : query(items -> items.orElsePrefer(values));
     }
@@ -99,7 +89,6 @@ public abstract class ItemsQueryImpl implements Items.Query {
         return inventoryMatch(Item::isAvailable) ? this : otherItems;
     }
 
-    @SuppressWarnings("static-method")
     private Query query(Function<ItemsImpl, ItemsImpl> function) {
         return new ItemsQueryImpl() {
             @Override

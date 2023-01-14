@@ -792,16 +792,6 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     }
 
     @Override
-    public ItemsImpl orElseItems(Enum<?>... items) {
-        return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).items(items);
-    }
-
-    @Override
-    public ItemsImpl orElseItems(String... items) {
-        return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).items(items);
-    }
-
-    @Override
     public ItemsImpl orElsePrefer(Enum<?>... attributes) {
         return inventoryMatch(Item::isAvailable) ? this : new ItemsImpl(inventory).prefer(attributes);
     }
@@ -824,6 +814,11 @@ public class ItemsImpl implements Items.Collection, Items.Set {
     @Override
     public ItemsImpl orElse(Supplier<Items> items) {
         return inventoryMatch(Item::isAvailable) ? this : (ItemsImpl) items.get();
+    }
+
+    @Override
+    public Items orElse(Query items) {
+        return inventoryMatch(Item::isAvailable) ? this : (ItemsImpl) items.inventory();
     }
 
     private boolean inventoryMatch(Predicate<? super Item> predicate) {

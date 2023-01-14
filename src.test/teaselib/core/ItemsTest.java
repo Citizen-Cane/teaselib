@@ -1,9 +1,17 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-import static teaselib.Body.*;
-import static teaselib.Bondage.*;
-import static teaselib.Toys.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static teaselib.Body.OnNipples;
+import static teaselib.Bondage.Ankle_Restraints;
+import static teaselib.Bondage.Chains;
+import static teaselib.Bondage.Wrist_Restraints;
+import static teaselib.Toys.Collar;
+import static teaselib.Toys.Nipple_Clamps;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1055,7 +1063,7 @@ public class ItemsTest {
     }
 
     @Test
-    public void testOrElseItems() throws IOException {
+    public void testItemsOrElse() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
             script.setAvailable(Clothes.Garter_Belt, Clothes.Stockings);
@@ -1089,7 +1097,25 @@ public class ItemsTest {
     }
 
     @Test
-    public void testOrElseItemsEnum() throws IOException {
+    public void testItemsEmptyOrElseItems() throws IOException {
+        try (TestScript script = new TestScript()) {
+            script.addTestUserItems();
+            script.setAvailable(Clothes.Catsuit, Clothes.Stockings);
+
+            var empty = script.items(Clothes.Catsuit /* , Clothes.Stockings */).matching(Material.Wood);
+            var none = empty.inventory();
+            assertEquals(0, none.size());
+
+            var catsuits = empty.orElse(script.items(Clothes.Catsuit).matching(Material.Rubber)).inventory();
+            assertEquals(1, catsuits.size());
+
+            var stockings = empty.orElse(script.items(Clothes.Stockings)).inventory();
+            assertEquals(1, stockings.size());
+        }
+    }
+
+    @Test
+    public void testItemsOrElseItemsEnum() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
@@ -1097,21 +1123,21 @@ public class ItemsTest {
             assertEquals(2, restraints1.size());
 
             Items restraints2 = script.items(Bondage.Wrist_Restraints).inventory()
-                    .orElseItems(Bondage.Wrist_Restraints);
+                    .orElse(() -> script.items(Bondage.Wrist_Restraints).inventory());
             assertEquals(restraints1, restraints2);
         }
     }
 
     @Test
-    public void testOrElseItemsString() throws IOException {
+    public void testItemsOrElseItemsString() throws IOException {
         try (TestScript script = new TestScript()) {
             script.addTestUserItems();
 
             Items restraints1 = script.items("teaselib.Bondage.Wrist_Restraints").inventory();
             assertEquals(2, restraints1.size());
 
-            Items restraints2 = script.items("teaselib.Bondage.Wrist_Restraints")
-                    .orElseItems("teaselib.Bondage.Wrist_Restraints").inventory();
+            Items restraints2 = script.items("teaselib.Bondage.Wrist_Restraints").inventory()
+                    .orElse(() -> script.items("teaselib.Bondage.Wrist_Restraints").inventory());
             assertEquals(restraints1, restraints2);
         }
     }
@@ -1173,15 +1199,14 @@ public class ItemsTest {
             assertEquals(2, without.size());
             assertEquals(Item.NotFound, without.items(Bondage.Ankle_Restraints).get());
 
-            assertTrue(without.orElseItems(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints)
+            assertTrue(without.orElse(script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints))
                     .contains(Bondage.Wrist_Restraints));
-            // Item.without() removes items whose kind/name appears in attribute values
-            assertFalse(without.orElseItems(Bondage.Ankle_Restraints).contains(Bondage.Ankle_Restraints));
+            assertTrue(without.orElse(script.items(Bondage.Ankle_Restraints)).contains(Bondage.Ankle_Restraints));
 
             script.setAvailable(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints);
-            assertTrue(without.orElseItems(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints)
+            assertTrue(without.orElse(script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints))
                     .contains(Bondage.Wrist_Restraints));
-            assertFalse(without.orElseItems(Bondage.Ankle_Restraints).contains(Bondage.Ankle_Restraints));
+            assertFalse(without.orElse(script.items(Bondage.Ankle_Restraints)).contains(Bondage.Ankle_Restraints));
         }
     }
 
@@ -1197,16 +1222,16 @@ public class ItemsTest {
             assertEquals(2, without.size());
             assertEquals(Item.NotFound, without.items("teaselib.Bondage.Ankle_Restraints").get());
 
-            assertTrue(without.orElseItems("teaselib.Bondage.Ankle_Restraints", "teaselib.Bondage.Wrist_Restraints")
+            assertTrue(without.orElse(script.items("teaselib.Bondage.Ankle_Restraints", "teaselib.Bondage.Wrist_Restraints"))
                     .contains("teaselib.Bondage.Wrist_Restraints"));
 
-            assertFalse(without.orElseItems("teaselib.Bondage.Ankle_Restraints")
+            assertTrue(without.orElse(script.items("teaselib.Bondage.Ankle_Restraints"))
                     .contains("teaselib.Bondage.Ankle_Restraints"));
 
             script.setAvailable(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints);
-            assertTrue(without.orElseItems("teaselib.Bondage.Ankle_Restraints", "teaselib.Bondage.Wrist_Restraints")
+            assertTrue(without.orElse(script.items("teaselib.Bondage.Ankle_Restraints", "teaselib.Bondage.Wrist_Restraints"))
                     .contains("teaselib.Bondage.Wrist_Restraints"));
-            assertFalse(without.orElseItems("teaselib.Bondage.Ankle_Restraints")
+            assertFalse(without.orElse(script.items("teaselib.Bondage.Ankle_Restraints"))
                     .contains("teaselib.Bondage.Ankle_Restraints"));
         }
     }
@@ -1222,16 +1247,14 @@ public class ItemsTest {
             assertEquals(2, without.size());
             assertTrue(without.items(Bondage.Ankle_Restraints).isEmpty());
 
-            assertTrue(without.orElseItems(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints)
+            assertTrue(without.orElse(script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints))
                     .contains(Bondage.Wrist_Restraints));
-            // Item.without() removes inventory items whose kind/name matches any of the value arguments
-            // Therefore, the items are "complete" because their element set equals their inventory set
-            assertFalse(without.orElseItems(Bondage.Ankle_Restraints).contains(Bondage.Ankle_Restraints));
+            assertTrue(without.orElse(script.items(Bondage.Ankle_Restraints)).contains(Bondage.Ankle_Restraints));
 
             script.setAvailable(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints);
-            assertTrue(without.orElseItems(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints)
+            assertTrue(without.orElse(script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints))
                     .contains(Bondage.Wrist_Restraints));
-            assertFalse(without.orElseItems(Bondage.Ankle_Restraints).contains(Bondage.Ankle_Restraints));
+            assertFalse(without.orElse(script.items(Bondage.Ankle_Restraints)).contains(Bondage.Ankle_Restraints));
         }
     }
 
@@ -1247,16 +1270,15 @@ public class ItemsTest {
             assertEquals(2, without.size());
             assertTrue(without.items("teaselib.Bondage.Ankle_Restraints").isEmpty());
 
-            assertTrue(without.orElseItems("teaselib.Bondage.Ankle_Restraints", "teaselib.Bondage.Wrist_Restraints")
+            assertTrue(without.orElse(script.items("teaselib.Bondage.Ankle_Restraints", "teaselib.Bondage.Wrist_Restraints"))
                     .contains("teaselib.Bondage.Wrist_Restraints"));
-            // Item.without() removes inventory items whose kind/name matches any of the value arguments
-            assertFalse(without.orElseItems("teaselib.Bondage.Ankle_Restraints")
+            assertTrue(without.orElse(script.items("teaselib.Bondage.Ankle_Restraints"))
                     .contains("teaselib.Bondage.Ankle_Restraints"));
 
             script.setAvailable(Bondage.Wrist_Restraints, Bondage.Ankle_Restraints);
-            assertTrue(without.orElseItems("teaselib.Bondage.Ankle_Restraints", "teaselib.Bondage.Wrist_Restraints")
+            assertTrue(without.orElse(script.items("teaselib.Bondage.Ankle_Restraints", "teaselib.Bondage.Wrist_Restraints"))
                     .contains("teaselib.Bondage.Wrist_Restraints"));
-            assertFalse(without.orElseItems("teaselib.Bondage.Ankle_Restraints")
+            assertFalse(without.orElse(script.items("teaselib.Bondage.Ankle_Restraints"))
                     .contains("teaselib.Bondage.Ankle_Restraints"));
         }
     }

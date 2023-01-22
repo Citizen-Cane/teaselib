@@ -199,6 +199,12 @@ public class SectionRenderer implements Closeable {
             }
         }
 
+        public void forwardToEnd() {
+            synchronized (messages) {
+                currentMessage = messages.size();
+            }
+        }
+
         private void render(RenderedMessage message) throws IOException, InterruptedException {
             MessagePart previousPart = MessagePart.None;
             String mood = Mood.Neutral;
@@ -524,6 +530,10 @@ public class SectionRenderer implements Closeable {
 
     private boolean isInstructionalImageOutputEnabled() {
         return Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages));
+    }
+
+    public void forwardToEnd() {
+        currentMessageRenderer.forwardToEnd();
     }
 
 }

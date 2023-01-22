@@ -504,6 +504,9 @@ public abstract class Script {
             throw new ScriptInterruptedException(e);
         } finally {
             endAll();
+            if (scriptFunction != null && scriptFunction.relation == ScriptFunction.Relation.Autonomous) {
+                scriptRenderer.sectionRenderer.forwardToEnd();
+            }
             teaseLib.host.endScene();
             teaseLib.host.show();
         }

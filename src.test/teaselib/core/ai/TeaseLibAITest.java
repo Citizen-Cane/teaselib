@@ -1,11 +1,15 @@
 package teaselib.core.ai;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeFalse;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -60,7 +64,7 @@ public class TeaseLibAITest {
     }
 
     @Test
-    public void testImageCapture() throws InterruptedException {
+    public void testImageCapture() throws InterruptedException, FileNotFoundException {
         String name = "images/p2_320x240_01.jpg";
         String pattern = "p2_320x240_%02d.jpg";
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
@@ -80,7 +84,7 @@ public class TeaseLibAITest {
     }
 
     @Test
-    public void testImageCaptureRotated() throws InterruptedException {
+    public void testImageCaptureRotated() throws InterruptedException, FileNotFoundException {
         String name = "images/handsup1_camera_rotated_clockwise_01.jpg";
         String pattern = "handsup1_camera_rotated_clockwise_%02d.jpg";
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
@@ -244,7 +248,7 @@ public class TeaseLibAITest {
     }
 
     @Test
-    public void testMultipleModelsSharedCapture() throws InterruptedException {
+    public void testMultipleModelsSharedCapture() throws InterruptedException, FileNotFoundException {
         String name = "images/hand1.jpg";
         String pattern = "hand%01d.jpg";
 
@@ -306,7 +310,6 @@ public class TeaseLibAITest {
                         assertEquals("Assertion based on PoseEstimation::Resolution::Size320x240", 0.88f,
                                 poses.get(0).distance.orElseThrow(), 0.01f);
                         assertEquals(Proximity.FACE2FACE, poses.get(0).proximity());
-
                     } catch (IOException e) {
                         throw ExceptionUtil.asRuntimeException(e);
                     }
@@ -320,8 +323,10 @@ public class TeaseLibAITest {
         return getClass().getResourceAsStream(path);
     }
 
-    private static String getOpenCVImageSequence(String name, String pattern) {
-        File folder = new File(TeaseLibAITest.class.getResource(name).getFile()).getParentFile();
+    public static String getOpenCVImageSequence(String name, String pattern) throws FileNotFoundException {
+        URL resource = TeaseLibAITest.class.getResource(name);
+        if (resource == null) throw new FileNotFoundException(name);
+        File folder = new File(resource.getFile()).getParentFile();
         return new File(folder, pattern).getAbsolutePath();
     }
 

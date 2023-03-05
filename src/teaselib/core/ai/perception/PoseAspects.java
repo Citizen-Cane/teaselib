@@ -43,13 +43,15 @@ public class PoseAspects {
         if (interests.contains(Interest.Proximity)) {
             Optional<Proximity> previousProximity = previous.aspect(Proximity.class);
             Proximity proximity = pose.proximity();
-            if (previousProximity.isPresent() && previousProximity.get().isCloserThan(proximity)) {
-                aspects.add(pose.proximity(DISTANCE_RETREAT_FACTOR));
+            if (proximity == null) {
+                previousProximity.ifPresent(aspects::add);
             } else {
-                aspects.add(proximity);
+                aspects.add(previousProximity
+                        .filter(p -> p.isCloserThan(proximity))
+                        .map(p -> pose.proximity(DISTANCE_RETREAT_FACTOR))
+                        .orElse(proximity));
             }
 
-            // TODO max-reliable distance for inference model to avoid drop-outs in the distance
             if (interests.contains(Interest.HeadGestures)) {
                 if (proximity == Proximity.FACE2FACE && pose.head.isPresent()) {
                     aspects.add(HeadGestures.Gaze);
@@ -65,9 +67,15 @@ public class PoseAspects {
         return interests.contains(interest);
     }
 
+    /**
+     * @param values
+     *            Aspects to test. Multiple aspects might be passed for each aspect class.
+     * @return {@code true} if there is a match for each aspect class.
+     */
     public boolean is(PoseAspect... values) {
         for (PoseAspect value : values) {
             if (aspects.contains(value)) {
+                // TODO match single aspect value for each aspect class
                 return true;
             }
         }

@@ -8,6 +8,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -19,22 +20,22 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.Actor;
 import teaselib.core.Closeable;
+import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
 import teaselib.core.ai.perception.HumanPose.Proximity;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.events.EventSource;
 
 class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
-    private static final int PROXIMITY_SENSOR_FRAMERATE_MILLIS = 500;
+    private static final int PROXIMITY_SENSOR_FRAMERATE_MILLIS = 125;
     private static final int HEAD_GESTURE_FRAME_RATE_MILLIS = 125;
 
     static final Logger logger = LoggerFactory.getLogger(PoseEstimationTask.class);
 
     private final TeaseLibAI teaseLibAI;
-    private final HumanPoseDeviceInteraction interaction;
 
     private final NamedExecutorService taskExecutor;
     private Future<PoseAspects> future = null;
@@ -54,18 +55,19 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
 
     private SceneCapture device = null;
     private HumanPose humanPoseCachedModel = null;
-    private Actor currentActor;
 
-    PoseEstimationTask(TeaseLibAI teaseLibAI, HumanPoseDeviceInteraction humanPoseDeviceInteraction)
-            throws InterruptedException {
+    private DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> did = DeviceInteractionDefinitions.empty();
+
+    private CountDownLatch startup = new CountDownLatch(1);
+
+    PoseEstimationTask(TeaseLibAI teaseLibAI) throws InterruptedException {
         this.teaseLibAI = teaseLibAI;
-        this.interaction = humanPoseDeviceInteraction;
-
         this.taskExecutor = NamedExecutorService.sameThread("Pose Estimation");
         this.inferenceExecutor = teaseLibAI.getExecutor(TeaseLibAI.ExecutionType.Accelerated);
         this.inferenceThread = inferenceExecutor.submitAndGet(Thread::currentThread);
-        inferenceExecutor.submitAndGet(() -> getModel(Interest.supported));
+        this.device = getDevice();
         this.future = taskExecutor.submit(this);
+        startup.await();
     }
 
     @Override
@@ -97,9 +99,11 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
                 var availablePose = poseAspects.get();
                 if (availablePose.containsAll(interests)) {
                     long passedMillis = System.currentTimeMillis() - availablePose.timestamp;
-                    if (passedMillis < 250) {
+                    if (passedMillis < PROXIMITY_SENSOR_FRAMERATE_MILLIS) {
                         return availablePose;
                     } else {
+                        // TODO if pose task is running then
+                        // await next pose completion instead of computing own pose with similar interests
                         return computePose(interests);
                     }
                 } else {
@@ -136,6 +140,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     boolean awaitPose(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects)
             throws InterruptedException {
         throwIfUnsupported(interests);
+
         estimatePoses.lockInterruptibly();
         try {
             awaitPose.lockInterruptibly();
@@ -170,7 +175,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
 
     private boolean awaitFuturePose(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects)
             throws InterruptedException {
-        logger.info("Awaiting pose {} and {}", interests, aspects);
+        logger.info("Awaiting pose {}.{}", interests, aspects);
         var now = System.currentTimeMillis();
         long durationMillis = unit.toMillis(duration);
         var deadline = new Date(durationMillis < Long.MAX_VALUE - now ? durationMillis + now : Long.MAX_VALUE);
@@ -189,6 +194,14 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         return false;
     }
 
+    private HumanPose loadModel() throws InterruptedException {
+        this.humanPoseCachedModel = getModel(Interest.supported);
+        return inferenceExecutor.submitAndGet(() -> {
+            humanPoseCachedModel.loadModel(Interest.supported, device.rotation());
+            return humanPoseCachedModel;
+        });
+    }
+
     // TODO remove multiple cached models since HumanPose handles interests already
     HumanPose getModel(Set<Interest> interests) throws InterruptedException {
         throwIfUnsupported(interests);
@@ -200,6 +213,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
                 humanPoseCachedModel = inferenceExecutor.submitAndGet(() -> teaseLibAI.getModel(interests));
             }
         }
+        humanPoseCachedModel.setInterests(interests);
         return humanPoseCachedModel;
     }
 
@@ -209,25 +223,57 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
 
     @Override
     public PoseAspects call() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                device = awaitCaptureDevice();
-                estimatePoses.lockInterruptibly();
-                try {
-                    estimatePoses();
-                } finally {
-                    estimatePoses.unlock();
-                    device.close();
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } finally {
-                device = null;
+        try {
+            estimatePoses.lockInterruptibly();
+            startup.countDown();
+            if (device != null) {
+                loadModel();
             }
-            poseAspects.set(PoseAspects.Unavailable);
-            signalPoseChange();
+
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    if (device == null) {
+                        device = awaitCaptureDevice();
+                    }
+                    try {
+                        estimatePoses.lockInterruptibly();
+                        try {
+                            estimatePoses();
+                        } finally {
+                            device.close();
+                            estimatePoses.unlock();
+                        }
+                    } finally {
+                        device = null;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    poseAspects.set(PoseAspects.Unavailable);
+                }
+                signalPoseChange();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            estimatePoses.unlock();
         }
         return PoseAspects.Unavailable;
+    }
+
+    private SceneCapture awaitCaptureDevice() throws InterruptedException {
+        SceneCapture newDevice = null;
+        while (newDevice == null) {
+            newDevice = getDevice();
+            if (newDevice == null) {
+                poseChanged.await(SceneCapture.DEVICE_POLL_DURATION_MILLIS, TimeUnit.MILLISECONDS);
+            }
+        }
+        return newDevice;
+    }
+
+    SceneCapture getDevice() throws InterruptedException {
+        return inferenceExecutor.submitAndGet(SceneCapture::getDevice);
     }
 
     private void estimatePoses() throws InterruptedException {
@@ -238,7 +284,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
                 device.start();
                 human.startTracking();
                 while (!Thread.currentThread().isInterrupted()) {
-                    estimatePose(currentActor, poseAspects.get(), interests);
+                    estimatePose(poseAspects.get(), interests);
                     interests = awaitInterests();
                 }
                 device.stop();
@@ -252,17 +298,6 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         }
     }
 
-    private SceneCapture awaitCaptureDevice() throws InterruptedException {
-        SceneCapture newDevice = null;
-        while (newDevice == null) {
-            newDevice = inferenceExecutor.submitAndGet(SceneCapture::getDevice);
-            if (newDevice == null) {
-                Thread.sleep(SceneCapture.DEVICE_POLL_DURATION_MILLIS);
-            }
-        }
-        return newDevice;
-    }
-
     public void setPause(Runnable task) {
         // TODO Cancel ongoing pose estimation when streaming
         pause.set(task);
@@ -272,11 +307,11 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         pause.set(null);
     }
 
-    public void setActor(Actor actor) {
+    public void setActor(DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions) {
         try {
             estimatePoses.lockInterruptibly();
             try {
-                currentActor = actor;
+                did = definitions;
                 interestChange.signalAll();
             } finally {
                 estimatePoses.unlock();
@@ -303,7 +338,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         Set<Interest> interests = gatherInterests();
         if (interests.isEmpty()) {
             do {
-                awaitInterestChange(currentActor);
+                awaitInterestChange();
                 interests = gatherInterests();
             } while (interests.isEmpty());
             human.startTracking();
@@ -311,23 +346,26 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         return interests;
     }
 
-    private Set<Interest> gatherInterests() {
-        Set<Interest> poseInterests = awaitPoseInterests.get();
-        Set<Interest> actorInterests = currentActor == null ? Collections.emptySet()
-                : interaction.definitions(currentActor).keySet();
-        return joinInterests(actorInterests, poseInterests);
-    }
-
-    private void awaitInterestChange(Actor actor) throws InterruptedException {
+    private void awaitInterestChange() throws InterruptedException {
         if (poseAspects.get() != PoseAspects.Unavailable) {
             PoseAspects previous = poseAspects.get();
             poseAspects.set(PoseAspects.Unavailable);
-            signal(actor, PoseAspects.Unavailable, previous);
+            signal(PoseAspects.Unavailable, previous);
         }
         interestChange.await();
     }
 
-    private void estimatePose(Actor actor, PoseAspects previous, Set<Interest> interests) throws InterruptedException {
+    private Set<Interest> gatherInterests() {
+        Set<Interest> poseInterests = awaitPoseInterests.get();
+        if (did.actor == null) {
+            return Collections.unmodifiableSet(poseInterests);
+        } else {
+            Set<Interest> actorInterests = did.keySet();
+            return joinInterests(actorInterests, poseInterests);
+        }
+    }
+
+    private void estimatePose(PoseAspects previous, Set<Interest> interests) throws InterruptedException {
         PoseAspects update = getLatestPoseAspects(previous, interests);
         poseAspects.set(update);
 
@@ -335,7 +373,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         // - avoids deadlock when polling thread and event have locked the same resource
         estimatePoses.unlock();
         try {
-            signal(actor, update, previous);
+            signal(update, previous);
         } finally {
             estimatePoses.lockInterruptibly();
         }
@@ -384,7 +422,6 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         wakeUpFromHibernate(device);
         try {
             HumanPose model = getModel(interests);
-            model.setInterests(interests);
             long timestamp = System.currentTimeMillis();
             human.update(model, device, device.rotation().reverse().value, timestamp);
             var pose = human.pose();
@@ -405,16 +442,21 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         }
     }
 
-    private void signal(Actor actor, PoseAspects update, PoseAspects previous) {
+    private void signal(PoseAspects update, PoseAspects previous) {
         // TODO fire only stream-relevant interests (Gaze), but not proximity
-        // - stream relevant aspects are fired always, change relevant only when they've changed
+        // - stream relevant aspects are fired always, fire relevant only when they've changed
         if (update.is(HumanPose.Status.Stream) || !update.equals(previous)) {
-            var definitions = interaction.definitions(actor);
-            var eventArgs = new PoseEstimationEventArgs(actor, update);
-            definitions.stream().filter(e -> update.is(e.getKey())).map(Map.Entry::getValue)
-                    .forEach(e -> e.fire(eventArgs));
+            var eventArgs = new PoseEstimationEventArgs(did.actor, update);
+            fireEvent(eventArgs);
             signalPoseChange();
         }
+    }
+
+    private void fireEvent(PoseEstimationEventArgs eventArgs) {
+        did.stream()
+                .filter(entry -> eventArgs.pose.is(entry.getKey()))
+                .map(Map.Entry::getValue)
+                .forEach(event -> event.fire(eventArgs));
     }
 
     private void signalPoseChange() {

@@ -27,9 +27,9 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
         private static final long serialVersionUID = 1L;
 
         {
-            put(Proximity.CLOSE, 2.0);
+            put(Proximity.CLOSE, 1.4);
             put(Proximity.FACE2FACE, 1.1);
-            put(Proximity.NEAR, 1.05);
+            put(Proximity.NEAR, 1.00);
             put(Proximity.FAR, 1.0);
             put(Proximity.AWAY, 0.0);
         }
@@ -48,14 +48,10 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
         var proximity = proximity();
         var stream = stream(pose);
 
-        var speechProximity = presence && proximity == Proximity.FACE2FACE;
-        var focusLevel = stream ? (presence || proximity == Proximity.CLOSE ? 1.0f : 0.0f) : 1.0f;
+        var speechProximity = presence && (proximity == Proximity.FACE2FACE || proximity == Proximity.CLOSE);
+        var focusLevel = stream ? (presence ? 1.0f : 0.0f) : 1.0f;
 
         logger.info("User Presence: {}\t User Proximity: {}, Stream: {}", presence, proximity, stream);
-
-        // TODO update during actor speech - disabled to reduce power consumption on older hardware
-        // TODO faster updates for immediate response - disabled to reduce power consumption on older hardware
-        // -> detect older hardware? Require fast CPU or decent GPU
 
         // TODO proximity and blur visualization is out-of-sync with script-rendering
         // - when presence is false because pose estimation has not started or is just starting up
@@ -63,11 +59,6 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
         teaseLib.host.setActorZoom(zoom.get(proximity));
         teaseLib.host.setFocusLevel(focusLevel);
         teaseLib.globals.get(Shower.class).updateUI(new InputMethod.UiEvent(speechProximity));
-
-        // TODO zoomed image rendered with a delay because
-        // - image rendering in section renderer is not synchronized with proximity blurring
-        // Showing the prompt renders the first showAll image and
-        // proximity blur/zoom at the same time but completely unsynchronized
         teaseLib.host.show();
     }
 

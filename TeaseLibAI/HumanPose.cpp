@@ -57,6 +57,27 @@ extern "C"
 
 	/*
 	 * Class:     teaselib_core_ai_perception_HumanPose
+	 * Method:    loadModel
+	 * Signature: (II)V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_loadModel
+	(JNIEnv* env, jobject jthis, jint interest, jint rotation) {
+		try {
+			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
+			humanPose->loadModel(static_cast<HumanPose::Interest>(interest), static_cast<image::Rotation>(rotation));
+		} catch (invalid_argument& e) {
+			JNIException::rethrow(env, e);
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
+		} catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		} catch (JNIException& e) {
+			e.rethrow();
+		}
+	}
+
+	/*
+	 * Class:     teaselib_core_ai_perception_HumanPose
 	 * Method:    setInterests
 	 * Signature: (I)V
 	 */
@@ -66,17 +87,13 @@ extern "C"
 		try {
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 			humanPose->set(static_cast<HumanPose::Interest>(interests));
-		}
-		catch (invalid_argument& e) {
+		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 		}
 	}
@@ -219,17 +236,14 @@ extern "C"
 HumanPose::HumanPose()
 	: interests(0)
 	, rotation(image::Rotation::None)
-	, interpreter(nullptr)
-	{}
+{}
 
-HumanPose::~HumanPose()
+void HumanPose::loadModel(Interest interest, const aifx::image::Rotation rotation_)
 {
-	for_each(models.begin(), models.end(), [](const Models::value_type& interpreter) {
-		delete interpreter.second;
-	});
+	model_cache(interest, rotation_);
 }
 
-void HumanPose::set(Interest flags)
+void HumanPose::set(const Interest flags)
 {
 	this->interests = flags;
 }
@@ -265,7 +279,7 @@ bool HumanPose::acquire(const void* image, int size)
 
 const vector<Pose> HumanPose::estimate(const std::chrono::milliseconds timestamp)
 {
-	interpreter = getInterpreter();
+	aifx::pose::Movenet* interpreter = model_cache(interests, rotation, frame.size());
 	if (interpreter) return (*interpreter)(frame, rotation, timestamp);
 	if (interests == 0) throw invalid_argument("no interests");
 	throw logic_error("no interpreter");
@@ -313,21 +327,25 @@ jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
 	return jpose;
 }
 
-Movenet* HumanPose::getInterpreter()
+HumanPose::ModelCache::~ModelCache()
+{
+	for(auto entry : elements)  { delete entry.second; }
+}
+
+aifx::pose::Movenet* HumanPose::ModelCache::operator()(int interests, image::Rotation rotation, const cv::Size& image)
 {
 	const Movenet::Model model = (interests & (UpperTorso + LowerTorso + LegsAndFeet)) != 0 && (interests & MultiPose) == 0
 		? Movenet::Model::SinglePoseExact
 		: Movenet::Model::MultiposeFast;
-	const bool portait_image = frame.cols < frame.rows;
+	const bool portait_image = image.width < image.height;
 	const bool orientation_change = rotation == aifx::image::Rotation::None || rotation == image::Rotation::Rotate_180;
 	const image::Orientation orientation = orientation_change ^ portait_image
-		? image::Orientation::Landscape 
+		? image::Orientation::Landscape
 		: image::Orientation::Portrait;
-
 	const int key = Movenet::resource(model, orientation);
-	auto pose_estimation = models.find(key);
-	if (pose_estimation == models.end()) {
-		return models[key]  = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);
+	auto pose_estimation = elements.find(key);
+	if (pose_estimation == elements.end()) {
+		return elements[key] = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);
 	}
 	return pose_estimation->second;
 }

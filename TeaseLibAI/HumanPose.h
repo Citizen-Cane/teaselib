@@ -17,7 +17,6 @@ using namespace std::chrono_literals;
 class HumanPose {
 public:
     HumanPose();
-    virtual ~HumanPose();
 
     enum Interest {
         Status = 1,
@@ -31,7 +30,8 @@ public:
         MultiPose = 256
     };
 
-    void set(Interest interests);
+    void loadModel(Interest interest, const aifx::image::Rotation rotation);
+    void set(const Interest interests);
     void set(const aifx::image::Rotation rotation);
     bool acquire(aifx::video::VideoCapture* capture);
     bool acquire(const void* image, int size);
@@ -39,15 +39,17 @@ public:
 
     static jobject estimation(JNIEnv* env, const aifx::pose::Pose& pose);
 private:
-    typedef std::map<int, aifx::pose::Movenet*> Models;
-    Models models;
+    //typedef std::map<int, aifx::pose::Movenet*> Models;
+    class ModelCache {
+    public:
+        ~ModelCache();
+        aifx::pose::Movenet* operator()(int interests, aifx::image::Rotation rotation, const cv::Size& image = { 0,0 });
+    private:
+        std::map<int, aifx::pose::Movenet*> elements;
+    };
+    ModelCache model_cache;
     int interests;
-    aifx::pose::Movenet* interpreter;
-
     aifx::image::Rotation rotation;
     cv::UMat frame;
-
-    aifx::pose::Movenet* getInterpreter();
-}
-;
+};
 

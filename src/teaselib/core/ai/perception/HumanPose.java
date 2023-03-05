@@ -47,6 +47,10 @@ public class HumanPose extends NativeObject.Disposible {
             this.bit = bit;
         }
 
+        static Integer valueOf(Set<Interest> interests) {
+            return interests.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b);
+        }
+
         public static final Set<Interest> supported = asSet(Status, Proximity, HeadGestures, UpperTorso, LowerTorso, LegsAndFeet, MultiPose);
         public static final Set<Interest> Head = asSet(Status, Proximity, UpperTorso);
         public static final Set<Interest> AllPersons = asSet(Status, Proximity, MultiPose);
@@ -64,6 +68,32 @@ public class HumanPose extends NativeObject.Disposible {
         Stream,
     }
 
+    /**
+     *
+     * Proximity relative to scene capture device. The {@link Proximity#CLOSE} region is embedded in the
+     * {@link Proximity#FACE2FACE} region. Both {@link #CLOSE} or {@link #FACE2FACE} are embedded in the
+     * {@link Proximity#NEAR} region.
+     * <p>
+     * {@link Proximity#FAR} and {@link Proximity#AWAY} are disjunct.
+     * <p>
+     * <p>
+     * Hysteresis is applied to all proximity values but {@link #CLOSE}.
+     * 
+     * <pre>
+     *         {@code  NCCCN
+     *         NFFFFFN 
+     *        NFFFFFFFN
+     *       NNNNNNNNNNN
+     *      NNNNNNNNNNNNN
+     *     FARFARFARFARFAR
+     *    FARFARFARARFARFAR
+     *   AWAYAWAYAWYAWAYAWAY
+     *  AWAYAWAYAWWAYAWAYAWAY 
+     *         }
+     * </pre>
+     *
+     * @author Citizen-Cane
+     */
     public enum Proximity implements PoseAspect {
         AWAY(Integer.MAX_VALUE),
         FAR(3),
@@ -79,7 +109,7 @@ public class HumanPose extends NativeObject.Disposible {
             this.distance = distance;
         }
 
-        public static final Proximity[] NotFace2Face = { AWAY, FAR, NEAR, CLOSE };
+        public static final Proximity[] NotFace2Face = { AWAY, FAR, NEAR };
 
         boolean isCloserThan(Proximity proximity) {
             return distance < proximity.distance;
@@ -173,28 +203,32 @@ public class HumanPose extends NativeObject.Disposible {
             return proximity(1.0f);
         }
 
-        public Proximity proximity(float distanceFactor) {
+        private static final Rectangle2D.Float CloseRegion = new Rectangle2D.Float(0.1f, 0.1f, 0.8f, 0.8f);
+        private static final Point2D OutOfView = new Point2D.Float(-1.0f, -1.0f);
+
+        Proximity proximity(float distanceFactor) {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.5f * distanceFactor) {
-                    proximity = Proximity.CLOSE;
+                if (z < 0.7f && CloseRegion.contains(head.orElse(OutOfView))) {
+                    proximity = isFace2Face(gaze) ? Proximity.CLOSE : Proximity.NEAR;
                 } else if (z < 1.5f * distanceFactor) {
-                    proximity = gaze.map(Gaze::isFace2Face).orElse(false) ? Proximity.FACE2FACE : Proximity.NEAR;
+                    proximity = isFace2Face(gaze) ? Proximity.FACE2FACE : Proximity.NEAR;
                 } else if (z < 3.0f * distanceFactor) {
                     proximity = Proximity.NEAR;
-                } else {
+                } else if (z < 6.0f * distanceFactor) {
                     proximity = Proximity.FAR;
+                } else {
+                    proximity = Proximity.AWAY;
                 }
                 return proximity;
             } else {
-                // might be far or near, but always only partial posture
-                // TODO estimate missing distance from previous value and direction,
-                // and return the corresponding proximity value
-                return Proximity.FAR;
-                // Never returns Proximity.Away,
-                // since in this case there wouldn't be any estimation result at all
+                return null;
             }
+        }
+
+        private static Boolean isFace2Face(Optional<Gaze> gaze) {
+            return gaze.map(Gaze::isFace2Face).orElse(false);
         }
 
         public Optional<Rectangle2D> face() {
@@ -245,15 +279,21 @@ public class HumanPose extends NativeObject.Disposible {
 
     }
 
+    public void loadModel(Set<Interest> interests, Rotation rotation) {
+        loadModel(HumanPose.Interest.valueOf(interests), rotation.value);
+    }
+
+    private native void loadModel(int interests, int roation);
+
     public void setInterests(Set<Interest> interests) {
-        setInterests(interests.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b));
+        setInterests(HumanPose.Interest.valueOf(interests));
     }
 
     // TODO Parameter of estimate() or handle multiple models in Java
     // - handle in Java for simpler warm-up
     // - handle in AIfx to choose the right model for portrait and landscape image bytes
     // -> cache models in native code but select in Java
-    private native void setInterests(int aspects);
+    private native void setInterests(int interests);
 
     private native void setRotation(int rotation);
 

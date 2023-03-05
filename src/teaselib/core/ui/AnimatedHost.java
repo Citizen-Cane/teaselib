@@ -32,8 +32,8 @@ public class AnimatedHost implements Host, Closeable {
 
     static final Logger logger = LoggerFactory.getLogger(AnimatedHost.class);
 
-    private static final int ZOOM_DURATION = 250;
-    private static final int TRANSITION_DURATION = 750;
+    private static final int ZOOM_DURATION = 200;
+    private static final int TRANSITION_DURATION = 500;
     private final static long FRAMETIME_MILLIS = 16;
 
     enum Animation {

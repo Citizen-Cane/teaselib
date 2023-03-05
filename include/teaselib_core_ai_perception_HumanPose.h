@@ -17,6 +17,14 @@ JNIEXPORT jlong JNICALL Java_teaselib_core_ai_perception_HumanPose_newNativeInst
 
 /*
  * Class:     teaselib_core_ai_perception_HumanPose
+ * Method:    loadModel
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_loadModel
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     teaselib_core_ai_perception_HumanPose
  * Method:    setInterests
  * Signature: (I)V
  */

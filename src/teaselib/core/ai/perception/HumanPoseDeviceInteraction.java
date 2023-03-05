@@ -1,6 +1,6 @@
 package teaselib.core.ai.perception;
 
-import static teaselib.core.util.ExceptionUtil.*;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +18,6 @@ import teaselib.core.DeviceInteractionDefinitions;
 import teaselib.core.DeviceInteractionImplementation;
 import teaselib.core.ScriptEventArgs.ActorChanged;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.ScriptRenderer;
 import teaselib.core.TeaseLib;
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Estimation;
@@ -29,13 +28,13 @@ import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 
 public class HumanPoseDeviceInteraction extends
-        DeviceInteractionImplementation<HumanPose.Interest, EventSource<PoseEstimationEventArgs>> implements Closeable {
+        DeviceInteractionImplementation<HumanPose.Interest, EventSource<PoseEstimationEventArgs>>
+        implements Closeable, Event<ActorChanged> {
     static final Logger logger = LoggerFactory.getLogger(HumanPoseDeviceInteraction.class);
 
-    private final PoseEstimationTask poseEstimationTask;
     public final ProximitySensor proximitySensor;
-    final ScriptRenderer scriptRenderer;
-    final Event<ActorChanged> actorChangedListener;
+
+    private final PoseEstimationTask poseEstimationTask;
 
     public abstract static class EventListener implements Event<PoseEstimationEventArgs> {
         final Set<Interest> interests;
@@ -49,19 +48,18 @@ public class HumanPoseDeviceInteraction extends
         }
     }
 
-    public HumanPoseDeviceInteraction(TeaseLib teaseLib, TeaseLibAI teaseLibAI, ScriptRenderer scriptRenderer)
-            throws InterruptedException {
+    public HumanPoseDeviceInteraction(TeaseLib teaseLib, TeaseLibAI teaseLibAI) throws InterruptedException {
+        this(teaseLib, new PoseEstimationTask(teaseLibAI));
+    }
+
+    HumanPoseDeviceInteraction(TeaseLib teaseLib, PoseEstimationTask poseEstimationTask) {
         super(Object::equals);
-        this.poseEstimationTask = new PoseEstimationTask(teaseLibAI, this);
+        this.poseEstimationTask = poseEstimationTask;
         this.proximitySensor = new ProximitySensor(teaseLib, HumanPose.asSet(Interest.Status, Interest.Proximity));
-        this.scriptRenderer = scriptRenderer;
-        this.actorChangedListener = e -> poseEstimationTask.setActor(e.actor);
-        scriptRenderer.events.actorChanged.add(actorChangedListener);
     }
 
     @Override
     public void close() {
-        scriptRenderer.events.actorChanged.remove(actorChangedListener);
         poseEstimationTask.close();
     }
 
@@ -79,9 +77,8 @@ public class HumanPoseDeviceInteraction extends
 
     public PoseAspects getPose(Set<Interest> interests, byte[] image) throws InterruptedException {
         Callable<PoseAspects> poseAspects = () -> {
-            long timestamp = System.currentTimeMillis();
             HumanPose model = getModel(interests);
-            model.setInterests(interests);
+            long timestamp = System.currentTimeMillis();
             List<Estimation> poses = model.poses(image, Rotation.None);
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
@@ -122,20 +119,17 @@ public class HumanPoseDeviceInteraction extends
     public void addEventListener(Actor actor, EventListener listener) {
         List<EventSource<PoseEstimationEventArgs>> eventSources = new ArrayList<>();
         synchronized (this) {
-            DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
-                    actor);
+            var definitions = super.definitions(actor);
             for (Interest interest : listener.interests) {
-                EventSource<PoseEstimationEventArgs> eventSource = definitions.get(interest,
-                        k -> new EventSource<>(k.toString()));
+                var eventSource = definitions.get(interest, k -> new EventSource<>(k.toString()));
                 eventSources.add(eventSource);
             }
         }
         eventSources.stream().forEach(eventSource -> eventSource.add(listener));
-        poseEstimationTask.interestChanged();
+        interestChanged(actor);
 
         try {
-            PoseEstimationEventArgs eventArgs = new PoseEstimationEventArgs(actor,
-                    poseEstimationTask.getPose(listener.interests));
+            var eventArgs = new PoseEstimationEventArgs(actor, poseEstimationTask.getPose(listener.interests));
             listener.run(eventArgs);
         } catch (Exception e) {
             throw asRuntimeException(e);
@@ -144,8 +138,7 @@ public class HumanPoseDeviceInteraction extends
 
     public boolean containsEventListener(Actor actor, EventListener listener) {
         synchronized (this) {
-            DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
-                    actor);
+            var definitions = super.definitions(actor);
             for (Interest interest : listener.interests) {
                 EventSource<PoseEstimationEventArgs> eventSource;
                 eventSource = definitions.get(interest);
@@ -160,15 +153,23 @@ public class HumanPoseDeviceInteraction extends
     public void removeEventListener(Actor actor, EventListener listener) {
         List<EventSource<PoseEstimationEventArgs>> eventSources = new ArrayList<>();
         synchronized (this) {
-            DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = super.definitions(
-                    actor);
+            var definitions = super.definitions(actor);
             for (Interest interest : listener.interests) {
-                EventSource<PoseEstimationEventArgs> eventSource = definitions.get(interest);
+                var eventSource = definitions.get(interest);
                 eventSources.add(eventSource);
             }
         }
         eventSources.stream().forEach(eventSource -> eventSource.remove(listener));
-        poseEstimationTask.interestChanged();
+        interestChanged(actor);
+    }
+
+    @Override
+    public void run(ActorChanged eventArgs) {
+        interestChanged(eventArgs.actor);
+    }
+
+    private void interestChanged(Actor actor) {
+        poseEstimationTask.setActor(definitions(actor));
     }
 
 }

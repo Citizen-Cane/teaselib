@@ -9,17 +9,17 @@
 #include "JNIString.h"
 #include "NativeException.h"
 
-void JNIException::rethrow(JNIEnv* env, std::invalid_argument& e)
+void JNIException::rethrow(JNIEnv* env, const std::invalid_argument& e)
 {
 	rethrow(env, e, "java/lang/IllegalArgumentException");
 }
 
-void JNIException::rethrow(JNIEnv* env, std::exception& e)
+void JNIException::rethrow(JNIEnv* env, const std::exception& e)
 {
 	rethrow(env, e, "java/lang/RuntimeException");
 }
 
-void JNIException::rethrow(JNIEnv* env, std::exception& e, const char* runtimeClass)
+void JNIException::rethrow(JNIEnv* env, const std::exception& e, const char* runtimeClass)
 {
 	rethrow(env, e.what(), runtimeClass);
 }
@@ -40,7 +40,7 @@ void JNIException::rethrow(JNIEnv* env, const char* what, const char* runtimeCla
 	env->Throw(throwable);
 }
 
-void JNIException::rethrow(JNIEnv* env, NativeException& e) {
+void JNIException::rethrow(JNIEnv* env, const NativeException& e) {
 	assert(!env->ExceptionCheck());
 	jclass jruntimeClass = env->FindClass(e.runtimeClass);
 	JNIString message(env, e.message);

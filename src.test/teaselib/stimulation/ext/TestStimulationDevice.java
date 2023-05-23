@@ -44,7 +44,7 @@ public final class TestStimulationDevice extends StimulationDevice {
 
     @Override
     public void close() {
-        throw new UnsupportedOperationException();
+        // Ignore
     }
 
     @Override

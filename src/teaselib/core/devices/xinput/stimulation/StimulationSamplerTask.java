@@ -40,6 +40,9 @@ public abstract class StimulationSamplerTask implements Closeable {
     public void close() {
         executor.shutdown();
         playList.drainTo(new ArrayList<>());
+        if (future != null && !future.isCancelled() && !future.isDone()) {
+            future.cancel(true);
+        }
     }
 
     public void play(StimulationTargets targets) {

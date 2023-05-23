@@ -38,49 +38,54 @@ public class XInputTest {
     @Test
     public void testEnumXInputDevices() {
         Configuration config = DebugSetup.getConfiguration();
-        Devices devices = new Devices(config);
-
-        List<XInputDevice> xinputDevices = getXInputDevices(devices);
-        for (XInputDevice xinputDevice : xinputDevices) {
-            assertNotEquals(null, xinputDevice);
-            assertEquals(true, xinputDevice.connected() || xinputDevice.getPlayerNum() == 0);
-            assertEquals(true, xinputDevice.active() || xinputDevice.getPlayerNum() == 0);
-            System.out.println("Device " + xinputDevice.getDevicePath() + ": "
-                    + (xinputDevice.connected() ? "connected" : "not connected"));
+        try (Devices devices = new Devices(config)) {
+            List<XInputDevice> xinputDevices = getXInputDevices(devices);
+            for (XInputDevice xinputDevice : xinputDevices) {
+                assertNotEquals(null, xinputDevice);
+                assertEquals(true, xinputDevice.connected() || xinputDevice.getPlayerNum() == 0);
+                assertEquals(true, xinputDevice.active() || xinputDevice.getPlayerNum() == 0);
+                System.out.println("Device " + xinputDevice.getDevicePath() + ": "
+                        + (xinputDevice.connected() ? "connected" : "not connected"));
+            }
         }
     }
 
     @Test
     public void testEnumStimulationDevices() {
         Configuration config = DebugSetup.getConfiguration();
-        Devices devices = new Devices(config);
-
-        List<XInputDevice> xinputDevices = getXInputDevices(devices);
-        int n = 0;
-        for (XInputDevice xinputDevice : xinputDevices) {
-            final boolean useDevice = xinputDevice.connected() || xinputDevice.getPlayerNum() == 0;
-            assertEquals(true, useDevice);
-            if (useDevice) {
-                n++;
+        try (Devices devices = new Devices(config)) {
+            List<XInputDevice> xinputDevices = getXInputDevices(devices);
+            int n = 0;
+            for (XInputDevice xinputDevice : xinputDevices) {
+                final boolean useDevice = xinputDevice.connected() || xinputDevice.getPlayerNum() == 0;
+                assertEquals(true, useDevice);
+                if (useDevice) {
+                    n++;
+                }
             }
-        }
-        Collection<String> devicePaths = devices.get(StimulationDevice.class).getDevicePaths();
-        List<StimulationDevice> stimulationDevices = new ArrayList<>();
-        for (String devicePath : devicePaths) {
-            StimulationDevice stimulationDevice = devices.get(StimulationDevice.class).getDevice(devicePath);
-            if (stimulationDevice instanceof XInputStimulationDevice) {
-                stimulationDevices.add(stimulationDevice);
+            Collection<String> devicePaths = devices.get(StimulationDevice.class).getDevicePaths();
+            List<StimulationDevice> stimulationDevices = new ArrayList<>();
+            for (String devicePath : devicePaths) {
+                StimulationDevice stimulationDevice = devices.get(StimulationDevice.class).getDevice(devicePath);
+                if (stimulationDevice instanceof XInputStimulationDevice) {
+                    stimulationDevices.add(stimulationDevice);
+                }
             }
-        }
-        assertEquals(n, stimulationDevices.size());
+            assertEquals(n, stimulationDevices.size());
 
-        for (StimulationDevice stimulationDevice : stimulationDevices) {
-            if (stimulationDevice instanceof XInputStimulationDevice) {
-                XInputStimulationDevice xinputStimulationDevice = (XInputStimulationDevice) stimulationDevice;
-                assertNotEquals(null, stimulationDevice);
-                System.out.println("Device " + xinputStimulationDevice.getDevicePath() + ": "
-                        + (xinputStimulationDevice.connected() ? "connected" : "not connected"));
+            for (StimulationDevice stimulationDevice : stimulationDevices) {
+                if (stimulationDevice instanceof XInputStimulationDevice) {
+                    XInputStimulationDevice xinputStimulationDevice = (XInputStimulationDevice) stimulationDevice;
+                    assertNotEquals(null, stimulationDevice);
+                    System.out.println("Device " + xinputStimulationDevice.getDevicePath() + ": "
+                            + (xinputStimulationDevice.connected() ? "connected" : "not connected"));
+                }
+            }
+
+            for (StimulationDevice stimulationDevice : stimulationDevices) {
+                stimulationDevice.close();
             }
         }
     }
+
 }

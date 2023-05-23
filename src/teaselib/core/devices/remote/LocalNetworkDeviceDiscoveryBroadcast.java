@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.devices.remote;
 
 import java.io.IOException;
@@ -19,14 +16,18 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.concurrency.NamedExecutorService;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     static final Logger logger = LoggerFactory.getLogger(LocalNetworkDeviceDiscoveryBroadcast.class);
 
-    private final Map<InterfaceAddress, BroadcastListener> discoveryThreads = new HashMap<>();
-    private BroadcastListener deviceStatusMessageListener;
-
-    final NamedExecutorService eventExecutor = NamedExecutorService
+    private final NamedExecutorService eventExecutor = NamedExecutorService
             .singleThreadedQueue("LocalNetworkDeviceConnectionHandler");
+
+    private BroadcastListener deviceStatusMessageListener;
+    private final Map<InterfaceAddress, BroadcastListener> discoveryThreads = new HashMap<>();
 
     @Override
     public void enableDeviceStatusListener(boolean enable) {
@@ -71,7 +72,8 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         for (InterfaceAddress interfaceAddress : networks) {
             if (!discoveryThreads.containsKey(interfaceAddress)) {
                 try {
-                    BroadcastListener socketThread = new BroadcastListener(interfaceAddress.getBroadcast(),
+                    BroadcastListener socketThread = new BroadcastListener(
+                            interfaceAddress.getBroadcast(),
                             LocalNetworkDevice.Port);
                     discoveryThreads.put(interfaceAddress, socketThread);
                     socketThread.start();
@@ -85,7 +87,8 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     private void removeSocketThreadsForVanishedNetworks(List<InterfaceAddress> networks) {
         for (Entry<InterfaceAddress, BroadcastListener> entry : discoveryThreads.entrySet()) {
             if (!networks.contains(entry.getKey())) {
-                discoveryThreads.remove(entry.getKey()).interrupt();
+                BroadcastListener socketThread = discoveryThreads.remove(entry.getKey());
+                socketThread.interrupt();
             }
         }
     }
@@ -108,8 +111,8 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     }
 
     class BroadcastListener extends Thread {
-        final UDPConnection connection;
-        private final AtomicBoolean isRunning = new AtomicBoolean(false);
+
+        private final UDPConnection connection;
 
         public BroadcastListener(InetAddress address, int port) throws IOException {
             connection = new UDPConnection(address, port);
@@ -132,7 +135,6 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         @Override
         public synchronized void start() {
             super.start();
-            isRunning.set(true);
         }
 
         public void end() {
@@ -162,7 +164,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
                             });
                         }
                     } catch (SocketException e) {
-                        boolean socketHasBeenClosed = isRunning.get();
+                        boolean socketHasBeenClosed = !isInterrupted();
                         if (socketHasBeenClosed) {
                             logger.error(e.getMessage(), e);
                         }
@@ -177,14 +179,15 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
 
         @Override
         public void interrupt() {
-            isRunning.set(false);
             super.interrupt();
             connection.close();
         }
     }
 
     @Override
-    void close() {
+    public void close() {
+        eventExecutor.shutdown();
+        discoveryThreads.values().stream().forEach(Thread::interrupt);
         if (deviceStatusMessageListener != null) {
             deviceStatusMessageListener.interrupt();
             try {
@@ -194,4 +197,5 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
             }
         }
     }
+
 }

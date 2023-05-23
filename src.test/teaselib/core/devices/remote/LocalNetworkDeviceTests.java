@@ -17,10 +17,10 @@ public class LocalNetworkDeviceTests {
     @Test
     public void testResourceDeallocationQuiteLong() {
         Configuration config = DebugSetup.getConfigurationWithRemoteDeviceAccess();
-        Devices devices = new Devices(config);
-
-        int j = 10;
-        testResourceDeallocation(devices, j);
+        try (Devices devices = new Devices(config)) {
+            int j = 10;
+            testResourceDeallocation(devices, j);
+        }
     }
 
     private static void testResourceDeallocation(Devices devices, int j) {
@@ -43,4 +43,5 @@ public class LocalNetworkDeviceTests {
         assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.Settings.EnableDeviceStatusListener",
                 QualifiedString.of(LocalNetworkDevice.Settings.EnableDeviceStatusListener).toString());
     }
+
 }

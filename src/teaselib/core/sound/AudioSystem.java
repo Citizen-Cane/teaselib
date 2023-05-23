@@ -5,16 +5,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import teaselib.core.Closeable;
+
 /**
  * @author Citizen-Cane
  *
  */
-public class AudioSystem {
+public class AudioSystem implements Closeable {
 
     public static class Devices<T> {
 
         T primary;
-        List<T> devices = Collections.emptyList();
+        private List<T> devices = Collections.emptyList();
 
         public List<T> devices() {
             return devices;
@@ -79,6 +81,14 @@ public class AudioSystem {
 
     public AudioOutputDevice defaultOutput() {
         return output.primary;
+    }
+
+    @Override
+    public void close() {
+        input.devices().stream().forEach(AudioInputDevice::close);
+        input.primary.close();
+        output.devices().stream().forEach(AudioOutputDevice::close);
+        output.primary.close();
     }
 
 }

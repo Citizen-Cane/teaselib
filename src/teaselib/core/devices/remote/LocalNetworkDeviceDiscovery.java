@@ -11,7 +11,9 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-public abstract class LocalNetworkDeviceDiscovery {
+import teaselib.core.Closeable;
+
+public abstract class LocalNetworkDeviceDiscovery implements Closeable {
 
     final List<RemoteDeviceListener> remoteDeviceListeners = new ArrayList<>();
 
@@ -19,7 +21,8 @@ public abstract class LocalNetworkDeviceDiscovery {
 
     abstract void searchDevices() throws InterruptedException;
 
-    abstract void close();
+    @Override
+    public abstract void close();
 
     List<InterfaceAddress> networks() throws SocketException {
         List<InterfaceAddress> interfaceAddresses = new ArrayList<>();

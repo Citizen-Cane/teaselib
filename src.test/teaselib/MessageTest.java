@@ -15,7 +15,7 @@ import org.junit.Test;
 import teaselib.core.texttospeech.Voice;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class MessageTest {

@@ -1,9 +1,7 @@
 package teaselib.core.devices.release.unattended;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static java.util.concurrent.TimeUnit.*;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +44,7 @@ public class KeyReleaseAutoReleaseTest extends KeyReleaseBaseTest {
     @After
     public void after() {
         releaseAllRunningActuators(keyRelease);
+        devices.close();
     }
 
     @Test

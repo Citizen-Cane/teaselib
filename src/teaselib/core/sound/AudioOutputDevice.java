@@ -22,8 +22,8 @@ import teaselib.host.Host.Audio;
  */
 public class AudioOutputDevice extends AudioDevice implements Closeable {
 
-    NamedExecutorService audioService;
-    protected final Map<Audio.Type, AudioOutputLine> lines;
+    private final NamedExecutorService audioService;
+    private final Map<Audio.Type, AudioOutputLine> lines;
 
     public AudioOutputDevice(String name, Mixer.Info mixer, Mixer.Info port) {
         super(name, mixer, port);
@@ -99,7 +99,8 @@ public class AudioOutputDevice extends AudioDevice implements Closeable {
 
     @Override
     public void close() {
-        lines.values().stream().forEach(Closeable::close);
+        audioService.shutdown();
+        lines.values().stream().forEach(AudioOutputLine::close);
     }
 
 }

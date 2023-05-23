@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.devices.remote;
 
 import java.net.InetAddress;
@@ -30,8 +27,7 @@ public class NetworkDeviceDiscoveryTest {
     public void testBroadcastConnectProcedure() throws Exception {
         logger.info("Manual device discovery broadcast:");
         Map<InetAddress, RemoteDeviceMessage> devices = new HashMap<>();
-        LocalNetworkDeviceDiscoveryBroadcast localNetworkDeviceDiscoveryBroadcast = new LocalNetworkDeviceDiscoveryBroadcast();
-        try {
+        try (LocalNetworkDeviceDiscoveryBroadcast localNetworkDeviceDiscoveryBroadcast = new LocalNetworkDeviceDiscoveryBroadcast()) {
             for (InterfaceAddress interfaceAddress : localNetworkDeviceDiscoveryBroadcast.networks()) {
                 logger.info("Sending broadcast message to {}", interfaceAddress.getBroadcast());
 
@@ -54,8 +50,6 @@ public class NetworkDeviceDiscoveryTest {
                     connection.close();
                 }
             }
-        } finally {
-            localNetworkDeviceDiscoveryBroadcast.close();
         }
         for (Map.Entry<InetAddress, RemoteDeviceMessage> device : devices.entrySet()) {
             logger.info(device.getKey().toString() + " -> " + device.getValue());
@@ -65,11 +59,8 @@ public class NetworkDeviceDiscoveryTest {
     @Test
     public void testLocalNetworkDeviceBroadcastDiscovery() throws Exception {
         logger.info("Local network device discovery broadcast):");
-        LocalNetworkDeviceDiscoveryBroadcast scanner = new LocalNetworkDeviceDiscoveryBroadcast();
-        try {
+        try (LocalNetworkDeviceDiscoveryBroadcast scanner = new LocalNetworkDeviceDiscoveryBroadcast()) {
             collectFoundDevices(scanner);
-        } finally {
-            scanner.close();
         }
     }
 
@@ -88,12 +79,12 @@ public class NetworkDeviceDiscoveryTest {
     @Test
     public void testDeviceClass() throws Exception {
         Configuration config = DebugSetup.getConfigurationWithRemoteDeviceAccess();
-        Devices devices = new Devices(config);
-
-        logger.info("Device factory network scan (uses broadcast device discovery):");
-
-        for (String devicePath : devices.get(LocalNetworkDevice.class).getDevicePaths()) {
-            logger.info(devicePath);
+        try (Devices devices = new Devices(config)) {
+            logger.info("Device factory network scan (uses broadcast device discovery):");
+            for (String devicePath : devices.get(LocalNetworkDevice.class).getDevicePaths()) {
+                logger.info(devicePath);
+            }
         }
     }
+
 }

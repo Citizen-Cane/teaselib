@@ -261,6 +261,12 @@ public class TeaseLib implements Closeable {
         }
 
         try {
+            devices.close();
+        } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
+        }
+
+        try {
             config.close();
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);

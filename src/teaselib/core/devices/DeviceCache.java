@@ -1,6 +1,6 @@
 package teaselib.core.devices;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -72,8 +72,7 @@ public class DeviceCache<T extends Device> {
         return factories.values().stream().map(DeviceFactory<? extends T>::getDeviceClass).collect(toList());
     }
 
-    public void addListeners() { //
-    };
+    public void addListeners() { /* ignore */ }
 
     public static String createDevicePath(String deviceClassName, String deviceName) {
         return deviceClassName + PathSeparator + deviceName;
@@ -181,6 +180,10 @@ public class DeviceCache<T extends Device> {
 
     public int size() {
         return factories.values().stream().map(f -> f.getDevices().size()).reduce(0, Integer::sum);
+    }
+
+    void close() {
+        factories.values().stream().forEach(DeviceFactory::close);
     }
 
 }

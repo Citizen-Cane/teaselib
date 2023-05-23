@@ -1,5 +1,6 @@
 package teaselib.core.speechrecognition.sapi;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.util.Locale;
@@ -22,8 +23,9 @@ public class SpeechRecognitionSimpleTest {
 
     @Test
     public void testResourceHandling() {
-        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRSimple.class, new AudioSync());
-        sr.close();
+        try (SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRSimple.class, new AudioSync())) {
+            assertEquals(false, sr.isActive());
+        }
     }
 
     @Test

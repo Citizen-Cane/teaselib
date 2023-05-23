@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.AudioSync;
+import teaselib.core.Closeable;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
@@ -15,7 +16,7 @@ import teaselib.core.ui.Choices;
 import teaselib.core.util.Environment;
 import teaselib.core.util.ExceptionUtil;
 
-public class SpeechRecognition {
+public class SpeechRecognition implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
 
     public final SpeechRecognitionEvents events;
@@ -83,26 +84,33 @@ public class SpeechRecognition {
         } else if (srClass == Unsupported.class) {
             implementation = Unsupported.Instance;
         } else {
-            implementation = delegateThread.call(() -> {
-                try {
-                    if (Environment.SYSTEM == Environment.Windows) {
-                        SpeechRecognitionNativeImplementation instance = srClass.getConstructor(Locale.class)
-                                .newInstance(locale);
-                        instance.startEventLoop(events);
-                        instance.setMaxAlternates(SpeechRecognitionImplementation.MAX_ALTERNATES_DEFAULT);
-                        return instance;
-                    } else {
-                        return Unsupported.Instance;
+            try {
+                implementation = delegateThread.call(() -> {
+                    try {
+                        if (Environment.SYSTEM == Environment.Windows) {
+                            SpeechRecognitionNativeImplementation instance = srClass.getConstructor(Locale.class)
+                                    .newInstance(locale);
+                            instance.startEventLoop(events);
+                            instance.setMaxAlternates(SpeechRecognitionImplementation.MAX_ALTERNATES_DEFAULT);
+                            return instance;
+                        } else {
+                            return Unsupported.Instance;
+                        }
+                    } catch (RuntimeException e) {
+                        throw e;
+                    } catch (Throwable t) {
+                        throw ExceptionUtil.asRuntimeException(t);
                     }
-                } catch (RuntimeException e) {
-                    throw e;
-                } catch (Throwable t) {
-                    throw ExceptionUtil.asRuntimeException(t);
-                }
-            });
+                });
+            } catch (Throwable t) {
+                delegateThread.shutdown();
+                throw t;
+            }
+
         }
     }
 
+    @Override
     public void close() {
         implementation.close();
         unlockSpeechRecognitionInProgressSyncObject();

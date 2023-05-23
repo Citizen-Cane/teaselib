@@ -6,10 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import teaselib.core.Closeable;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.remote.RemoteDevice;
 
-public class Devices {
+public class Devices implements Closeable {
+
     private final Map<Class<?>, DeviceCache<? extends Device>> deviceClasses = new HashMap<>();
     private final Map<String, DeviceCache<? extends Device>> deviceClassNames = new HashMap<>();
     private final Configuration configuration;
@@ -62,6 +64,11 @@ public class Devices {
     public <T extends Device> T getDefaultDevice(Class<T> deviceClass) {
         DeviceCache<T> deviceCache = get(deviceClass);
         return deviceCache.getDefaultDevice();
+    }
+
+    @Override
+    public void close() {
+        deviceClasses.values().stream().forEach(DeviceCache::close);
     }
 
 }

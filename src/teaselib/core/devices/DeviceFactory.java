@@ -158,4 +158,8 @@ public abstract class DeviceFactory<T extends Device> {
                 || devicePath.equals(device.getDevicePath())).map(this::getDevice).findFirst();
     }
 
+    protected void close() {
+        deviceCache.values().stream().forEach(Device::close);
+    }
+
 }

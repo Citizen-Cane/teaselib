@@ -3,10 +3,7 @@
  */
 package teaselib.core.devices.release.unattended;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static teaselib.core.devices.release.KeyReleaseBaseTest.HOLD_DURATION_MINUTES;
-import static teaselib.core.devices.release.KeyReleaseBaseTest.WAIT_FOR_CONNECTION_SECONDS;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +39,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
     @After
     public void releaseAllAfterwards() {
         releaseAllRunningActuators(keyRelease);
+        devices.close();
     }
 
     @Test

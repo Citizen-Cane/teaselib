@@ -1,11 +1,12 @@
 package teaselib.core.devices.xinput.stimulation;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Test;
 
 import teaselib.stimulation.ConstantWave;
@@ -24,6 +25,7 @@ import teaselib.test.TestException;
  *
  */
 public class StimulationSamplerTaskTest {
+
     static class TestStimulationSamplerTask extends StimulationSamplerTask {
         final List<Samples> sampled = new ArrayList<>();
 
@@ -44,12 +46,16 @@ public class StimulationSamplerTaskTest {
     }
 
     TestStimulationDevice device = new TestStimulationDevice();
-
     Stimulator stim1 = device.add(new TestStimulator(device, 1));
     Stimulator stim2 = device.add(new TestStimulator(device, 2));
     Stimulator stim3 = device.add(new TestStimulator(device, 3));
 
     final StimulationTargets constantSignal = constantSignal(device, 1, TimeUnit.MILLISECONDS);
+
+    @After
+    public void close() {
+        device.close();
+    }
 
     private static StimulationTargets constantSignal(StimulationDevice device, long duration, TimeUnit timeUnit) {
         WaveForm waveForm = new ConstantWave(timeUnit.toMillis(duration));

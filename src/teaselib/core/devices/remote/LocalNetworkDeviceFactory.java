@@ -1,6 +1,6 @@
 package teaselib.core.devices.remote;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import static teaselib.core.util.ExceptionUtil.*;
 
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -87,6 +87,12 @@ public final class LocalNetworkDeviceFactory extends DeviceFactory<LocalNetworkD
 
     public boolean isDeviceDiscoveryEnabled() {
         return Boolean.parseBoolean(configuration.get(LocalNetworkDevice.Settings.EnableDeviceDiscovery));
+    }
+
+    @Override
+    protected void close() {
+        deviceDiscovery.close();
+        super.close();
     }
 
 }

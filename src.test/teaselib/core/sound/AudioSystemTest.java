@@ -143,19 +143,20 @@ public class AudioSystemTest {
 
     @Test
     public void testAudioOutputDevices() {
-        AudioSystem audioSystem = new AudioSystem();
+        try (AudioSystem audioSystem = new AudioSystem()) {
 
-        var speakers = audioSystem.output.devices();
-        assertNotNull(speakers);
-        assumeTrue(speakers.size() > 0);
-        assertNotNull(audioSystem.defaultOutput());
-        assertFalse(speakers.contains(audioSystem.defaultOutput()));
+            var speakers = audioSystem.output.devices();
+            assertNotNull(speakers);
+            assumeTrue(speakers.size() > 0);
+            assertNotNull(audioSystem.defaultOutput());
+            assertFalse(speakers.contains(audioSystem.defaultOutput()));
 
-        var mics = audioSystem.input.devices();
-        assertNotNull(mics);
-        assumeTrue(mics.size() > 0);
-        assertNotNull(audioSystem.defaultInput());
-        assertFalse(mics.contains(audioSystem.defaultInput()));
+            var mics = audioSystem.input.devices();
+            assertNotNull(mics);
+            assumeTrue(mics.size() > 0);
+            assertNotNull(audioSystem.defaultInput());
+            assertFalse(mics.contains(audioSystem.defaultInput()));
+        }
     }
 
     @Test
@@ -174,31 +175,33 @@ public class AudioSystemTest {
     @Test
     public void testInterruptAudioStream()
             throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
-        AudioSystem audioSystem = new AudioSystem();
-        var device = audioSystem.output.primary;
-        InputStream mp3 = getClass().getResource("1.mp3").openStream();
-        var audio = device.newStream(Audio.Type.Speech, mp3);
-        var playing = audio.start();
-        Thread.sleep(1000);
-        playing.cancel(true);
-        assertThrows(CancellationException.class, () -> playing.get());
+        try (AudioSystem audioSystem = new AudioSystem()) {
+            var device = audioSystem.output.primary;
+            InputStream mp3 = getClass().getResource("1.mp3").openStream();
+            var audio = device.newStream(Audio.Type.Speech, mp3);
+            var playing = audio.start();
+            Thread.sleep(1000);
+            playing.cancel(true);
+            assertThrows(CancellationException.class, () -> playing.get());
+        }
     }
 
     @Test
     public void testBalance()
             throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
-        AudioSystem audioSystem = new AudioSystem();
-        var device = audioSystem.output.primary;
-        InputStream mp3 = getClass().getResource("1.mp3").openStream();
-        var audio = device.newStream(Audio.Type.Speech, mp3);
-        audio.setVolume(1.0f);
-        audio.setBalance(-1.0f);
-        var playing = audio.start();
-        Thread.sleep(1000);
-        audio.setBalance(1.0f);
-        Thread.sleep(1000);
-        playing.cancel(true);
-        assertThrows(CancellationException.class, () -> playing.get());
+        try (AudioSystem audioSystem = new AudioSystem()) {
+            var device = audioSystem.output.primary;
+            InputStream mp3 = getClass().getResource("1.mp3").openStream();
+            var audio = device.newStream(Audio.Type.Speech, mp3);
+            audio.setVolume(1.0f);
+            audio.setBalance(-1.0f);
+            var playing = audio.start();
+            Thread.sleep(1000);
+            audio.setBalance(1.0f);
+            Thread.sleep(1000);
+            playing.cancel(true);
+            assertThrows(CancellationException.class, () -> playing.get());
+        }
     }
 
     @Test
@@ -221,12 +224,13 @@ public class AudioSystemTest {
     private static void testMP3(InputStream mp3, int s)
             throws LineUnavailableException, UnsupportedAudioFileException, IOException, InterruptedException, ExecutionException {
         assertNotNull(mp3);
-        AudioSystem audioSystem = new AudioSystem();
-        var device = audioSystem.output.primary;
-        var audio = device.newStream(Audio.Type.Speech, mp3);
-        var playing = audio.start();
-        int samples = playing.get();
-        assertEquals(s, samples);
+        try (AudioSystem audioSystem = new AudioSystem()) {
+            var device = audioSystem.output.primary;
+            var audio = device.newStream(Audio.Type.Speech, mp3);
+            var playing = audio.start();
+            int samples = playing.get();
+            assertEquals(s, samples);
+        }
     }
 
 }

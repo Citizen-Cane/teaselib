@@ -23,7 +23,7 @@ public class AudioOutputStream implements Closeable {
     private static final int FrameSize = 256;
 
     private final AudioInputStream audio;
-    public final AudioOutputLine line;
+    private final AudioOutputLine line;
     private final javax.sound.sampled.SourceDataLine dataLine;
     private final ExecutorService executor;
     private final boolean stereoUpmix;
@@ -131,6 +131,9 @@ public class AudioOutputStream implements Closeable {
     @Override
     public void close() {
         try {
+            if (!future.isDone() && !future.isCancelled()) {
+                future.cancel(true);
+            }
             audio.close();
             line.release();
         } catch (IOException e) {

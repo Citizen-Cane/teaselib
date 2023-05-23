@@ -1,6 +1,6 @@
 package teaselib.core.devices;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import java.util.Set;
 
@@ -24,13 +24,13 @@ public class DeviceFactoryTests {
     @Test
     public void instanciateDeviceFactories() {
         Configuration config = DebugSetup.getConfiguration();
-        Devices devices = new Devices(config);
-
-        logger.info("Available devices:");
-        listDevices(devices.get(XInputDevice.class).getDevicePaths());
-        listDevices(devices.get(StimulationDevice.class).getDevicePaths());
-        listDevices(devices.get(RemoteDevice.class).getDevicePaths());
-        listDevices(devices.get(KeyRelease.class).getDevicePaths());
+        try (Devices devices = new Devices(config)) {
+            logger.info("Available devices:");
+            listDevices(devices.get(XInputDevice.class).getDevicePaths());
+            listDevices(devices.get(StimulationDevice.class).getDevicePaths());
+            listDevices(devices.get(RemoteDevice.class).getDevicePaths());
+            listDevices(devices.get(KeyRelease.class).getDevicePaths());
+        }
     }
 
     private static void listDevices(Set<String> devicePaths) {
@@ -43,18 +43,18 @@ public class DeviceFactoryTests {
     @Test
     public void enumerateRemoteDevices() {
         Configuration config = DebugSetup.getConfiguration();
-        Devices devices = new Devices(config);
-        DeviceCache<RemoteDevice> deviceCache = devices.get(RemoteDevice.class);
+        try (Devices devices = new Devices(config)) {
+            DeviceCache<RemoteDevice> deviceCache = devices.get(RemoteDevice.class);
+            Set<String> devicePaths = deviceCache.getDevicePaths();
+            assertNotNull(devicePaths);
 
-        Set<String> devicePaths = deviceCache.getDevicePaths();
-        assertNotNull(devicePaths);
-
-        for (String devicePath : devicePaths) {
-            logger.info(devicePath);
-            if (!Device.WaitingForConnection.equals(DeviceCache.getDeviceName(devicePath))) {
-                RemoteDevice device = deviceCache.getDevice(devicePath);
-                logger.info(
-                        "-> " + device.getName() + ":" + device.getServiceName() + " Version " + device.getVersion());
+            for (String devicePath : devicePaths) {
+                logger.info(devicePath);
+                if (!Device.WaitingForConnection.equals(DeviceCache.getDeviceName(devicePath))) {
+                    RemoteDevice device = deviceCache.getDevice(devicePath);
+                    logger.info(
+                            "-> " + device.getName() + ":" + device.getServiceName() + " Version " + device.getVersion());
+                }
             }
         }
     }

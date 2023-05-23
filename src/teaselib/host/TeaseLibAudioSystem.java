@@ -90,7 +90,7 @@ public class TeaseLibAudioSystem implements Host.AudioSystem {
 
     @Override
     public void close() {
-        audioSystem.defaultOutput().close();
+        audioSystem.close();
     }
 
 }

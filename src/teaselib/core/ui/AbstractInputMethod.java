@@ -23,9 +23,8 @@ public abstract class AbstractInputMethod implements InputMethod {
     };
 
     protected final ExecutorService executor;
-    protected final ReentrantLock showLock = new ReentrantLock(true);
-
-    protected final ReentrantLock startLock = new ReentrantLock(true);
+    private final ReentrantLock showLock = new ReentrantLock(true);
+    private final ReentrantLock startLock = new ReentrantLock(true);
     private final Condition start = startLock.newCondition();
 
     protected final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
@@ -59,25 +58,19 @@ public abstract class AbstractInputMethod implements InputMethod {
     }
 
     @Override
-    public final void show(Prompt prompt) throws InterruptedException {
+    public final void show(Prompt prompt) {
         Objects.requireNonNull(prompt);
         if (showLock.isLocked()) {
             throw new ConcurrentModificationException("Show prompt " + this);
         }
 
         activePrompt.set(prompt);
-        start(prompt);
-
-        if (Thread.interrupted()) {
-            throw new InterruptedException();
-        }
-    }
-
-    private void start(Prompt prompt) throws InterruptedException {
         if (startLock.tryLock()) {
             try {
                 resultWorker = executor.submit(() -> showPrompt.accept(prompt));
                 start.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } finally {
                 startLock.unlock();
             }

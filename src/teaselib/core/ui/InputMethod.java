@@ -17,8 +17,7 @@ public interface InputMethod extends teaselib.core.Closeable {
      *
      */
     public interface Setup {
-        static final Setup None = () -> {
-        };
+        static final Setup None = () -> {};
 
         /**
          * Called by the input method before realizing the input method.
@@ -45,7 +44,7 @@ public interface InputMethod extends teaselib.core.Closeable {
 
     Setup getSetup(Choices choices);
 
-    void show(Prompt prompt) throws InterruptedException;
+    void show(Prompt prompt);
 
     void updateUI(UiEvent event);
 

@@ -227,6 +227,10 @@ public class Prompt {
         for (InputMethod inputMethod : realized) {
             inputMethod.show(this);
         }
+
+        if (Thread.interrupted()) {
+            throw new InterruptedException();
+        }
     }
 
     boolean isActive() {

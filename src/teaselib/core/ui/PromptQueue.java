@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Closeable;
 import teaselib.core.util.ExceptionUtil;
 
 /**
@@ -22,28 +21,35 @@ class PromptQueue {
     private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
 
     void show(Prompt prompt) throws InterruptedException {
-        stack.push(prompt);
-        Prompt active = activePrompt.get();
-
-        if (prompt == active) {
-            throw new IllegalStateException("Already showing " + prompt);
-        } else if (active != null) {
-            pause(active);
-        }
-
-        try {
-            activate(prompt);
-        } catch (Exception e) {
-            if (prompt.hasScriptTask()) {
-                prompt.cancelScriptTask();
+        updateActivePrompt(active -> {
+            stack.push(prompt);
+            if (prompt == active) {
+                throw new IllegalStateException("Already showing " + prompt);
+            } else if (active != null) {
+                active.lock.lockInterruptibly();
+                try {
+                    if (!active.paused()) {
+                        pause(active);
+                    }
+                } finally {
+                    active.lock.unlock();
+                }
             }
-            throw ExceptionUtil.asRuntimeException(e);
-        }
 
-        if (prompt.hasScriptTask()) {
-            prompt.executeScriptTask();
-        }
+            try {
+                prompt.show();
+            } catch (Exception e) {
+                if (prompt.hasScriptTask()) {
+                    prompt.cancelScriptTask();
+                }
+                throw ExceptionUtil.asRuntimeException(e);
+            }
 
+            if (prompt.hasScriptTask()) {
+                prompt.executeScriptTask();
+            }
+            return prompt;
+        });
         awaitResult(prompt);
     }
 
@@ -51,7 +57,7 @@ class PromptQueue {
         if (prompt.undefined()) {
             prompt.click.await();
         }
-        dismiss(prompt);
+        updateActivePrompt(active -> dismiss(active, prompt));
     }
 
     void resumePrevious() throws InterruptedException {
@@ -77,79 +83,86 @@ class PromptQueue {
     }
 
     private void resume(Prompt prompt) throws InterruptedException {
-        Prompt active = activePrompt.get();
-        if (active != null) {
-            if (prompt == active) {
-                throw new IllegalStateException("Prompt already showing: " + prompt);
-            } else {
-                throw new IllegalStateException("Previous prompt still showing:" + active);
+        updateActivePrompt(active -> {
+            if (active != null) {
+                if (prompt == active) {
+                    throw new IllegalStateException("Prompt already showing: " + prompt);
+                } else {
+                    throw new IllegalStateException("Previous prompt still showing:" + active);
+                }
+            } else if (!prompt.result().equals(Prompt.Result.UNDEFINED)) {
+                return null;
             }
-        } else if (!prompt.result().equals(Prompt.Result.UNDEFINED)) {
-            return;
-        }
 
-        prompt.resume();
-        activate(prompt);
+            prompt.resume();
+            prompt.show();
+            return prompt;
+        });
     }
 
     void resumePreviousPromptAfterException(Prompt prompt, Exception e) {
         try {
-            if (stack.isEmpty()) {
-                throw new IllegalStateException("Prompt stack empty: " + prompt, e);
-            }
+            updateActivePrompt(active -> {
+                if (stack.isEmpty()) {
+                    return null;
+                }
 
-            if (prompt.hasScriptTask()) {
-                prompt.scriptTask.cancel(true);
-                try {
+                if (prompt.hasScriptTask()) {
+                    prompt.scriptTask.cancel(true);
                     prompt.scriptTask.awaitCompleted();
-                } catch (InterruptedException interrupted) {
-                    Thread.currentThread().interrupt();
                 }
-            }
 
-            if (!stack.isEmpty() && stack.peek() != prompt) {
-                throw new IllegalStateException("Nested prompts not dismissed: " + prompt, e);
-            }
-
-            // active prompt UI must be unrealized explicitly
-            if (prompt == activePrompt.get()) {
-                if (prompt.undefined()) {
-                    dismiss(prompt);
+                if (!stack.isEmpty() && stack.peek() != prompt) {
+                    throw new IllegalStateException("Nested prompts not dismissed: " + prompt, e);
                 }
-            }
-            stack.remove(prompt);
-            if (!stack.isEmpty()) {
-                setActive(stack.peek());
-            }
+
+                // active prompt UI must be unrealized explicitly
+                if (prompt == active) {
+                    if (prompt.undefined()) {
+                        dismiss(active, prompt);
+                    }
+                }
+                stack.remove(prompt);
+                if (!stack.isEmpty()) {
+                    return stack.peek();
+                }
+                return null;
+            });
+
             if (prompt.isActive()) {
                 throw new IllegalStateException("Input methods not dismissed: " + prompt, e);
             }
+        } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
         } catch (RuntimeException ignore) {
             logger.warn(ignore.getMessage(), ignore);
-            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
-    private class HiddenPrompt implements Closeable {
+    private class HiddenPrompt {
 
         private final Prompt prompt = new Prompt(null, new InputMethods());
 
         HiddenPrompt() throws InterruptedException {
             prompt.lock.lock();
             try {
-                stack.push(prompt);
-                PromptQueue.this.activate(prompt);
+                updateActivePrompt(active -> {
+                    stack.push(prompt);
+                    prompt.show();
+                    return prompt;
+                });
             } finally {
                 prompt.lock.unlock();
             }
         }
 
-        @Override
-        public void close() {
-            PromptQueue.this.setActive(null);
-            if (stack.peek() == prompt) {
-                stack.pop();
-            }
+        public void dismiss() {
+            PromptQueue.this.activePrompt.updateAndGet(active -> {
+                if (stack.peek() == prompt) {
+                    stack.pop();
+                }
+                return null;
+            });
         }
     }
 
@@ -164,10 +177,13 @@ class PromptQueue {
         }
 
         // Ensure parent prompt is only resumed once the handler has completed
-        try (var hidden = new HiddenPrompt()) {
+        var hidden = new HiddenPrompt();
+        try {
             if (!contains(eventArgs.source)) {
                 prompt.executeInputMethodHandler(eventArgs);
             }
+        } finally {
+            hidden.dismiss();
         }
 
         if (stack.peek() != prompt) {
@@ -189,53 +205,61 @@ class PromptQueue {
         return false;
     }
 
-    void activate(Prompt prompt) throws InterruptedException {
-        prompt.show();
-        setActive(prompt);
-    }
-
     void pauseCurrent() throws InterruptedException {
-        if (!stack.isEmpty()) {
-            var prompt = stack.peek();
-            prompt.lock.lockInterruptibly();
-            try {
-                if (!prompt.paused()) {
-                    pause(prompt);
+        updateActivePrompt(active -> {
+            if (!stack.isEmpty()) {
+                var prompt = stack.peek();
+                prompt.lock.lockInterruptibly();
+                try {
+                    if (!prompt.paused()) {
+                        pause(prompt);
+                    }
+                } finally {
+                    prompt.lock.unlock();
                 }
-            } finally {
-                prompt.lock.unlock();
+                return prompt;
+            } else {
+                return null;
             }
-        }
+        });
     }
 
-    private void pause(Prompt prompt) {
+    private static void pause(Prompt prompt) {
         prompt.pause();
         if (prompt.undefined()) {
-            dismiss(prompt);
+            prompt.dismiss();
         } else {
             throw new IllegalStateException("Prompt result already set: " + prompt);
         }
     }
 
-    private void dismiss(Prompt prompt) {
-        Prompt active = activePrompt.get();
-
+    private static Prompt dismiss(Prompt active, Prompt prompt) {
         if (active == null) {
-            throw new IllegalArgumentException("Prompt already dismissed: " + prompt);
+            throw new IllegalStateException("Prompt already dismissed: " + prompt);
         }
         if (prompt != active) {
-            throw new IllegalArgumentException("Can only dismiss active prompt: " + active);
+            throw new IllegalStateException("Can only dismiss active prompt: " + active);
         }
-
-        try {
-            prompt.dismiss();
-        } finally {
-            setActive(null);
-        }
+        prompt.dismiss();
+        return null;
     }
 
-    void setActive(Prompt prompt) {
-        activePrompt.set(prompt);
+    private interface UpdatePrompt {
+        Prompt apply(Prompt active) throws InterruptedException;
+    }
+
+    private void updateActivePrompt(UpdatePrompt updateFunction) throws InterruptedException {
+        activePrompt.updateAndGet(active -> {
+            try {
+                return updateFunction.apply(active);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        });
+        if (Thread.interrupted()) {
+            throw new InterruptedException();
+        }
     }
 
     void updateUI(InputMethod.UiEvent event) throws InterruptedException {

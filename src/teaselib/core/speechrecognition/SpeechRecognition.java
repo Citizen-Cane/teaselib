@@ -134,10 +134,10 @@ public class SpeechRecognition implements Closeable {
             delegateThread.run(() -> {
                 preparedChoices.accept(implementation);
                 if (isActiveCalledFromDelegateThread()) {
-                    logger.warn("Speech recognition already running - re-initialized for active prompt");
+                    logger.warn("already running - re-initialized for active prompt");
                 } else if (paused) {
                     paused = false;
-                    logger.info("Speech recognition inactive stated changed from paused to started");
+                    logger.info("state changed from paused to started");
                 } else {
                     enableSR();
                     paused = false;
@@ -155,9 +155,9 @@ public class SpeechRecognition implements Closeable {
                 if (isActiveCalledFromDelegateThread()) {
                     disableSR();
                     paused = true;
-                    logger.info("Speech recognition paused");
+                    logger.info("paused");
                 } else {
-                    logger.warn("Speech recognition already stopped - pause request ignored");
+                    logger.warn("already stopped - pause request ignored");
                 }
             });
         } else {
@@ -169,13 +169,13 @@ public class SpeechRecognition implements Closeable {
         if (implementation != null) {
             delegateThread.run(() -> {
                 if (isActiveCalledFromDelegateThread()) {
-                    logger.warn("Speech recognition already running on resume attempt");
+                    logger.warn("already running on resume attempt");
                 } else if (!paused) {
-                    logger.warn("Speech recognition already stopped - not resumed");
+                    logger.warn("already stopped - not resumed");
                 } else {
                     enableSR();
                     paused = false;
-                    logger.info("Speech recognition resumed");
+                    logger.info("resumed");
                 }
             });
         } else {
@@ -190,9 +190,9 @@ public class SpeechRecognition implements Closeable {
                     implementation.stopRecognition();
                     enableSR();
                     paused = false;
-                    logger.info("Speech recognition restarted");
+                    logger.info("restarted");
                 } else {
-                    logger.warn("Speech recognition already stopped - restart request ignored");
+                    logger.warn("already stopped - restart request ignored");
                 }
             });
         } else {
@@ -205,12 +205,12 @@ public class SpeechRecognition implements Closeable {
             delegateThread.run(() -> {
                 if (isActiveCalledFromDelegateThread()) {
                     disableSR();
-                    logger.info("Speech recognition stopped");
+                    logger.info("stopped");
                 } else if (paused) {
                     paused = false;
-                    logger.info("Speech recognition inactive stated changed from paused to stopped");
+                    logger.info("state changed from paused to stopped");
                 } else {
-                    logger.warn("Speech recognition already stopped");
+                    logger.warn("already stopped");
                 }
             });
         } else {

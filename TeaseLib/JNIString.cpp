@@ -27,6 +27,14 @@ template<> JNIStringT<wchar_t>::~JNIStringT() {
 	env->ReleaseStringChars(jthis, reinterpret_cast<const jchar*>(string));
 }
 
+template<> bool JNIStringT<char>::operator==(const char* other) const {
+	return strcmp(string, other) == 0;
+}
+
+template<> bool JNIStringT<wchar_t>::operator==(const wchar_t* other) const {
+	return wcscmp(string, other) == 0;
+}
+
 template<> JNIStringT<char>::JNIStringT(JNIEnv *env, jstring string)
 	: JNIObject(env, string) {
 	jboolean isCopy;

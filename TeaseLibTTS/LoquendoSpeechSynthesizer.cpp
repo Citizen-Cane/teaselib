@@ -141,7 +141,7 @@ void LoquendoSpeechSynthesizer::setOutput(OutputType output, const char* wav)
     if (output == OutputType::AudioDevice && output == current) {
         return;
     } else {
-        char* destination;
+        const char* destination;
         if (output == OutputType::AudioDevice) {
             destination = "LTTS7AudioBoard";
         } else if (output == OutputType::File) {

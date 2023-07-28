@@ -22,6 +22,8 @@ public:
 		return env->GetStringLength(jthis);
 	};
 
+	bool operator==(const T* other) const;
+
 private:
 	const T *string;
 };

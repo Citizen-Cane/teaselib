@@ -45,7 +45,7 @@ extern "C"
 	(JNIEnv* env, jclass, jstring jsdk)
 	{
 		try {
-			const string sdk = JNIStringUTF8(env, jsdk);
+			const JNIStringUTF8 sdk(env, jsdk);
 			SpeechSynthesizer* speechSynthesizer;
 			if (sdk == LoquendoSpeechSynthesizer::Sdk) {
 				try {
@@ -60,6 +60,10 @@ extern "C"
 				throw invalid_argument(sdk);
 			}
 			return reinterpret_cast<jlong>(speechSynthesizer);
+		}
+		catch (invalid_argument& e) {
+			JNIException::rethrow(env, e);
+			return 0;
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 			return 0;

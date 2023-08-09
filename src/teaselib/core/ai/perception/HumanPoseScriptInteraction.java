@@ -1,6 +1,5 @@
 package teaselib.core.ai.perception;
 
-import static java.util.Collections.singleton;
 import static teaselib.core.ai.perception.HumanPose.Interest.Proximity;
 
 import java.util.Collections;
@@ -16,6 +15,7 @@ import teaselib.core.Script;
 import teaselib.core.ScriptInteraction;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ai.perception.HumanPose.Interest;
+import teaselib.core.ai.perception.HumanPose.PoseAspect;
 
 public class HumanPoseScriptInteraction implements ScriptInteraction {
 
@@ -33,26 +33,55 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
      * 
      */
     public interface Await {
-        boolean await(long duration, TimeUnit unit);
-
         default boolean await() {
             return await(Long.MAX_VALUE, TimeUnit.SECONDS);
         }
 
+        boolean await(long duration, TimeUnit unit);
+
         void over(long duration, TimeUnit unit);
     }
 
+    class AwaitImpl implements Await {
+        private final Set<Interest> interests;
+        private final PoseAspect[] aspects;
+
+        public AwaitImpl(Interest interest, PoseAspect... aspects) {
+            this(Collections.singleton(interest), aspects);
+        }
+
+        public AwaitImpl(Set<Interest> interests, PoseAspect... aspects) {
+            this.interests = interests;
+            this.aspects = aspects;
+        }
+
+        @Override
+        public boolean await(long duration, TimeUnit unit) {
+            return deviceInteraction.await(interests, duration, unit, aspects);
+        }
+
+        @Override
+        public void over(long duration, TimeUnit unit) {
+            while (await()) {
+                if (!deviceInteraction.awaitNoneOf(interests, duration, unit, aspects)) {
+                    break;
+                }
+            }
+        }
+
+    }
+
+    public final Await Presence;
+
     public final Await FaceToFace;
-    public final Await NotFaceToFace;
-
     public final Await Near;
-    public final Await NotNear;
-
     public final Await Far;
+
+    public final Await NotFaceToFace;
+    public final Await NotNear;
     public final Await NotFar;
 
-    public final Await Away;
-    public final Await NotAway;
+    public final Await Absence;
 
     public HumanPoseScriptInteraction(Script script) {
         this(script.teaseLib.globals
@@ -63,163 +92,17 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
     public HumanPoseScriptInteraction(HumanPoseDeviceInteraction deviceInteraction) {
         this.deviceInteraction = deviceInteraction;
 
-        this.FaceToFace = new Await() {
-            @Override
-            public boolean await(long duration, TimeUnit unit) {
-                return deviceInteraction.awaitPose(
-                        singleton(Proximity), duration, unit,
-                        HumanPose.Proximity.FACE2FACE,
-                        HumanPose.Proximity.CLOSE);
-            }
+        this.Presence = new AwaitImpl(Interest.Proximity, HumanPose.Proximity.Presence);
 
-            @Override
-            public void over(long duration, TimeUnit unit) {
-                while (await()) {
-                    if (!NotFaceToFace.await(duration, unit)) {
-                        break;
-                    }
-                }
-            }
-        };
+        this.FaceToFace = new AwaitImpl(Interest.Proximity, HumanPose.Proximity.Face2Face);
+        this.Near = new AwaitImpl(Interest.Proximity, HumanPose.Proximity.Not.Near);
+        this.Far = new AwaitImpl(Interest.Proximity, HumanPose.Proximity.Not.Far);
 
-        this.NotFaceToFace = new Await() {
-            @Override
-            public boolean await(long duration, TimeUnit unit) {
-                return deviceInteraction.awaitPose(
-                        singleton(Proximity), duration, unit,
-                        HumanPose.Proximity.NotFace2Face);
-                // TODO await absent pose
-            }
+        this.NotFaceToFace = new AwaitImpl(Interest.Proximity, HumanPose.Proximity.Not.Face2Face);
+        this.NotNear = new AwaitImpl(Interest.Proximity, HumanPose.Proximity.Not.Near);
+        this.NotFar = new AwaitImpl(Interest.Proximity, HumanPose.Proximity.Not.Far);
 
-            @Override
-            public void over(long duration, TimeUnit unit) {
-                while (await()) {
-                    if (!FaceToFace.await(duration, unit)) {
-                        break;
-                    }
-                }
-            }
-        };
-
-        this.Near = new Await() {
-            @Override
-            public boolean await(long duration, TimeUnit unit) {
-                return deviceInteraction.awaitPose(
-                        singleton(Proximity), duration, unit,
-                        HumanPose.Proximity.NEAR,
-                        HumanPose.Proximity.FACE2FACE,
-                        HumanPose.Proximity.CLOSE);
-            }
-
-            @Override
-            public void over(long duration, TimeUnit unit) {
-                while (await()) {
-                    if (!NotNear.await(duration, unit)) {
-                        break;
-                    }
-                }
-            }
-        };
-
-        this.NotNear = new Await() {
-            @Override
-            public boolean await(long duration, TimeUnit unit) {
-                return deviceInteraction.awaitPose(
-                        singleton(Proximity), duration, unit,
-                        HumanPose.Proximity.FAR,
-                        HumanPose.Proximity.AWAY);
-                // TODO await absent pose
-            }
-
-            @Override
-            public void over(long duration, TimeUnit unit) {
-                while (await()) {
-                    if (!Near.await(duration, unit)) {
-                        break;
-                    }
-                }
-            }
-        };
-
-        this.Far = new Await() {
-            @Override
-            public boolean await(long duration, TimeUnit unit) {
-                return deviceInteraction.awaitPose(
-                        singleton(Proximity), duration, unit,
-                        HumanPose.Proximity.FAR,
-                        HumanPose.Proximity.AWAY);
-                // TODO await absent pose
-            }
-
-            @Override
-            public void over(long duration, TimeUnit unit) {
-                while (await()) {
-                    if (!NotFar.await(duration, unit)) {
-                        break;
-                    }
-                }
-            }
-        };
-
-        this.NotFar = new Await() {
-            @Override
-            public boolean await(long duration, TimeUnit unit) {
-                return deviceInteraction.awaitPose(
-                        singleton(Proximity), duration, unit,
-                        HumanPose.Proximity.NEAR,
-                        HumanPose.Proximity.FACE2FACE,
-                        HumanPose.Proximity.CLOSE);
-            }
-
-            @Override
-            public void over(long duration, TimeUnit unit) {
-                while (await()) {
-                    if (!Far.await(duration, unit)) {
-                        break;
-                    }
-                }
-            }
-        };
-
-        this.Away = new Await() {
-            @Override
-            public boolean await(long duration, TimeUnit unit) {
-                return deviceInteraction.awaitPose(
-                        singleton(Proximity), duration, unit,
-                        HumanPose.Proximity.AWAY);
-                // TODO await absent pose
-            }
-
-            @Override
-            public void over(long duration, TimeUnit unit) {
-                while (await()) {
-                    if (!NotAway.await(duration, unit)) {
-                        break;
-                    }
-                }
-            }
-        };
-
-        this.NotAway = new Await() {
-            @Override
-            public boolean await(long duration, TimeUnit unit) {
-                return deviceInteraction.awaitPose(
-                        singleton(Proximity), duration, unit,
-                        HumanPose.Proximity.FAR,
-                        HumanPose.Proximity.NEAR,
-                        HumanPose.Proximity.FACE2FACE,
-                        HumanPose.Proximity.CLOSE);
-            }
-
-            @Override
-            public void over(long duration, TimeUnit unit) {
-                while (await()) {
-                    if (!Away.await(duration, unit)) {
-                        break;
-                    }
-                }
-            }
-        };
+        this.Absence = new AwaitImpl(Interest.Proximity, HumanPose.Proximity.Not.Far);
 
     }
 
@@ -228,11 +111,11 @@ public class HumanPoseScriptInteraction implements ScriptInteraction {
     }
 
     public boolean isFaceToFace() {
-        return getPose(Proximity).is(HumanPose.Proximity.FACE2FACE, HumanPose.Proximity.CLOSE);
+        return getPose(Proximity).is(HumanPose.Proximity.Face2Face);
     }
 
     public boolean isNotFaceToFace() {
-        return getPose(Proximity).is(HumanPose.Proximity.NotFace2Face);
+        return getPose(Proximity).is(HumanPose.Proximity.Not.Face2Face);
     }
 
     public PoseAspects getPose(Interest interest) {

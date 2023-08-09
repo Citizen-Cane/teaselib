@@ -101,9 +101,17 @@ public class HumanPoseDeviceInteraction extends
         poseEstimationTask.clearPause();
     }
 
-    public boolean awaitPose(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) {
+    public boolean await(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) {
         try {
-            return poseEstimationTask.awaitPose(interests, duration, unit, aspects);
+            return poseEstimationTask.await(interests, duration, unit, aspects);
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
+        }
+    }
+
+    public boolean awaitNoneOf(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) {
+        try {
+            return poseEstimationTask.awaitNoneOf(interests, duration, unit, aspects);
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
         }

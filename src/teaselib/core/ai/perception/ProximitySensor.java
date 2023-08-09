@@ -79,7 +79,7 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
         if (aspect.isPresent()) {
             presence = aspect.get();
         } else {
-            presence = HumanPose.Status.Available;
+            presence = HumanPose.Status.None;
         }
         return presence != HumanPose.Status.None;
     }

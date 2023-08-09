@@ -2,9 +2,11 @@ package teaselib.core.ai.perception;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.HeadGestures;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
@@ -33,6 +35,11 @@ public class PoseAspects {
         this(pose, timestamp, interests, Unavailable);
     }
 
+    PoseAspects(HumanPose.Estimation pose, long timestamp, Set<Interest> interests, PoseAspect... aspects) {
+        this(pose, timestamp, interests, Unavailable);
+        this.aspects.addAll(List.of(aspects));
+    }
+
     PoseAspects(HumanPose.Estimation pose, long timestamp, Set<Interest> interests, PoseAspects previous) {
         this.estimation = pose;
         this.timestamp = timestamp;
@@ -44,7 +51,9 @@ public class PoseAspects {
             Optional<Proximity> previousProximity = previous.aspect(Proximity.class);
             Proximity proximity = pose.proximity();
             if (proximity == null) {
-                previousProximity.ifPresent(aspects::add);
+                if (pose != Estimation.NONE) {
+                    aspects.add(Proximity.AWAY);
+                }
             } else {
                 aspects.add(previousProximity
                         .filter(p -> p.isCloserThan(proximity))
@@ -69,17 +78,34 @@ public class PoseAspects {
 
     /**
      * @param values
-     *            Aspects to test. Multiple aspects might be passed for each aspect class.
-     * @return {@code true} if there is a match for each aspect class.
+     *            {@link PoseAspect} values to test.
+     * @return {@code true} if any value matches
+     *         <p>
+     *         TODO there is a match for each aspect class.
      */
     public boolean is(PoseAspect... values) {
         for (PoseAspect value : values) {
             if (aspects.contains(value)) {
-                // TODO match single aspect value for each aspect class
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Determine whether {@code this} is none of the aspect values.
+     * 
+     * @param values
+     *            {@link PoseAspect} values to test.
+     * @return {@code true} if no value matches
+     */
+    public boolean isNot(PoseAspect... values) {
+        for (PoseAspect value : values) {
+            if (aspects.contains(value)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean containsAll(Set<Interest> values) {

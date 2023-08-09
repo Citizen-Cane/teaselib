@@ -2,8 +2,6 @@ package teaselib.core.ai.perception;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,10 +79,10 @@ public class HumanPose extends NativeObject.Disposible {
      * 
      * <pre>
      *         {@code  NCCCN
-     *         NFFFFFN 
-     *        NFFFFFFFN
-     *       NNNNNNNNNNN
-     *      NNNNNNNNNNNNN
+     *         NFACEFN 
+     *        NFACEFACN
+     *       NEARNEARNEA
+     *      NEARNEARNEARN
      *     FARFARFARFARFAR
      *    FARFARFARARFARFAR
      *   AWAYAWAYAWYAWAYAWAY
@@ -95,10 +93,25 @@ public class HumanPose extends NativeObject.Disposible {
      * @author Citizen-Cane
      */
     public enum Proximity implements PoseAspect {
+        /**
+         * Far away or absent.
+         */
         AWAY(Integer.MAX_VALUE),
+        /**
+         * Far from the NPC, not close enough for dialog.
+         */
         FAR(3),
+        /**
+         * In range for dialog.
+         */
         NEAR(2),
+        /**
+         * Actually looking towards the NPC, ready for a face2face dialog.
+         */
         FACE2FACE(1),
+        /**
+         * Too close for normal dialog
+         */
         CLOSE(0),
 
         ;
@@ -109,7 +122,19 @@ public class HumanPose extends NativeObject.Disposible {
             this.distance = distance;
         }
 
-        public static final Proximity[] NotFace2Face = { AWAY, FAR, NEAR };
+        public static final Proximity[] Presence = { FAR, NEAR, FACE2FACE, CLOSE };
+
+        public static final Proximity[] Face2Face = { FACE2FACE, CLOSE };
+        public static final Proximity[] Near = { NEAR, FACE2FACE, CLOSE };
+        public static final Proximity[] Far = { FAR, NEAR, FACE2FACE, CLOSE };
+
+        @SuppressWarnings("hiding")
+        static final class Not {
+            public static final Proximity[] Close = { AWAY, FAR, NEAR, FACE2FACE };
+            public static final Proximity[] Face2Face = { AWAY, FAR, NEAR };
+            public static final Proximity[] Near = { FAR, AWAY };
+            public static final Proximity[] Far = { AWAY };
+        }
 
         boolean isCloserThan(Proximity proximity) {
             return distance < proximity.distance;
@@ -313,14 +338,6 @@ public class HumanPose extends NativeObject.Disposible {
             return estimate(timestamp);
         } else {
             throw new SceneCapture.DeviceLost("Image acquisition failed");
-        }
-    }
-
-    public List<HumanPose.Estimation> poses(InputStream image, Rotation rotation) throws IOException {
-        try {
-            return poses(image.readAllBytes(), rotation);
-        } finally {
-            image.close();
         }
     }
 

@@ -276,8 +276,6 @@ public class PoseEstimationTaskTest {
         try (var testPerson = new TestPerson(Proximity.NEAR)) {
             try (var humanPoseDeviceInteraction = testPerson.near()) {
                 var pose = new HumanPoseScriptInteraction(humanPoseDeviceInteraction);
-                // TODO fails because scene capture ends and pose is set back to PoseAspects.Unavailable
-                // - workaround: sleep before signaling in PoseEstimationTask::call
                 assertFalse(pose.Absence.await(AWAIT_DURATION, SECONDS));
             }
 

@@ -57,7 +57,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     private SceneCapture device = null;
     private HumanPose humanPoseCachedModel = null;
 
-    private DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> did = DeviceInteractionDefinitions.empty();
+    private DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = DeviceInteractionDefinitions.empty();
 
     private CountDownLatch startup = new CountDownLatch(1);
 
@@ -329,24 +329,33 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         pause.set(null);
     }
 
-    public void setActor(DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions) {
-        try {
-            estimatePoses.lockInterruptibly();
-            try {
-                did = definitions;
-                interestChange.signalAll();
-            } finally {
-                estimatePoses.unlock();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    public void changeInterest(DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> newDefinitions) {
+        // TODO only if interests have actually changed
+        if (estimatePoses.tryLock()) {
+            // pose estimation task already in waiting position
+            changeInterestWhileWaiting(newDefinitions);
+        } else {
+            // TODO blocks caller until pose estimation is ready
+            // TODO use queue to avoid wait
+            // - but getPose() injects additional interests, so a simple queue isn't enough
+            changeInterestBlocking(newDefinitions);
         }
     }
 
-    public void interestChanged() {
+    private void changeInterestWhileWaiting(DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> newDefinitions) {
+        try {
+            definitions = newDefinitions;
+            interestChange.signalAll();
+        } finally {
+            estimatePoses.unlock();
+        }
+    }
+
+    private void changeInterestBlocking(DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> newDefinitions) {
         try {
             estimatePoses.lockInterruptibly();
             try {
+                definitions = newDefinitions;
                 interestChange.signalAll();
             } finally {
                 estimatePoses.unlock();
@@ -379,10 +388,10 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
 
     private Set<Interest> gatherInterests() {
         Set<Interest> poseInterests = awaitPoseInterests.get();
-        if (did.actor == null) {
+        if (definitions.actor == null) {
             return Collections.unmodifiableSet(poseInterests);
         } else {
-            Set<Interest> actorInterests = did.keySet();
+            Set<Interest> actorInterests = definitions.keySet();
             return joinInterests(actorInterests, poseInterests);
         }
     }
@@ -459,7 +468,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         // TODO fire only stream-relevant interests (Gaze), but not proximity
         // - stream relevant aspects are fired always, fire relevant only when they've changed
         if (update.is(HumanPose.Status.Stream) || !update.equals(previous)) {
-            var eventArgs = new PoseEstimationEventArgs(did.actor, update);
+            var eventArgs = new PoseEstimationEventArgs(definitions.actor, update);
             fireEvent(eventArgs);
             signalPoseChange();
             // allow polling threads to get or await a pose
@@ -470,7 +479,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     }
 
     private void fireEvent(PoseEstimationEventArgs eventArgs) {
-        did.stream()
+        definitions.stream()
                 .filter(entry -> eventArgs.pose.is(entry.getKey()))
                 .map(Map.Entry::getValue)
                 .forEach(event -> event.fire(eventArgs));

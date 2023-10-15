@@ -106,7 +106,7 @@ public class Shower {
         return prompt.choice();
     }
 
-    public void updateUI(InputMethod.UiEvent event) throws InterruptedException {
+    public void updateUI(InputMethod.UiEvent event) {
         promptQueue.updateUI(event);
     }
 

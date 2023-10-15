@@ -262,7 +262,24 @@ class PromptQueue {
         }
     }
 
-    void updateUI(InputMethod.UiEvent event) throws InterruptedException {
+    void updateUI(InputMethod.UiEvent event) {
+        var prompt = stack.peek();
+        // if locked either because realizing or dismissing
+        // -> no update necessary
+        if (prompt != null) {
+            if (prompt.lock.tryLock()) {
+                try {
+                    prompt.updateUI(event);
+                } finally {
+                    prompt.lock.unlock();
+                }
+            } else if (prompt.isActive()) {
+                logger.info("skipping UI update for locked prompt {}", this);
+            }
+        }
+    }
+
+    void updateUI_(InputMethod.UiEvent event) throws InterruptedException {
         if (!stack.isEmpty()) {
             var prompt = stack.peek();
             prompt.lock.lockInterruptibly();

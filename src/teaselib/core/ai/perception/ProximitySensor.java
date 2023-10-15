@@ -27,11 +27,11 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
         private static final long serialVersionUID = 1L;
 
         {
-            put(Proximity.CLOSE, 1.4);
-            put(Proximity.FACE2FACE, 1.1);
-            put(Proximity.NEAR, 1.00);
+            put(Proximity.CLOSE, 1.728);
+            put(Proximity.FACE2FACE, 1.2);
+            put(Proximity.NEAR, 1.0);
             put(Proximity.FAR, 1.0);
-            put(Proximity.AWAY, 0.0);
+            put(Proximity.AWAY, 1.0);
         }
     };
 
@@ -41,7 +41,7 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
     }
 
     @Override
-    public void run(PoseEstimationEventArgs eventArgs) throws InterruptedException {
+    public void run(PoseEstimationEventArgs eventArgs) {
         pose = eventArgs.pose;
 
         var presence = presence(pose);

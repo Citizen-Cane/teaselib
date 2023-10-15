@@ -1,10 +1,8 @@
 package teaselib.core.ai.perception;
 
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
-
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -125,50 +123,36 @@ public class HumanPoseDeviceInteraction extends
     }
 
     public void addEventListener(Actor actor, EventListener listener) {
-        List<EventSource<PoseEstimationEventArgs>> eventSources = new ArrayList<>();
-        synchronized (this) {
-            var definitions = super.definitions(actor);
-            for (Interest interest : listener.interests) {
-                var eventSource = definitions.get(interest, k -> new EventSource<>(k.toString()));
-                eventSources.add(eventSource);
-            }
-        }
+        List<EventSource<PoseEstimationEventArgs>> eventSources = eventSources(actor, listener);
         eventSources.stream().forEach(eventSource -> eventSource.add(listener));
         interestChanged(actor);
-
-        try {
-            var eventArgs = new PoseEstimationEventArgs(actor, poseEstimationTask.getPose(listener.interests));
-            listener.run(eventArgs);
-        } catch (Exception e) {
-            throw asRuntimeException(e);
-        }
     }
 
     public boolean containsEventListener(Actor actor, EventListener listener) {
         synchronized (this) {
             var definitions = super.definitions(actor);
-            for (Interest interest : listener.interests) {
-                EventSource<PoseEstimationEventArgs> eventSource;
-                eventSource = definitions.get(interest);
-                if (eventSource != null && eventSource.contains(listener)) {
-                    return true;
-                }
-            }
+            return listener.interests.stream()
+                    .map(interest -> definitions.get(interest))
+                    .filter(Objects::nonNull)
+                    .anyMatch(eventSource -> eventSource.contains(listener));
         }
-        return false;
     }
 
     public void removeEventListener(Actor actor, EventListener listener) {
-        List<EventSource<PoseEstimationEventArgs>> eventSources = new ArrayList<>();
-        synchronized (this) {
-            var definitions = super.definitions(actor);
-            for (Interest interest : listener.interests) {
-                var eventSource = definitions.get(interest);
-                eventSources.add(eventSource);
-            }
-        }
+        List<EventSource<PoseEstimationEventArgs>> eventSources = eventSources(actor, listener);
         eventSources.stream().forEach(eventSource -> eventSource.remove(listener));
         interestChanged(actor);
+    }
+
+    private List<EventSource<PoseEstimationEventArgs>> eventSources(Actor actor, EventListener listener) {
+        List<EventSource<PoseEstimationEventArgs>> eventSources;
+        synchronized (this) {
+            var definitions = super.definitions(actor);
+            eventSources = listener.interests.stream()
+                    .map(interest -> definitions.get(interest, k -> new EventSource<>(k.toString())))
+                    .toList();
+        }
+        return eventSources;
     }
 
     @Override
@@ -177,7 +161,7 @@ public class HumanPoseDeviceInteraction extends
     }
 
     private void interestChanged(Actor actor) {
-        poseEstimationTask.setActor(definitions(actor));
+        poseEstimationTask.changeInterest(definitions(actor));
     }
 
 }

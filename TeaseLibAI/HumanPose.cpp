@@ -279,10 +279,11 @@ bool HumanPose::acquire(const void* image, int size)
 
 const vector<Pose> HumanPose::estimate(const std::chrono::milliseconds timestamp)
 {
-	aifx::pose::Movenet* interpreter = model_cache(interests, rotation, frame.size());
-	if (interpreter) return (*interpreter)(frame, rotation, timestamp);
+	if (frame.empty())  throw logic_error("empty frame");
 	if (interests == 0) throw invalid_argument("no interests");
-	throw logic_error("no interpreter");
+	aifx::pose::Movenet* model = model_cache(interests, rotation, frame.size());
+	if (!model) throw logic_error("no model");
+	return (*model)(frame, rotation, timestamp);
 }
 
 jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)

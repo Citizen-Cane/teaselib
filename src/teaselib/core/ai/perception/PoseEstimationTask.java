@@ -27,6 +27,7 @@ import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
 import teaselib.core.ai.perception.HumanPose.Proximity;
+import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.EventSource;
 
@@ -213,10 +214,10 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         return false;
     }
 
-    private HumanPose loadModel() throws InterruptedException {
-        this.humanPoseCachedModel = getModel(Interest.supported);
+    private HumanPose preloadModel(Set<Interest> interests, Rotation rotation) throws InterruptedException {
+        this.humanPoseCachedModel = getModel(interests);
         return inferenceExecutor.submitAndGet(() -> {
-            humanPoseCachedModel.loadModel(Interest.supported, device.rotation());
+            humanPoseCachedModel.loadModel(interests, rotation);
             return humanPoseCachedModel;
         });
     }
@@ -246,7 +247,9 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
             estimatePoses.lockInterruptibly();
             startup.countDown();
             if (device != null) {
-                loadModel();
+                // TODO preloads the wrong model - should be Interest.Head
+                // -> "INFO: Created 1 GPU delegate kernels." appears 3 times and prompt is delayed
+                preloadModel(Interest.supported, device.rotation());
             }
 
             while (!Thread.currentThread().isInterrupted()) {
@@ -300,7 +303,9 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         try {
             interestChange.await();
             Set<Interest> interests = gatherInterests();
-            if (interests.isEmpty()) awaitInterests();
+            if (interests.isEmpty()) {
+                interests = awaitInterests();
+            }
             while (!Thread.currentThread().isInterrupted()) {
                 device.start();
                 human.startTracking();

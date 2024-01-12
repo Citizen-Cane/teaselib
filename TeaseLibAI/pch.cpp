@@ -11,6 +11,7 @@
 
 #pragma comment(lib, "Audio.lib") 
 #pragma comment(lib, "Compute.lib") 
+#pragma comment(lib, "Graphics.lib") 
 #pragma comment(lib, "Math.lib") 
 #pragma comment(lib, "Motion.lib") 
 #pragma comment(lib, "Speech.lib") 

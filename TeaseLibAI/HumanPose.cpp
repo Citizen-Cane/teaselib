@@ -306,8 +306,7 @@ const vector<Pose> HumanPose::estimate(const std::chrono::milliseconds timestamp
 
 jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
 {
-	const Point2f head = pose.head();
-	const Point3f gaze = pose.gaze();
+	const Point2f head = pose.parts.head();
 	jclass resultClass = JNIClass::getClass(env, "teaselib/core/ai/perception/HumanPose$Estimation");
 	if (env->ExceptionCheck()) throw JNIException(env);
 	jobject jpose;
@@ -322,26 +321,29 @@ jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
 				JNIClass::getMethodID(env, resultClass, "<init>", "(F)V"),
 				pose.distance
 			);
-		} else if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
-				jpose = env->NewObject(
-					resultClass,
-					JNIClass::getMethodID(env, resultClass, "<init>", "(FFF)V"),
-					pose.distance,
-					head.x,
-					head.y
-				);
-			} else {
-				jpose = env->NewObject(
-					resultClass,
-					JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
-					pose.distance,
-					head.x,
-					head.y,
-					gaze.x,
-					gaze.y,
-					gaze.z
-				);
-			}
+	} else {
+		const Point3f gaze = pose.gaze;
+		if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
+			jpose = env->NewObject(
+				resultClass,
+				JNIClass::getMethodID(env, resultClass, "<init>", "(FFF)V"),
+				pose.distance,
+				head.x,
+				head.y
+			);
+		} else {
+			jpose = env->NewObject(
+				resultClass,
+				JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
+				pose.distance,
+				head.x,
+				head.y,
+				gaze.x,
+				gaze.y,
+				gaze.z
+			);
+		}
+	}
 	if (env->ExceptionCheck()) throw JNIException(env);
 	return jpose;
 }

@@ -131,7 +131,7 @@ extern "C"
 		try {
 			Objects::requireNonNull(L"device", jdevice);
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
-			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jdevice);
+			auto* capture = NativeInstance::get<aifx::video::VideoCapture>(env, jdevice);
 			return humanPose->acquire(capture);
 		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
@@ -236,7 +236,13 @@ extern "C"
 HumanPose::HumanPose()
 	: interests(0)
 	, rotation(image::Rotation::None)
+	, motion(nullptr)
 {}
+
+HumanPose::~HumanPose()
+{
+	if (motion) delete motion;
+}
 
 void HumanPose::loadModel(Interest interest, const aifx::image::Rotation rotation_)
 {
@@ -250,13 +256,20 @@ void HumanPose::set(const Interest flags)
 
 void HumanPose::set(const image::Rotation value)
 {
-	this->rotation = value;
+	if (value != rotation || motion == nullptr) {
+		if (motion) delete motion;
+		motion = new Motion(image::Orientation(rotation));
+		this->rotation = value;
+	}
 }
 
-bool HumanPose::acquire(VideoCapture* capture)
+bool HumanPose::acquire(aifx::video::VideoCapture* capture)
 {
 	if (capture->started()) {
 		*capture >> frame;
+		if (!frame.empty() && motion) {
+			motion->update(frame);
+		}
 		return !frame.empty();
 	} else {
 		return false;
@@ -275,6 +288,11 @@ bool HumanPose::acquire(const void* image, int size)
 		}
 		return true;
 	}
+}
+
+const Rect2f& HumanPose::motion_area() const
+{
+	return motion->operator const Rect2f & ();
 }
 
 const vector<Pose> HumanPose::estimate(const std::chrono::milliseconds timestamp)

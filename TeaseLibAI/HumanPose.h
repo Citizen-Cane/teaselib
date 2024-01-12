@@ -10,6 +10,7 @@
 
 #include <Math/Image.h>
 #include <Pose/Movenet.h>
+#include <Motion/Motion.h>
 #include <Video/VideoCapture.h>
 
 using namespace std::chrono_literals;
@@ -17,6 +18,7 @@ using namespace std::chrono_literals;
 class HumanPose {
 public:
     HumanPose();
+    ~HumanPose();
 
     enum Interest {
         Status = 1,
@@ -35,6 +37,7 @@ public:
     void set(const aifx::image::Rotation rotation);
     bool acquire(aifx::video::VideoCapture* capture);
     bool acquire(const void* image, int size);
+    const cv::Rect2f& motion_area() const;
     const std::vector<aifx::pose::Pose> estimate(const std::chrono::milliseconds timestamp = 0ms);
 
     static jobject estimation(JNIEnv* env, const aifx::pose::Pose& pose);
@@ -50,6 +53,7 @@ private:
     ModelCache model_cache;
     int interests;
     aifx::image::Rotation rotation;
+    aifx::video::Motion* motion;
     cv::UMat frame;
 };
 

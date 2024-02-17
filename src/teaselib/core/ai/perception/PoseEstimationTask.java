@@ -233,7 +233,6 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
                 humanPoseCachedModel = inferenceExecutor.submitAndGet(() -> teaseLibAI.getModel(interests));
             }
         }
-        humanPoseCachedModel.setInterests(interests);
         return humanPoseCachedModel;
     }
 
@@ -247,9 +246,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
             estimatePoses.lockInterruptibly();
             startup.countDown();
             if (device != null) {
-                // TODO preloads the wrong model - should be Interest.Head
-                // -> "INFO: Created 1 GPU delegate kernels." appears 3 times and prompt is delayed
-                preloadModel(Interest.supported, device.rotation());
+                preloadModel(Interest.Head, device.rotation());
             }
 
             while (!Thread.currentThread().isInterrupted()) {

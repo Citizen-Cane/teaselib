@@ -298,11 +298,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     private void estimatePoses() throws InterruptedException {
         logger.info("Using capture device {}", device.name);
         try {
-            interestChange.await();
-            Set<Interest> interests = gatherInterests();
-            if (interests.isEmpty()) {
-                interests = awaitInterests();
-            }
+            Set<Interest> interests = awaitInterests();
             while (!Thread.currentThread().isInterrupted()) {
                 device.start();
                 human.startTracking();

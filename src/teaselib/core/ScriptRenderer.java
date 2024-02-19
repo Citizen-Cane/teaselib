@@ -109,6 +109,7 @@ public class ScriptRenderer implements Closeable {
     void renderIntertitle(TeaseLib teaseLib, Message message, Decorator[] decorators) throws InterruptedException {
         var composed = composeIntertitleMessage(message);
         var interTitle = new RenderInterTitle(RenderedMessage.of(composed, decorators), teaseLib);
+        sectionRenderer.setRenderer(interTitle);
         renderMessage(teaseLib, message.actor, interTitle, OutlineType.NewSection);
     }
 
@@ -161,7 +162,8 @@ public class ScriptRenderer implements Closeable {
     void startMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
             Decorator[] decorators) throws InterruptedException {
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
-        MediaRenderer messageRenderer = sectionRenderer.createStartBatch(actor, renderedMessages, resources);
+        var messageRenderer = sectionRenderer.createStartBatch(actor, renderedMessages, resources);
+        sectionRenderer.setRenderer(messageRenderer);
         renderMessage(teaseLib, actor, messageRenderer, OutlineType.NewSection);
     }
 
@@ -175,6 +177,27 @@ public class ScriptRenderer implements Closeable {
         }
     }
 
+    private void appendMessagesToSection(TeaseLib teaseLib, Actor actor, List<RenderedMessage> messages)
+            throws InterruptedException {
+        remember(actor);
+        fireBeforeMessageEvent(teaseLib, OutlineType.AppendParagraph);
+
+        synchronized (renderQueue.activeRenderers) {
+            synchronized (queuedRenderers) {
+                awaitStartCompleted();
+                boolean playing = sectionRenderer.append(messages);
+                if (!playing) {
+                    awaitAllCompleted();
+                    List<MediaRenderer> replay = new ArrayList<>(playedRenderers);
+                    sectionRenderer.restoreCurrentRenderer(replay);
+                    replay(replay, Position.FromCurrentPosition);
+                } else {
+                    awaitMandatoryCompleted();
+                }
+            }
+        }
+    }
+
     void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
             Decorator[] decorators) throws InterruptedException {
         replaceMessage(teaseLib, resources, actor, singletonList(message), decorators);
@@ -184,12 +207,9 @@ public class ScriptRenderer implements Closeable {
             Decorator[] decorators)
             throws InterruptedException {
         List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
-        MediaRenderer messageRenderer = sectionRenderer.createBatch(actor, renderedMessages, resources);
+        var messageRenderer = sectionRenderer.createBatch(actor, renderedMessages, resources);
+        sectionRenderer.setRenderer(messageRenderer);
         renderMessage(teaseLib, actor, messageRenderer, OutlineType.ReplaceParagraph);
-    }
-
-    boolean isInterTitle() {
-        return playedRenderers != null && playedRenderers.stream().anyMatch(RenderInterTitle.class::isInstance);
     }
 
     private List<RenderedMessage> convertMessagesToRendered(List<Message> messages, Decorator[] decorators) {
@@ -226,27 +246,7 @@ public class ScriptRenderer implements Closeable {
                 renderQueue.start(nextSet);
             }
             startBackgroundRenderers();
-            renderQueue.awaitStartCompleted();
-        }
-    }
-
-    private void appendMessagesToSection(TeaseLib teaseLib, Actor actor, List<RenderedMessage> messages)
-            throws InterruptedException {
-        remember(actor);
-        fireBeforeMessageEvent(teaseLib, OutlineType.AppendParagraph);
-
-        synchronized (renderQueue.activeRenderers) {
-            synchronized (queuedRenderers) {
-                boolean playing = sectionRenderer.append(messages);
-                if (!playing) {
-                    awaitAllCompleted();
-                    List<MediaRenderer> replay = new ArrayList<>(playedRenderers);
-                    sectionRenderer.restoreCurrentRenderer(replay);
-                    replay(replay, Position.FromCurrentPosition);
-                } else {
-                    awaitMandatoryCompleted();
-                }
-            }
+            awaitStartCompleted();
         }
     }
 

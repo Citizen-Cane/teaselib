@@ -105,7 +105,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
     }
 
     @Override
-    public void showInterTitle(String text) {
+    public void showInterTitle(List<String> text) {
         // Ignore
     }
 

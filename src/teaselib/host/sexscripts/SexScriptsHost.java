@@ -321,7 +321,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     @Override
-    public void showInterTitle(String text) {
+    public void showInterTitle(List<String> text) {
         scene.showInterTitle(text, getContentBounds());
     }
 

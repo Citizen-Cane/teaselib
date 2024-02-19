@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -182,7 +182,7 @@ public class TeaseLib implements Closeable {
     }
 
     private void run(String scriptName) throws ReflectiveOperationException {
-        host.showInterTitle("");
+        host.showInterTitle(Collections.singletonList(""));
         host.show();
         try {
             logger.info("Running script {}", scriptName);

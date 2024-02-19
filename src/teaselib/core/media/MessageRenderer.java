@@ -9,9 +9,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.Actor;
 import teaselib.Message;
-import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.util.AnnotatedImage;
 
@@ -23,32 +21,28 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
             Message.Type.Image, Message.Type.Mood, Message.Type.Sound, Message.Type.Speech, Message.Type.Delay));
 
     // TODO blocks multiple actors in one batch
-    final Actor actor;
-    final ResourceLoader resources;
     final List<RenderedMessage> messages;
-
-    MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
-
-    int currentMessage = 0;
-    String displayImageName = null;
-    AnnotatedImage displayImage = null;
-    RenderedMessage previousLastParagraph;
     RenderedMessage lastParagraph;
 
-    protected MessageRenderer(TeaseLib teaseLib, Actor actor, ResourceLoader resources,
-            List<RenderedMessage> messages) {
+    MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
+    String displayImageName = null;
+    AnnotatedImage displayImage = null;
+
+    protected MessageRenderer(TeaseLib teaseLib, List<RenderedMessage> messages) {
         super(teaseLib);
-        this.actor = actor;
-        this.resources = resources;
         this.messages = new ArrayList<>(messages);
+        this.lastParagraph = lastParagraph();
+    }
+
+    RenderedMessage lastParagraph() {
         if (messages.isEmpty()) {
-            this.lastParagraph = new RenderedMessage();
+            return new RenderedMessage();
         } else {
-            this.lastParagraph = RenderedMessage.getLastParagraph(getLastMessage());
+            return RenderedMessage.getLastParagraph(getLastMessage());
         }
     }
 
-    RenderedMessage getLastMessage() {
+    private RenderedMessage getLastMessage() {
         return getLastMessage(this.messages);
     }
 
@@ -56,9 +50,9 @@ public abstract class MessageRenderer extends MediaRendererThread implements Rep
         return messages.get(messages.size() - 1);
     }
 
-    RenderedMessage getEnd() {
-        return RenderedMessage.getLastParagraph(getLastMessage()).stripAudio();
-    }
+    public abstract boolean append(List<RenderedMessage> newMessages);
+
+    public abstract void forwardToEnd();
 
     @Override
     public String toString() {

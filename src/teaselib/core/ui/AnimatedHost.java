@@ -321,7 +321,7 @@ public class AnimatedHost implements Host, Closeable {
     }
 
     @Override
-    public void showInterTitle(String text) {
+    public void showInterTitle(List<String> text) {
         synchronized (animator) {
             animationTask.cancel(true);
             host.showInterTitle(text);

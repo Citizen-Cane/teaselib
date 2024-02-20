@@ -1,14 +1,11 @@
 package teaselib;
 
-import static java.util.concurrent.TimeUnit.*;
-import static teaselib.core.ai.perception.HumanPose.Interest.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import teaselib.Message.Type;
-import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPoseScriptInteraction;
 import teaselib.core.devices.release.KeyReleaseSetup;
 import teaselib.util.Item;
@@ -21,28 +18,7 @@ public class TeaseScriptPerformActions extends TeaseScript {
     private static final double DELAY_INSTRUCTIONS_SECONDS = 5.0f;
     private static final double DELAY_PROLONGATION_COMMENT_SECONDS = 2.0f;
 
-    private final HumanPoseScriptInteraction poseEstimation = interaction(HumanPoseScriptInteraction.class);
-
-    private final BooleanSupplier faceToFace = () -> poseEstimation.getPose(Proximity).is(HumanPose.Proximity.FACE2FACE, HumanPose.Proximity.CLOSE);
-    private final ScriptFunction untilFaceToFace = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.FACE2FACE, HumanPose.Proximity.CLOSE);
-
-    // TODO and not HumanPose.Proximity.CLOSE
-    private final ScriptFunction untilNotFaceToFaceOr2s = poseEstimation.autoConfirm(Proximity, 2, SECONDS, HumanPose.Proximity.NotFace2Face);
-
-    // TODO and not HumanPose.Proximity.CLOSE
-    private final ScriptFunction untilNotFaceToFace = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.NotFace2Face);
-
-    private final ScriptFunction untilNotFaceToFaceOver5s = new ScriptFunction(() -> {
-        Answer notFace2Face;
-        while ((notFace2Face = poseEstimation.autoConfirm(Proximity, HumanPose.Proximity.NotFace2Face)
-                .call()) != Answer.Timeout) {
-            if (poseEstimation.autoConfirm(Proximity, 3, SECONDS, HumanPose.Proximity.FACE2FACE)
-                    .call() == Answer.Timeout) {
-                break;
-            }
-        }
-        return notFace2Face;
-    });
+    private final HumanPoseScriptInteraction pose = interaction(HumanPoseScriptInteraction.class);
 
     public TeaseScriptPerformActions(TeaseScript script) {
         super(script);
@@ -132,7 +108,7 @@ public class TeaseScriptPerformActions extends TeaseScript {
      * The performance is usually preceded with an introduction about the purpose of the task.
      * 
      * @param items
-     *            The items to perfrom with.
+     *            The items to perform with.
      * @param command
      *            The initial command to start the action. It might mention the items, or how to perform the task, e.g.
      *            to hurry, or to crawl.
@@ -161,14 +137,15 @@ public class TeaseScriptPerformActions extends TeaseScript {
             Message prolongationComment) {
         awaitMandatoryCompleted();
 
-        if (poseEstimation.deviceInteraction.isActive()) {
-            untilFaceToFace.call();
+        if (pose.isActive()) {
+            pose.FaceToFace.await();
+
             say(command);
             awaitMandatoryCompleted();
 
             boolean playerListening;
-            if (faceToFace.getAsBoolean()) {
-                if (chat(untilNotFaceToFace, commandConfirmation)) {
+            if (pose.isFaceToFace()) {
+                if (chat(pose.autoConfirm(pose.NotFaceToFace::await), commandConfirmation)) {
                     // prompt dismissed, still face2face
                     playerListening = true;
                 } else {
@@ -187,24 +164,33 @@ public class TeaseScriptPerformActions extends TeaseScript {
 
             while (true) {
                 show(items);
-                // TODO pause instructions when the slave is away
+                // TODO pause instructions when the slave is away, continue when back
                 if (playerListening) {
                     append(progressInstructions);
                     awaitMandatoryCompleted();
-                    untilFaceToFace.call();
+                    pose.FaceToFace.await();
                 } else {
                     append(progressInstructionsWithDelay);
-                    untilFaceToFace.call();
+                    // Player might look face2face to check the instructions, or after completIng the task
+                    // - how to handle?
+                    pose.FaceToFace.over(2, SECONDS);
+                    // TODO Await speech paragraph end, as interrupting speech in the middle of a word sounds
+                    // unrealistic
                     endAll();
+                    // -> manually loop through message, replacing delay with pose.over(...)
+                    // TODO add message iterator that calls BooleanSupplier() each time and stops on false
                 }
 
                 show(items);
                 append(completionQuestion);
-                // Wait to show the prompt
-                untilFaceToFace.call();
-                Answer answer = reply(untilNotFaceToFaceOver5s, completionConfirmation, prolongationExcuse);
+                // ensure player is face2face in order to show until player looks away
+                pose.FaceToFace.await();
+                Answer answer = reply(pose.autoConfirm(pose.NotFaceToFace::over, 5, SECONDS), completionConfirmation, prolongationExcuse);
                 if (answer == Answer.Timeout) {
                     playerListening = true;
+                    // workaround for restoring the command for the next iteration of the instructional loop
+                    // TODO make this paragraph appear before every append()
+                    show(command);
                     continue;
                 } else if (answer == completionConfirmation) {
                     break;
@@ -212,7 +198,7 @@ public class TeaseScriptPerformActions extends TeaseScript {
                     say(prolongationComment);
                     awaitMandatoryCompleted();
                     // True if player is still looking at top -> repeat instructions
-                    playerListening = untilNotFaceToFaceOr2s.call() == Answer.Timeout;
+                    playerListening = !pose.NotFaceToFace.await(2, SECONDS);
                     if (!playerListening) {
                         progressInstructionsWithDelay = extendMessageDelays(
                                 progressInstructionsWithDelay, DELAY_INSTRUCTIONS_SECONDS, DELAY_INSTRUCTIONS_EXTEND_FACTOR);

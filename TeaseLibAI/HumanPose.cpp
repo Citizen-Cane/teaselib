@@ -57,6 +57,27 @@ extern "C"
 
 	/*
 	 * Class:     teaselib_core_ai_perception_HumanPose
+	 * Method:    loadModel
+	 * Signature: (II)V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_ai_perception_HumanPose_loadModel
+	(JNIEnv* env, jobject jthis, jint interest, jint rotation) {
+		try {
+			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
+			humanPose->loadModel(static_cast<HumanPose::Interest>(interest), static_cast<image::Rotation>(rotation));
+		} catch (invalid_argument& e) {
+			JNIException::rethrow(env, e);
+		} catch (exception& e) {
+			JNIException::rethrow(env, e);
+		} catch (NativeException& e) {
+			JNIException::rethrow(env, e);
+		} catch (JNIException& e) {
+			e.rethrow();
+		}
+	}
+
+	/*
+	 * Class:     teaselib_core_ai_perception_HumanPose
 	 * Method:    setInterests
 	 * Signature: (I)V
 	 */
@@ -66,17 +87,13 @@ extern "C"
 		try {
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
 			humanPose->set(static_cast<HumanPose::Interest>(interests));
-		}
-		catch (invalid_argument& e) {
+		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (exception& e) {
+		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (NativeException& e) {
+		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-		}
-		catch (JNIException& e) {
+		} catch (JNIException& e) {
 			e.rethrow();
 		}
 	}
@@ -114,7 +131,7 @@ extern "C"
 		try {
 			Objects::requireNonNull(L"device", jdevice);
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
-			VideoCapture* capture = NativeInstance::get<VideoCapture>(env, jdevice);
+			auto* capture = NativeInstance::get<aifx::video::VideoCapture>(env, jdevice);
 			return humanPose->acquire(capture);
 		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
@@ -219,30 +236,40 @@ extern "C"
 HumanPose::HumanPose()
 	: interests(0)
 	, rotation(image::Rotation::None)
-	, interpreter(nullptr)
-	{}
+	, motion(nullptr)
+{}
 
 HumanPose::~HumanPose()
 {
-	for_each(models.begin(), models.end(), [](const Models::value_type& interpreter) {
-		delete interpreter.second;
-	});
+	if (motion) delete motion;
 }
 
-void HumanPose::set(Interest flags)
+void HumanPose::loadModel(Interest interest, const aifx::image::Rotation rotation_)
+{
+	model_cache(interest, rotation_);
+}
+
+void HumanPose::set(const Interest flags)
 {
 	this->interests = flags;
 }
 
 void HumanPose::set(const image::Rotation value)
 {
-	this->rotation = value;
+	if (value != rotation || motion == nullptr) {
+		if (motion) delete motion;
+		motion = new Motion(image::Orientation(rotation));
+		this->rotation = value;
+	}
 }
 
-bool HumanPose::acquire(VideoCapture* capture)
+bool HumanPose::acquire(aifx::video::VideoCapture* capture)
 {
 	if (capture->started()) {
 		*capture >> frame;
+		if (!frame.empty() && motion) {
+			motion->update(frame);
+		}
 		return !frame.empty();
 	} else {
 		return false;
@@ -263,18 +290,23 @@ bool HumanPose::acquire(const void* image, int size)
 	}
 }
 
+const Rect2f& HumanPose::motion_area() const
+{
+	return motion->operator const Rect2f & ();
+}
+
 const vector<Pose> HumanPose::estimate(const std::chrono::milliseconds timestamp)
 {
-	interpreter = getInterpreter();
-	if (interpreter) return (*interpreter)(frame, rotation, timestamp);
+	if (frame.empty())  throw logic_error("empty frame");
 	if (interests == 0) throw invalid_argument("no interests");
-	throw logic_error("no interpreter");
+	aifx::pose::Movenet* model = model_cache(interests, rotation, frame.size());
+	if (!model) throw logic_error("no model");
+	return (*model)(frame, rotation, timestamp);
 }
 
 jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
 {
-	const Point2f head = pose.head();
-	const Point3f gaze = pose.gaze();
+	const Point2f head = pose.parts.head();
 	jclass resultClass = JNIClass::getClass(env, "teaselib/core/ai/perception/HumanPose$Estimation");
 	if (env->ExceptionCheck()) throw JNIException(env);
 	jobject jpose;
@@ -289,45 +321,52 @@ jobject HumanPose::estimation(JNIEnv* env, const aifx::pose::Pose& pose)
 				JNIClass::getMethodID(env, resultClass, "<init>", "(F)V"),
 				pose.distance
 			);
-		} else if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
-				jpose = env->NewObject(
-					resultClass,
-					JNIClass::getMethodID(env, resultClass, "<init>", "(FFF)V"),
-					pose.distance,
-					head.x,
-					head.y
-				);
-			} else {
-				jpose = env->NewObject(
-					resultClass,
-					JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
-					pose.distance,
-					head.x,
-					head.y,
-					gaze.x,
-					gaze.y,
-					gaze.z
-				);
-			}
+	} else {
+		const Point3f gaze = pose.gaze;
+		if (isnan(gaze.x) || isnan(gaze.y) || isnan(gaze.z)) {
+			jpose = env->NewObject(
+				resultClass,
+				JNIClass::getMethodID(env, resultClass, "<init>", "(FFF)V"),
+				pose.distance,
+				head.x,
+				head.y
+			);
+		} else {
+			jpose = env->NewObject(
+				resultClass,
+				JNIClass::getMethodID(env, resultClass, "<init>", "(FFFFFF)V"),
+				pose.distance,
+				head.x,
+				head.y,
+				gaze.x,
+				gaze.y,
+				gaze.z
+			);
+		}
+	}
 	if (env->ExceptionCheck()) throw JNIException(env);
 	return jpose;
 }
 
-Movenet* HumanPose::getInterpreter()
+HumanPose::ModelCache::~ModelCache()
+{
+	for(auto entry : elements)  { delete entry.second; }
+}
+
+aifx::pose::Movenet* HumanPose::ModelCache::operator()(int interests, image::Rotation rotation, const cv::Size& image)
 {
 	const Movenet::Model model = (interests & (UpperTorso + LowerTorso + LegsAndFeet)) != 0 && (interests & MultiPose) == 0
 		? Movenet::Model::SinglePoseExact
 		: Movenet::Model::MultiposeFast;
-	const bool portait_image = frame.cols < frame.rows;
+	const bool portait_image = image.width < image.height;
 	const bool orientation_change = rotation == aifx::image::Rotation::None || rotation == image::Rotation::Rotate_180;
 	const image::Orientation orientation = orientation_change ^ portait_image
-		? image::Orientation::Landscape 
+		? image::Orientation::Landscape
 		: image::Orientation::Portrait;
-
 	const int key = Movenet::resource(model, orientation);
-	auto pose_estimation = models.find(key);
-	if (pose_estimation == models.end()) {
-		return models[key]  = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);
+	auto pose_estimation = elements.find(key);
+	if (pose_estimation == elements.end()) {
+		return elements[key] = new Movenet(model, orientation, TfLiteDelegateV2::GPU_CPU);
 	}
 	return pose_estimation->second;
 }

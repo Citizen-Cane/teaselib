@@ -53,7 +53,7 @@ public class CommandLineHost implements Host {
     }
 
     @Override
-    public void showInterTitle(String text) {
+    public void showInterTitle(List<String> text) {
         // Ignore
     }
 

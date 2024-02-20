@@ -121,7 +121,7 @@ public interface Host {
      * 
      * @param text
      */
-    void showInterTitle(String text);
+    void showInterTitle(List<String> text);
 
     /**
      * Use to initiate a scene change after the current scene has been completed. This usually sort of clears the screen

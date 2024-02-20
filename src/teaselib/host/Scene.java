@@ -11,6 +11,7 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class Scene {
         this.renderer = renderer;
     }
 
-    public void showInterTitle(String text, Rectangle bounds) {
+    public void showInterTitle(List<String> text, Rectangle bounds) {
         synchronized (nextFrame) {
             nextFrame.isIntertitle = true;
             rotateTextOverlayBuffer(text, bounds);
@@ -100,7 +101,7 @@ public class Scene {
                 }
             }
             nextFrame.isIntertitle = false;
-            rotateTextOverlayBuffer(text.stream().collect(Collectors.joining("\n")), bounds);
+            rotateTextOverlayBuffer(text, bounds);
             rememberPreviousImage();
             transistionBounds = bounds;
         }
@@ -154,8 +155,7 @@ public class Scene {
     public void endScene(Rectangle bounds) {
         synchronized (nextFrame) {
             // Keep the image, remove any text to provide some feedback
-            String text = "";
-            rotateTextOverlayBuffer(text, bounds);
+            rotateTextOverlayBuffer(Collections.singletonList(""), bounds);
             rememberPreviousImage();
         }
     }
@@ -179,8 +179,8 @@ public class Scene {
         }
     }
 
-    private void rotateTextOverlayBuffer(String text, Rectangle bounds) {
-        nextFrame.text = text;
+    private void rotateTextOverlayBuffer(List<String> text, Rectangle bounds) {
+        nextFrame.text = text.stream().collect(Collectors.joining("\n"));
         nextFrame.textImage = new ValidatedBufferedImage(
                 (gc, w, h, t) -> renderer.textOverlays.rotateBuffer(gc, bounds), Transparency.TRANSLUCENT);
         nextFrame.textImage.setSize(bounds.width, bounds.height);

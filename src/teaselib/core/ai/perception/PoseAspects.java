@@ -2,9 +2,11 @@ package teaselib.core.ai.perception;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.HeadGestures;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.PoseAspect;
@@ -33,6 +35,11 @@ public class PoseAspects {
         this(pose, timestamp, interests, Unavailable);
     }
 
+    PoseAspects(HumanPose.Estimation pose, long timestamp, Set<Interest> interests, PoseAspect... aspects) {
+        this(pose, timestamp, interests, Unavailable);
+        this.aspects.addAll(List.of(aspects));
+    }
+
     PoseAspects(HumanPose.Estimation pose, long timestamp, Set<Interest> interests, PoseAspects previous) {
         this.estimation = pose;
         this.timestamp = timestamp;
@@ -43,13 +50,17 @@ public class PoseAspects {
         if (interests.contains(Interest.Proximity)) {
             Optional<Proximity> previousProximity = previous.aspect(Proximity.class);
             Proximity proximity = pose.proximity();
-            if (previousProximity.isPresent() && previousProximity.get().isCloserThan(proximity)) {
-                aspects.add(pose.proximity(DISTANCE_RETREAT_FACTOR));
+            if (proximity == null) {
+                if (pose != Estimation.NONE) {
+                    aspects.add(Proximity.AWAY);
+                }
             } else {
-                aspects.add(proximity);
+                aspects.add(previousProximity
+                        .filter(p -> p.isCloserThan(proximity))
+                        .map(p -> pose.proximity(DISTANCE_RETREAT_FACTOR))
+                        .orElse(proximity));
             }
 
-            // TODO max-reliable distance for inference model to avoid drop-outs in the distance
             if (interests.contains(Interest.HeadGestures)) {
                 if (proximity == Proximity.FACE2FACE && pose.head.isPresent()) {
                     aspects.add(HeadGestures.Gaze);
@@ -65,6 +76,13 @@ public class PoseAspects {
         return interests.contains(interest);
     }
 
+    /**
+     * @param values
+     *            {@link PoseAspect} values to test.
+     * @return {@code true} if any value matches
+     *         <p>
+     *         TODO there is a match for each aspect class.
+     */
     public boolean is(PoseAspect... values) {
         for (PoseAspect value : values) {
             if (aspects.contains(value)) {
@@ -72,6 +90,22 @@ public class PoseAspects {
             }
         }
         return false;
+    }
+
+    /**
+     * Determine whether {@code this} is none of the aspect values.
+     * 
+     * @param values
+     *            {@link PoseAspect} values to test.
+     * @return {@code true} if no value matches
+     */
+    public boolean isNot(PoseAspect... values) {
+        for (PoseAspect value : values) {
+            if (aspects.contains(value)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean containsAll(Set<Interest> values) {

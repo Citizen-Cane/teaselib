@@ -2,13 +2,12 @@ package teaselib.core.ai.perception;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -47,6 +46,10 @@ public class HumanPose extends NativeObject.Disposible {
             this.bit = bit;
         }
 
+        static Integer valueOf(Set<Interest> interests) {
+            return interests.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b);
+        }
+
         public static final Set<Interest> supported = asSet(Status, Proximity, HeadGestures, UpperTorso, LowerTorso, LegsAndFeet, MultiPose);
         public static final Set<Interest> Head = asSet(Status, Proximity, UpperTorso);
         public static final Set<Interest> AllPersons = asSet(Status, Proximity, MultiPose);
@@ -64,11 +67,52 @@ public class HumanPose extends NativeObject.Disposible {
         Stream,
     }
 
+    /**
+     *
+     * Proximity relative to scene capture device. The {@link Proximity#CLOSE} region is embedded in the
+     * {@link Proximity#FACE2FACE} region. Both {@link #CLOSE} or {@link #FACE2FACE} are embedded in the
+     * {@link Proximity#NEAR} region.
+     * <p>
+     * {@link Proximity#FAR} and {@link Proximity#AWAY} are disjunct.
+     * <p>
+     * <p>
+     * Hysteresis is applied to all proximity values but {@link #CLOSE}.
+     * 
+     * <pre>
+     *         {@code  NCCCN
+     *         NFACEFN 
+     *        NFACEFACN
+     *       NEARNEARNEA
+     *      NEARNEARNEARN
+     *     FARFARFARFARFAR
+     *    FARFARFARARFARFAR
+     *   AWAYAWAYAWYAWAYAWAY
+     *  AWAYAWAYAWWAYAWAYAWAY 
+     *         }
+     * </pre>
+     *
+     * @author Citizen-Cane
+     */
     public enum Proximity implements PoseAspect {
+        /**
+         * Far away or absent.
+         */
         AWAY(Integer.MAX_VALUE),
+        /**
+         * Far from the NPC, not close enough for dialog.
+         */
         FAR(3),
+        /**
+         * In range for dialog.
+         */
         NEAR(2),
+        /**
+         * Actually looking towards the NPC, ready for a face2face dialog.
+         */
         FACE2FACE(1),
+        /**
+         * Too close for normal dialog
+         */
         CLOSE(0),
 
         ;
@@ -79,7 +123,34 @@ public class HumanPose extends NativeObject.Disposible {
             this.distance = distance;
         }
 
-        public static final Proximity[] NotFace2Face = { AWAY, FAR, NEAR, CLOSE };
+        public static final class Distance {
+            private float[] values;
+
+            Distance(float... values) {
+                if (values.length != Proximity.values().length) {
+                    throw new IllegalArgumentException(Objects.toString(values));
+                }
+                this.values = values;
+            }
+
+            float max(Proximity proximity) {
+                return values[proximity.distance];
+            }
+        }
+
+        public static final Proximity[] Presence = { FAR, NEAR, FACE2FACE, CLOSE };
+
+        public static final Proximity[] Face2Face = { FACE2FACE, CLOSE };
+        public static final Proximity[] Near = { NEAR, FACE2FACE, CLOSE };
+        public static final Proximity[] Far = { FAR, NEAR, FACE2FACE, CLOSE };
+
+        @SuppressWarnings("hiding")
+        static final class Not {
+            public static final Proximity[] Close = { AWAY, FAR, NEAR, FACE2FACE };
+            public static final Proximity[] Face2Face = { AWAY, FAR, NEAR };
+            public static final Proximity[] Near = { FAR, AWAY };
+            public static final Proximity[] Far = { AWAY };
+        }
 
         boolean isCloserThan(Proximity proximity) {
             return distance < proximity.distance;
@@ -173,28 +244,35 @@ public class HumanPose extends NativeObject.Disposible {
             return proximity(1.0f);
         }
 
-        public Proximity proximity(float distanceFactor) {
+        private static final Rectangle2D.Float CloseRegion = new Rectangle2D.Float(
+                0.1f, 0.1f, 0.8f, 0.8f);
+        private static final Point2D OutOfView = new Point2D.Float(-1.0f, -1.0f);
+        private static final Proximity.Distance distances = new Proximity.Distance(
+                0.7f, 1.5f, 3.0f, 6.0f, Float.MAX_VALUE);
+
+        Proximity proximity(float distanceFactor) {
             if (distance.isPresent()) {
                 float z = distance.get();
                 Proximity proximity;
-                if (z < 0.5f * distanceFactor) {
-                    proximity = Proximity.CLOSE;
-                } else if (z < 1.5f * distanceFactor) {
-                    proximity = gaze.map(Gaze::isFace2Face).orElse(false) ? Proximity.FACE2FACE : Proximity.NEAR;
-                } else if (z < 3.0f * distanceFactor) {
+                if (z < distances.max(Proximity.CLOSE) * distanceFactor && CloseRegion.contains(head.orElse(OutOfView))) {
+                    proximity = isFace2Face(gaze) ? Proximity.CLOSE : Proximity.NEAR;
+                } else if (z < distances.max(Proximity.FACE2FACE) * distanceFactor) {
+                    proximity = isFace2Face(gaze) ? Proximity.FACE2FACE : Proximity.NEAR;
+                } else if (z < distances.max(Proximity.NEAR) * distanceFactor) {
                     proximity = Proximity.NEAR;
-                } else {
+                } else if (z < distances.max(Proximity.FAR) * distanceFactor) {
                     proximity = Proximity.FAR;
+                } else {
+                    proximity = Proximity.AWAY;
                 }
                 return proximity;
             } else {
-                // might be far or near, but always only partial posture
-                // TODO estimate missing distance from previous value and direction,
-                // and return the corresponding proximity value
-                return Proximity.FAR;
-                // Never returns Proximity.Away,
-                // since in this case there wouldn't be any estimation result at all
+                return null;
             }
+        }
+
+        private static Boolean isFace2Face(Optional<Gaze> gaze) {
+            return gaze.map(Gaze::isFace2Face).orElse(false);
         }
 
         public Optional<Rectangle2D> face() {
@@ -245,15 +323,21 @@ public class HumanPose extends NativeObject.Disposible {
 
     }
 
+    public void loadModel(Set<Interest> interests, Rotation rotation) {
+        loadModel(HumanPose.Interest.valueOf(interests), rotation.value);
+    }
+
+    private native void loadModel(int interests, int roation);
+
     public void setInterests(Set<Interest> interests) {
-        setInterests(interests.stream().map(a -> a.bit).reduce(0, (a, b) -> a | b));
+        setInterests(HumanPose.Interest.valueOf(interests));
     }
 
     // TODO Parameter of estimate() or handle multiple models in Java
     // - handle in Java for simpler warm-up
     // - handle in AIfx to choose the right model for portrait and landscape image bytes
     // -> cache models in native code but select in Java
-    private native void setInterests(int aspects);
+    private native void setInterests(int interests);
 
     private native void setRotation(int rotation);
 
@@ -273,14 +357,6 @@ public class HumanPose extends NativeObject.Disposible {
             return estimate(timestamp);
         } else {
             throw new SceneCapture.DeviceLost("Image acquisition failed");
-        }
-    }
-
-    public List<HumanPose.Estimation> poses(InputStream image, Rotation rotation) throws IOException {
-        try {
-            return poses(image.readAllBytes(), rotation);
-        } finally {
-            image.close();
         }
     }
 

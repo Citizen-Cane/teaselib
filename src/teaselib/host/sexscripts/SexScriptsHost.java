@@ -321,7 +321,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
     }
 
     @Override
-    public void showInterTitle(String text) {
+    public void showInterTitle(List<String> text) {
         scene.showInterTitle(text, getContentBounds());
     }
 
@@ -536,7 +536,11 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
 
         void showPopup() {
             comboBox.requestFocus();
-            comboBox.setPopupVisible(true);
+            try {
+                comboBox.setPopupVisible(true);
+            } catch (java.awt.IllegalComponentStateException e) {
+                logger.warn(e.getMessage());
+            }
             resetPopupVisibility.set(true);
         }
 

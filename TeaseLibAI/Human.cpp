@@ -88,10 +88,10 @@ extern "C"
 				const vector<aifx::pose::Pose> poses = humanPose->estimate(millis);
 
 				if (poses.empty()) {
-					Human::update(env, jperson, human->person.estimated(chrono::milliseconds(timestamp)));
+					Human::update(env, jperson, human->person.estimated(humanPose->motion_area(), chrono::milliseconds(timestamp)));
 				} else {
 					human->person.update(poses.at(0));
-					Human::update(env, jperson, human->person.pose());
+					Human::update(env, jperson, human->person.last_known_pose());
 				}
 			} else {
 				throw NativeException(0, L"Scene capture failed", "teaselib/core/ai/perception/SceneCapture$DeviceLost");
@@ -154,7 +154,7 @@ extern "C"
 
 void Human::startTracking()
 {
-	person.clearTimeline();
+	person.clear_timeline();
 }
 
 void Human::update(JNIEnv* env, jobject jperson, const aifx::pose::Pose& pose)

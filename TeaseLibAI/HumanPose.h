@@ -10,6 +10,7 @@
 
 #include <Math/Image.h>
 #include <Pose/Movenet.h>
+#include <Motion/Motion.h>
 #include <Video/VideoCapture.h>
 
 using namespace std::chrono_literals;
@@ -17,7 +18,7 @@ using namespace std::chrono_literals;
 class HumanPose {
 public:
     HumanPose();
-    virtual ~HumanPose();
+    ~HumanPose();
 
     enum Interest {
         Status = 1,
@@ -31,23 +32,28 @@ public:
         MultiPose = 256
     };
 
-    void set(Interest interests);
+    void loadModel(Interest interest, const aifx::image::Rotation rotation);
+    void set(const Interest interests);
     void set(const aifx::image::Rotation rotation);
     bool acquire(aifx::video::VideoCapture* capture);
     bool acquire(const void* image, int size);
+    const cv::Rect2f& motion_area() const;
     const std::vector<aifx::pose::Pose> estimate(const std::chrono::milliseconds timestamp = 0ms);
 
     static jobject estimation(JNIEnv* env, const aifx::pose::Pose& pose);
 private:
-    typedef std::map<int, aifx::pose::Movenet*> Models;
-    Models models;
+    //typedef std::map<int, aifx::pose::Movenet*> Models;
+    class ModelCache {
+    public:
+        ~ModelCache();
+        aifx::pose::Movenet* operator()(int interests, aifx::image::Rotation rotation, const cv::Size& image = { 0,0 });
+    private:
+        std::map<int, aifx::pose::Movenet*> elements;
+    };
+    ModelCache model_cache;
     int interests;
-    aifx::pose::Movenet* interpreter;
-
     aifx::image::Rotation rotation;
+    aifx::video::Motion* motion;
     cv::UMat frame;
-
-    aifx::pose::Movenet* getInterpreter();
-}
-;
+};
 

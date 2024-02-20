@@ -2,6 +2,7 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Collections;
 
 import teaselib.ActorImages;
 import teaselib.CachedImages;
@@ -10,9 +11,9 @@ import teaselib.core.ai.perception.HumanPose;
 import teaselib.core.ai.perception.HumanPose.Estimation;
 import teaselib.core.ai.perception.HumanPose.Interest;
 import teaselib.core.ai.perception.HumanPose.Status;
-import teaselib.host.Host.Location;
 import teaselib.core.ai.perception.HumanPoseDeviceInteraction;
 import teaselib.core.ai.perception.PoseAspects;
+import teaselib.host.Host.Location;
 import teaselib.util.AnnotatedImage;
 import teaselib.util.AnnotatedImage.Annotation;
 
@@ -29,7 +30,7 @@ public abstract class AbstractActorImages extends CachedImages implements ActorI
 
     private Estimation computePose(String resource, byte[] image) {
         // TODO add status display to host since this is not about actors and script conversation
-        resources.teaseLib.host.showInterTitle("Pose estimation pre-caching: \n\n" + resource);
+        resources.teaseLib.host.showInterTitle(Collections.singletonList("Pose estimation pre-caching: \n\n" + resource));
         resources.teaseLib.host.show();
 
         PoseAspects pose;

@@ -156,8 +156,19 @@ public abstract class Script {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.HeadGestures))) {
             deviceInteractionImplementations.add(HumanPoseDeviceInteraction.class, () -> {
                 try {
-                    return new HumanPoseDeviceInteraction(teaseLib, teaseLib.globals.get(TeaseLibAI.class),
-                            scriptRenderer);
+                    var humanPoseDeviceInteraction = new HumanPoseDeviceInteraction(
+                            teaseLib, teaseLib.globals.get(TeaseLibAI.class)) {
+                        {
+                            scriptRenderer.events.actorChanged.add(this);
+                        }
+
+                        @Override
+                        public void close() {
+                            scriptRenderer.events.actorChanged.remove(this);
+                            super.close();
+                        }
+                    };
+                    return humanPoseDeviceInteraction;
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException(e);
                 }
@@ -636,7 +647,7 @@ public abstract class Script {
                 if (humanPoseInteraction != null && humanPoseInteraction.deviceInteraction.isActive()) {
                     var proximitySensor = humanPoseInteraction.deviceInteraction.proximitySensor;
                     if (!humanPoseInteraction.deviceInteraction.containsEventListener(actor, proximitySensor)) {
-                        // Starting the sensor includes fires event with all relevant updates for the new listener
+                        // Starting the sensor includes firing event with all relevant updates for the new listener
                         startProximitySensor(humanPoseInteraction);
                         // -> current pose available
                     }

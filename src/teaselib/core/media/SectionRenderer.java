@@ -32,7 +32,7 @@ public class SectionRenderer implements Closeable {
     // TODO Handle message decorator processing here in order to make textToSpeechPlayer private
     public final TextToSpeechPlayer textToSpeechPlayer;
 
-    private Batch currentMessageRenderer;
+    private MessageRenderer currentMessageRenderer;
     private MediaRenderer.Threaded currentRenderer = MediaRenderer.None;
     private RenderSound backgroundSoundRenderer;
 
@@ -40,7 +40,7 @@ public class SectionRenderer implements Closeable {
         this.teaseLib = teaseLib;
         this.renderQueue = renderQueue;
         this.textToSpeechPlayer = new TextToSpeechPlayer(teaseLib.config);
-        this.currentMessageRenderer = new Batch(null, Collections.emptyList(), null);
+        this.currentMessageRenderer = new ParagraphRenderer(null, Collections.emptyList(), null);
     }
 
     @Override
@@ -72,9 +72,17 @@ public class SectionRenderer implements Closeable {
         }
     }
 
-    final class Batch extends MessageRenderer {
-        private Batch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
-            super(SectionRenderer.this.teaseLib, actor, resources, messages);
+    public final class ParagraphRenderer extends MessageRenderer {
+
+        final Actor actor;
+        final ResourceLoader resources;
+
+        int currentMessage = 0;
+
+        private ParagraphRenderer(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
+            super(SectionRenderer.this.teaseLib, messages);
+            this.actor = actor;
+            this.resources = resources;
         }
 
         @Override
@@ -191,14 +199,17 @@ public class SectionRenderer implements Closeable {
             }
         }
 
+        @Override
         public boolean append(List<RenderedMessage> newMessages) {
             synchronized (messages) {
                 messages.addAll(newMessages);
+                lastParagraph = lastParagraph();
                 boolean stillRunning = !currentMessageRenderer.hasCompletedMandatory();
                 return stillRunning;
             }
         }
 
+        @Override
         public void forwardToEnd() {
             synchronized (messages) {
                 currentMessage = messages.size();
@@ -310,14 +321,17 @@ public class SectionRenderer implements Closeable {
 
     }
 
-    public Batch createStartBatch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
-        Batch batch = new Batch(actor, messages, resources);
-        currentMessageRenderer = batch;
+    public ParagraphRenderer createStartBatch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
+        ParagraphRenderer batch = new ParagraphRenderer(actor, messages, resources);
         return batch;
     }
 
-    public Batch createBatch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
-        return new Batch(actor, messages, resources);
+    public ParagraphRenderer createBatch(Actor actor, List<RenderedMessage> messages, ResourceLoader resources) {
+        return new ParagraphRenderer(actor, messages, resources);
+    }
+
+    public void setRenderer(MessageRenderer messageRendererer) {
+        currentMessageRenderer = messageRendererer;
     }
 
     private void finalizeRendering(MessageRenderer messageRenderer) throws InterruptedException {

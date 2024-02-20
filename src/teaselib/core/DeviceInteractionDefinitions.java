@@ -20,10 +20,24 @@ import java.util.stream.Stream;
 import teaselib.Actor;
 
 public class DeviceInteractionDefinitions<K, V> implements Iterable<Map.Entry<K, V>> {
-    final Actor actor;
+
+    public static final DeviceInteractionDefinitions<?, ?> EMPTY = new DeviceInteractionDefinitions<>();
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> DeviceInteractionDefinitions<K, V> empty() {
+        return (DeviceInteractionDefinitions<K, V>) EMPTY;
+    }
+
+    public final Actor actor;
+
     private final Map<K, V> elements = new LinkedHashMap<>();
     public final Deque<K> pending = new ArrayDeque<>();
     private final BiPredicate<K, K> matcher;
+
+    private DeviceInteractionDefinitions() {
+        this.actor = null;
+        this.matcher = null;
+    }
 
     public DeviceInteractionDefinitions(Actor actor, BiPredicate<K, K> matcher) {
         this.actor = actor;

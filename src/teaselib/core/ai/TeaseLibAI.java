@@ -1,6 +1,7 @@
 package teaselib.core.ai;
 
-import static teaselib.core.jni.NativeLibraries.*;
+import static teaselib.core.jni.NativeLibraries.TEASELIB;
+import static teaselib.core.jni.NativeLibraries.TEASELIB_AI;
 
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -71,6 +72,7 @@ public class TeaseLibAI implements Closeable {
         if (cachedModel == null) {
             cachedModel = new HumanPose();
         }
+        cachedModel.setInterests(interests);
         return cachedModel;
     }
 

@@ -83,8 +83,11 @@ public abstract class Script {
      */
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace, //
-                getOrDefault(teaseLib, ScriptRenderer.class, () -> new ScriptRenderer(teaseLib)));
-
+                getOrDefault(teaseLib, ScriptRenderer.class, () -> {
+                    var scriptRenderer = new ScriptRenderer(teaseLib);
+                    scriptRenderer.set(actor);
+                    return scriptRenderer;
+                }));
         getOrDefault(teaseLib, Shower.class, Shower::new);
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
         Configuration config = teaseLib.config;

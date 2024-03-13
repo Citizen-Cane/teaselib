@@ -1,8 +1,9 @@
 package teaselib.core;
 
-import static java.util.Collections.*;
-import static java.util.concurrent.TimeUnit.*;
-import static teaselib.core.concurrency.NamedExecutorService.*;
+import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static teaselib.core.concurrency.NamedExecutorService.newUnlimitedThreadPool;
+import static teaselib.core.concurrency.NamedExecutorService.singleThreadedQueue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -179,9 +180,6 @@ public class ScriptRenderer implements Closeable {
 
     private void appendMessagesToSection(TeaseLib teaseLib, Actor actor, List<RenderedMessage> messages)
             throws InterruptedException {
-        remember(actor);
-        fireBeforeMessageEvent(teaseLib, OutlineType.AppendParagraph);
-
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
                 awaitStartCompleted();
@@ -190,9 +188,13 @@ public class ScriptRenderer implements Closeable {
                     awaitAllCompleted();
                     List<MediaRenderer> replay = new ArrayList<>(playedRenderers);
                     sectionRenderer.restoreCurrentRenderer(replay);
+                    set(actor);
+                    fireBeforeMessageEvent(teaseLib, OutlineType.AppendParagraph);
                     replay(replay, Position.FromCurrentPosition);
                 } else {
                     awaitMandatoryCompleted();
+                    set(actor);
+                    fireBeforeMessageEvent(teaseLib, OutlineType.AppendParagraph);
                 }
             }
         }
@@ -221,8 +223,6 @@ public class ScriptRenderer implements Closeable {
 
     private void renderMessage(TeaseLib teaseLib, Actor actor, MediaRenderer messageRenderer, OutlineType outlineType)
             throws InterruptedException {
-        remember(actor);
-        fireBeforeMessageEvent(teaseLib, outlineType);
 
         synchronized (renderQueue.activeRenderers) {
             synchronized (queuedRenderers) {
@@ -243,6 +243,9 @@ public class ScriptRenderer implements Closeable {
                 awaitAllCompleted();
                 // Start a new chapter in the transcript
                 teaseLib.transcript.info("");
+
+                set(actor);
+                fireBeforeMessageEvent(teaseLib, outlineType);
                 renderQueue.start(nextSet);
             }
             startBackgroundRenderers();
@@ -254,7 +257,7 @@ public class ScriptRenderer implements Closeable {
         return sectionRenderer.hasMultipleParagraphs();
     }
 
-    private void remember(Actor actor) {
+    void set(Actor actor) {
         if (actor != currentActor) {
             currentActor = actor;
             events.actorChanged.fire(new ScriptEventArgs.ActorChanged(currentActor));

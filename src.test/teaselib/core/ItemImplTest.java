@@ -1,6 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -29,6 +34,7 @@ import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.Toys.Gags;
 import teaselib.core.state.AbstractProxy;
+import teaselib.core.util.QualifiedName;
 import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -58,8 +64,8 @@ public class ItemImplTest {
         try (TestScript script = new TestScript()) {
             QualifiedString fooBar = QualifiedString.of("Foo.Bar");
             String guid = fooBar.name();
-            TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
-                    fooBar.toString(), guid + ".Available");
+            TeaseLib.PersistentBoolean value = script.teaseLib.getBoolean(QualifiedName.of(
+                    TeaseLib.DefaultDomain, fooBar.toString(), guid + ".Available"));
             Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, QualifiedString.from(fooBar, guid),
                     ItemImpl.createDisplayName(QualifiedString.from(fooBar, guid)));
 

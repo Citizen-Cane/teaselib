@@ -1,7 +1,9 @@
 package teaselib.core.util;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,6 +37,20 @@ public class QualifiedName implements Comparable<QualifiedName> {
 
     public static QualifiedName of(String domain, String namespace, String name) {
         return new QualifiedName(strip(domain), strip(namespace), name);
+    }
+
+    public static QualifiedName of(String domain, String namespace, String... names) {
+        return new QualifiedName(strip(domain), strip(namespace), path(names));
+    }
+
+    public static String path(String... parts) {
+        Iterator<String> part = Arrays.asList(parts).iterator();
+        StringBuilder qualifiedName = new StringBuilder(part.next().toLowerCase());
+        while (part.hasNext()) {
+            qualifiedName.append(".");
+            qualifiedName.append(part.next().toLowerCase());
+        }
+        return qualifiedName.toString();
     }
 
     public static QualifiedName of(String domain, Enum<?> item) {
@@ -114,28 +130,28 @@ public class QualifiedName implements Comparable<QualifiedName> {
         return true;
     }
 
-    public QualifiedName withDomain(String domain) {
-        return QualifiedName.of(domain, this.namespace, this.name);
+    public QualifiedName withDomain(String newDomain) {
+        return QualifiedName.of(newDomain, this.namespace, this.name);
     }
 
-    public QualifiedName withNamespace(String namespace) {
-        return QualifiedName.of(this.domain, namespace, this.name);
+    public QualifiedName withNamespace(String newNamespace) {
+        return QualifiedName.of(this.domain, newNamespace, this.name);
     }
 
-    public QualifiedName withName(String name) {
-        return QualifiedName.of(this.domain, this.namespace, name);
+    public QualifiedName withName(String newName) {
+        return QualifiedName.of(this.domain, this.namespace, newName);
     }
 
-    public boolean domainEquals(String domain) {
-        return this.domain.equalsIgnoreCase(domain);
+    public boolean domainEquals(String other) {
+        return this.domain.equalsIgnoreCase(other);
     }
 
-    public boolean namespaceEquals(String namespace) {
-        return this.namespace.equalsIgnoreCase(namespace);
+    public boolean namespaceEquals(String other) {
+        return this.namespace.equalsIgnoreCase(other);
     }
 
-    public boolean nameEquals(String name) {
-        return this.name.equalsIgnoreCase(name);
+    public boolean nameEquals(String other) {
+        return this.name.equalsIgnoreCase(other);
     }
 
     public boolean equals(Enum<?> item) {

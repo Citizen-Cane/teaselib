@@ -15,6 +15,7 @@ import teaselib.core.TeaseLib.PersistentBoolean;
 import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
+import teaselib.core.util.QualifiedName;
 import teaselib.core.util.QualifiedString;
 
 class StateStorage {
@@ -194,11 +195,11 @@ class StateStorage {
     }
 
     private PersistentBoolean persistentBoolean(String domain, String name, String property) {
-        return state.cache.teaseLib.new PersistentBoolean(domain, name, "state." + property);
+        return state.cache.teaseLib.getBoolean(QualifiedName.of(domain, name, "state." + property));
     }
 
     private PersistentString persistentString(String domain, String name, String property) {
-        return state.cache.teaseLib.new PersistentString(domain, name, "state." + property);
+        return state.cache.teaseLib.getString(QualifiedName.of(domain, name, "state." + property));
     }
 
     void updatePersistence() {

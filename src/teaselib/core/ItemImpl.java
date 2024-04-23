@@ -20,6 +20,7 @@ import teaselib.core.StateImpl.Precondition;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
+import teaselib.core.util.QualifiedName;
 import teaselib.core.util.QualifiedString;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
@@ -57,8 +58,8 @@ public class ItemImpl implements Item, State.Options, State.Attributes, Persista
         this.domain = domain;
         this.name = name;
         this.displayName = displayName;
-        this.available = teaseLib.new PersistentBoolean(domain, kind().toString(),
-                name.guid().orElseThrow() + "." + Available);
+        this.available = teaseLib.getBoolean(QualifiedName.of(
+                domain, kind().toString(), name.guid().orElseThrow() + "." + Available));
         this.defaultPeers = unmodifiableSet(defaultPeers);
         this.attributes = unmodifiableSet(attributes(attributes));
         this.blockers = unmodifiableSet(blockers);

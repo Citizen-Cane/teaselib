@@ -1,6 +1,8 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static teaselib.core.util.ReflectionUtils.classSimpleName;
+import static teaselib.core.util.ReflectionUtils.parent;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,10 +17,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -75,7 +79,7 @@ public class TeaseLib implements Closeable {
 
     public final Host host;
     public final Host.AudioSystem audioSystem;
-    final Persistence persistence;
+    public final Persistence persistence;
     final UserItems userItems;
     public final TeaseLibLogger transcript;
     public final ItemLogger itemLogger;
@@ -439,17 +443,12 @@ public class TeaseLib implements Closeable {
         return duration(durationMinutes, TimeUnit.MINUTES);
     }
 
-    protected abstract class PersistentValue<T> {
+    public abstract class PersistentValue<T> {
         public final QualifiedName name;
         protected T defaultValue;
 
-        protected PersistentValue(String domain, String namespace, String name, T defaultValue) {
-            this.name = QualifiedName.of(domain, namespace, name);
-            this.defaultValue = defaultValue;
-        }
-
-        protected PersistentValue(String domain, Enum<?> item, T defaultValue) {
-            this.name = QualifiedName.of(domain, item);
+        PersistentValue(QualifiedName name, T defaultValue) {
+            this.name = name;
             this.defaultValue = defaultValue;
         }
 
@@ -461,8 +460,8 @@ public class TeaseLib implements Closeable {
             return persistence.has(name);
         }
 
-        public PersistentValue<T> defaultValue(T defaultValue) {
-            this.defaultValue = defaultValue;
+        public PersistentValue<T> defaultValue(T newValue) {
+            this.defaultValue = newValue;
             return this;
         }
 
@@ -519,6 +518,12 @@ public class TeaseLib implements Closeable {
         }
     }
 
+    Map<QualifiedName, PersistentBoolean> persistentBooleanMap = new HashMap<>();
+
+    public PersistentBoolean getBoolean(QualifiedName name) {
+        return persistentBooleanMap.computeIfAbsent(name, PersistentBoolean::new);
+    }
+
     /**
      * @author Citizen-Cane
      * 
@@ -527,17 +532,14 @@ public class TeaseLib implements Closeable {
     public class PersistentBoolean extends PersistentValue<Boolean> {
         public static final boolean DefaultValue = false;
 
-        public PersistentBoolean(String domain, String namespace, String name) {
-            super(domain, namespace, name, DefaultValue);
-        }
-
-        public PersistentBoolean(String domain, Enum<?> name) {
-            super(domain, name, DefaultValue);
+        PersistentBoolean(QualifiedName name) {
+            super(name, DefaultValue);
         }
 
         @Override
-        public PersistentBoolean defaultValue(Boolean defaultValue) {
-            return (PersistentBoolean) super.defaultValue(defaultValue);
+        public PersistentBoolean defaultValue(Boolean newValue) {
+            super.defaultValue(newValue);
+            return this;
         }
 
         @Override
@@ -568,46 +570,10 @@ public class TeaseLib implements Closeable {
         }
     }
 
-    /**
-     * @author Citizen-Cane
-     * 
-     *         A persistent integer value, start value is 0
-     */
-    public class PersistentInteger extends PersistentValue<Integer> {
-        public static final int DefaultValue = 0;
+    Map<QualifiedName, PersistentNumber> persistentNumberMap = new HashMap<>();
 
-        public PersistentInteger(String domain, String namespace, String name) {
-            super(domain, namespace, name, DefaultValue);
-        }
-
-        public PersistentInteger(String domain, Enum<?> name) {
-            super(domain, name, DefaultValue);
-        }
-
-        @Override
-        public PersistentInteger defaultValue(Integer defaultValue) {
-            return (PersistentInteger) super.defaultValue(defaultValue);
-        }
-
-        @Override
-        public Integer value() {
-            String value = persistence.get(name);
-            if (value == null) {
-                return defaultValue;
-            } else {
-                try {
-                    return Integer.parseInt(value);
-                } catch (NumberFormatException e) {
-                    return defaultValue;
-                }
-            }
-        }
-
-        @Override
-        public PersistentValue<Integer> set(Integer value) {
-            persistence.set(name, Integer.toString(value));
-            return this;
-        }
+    public PersistentNumber getNumber(QualifiedName name) {
+        return persistentNumberMap.computeIfAbsent(name, PersistentNumber::new);
     }
 
     /**
@@ -617,20 +583,22 @@ public class TeaseLib implements Closeable {
      *         <p>
      *         The long value can be used to store dates and time.
      */
-    public class PersistentLong extends PersistentValue<Long> {
+    public class PersistentNumber extends PersistentValue<Long> {
         public static final long DefaultValue = 0;
 
-        public PersistentLong(String domain, String namespace, String name) {
-            super(domain, namespace, name, DefaultValue);
-        }
-
-        public PersistentLong(String domain, Enum<?> name) {
-            super(domain, name, DefaultValue);
+        PersistentNumber(QualifiedName name) {
+            super(name, DefaultValue);
         }
 
         @Override
-        public PersistentLong defaultValue(Long defaultValue) {
-            return (PersistentLong) super.defaultValue(defaultValue);
+        public PersistentNumber defaultValue(Long newValue) {
+            super.defaultValue(newValue);
+            return this;
+        }
+
+        public PersistentNumber defaultValue(int newValue) {
+            super.defaultValue((long) newValue);
+            return this;
         }
 
         @Override
@@ -647,11 +615,35 @@ public class TeaseLib implements Closeable {
             }
         }
 
+        public int intValue() {
+            String value = persistence.get(name);
+            if (value == null) {
+                return defaultValue.intValue();
+            } else {
+                try {
+                    return Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    return defaultValue.intValue();
+                }
+            }
+        }
+
         @Override
-        public PersistentValue<Long> set(Long value) {
+        public PersistentNumber set(Long value) {
             persistence.set(name, Long.toString(value));
             return this;
         }
+
+        public PersistentNumber set(int value) {
+            persistence.set(name, Integer.toString(value));
+            return this;
+        }
+    }
+
+    Map<QualifiedName, PersistentFloat> persistentFloatMap = new HashMap<>();
+
+    public PersistentFloat getFloat(QualifiedName name) {
+        return persistentFloatMap.computeIfAbsent(name, PersistentFloat::new);
     }
 
     /**
@@ -662,17 +654,14 @@ public class TeaseLib implements Closeable {
     public class PersistentFloat extends PersistentValue<Double> {
         public static final double DefaultValue = 0.0;
 
-        public PersistentFloat(String domain, String namespace, String name) {
-            super(domain, namespace, name, DefaultValue);
-        }
-
-        public PersistentFloat(String domain, Enum<?> name) {
-            super(domain, name, DefaultValue);
+        PersistentFloat(QualifiedName name) {
+            super(name, DefaultValue);
         }
 
         @Override
-        public PersistentFloat defaultValue(Double defaultValue) {
-            return (PersistentFloat) super.defaultValue(defaultValue);
+        public PersistentFloat defaultValue(Double newValue) {
+            super.defaultValue(newValue);
+            return this;
         }
 
         @Override
@@ -696,6 +685,12 @@ public class TeaseLib implements Closeable {
         }
     }
 
+    Map<QualifiedName, PersistentString> persistentStringMap = new HashMap<>();
+
+    public PersistentString getString(QualifiedName name) {
+        return persistentStringMap.computeIfAbsent(name, PersistentString::new);
+    }
+
     /**
      * @author Citizen-Cane
      * 
@@ -704,17 +699,13 @@ public class TeaseLib implements Closeable {
     public class PersistentString extends PersistentValue<String> {
         public static final String DefaultValue = "";
 
-        public PersistentString(String domain, String namespace, String name) {
-            super(domain, namespace, name, DefaultValue);
-        }
-
-        public PersistentString(String domain, Enum<?> name) {
-            super(domain, name, DefaultValue);
+        PersistentString(QualifiedName name) {
+            super(name, DefaultValue);
         }
 
         @Override
-        public PersistentString defaultValue(String defaultValue) {
-            return (PersistentString) super.defaultValue(defaultValue);
+        public PersistentString defaultValue(String newValue) {
+            return (PersistentString) super.defaultValue(newValue);
         }
 
         @Override
@@ -734,33 +725,45 @@ public class TeaseLib implements Closeable {
         }
     }
 
+    public <T extends Enum<?>> PersistentEnum<T> getEnum(String domain, Class<T> enumClass) {
+        return getEnum(QualifiedName.of(
+                domain, ReflectionUtils.parent(enumClass), ReflectionUtils.classSimpleName(enumClass)),
+                enumClass);
+    }
+
+    Map<QualifiedName, PersistentEnum<? extends Enum<?>>> persistentEnumMap = new HashMap<>();
+
+    @SuppressWarnings("unchecked")
+    public <T extends Enum<?>> PersistentEnum<T> getEnum(QualifiedName name, Class<T> enumClass) {
+        PersistentEnum<? extends Enum<?>> t = persistentEnumMap.computeIfAbsent(name, k -> {
+            PersistentEnum<T> persistentEnum = new PersistentEnum<>(k, enumClass);
+            return persistentEnum;
+        });
+        return (PersistentEnum<T>) t;
+    }
+
     public class PersistentEnum<T extends Enum<?>> extends PersistentValue<T> {
 
-        public PersistentEnum(String domain, Class<T> enumClass) {
-            super(domain, ReflectionUtils.parent(enumClass), ReflectionUtils.classSimpleName(enumClass),
+        private PersistentEnum(String domain, Class<T> enumClass) {
+            super(QualifiedName.of(domain, parent(enumClass), classSimpleName(enumClass)),
                     enumClass.getEnumConstants()[0]);
         }
 
-        public PersistentEnum(String domain, String namespace, String name, Class<T> enumClass) {
-            super(domain, namespace, name, enumClass.getEnumConstants()[0]);
-        }
-
-        public PersistentEnum(String domain, Enum<?> name, Class<T> enumClass) {
-            super(domain, name.getClass().getName(), DefaultName, enumClass.getEnumConstants()[0]);
+        PersistentEnum(QualifiedName name, Class<T> enumClass) {
+            super(name, enumClass.getEnumConstants()[0]);
         }
 
         @Override
-        public PersistentEnum<T> defaultValue(T defaultValue) {
-            return (PersistentEnum<T>) super.defaultValue(defaultValue);
+        public PersistentEnum<T> defaultValue(T newValue) {
+            return (PersistentEnum<T>) super.defaultValue(newValue);
         }
 
         @Override
         public T value() {
-            var any = defaultValue;
             if (persistence.has(name)) {
                 var valueAsString = persistence.get(name);
-                @SuppressWarnings({ "unchecked", "static-access" })
-                T value = (T) any.valueOf(any.getClass(), valueAsString);
+                @SuppressWarnings("unchecked")
+                T value = (T) Enum.valueOf(defaultValue.getClass(), valueAsString);
                 if (value == null) {
                     return defaultValue;
                 } else {
@@ -772,98 +775,11 @@ public class TeaseLib implements Closeable {
         }
 
         @Override
-        public PersistentValue<T> set(T value) {
+        public PersistentEnum<T> set(T value) {
             persistence.set(name, value.name());
             return this;
         }
-    }
 
-    public void clear(String domain, String namespace, String name) {
-        persistence.clear(QualifiedName.of(domain, namespace, name));
-    }
-
-    public void clear(String domain, Enum<?> name) {
-        persistence.clear(QualifiedName.of(domain, name));
-    }
-
-    public void set(String domain, Enum<?> name, boolean value) {
-        persistence.set(QualifiedName.of(domain, name), value);
-    }
-
-    public void set(String domain, Enum<?> name, int value) {
-        new PersistentInteger(domain, name).set(value);
-    }
-
-    public void set(String domain, Enum<?> name, long value) {
-        new PersistentLong(domain, name).set(value);
-    }
-
-    public void set(String domain, Enum<?> name, double value) {
-        new PersistentFloat(domain, name).set(value);
-    }
-
-    public void set(String domain, Enum<?> name, String value) {
-        persistence.set(QualifiedName.of(domain, name), value);
-    }
-
-    public void set(String domain, String namespace, String name, boolean value) {
-        persistence.set(QualifiedName.of(domain, namespace, name), value);
-    }
-
-    public void set(String domain, String namespace, String name, int value) {
-        new PersistentInteger(domain, namespace, name).set(value);
-    }
-
-    public void set(String domain, String namespace, String name, long value) {
-        new PersistentLong(domain, namespace, name).set(value);
-    }
-
-    public void set(String domain, String namespace, String name, double value) {
-        new PersistentFloat(domain, namespace, name).set(value);
-    }
-
-    public void set(String domain, String namespace, String name, String value) {
-        persistence.set(QualifiedName.of(domain, namespace, name), value);
-    }
-
-    public boolean getBoolean(String domain, String namespace, String name) {
-        return persistence.getBoolean(QualifiedName.of(domain, namespace, name));
-    }
-
-    public double getFloat(String domain, String namespace, String name) {
-        return new PersistentFloat(domain, namespace, name).value();
-    }
-
-    public int getInteger(String domain, String namespace, String name) {
-        return new PersistentInteger(domain, namespace, name).value();
-    }
-
-    public long getLong(String domain, String namespace, String name) {
-        return new PersistentLong(domain, namespace, name).value();
-    }
-
-    public String getString(String domain, String namespace, String name) {
-        return persistence.get(QualifiedName.of(domain, namespace, name));
-    }
-
-    public boolean getBoolean(String domain, Enum<?> name) {
-        return persistence.getBoolean(QualifiedName.of(domain, name));
-    }
-
-    public double getFloat(String domain, Enum<?> name) {
-        return new PersistentFloat(domain, name).value();
-    }
-
-    public int getInteger(String domain, Enum<?> name) {
-        return new PersistentInteger(domain, name).value();
-    }
-
-    public long getLong(String domain, Enum<?> name) {
-        return new PersistentInteger(domain, name).value();
-    }
-
-    public String getString(String domain, Enum<?> name) {
-        return persistence.get(QualifiedName.of(domain, name));
     }
 
     public TextVariables getTextVariables(String domain, Locale locale) {
@@ -873,14 +789,15 @@ public class TeaseLib implements Closeable {
     }
 
     public class PersistentSequence<T extends Enum<T>> {
-        public final PersistentString valueName;
+        public final PersistentString storage;
         public final T[] values;
         private T value;
 
-        public PersistentSequence(String domain, String namespace, String name, T[] values) {
-            this.valueName = new PersistentString(domain, namespace, name);
+        @SafeVarargs
+        public PersistentSequence(String domain, String namespace, String name, T... values) {
+            this.storage = new PersistentString(QualifiedName.of(domain, namespace, name));
             this.values = values;
-            String persistedValue = valueName.value();
+            String persistedValue = storage.value();
             this.value = values[0];
             if (persistedValue != null) {
                 for (T v : values) {
@@ -919,7 +836,7 @@ public class TeaseLib implements Closeable {
 
         public void set(T value) {
             this.value = value;
-            valueName.set(value.name());
+            storage.set(value.name());
         }
     }
 

@@ -1,6 +1,9 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -53,25 +56,28 @@ public class ScriptPersistenceTests {
     @Test
     public void testScriptNamespacePersistence() throws IOException {
         try (TestScript script = new TestScript()) {
-            assertNull(script.persistence.getString(TestValuesEnumClass.My_Test_Value_set_by_name.name()));
+            assertNull(script.teaseLib.persistence
+                    .get(QualifiedName.of(TeaseLib.DefaultDomain, script.namespace, TestValuesEnumClass.My_Test_Value_set_by_name.name())));
 
-            script.persistence.set(TestValuesEnumClass.My_Test_Value_set_by_name.name(), "Saved as local enum by name");
+            script.teaseLib.persistence.set(
+                    QualifiedName.of(TeaseLib.DefaultDomain, script.namespace, TestValuesEnumClass.My_Test_Value_set_by_name.name()),
+                    "Saved as local enum by name");
             Optional<ConfigurationFile> scriptSettings = script.teaseLib.config.getUserSettings(script.namespace);
             assertTrue(scriptSettings.isPresent());
             assertTrue(scriptSettings.get().has(QualifiedName
                     .of(TeaseLib.DefaultDomain, script.namespace, "My_Test_Value_set_by_name").toString()));
-            assertEquals("Saved as local enum by name",
-                    script.persistence.getString(TestValuesEnumClass.My_Test_Value_set_by_name.name()));
-
+            assertEquals("Saved as local enum by name", script.teaseLib.persistence
+                    .get(QualifiedName.of(TeaseLib.DefaultDomain, script.namespace, TestValuesEnumClass.My_Test_Value_set_by_name.name())));
         }
     }
 
     @Test
     public void testGlobalPersistence() throws IOException {
         try (TestScript script = new TestScript()) {
-            assertNull(script.persistence.getString(TestValuesEnumClass.My_Test_Value_set_by_enum));
+            assertNull(script.teaseLib.persistence.get(QualifiedName.of(TeaseLib.DefaultDomain, (Enum<?>) TestValuesEnumClass.My_Test_Value_set_by_enum)));
 
-            script.persistence.set(TestValuesEnumClass.My_Test_Value_set_by_enum, "Saved by local enum");
+            script.teaseLib.persistence.set(QualifiedName.of(TeaseLib.DefaultDomain, (Enum<?>) TestValuesEnumClass.My_Test_Value_set_by_enum),
+                    "Saved by local enum");
             QualifiedName expected = QualifiedName.of(TeaseLib.DefaultDomain,
                     "ScriptPersistenceTests.TestValuesEnumClass", "My_Test_Value_set_by_enum");
             assertTrue(script.storage.containsKey(expected));
@@ -114,8 +120,8 @@ public class ScriptPersistenceTests {
     public void testSetVersusItem() throws IOException {
         try (TestScript script = new TestScript()) {
 
-            QualifiedName qualified = QualifiedName.of(TeaseLib.DefaultDomain, //
-                    "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_item_by_enum", //
+            QualifiedName qualified = QualifiedName.of(TeaseLib.DefaultDomain,
+                    "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_item_by_enum",
                     "My_Test_Value_item_by_enum.Available");
             Item item = script.item(TestValuesEnumClass.My_Test_Value_item_by_enum);
             assertEquals(0, script.storage.size());
@@ -124,9 +130,10 @@ public class ScriptPersistenceTests {
             assertEquals(1, script.storage.size());
             assertEquals(true, item.isAvailable());
             assertEquals(true, script.storage.containsKey(qualified));
-            TeaseLib.PersistentBoolean persistentBoolean = script.teaseLib.new PersistentBoolean("",
-                    "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_item_by_enum",
-                    "My_Test_Value_item_by_enum.Available");
+            TeaseLib.PersistentBoolean persistentBoolean = script.teaseLib.getBoolean(
+                    QualifiedName.of(TeaseLib.DefaultDomain,
+                            "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_item_by_enum",
+                            "My_Test_Value_item_by_enum.Available"));
 
             // state is:
             // Domain:ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_item_by_enum/state.applied=true
@@ -157,12 +164,12 @@ public class ScriptPersistenceTests {
     public void testScriptPersistencenGlobalNamespace() throws IOException {
         try (TestScript script = new TestScript()) {
 
-            script.teaseLib.set(TeaseLib.DefaultDomain, "My namespace",
-                    TestValuesEnumClass.My_Test_Value_set_by_name.name(), "Saved by global name");
+            script.teaseLib.persistence.set(QualifiedName.of(TeaseLib.DefaultDomain, "My namespace", TestValuesEnumClass.My_Test_Value_set_by_name.name()),
+                    "Saved by global name");
             assertTrue(script.storage.containsKey(
                     QualifiedName.of(TeaseLib.DefaultDomain, "My namespace", "My_Test_Value_set_by_name")));
 
-            script.teaseLib.set("My domain", TestValuesEnumClass.My_Test_Value_set_by_enum, "Saved by global enum");
+            script.teaseLib.persistence.set(QualifiedName.of("My domain", (Enum<?>) TestValuesEnumClass.My_Test_Value_set_by_enum), "Saved by global enum");
             assertTrue(script.storage.containsKey(QualifiedName.of("My domain",
                     "ScriptPersistenceTests.TestValuesEnumClass", "My_Test_Value_set_by_enum")));
 

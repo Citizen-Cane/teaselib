@@ -1,7 +1,6 @@
 package teaselib.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,6 +11,7 @@ import java.util.regex.Pattern;
 
 import teaselib.Sexuality.Gender;
 import teaselib.core.TeaseLib;
+import teaselib.core.util.QualifiedName;
 
 /**
  * 
@@ -178,7 +178,7 @@ public class TextVariables implements Iterable<String> {
     }
 
     public void addUserIdentity(TeaseLib teaseLib, String domain, Locale locale) {
-        Gender gender = teaseLib.new PersistentEnum<>(domain, Gender.class).value();
+        Gender gender = teaseLib.getEnum(domain, Gender.class).value();
         String language = locale.getLanguage();
         String namespace = userNamespace(gender);
 
@@ -192,25 +192,11 @@ public class TextVariables implements Iterable<String> {
 
     private static String formOfAddress(TeaseLib teaseLib, String domain, String namespace, FormOfAddress formOfAddress,
             String language) {
-        return teaseLib.getString(domain, namespace, qualifiedName(formOfAddress, language));
+        return teaseLib.getString(QualifiedName.of(domain, namespace, formOfAddress.name(), language)).value();
     }
 
     private static String userNamespace(Gender gender) {
-        return qualifiedName("user", gender.name());
-    }
-
-    private static String qualifiedName(Enum<?> part1, String part2) {
-        return qualifiedName(part1.name(), part2);
-    }
-
-    private static String qualifiedName(String... parts) {
-        Iterator<String> part = Arrays.asList(parts).iterator();
-        StringBuilder qualifiedName = new StringBuilder(part.next().toLowerCase());
-        while (part.hasNext()) {
-            qualifiedName.append(".");
-            qualifiedName.append(part.next().toLowerCase());
-        }
-        return qualifiedName.toString();
+        return QualifiedName.path("user", gender.name());
     }
 
     @Override

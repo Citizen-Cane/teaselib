@@ -250,3 +250,8 @@ public abstract class TeaseScriptPersistence extends Script {
         return defaultDomain.state(value);
     }
 }
+
+// TODO add States to Domain class
+// TODO refactor domain class into new file
+// TODO Domain methods to interface
+// TODO TeaseScript implements Domain interface

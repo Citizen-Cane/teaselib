@@ -113,9 +113,7 @@ public class SceneCapture extends NativeObject.Disposible {
     }
 
     public SceneCapture(String openCVImagePattern) {
-        super(newNativeInstance(openCVImagePattern));
-        this.name = openCVImagePattern;
-        this.location = EnclosureLocation.External;
+        this(newNativeInstance(openCVImagePattern), openCVImagePattern, EnclosureLocation.External);
     }
 
     private static native long newNativeInstance(String openCVImagePattern);

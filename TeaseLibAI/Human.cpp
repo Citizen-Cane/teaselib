@@ -10,6 +10,7 @@
 #include <Pose/Person.h>
 
 #include <teaselib_core_ai_perception_Person.h>
+#include "SceneCapture.h"
 #include "Human.h"
 #include "HumanPose.h"
 
@@ -78,15 +79,14 @@ extern "C"
 	(JNIEnv* env, jobject jperson, jobject jhumanPose, jobject jdevice, jint rotation, jlong timestamp)
 	{
 		try {
-			Human* human = NativeInstance::get<Human>(env, jperson);
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jhumanPose);
-			aifx::video::VideoCapture* device = NativeInstance::get<VideoCapture>(env, jdevice);
-
 			humanPose->set(static_cast<aifx::image::Rotation>(rotation));
+			VideoCapture* device = SceneCapture::nativeInstance(env, jdevice)->device;
 			if (humanPose->acquire(device)) {
 				auto millis = std::chrono::milliseconds(timestamp);
 				const vector<aifx::pose::Pose> poses = humanPose->estimate(millis);
 
+				Human* human = NativeInstance::get<Human>(env, jperson);
 				if (poses.empty()) {
 					Human::update(env, jperson, human->person.estimated(humanPose->motion_area(), chrono::milliseconds(timestamp)));
 				} else {

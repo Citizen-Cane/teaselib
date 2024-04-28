@@ -19,6 +19,7 @@
 
 #include <teaselib_core_ai_perception_HumanPose.h>
 #include "HumanPose.h"
+#include "SceneCapture.h"
 
 using namespace aifx;
 using namespace aifx::pose;
@@ -131,8 +132,8 @@ extern "C"
 		try {
 			Objects::requireNonNull(L"device", jdevice);
 			HumanPose* humanPose = NativeInstance::get<HumanPose>(env, jthis);
-			auto* capture = NativeInstance::get<aifx::video::VideoCapture>(env, jdevice);
-			return humanPose->acquire(capture);
+			aifx::video::VideoCapture* device = SceneCapture::nativeInstance(env, jdevice)->device;
+			return humanPose->acquire(device);
 		} catch (invalid_argument& e) {
 			JNIException::rethrow(env, e);
 			return false;
@@ -355,9 +356,14 @@ HumanPose::ModelCache::~ModelCache()
 
 aifx::pose::Movenet* HumanPose::ModelCache::operator()(int interests, image::Rotation rotation, const cv::Size& image)
 {
-	const Movenet::Model model = (interests & (UpperTorso + LowerTorso + LegsAndFeet)) != 0 && (interests & MultiPose) == 0
-		? Movenet::Model::SinglePoseExact
-		: Movenet::Model::MultiposeFast;
+	// Movenet::Model::MultiposeFast is the best model model because it provides stable head detection at image borders 
+	// The other models have been disabled because they cause interactive prompts to flicker when the head is at the bottom
+	const Movenet::Model model = Movenet::Model::MultiposeFast;
+	
+	// Movenet::Model::SinglePoseFast is ignored for similar reasons
+	// const Movenet::Model model = (interests & (UpperTorso + LowerTorso + LegsAndFeet)) != 0 && (interests & MultiPose) == 0
+	//	? Movenet::Model::SinglePoseExact
+	//	: Movenet::Model::MultiposeFast;
 	const bool portait_image = image.width < image.height;
 	const bool orientation_change = rotation == aifx::image::Rotation::None || rotation == image::Rotation::Rotate_180;
 	const image::Orientation orientation = orientation_change ^ portait_image

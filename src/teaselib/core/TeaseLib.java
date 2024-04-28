@@ -100,10 +100,6 @@ public class TeaseLib implements Closeable {
 
     private final Thread shutdownHook = new Thread(this::shutdown);
 
-    public TeaseLib(Host host) throws IOException {
-        this(host, new TeaseLibConfigSetup(host));
-    }
-
     public TeaseLib(Host host, Setup setup) throws IOException {
         Objects.requireNonNull(host);
         Objects.requireNonNull(setup);

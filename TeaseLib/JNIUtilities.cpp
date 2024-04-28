@@ -92,12 +92,12 @@ jobject JNIUtilities::asList(JNIEnv* env, const vector<NativeObject*>& elements)
 
 jobject JNIUtilities::asList(JNIEnv* env, const vector<jobject>& elements)
 {
-	jobject list = newList(env, elements.size());
-	jmethodID add = JNIClass::getMethodID(env, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z");
-	for_each(elements.begin(), elements.end(), [&](const jobject element) {
+	jobject list = newNativeObjectList(env, elements.size());
+	jmethodID add = JNIClass::getMethodID(env, "teaselib/core/jni/NativeObjectList", "add", "(Ljava/lang/Object;)Z");
+	for_each(elements.begin(), elements.end(), [&](jobject element) {
 		env->CallObjectMethod(list, add, element);
 		if (env->ExceptionCheck()) throw JNIException(env);
-	});
+		});
 	return list;
 }
 

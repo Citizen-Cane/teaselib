@@ -2,9 +2,13 @@
 
 #include <NativeObject.h>
 
-class SceneCapture : public NativeObject {
+#include <video/VideoCapture.h>
+
+class SceneCapture {
 public:
-	SceneCapture(JNIEnv* env, const aifx::video::VideoCapture::CameraInfo& cameraInfo);
-private:
-	std::unique_ptr<aifx::video::VideoCapture> device;
+	static SceneCapture* nativeInstance(JNIEnv* env, jobject jthis);
+
+	SceneCapture(aifx::video::VideoCapture* device);
+	~SceneCapture();
+	aifx::video::VideoCapture* device;
 };

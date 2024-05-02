@@ -304,7 +304,7 @@ DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languag
 		aifx::speech::SpeechAudioStream::audio_buffer_capacity_default * 2, // avoid buffer saturation on low-end systems
 		aifx::speech::VoiceActivationDetection::Mode::VeryAggressive, // ignore noise & breathing
 		24, 24, 80) // restore speech frames cut off by vad 
-	, audio(AudioCapture::DeviceInfo::defaultDevice(), recognizer.sample_rate(), aifx::speech::SpeechAudioStream::feed_audio_samples / 2)
+	, audio(AudioCapture::Devices().default_device, recognizer.sample_rate(), aifx::speech::SpeechAudioStream::feed_audio_samples / 2)
 	, input([this](const short* audio, unsigned int samples) {
 		aifx::speech::SpeechAudioStream::FeedState feed_stste;
 		const unsigned int consumed = audioStream.feed(audio, samples, feed_stste);

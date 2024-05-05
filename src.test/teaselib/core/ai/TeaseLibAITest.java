@@ -3,8 +3,9 @@ package teaselib.core.ai;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -72,6 +73,7 @@ public class TeaseLibAITest {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
                 SceneCapture sceneCapture = new SceneCapture(getOpenCVImageSequence(name, pattern))) {
             sceneCapture.start();
+            assertTrue(sceneCapture.isStarted());
             Runnable test = () -> {
                 try (HumanPose humanPose = new HumanPose()) {
                     humanPose.setInterests(Interest.AllPersons);
@@ -97,6 +99,7 @@ public class TeaseLibAITest {
                     }
                 }) {
             sceneCapture.start();
+            assertTrue(sceneCapture.isStarted());
             Runnable test = () -> {
                 try (HumanPose humanPose = new HumanPose()) {
                     humanPose.setInterests(Interest.Head);
@@ -282,6 +285,7 @@ public class TeaseLibAITest {
                     humanPose1.setInterests(Interest.Head);
                     humanPose2.setInterests(Interest.Head);
                     sceneCapture.start();
+                    assertTrue(sceneCapture.isStarted());
                     var timestamp = System.currentTimeMillis();
                     List<HumanPose.Estimation> poses1 = humanPose1.poses(sceneCapture, timestamp);
                     assertEquals(1, poses1.size());
@@ -356,7 +360,8 @@ public class TeaseLibAITest {
 
     public static String getOpenCVImageSequence(String name, String pattern) throws FileNotFoundException {
         URL resource = TeaseLibAITest.class.getResource(name);
-        if (resource == null) throw new FileNotFoundException(name);
+        if (resource == null)
+            throw new FileNotFoundException(name);
         File folder = new File(resource.getFile()).getParentFile();
         return new File(folder, pattern).getAbsolutePath();
     }

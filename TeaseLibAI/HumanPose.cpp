@@ -354,7 +354,7 @@ HumanPose::ModelCache::~ModelCache()
 	for(auto entry : elements)  { delete entry.second; }
 }
 
-aifx::pose::Movenet* HumanPose::ModelCache::operator()(int interests, image::Rotation rotation, const cv::Size& image)
+aifx::pose::Movenet* HumanPose::ModelCache::operator()(int /* interests */, image::Rotation rotation, const cv::Size& image)
 {
 	// Movenet::Model::MultiposeFast is the best model model because it provides stable head detection at image borders 
 	// The other models have been disabled because they cause interactive prompts to flicker when the head is at the bottom

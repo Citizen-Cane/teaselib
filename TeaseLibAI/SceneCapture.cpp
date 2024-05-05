@@ -92,7 +92,7 @@ extern "C"
 		try {
 			VideoCapture* device = SceneCapture::nativeInstance(env, jthis)->device;
 			device->start();
-			if (device->source() == VideoCapture::Source::Hardware) {
+			if (device->source() == VideoCapture::Source::Camera) {
 				device->size(VideoCapture::Quality::VGA, VideoCapture::Aspect::Sensor);
 			}
 		} catch (exception& e) {

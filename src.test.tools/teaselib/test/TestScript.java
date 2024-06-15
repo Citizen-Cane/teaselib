@@ -164,7 +164,7 @@ public class TestScript extends TeaseScript implements Closeable {
                 .filter(key -> !key.namespace.startsWith("LastUsed")) //
                 // PersistedDomain values are present since they reference Domain.LastUsed
                 .filter(key -> !key.namespace.startsWith("PersistedDomains")) //
-                .collect(Collectors.toList());
+                .toList();
         return keys.size();
     }
 

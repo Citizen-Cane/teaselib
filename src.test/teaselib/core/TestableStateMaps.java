@@ -2,6 +2,7 @@ package teaselib.core;
 
 import teaselib.State;
 import teaselib.core.util.QualifiedString;
+import teaselib.test.TestScript;
 
 /**
  * @author Citizen-Cane
@@ -9,8 +10,10 @@ import teaselib.core.util.QualifiedString;
  */
 public class TestableStateMaps extends StateMaps {
 
-    public TestableStateMaps(TeaseLib teaseLib) {
-        super(teaseLib);
+    protected final TestScript script;
+    public TestableStateMaps(TestScript script) {
+        super(script.teaseLib);
+        this.script=script;
     }
 
     protected State state(String domain, Enum<?> item) {

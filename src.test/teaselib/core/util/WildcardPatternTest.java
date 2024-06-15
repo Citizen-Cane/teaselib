@@ -1,14 +1,13 @@
 /**
- * 
+ *
  */
 package teaselib.core.util;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
-import org.junit.Test;
 
 /**
  * @author someone
@@ -32,7 +31,7 @@ public class WildcardPatternTest {
     static Pattern SPECIAL_REGEX_CHARS_JOKER = Pattern
             .compile("[{}()\\[\\].+^$\\\\|]");
 
-    static String[][] jokers = { { "\\*", ".*" }, { "\\?", "." } };
+    static String[][] jokers = {{"\\*", ".*"}, {"\\?", "."}};
 
     static String escapeSpecialRegexCharsToJokers(String str) {
         String escaped = SPECIAL_REGEX_CHARS_JOKER.matcher(str)
@@ -48,9 +47,9 @@ public class WildcardPatternTest {
         String path = "Pictures/Scene?_*.*";
         Pattern escaped = toSafePattern(path);
         Predicate<String> p = escaped.asPredicate();
-        assertEquals(true, p.test(path));
-        assertEquals(false, p.test("xxx"));
-        assertEquals(false, p.test("Pictures/Scene1_1.jpg"));
+        Assertions.assertTrue(p.test(path));
+        Assertions.assertFalse(p.test("xxx"));
+        Assertions.assertFalse(p.test("Pictures/Scene1_1.jpg"));
     }
 
     @Test
@@ -58,9 +57,9 @@ public class WildcardPatternTest {
         String path = escapeSpecialRegexCharsToJokers("Pictures/Scene*_*.*");
         Pattern escaped = Pattern.compile(path);
         Predicate<String> p = escaped.asPredicate();
-        assertEquals(false, p.test("xxx"));
-        assertEquals(true, p.test("Pictures/Scene1_1.jpg"));
-        assertEquals(true, p.test("Pictures/Scene1_12.jpg"));
+        Assertions.assertFalse(p.test("xxx"));
+        Assertions.assertTrue(p.test("Pictures/Scene1_1.jpg"));
+        Assertions.assertTrue(p.test("Pictures/Scene1_12.jpg"));
     }
 
     @Test
@@ -68,9 +67,9 @@ public class WildcardPatternTest {
         String path = escapeSpecialRegexCharsToJokers("Pictures/Scene?_*.*");
         Pattern escaped = Pattern.compile(path);
         Predicate<String> p = escaped.asPredicate();
-        assertEquals(false, p.test("xxx"));
-        assertEquals(true, p.test("Pictures/Scene2_1.jpg"));
-        assertEquals(false, p.test("Pictures/Scene22_1.jpg"));
+        Assertions.assertFalse(p.test("xxx"));
+        Assertions.assertTrue(p.test("Pictures/Scene2_1.jpg"));
+        Assertions.assertFalse(p.test("Pictures/Scene22_1.jpg"));
     }
 
     @Test
@@ -78,9 +77,9 @@ public class WildcardPatternTest {
         final String string = "Pictures/Scene?_*.*";
         Pattern path = WildcardPattern.compile(string);
         Predicate<String> p = path.asPredicate();
-        assertEquals(true, p.test(string));
-        assertEquals(false, p.test("xxx"));
-        assertEquals(true, p.test("Pictures/Scene1_1.jpg"));
+        Assertions.assertTrue(p.test(string));
+        Assertions.assertFalse(p.test("xxx"));
+        Assertions.assertTrue(p.test("Pictures/Scene1_1.jpg"));
     }
 
     @Test
@@ -88,9 +87,9 @@ public class WildcardPatternTest {
         String string = "Pictures/Scene*_*.*";
         Pattern path = WildcardPattern.compile(string);
         Predicate<String> p = path.asPredicate();
-        assertEquals(false, p.test("xxx"));
-        assertEquals(true, p.test("Pictures/Scene1_1.jpg"));
-        assertEquals(true, p.test("Pictures/Scene1_12.jpg"));
+        Assertions.assertFalse(p.test("xxx"));
+        Assertions.assertTrue(p.test("Pictures/Scene1_1.jpg"));
+        Assertions.assertTrue(p.test("Pictures/Scene1_12.jpg"));
     }
 
     @Test
@@ -98,9 +97,9 @@ public class WildcardPatternTest {
         String string = "Pictures/Scene?_*.*";
         Pattern path = WildcardPattern.compile(string);
         Predicate<String> p = path.asPredicate();
-        assertEquals(false, p.test("xxx"));
-        assertEquals(true, p.test("Pictures/Scene2_1.jpg"));
-        assertEquals(false, p.test("Pictures/Scene22_1.jpg"));
+        Assertions.assertFalse(p.test("xxx"));
+        Assertions.assertTrue(p.test("Pictures/Scene2_1.jpg"));
+        Assertions.assertFalse(p.test("Pictures/Scene22_1.jpg"));
     }
 
 }

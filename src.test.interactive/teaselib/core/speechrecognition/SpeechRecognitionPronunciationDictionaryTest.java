@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.runners.MethodSorters;
 
 import teaselib.core.configuration.Configuration;

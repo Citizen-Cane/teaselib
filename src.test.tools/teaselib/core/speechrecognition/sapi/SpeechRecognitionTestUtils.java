@@ -1,13 +1,17 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static teaselib.core.util.ExceptionUtil.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import teaselib.core.AudioSync;
+import teaselib.core.ai.deepspeech.DeepSpeechRecognizer;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
+import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.*;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.srgs.PhraseString;
+import teaselib.core.ui.*;
+import teaselib.core.ui.Prompt.Result;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,31 +23,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import teaselib.core.AudioSync;
-import teaselib.core.ai.deepspeech.DeepSpeechRecognizer;
-import teaselib.core.configuration.Configuration;
-import teaselib.core.configuration.DebugSetup;
-import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.Rule;
-import teaselib.core.speechrecognition.SpeechRecognitionEvents;
-import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
-import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
-import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.srgs.PhraseString;
-import teaselib.core.ui.Choice;
-import teaselib.core.ui.Choices;
-import teaselib.core.ui.InputMethods;
-import teaselib.core.ui.Intention;
-import teaselib.core.ui.Prompt;
-import teaselib.core.ui.Prompt.Result;
+import static java.util.stream.Collectors.joining;
+import static org.junit.jupiter.api.Assertions.*;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 /**
  * @author Citizen-Cane
- *
  */
 public class SpeechRecognitionTestUtils {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionTestUtils.class);
@@ -76,7 +61,8 @@ public class SpeechRecognitionTestUtils {
         return config;
     }
 
-    private SpeechRecognitionTestUtils() {}
+    private SpeechRecognitionTestUtils() {
+    }
 
     public static List<Rule> assertRecognized(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
@@ -84,7 +70,7 @@ public class SpeechRecognitionTestUtils {
     }
 
     public static List<Rule> assertRecognized(SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase,
-            Prompt.Result expected) throws InterruptedException {
+                                              Prompt.Result expected) throws InterruptedException {
         return emulateSpeechRecognition(inputMethod, choices, phrase, expected);
     }
 
@@ -96,7 +82,7 @@ public class SpeechRecognitionTestUtils {
     }
 
     public static List<Rule> assertRecognizedAsHypothesis(SpeechRecognitionInputMethod inputMethod, Choices choices,
-            String phrase, Prompt.Result expected) throws InterruptedException {
+                                                          String phrase, Prompt.Result expected) throws InterruptedException {
         return emulateSpeechRecognition(inputMethod, choices, phrase, expected);
     }
 
@@ -116,7 +102,7 @@ public class SpeechRecognitionTestUtils {
     }
 
     private static List<Rule> emulateSpeechRecognition(SpeechRecognitionInputMethod inputMethod, Choices choices,
-            String phrase, Prompt.Result expected) throws InterruptedException {
+                                                       String phrase, Prompt.Result expected) throws InterruptedException {
         Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
         return awaitResult(prompt, inputMethod, phrase, expected);
     }
@@ -140,10 +126,10 @@ public class SpeechRecognitionTestUtils {
     }
 
     public static List<Rule> awaitResult(Prompt prompt, SpeechRecognitionInputMethod inputMethod, String phrase,
-            Prompt.Result expectedRules) throws InterruptedException {
+                                         Prompt.Result expectedRules) throws InterruptedException {
         boolean isAudioFile = phrase.toLowerCase().endsWith(".raw");
         if (!isAudioFile) {
-            assertEquals("Phrase may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
+            assertEquals(withoutPunctation(phrase), phrase, "Phrase may not contain punctation: '" + phrase + "'");
         }
 
         List<Rule> results = new ArrayList<>();
@@ -203,12 +189,12 @@ public class SpeechRecognitionTestUtils {
                 result = prompt.result();
                 if (dismissed) {
                     if (expectedRules != null) {
-                        assertNotEquals("Result expected" + prompt, Result.UNDEFINED, result);
+                        assertNotEquals(Result.UNDEFINED, result, "Result expected" + prompt);
                     } else {
-                        assertEquals("Result unexpected" + prompt, Result.UNDEFINED, result);
+                        assertEquals(Result.UNDEFINED, result, "Result unexpected" + prompt);
                     }
                 } else {
-                    assertEquals("Rejected prompt expected" + prompt, Result.UNDEFINED, result);
+                    assertEquals(Result.UNDEFINED, result, "Rejected prompt expected" + prompt);
                 }
             } finally {
                 prompt.lock.unlock();
@@ -217,9 +203,9 @@ public class SpeechRecognitionTestUtils {
             if (expectedRules != null) {
                 if (isAudioFile) {
                     String expected = prompt.choices.get(expectedRules.elements.get(0)).phrases.get(0);
-                    assertTrue("Expected recognition:: \"" + expected + "\"", dismissed);
+                    assertTrue(dismissed, "Expected recognition:: \"" + expected + "\"");
                 } else {
-                    assertTrue("Expected recognition:: \"" + phrase + "\"", dismissed);
+                    assertTrue(dismissed, "Expected recognition:: \"" + phrase + "\"");
                 }
 
                 if (prompt.acceptedResult == Prompt.Result.Accept.Multiple) {
@@ -228,14 +214,12 @@ public class SpeechRecognitionTestUtils {
                     assertAllTheSameChoices(expectedRules, result);
                 }
             } else if (speechRejected.get()) {
-                assertTrue("Expected rejected and dismissed: \"" + phrase + "\" but got " + result, dismissed);
+                assertTrue(dismissed, "Expected rejected and dismissed: \"" + phrase + "\" but got " + result);
             } else {
-                assertFalse("Expected rejected: \"" + phrase + "\" but got " + result, dismissed);
-                assertNotEquals("Undefined result", Result.UNDEFINED, result);
+                assertFalse(dismissed, "Expected rejected: \"" + phrase + "\" but got " + result);
+                assertNotEquals(Result.UNDEFINED, result, "Undefined result");
             }
-        } finally
-
-        {
+        } finally {
             inputMethod.events.recognitionRejected.remove(rejectedHandler);
             inputMethod.events.recognitionCompleted.remove(completedHandler);
             inputMethod.events.speechDetected.remove(detectedHandler);
@@ -245,9 +229,9 @@ public class SpeechRecognitionTestUtils {
     }
 
     private static void assertAllTheSameChoices(Prompt.Result expectedRules, Prompt.Result result) {
-        List<Integer> choices = result.elements.stream().distinct().collect(toList());
-        assertEquals("Result contains different choices: " + result, 1, choices.size());
-        assertEquals("Expected choice " + expectedRules, expectedRules.elements.get(0), choices.get(0));
+        List<Integer> choices = result.elements.stream().distinct().toList();
+        assertEquals(1, choices.size(), "Result contains different choices: " + result);
+        assertEquals(expectedRules.elements.get(0), choices.get(0), "Expected choice " + expectedRules);
     }
 
     static void emulateRecognition(SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase)
@@ -295,15 +279,15 @@ public class SpeechRecognitionTestUtils {
             } while (!dismissed && speechDetectedCount < speechDetected.get());
 
             if (recognitionRejected.get()) {
-                assertNull("Speech rejected but got result: " + speechRecognized.get(), speechRecognized.get());
+                assertNull(speechRecognized.get(), "Speech rejected but got result: " + speechRecognized.get());
                 return Rule.Nothing;
             } else if (dismissed) {
                 assertNotNull(speechRecognized.get());
                 List<Rule> rules = speechRecognized.get().result;
-                assertFalse("Audio file result expected - path correct?", rules.isEmpty());
+                assertFalse(rules.isEmpty(), "Audio file result expected - path correct?");
                 Rule rule = rules.get(0);
                 assertTrue(rule.isValid());
-                assertEquals("Distinct rule", 1, rule.indices.size());
+                assertEquals(1, rule.indices.size(), "Distinct rule");
                 assertEquals(choice, rule.indices.iterator().next().intValue());
                 return rule;
             } else {
@@ -322,13 +306,14 @@ public class SpeechRecognitionTestUtils {
     }
 
     public static void assertConfidence(SpeechRecognitionNativeImplementation recognizer, Rule rule,
-            Intention intention) {
+                                        Intention intention) {
         assertConfidence(rule, recognizer.required.confidence(intention));
     }
 
     public static void assertConfidence(Rule rule, float confidence) {
-        assertTrue("confidence=" + rule.probability + " too low for required confidence=" + confidence + " in rule "
-                + rule, rule.probability > confidence);
+        assertTrue(rule.probability > confidence,
+                "confidence=" + rule.probability
+                        + " too low for required confidence=" + confidence + " in rule " + rule);
     }
 
 }

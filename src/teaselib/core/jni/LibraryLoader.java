@@ -1,5 +1,6 @@
 package teaselib.core.jni;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import teaselib.core.ResourceLoader;
@@ -13,8 +14,14 @@ public class LibraryLoader {
 
     public static void load(String name) {
         String library = library(name);
-        Path releaseLocation = ResourceLoader.getProjectPath(LibraryLoader.class).toPath().getParent().resolve("lib");
-        System.load(releaseLocation.resolve(library).toString());
+        Path projectPath = ResourceLoader.getProjectPath(LibraryLoader.class).toPath();
+        Path releaseLocation = projectPath.getParent().resolve("lib");
+        Path path = releaseLocation.resolve(library);
+        if (!Files.exists(path)) {
+            Path gradleLocation = projectPath.getParent().getParent().getParent().getParent().resolve("lib");
+             path = gradleLocation.resolve(library);
+        }
+        System.load(path.toString());
     }
 
     private static String library(String name) {

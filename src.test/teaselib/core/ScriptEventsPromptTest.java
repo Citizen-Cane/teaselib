@@ -1,7 +1,16 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import teaselib.Bondage;
+import teaselib.core.devices.release.Actuator;
+import teaselib.core.devices.release.KeyRelease;
+import teaselib.core.devices.release.KeyReleaseBaseTest;
+import teaselib.core.devices.release.KeyReleaseSetup;
+import teaselib.test.TestScript;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -10,18 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import teaselib.Bondage;
-import teaselib.core.devices.release.Actuator;
-import teaselib.core.devices.release.KeyRelease;
-import teaselib.core.devices.release.KeyReleaseBaseTest;
-import teaselib.core.devices.release.KeyReleaseSetup;
-import teaselib.test.TestScript;
-
-public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
+class ScriptEventsPromptTest extends KeyReleaseBaseTest {
     private static final List<Actuator> actuatorMocks = Arrays.asList(new ActuatorMock(2, TimeUnit.HOURS),
             new ActuatorMock(1, TimeUnit.HOURS));
 
@@ -31,20 +29,20 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
     private KeyReleaseSetup keyReleaseSetup;
     private KeyRelease keyRelease;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         script = new TestScript();
         keyReleaseSetup = script.interaction(KeyReleaseSetup.class);
     }
 
-    @After
+    @AfterEach
     public void detachDevice() {
         keyReleaseSetup.deviceInteraction.deviceDisconnected(new DeviceEventMock(keyRelease));
         script.close();
     }
 
     @Test
-    public void testDeviceConnectInvokesPromptHandler() {
+    void testDeviceConnectInvokesPromptHandler() {
         script.debugger.addResponse(FOOBAR, Debugger.Response.Ignore);
         AtomicBoolean triggered = new AtomicBoolean();
         CountDownLatch done = new CountDownLatch(1);
@@ -57,14 +55,14 @@ public class ScriptEventsPromptTest extends KeyReleaseBaseTest {
             keyRelease = new KeyReleaseMock(actuatorMocks);
             keyReleaseSetup.deviceInteraction.deviceConnected(new DeviceEventMock(keyRelease));
             try {
-                assertTrue("Awaiting prepare instruction timed out", done.await(5, TimeUnit.SECONDS));
+                Assertions.assertTrue(done.await(5, TimeUnit.SECONDS), "Awaiting prepare instruction timed out");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
         }, FOOBAR);
 
-        assertEquals("Prepare instructions not called", true, triggered.get());
+        Assertions.assertTrue(triggered.get(), "Prepare instructions not called");
     }
 
 }

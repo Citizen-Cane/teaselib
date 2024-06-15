@@ -1,20 +1,18 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ItemImplAutoRemoveTests {
 

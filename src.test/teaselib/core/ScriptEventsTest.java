@@ -1,19 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import teaselib.Bondage;
 import teaselib.Features;
 import teaselib.State;
@@ -29,7 +19,13 @@ import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
-public class ScriptEventsTest extends KeyReleaseBaseTest {
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+class ScriptEventsTest extends KeyReleaseBaseTest {
     private static final List<Actuator> actuatorMocks = Arrays.asList(new ActuatorMock(2, TimeUnit.HOURS),
             new ActuatorMock(1, TimeUnit.HOURS));
 
@@ -39,7 +35,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     private KeyReleaseSetup keyReleaseSetup;
     private KeyRelease keyRelease;
 
-    @Before
+    @BeforeEach
     public void setupActuators() throws IOException {
         script = new TestScript();
         script.debugger.freezeTime();
@@ -49,12 +45,12 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
 
     private void simulateDeviceConnect() {
         keyReleaseSetup.deviceInteraction.deviceConnected(new DeviceEventMock(keyRelease));
-        assertEquals(2, keyRelease.actuators().size());
-        assertEquals(2, keyReleaseSetup.deviceInteraction.definitions(script.actor).size());
-        assertTrue(keyReleaseSetup.deviceAvailable());
+        Assertions.assertEquals(2, keyRelease.actuators().size());
+        Assertions.assertEquals(2, keyReleaseSetup.deviceInteraction.definitions(script.actor).size());
+        Assertions.assertTrue(keyReleaseSetup.deviceAvailable());
     }
 
-    @After
+    @AfterEach
     public void detachDevice() {
         actuatorMocks.stream().forEach(Actuator::release);
         keyReleaseSetup.deviceInteraction.deviceDisconnected(new DeviceEventMock(keyRelease));
@@ -76,8 +72,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
 
         Items cuffs = script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints).without(Features.Detachable)
                 .inventory();
-        assertFalse(keyReleaseSetup.isPrepared(cuffs));
-        assertTrue(keyReleaseSetup.canPrepare(cuffs));
+        Assertions.assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -85,8 +81,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(0);
         assertRemoveActions(0);
 
-        assertFalse("Actuator mock not released after previous test", keyReleaseSetup.isPrepared(cuffs));
-        assertTrue(keyReleaseSetup.canPrepare(cuffs));
+        Assertions.assertFalse(keyReleaseSetup.isPrepared(cuffs), "Actuator mock not released after previous test");
+        Assertions.assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, items -> instructionsCalled.set(true));
@@ -94,7 +90,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         script.say(FOOBAR);
         assertHoldActions(1);
         assertApplyActions(2);
-        assertTrue(instructionsCalled.get());
+        Assertions.assertTrue(instructionsCalled.get());
 
         cuffs.apply();
         script.say(FOOBAR);
@@ -535,10 +531,10 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
 
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);
         keyReleaseSetup.prepare(items, 1, TimeUnit.HOURS, cuffs -> instructionsCalled.set(true));
-        assertFalse(instructionsCalled.get());
+        Assertions.assertFalse(instructionsCalled.get());
 
         script.say(FOOBAR);
-        assertFalse(instructionsCalled.get());
+        Assertions.assertFalse(instructionsCalled.get());
         assertApplyActions(0);
         assertHoldActions(0);
         assertCountdownActions(0);
@@ -546,7 +542,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
 
         simulateDeviceConnect();
         script.say(FOOBAR);
-        assertTrue(instructionsCalled.get());
+        Assertions.assertTrue(instructionsCalled.get());
 
         assertApplyActions(2);
         assertHoldActions(1);
@@ -571,8 +567,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void testKeyReleaseEventHandlingConnectAfterApplyAssignsActuator() {
         Items cuffs = script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints).matching(Features.Coupled)
                 .inventory();
-        assertFalse(keyReleaseSetup.isPrepared(cuffs));
-        assertTrue(keyReleaseSetup.canPrepare(cuffs));
+        Assertions.assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         script.say(FOOBAR);
         assertApplyActions(0);
@@ -634,7 +630,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertArmedActions(0);
         assertHoldActions(0);
         assertCountdownActions(0);
-        assertEquals(1800, keyRelease.actuators().get(1).remaining(TimeUnit.SECONDS));
+        Assertions.assertEquals(1800, keyRelease.actuators().get(1).remaining(TimeUnit.SECONDS));
         assertRemoveActions(1);
 
         cuffs.remove();
@@ -650,8 +646,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
     public void testKeyReleaseEventHandlingConnectAfterApplyAssignsActuatorWithPreparation() {
         Items cuffs = script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints).without(Features.Detachable)
                 .inventory();
-        assertFalse(keyReleaseSetup.isPrepared(cuffs));
-        assertTrue(keyReleaseSetup.canPrepare(cuffs));
+        Assertions.assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, items -> instructionsCalled.set(true));
@@ -663,11 +659,11 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertRemoveActions(0);
 
         cuffs.apply();
-        assertFalse(instructionsCalled.get());
+        Assertions.assertFalse(instructionsCalled.get());
 
         simulateDeviceConnect();
         script.say(FOOBAR); // transition idle -> Arm
-        assertTrue(instructionsCalled.get());
+        Assertions.assertTrue(instructionsCalled.get());
 
         assertApplyActions(1);
         assertArmedActions(1);
@@ -699,15 +695,15 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         script.setAvailable(Bondage.All);
         Items.Set cuffs = script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints).without(Features.Detachable)
                 .getApplicableSet();
-        assertFalse(keyReleaseSetup.isPrepared(cuffs));
-        assertTrue(keyReleaseSetup.canPrepare(cuffs));
+        Assertions.assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertTrue(keyReleaseSetup.canPrepare(cuffs));
 
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);
         AtomicBoolean instructionsCalledAgain = new AtomicBoolean(false);
         keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, //
                 items -> instructionsCalled.set(true), items -> instructionsCalledAgain.set(true));
-        assertTrue(keyReleaseSetup.isPrepared(cuffs));
-        assertTrue(instructionsCalled.get());
+        Assertions.assertTrue(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertTrue(instructionsCalled.get());
 
         script.say(FOOBAR);
         assertApplyActions(2);
@@ -721,7 +717,7 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(1);
         assertRemoveActions(1);
 
-        assertTrue(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertTrue(keyReleaseSetup.isPrepared(cuffs));
         keyReleaseSetup.clear(cuffs);
         assertApplyActions(1);
         assertHoldActions(1);
@@ -735,8 +731,8 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(0);
         assertRemoveActions(0);
 
-        assertFalse(instructionsCalledAgain.get());
-        assertFalse(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertFalse(instructionsCalledAgain.get());
+        Assertions.assertFalse(keyReleaseSetup.isPrepared(cuffs));
     }
 
     @Test
@@ -746,25 +742,24 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         script.setAvailable(Bondage.All);
         var cuffs = script.items(Bondage.Ankle_Restraints, Bondage.Wrist_Restraints).without(Features.Detachable)
                 .getApplicableSet();
-        assertTrue("ItemProxy instances expected for event counting",
-                cuffs.stream().allMatch(ItemProxy.class::isInstance));
+        Assertions.assertTrue(cuffs.stream().allMatch(ItemProxy.class::isInstance), "ItemProxy instances expected for event counting");
 
         AtomicBoolean instructionsCalled = new AtomicBoolean(false);
         AtomicBoolean instructionsCalledAgain = new AtomicBoolean(false);
 
-        assertTrue(keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, //
+        Assertions.assertTrue(keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, //
                 items -> instructionsCalled.set(true), items -> instructionsCalledAgain.set(true)));
-        assertTrue(keyReleaseSetup.isPrepared(cuffs));
-        assertTrue(instructionsCalled.get());
-        assertFalse(instructionsCalledAgain.get());
+        Assertions.assertTrue(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertTrue(instructionsCalled.get());
+        Assertions.assertFalse(instructionsCalledAgain.get());
 
         AtomicBoolean instructionsCalled2 = new AtomicBoolean(false);
         AtomicBoolean instructionsCalledAgain2 = new AtomicBoolean(false);
-        assertFalse(keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, //
+        Assertions.assertFalse(keyReleaseSetup.prepare(cuffs, 1, TimeUnit.HOURS, //
                 items -> instructionsCalled2.set(true), items -> instructionsCalledAgain2.set(true)));
-        assertTrue(keyReleaseSetup.isPrepared(cuffs));
-        assertFalse(instructionsCalled2.get());
-        assertFalse(instructionsCalledAgain2.get());
+        Assertions.assertTrue(keyReleaseSetup.isPrepared(cuffs));
+        Assertions.assertFalse(instructionsCalled2.get());
+        Assertions.assertFalse(instructionsCalledAgain2.get());
 
         instructionsCalled.set(false);
 
@@ -787,33 +782,33 @@ public class ScriptEventsTest extends KeyReleaseBaseTest {
         assertCountdownActions(0);
         assertRemoveActions(0);
 
-        assertFalse(instructionsCalled.get());
-        assertFalse(instructionsCalledAgain.get());
-        assertFalse(instructionsCalled2.get());
-        assertTrue(instructionsCalledAgain2.get());
+        Assertions.assertFalse(instructionsCalled.get());
+        Assertions.assertFalse(instructionsCalledAgain.get());
+        Assertions.assertFalse(instructionsCalled2.get());
+        Assertions.assertTrue(instructionsCalledAgain2.get());
     }
 
     // TODO passing keys between actors
     // TODO test that clearing preparation before apply should releases key
 
     private void assertApplyActions(int count) {
-        assertEquals("Expected all apply-hooks active", count, script.events().itemApplied.size());
+        Assertions.assertEquals(count, script.events().itemApplied.size(), "Expected all apply-hooks active");
     }
 
     private void assertArmedActions(int count) {
-        assertEquals("Expected actuator to be prepared and armed", count, script.events().beforeMessage.size());
+        Assertions.assertEquals(count, script.events().beforeMessage.size(), "Expected actuator to be prepared and armed");
     }
 
     private void assertHoldActions(int count) {
-        assertEquals("Expected actuator to be prepared and holding", count, script.events().afterPrompt.size());
+        Assertions.assertEquals(count, script.events().afterPrompt.size(), "Expected actuator to be prepared and holding");
     }
 
     private void assertCountdownActions(int count) {
-        assertEquals(count, script.events().itemRemember.size());
+        Assertions.assertEquals(count, script.events().itemRemember.size());
     }
 
     private void assertRemoveActions(int count) {
-        assertEquals(count, script.events().itemRemoved.size());
+        Assertions.assertEquals(count, script.events().itemRemoved.size());
     }
 
 }

@@ -1,15 +1,14 @@
 /**
- * 
+ *
  */
 package teaselib.core.util;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
-import org.junit.Test;
 
 /**
  * @author Citizen-Cane
@@ -43,14 +42,14 @@ public class StreamTests {
         ByteArrayInputStream bis = new ByteArrayInputStream(test);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Stream.copy(bis, bos);
-        assertEquals(test.length, bos.toByteArray().length);
-        assertArrayEquals(test, bos.toByteArray());
+        Assertions.assertEquals(test.length, bos.toByteArray().length);
+        Assertions.assertArrayEquals(test, bos.toByteArray());
     }
 
     public void testSize(byte[] test, int s) throws IOException {
         ByteArrayInputStream bis = new ByteArrayInputStream(test);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Stream.copy(bis, bos, s);
-        assertEquals(s, bos.toByteArray().length);
+        Assertions.assertEquals(s, bos.toByteArray().length);
     }
 }

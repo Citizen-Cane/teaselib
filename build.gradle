@@ -1,44 +1,74 @@
 apply plugin: 'java-library'
 
 allprojects {
-	repositories {
-		mavenCentral()
-		maven { url 'https://jitpack.io' }
-	}
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven { url 'https://jitpack.io' }
+    }
 }
 
 sourceCompatibility = 17
 targetCompatibility = 17
 
 sourceSets {
-  main {
-    java {
-    	srcDirs 'src'
+    main {
+        java {
+            srcDirs 'src'
+        }
+        resources {
+            srcDirs 'src'
+        }
+        output.resourcesDir = "build/classes/java/main"
     }
-  }
+
+    test {
+        java {
+            srcDirs 'src.test'
+            srcDirs 'src.test.tools'
+        }
+        resources {
+            srcDirs 'src.test'
+            srcDirs 'src.test.tools'
+        }
+        output.resourcesDir = "build/classes/java/test"
+    }
 }
 
 configurations {
-	host
+    host
     runtime
 }
 
 dependencies {
-    host files('../SexScripts/SexScripts.jar')
+    implementation files('../SexScripts/SexScripts.jar')
 
-	runtime 'org.slf4j:slf4j-api:1.7.25'
-	runtime 'org.slf4j:slf4j-simple:1.7.25'
+    implementation 'org.slf4j:slf4j-api:1.7.25'
+    implementation 'org.slf4j:slf4j-simple:1.7.25'
 
-    runtime 'de.sciss:jump3r:1.0.5'   
-    runtime 'com.tagtraum:ffsampledsp-complete:0.9.46'   
+    implementation 'de.sciss:jump3r:1.0.5'
+    implementation 'com.tagtraum:ffsampledsp-complete:0.9.46'
+
+    testImplementation "org.junit.jupiter:junit-jupiter-params:5.9.3"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
 }
 
-task copyLibs(type: Copy) {
+tasks.register('copyLibs', Copy) {
     from configurations.runtime
     into 'lib'
 }
 
+test {
+    useJUnitPlatform {
+        includeEngines 'junit-jupiter', 'junit-vintage'
+    }
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
 jar {
     archiveBaseName = 'teaselib-gradle'
-    archiveVersion =  '0.0.1'
+    archiveVersion = '0.0.1'
 }

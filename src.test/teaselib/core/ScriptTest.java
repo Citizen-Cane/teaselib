@@ -1,12 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.util.Optional;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.TeaseScript;
@@ -15,7 +10,13 @@ import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.test.TestScript;
 import teaselib.util.TextVariables;
 
+import java.io.IOException;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 public class ScriptTest {
+
     @Test
     public void testScriptVariableDefault() throws IOException {
         try (TestScript script = new TestScript()) {
@@ -109,19 +110,22 @@ public class ScriptTest {
         }
     }
 
-    @Test(expected = NoSuchMethodException.class)
-    public void testScriptClassNestedInNonScriptClassFails() throws IOException, NoSuchMethodException {
+    @Test
+    public void testScriptClassNestedInNonScriptClassFails() throws IOException {
         try (TestScript one = new TestScript()) {
-            NotAStaticClassScript foo;
-            try {
-                foo = one.script(NotAStaticClassScript.class);
-            } catch (RuntimeException e) {
-                if (e.getCause() instanceof NoSuchMethodException)
-                    throw (NoSuchMethodException) e.getCause();
-                else
-                    throw e;
-            }
-            assertNull(foo);
+            assertThrows(NoSuchMethodException.class,
+                    () -> {
+                        NotAStaticClassScript foo;
+                        try {
+                            foo = one.script(NotAStaticClassScript.class);
+                        } catch (RuntimeException e) {
+                            if (e.getCause() instanceof NoSuchMethodException)
+                                throw e.getCause();
+                            else
+                                throw e;
+                        }
+                        Assertions.assertNull(foo);
+                    });
         }
     }
 
@@ -130,7 +134,7 @@ public class ScriptTest {
             super(script, script.actor);
         }
 
-        public class NestedScriptClass extends TeaseScript {
+        public static class NestedScriptClass extends TeaseScript {
             public NestedScriptClass(TeaseScript script) {
                 super(script, script.actor);
             }
@@ -143,7 +147,7 @@ public class ScriptTest {
         Script script = new StaticTestScript(main);
 
         StaticTestScript.NestedScriptClass foo = script.script(StaticTestScript.NestedScriptClass.class);
-        assertNotNull(foo);
+        Assertions.assertNotNull(foo);
     }
 
     private static String text(Script script, Message message) {
@@ -158,7 +162,7 @@ public class ScriptTest {
         }
 
         public static class FooScript extends TeaseScript {
-            final Script baz = script(BazScript.class);
+            Script baz = script(BazScript.class);
 
             public FooScript(TeaseScript script) {
                 super(script, script.actor);

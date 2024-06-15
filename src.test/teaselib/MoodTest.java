@@ -1,13 +1,12 @@
 /**
- * 
+ *
  */
 package teaselib;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-
-import org.junit.Test;
 
 /**
  * @author someone
@@ -21,7 +20,7 @@ public class MoodTest {
                 Mood.Disappointed, Mood.Friendly, Mood.Harsh, Mood.Neutral,
                 Mood.Pleased, Mood.Reading, Mood.Sceptic, Mood.Sorry)) {
             String name = Mood.extractName(mood);
-            assertTrue(mood.equalsIgnoreCase(Mood.Prefix + name + Mood.Suffix));
+            Assertions.assertTrue(mood.equalsIgnoreCase(Mood.Prefix + name + Mood.Suffix));
         }
     }
 }

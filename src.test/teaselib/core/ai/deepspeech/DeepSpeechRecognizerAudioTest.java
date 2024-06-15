@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.assertConfidence;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.await;
 
+import java.io.FileNotFoundException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -31,17 +34,20 @@ class DeepSpeechRecognizerAudioTest extends DeepSpeechRecognizerAbstractTest {
         deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
 
         for (DeepSpeechTestData testData : DeepSpeechTestData.tests) {
-            deepSpeechRecognizer.emulateRecognition(testData.audio.toString());
-            Optional<Throwable> exception = deepSpeechRecognizer.getException();
-            if (exception.isPresent()) {
-                fail(exception.get());
+            Path audio = testData.audio();
+            if (Files.exists(audio)) {
+                deepSpeechRecognizer.emulateRecognition(audio.toString());
+                Optional<Throwable> exception = deepSpeechRecognizer.getException();
+                exception.ifPresent(Assertions::fail);
+            } else {
+                throw new FileNotFoundException(audio.toString());
             }
         }
     }
 
     @ParameterizedTest
     @MethodSource("tests")
-    void testExpectedAudio(DeepSpeechTestData testData) throws InterruptedException {
+    void testExpectedAudio(DeepSpeechTestData testData) throws InterruptedException, FileNotFoundException {
         testAudio(testData);
     }
 
@@ -61,11 +67,12 @@ class DeepSpeechRecognizerAudioTest extends DeepSpeechRecognizerAbstractTest {
     // [[why] confidence=0.6653479]
     // [[who, s] confidence=0.65512556]
 
-    void testAudio(DeepSpeechTestData testData) throws InterruptedException {
+    void testAudio(DeepSpeechTestData testData) throws InterruptedException, FileNotFoundException {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm, new Choice(testData.groundTruth));
         deepSpeechRecognizer.prepare(choices).accept(deepSpeechRecognizer);
-        assertTrue(Files.exists(testData.audio), "File not found: " + testData.audio);
-        deepSpeechRecognizer.emulateRecognition(testData.audio.toString());
+        Path audio = testData.audio();
+        assertTrue(Files.exists(audio), "File not found: " + audio);
+        deepSpeechRecognizer.emulateRecognition(audio.toString());
         Rule rule = await(0, deepSpeechRecognizer, events);
         assertConfidence(deepSpeechRecognizer, rule, Intention.Decide);
     }

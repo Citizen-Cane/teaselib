@@ -1,17 +1,14 @@
 package teaselib.core.jni;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +25,19 @@ import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class LibraryLoaderTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LibraryLoaderTest.class);
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @TempDir
+    Path tempFolder;
 
     @Test
     public void testLoadAI() throws InterruptedException {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI();
+        try (TeaseLibAI ignored = new TeaseLibAI();
                 NativeObjectList<SceneCapture> devices = SceneCapture.devices()) {
             assertNotNull(devices);
             int n = 0;
@@ -57,9 +57,9 @@ public class LibraryLoaderTest {
         try (TextToSpeechImplementation tts = TeaseLibTTS.Microsoft.newInstance()) {
             List<Voice> voices = tts.getVoices();
             tts.setVoice(voices.get(0));
-            File file = tempFolder.newFile();
-            tts.speak("Foo bar", file.getAbsolutePath());
-            assertTrue(Files.exists(file.toPath()));
+            Path file = Files.createFile(tempFolder.resolve("FooBar.wav"));
+            tts.speak("Foo bar", file.toAbsolutePath().toString());
+            assertTrue(Files.exists(file));
         }
     }
 

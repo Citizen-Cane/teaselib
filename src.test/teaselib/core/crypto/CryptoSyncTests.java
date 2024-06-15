@@ -1,25 +1,25 @@
 /**
- * 
+ *
  */
 package teaselib.core.crypto;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import teaselib.core.util.FileUtilities;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import teaselib.core.util.FileUtilities;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author someone
- *
  */
 public class CryptoSyncTests {
     File currentDir = new File(getClass().getResource(getClass().getSimpleName() + ".class").getPath()).getParentFile();
@@ -36,14 +36,14 @@ public class CryptoSyncTests {
         assertEquals(testFiles.get(0), cryptoSync.getDecryptedFile(testFiles.get(0)).getName());
     }
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    Path temporaryFolder;
 
     /**
      * Creates a fresh set of encrypted test data, which can be used to ensure existing encrypted files can still be
      * decrypted.
      * <p>
-     * 
+     *
      * @throws IOException
      * @throws GeneralSecurityException
      */
@@ -55,10 +55,12 @@ public class CryptoSyncTests {
 
     @Test
     public void testFileSync() throws IOException, GeneralSecurityException {
-        final File encryptedFiles = temporaryFolder.newFolder();
+        final File encryptedFiles = Files.createDirectory(
+                temporaryFolder.resolve("encrypted")).toFile();
         CryptoSync cryptoSync = new CryptoSync(decryptedTestData, encryptedFiles);
         cryptoSync.sync();
-        final File decryptedCopies = temporaryFolder.newFolder();
+        final File decryptedCopies = Files.createDirectory(
+                temporaryFolder.resolve("decrypted")).toFile();
         CryptoSync cryptoSyncCopy = new CryptoSync(decryptedCopies, encryptedFiles);
         cryptoSyncCopy.sync();
         for (String name : testFiles) {
@@ -73,7 +75,8 @@ public class CryptoSyncTests {
 
     @Test
     public void ensurePersistedEncryptionWorks() throws IOException, GeneralSecurityException {
-        final File decryptedFiles = temporaryFolder.newFolder();
+        final File decryptedFiles = Files.createDirectory(
+                temporaryFolder.resolve("decrypted")).toFile();
         CryptoSync cryptoSync = new CryptoSync(decryptedFiles, encryptedTestData);
         CryptoSync cryptoSyncOriginal = new CryptoSync(decryptedTestData, encryptedTestData);
         cryptoSync.sync();
@@ -89,7 +92,8 @@ public class CryptoSyncTests {
 
     @Test
     public void testEncryptedTestDataIsComplete() throws GeneralSecurityException, IOException {
-        final File noFiles = temporaryFolder.newFolder();
+        final File noFiles = Files.createDirectory(
+                temporaryFolder.resolve("nofiles")).toFile();
         assertEquals(6, new CryptoSync(noFiles, encryptedTestData).size());
     }
 
@@ -101,7 +105,8 @@ public class CryptoSyncTests {
                 new CryptoSync(decryptedTestData, encryptedTestData, FileUtilities.getFileFilter("png")).size());
         assertEquals(6,
                 new CryptoSync(decryptedTestData, encryptedTestData, FileUtilities.getFileFilter("jpg", "png")).size());
-        final File noFiles = temporaryFolder.newFolder();
+        final File noFiles = Files.createDirectory(
+                temporaryFolder.resolve("nofiles")).toFile();
         assertEquals(2, new CryptoSync(noFiles, encryptedTestData, FileUtilities.getFileFilter("jpg")).size());
         assertEquals(4, new CryptoSync(noFiles, encryptedTestData, FileUtilities.getFileFilter("png")).size());
         assertEquals(6, new CryptoSync(noFiles, encryptedTestData, FileUtilities.getFileFilter("jpg", "png")).size());

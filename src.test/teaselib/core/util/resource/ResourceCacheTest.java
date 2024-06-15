@@ -1,22 +1,20 @@
 package teaselib.core.util.resource;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import teaselib.core.ResourceLoader;
+import teaselib.core.ResourceLoaderTest;
+import teaselib.core.util.ReflectionUtils;
+import teaselib.core.util.WildcardPattern;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import teaselib.core.ResourceLoader;
-import teaselib.core.ResourceLoaderTest;
-import teaselib.core.util.ReflectionUtils;
-import teaselib.core.util.WildcardPattern;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ResourceCacheTest {
     private static final Logger logger = LoggerFactory.getLogger(ResourceCacheTest.class);
@@ -42,7 +40,7 @@ public class ResourceCacheTest {
         assertFalse(resources.isEmpty());
         assertEquals("/UnpackResourcesTestData/resource1.txt", resources.get(0));
 
-        try (InputStream is = resourceCache.get(resources.get(0));) {
+        try (InputStream is = resourceCache.get(resources.get(0))) {
             assertNotNull(is);
         }
     }
@@ -56,7 +54,7 @@ public class ResourceCacheTest {
         assertFalse(resources.isEmpty());
         assertEquals("/teaselib/core/UnpackResourcesTestData/resource1.txt", resources.get(0));
 
-        try (InputStream is = resourceCache.get(resources.get(0));) {
+        try (InputStream is = resourceCache.get(resources.get(0))) {
             assertNotNull(is);
         }
     }
@@ -70,7 +68,7 @@ public class ResourceCacheTest {
         assertFalse(resources.isEmpty());
         assertEquals("/teaselib/core/util/bar.txt", resources.get(0));
 
-        try (InputStream is = resourceCache.get(resources.get(0));) {
+        try (InputStream is = resourceCache.get(resources.get(0))) {
             assertNotNull(is);
         }
     }
@@ -84,7 +82,7 @@ public class ResourceCacheTest {
         assertFalse(resources.isEmpty());
         assertEquals("/teaselib/core/util/bar.txt", resources.get(0));
 
-        try (InputStream is = resourceCache.get(resources.get(0));) {
+        try (InputStream is = resourceCache.get(resources.get(0))) {
             assertNotNull(is);
         }
     }

@@ -1,17 +1,12 @@
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
+
+import java.io.IOException;
 
 public class PersistentEnumTest {
 
@@ -23,11 +18,11 @@ public class PersistentEnumTest {
     public void testBool() throws IOException {
         try (TestScript script = new TestScript()) {
             var flag = script.persistence.newBoolean(FoobarBool.Flag);
-            assertFalse(flag.value());
-            assertFalse(script.persistence.value(FoobarBool.Flag));
+            Assertions.assertFalse(flag.value());
+            Assertions.assertFalse(script.persistence.value(FoobarBool.Flag));
             flag.set();
-            assertTrue(script.persistence.value(FoobarBool.Flag));
-            assertTrue(flag.value());
+            Assertions.assertTrue(script.persistence.value(FoobarBool.Flag));
+            Assertions.assertTrue(flag.value());
         }
     }
 
@@ -39,16 +34,16 @@ public class PersistentEnumTest {
     public void testNumber() throws IOException {
         try (TestScript script = new TestScript()) {
             var flag = script.persistence.newNumber(FoobarInt.Flag);
-            assertEquals(0, flag.value().intValue());
+            Assertions.assertEquals(0, flag.value().intValue());
             flag.defaultValue(42L);
-            assertEquals(42, flag.value().intValue());
+            Assertions.assertEquals(42, flag.value().intValue());
             script.persistence.set(FoobarInt.Flag, 666);
-            assertEquals(666, flag.value().intValue());
-            assertEquals(666, script.persistence.value(FoobarInt.Flag).intValue());
+            Assertions.assertEquals(666, flag.value().intValue());
+            Assertions.assertEquals(666, script.persistence.value(FoobarInt.Flag).intValue());
             flag.defaultValue(42);
-            assertEquals(666, flag.value().intValue());
+            Assertions.assertEquals(666, flag.value().intValue());
             flag.clear();
-            assertEquals(42, flag.value().intValue());
+            Assertions.assertEquals(42, flag.value().intValue());
         }
     }
 
@@ -62,16 +57,16 @@ public class PersistentEnumTest {
         try (TestScript script = new TestScript()) {
             var a = script.persistence.newBoolean(FoobarVariant.Flag1);
             var b = script.persistence.newNumber(FoobarVariant.Flag2);
-            assertTrue(script.storage.isEmpty());
+            Assertions.assertTrue(script.storage.isEmpty());
 
             a.set();
             b.set(100);
-            assertEquals(2, script.storage.size());
-            assertEquals("true", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "PersistentEnumTest.FoobarVariant", "Flag1")));
-            assertEquals("100", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "PersistentEnumTest.FoobarVariant", "Flag2")));
-            assertEquals(true, a.value().booleanValue());
-            assertEquals(100, b.value().intValue());
-            assertEquals(100, b.value().longValue());
+            Assertions.assertEquals(2, script.storage.size());
+            Assertions.assertEquals("true", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "PersistentEnumTest.FoobarVariant", "Flag1")));
+            Assertions.assertEquals("100", script.storage.get(QualifiedName.of(TeaseLib.DefaultDomain, "PersistentEnumTest.FoobarVariant", "Flag2")));
+            Assertions.assertTrue(a.value().booleanValue());
+            Assertions.assertEquals(100, b.value().intValue());
+            Assertions.assertEquals(100, b.value().longValue());
         }
     }
 
@@ -80,7 +75,7 @@ public class PersistentEnumTest {
         try (TestScript script = new TestScript()) {
             var a = script.persistence.newBoolean(FoobarVariant.Flag1);
             var b = script.persistence.newBoolean(FoobarVariant.Flag1);
-            assertSame(a, b);
+            Assertions.assertSame(a, b);
         }
     }
 }

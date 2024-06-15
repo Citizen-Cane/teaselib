@@ -1,17 +1,10 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import teaselib.ScriptFunction;
 import teaselib.core.Debugger.Response;
 import teaselib.core.debug.CheckPoint;
@@ -19,7 +12,14 @@ import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.test.TestScript;
 
-public class CheckPointTest {
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class CheckPointTest {
     static final Logger logger = LoggerFactory.getLogger(CheckPointTest.class);
 
     abstract static class CheckPointTester implements CheckPointListener {
@@ -78,7 +78,7 @@ public class CheckPointTest {
 
             script.debugger.addResponse("Finished", Response.Ignore);
             script.teaseLib.addCheckPointListener(checkPoints);
-            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
+            Assertions.assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
             script.teaseLib.removeCheckPointListener(checkPoints);
 
             checkPoints.throwCatchedException();
@@ -95,7 +95,7 @@ public class CheckPointTest {
             script.debugger.addResponse("Finished", Response.Ignore);
             script.teaseLib.addCheckPointListener(checkPoints);
 
-            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
+            Assertions.assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
             script.teaseLib.removeCheckPointListener(checkPoints);
 
             checkPoints.throwCatchedException();
@@ -115,7 +115,7 @@ public class CheckPointTest {
             script.debugger.addResponse("Finished", Response.Ignore);
             script.teaseLib.addCheckPointListener(checkPoints);
             script.teaseLib.addTimeAdvancedListener(tal);
-            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
+            Assertions.assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
             script.teaseLib.removeCheckPointListener(checkPoints);
             script.teaseLib.removeTimeAdvancedListener(tal);
 
@@ -125,7 +125,7 @@ public class CheckPointTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     // TODO Test requires DebugResponse.ChooseWhenScriptFunctionFinsished
     // -> otherwise CheckPoint.StartScriptFunction and CheckPoint.NewMessage may not be reacched
     public void testCheckPointScriptFunctionAndTimeListenerWithResponse() throws Exception {
@@ -142,7 +142,7 @@ public class CheckPointTest {
             script.teaseLib.addCheckPointListener(checkPoints);
             script.teaseLib.addTimeAdvancedListener(tal);
 
-            assertEquals(answer, script.reply(() -> {
+            Assertions.assertEquals(answer, script.reply(() -> {
                 script.say("test");
                 try {
                     inScriptFunction.await();
@@ -159,7 +159,7 @@ public class CheckPointTest {
             script.teaseLib.removeTimeAdvancedListener(tal);
 
             checkPoints.throwCatchedException();
-            assertEquals("Passing all checkpoints", 2, checkPoints.actual.get());
+            assertEquals(2, checkPoints.actual.get(), "Passing all checkpoints");
         }
     }
 

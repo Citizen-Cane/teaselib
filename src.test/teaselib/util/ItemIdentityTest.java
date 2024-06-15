@@ -1,23 +1,10 @@
 /**
- * 
+ *
  */
 package teaselib.util;
 
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import teaselib.Body;
 import teaselib.Household;
 import teaselib.State;
@@ -27,12 +14,15 @@ import teaselib.Toys.Gags;
 import teaselib.core.ItemImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
-import teaselib.core.util.Persist;
-import teaselib.core.util.PersistedObject;
-import teaselib.core.util.QualifiedName;
-import teaselib.core.util.QualifiedString;
-import teaselib.core.util.Storage;
+import teaselib.core.util.*;
 import teaselib.test.TestScript;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Citizen-Cane
@@ -45,13 +35,13 @@ public class ItemIdentityTest {
             Items.Collection gags = script.items(Toys.Gag).inventory();
 
             Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
-            assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
+            Assertions.assertTrue(ringGag.is(Gags.Ring_Gag));
 
             Item sameRingGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             assertEquals(ringGag, sameRingGag);
 
-            assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
-            assertTrue(sameRingGag.is(Toys.Gags.Ring_Gag));
+            Assertions.assertTrue(ringGag.is(Gags.Ring_Gag));
+            Assertions.assertTrue(sameRingGag.is(Gags.Ring_Gag));
         }
     }
 
@@ -64,14 +54,14 @@ public class ItemIdentityTest {
             assertFalse(ringGag.is(Body.InMouth));
 
             ringGag.apply();
-            assertTrue(ringGag.is(Body.InMouth));
-            assertTrue(script.state(Body.InMouth).is(Toys.Gag));
-            assertTrue(script.state(Body.InMouth).is(Toys.Gags.Ring_Gag));
+            Assertions.assertTrue(ringGag.is(Body.InMouth));
+            Assertions.assertTrue(script.state(Body.InMouth).is(Toys.Gag));
+            Assertions.assertTrue(script.state(Body.InMouth).is(Gags.Ring_Gag));
 
             State mouth = script.state(Body.InMouth);
-            assertTrue(mouth.is(Toys.Gag));
-            assertTrue(mouth.is(Toys.Gags.Ring_Gag));
-            assertTrue(mouth.is(ringGag));
+            Assertions.assertTrue(mouth.is(Toys.Gag));
+            Assertions.assertTrue(mouth.is(Gags.Ring_Gag));
+            Assertions.assertTrue(mouth.is(ringGag));
         }
     }
 
@@ -84,8 +74,8 @@ public class ItemIdentityTest {
             assertFalse(ringGag.is(Body.InMouth));
             ringGag.apply();
 
-            assertTrue(ringGag.is(Body.InMouth));
-            assertTrue(ringGag.is(script.state(Body.InMouth)));
+            Assertions.assertTrue(ringGag.is(Body.InMouth));
+            Assertions.assertTrue(ringGag.is(script.state(Body.InMouth)));
         }
     }
 
@@ -97,8 +87,8 @@ public class ItemIdentityTest {
 
             chastityDevice.apply();
 
-            assertTrue(chastityDevice.applied());
-            assertTrue(onPenis.applied());
+            Assertions.assertTrue(chastityDevice.applied());
+            Assertions.assertTrue(onPenis.applied());
 
             chastityDevice.remove();
 
@@ -116,8 +106,8 @@ public class ItemIdentityTest {
 
             chastityDevice.apply();
 
-            assertTrue(chastityDevice.applied());
-            assertTrue(onPenis.applied());
+            Assertions.assertTrue(chastityDevice.applied());
+            Assertions.assertTrue(onPenis.applied());
 
             Item otherChastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Belt).item();
 
@@ -126,12 +116,12 @@ public class ItemIdentityTest {
                 otherChastityDevice.remove();
                 fail("Removing un-applied item must throw");
             } catch (IllegalStateException e) {
-                assertTrue(chastityDevice.applied());
-                assertTrue(onPenis.applied());
+                Assertions.assertTrue(chastityDevice.applied());
+                Assertions.assertTrue(onPenis.applied());
             }
 
-            assertTrue(chastityDevice.applied());
-            assertTrue(onPenis.applied());
+            Assertions.assertTrue(chastityDevice.applied());
+            Assertions.assertTrue(onPenis.applied());
 
             // Instead just remove the default item
             script.item(Toys.Chastity_Device).remove();
@@ -149,8 +139,8 @@ public class ItemIdentityTest {
 
             chastityDevice.apply();
 
-            assertTrue(chastityDevice.applied());
-            assertTrue(onPenis.applied());
+            Assertions.assertTrue(chastityDevice.applied());
+            Assertions.assertTrue(onPenis.applied());
 
             Item otherChastityDevice = script.items("teaselib.Toys.Chastity_Device")
                     .matching("teaselib.Toys.Chastity_Devices.Belt").item();
@@ -160,8 +150,8 @@ public class ItemIdentityTest {
                 otherChastityDevice.remove();
                 fail("Removing un-applied item must throw");
             } catch (IllegalStateException e) {
-                assertTrue(chastityDevice.applied());
-                assertTrue(onPenis.applied());
+                Assertions.assertTrue(chastityDevice.applied());
+                Assertions.assertTrue(onPenis.applied());
             }
 
             // Instead just remove the default item
@@ -193,7 +183,7 @@ public class ItemIdentityTest {
 
             // remove just on item instance
             clothesPegsOnNipples.remove(0).remove();
-            assertTrue(script.state(Household.Clothes_Pegs).applied());
+            Assertions.assertTrue(script.state(Household.Clothes_Pegs).applied());
             // Testing script default item doesn'twork here,
             // since we've created a lot of temporary items ourselves
             script.state(Household.Clothes_Pegs).remove();
@@ -213,12 +203,12 @@ public class ItemIdentityTest {
             placeClothesPegs(script, nipples);
             assertFalse(notApplied.applied());
 
-            assertTrue(clothesPinsState.applied());
+            Assertions.assertTrue(clothesPinsState.applied());
             notApplied.apply();
-            assertTrue(notApplied.applied());
+            Assertions.assertTrue(notApplied.applied());
             notApplied.remove();
             assertFalse(notApplied.applied());
-            assertTrue(clothesPinsState.applied());
+            Assertions.assertTrue(clothesPinsState.applied());
         }
     }
 
@@ -241,7 +231,7 @@ public class ItemIdentityTest {
             State nipples = script.state(Body.OnNipples);
             List<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
-            assertTrue(script.state(Body.OnNipples).applied());
+            Assertions.assertTrue(script.state(Body.OnNipples).applied());
             nipples.removeFrom(Household.Clothes_Pegs);
 
             verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
@@ -255,17 +245,17 @@ public class ItemIdentityTest {
 
         for (Item peg : clothesPegsOnNipples) {
             peg.setAvailable(true);
-            assertTrue(peg.canApply());
+            Assertions.assertTrue(peg.canApply());
             assertFalse(peg.applied());
             peg.to(Body.OnNipples).apply();
             assertFalse(peg.canApply());
         }
-        assertTrue(nipples.applied());
+        Assertions.assertTrue(nipples.applied());
 
         for (Item peg : clothesPegsOnNipples) {
-            assertTrue(peg.applied());
-            assertTrue(nipples.is(peg));
-            assertTrue(peg.is(nipples));
+            Assertions.assertTrue(peg.applied());
+            Assertions.assertTrue(nipples.is(peg));
+            Assertions.assertTrue(peg.is(nipples));
         }
         return clothesPegsOnNipples;
     }
@@ -311,7 +301,7 @@ public class ItemIdentityTest {
                     "ring_gag");
             assertEquals(ringGag, sameRingGag);
             assertEquals(sameRingGag, ringGag);
-            assertNotSame(ringGag, sameRingGag);
+            Assertions.assertNotSame(ringGag, sameRingGag);
         }
     }
 
@@ -325,13 +315,13 @@ public class ItemIdentityTest {
             Storage storage = Storage.from(persisted);
             Item restored = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
 
-            assertSame(gag, restored);
+            Assertions.assertSame(gag, restored);
 
             script.debugger.clearStateMaps();
             Storage storage2 = Storage.from(persisted);
             Item restored2 = restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
 
-            assertNotSame(gag, restored2);
+            Assertions.assertNotSame(gag, restored2);
             assertEquals(gag, restored2);
         }
     }
@@ -347,12 +337,12 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             Item gag = script.item(Toys.Gag);
             gag.apply().remember(Until.Removed);
-            assertTrue(gag.applied());
+            Assertions.assertTrue(gag.applied());
 
             script.debugger.clearStateMaps();
 
             Item restored = script.item(Toys.Gag);
-            assertTrue(restored.applied());
+            Assertions.assertTrue(restored.applied());
             assertEquals(gag, restored);
         }
     }
@@ -372,8 +362,8 @@ public class ItemIdentityTest {
             Item restored = gags.matching(Toys.Gags.Ring_Gag).item();
 
             State inMouth = script.state(Body.InMouth);
-            assertTrue(inMouth.is(restored));
-            assertTrue(restored.applied());
+            Assertions.assertTrue(inMouth.is(restored));
+            Assertions.assertTrue(restored.applied());
         }
     }
 
@@ -387,20 +377,20 @@ public class ItemIdentityTest {
             Item muzzleGag = gags.matching(Toys.Gags.Muzzle_Gag).item();
             ringGag.apply();
 
-            assertTrue(ringGag.applied());
+            Assertions.assertTrue(ringGag.applied());
             assertFalse(muzzleGag.applied());
 
             State inMouth = script.state(Body.InMouth);
 
-            assertTrue(inMouth.is(ringGag));
+            Assertions.assertTrue(inMouth.is(ringGag));
             assertFalse(inMouth.is(muzzleGag));
 
-            assertTrue(inMouth.is(script.namespace));
+            Assertions.assertTrue(inMouth.is(script.namespace));
             // inMouth has not been applied as an item, and is not an item
             // -> TODO allow only pre-defined items to be applied as such
             assertFalse(script.item(Body.InMouth).is(script.namespace));
 
-            assertTrue(ringGag.is(script.namespace));
+            Assertions.assertTrue(ringGag.is(script.namespace));
             assertFalse(muzzleGag.is(script.namespace));
         }
     }
@@ -416,7 +406,7 @@ public class ItemIdentityTest {
 
             var gags = script.items(Toys.Gag);
             Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).item();
-            assertNotSame(ringGag, ringGag2);
+            Assertions.assertNotSame(ringGag, ringGag2);
 
             verifyInMouth(script);
             verifyGagApplied(script, ringGag2);
@@ -451,17 +441,17 @@ public class ItemIdentityTest {
 
     private static void verifyInMouth(TestScript script) {
         State inMouth = script.state(Body.InMouth);
-        assertTrue(inMouth.applied());
-        assertTrue(inMouth.is(Toys.Gag));
-        assertTrue(inMouth.is(Toys.Gags.Ring_Gag));
+        Assertions.assertTrue(inMouth.applied());
+        Assertions.assertTrue(inMouth.is(Toys.Gag));
+        Assertions.assertTrue(inMouth.is(Gags.Ring_Gag));
     }
 
     private static void verifyGagApplied(TestScript script, Item gag) {
-        assertTrue(gag.applied());
-        assertTrue(gag.is(Body.InMouth));
-        assertTrue(gag.is(script.state(Body.InMouth)));
+        Assertions.assertTrue(gag.applied());
+        Assertions.assertTrue(gag.is(Body.InMouth));
+        Assertions.assertTrue(gag.is(script.state(Body.InMouth)));
         State inMouth = script.state(Body.InMouth);
-        assertTrue(inMouth.is(gag));
+        Assertions.assertTrue(inMouth.is(gag));
     }
 
     @Test
@@ -470,14 +460,14 @@ public class ItemIdentityTest {
             ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, 10);
             for (Item peg : clothesPegsOnNipples) {
                 peg.setAvailable(true);
-                assertTrue(peg.canApply());
+                Assertions.assertTrue(peg.canApply());
                 assertFalse(peg.applied());
                 peg.apply();
 
                 State pegs = script.state(Household.Clothes_Pegs);
-                assertTrue(pegs.applied());
-                assertTrue(peg.applied());
-                assertTrue(peg.is(peg));
+                Assertions.assertTrue(pegs.applied());
+                Assertions.assertTrue(peg.applied());
+                Assertions.assertTrue(peg.is(peg));
                 assertFalse(peg.canApply());
             }
         }
@@ -488,15 +478,15 @@ public class ItemIdentityTest {
         try (TestScript script = new TestScript()) {
             Item nippleClamps = script.item(Toys.Nipple_Clamps);
             nippleClamps.setAvailable(true);
-            assertTrue(nippleClamps.canApply());
+            Assertions.assertTrue(nippleClamps.canApply());
             nippleClamps.apply();
-            assertTrue(nippleClamps.applied());
-            assertTrue(nippleClamps.is(nippleClamps));
+            Assertions.assertTrue(nippleClamps.applied());
+            Assertions.assertTrue(nippleClamps.is(nippleClamps));
 
             State onNipples = script.state(Body.OnNipples);
-            assertTrue(nippleClamps.is(nippleClamps));
-            assertTrue(nippleClamps.is(onNipples));
-            assertTrue(onNipples.is(nippleClamps));
+            Assertions.assertTrue(nippleClamps.is(nippleClamps));
+            Assertions.assertTrue(nippleClamps.is(onNipples));
+            Assertions.assertTrue(onNipples.is(nippleClamps));
 
             assertFalse(nippleClamps.canApply());
         }
@@ -509,7 +499,7 @@ public class ItemIdentityTest {
             Item clothesPegsByString = script.item("teaselib.household.clothes_pegs");
 
             assertEquals(clothesPegsByEnum, clothesPegsByString);
-            assertTrue(((ItemProxy) clothesPegsByEnum).state == ((ItemProxy) clothesPegsByString).state);
+            assertSame(((ItemProxy) clothesPegsByEnum).state, ((ItemProxy) clothesPegsByString).state);
         }
     }
 
@@ -519,13 +509,13 @@ public class ItemIdentityTest {
             script.debugger.freezeTime();
 
             script.item(Toys.Gag).apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-            assertTrue(script.item(Toys.Gag).applied());
-            assertTrue(script.state(Toys.Gag).applied());
+            Assertions.assertTrue(script.item(Toys.Gag).applied());
+            Assertions.assertTrue(script.state(Toys.Gag).applied());
 
             script.debugger.clearStateMaps();
 
-            assertTrue(script.item(Toys.Gag).applied());
-            assertTrue(script.state(Toys.Gag).applied());
+            Assertions.assertTrue(script.item(Toys.Gag).applied());
+            Assertions.assertTrue(script.state(Toys.Gag).applied());
         }
     }
 
@@ -536,14 +526,14 @@ public class ItemIdentityTest {
 
             var gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-            assertTrue(gag.applied());
-            assertTrue(script.state(Toys.Gag).applied());
+            Assertions.assertTrue(gag.applied());
+            Assertions.assertTrue(script.state(Toys.Gag).applied());
 
             script.debugger.clearStateMaps();
 
             var restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
-            assertTrue(restored.applied());
-            assertTrue(script.state(Toys.Gag).applied());
+            Assertions.assertTrue(restored.applied());
+            Assertions.assertTrue(script.state(Toys.Gag).applied());
         }
     }
 
@@ -554,8 +544,8 @@ public class ItemIdentityTest {
 
             Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-            assertTrue(gag.applied());
-            assertTrue(script.state(Toys.Gag).applied());
+            Assertions.assertTrue(gag.applied());
+            Assertions.assertTrue(script.state(Toys.Gag).applied());
 
             gag.remove();
             assertFalse(gag.applied());
@@ -564,8 +554,8 @@ public class ItemIdentityTest {
             script.debugger.clearStateMaps();
 
             Item restored = script.item(Toys.Gag);
-            assertTrue(restored.applied());
-            assertTrue(script.state(Toys.Gag).applied());
+            Assertions.assertTrue(restored.applied());
+            Assertions.assertTrue(script.state(Toys.Gag).applied());
 
             restored.remove();
             assertFalse(restored.applied());
@@ -594,7 +584,7 @@ public class ItemIdentityTest {
 
             for (String persistedPeer : peers) {
                 Object peer = Persist.from(persistedPeer);
-                assertTrue("State is missing persisted " + peer, gagState.is(peer));
+                Assertions.assertTrue(gagState.is(peer), "State is missing persisted " + peer);
             }
         }
     }
@@ -606,16 +596,16 @@ public class ItemIdentityTest {
 
             Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             gag.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-            assertTrue(gag.applied());
-            assertTrue(script.item(Toys.Gag).applied());
-            assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
+            Assertions.assertTrue(gag.applied());
+            Assertions.assertTrue(script.item(Toys.Gag).applied());
+            Assertions.assertTrue(script.item(Toys.Gag).is(Gags.Ring_Gag));
 
             script.debugger.clearStateMaps();
 
             Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
-            assertTrue(restored.applied());
-            assertTrue(script.item(Toys.Gag).applied());
-            assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
+            Assertions.assertTrue(restored.applied());
+            Assertions.assertTrue(script.item(Toys.Gag).applied());
+            Assertions.assertTrue(script.item(Toys.Gag).is(Gags.Ring_Gag));
         }
     }
 
@@ -626,13 +616,13 @@ public class ItemIdentityTest {
 
             Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             ringGag.apply();
-            assertTrue(ringGag.is(ringGag));
+            Assertions.assertTrue(ringGag.is(ringGag));
 
             Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).item();
             assertNotEquals(ringGag, bitGag);
             assertFalse(ringGag.is(bitGag));
 
-            assertTrue(ringGag.applied());
+            Assertions.assertTrue(ringGag.applied());
             assertFalse(bitGag.applied());
         }
     }
@@ -644,7 +634,7 @@ public class ItemIdentityTest {
 
             Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).item();
             ringGag.apply();
-            assertTrue(ringGag.is(ringGag));
+            Assertions.assertTrue(ringGag.is(ringGag));
 
             Item analBeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).item();
             assertNotEquals(ringGag, analBeads);
@@ -659,10 +649,10 @@ public class ItemIdentityTest {
 
             Item gag = script.item(Toys.Gag);
             gag.apply();
-            assertTrue(gag.applied());
-            assertTrue(script.state(Toys.Gag).applied());
-            assertTrue(script.state(Body.InMouth).is(gag));
-            assertTrue(script.state(Toys.Gag).is(gag));
+            Assertions.assertTrue(gag.applied());
+            Assertions.assertTrue(script.state(Toys.Gag).applied());
+            Assertions.assertTrue(script.state(Body.InMouth).is(gag));
+            Assertions.assertTrue(script.state(Toys.Gag).is(gag));
         }
     }
 
@@ -680,7 +670,7 @@ public class ItemIdentityTest {
             assertNotEquals(ringGagRef.toString(), bitGagRef.toString());
 
             Item ballGag = script.defaultDomain.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).item();
-            assertTrue(ballGag.is(Gags.Ball_Gag));
+            Assertions.assertTrue(ballGag.is(Gags.Ball_Gag));
             assertEquals(ringGag, script.item(ringGagRef.toString()));
             assertEquals(bitGag, script.item(bitGagRef.toString()));
         }

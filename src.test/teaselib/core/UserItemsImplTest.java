@@ -1,18 +1,13 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import teaselib.Body;
 import teaselib.Bondage;
@@ -31,6 +26,8 @@ import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
 import teaselib.util.Select;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UserItemsImplTest {
 
@@ -87,7 +84,7 @@ public class UserItemsImplTest {
                 List<Item> predefined = items.get(TeaseLib.DefaultDomain, QualifiedString.of(item));
                 assertNotNull(predefined);
                 assertFalse(predefined.isEmpty());
-                assertNotEquals("Expected defined item for " + item.name(), Item.NotFound, predefined.get(0));
+                Assertions.assertNotEquals(Item.NotFound, predefined.get(0), "Expected defined item for " + item.name());
             }
         }
     }
@@ -254,7 +251,7 @@ public class UserItemsImplTest {
                 Iterator<Item> humblers = script.items(Toys.Humbler).inventory().iterator();
                 Item notMyHumbler = humblers.next();
                 // assertEquals("Humbler", notMyHumbler.displayName());
-                assertFalse("User items not reset", humblers.hasNext());
+                assertFalse(humblers.hasNext(), "User items not reset");
 
                 // With the persisted item removed the state is still applied
                 State state = script.state(Toys.Humbler);

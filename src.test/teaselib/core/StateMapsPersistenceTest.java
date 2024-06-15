@@ -1,22 +1,18 @@
 package teaselib.core;
 
 import static java.util.concurrent.TimeUnit.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.*;
 import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.*;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +24,6 @@ import teaselib.Toys;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 
-@RunWith(Parameterized.class)
 public class StateMapsPersistenceTest extends TestableStateMaps {
     private static final Logger logger = LoggerFactory.getLogger(StateMapsPersistenceTest.class);
 
@@ -49,33 +44,17 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         WristsTiedBehindBack
     }
 
-    final TestScript script;
-    final TestParameter rememberState;
-
-    enum TestParameter {
+    public enum TestParameter {
         DontTestPersistence,
         TestPersistence
     }
 
-    @Parameters(name = "{0}")
-    public static Collection<Object[]> parameters() {
-        return Arrays
-                .asList(new Object[][] { { TestParameter.DontTestPersistence }, { TestParameter.TestPersistence } });
-    }
-
-    public StateMapsPersistenceTest(TestParameter remember) throws IOException {
-        this(new TestScript(), remember);
-    }
-
-    StateMapsPersistenceTest(TestScript script, TestParameter remember) {
-        super(script.teaseLib);
-        this.script = script;
-        rememberState = remember;
-
+    public StateMapsPersistenceTest() throws IOException {
+        super(new TestScript());
         script.teaseLib.freezeTime();
     }
 
-    @Before
+    @BeforeEach
     public void initStorage() {
         script.storage.clear();
 
@@ -88,52 +67,53 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         script.close();
     }
 
-    void rememberOrNot(State.Persistence state) {
-        if (isRemembered()) {
+    void rememberOrNot(State.Persistence state, TestParameter rememberState) {
+        if (isRemembered(rememberState)) {
             state.remember(Until.Removed);
         }
     }
 
-    void clearStatesMapsOrNot() {
-        if (isRemembered()) {
+    void clearStatesMapsOrNot(TestParameter rememberState) {
+        if (isRemembered(rememberState)) {
             script.storage.printTo(logger);
             clear();
         }
     }
 
-    private boolean isRemembered() {
+    private boolean isRemembered(TestParameter rememberState) {
         return rememberState == TestParameter.TestPersistence;
     }
 
-    @Test
-    public void testPersistenceOnLock() {
-        rememberOrNot(state(TEST_DOMAIN, Chastity_Device).applyTo(SomethingOnPenis, CannotJerkOff));
+    @ParameterizedTest
+    @EnumSource(TestParameter.class)
+    public void testPersistenceOnLock(TestParameter rememberState) {
+        rememberOrNot(state(TEST_DOMAIN, Chastity_Device).applyTo(SomethingOnPenis, CannotJerkOff), rememberState);
 
         assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(NestedTestToys.Chastity_Device);
 
-        boolean notRemembered = !isRemembered();
+        boolean notRemembered = !isRemembered(rememberState);
         assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
         assertEquals(notRemembered, state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
 
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
 
-        rememberOrNot(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Chastity_Device).over(24, TimeUnit.HOURS));
+        rememberOrNot(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Chastity_Device).over(24, TimeUnit.HOURS), rememberState);
 
         assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
         assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).expired());
         assertEquals(notRemembered, state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).expired());
 
-        clearStatesMapsOrNot();
+        clearStatesMapsOrNot(rememberState);
 
         assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
@@ -171,17 +151,18 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
     }
 
-    @Test
-    public void testCannotJerkOffWearingAChastityCageAndHandsTiedOnBack() {
+    @ParameterizedTest
+    @EnumSource(TestParameter.class)
+    public void testCannotJerkOffWearingAChastityCageAndHandsTiedOnBack(TestParameter rememberState) {
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
 
         state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applyTo(NestedTestBody.WristsTiedBehindBack,
                 NestedTestBody.CannotJerkOff);
         rememberOrNot(
-                state(TEST_DOMAIN, Chastity_Device).applyTo(SomethingOnPenis, CannotJerkOff).over(24, TimeUnit.HOURS));
+                state(TEST_DOMAIN, Chastity_Device).applyTo(SomethingOnPenis, CannotJerkOff).over(24, TimeUnit.HOURS),rememberState);
 
-        clearStatesMapsOrNot();
+        clearStatesMapsOrNot(rememberState);
 
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).is(NestedTestBody.SomethingOnPenis));
@@ -189,22 +170,22 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
-        assertEquals(!isRemembered(),
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
+        assertEquals(!isRemembered(rememberState),
                 state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).is(NestedTestBody.CannotJerkOff));
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
 
         state(TEST_DOMAIN, NestedTestToys.Chastity_Device).remove();
 
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
         state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).remove();
 
@@ -212,17 +193,21 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
     }
 
-    @Test
-    public void testCannotJerkOffWhenWearingALockedChastityCageAndHandsTiedOnBack() {
+    @ParameterizedTest
+    @EnumSource(TestParameter.class)
+    public void testCannotJerkOffWhenWearingALockedChastityCageAndHandsTiedOnBack(TestParameter rememberState) {
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
 
-        rememberOrNot(state(TEST_DOMAIN, Chastity_Device).applyTo(SomethingOnPenis, CannotJerkOff)
-                .over(Duration.INFINITE, TimeUnit.HOURS));
+        rememberOrNot(state(TEST_DOMAIN, Chastity_Device)
+                .applyTo(SomethingOnPenis, CannotJerkOff)
+                .over(Duration.INFINITE, TimeUnit.HOURS), rememberState);
 
-        rememberOrNot(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Chastity_Device).over(24, TimeUnit.HOURS));
+        rememberOrNot(state(TEST_DOMAIN, Locks.Chastity_Device_Lock)
+                .applyTo(Chastity_Device)
+                .over(24, TimeUnit.HOURS), rememberState);
 
-        clearStatesMapsOrNot();
+        clearStatesMapsOrNot(rememberState);
 
         teaseLib.advanceTime(22, TimeUnit.HOURS);
 
@@ -302,8 +287,9 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).expired());
     }
 
-    @Test
-    public void testCannotJerkOffWearingAChastityCageAndHandsTiedOnBackWithStrings() {
+    @ParameterizedTest
+    @EnumSource(TestParameter.class)
+    public void testCannotJerkOffWearingAChastityCageAndHandsTiedOnBackWithStrings(TestParameter rememberState) {
         String Toys_Chastity_Device = "teaselib.Toys.Chastity_Device";
         String Toys_Wrist_Restraints = "teaselib.Bondage.Wrist_Restraints";
 
@@ -315,19 +301,20 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
 
         state(TEST_DOMAIN, Toys_Wrist_Restraints).applyTo(Body_WristsTiedBehindBack, Body_CannotJerkOff);
-        rememberOrNot(state(TEST_DOMAIN, Toys_Chastity_Device).applyTo(Body_SomethingOnPenis, Body_CannotJerkOff)
-                .over(24, TimeUnit.HOURS));
+        rememberOrNot(state(TEST_DOMAIN, Toys_Chastity_Device)
+                .applyTo(Body_SomethingOnPenis, Body_CannotJerkOff)
+                .over(24, TimeUnit.HOURS), rememberState);
 
-        clearStatesMapsOrNot();
+        clearStatesMapsOrNot(rememberState);
 
         assertTrue(state(TEST_DOMAIN, Toys_Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Body_SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body_CannotJerkOff).applied());
 
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
 
-        if (isRemembered()) {
+        if (isRemembered(rememberState)) {
             assertEquals(15, script.storageSize());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
@@ -345,13 +332,13 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, Toys_Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body_SomethingOnPenis).applied());
 
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
         // wrists still tied behind back -> cannot jerk off
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
-        assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(rememberState), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
 
-        if (isRemembered()) {
+        if (isRemembered(rememberState)) {
             assertEquals(3, script.storageSize());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
@@ -370,13 +357,16 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertFalse(state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
     }
 
-    @Test
-    public void testPersistenceOfDuratioElapsedOfRemovedItems() {
-        rememberOrNot(state(TEST_DOMAIN, Toys.Enema_Kit).apply().over(1, TimeUnit.HOURS));
+    @ParameterizedTest
+    @EnumSource(TestParameter.class)
+    public void testPersistenceOfDuratioElapsedOfRemovedItems(TestParameter rememberState) {
+        rememberOrNot(state(TEST_DOMAIN, Toys.Enema_Kit)
+                .apply()
+                .over(1, TimeUnit.HOURS), rememberState);
 
-        clearStatesMapsOrNot();
+        clearStatesMapsOrNot(rememberState);
 
-        if (isRemembered()) {
+        if (isRemembered(rememberState)) {
             assertEquals(9, script.storageSize());
         }
 
@@ -386,8 +376,9 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         script.debugger.advanceTime(1, TimeUnit.MINUTES);
         state(TEST_DOMAIN, Toys.Enema_Kit).remove();
 
-        if (isRemembered()) {
-            assertEquals("State not cleared on remove (excluding auto-removal book-keeping)", 3, script.storageSize());
+        if (isRemembered(rememberState)) {
+            assertEquals(3, script.storageSize(),
+                    "State not cleared on remove (excluding auto-removal book-keeping)");
         }
 
         assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
@@ -397,7 +388,7 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         script.debugger.advanceTime(1, HOURS);
         assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).expired());
 
-        clearStatesMapsOrNot();
+        clearStatesMapsOrNot(rememberState);
 
         Duration duration = state(TEST_DOMAIN, Toys.Enema_Kit).duration();
         assertEquals(60, duration.limit(MINUTES));
@@ -406,13 +397,14 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertEquals(1, duration.elapsed(MINUTES));
     }
 
-    @Test
-    public void testPersistenceOfElapsedDurationOfRemovedStateWithPeers() {
-        rememberOrNot(state(TEST_DOMAIN, Toys.Ball_Stretcher).applyTo(Body.OnBalls).over(2, TimeUnit.HOURS));
+    @ParameterizedTest
+    @EnumSource(TestParameter.class)
+    public void testPersistenceOfElapsedDurationOfRemovedStateWithPeers(TestParameter rememberState) {
+        rememberOrNot(state(TEST_DOMAIN, Toys.Ball_Stretcher).applyTo(Body.OnBalls).over(2, TimeUnit.HOURS), rememberState);
 
-        clearStatesMapsOrNot();
+        clearStatesMapsOrNot(rememberState);
 
-        if (isRemembered()) {
+        if (isRemembered(rememberState)) {
             assertEquals(12, script.storageSize());
         }
 
@@ -423,8 +415,9 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         State ballStretcher = state(TEST_DOMAIN, Toys.Ball_Stretcher);
         State onBalls = state(TEST_DOMAIN, Body.OnBalls);
         assertFalse(onBalls.applied());
-        assertEquals("State not completely cleared (excluding auto-removal book-keeping)", isRemembered() ? 3 : 0,
-                script.storageSize());
+        assertEquals(isRemembered(rememberState) ? 3 : 0,
+                script.storageSize(),
+                "State not completely cleared (excluding auto-removal book-keeping)");
         assertFalse(ballStretcher.applied());
 
         // False because we removed the item early
@@ -435,7 +428,7 @@ public class StateMapsPersistenceTest extends TestableStateMaps {
         assertTrue(state(TEST_DOMAIN, Toys.Ball_Stretcher).expired());
         assertEquals(1, state(TEST_DOMAIN, Toys.Ball_Stretcher).duration().elapsed(HOURS));
 
-        clearStatesMapsOrNot();
+        clearStatesMapsOrNot(rememberState);
         teaseLib.advanceTime(22, TimeUnit.HOURS);
 
         Duration duration = state(TEST_DOMAIN, Toys.Ball_Stretcher).duration();

@@ -1,18 +1,16 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import teaselib.ScriptFunction;
 import teaselib.core.speechrecognition.TimeoutBehavior;
 import teaselib.test.TestScript;
 
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * @author Citizen-Cane
- *
  */
 public class ShowChoicesAutoConfirmTest {
     @Test

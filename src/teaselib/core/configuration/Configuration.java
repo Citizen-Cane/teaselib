@@ -3,10 +3,7 @@ package teaselib.core.configuration;
 import static java.util.Collections.singletonList;
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -100,7 +97,11 @@ public class Configuration implements Closeable {
         } else {
             var configurationFile = new ConfigurationFileImpl();
             if (defaults.isPresent()) {
-                try (InputStream stream = getClass().getResourceAsStream(defaults.get() + resource)) {
+                String path = defaults.get() + resource;
+                try (InputStream stream = getClass().getResourceAsStream(path)) {
+                    if (stream == null) {
+                        throw new FileNotFoundException(path);
+                    }
                     configurationFile.load(stream);
                 }
             }

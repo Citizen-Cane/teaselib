@@ -1,14 +1,7 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Type;
@@ -16,6 +9,13 @@ import teaselib.MessagePart;
 import teaselib.Mood;
 import teaselib.test.ActorTestImages;
 import teaselib.test.TestScript;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ScriptMessageDecoratorTest {
 
@@ -50,12 +50,11 @@ public class ScriptMessageDecoratorTest {
             ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
                     Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
             RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
-            assertEquals(r.toString(), 4, r.size());
-
-            assertEquals(r.toString(), Type.Mood, r.get(0).type);
-            assertEquals(r.toString(), Type.Image, r.get(1).type);
-            assertEquals(r.toString(), Type.Text, r.get(2).type);
-            assertEquals(r.toString(), Type.Delay, r.get(3).type);
+            assertEquals(4, r.size(), r.toString());
+            assertEquals(Type.Mood, r.get(0).type, r.toString());
+            assertEquals(Type.Image, r.get(1).type, r.toString());
+            assertEquals(Type.Text, r.get(2).type, r.toString());
+            assertEquals(Type.Delay, r.get(3).type, r.toString());
         }
     }
 
@@ -66,20 +65,20 @@ public class ScriptMessageDecoratorTest {
 
             Message m = new Message(script.actor);
             m.add(Type.Image, Message.ActorImage);
-            m.add(Type.Item, "°");
+            m.add(Type.Item, "ï¿½");
             m.add(Type.Text, "FooBar");
 
             ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
                     Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
             RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
-            assertEquals(r.toString(), 4, r.size());
+            assertEquals(4, r.size(), r.toString());
 
             // Renders correctly -> TODO Item should be placed right before text part
-            assertEquals(r.toString(), Type.Mood, r.get(0).type);
-            assertEquals(r.toString(), Type.Image, r.get(1).type);
-            assertEquals(r.toString(), Type.Item, r.get(2).type);
-            assertEquals(r.toString(), Type.Text, r.get(3).type);
-            assertEquals(r.toString(), "FooBar", r.get(3).value);
+            assertEquals(Type.Mood, r.get(0).type, r.toString());
+            assertEquals(Type.Image, r.get(1).type, r.toString());
+            assertEquals(Type.Item, r.get(2).type, r.toString());
+            assertEquals(Type.Text, r.get(3).type, r.toString());
+            assertEquals("FooBar", r.get(3).value, r.toString());
         }
     }
 
@@ -99,12 +98,12 @@ public class ScriptMessageDecoratorTest {
             ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
                     Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
             RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
-            assertEquals("Actor image", 4, r.size());
+            assertEquals(4, r.size(), "Actor image");
 
-            assertEquals(r.toString(), Type.Mood, r.get(0).type);
-            assertEquals(r.toString(), Type.Image, r.get(1).type);
-            assertEquals(r.toString(), Type.Delay, r.get(2).type);
-            assertEquals(r.toString(), Type.Image, r.get(3).type);
+            assertEquals(Type.Mood, r.get(0).type, r.toString());
+            assertEquals(Type.Image, r.get(1).type, r.toString());
+            assertEquals(Type.Delay, r.get(2).type, r.toString());
+            assertEquals(Type.Image, r.get(3).type, r.toString());
 
             assertEquals(2, fetched.size());
             assertEquals("Actor1.jpg", fetched.get(0));
@@ -117,7 +116,7 @@ public class ScriptMessageDecoratorTest {
         try (TestScript script = new TestScript()) {
             List<String> fetched = new ArrayList<>();
             script.actor.images = new ActorTestImages(Arrays.asList("Actor1.jpg", "Actor2.jpg"), fetched);
-            script.actor.instructions = new ActorTestImages(Arrays.asList("test.jpg"), fetched);
+            script.actor.instructions = new ActorTestImages(List.of("test.jpg"), fetched);
             script.teaseLib.config.set(Config.Render.ActorImages, Boolean.TRUE.toString());
             // TODO test should succeed without enabling instructional images
             script.teaseLib.config.set(Config.Render.InstructionalImages, Boolean.TRUE.toString());
@@ -129,12 +128,12 @@ public class ScriptMessageDecoratorTest {
             ScriptMessageDecorator scriptMessageDecorator = new ScriptMessageDecorator(script.teaseLib.config,
                     Message.ActorImage, script.actor, Mood.Neutral, script.resources, x -> x);
             RenderedMessage r = RenderedMessage.of(m, scriptMessageDecorator.all());
-            assertEquals("Actor image", 4, r.size());
+            assertEquals(4, r.size(), "Actor image");
 
-            assertEquals(r.toString(), Type.Mood, r.get(0).type);
-            assertEquals(r.toString(), Type.Image, r.get(1).type);
-            assertEquals(r.toString(), Type.Delay, r.get(2).type);
-            assertEquals(r.toString(), Type.Image, r.get(3).type);
+            assertEquals(Type.Mood, r.get(0).type, r.toString());
+            assertEquals(Type.Image, r.get(1).type, r.toString());
+            assertEquals(Type.Delay, r.get(2).type, r.toString());
+            assertEquals(Type.Image, r.get(3).type, r.toString());
 
             assertEquals("Actor1.jpg", fetched.get(0));
             assertEquals("test.jpg", fetched.get(1));

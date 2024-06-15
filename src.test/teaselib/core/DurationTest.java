@@ -1,120 +1,114 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
-public class DurationTest {
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+class DurationTest {
 
     private TestScript script;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         script = new TestScript();
         script.teaseLib.freezeTime();
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         script.close();
     }
 
     @Test
     public void testStart() throws Exception {
-        assertEquals(TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis()),
-                script.duration(24, TimeUnit.HOURS).start(TimeUnit.HOURS));
+        Assertions.assertEquals(TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis()), script.duration(24, TimeUnit.HOURS).start(TimeUnit.HOURS));
 
-        assertEquals(TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis()),
-                script.duration(60, TimeUnit.MINUTES).start(TimeUnit.MINUTES));
+        Assertions.assertEquals(TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis()), script.duration(60, MINUTES).start(MINUTES));
 
-        assertEquals(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
-                script.duration(60, TimeUnit.SECONDS).start(TimeUnit.SECONDS));
+        Assertions.assertEquals(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()), script.duration(60, SECONDS).start(SECONDS));
     }
 
     @Test
     public void testLimit() throws Exception {
-        assertEquals(24, script.duration(24, TimeUnit.HOURS).limit(TimeUnit.HOURS));
-        assertEquals(60, script.duration(60, TimeUnit.MINUTES).limit(TimeUnit.MINUTES));
-        assertEquals(60, script.duration(60, TimeUnit.SECONDS).limit(TimeUnit.SECONDS));
+        Assertions.assertEquals(24, script.duration(24, TimeUnit.HOURS).limit(TimeUnit.HOURS));
+        Assertions.assertEquals(60, script.duration(60, MINUTES).limit(MINUTES));
+        Assertions.assertEquals(60, script.duration(60, SECONDS).limit(SECONDS));
     }
 
     @Test
     public void testSinceElapsingDuration() throws Exception {
         Duration duration = script.duration(30, TimeUnit.MINUTES);
-        assertEquals(0, duration.since(TimeUnit.MINUTES));
-        assertEquals(0, duration.since(TimeUnit.HOURS));
+        Assertions.assertEquals(0, duration.since(MINUTES));
+        Assertions.assertEquals(0, duration.since(TimeUnit.HOURS));
         script.debugger.advanceTime(30, MINUTES);
-        assertEquals(0, duration.since(TimeUnit.MINUTES));
-        assertEquals(0, duration.since(TimeUnit.HOURS));
+        Assertions.assertEquals(0, duration.since(MINUTES));
+        Assertions.assertEquals(0, duration.since(TimeUnit.HOURS));
         script.debugger.advanceTime(30, MINUTES);
-        assertEquals(0, duration.since(TimeUnit.MINUTES));
-        assertEquals(0, duration.since(TimeUnit.HOURS));
+        Assertions.assertEquals(0, duration.since(MINUTES));
+        Assertions.assertEquals(0, duration.since(TimeUnit.HOURS));
         script.debugger.advanceTime(30, MINUTES);
-        assertEquals(0, duration.since(TimeUnit.MINUTES));
-        assertEquals(0, duration.since(TimeUnit.HOURS));
+        Assertions.assertEquals(0, duration.since(MINUTES));
+        Assertions.assertEquals(0, duration.since(TimeUnit.HOURS));
     }
 
     @Test
     public void testSinceFrozenDuration() throws Exception {
         Duration duration = new FrozenDuration(script.teaseLib, script.duration(30, TimeUnit.MINUTES));
-        assertEquals(0, duration.since(TimeUnit.HOURS));
+        Assertions.assertEquals(0, duration.since(TimeUnit.HOURS));
         script.debugger.advanceTime(30, MINUTES);
-        assertEquals(30, duration.since(TimeUnit.MINUTES));
-        assertEquals(0, duration.since(TimeUnit.HOURS));
+        Assertions.assertEquals(30, duration.since(MINUTES));
+        Assertions.assertEquals(0, duration.since(TimeUnit.HOURS));
         script.debugger.advanceTime(30, MINUTES);
-        assertEquals(60, duration.since(TimeUnit.MINUTES));
-        assertEquals(1, duration.since(TimeUnit.HOURS));
+        Assertions.assertEquals(60, duration.since(MINUTES));
+        Assertions.assertEquals(1, duration.since(TimeUnit.HOURS));
     }
 
     @Test
     public void testElapsed() throws Exception {
         Duration duration = script.duration(24, TimeUnit.HOURS);
         script.teaseLib.advanceTime(1, TimeUnit.HOURS);
-        assertEquals(1, duration.elapsed(TimeUnit.HOURS));
+        Assertions.assertEquals(1, duration.elapsed(TimeUnit.HOURS));
 
         Duration duration2 = script.duration(60, TimeUnit.MINUTES);
         script.teaseLib.advanceTime(1, TimeUnit.MINUTES);
-        assertEquals(1, duration2.elapsed(TimeUnit.MINUTES));
+        Assertions.assertEquals(1, duration2.elapsed(MINUTES));
 
         Duration duration3 = script.duration(60, TimeUnit.SECONDS);
         script.teaseLib.advanceTime(1, TimeUnit.SECONDS);
-        assertEquals(1, duration3.elapsed(TimeUnit.SECONDS));
+        Assertions.assertEquals(1, duration3.elapsed(SECONDS));
     }
 
     @Test
     public void testRemaining() throws Exception {
-        assertEquals(24, script.duration(24, TimeUnit.HOURS).remaining(TimeUnit.HOURS));
+        Assertions.assertEquals(24, script.duration(24, TimeUnit.HOURS).remaining(TimeUnit.HOURS));
 
-        assertEquals(24, script.duration(24, TimeUnit.MINUTES).remaining(TimeUnit.MINUTES));
+        Assertions.assertEquals(24, script.duration(24, MINUTES).remaining(MINUTES));
 
-        assertEquals(24, script.duration(24, TimeUnit.SECONDS).remaining(TimeUnit.SECONDS));
+        Assertions.assertEquals(24, script.duration(24, SECONDS).remaining(SECONDS));
     }
 
     @Test
     public void verifyThatRemainingBecomesNegative() throws Exception {
         Duration duration = script.duration(24, TimeUnit.HOURS);
-        assertEquals(24, duration.remaining(TimeUnit.HOURS));
+        Assertions.assertEquals(24, duration.remaining(TimeUnit.HOURS));
 
         script.teaseLib.advanceTime(24, TimeUnit.HOURS);
-        assertEquals(0, duration.remaining(TimeUnit.HOURS));
+        Assertions.assertEquals(0, duration.remaining(TimeUnit.HOURS));
 
         script.teaseLib.advanceTime(1, TimeUnit.HOURS);
-        assertEquals(-1, duration.remaining(TimeUnit.HOURS));
+        Assertions.assertEquals(-1, duration.remaining(TimeUnit.HOURS));
     }
 
     @Test
@@ -123,14 +117,14 @@ public class DurationTest {
 
         Duration duration = script.duration(60, unit);
 
-        assertEquals(now(unit), duration.start(unit));
-        assertEquals(now(unit), duration.end(unit));
-        assertEquals(0, duration.since(unit));
+        Assertions.assertEquals(now(unit), duration.start(unit));
+        Assertions.assertEquals(now(unit), duration.end(unit));
+        Assertions.assertEquals(0, duration.since(unit));
 
         script.debugger.advanceTime(60, unit);
-        assertEquals(now(unit) - 60, duration.start(unit));
-        assertEquals(now(unit), duration.end(unit));
-        assertEquals(0, duration.since(unit));
+        Assertions.assertEquals(now(unit) - 60, duration.start(unit));
+        Assertions.assertEquals(now(unit), duration.end(unit));
+        Assertions.assertEquals(0, duration.since(unit));
     }
 
     @Test
@@ -138,33 +132,33 @@ public class DurationTest {
         TimeUnit unit = SECONDS;
 
         State state = script.state("test");
-        assertEquals(Duration.INFINITE, state.removed(unit));
+        Assertions.assertEquals(Duration.INFINITE, state.removed(unit));
         state.apply();
 
         Duration elapsing = state.duration();
         script.debugger.advanceTime(60, unit);
 
-        assertEquals(now(unit) - 60, elapsing.start(unit));
-        assertEquals(now(unit), elapsing.end(unit));
-        assertEquals(0, elapsing.since(unit));
+        Assertions.assertEquals(now(unit) - 60, elapsing.start(unit));
+        Assertions.assertEquals(now(unit), elapsing.end(unit));
+        Assertions.assertEquals(0, elapsing.since(unit));
 
         state.remove();
 
         Duration frozen = state.duration();
-        assertEquals(now(unit) - 60, frozen.start(unit));
-        assertEquals(60, frozen.elapsed(unit));
-        assertEquals(now(unit), frozen.end(unit));
-        assertEquals(0, frozen.since(unit));
+        Assertions.assertEquals(now(unit) - 60, frozen.start(unit));
+        Assertions.assertEquals(60, frozen.elapsed(unit));
+        Assertions.assertEquals(now(unit), frozen.end(unit));
+        Assertions.assertEquals(0, frozen.since(unit));
 
         script.debugger.advanceTime(30, unit);
 
-        assertEquals(now(unit) - 90, frozen.start(unit));
-        assertEquals(60, frozen.elapsed(unit));
-        assertEquals(now(unit) - 30, frozen.end(unit));
-        assertEquals(30, frozen.since(unit));
+        Assertions.assertEquals(now(unit) - 90, frozen.start(unit));
+        Assertions.assertEquals(60, frozen.elapsed(unit));
+        Assertions.assertEquals(now(unit) - 30, frozen.end(unit));
+        Assertions.assertEquals(30, frozen.since(unit));
 
-        assertTrue(state.removed());
-        assertEquals(30, state.removed(unit));
+        Assertions.assertTrue(state.removed());
+        Assertions.assertEquals(30, state.removed(unit));
     }
 
     @Test
@@ -175,30 +169,30 @@ public class DurationTest {
         item.apply();
 
         Duration elapsing = item.duration();
-        assertEquals(now(unit), elapsing.start(unit));
+        Assertions.assertEquals(now(unit), elapsing.start(unit));
         script.debugger.advanceTime(25, unit);
 
-        assertEquals(now(unit) - 25, elapsing.start(unit));
-        assertEquals(now(unit), elapsing.end(unit));
-        assertEquals(0, elapsing.since(unit));
+        Assertions.assertEquals(now(unit) - 25, elapsing.start(unit));
+        Assertions.assertEquals(now(unit), elapsing.end(unit));
+        Assertions.assertEquals(0, elapsing.since(unit));
 
         item.remove();
 
         Duration frozen = item.duration();
-        assertEquals(now(unit) - 25, frozen.start(unit));
-        assertEquals(25, frozen.elapsed(unit));
-        assertEquals(now(unit), frozen.end(unit));
-        assertEquals(0, frozen.since(unit));
+        Assertions.assertEquals(now(unit) - 25, frozen.start(unit));
+        Assertions.assertEquals(25, frozen.elapsed(unit));
+        Assertions.assertEquals(now(unit), frozen.end(unit));
+        Assertions.assertEquals(0, frozen.since(unit));
 
         script.debugger.advanceTime(10, unit);
 
-        assertEquals(now(unit) - 35, frozen.start(unit));
-        assertEquals(25, frozen.elapsed(unit));
-        assertEquals(now(unit) - 10, frozen.end(unit));
-        assertEquals(10, frozen.since(unit));
+        Assertions.assertEquals(now(unit) - 35, frozen.start(unit));
+        Assertions.assertEquals(25, frozen.elapsed(unit));
+        Assertions.assertEquals(now(unit) - 10, frozen.end(unit));
+        Assertions.assertEquals(10, frozen.since(unit));
 
-        assertTrue(item.removed());
-        assertEquals(10, item.removed(unit));
+        Assertions.assertTrue(item.removed());
+        Assertions.assertEquals(10, item.removed(unit));
     }
 
     @Test
@@ -209,32 +203,32 @@ public class DurationTest {
         Item item1 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Cage).item();
         Item item2 = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).item();
 
-        assertEquals("Removed since for item1", neverApplied.since(unit), item1.removed(unit));
-        assertEquals("Removed since for item2", neverApplied.since(unit), item2.removed(unit));
+        Assertions.assertEquals(neverApplied.since(unit), item1.removed(unit), "Removed since for item1");
+        Assertions.assertEquals(neverApplied.since(unit), item2.removed(unit), "Removed since for item2");
 
         item1.apply();
         script.debugger.advanceTime(4, unit);
-        assertEquals("Removed since for item1", 0, item1.removed(unit));
+        Assertions.assertEquals(0, item1.removed(unit), "Removed since for item1");
 
         item1.remove();
-        assertEquals("Removed since for item1", 0, item1.removed(unit));
+        Assertions.assertEquals(0, item1.removed(unit), "Removed since for item1");
 
         script.debugger.advanceTime(1, unit);
 
-        assertEquals("Removed since for item1", 1, item1.removed(unit));
+        Assertions.assertEquals(1, item1.removed(unit), "Removed since for item1");
         item2.apply();
-        assertEquals("Removed since for item1", 1, item1.removed(unit));
+        Assertions.assertEquals(1, item1.removed(unit), "Removed since for item1");
 
         script.debugger.advanceTime(1, unit);
-        assertEquals("Removed since for item2", 0, item2.removed(unit));
+        Assertions.assertEquals(0, item2.removed(unit), "Removed since for item2");
 
         item2.remove();
-        assertEquals("Removed since for item1", 2, item1.removed(unit));
-        assertEquals("Removed since for item2", 0, item2.removed(unit));
+        Assertions.assertEquals(2, item1.removed(unit), "Removed since for item1");
+        Assertions.assertEquals(0, item2.removed(unit), "Removed since for item2");
 
         script.debugger.advanceTime(2, unit);
-        assertEquals("Removed since for item1", 4, item1.removed(unit));
-        assertEquals("Removed since for item2", 2, item2.removed(unit));
+        Assertions.assertEquals(4, item1.removed(unit), "Removed since for item1");
+        Assertions.assertEquals(2, item2.removed(unit), "Removed since for item2");
     }
 
     @Test
@@ -247,38 +241,38 @@ public class DurationTest {
         Duration elapsing = state.duration();
         script.debugger.advanceTime(60, unit);
 
-        assertEquals(now(unit) - 60, elapsing.start(unit));
-        assertEquals(now(unit), elapsing.end(unit));
-        assertEquals(0, elapsing.since(unit));
+        Assertions.assertEquals(now(unit) - 60, elapsing.start(unit));
+        Assertions.assertEquals(now(unit), elapsing.end(unit));
+        Assertions.assertEquals(0, elapsing.since(unit));
 
-        assertFalse(state.removed());
-        assertEquals(0, state.removed(SECONDS));
+        Assertions.assertFalse(state.removed());
+        Assertions.assertEquals(0, state.removed(SECONDS));
     }
 
     @Test
     public void testStateNeverApplied() {
         State state = script.state("test");
-        assertTrue(state.removed());
-        assertEquals(Duration.INFINITE, state.removed(TimeUnit.SECONDS));
-        assertEquals(Duration.INFINITE, state.removed(TimeUnit.MINUTES));
-        assertEquals(Duration.INFINITE, state.removed(TimeUnit.DAYS));
+        Assertions.assertTrue(state.removed());
+        Assertions.assertEquals(Duration.INFINITE, state.removed(SECONDS));
+        Assertions.assertEquals(Duration.INFINITE, state.removed(MINUTES));
+        Assertions.assertEquals(Duration.INFINITE, state.removed(TimeUnit.DAYS));
     }
 
     @Test
     public void testItemNeverApplied() {
         Item item = script.item("test");
-        assertFalse(item.is("test"));
-        assertFalse(item.is("other"));
-        assertEquals(0, item.duration().elapsed(TimeUnit.SECONDS));
-        assertTrue(item.removed());
-        assertEquals(Duration.INFINITE, item.removed(TimeUnit.SECONDS));
-        assertEquals(Duration.INFINITE, item.removed(TimeUnit.MINUTES));
-        assertEquals(Duration.INFINITE, item.removed(TimeUnit.DAYS));
+        Assertions.assertFalse(item.is("test"));
+        Assertions.assertFalse(item.is("other"));
+        Assertions.assertEquals(0, item.duration().elapsed(SECONDS));
+        Assertions.assertTrue(item.removed());
+        Assertions.assertEquals(Duration.INFINITE, item.removed(SECONDS));
+        Assertions.assertEquals(Duration.INFINITE, item.removed(MINUTES));
+        Assertions.assertEquals(Duration.INFINITE, item.removed(TimeUnit.DAYS));
     }
 
     @Test
     public void testIndefiniteDuration() {
-        assertEquals(Duration.INFINITE, script.duration(Duration.INFINITE, SECONDS).limit(SECONDS));
+        Assertions.assertEquals(Duration.INFINITE, script.duration(Duration.INFINITE, SECONDS).limit(SECONDS));
     }
 
     private long now(TimeUnit unit) {
@@ -287,13 +281,13 @@ public class DurationTest {
 
     @Test
     public void testExpired() {
-        assertFalse(script.duration(24, TimeUnit.HOURS).expired());
-        assertTrue(script.duration(0, TimeUnit.HOURS).expired());
+        Assertions.assertFalse(script.duration(24, TimeUnit.HOURS).expired());
+        Assertions.assertTrue(script.duration(0, TimeUnit.HOURS).expired());
 
-        assertFalse(script.duration(60, TimeUnit.MINUTES).expired());
-        assertTrue(script.duration(0, TimeUnit.MINUTES).expired());
+        Assertions.assertFalse(script.duration(60, MINUTES).expired());
+        Assertions.assertTrue(script.duration(0, MINUTES).expired());
 
-        assertFalse(script.duration(60, TimeUnit.SECONDS).expired());
-        assertTrue(script.duration(0, TimeUnit.SECONDS).expired());
+        Assertions.assertFalse(script.duration(60, SECONDS).expired());
+        Assertions.assertTrue(script.duration(0, SECONDS).expired());
     }
 }

@@ -1,19 +1,18 @@
 package teaselib.core;
 
-import java.io.IOException;
-
-import org.junit.After;
-import org.junit.Before;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import teaselib.Actor;
 import teaselib.TeaseScript;
 import teaselib.test.TestScript;
 
+import java.io.IOException;
+import java.io.Serial;
+
 /**
  * @author Citizen-Cane
- *
  */
-public class ShowChoicesAbstractTest {
+class ShowChoicesAbstractTest {
     protected static final int ITERATIONS = 1;
 
     protected TestScript script;
@@ -23,19 +22,20 @@ public class ShowChoicesAbstractTest {
         super();
     }
 
-    @Before
+    @BeforeEach
     public void initTestScript() throws IOException {
         script = new TestScript();
         debugger = script.debugger;
         debugger.freezeTime();
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         script.close();
     }
 
     static class TestException extends RuntimeException {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         public TestException() {

@@ -1,14 +1,10 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import teaselib.Body;
 import teaselib.Bondage;
@@ -18,26 +14,21 @@ import teaselib.State.Persistence.Until;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
-public class StateMapsTestRemember extends TestableStateMaps {
+import static org.junit.jupiter.api.Assertions.*;
+
+public class StateMapsRememberTest extends TestableStateMaps {
     public static final String TEST_DOMAIN = "test";
 
     private enum Locks {
         Chastity_Device_Lock
     }
 
-    private final TestScript script;
-
-    public StateMapsTestRemember() throws IOException {
-        this(new TestScript());
-    }
-
-    private StateMapsTestRemember(TestScript script) {
-        super(script.teaseLib);
-        this.script = script;
+    public StateMapsRememberTest() throws IOException {
+        super(new TestScript());
         teaseLib.freezeTime();
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         script.close();
     }

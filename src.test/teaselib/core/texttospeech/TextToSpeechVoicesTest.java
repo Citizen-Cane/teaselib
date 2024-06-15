@@ -1,31 +1,38 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.io.TempDir;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import teaselib.core.util.Environment;
 
-@RunWith(Parameterized.class)
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class TextToSpeechVoicesTest {
 
-    @ClassRule
-    public static final TemporaryFolder testFolder = new TemporaryFolder();
+    @TempDir
+    Path testFolder;
 
     private static TextToSpeech textToSpeech;
 
-    @AfterClass
+    @BeforeAll
+    public static void init() {
+        assertNull(textToSpeech, "Resource not closed");
+        textToSpeech = TextToSpeech.allSystemVoices();
+    }
+
+        @AfterAll
     public static void cleanup() {
         try {
             textToSpeech.close();
@@ -34,28 +41,20 @@ public class TextToSpeechVoicesTest {
         }
     }
 
-    @Parameters(name = "Voice ={0}")
     public static Iterable<Voice> voices() {
-        Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
-        assertNull("Resource not closed", textToSpeech);
-        textToSpeech = TextToSpeech.allSystemVoices();
+        Assumptions.assumeTrue(Environment.SYSTEM == Environment.Windows);
         Map<String, Voice> voices = textToSpeech.getVoices();
         assertTrue(voices.size() > 1);
 
         return voices.values();
     }
 
-    private final Voice voice;
-
-    public TextToSpeechVoicesTest(Voice voice) {
-        this.voice = voice;
-    }
-
-    @Test
-    public void testEachVoice() throws IOException {
-        File testFile = testFolder.newFile(voice.guid() + ".wav");
+    @ParameterizedTest
+    @MethodSource("voices")
+    public void testEachVoice(Voice voice) throws IOException {
+        File testFile = Files.createFile(testFolder.resolve(voice.guid() + ".wav")).toFile();
         String file = textToSpeech.speak(voice, "Test.", testFile, new String[] {});
-        assertEquals(testFile.getAbsolutePath(), file);
+        Assertions.assertEquals(testFile.getAbsolutePath(), file);
         assertTrue(testFile.exists());
     }
 

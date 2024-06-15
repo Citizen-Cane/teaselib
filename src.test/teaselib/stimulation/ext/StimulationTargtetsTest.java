@@ -1,12 +1,7 @@
 package teaselib.stimulation.ext;
 
-import static org.junit.Assert.*;
-
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import teaselib.stimulation.SquareWave;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.ext.StimulationTargets.Samples;
@@ -14,6 +9,9 @@ import teaselib.stimulation.pattern.Attention;
 import teaselib.stimulation.pattern.Repeat;
 import teaselib.stimulation.pattern.Walk;
 import teaselib.stimulation.pattern.Whip;
+
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 public class StimulationTargtetsTest {
     @Test
@@ -23,14 +21,14 @@ public class StimulationTargtetsTest {
         StimulationTargets targets = new StimulationTargets(device);
 
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
-        assertEquals(1, targets.size());
+        Assertions.assertEquals(1, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0);
         test(samples.next(), 500, 0.0);
         test(samples.next(), 1000, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -40,7 +38,7 @@ public class StimulationTargtetsTest {
         StimulationTargets targets = new StimulationTargets(device);
 
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), 0, 2000));
-        assertEquals(1, targets.size());
+        Assertions.assertEquals(1, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0);
@@ -49,7 +47,7 @@ public class StimulationTargtetsTest {
         test(samples.next(), 1500, 0.0);
         test(samples.next(), 2000, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -59,7 +57,7 @@ public class StimulationTargtetsTest {
         StimulationTargets targets = new StimulationTargets(device);
 
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), 0, 2000));
-        assertEquals(1, targets.size());
+        Assertions.assertEquals(1, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 500, 1.0);
@@ -68,7 +66,7 @@ public class StimulationTargtetsTest {
         test(samples.next(), 1500, 500, 0.0);
         test(samples.next(), 2000, Long.MAX_VALUE, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -79,7 +77,7 @@ public class StimulationTargtetsTest {
 
         int startOffset = 666;
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), startOffset));
-        assertEquals(1, targets.size());
+        Assertions.assertEquals(1, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 0.0);
@@ -87,7 +85,7 @@ public class StimulationTargtetsTest {
         test(samples.next(), startOffset + 500, 0.0);
         test(samples.next(), startOffset + 1000, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -99,14 +97,14 @@ public class StimulationTargtetsTest {
 
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
         targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
-        assertEquals(2, targets.size());
+        Assertions.assertEquals(2, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 1.0);
         test(samples.next(), 500, 0.0, 0.0);
         test(samples.next(), 1000, 0.0, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -118,7 +116,7 @@ public class StimulationTargtetsTest {
 
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
         targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 500));
-        assertEquals(2, targets.size());
+        Assertions.assertEquals(2, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 0.0);
@@ -126,7 +124,7 @@ public class StimulationTargtetsTest {
         test(samples.next(), 1000, 0.0, 0.0);
         test(samples.next(), 1500, 0.0, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -140,14 +138,14 @@ public class StimulationTargtetsTest {
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
         targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
         targets.set(new StimulationTarget(stim3, new SquareWave(0.5, 0.5)));
-        assertEquals(3, targets.size());
+        Assertions.assertEquals(3, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 1.0, 1.0);
         test(samples.next(), 500, 0.0, 0.0, 0.0);
         test(samples.next(), 1000, 0.0, 0.0, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -161,7 +159,7 @@ public class StimulationTargtetsTest {
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
         targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 500));
         targets.set(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 1000));
-        assertEquals(3, targets.size());
+        Assertions.assertEquals(3, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 0.0, 0.0);
@@ -170,7 +168,7 @@ public class StimulationTargtetsTest {
         test(samples.next(), 1500, 0.0, 0.0, 0.0);
         test(samples.next(), 2000, 0.0, 0.0, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -195,7 +193,7 @@ public class StimulationTargtetsTest {
     }
 
     private static void testOrderingAscending(TestStimulationDevice device, Stimulator stim1, Stimulator stim2,
-            Stimulator stim3) {
+                                              Stimulator stim3) {
         StimulationTargets targets = new StimulationTargets(device);
 
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
@@ -206,7 +204,7 @@ public class StimulationTargtetsTest {
     }
 
     private static void testOrderingDescending(TestStimulationDevice device, Stimulator stim1, Stimulator stim2,
-            Stimulator stim3) {
+                                               Stimulator stim3) {
         StimulationTargets targets = new StimulationTargets(device);
 
         targets.set(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
@@ -217,7 +215,7 @@ public class StimulationTargtetsTest {
     }
 
     private static void testOrderingRandom(TestStimulationDevice device, Stimulator stim1, Stimulator stim2,
-            Stimulator stim3) {
+                                           Stimulator stim3) {
         StimulationTargets targets = new StimulationTargets(device);
 
         targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
@@ -228,7 +226,7 @@ public class StimulationTargtetsTest {
     }
 
     private static void testTripleTargets(StimulationTargets channels) {
-        assertEquals(3, channels.size());
+        Assertions.assertEquals(3, channels.size());
 
         Iterator<Samples> samples = channels.iterator();
         test(samples.next(), 0, 1.0, 0.0, 0.0);
@@ -239,7 +237,7 @@ public class StimulationTargtetsTest {
         test(samples.next(), 2500, 0.0, 0.0, 0.0);
         test(samples.next(), 3000, 0.0, 0.0, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
     }
 
     @Test
@@ -251,19 +249,19 @@ public class StimulationTargtetsTest {
 
         targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
         targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
-        assertEquals(2, targets.size());
+        Assertions.assertEquals(2, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 1.0);
         test(samples.next(), 500, 0.0, 0.0);
         test(samples.next(), 1000, 0.0, 0.0);
 
-        assertFalse(samples.hasNext());
+        Assertions.assertFalse(samples.hasNext());
 
         StimulationTargets newTargets = new StimulationTargets(device);
         targets.continuedStimulation(newTargets, targets.maxDurationMillis());
 
-        assertFalse("Nothing has been inserted so there shouldn't be any new samples", samples.hasNext());
+        Assertions.assertFalse(samples.hasNext(), "Nothing has been inserted so there shouldn't be any new samples");
     }
 
     @Test
@@ -315,8 +313,8 @@ public class StimulationTargtetsTest {
         StimulationTargets continued = targets.continuedStimulation(newTargets,
                 targets.maxDurationMillis() - step.waveform(stim1, 0).getDurationMillis());
 
-        assertEquals(1000, continued.get(0).getWaveForm().getDurationMillis());
-        assertEquals(whip.waveform(stim3, 0).getDurationMillis(), continued.get(0).getWaveForm().getDurationMillis());
+        Assertions.assertEquals(1000, continued.get(0).getWaveForm().getDurationMillis());
+        Assertions.assertEquals(whip.waveform(stim3, 0).getDurationMillis(), continued.get(0).getWaveForm().getDurationMillis());
 
         Iterator<Samples> secondStim = continued.iterator();
         while (secondStim.hasNext()) {
@@ -328,14 +326,14 @@ public class StimulationTargtetsTest {
     // TODO More continuedStimulation() tests
 
     private static void test(Samples samples, long expectedTimeStampMillis, double... values) {
-        assertEquals(expectedTimeStampMillis, samples.getTimeStampMillis());
-        assertArrayEquals(values, samples.getValues(), 0.0);
+        Assertions.assertEquals(expectedTimeStampMillis, samples.getTimeStampMillis());
+        Assertions.assertArrayEquals(values, samples.getValues(), 0.0);
     }
 
     private static void test(Samples samples, long expectedTimeStampMillis, long exectedDurationMillis,
-            double... values) {
-        assertEquals("Time stamp -", expectedTimeStampMillis, samples.getTimeStampMillis());
-        assertEquals("Duration -", exectedDurationMillis, samples.getDurationMillis());
-        assertArrayEquals(values, samples.getValues(), 0.0);
+                             double... values) {
+        Assertions.assertEquals(expectedTimeStampMillis, samples.getTimeStampMillis(), "Time stamp -");
+        Assertions.assertEquals(exectedDurationMillis, samples.getDurationMillis(), "Duration -");
+        Assertions.assertArrayEquals(values, samples.getValues(), 0.0);
     }
 }

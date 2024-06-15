@@ -1,12 +1,7 @@
 package teaselib.core.devices;
 
-import static org.junit.Assert.*;
-
-import java.util.Set;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.KeyRelease;
@@ -14,15 +9,18 @@ import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.stimulation.StimulationDevice;
 
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 /**
  * @author Citizen-Cane
- *
  */
 public class DeviceFactoryTests {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(DeviceFactoryTests.class);
 
     @Test
-    public void instanciateDeviceFactories() {
+    public void instantiateDeviceFactories() {
         Configuration config = DebugSetup.getConfiguration();
         try (Devices devices = new Devices(config)) {
             logger.info("Available devices:");

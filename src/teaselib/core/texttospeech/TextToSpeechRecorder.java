@@ -35,7 +35,7 @@ import teaselib.core.configuration.TeaseLibConfigSetup;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.TextVariables;
 
-public class TextToSpeechRecorder implements Closeable {
+public class TextToSpeechRecorder implements java.io.Closeable {
     static final Logger logger = LoggerFactory.getLogger(TextToSpeechRecorder.class);
 
     public static final String MessageFilename = "message.txt";
@@ -55,7 +55,7 @@ public class TextToSpeechRecorder implements Closeable {
     private final TextVariables textVariables;
 
     static class Pass {
-        class Symbol {
+        static class Symbol {
             final String key;
             final String value;
 
@@ -143,7 +143,8 @@ public class TextToSpeechRecorder implements Closeable {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
+        storage.close();
         ttsPlayer.close();
     }
 
@@ -277,8 +278,6 @@ public class TextToSpeechRecorder implements Closeable {
     }
 
     public void finish() throws IOException, InterruptedException {
-        storage.close();
-
         if (passes.size() > 1) {
             logger.info("Generating speech files for all symbols generates a lot of reused entries");
         }
@@ -304,7 +303,7 @@ public class TextToSpeechRecorder implements Closeable {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));) {
             String line = null;
             while ((line = reader.readLine()) != null) {
-                if (message.length() > 0) {
+                if (!message.isEmpty()) {
                     message.append("\n");
                 }
                 message.append(line);

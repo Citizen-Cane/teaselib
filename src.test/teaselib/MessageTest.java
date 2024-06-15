@@ -1,22 +1,22 @@
 /**
- * 
+ *
  */
 package teaselib;
 
-import static org.junit.Assert.*;
-import static teaselib.Message.*;
-import static teaselib.Mood.*;
+import org.junit.jupiter.api.Test;
+import teaselib.core.texttospeech.Voice;
 
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.Test;
-
-import teaselib.core.texttospeech.Voice;
+import static org.junit.jupiter.api.Assertions.*;
+import static teaselib.Message.ActorImage;
+import static teaselib.Message.Delay10s;
+import static teaselib.Mood.Amused;
+import static teaselib.Mood.Angry;
 
 /**
  * @author Citizen-Cane
- *
  */
 public class MessageTest {
 
@@ -24,7 +24,7 @@ public class MessageTest {
 
     @Test
     public void determineType() {
-        assertTrue(Message.determineType("Understood, #slave?") == Message.Type.Text);
+        assertSame(Message.determineType("Understood, #slave?"), Message.Type.Text);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class MessageTest {
                 "We would therefore have to leave the guest room if we wanted to get free.",
                 "The interesting part to this whole adventure was the techniques that",
                 "Jennifer and I used to keep us both in the guest room for a few hours", "prior to getting out.")
-                        .joinSentences();
+                .joinSentences();
         assertEquals(4, message.size());
         assertEquals(Message.Type.Text, message.get(0).type);
         assertEquals(Message.Type.Text, message.get(1).type);
@@ -148,7 +148,7 @@ public class MessageTest {
         assertEquals(Message.Type.Mood, message.get(5).type);
         assertEquals(Mood.Neutral, message.get(5).value);
         assertEquals(Message.Type.Text, message.get(6).type);
-        assertTrue(!message.get(6).value.startsWith(Mood.Neutral));
+        assertFalse(message.get(6).value.startsWith(Mood.Neutral));
     }
 
     @Test

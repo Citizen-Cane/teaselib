@@ -1,25 +1,22 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.Confidence.Definite;
-import static teaselib.core.speechrecognition.Confidence.High;
-import static teaselib.core.speechrecognition.Confidence.Low;
-import static teaselib.core.speechrecognition.Confidence.Normal;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.stream.Collectors.joining;
+import static teaselib.core.speechrecognition.Confidence.*;
 
 public class ConfidenceTest {
     private static final Logger logger = LoggerFactory.getLogger(ConfidenceTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void showValues() {
-        Confidence[] confidenceValues = { Low, Normal, High, Definite };
+        Confidence[] confidenceValues = {Low, Normal, High, Definite};
         String confidenceDefaults = Arrays.stream(confidenceValues).map(c -> "\t" + c.name() + "=" + c.probability)
                 .collect(joining("\t"));
         logger.info("Weighted confidence values: {}", confidenceDefaults);
@@ -42,19 +39,19 @@ public class ConfidenceTest {
     public void testWeightedConfidenceHigh() {
         Confidence high = Confidence.High;
         float k = 2.0f;
-        assertEquals(0.825f, high.weighted(1, k), 0.001);
-        assertEquals(0.775f, high.weighted(2, k), 0.001);
-        assertEquals(0.750f, high.weighted(3, k), 0.001);
-        assertEquals(0.735f, high.weighted(4, k), 0.001);
-        assertEquals(0.725f, high.weighted(5, k), 0.001);
+        Assertions.assertEquals(0.825f, high.weighted(1, k), 0.001);
+        Assertions.assertEquals(0.775f, high.weighted(2, k), 0.001);
+        Assertions.assertEquals(0.750f, high.weighted(3, k), 0.001);
+        Assertions.assertEquals(0.735f, high.weighted(4, k), 0.001);
+        Assertions.assertEquals(0.725f, high.weighted(5, k), 0.001);
 
-        assertEquals(0.702f, high.weighted(10, k), 0.001);
+        Assertions.assertEquals(0.702f, high.weighted(10, k), 0.001);
 
-        assertEquals(0.677f, high.weighted(100, k), 0.001);
+        Assertions.assertEquals(0.677f, high.weighted(100, k), 0.001);
 
-        assertEquals(high.slightlyRaisedProbability(), high.weighted(1, k), 0.0);
-        assertEquals(high.probability, high.weighted(3), 0.0);
-        assertEquals(high.slightlyReducedProbability(), high.weighted(Integer.MAX_VALUE, k), 0.0);
+        Assertions.assertEquals(high.slightlyRaisedProbability(), high.weighted(1, k), 0.0);
+        Assertions.assertEquals(high.probability, high.weighted(3), 0.0);
+        Assertions.assertEquals(high.slightlyReducedProbability(), high.weighted(Integer.MAX_VALUE, k), 0.0);
     }
 
 }

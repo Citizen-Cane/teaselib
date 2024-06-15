@@ -1,21 +1,19 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IntervalTest {
 
     @Test
     public void testInterval() {
-        assertThrows(IllegalArgumentException.class, () -> new Interval(4, 1));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Interval(4, 1));
     }
 
     @Test

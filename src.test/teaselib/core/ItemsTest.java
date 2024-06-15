@@ -1,11 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static teaselib.Body.OnNipples;
 import static teaselib.Bondage.Ankle_Restraints;
 import static teaselib.Bondage.Chains;
@@ -19,7 +14,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import teaselib.Accessoires;
 import teaselib.Body;
@@ -600,13 +595,13 @@ public class ItemsTest {
 
             assertEquals(0, restraints.getAvailable().size());
             restraints.get().setAvailable(true);
-            assertEquals("Only one available item expected", 1, restraints.getAvailable().size());
+            assertEquals( 1, restraints.getAvailable().size(),"Only one available item expected");
             assertTrue(restraints.anyAvailable());
-            assertFalse("Only one available item expected", restraints.allAvailable());
+            assertFalse(restraints.allAvailable(),"Only one available item expected");
 
             assertTrue(script.items(Bondage.Wrist_Restraints).anyAvailable());
-            assertTrue("For queries one or more available item per kind is expected",
-                    script.items(Bondage.Wrist_Restraints).allAvailable());
+            assertTrue(script.items(Bondage.Wrist_Restraints).allAvailable(),
+                    "For queries one or more available item per kind is expected");
         }
     }
 
@@ -902,7 +897,7 @@ public class ItemsTest {
             assertTrue(gag0.applied());
             assertFalse(gag1.applied());
             assertTrue(gag0.is(Body.InMouth));
-            assertTrue("Default items must be applied", gag0.is(Body.CantLick));
+            assertTrue(gag0.is(Body.CantLick),"Default items must be applied");
 
             gag1.to(Body.InMouth).apply();
             assertTrue(gag0.applied());
@@ -977,7 +972,7 @@ public class ItemsTest {
             script.item(Bondage.Wrist_Restraints).setAvailable(true);
             restraints.items(Bondage.Wrist_Restraints).get().apply();
             assertEquals(1, restraints.getApplied().size());
-            assertThrows("Only applied items can be removed", IllegalStateException.class, () -> restraints.remove());
+            assertThrows(IllegalStateException.class, restraints::remove,"Only applied items can be removed");
             restraints.getApplied().remove();
             assertEquals(0, restraints.getApplied().size());
         }
@@ -1474,9 +1469,8 @@ public class ItemsTest {
     }
 
     private static void assertDecorated(Items items) {
-        assertFalse("Items expected but was empty", items.isEmpty());
-        String expected = "ItemProxy instances expected";
-        assertTrue(expected, items.stream().allMatch(ItemProxy.class::isInstance));
+        assertFalse(items.isEmpty(),"Items expected but was empty");
+        assertTrue(items.stream().allMatch(ItemProxy.class::isInstance),"ItemProxy instances expected");
     }
 
     @Test

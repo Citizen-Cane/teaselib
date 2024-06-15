@@ -2,14 +2,15 @@ package teaselib.core.ai.perception;
 
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import teaselib.core.Closeable;
 import teaselib.core.ai.TeaseLibAI;
@@ -82,7 +83,7 @@ public class PoseEstimationTaskTest {
             var humanPoseDeviceInteraction = new HumanPoseDeviceInteraction(
                     script.teaseLib, new PoseEstimationTask(teaseLibAI, poseAspects) {
 
-                        CountDownLatch sceneCaptureCompleted = new CountDownLatch(1);
+                        final CountDownLatch sceneCaptureCompleted = new CountDownLatch(1);
 
                         @Override
                         SceneCapture getDevice() throws InterruptedException {

@@ -1,14 +1,14 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.assertEquals;
+
+import org.junit.jupiter.api.Test;
+import teaselib.core.devices.release.KeyReleaseBaseTest.ActuatorMock;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
-import teaselib.core.devices.release.KeyReleaseBaseTest.ActuatorMock;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ActuatorsTest {
     private static final List<Actuator> actuatorMocks = Arrays.asList(new ActuatorMock(2, TimeUnit.HOURS),

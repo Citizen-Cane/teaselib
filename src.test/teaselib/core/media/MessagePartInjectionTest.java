@@ -1,15 +1,7 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.*;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Type;
@@ -22,6 +14,14 @@ import teaselib.core.configuration.Setup;
 import teaselib.test.ActorTestImage;
 import teaselib.test.ActorTestImages;
 import teaselib.test.TestScript;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MessagePartInjectionTest {
 

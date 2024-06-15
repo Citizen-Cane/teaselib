@@ -1,21 +1,15 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static teaselib.Household.Clothes_Pegs;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import teaselib.*;
+import teaselib.test.TestScript;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Test;
-
-import teaselib.Body;
-import teaselib.Bondage;
-import teaselib.Posture;
-import teaselib.State;
-import teaselib.Toys;
-import teaselib.test.TestScript;
+import static org.junit.jupiter.api.Assertions.*;
+import static teaselib.Household.Clothes_Pegs;
 
 public class StateMapsApplyTest extends TestableStateMaps {
     public static final String TEST_DOMAIN = "test";
@@ -24,11 +18,11 @@ public class StateMapsApplyTest extends TestableStateMaps {
         Chastity_Device_Lock
     }
 
-    public StateMapsApplyTest() {
-        super(TestScript.newTeaseLib());
+    public StateMapsApplyTest() throws IOException {
+        super(new TestScript());
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         teaseLib.close();
     }

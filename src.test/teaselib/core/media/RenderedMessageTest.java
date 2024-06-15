@@ -1,12 +1,12 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RenderedMessageTest {
 

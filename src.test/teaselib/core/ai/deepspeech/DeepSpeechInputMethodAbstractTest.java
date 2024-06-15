@@ -1,7 +1,5 @@
 package teaselib.core.ai.deepspeech;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -18,14 +16,12 @@ abstract class DeepSpeechInputMethodAbstractTest {
     protected SpeechRecognitionInputMethod inputMethod;
 
     @BeforeAll
-    @Before
     public void init() {
         teaseLibAI = new TeaseLibAI();
         inputMethod = SpeechRecognitionTestUtils.getInputMethod(DeepSpeechRecognizer.class);
     }
 
     @AfterAll
-    @After
     public void cleanup() {
         inputMethod.close();
         teaseLibAI.close();

@@ -74,12 +74,6 @@ class StorageSynchronizer {
         });
     }
 
-    Future<?> encode(Runnable task) {
-        Future<?> encoderTask = encoding.submit(task);
-        addAynchronousTask(encoderTask);
-        return encoderTask;
-    }
-
     Future<String> encode(Callable<String> task) {
         Future<String> encoderTask = encoding.submit(task);
         addAynchronousTask(encoderTask);
@@ -108,15 +102,21 @@ class StorageSynchronizer {
         });
     }
 
-    void close() throws InterruptedException, IOException {
+    void close() throws  IOException {
         shutdownAndAwaitTermination(encoding);
         shutdownAndAwaitTermination(io);
         storage.close();
     }
 
-    private static void shutdownAndAwaitTermination(ExecutorService service) throws InterruptedException {
+    private static void shutdownAndAwaitTermination(ExecutorService service) {
         service.shutdown();
-        service.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        if (!Thread.currentThread().isInterrupted()) {
+            try {
+                service.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            } catch(InterruptedException ignore) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private <T> Future<T> submitIO(Callable<T> task) {

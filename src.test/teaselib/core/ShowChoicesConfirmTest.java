@@ -1,21 +1,19 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-import static teaselib.ScriptFunction.*;
-import static teaselib.core.speechrecognition.TimeoutBehavior.*;
+import org.junit.jupiter.api.Test;
+import teaselib.core.Debugger.Response;
+import teaselib.test.TestScript;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
-import teaselib.core.Debugger.Response;
-import teaselib.test.TestScript;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static teaselib.ScriptFunction.TimeoutString;
+import static teaselib.core.speechrecognition.TimeoutBehavior.InDubioContraReum;
 
 /**
  * @author Citizen-Cane
- *
  */
 public class ShowChoicesConfirmTest {
 

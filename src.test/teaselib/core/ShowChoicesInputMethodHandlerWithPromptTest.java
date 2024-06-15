@@ -1,37 +1,20 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
-import org.junit.runners.Parameterized;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.debug.DebugHost;
-import teaselib.test.IntegrationTests;
 import teaselib.test.TestScript;
 
-@Category(IntegrationTests.class)
-@RunWith(Parameterized.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ShowChoicesInputMethodHandlerWithPromptTest {
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
-    @Parameterized.Parameters
-    public static List<Object[]> data() {
-        return Arrays.asList(new Object[ShowChoicesAbstractTest.ITERATIONS][0]);
-    }
+class ShowChoicesInputMethodHandlerWithPromptTest {
 
     ShowChoicesAbstractTest.RunnableTestScript script;
     Debugger debugger;
@@ -39,7 +22,7 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
     DebugHost host;
     TeaseLib teaseLib;
 
-    @Before
+    @BeforeEach
     public void init() throws IOException {
         host = new DebugHost();
         teaseLib = new TeaseLib(host, new DebugSetup());
@@ -67,7 +50,7 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         count = new AtomicInteger(0);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         teaseLib.close();
         host.close();
@@ -79,10 +62,10 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
 
         script.say("Start.");
-        assertEquals("No", script.reply("Yes", "No"));
+        Assertions.assertEquals("No", script.reply("Yes", "No"));
         script.say("End.");
 
-        assertEquals(1, count.get());
+        Assertions.assertEquals(1, count.get());
     }
 
     @Test
@@ -92,10 +75,10 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
 
         script.say("Start.");
-        assertEquals("No", script.reply("Yes", "No"));
+        Assertions.assertEquals("No", script.reply("Yes", "No"));
         script.say("End.");
 
-        assertEquals(2, count.get());
+        Assertions.assertEquals(2, count.get());
     }
 
     @Test
@@ -106,10 +89,10 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
 
         script.say("Start.");
-        assertEquals("No", script.reply("Yes", "No", "Maybe"));
+        Assertions.assertEquals("No", script.reply("Yes", "No", "Maybe"));
         script.say("End.");
 
-        assertEquals(3, count.get());
+        Assertions.assertEquals(3, count.get());
     }
 
     @Test
@@ -121,10 +104,10 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
 
         script.say("Start.");
-        assertEquals("No", script.reply("Yes", "No", "Maybe", "Later"));
+        Assertions.assertEquals("No", script.reply("Yes", "No", "Maybe", "Later"));
         script.say("End.");
 
-        assertEquals(4, count.get());
+        Assertions.assertEquals(4, count.get());
     }
 
     @Test
@@ -134,10 +117,10 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         debugger.resumeTime();
 
         script.say("Start.");
-        assertEquals("No", script.reply("Yes", "No"));
+        Assertions.assertEquals("No", script.reply("Yes", "No"));
         script.say("End.");
 
-        assertEquals(1, count.get());
+        Assertions.assertEquals(1, count.get());
     }
 
     @Test
@@ -148,10 +131,10 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         debugger.resumeTime();
 
         script.say("Start.");
-        assertEquals("No", script.reply("Yes", "No"));
+        Assertions.assertEquals("No", script.reply("Yes", "No"));
         script.say("End.");
 
-        assertEquals(2, count.get());
+        Assertions.assertEquals(2, count.get());
     }
 
     @Test
@@ -163,10 +146,10 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         debugger.resumeTime();
 
         script.say("Start.");
-        assertEquals("No", script.reply("Yes", "No", "Maybe"));
+        Assertions.assertEquals("No", script.reply("Yes", "No", "Maybe"));
         script.say("End.");
 
-        assertEquals(3, count.get());
+        Assertions.assertEquals(3, count.get());
     }
 
     @Test
@@ -179,9 +162,9 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         debugger.resumeTime();
 
         script.say("Start.");
-        assertEquals("No", script.reply("Yes", "No", "Maybe", "Later"));
+        Assertions.assertEquals("No", script.reply("Yes", "No", "Maybe", "Later"));
         script.say("End.");
 
-        assertEquals(4, count.get());
+        Assertions.assertEquals(4, count.get());
     }
 }

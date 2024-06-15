@@ -1,5 +1,8 @@
 package teaselib.core.ai.deepspeech;
 
+import java.io.FileNotFoundException;
+import java.io.Serial;
+import java.nio.file.Files;
 import java.util.Locale;
 import java.util.stream.Stream;
 
@@ -15,6 +18,7 @@ import teaselib.core.ui.Prompt;
 class DeepSpeechInputMethodTest extends DeepSpeechInputMethodAbstractTest {
 
     static Choices choices = new Choices(Locale.ENGLISH, Intention.Confirm) {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         {
@@ -28,8 +32,12 @@ class DeepSpeechInputMethodTest extends DeepSpeechInputMethodAbstractTest {
 
     @ParameterizedTest
     @MethodSource("tests")
-    void testExpectedAudio(DeepSpeechTestData testData) throws InterruptedException {
-        test(testData.audio.toString(), DeepSpeechTestData.tests.indexOf(testData));
+    void testExpectedAudio(DeepSpeechTestData testData) throws InterruptedException,FileNotFoundException {
+        if (Files.exists(testData.audio())) {
+            test(testData.audio().toString(), DeepSpeechTestData.tests.indexOf(testData));
+        } else {
+            throw new FileNotFoundException(testData.audio().toString());
+        }
     }
 
     @ParameterizedTest

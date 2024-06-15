@@ -1,20 +1,16 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import teaselib.Body;
 import teaselib.State;
 import teaselib.State.Persistence.Until;
 import teaselib.TeaseScriptPersistence.Domain;
 import teaselib.Toys;
 import teaselib.test.TestScript;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class ItemPersistencyTest {
 
@@ -27,15 +23,15 @@ public class ItemPersistencyTest {
             item.apply().over(2, TimeUnit.DAYS).remember(Until.Removed);
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertTrue(item.applied());
+            Assertions.assertTrue(item.applied());
 
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertTrue(item.applied());
+            Assertions.assertTrue(item.applied());
 
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertFalse("Until.Removed should expire after 2 days + 0.5 * duration", item.applied());
+            Assertions.assertFalse(item.applied(), "Until.Removed should expire after 2 days + 0.5 * duration");
         }
     }
 
@@ -50,10 +46,10 @@ public class ItemPersistencyTest {
             item.remove();
             script.debugger.advanceTime(60, TimeUnit.MINUTES);
 
-            assertFalse(item.applied());
-            assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
-            assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
-            assertEquals(60, item.removed(TimeUnit.MINUTES));
+            Assertions.assertFalse(item.applied());
+            Assertions.assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
+            Assertions.assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
+            Assertions.assertEquals(60, item.removed(TimeUnit.MINUTES));
         }
     }
 
@@ -67,10 +63,10 @@ public class ItemPersistencyTest {
             script.debugger.advanceTime(120, TimeUnit.MINUTES);
             script.triggerAutoRemove();
 
-            assertFalse(item.applied());
-            assertEquals(60, item.removed(TimeUnit.MINUTES));
-            assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
-            assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
+            Assertions.assertFalse(item.applied());
+            Assertions.assertEquals(60, item.removed(TimeUnit.MINUTES));
+            Assertions.assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
+            Assertions.assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
         }
     }
 
@@ -85,10 +81,10 @@ public class ItemPersistencyTest {
             state.remove();
             script.debugger.advanceTime(60, TimeUnit.MINUTES);
 
-            assertFalse(state.applied());
-            assertEquals(60, state.removed(TimeUnit.MINUTES));
-            assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
-            assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
+            Assertions.assertFalse(state.applied());
+            Assertions.assertEquals(60, state.removed(TimeUnit.MINUTES));
+            Assertions.assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
+            Assertions.assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
         }
     }
 
@@ -102,10 +98,10 @@ public class ItemPersistencyTest {
             script.debugger.advanceTime(120, TimeUnit.MINUTES);
             script.triggerAutoRemove();
 
-            assertFalse(state.applied());
-            assertEquals(60, state.removed(TimeUnit.MINUTES));
-            assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
-            assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
+            Assertions.assertFalse(state.applied());
+            Assertions.assertEquals(60, state.removed(TimeUnit.MINUTES));
+            Assertions.assertEquals(60, script.state(Toys.Buttplug).removed(TimeUnit.MINUTES));
+            Assertions.assertEquals(60, script.state(Body.InButt).removed(TimeUnit.MINUTES));
         }
     }
 
@@ -119,15 +115,15 @@ public class ItemPersistencyTest {
             item.apply().over(2, TimeUnit.DAYS).remember(Until.Removed);
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertTrue(item.applied());
+            Assertions.assertTrue(item.applied());
 
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertTrue(item.applied());
+            Assertions.assertTrue(item.applied());
 
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertFalse("Until.Removed should expire after 2 days + 0.5 * duration", item.applied());
+            Assertions.assertFalse(item.applied(), "Until.Removed should expire after 2 days + 0.5 * duration");
         }
     }
 
@@ -143,24 +139,23 @@ public class ItemPersistencyTest {
 
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertTrue(domain1.item(Toys.Chastity_Device).applied());
-            assertTrue(domain2.item(Toys.Chastity_Device).applied());
+            Assertions.assertTrue(domain1.item(Toys.Chastity_Device).applied());
+            Assertions.assertTrue(domain2.item(Toys.Chastity_Device).applied());
 
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertTrue("Until.Removed should expire after 2 days + 0.5 * duration",
-                    domain1.item(Toys.Chastity_Device).applied());
-            assertTrue(domain2.item(Toys.Chastity_Device).applied());
+            Assertions.assertTrue(domain1.item(Toys.Chastity_Device).applied(), "Until.Removed should expire after 2 days + 0.5 * duration");
+            Assertions.assertTrue(domain2.item(Toys.Chastity_Device).applied());
 
             script.debugger.advanceTime(3, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertFalse(domain1.item(Toys.Chastity_Device).applied());
-            assertTrue(domain2.item(Toys.Chastity_Device).applied());
+            Assertions.assertFalse(domain1.item(Toys.Chastity_Device).applied());
+            Assertions.assertTrue(domain2.item(Toys.Chastity_Device).applied());
 
             script.debugger.advanceTime(1, TimeUnit.DAYS);
             script.triggerAutoRemove();
-            assertFalse(domain1.item(Toys.Chastity_Device).applied());
-            assertFalse(domain2.item(Toys.Chastity_Device).applied());
+            Assertions.assertFalse(domain1.item(Toys.Chastity_Device).applied());
+            Assertions.assertFalse(domain2.item(Toys.Chastity_Device).applied());
         }
     }
 
@@ -173,13 +168,13 @@ public class ItemPersistencyTest {
             item.apply().over(2, TimeUnit.HOURS);
 
             script.debugger.advanceTime(1, TimeUnit.HOURS);
-            assertTrue(item.applied());
+            Assertions.assertTrue(item.applied());
 
             script.debugger.advanceTime(3, TimeUnit.HOURS);
-            assertTrue(item.applied());
+            Assertions.assertTrue(item.applied());
 
             script.debugger.advanceTime(Long.MAX_VALUE - 3, TimeUnit.HOURS);
-            assertTrue(item.applied());
+            Assertions.assertTrue(item.applied());
         }
     }
 
@@ -193,10 +188,10 @@ public class ItemPersistencyTest {
             script.debugger.clearStateMaps();
 
             script.debugger.advanceTime(3, TimeUnit.HOURS);
-            assertTrue("Auto Removal didn't account session startup time", item.applied());
+            Assertions.assertTrue(item.applied(), "Auto Removal didn't account session startup time");
 
             script.debugger.advanceTime(Long.MAX_VALUE - 3, TimeUnit.HOURS);
-            assertTrue("Auto Removal didn't account session startup time", item.applied());
+            Assertions.assertTrue(item.applied(), "Auto Removal didn't account session startup time");
         }
     }
 
@@ -213,8 +208,8 @@ public class ItemPersistencyTest {
             script.debugger.clearStateMaps();
 
             Item restored = script.item(Toys.Chastity_Device);
-            assertEquals(dispayName, restored.displayName());
-            assertTrue(restored.is(Until.Removed));
+            Assertions.assertEquals(dispayName, restored.displayName());
+            Assertions.assertTrue(restored.is(Until.Removed));
         }
     }
 
@@ -225,19 +220,19 @@ public class ItemPersistencyTest {
             Item item = script.item(Toys.Buttplug);
 
             item.apply().over(1, TimeUnit.HOURS).remember(Until.Removed);
-            assertEquals(0, item.duration().elapsed(TimeUnit.HOURS));
+            Assertions.assertEquals(0, item.duration().elapsed(TimeUnit.HOURS));
 
             script.debugger.advanceTime(1, TimeUnit.HOURS);
-            assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
+            Assertions.assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
 
             script.debugger.clearStateMaps();
-            assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
+            Assertions.assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
 
             item.remove();
-            assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
+            Assertions.assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
 
             script.debugger.clearStateMaps();
-            assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
+            Assertions.assertEquals(1, item.duration().elapsed(TimeUnit.HOURS));
         }
     }
 

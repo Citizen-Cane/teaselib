@@ -1,35 +1,45 @@
 package teaselib.core.ui;
 
-import static org.junit.Assert.assertEquals;
+
+import org.junit.jupiter.api.Test;
+import teaselib.Answer;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.Test;
-
-import teaselib.Answer;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ChoicesTest {
     @SuppressWarnings("unused")
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDuplicateText() {
-        new Choices(Locale.ENGLISH, Intention.Decide, new Choice(Answer.yes("Yes"), "Yes1"),
-                new Choice(Answer.resume("Yes"), "Yes2"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Choices(Locale.ENGLISH, Intention.Decide,
+                    new Choice(Answer.yes("Yes"), "Yes1"),
+                    new Choice(Answer.resume("Yes"), "Yes2"));
+        });
     }
 
     @SuppressWarnings("unused")
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDuplicateDisplay() {
-        new Choices(Locale.ENGLISH, Intention.Decide, new Choice(Answer.yes("Yes1"), "Yes"),
-                new Choice(Answer.yes("Yes2"), "Yes"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Choices(Locale.ENGLISH, Intention.Decide,
+                    new Choice(Answer.yes("Yes1"), "Yes"),
+                    new Choice(Answer.yes("Yes2"), "Yes"));
+        });
     }
 
     @SuppressWarnings("unused")
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDuplicateGestures() {
-        new Choices(Locale.ENGLISH, Intention.Decide, new Choice(Answer.yes("Yes1"), "Yes"),
-                new Choice(Answer.yes("Yes2"), "Yes"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Choices(Locale.ENGLISH, Intention.Decide,
+                    new Choice(Answer.yes("Yes1"), "Yes"),
+                    new Choice(Answer.yes("Yes2"), "Yes"));
+        });
     }
 
     @Test

@@ -1,6 +1,5 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -11,12 +10,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.NoSuchElementException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import teaselib.Resources;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.Stream;
 import teaselib.test.TestScript;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Citizen-Cane

@@ -1,18 +1,14 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.net.URL;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import teaselib.Actor;
 import teaselib.Mood;
@@ -20,6 +16,8 @@ import teaselib.Sexuality.Gender;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebugProxy;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TextToSpeechPlayerTest {
     static final TestTTS testTTS = new TestTTS();
@@ -37,7 +35,7 @@ public class TextToSpeechPlayerTest {
     private static final Voice MR_FOOBAR = new NativeVoice(0, testTTS, "Foobar", "en", Voice.Male,
             new VoiceInfo("Test", "English", "Mr.Foobar"));
 
-    @BeforeClass
+    @BeforeAll
     public static void initTestTTS() {
         testTTS.addVoices(MR_FOO, MR_FOO2, MR_FOO3, MR_BAR, MR_BAR2, MR_FOOBAR);
     }
@@ -58,7 +56,9 @@ public class TextToSpeechPlayerTest {
         Configuration config = new Configuration();
         new DebugSetup().withOutput().applyTo(config);
 
-        config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices.properties").getPath());
+        URL voices = getClass().getResource("voices.properties");
+        assertNotNull(voices);
+        config.set(TextToSpeechPlayer.Settings.Voices, voices.getPath());
         assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Voices)).exists());
 
         try (TextToSpeechPlayer tts = new TextToSpeechPlayer(config, testTTS)) {
@@ -73,7 +73,9 @@ public class TextToSpeechPlayerTest {
         Configuration config = new Configuration();
         new DebugSetup().withOutput().applyTo(config);
 
-        config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices.properties").getPath());
+        URL voices = getClass().getResource("voices.properties");
+        assertNotNull(voices);
+        config.set(TextToSpeechPlayer.Settings.Voices, voices.getPath());
         assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Voices)).exists());
 
         try (TextToSpeechPlayer tts = new TextToSpeechPlayer(config, testTTS)) {
@@ -81,7 +83,9 @@ public class TextToSpeechPlayerTest {
             assertEquals(MR_BAR2, tts.getVoiceFor(new Actor("Mr.Bar", Voice.Male, Locale.forLanguageTag("en-in"))));
             assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Voice.Male, Locale.ENGLISH)));
 
-            config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices2.properties").getPath());
+            URL voices2 = getClass().getResource("voices2.properties");
+            assertNotNull(voices2);
+            config.set(TextToSpeechPlayer.Settings.Voices, voices2.getPath());
             assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Voices)).exists());
 
             tts.reload();
@@ -93,9 +97,11 @@ public class TextToSpeechPlayerTest {
     }
 
     @Test
-    public void testPronountiationConfig() throws IOException {
+    public void testPronunciationConfig() throws IOException {
         Configuration config = DebugSetup.getConfiguration();
-        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+        URL pronunciation = getClass().getResource("pronunciation");
+        assertNotNull(pronunciation);
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, pronunciation.getPath());
         assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)).exists());
 
         PronunciationDictionary dict = new PronunciationDictionary(
@@ -107,15 +113,16 @@ public class TextToSpeechPlayerTest {
         assertEquals("sapiValue", test.get("languageSapiKey"));
         assertEquals("vendorMicrosoftValue", test.get("languageMicrosoftKey"));
         assertEquals("voiceZiraValue", test.get("voiceZiraKey"));
-
         assertEquals("overriddenByVoiceZiraValue2", test.get("languageTopLevelKey2"));
     }
 
     @Test
-    public void testPronountiationCorrection() throws IOException {
+    public void testPronunciationCorrection() throws IOException {
         Configuration config = DebugSetup.getConfiguration();
 
-        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+        URL pronunciation = getClass().getResource("pronunciation");
+        assertNotNull(pronunciation);
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, pronunciation.getPath());
         assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)).exists());
 
         PronunciationDictionary dict = new PronunciationDictionary(
@@ -130,12 +137,12 @@ public class TextToSpeechPlayerTest {
 
     @Test
     public void testPhonemeDictionarySetup() throws IOException {
-        testTTS.setPhoneticDictionary(
-                new PronunciationDictionary(new File(getClass().getResource("pronunciation").getPath())));
-
+        URL pronunciation = getClass().getResource("pronunciation");
+        assertNotNull(pronunciation);
+        testTTS.setPhoneticDictionary(new PronunciationDictionary(new File(pronunciation.getPath())));
         assertEquals("madam", testTTS.getEntry("fr", "Madame"));
         assertEquals("madam", testTTS.getEntry("fr-fr", "Madame"));
-        assertNull("H EH 1 L OW", testTTS.getEntry("en", "Hello"));
+        assertNull(testTTS.getEntry("en", "Hello"));
         assertEquals("H EH 1 L OW", testTTS.getEntry("en-au", "Hello"));
         assertNull(testTTS.getEntry("en-uk", "Hello world"));
         assertNull(testTTS.getEntry("fr", "UPS-Ignored"));
@@ -146,13 +153,15 @@ public class TextToSpeechPlayerTest {
         Configuration config = new Configuration();
         new DebugSetup().withOutput().withDictionaries().applyTo(config);
 
-        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+        URL pronunciation = getClass().getResource("pronunciation");
+        assertNotNull(pronunciation);
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, pronunciation.getPath());
         assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)).exists());
 
         TextToSpeechImplementation tts = new TextToSpeechImplementationDebugProxy(new TestTTS() {
             @Override
             public List<Voice> getVoices() {
-                return Arrays.asList(new NativeVoice(0, this, "Foo", "en-au", Voice.Male,
+                return List.of(new NativeVoice(0, this, "Foo", "en-au", Voice.Male,
                         new VoiceInfo("Test", "English-AU", "Mr.Foo")));
             }
 
@@ -163,9 +172,9 @@ public class TextToSpeechPlayerTest {
         });
 
         try (TextToSpeechPlayer textToSpeechPlayer = new TextToSpeechPlayer(config, tts)) {
-            // TODO Should throw without pronunciation dictionary in setup but oesn't
-            textToSpeechPlayer.speak(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-au")), "Hello",
-                    Mood.Neutral);
+            // TODO Should throw without pronunciation dictionary in setup but doesn't
+            textToSpeechPlayer.speak(new Actor(
+                    "Mr.Foo", Voice.Male, Locale.forLanguageTag("en-au")), "Hello", Mood.Neutral);
         }
     }
 }

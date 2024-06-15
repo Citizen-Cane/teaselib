@@ -1,14 +1,13 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.junit.Test;
 
 public class PreferredVoicesTest {
     @Test
@@ -23,9 +22,9 @@ public class PreferredVoicesTest {
 
         List<Entry<String, String>> result = new ArrayList<>(sorted.entrySet());
 
-        assertEquals("3", result.get(0).getValue());
-        assertEquals("2", result.get(1).getValue());
-        assertEquals("1", result.get(2).getValue());
+        Assertions.assertEquals("3", result.get(0).getValue());
+        Assertions.assertEquals("2", result.get(1).getValue());
+        Assertions.assertEquals("1", result.get(2).getValue());
     }
 
     @Test
@@ -40,9 +39,9 @@ public class PreferredVoicesTest {
 
         List<Entry<String, String>> result = new ArrayList<>(sorted.entrySet());
 
-        assertEquals("3", result.get(0).getValue());
-        assertEquals("2", result.get(1).getValue());
-        assertEquals("1", result.get(2).getValue());
+        Assertions.assertEquals("3", result.get(0).getValue());
+        Assertions.assertEquals("2", result.get(1).getValue());
+        Assertions.assertEquals("1", result.get(2).getValue());
     }
 
     @Test
@@ -57,8 +56,8 @@ public class PreferredVoicesTest {
 
         List<Entry<String, String>> result = new ArrayList<>(sorted.entrySet());
 
-        assertEquals("3", result.get(0).getValue());
-        assertEquals("2", result.get(1).getValue());
-        assertEquals("1", result.get(2).getValue());
+        Assertions.assertEquals("3", result.get(0).getValue());
+        Assertions.assertEquals("2", result.get(1).getValue());
+        Assertions.assertEquals("1", result.get(2).getValue());
     }
 }

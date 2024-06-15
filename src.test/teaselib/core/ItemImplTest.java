@@ -1,11 +1,5 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -16,7 +10,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Disabled;
 
 import teaselib.Accessoires;
@@ -39,6 +33,8 @@ import teaselib.core.util.QualifiedString;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ItemImplTest {
 
@@ -72,12 +68,12 @@ public class ItemImplTest {
             assertEquals(0, script.storage.size());
             item.setAvailable(false);
             assertEquals(1, script.storage.size());
-            assertEquals(false, item.isAvailable());
+            assertFalse(item.isAvailable());
             assertEquals(false, value.value());
 
             item.setAvailable(true);
             assertEquals(1, script.storage.size());
-            assertEquals(true, item.isAvailable());
+            assertTrue(item.isAvailable());
             assertEquals(true, value.value());
         }
     }
@@ -285,7 +281,7 @@ public class ItemImplTest {
     }
 
     private static void say(String message, boolean assertion) {
-        assertTrue(message, assertion);
+        assertTrue(assertion, message);
     }
 
     @Test
@@ -401,7 +397,7 @@ public class ItemImplTest {
             gag.apply();
 
             assertTrue(gag.applied());
-            assertFalse("Already applied", gag.canApply());
+            assertFalse(gag.canApply(), "Already applied");
             assertTrue(gag.is(Body.InMouth));
         }
     }

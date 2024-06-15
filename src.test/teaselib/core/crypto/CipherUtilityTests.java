@@ -1,6 +1,7 @@
 package teaselib.core.crypto;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -23,16 +24,16 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Encryption tests.
  */
-public class CipherUtilityTests {
+class CipherUtilityTests {
     private static final Logger logger = LoggerFactory.getLogger(CipherUtilityTests.class);
 
     File currentDir = new File(getClass().getResource(getClass().getSimpleName() + ".class").getPath()).getParentFile();
@@ -40,7 +41,7 @@ public class CipherUtilityTests {
     File encryptedKeyFile = new File(resources, "encryptedKey.key");
     File[] testFiles;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() {
         // Installed ciphers
         for (Provider provider : Security.getProviders()) {
@@ -52,7 +53,7 @@ public class CipherUtilityTests {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         testFiles = new File[] { new File(resources, "test1.png"), new File(resources, "test2.jpg"),
                 new File(resources, "test3.jpg") };

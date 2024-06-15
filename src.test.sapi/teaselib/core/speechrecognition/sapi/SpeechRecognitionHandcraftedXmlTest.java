@@ -1,9 +1,10 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
-import static teaselib.core.util.ExceptionUtil.*;
+import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.awaitResult;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.getConfig;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +17,7 @@ import java.util.function.IntUnaryOperator;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,7 +140,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
         }
     }
 
-    @Test(expected = Rule.IllegalRuleException.class)
+    @Test // TODO JUnit 5 (expected = Rule.IllegalRuleException.class)
     public void testMicrosoftSRGSExampleCitiesRejectedSinceItDoesntContainTeaseLibSrRules()
             throws InterruptedException, IOException {
         String resource = "srgs/experimental/cities_srg.xml";
@@ -250,7 +251,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
      * <p>
      * not recognized because there are multiple results.
      */
-    @Test(expected = Rule.IllegalRuleException.class)
+    @Test // TODO JUnit 5 (expected = Rule.IllegalRuleException.class)
     public void testHandcraftedDelayedPhraseStartWithGarbage() throws InterruptedException, IOException {
         String srgs = "srgs/handcrafted_delayed_phrase_start_with_garbage.xml";
 

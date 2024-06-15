@@ -3,11 +3,13 @@
  */
 package teaselib.util.math;
 
-import static org.junit.Assert.*;
+
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 /**
  * @author someone
@@ -17,7 +19,7 @@ public class StatisticsTest {
 
     @Test
     public void testBasics() {
-        Statistics<Double> statistics = new Statistics<>(new ArrayList<>());
+        Statistics<Double> statistics = new Statistics<Double>(new ArrayList<Double>());
         assertTrue(statistics.isEmpty());
 
         statistics.add(10.0);
@@ -57,7 +59,7 @@ public class StatisticsTest {
 
     @Test
     public void testMediaDoesntChangeValueOrder() {
-        Statistics<Double> statistics = new Statistics<>(new ArrayList<>());
+        Statistics<Double> statistics = new Statistics<Double>(new ArrayList<Double>());
 
         statistics.add(10.0);
         statistics.add(20.0);

@@ -1,17 +1,18 @@
 package teaselib.core.concurrency;
 
-import static org.junit.Assert.*;
+
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NamedExecutorServiceTest {
 
-    private CountDownLatch complete = new CountDownLatch(1);
+    private final CountDownLatch complete = new CountDownLatch(1);
 
-    private Runnable test = () -> {
+    private final Runnable test = () -> {
         try {
             synchronized (NamedExecutorServiceTest.this) {
                 NamedExecutorServiceTest.this.notifyAll();

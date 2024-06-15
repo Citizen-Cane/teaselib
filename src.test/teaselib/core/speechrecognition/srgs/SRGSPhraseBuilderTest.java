@@ -1,23 +1,18 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
+import teaselib.core.ui.Intention;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
-
-import org.junit.Test;
-
-import teaselib.core.ui.Choice;
-import teaselib.core.ui.Choices;
-import teaselib.core.ui.Intention;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 public class SRGSPhraseBuilderTest {
 
@@ -26,9 +21,9 @@ public class SRGSPhraseBuilderTest {
         Sequence<PhraseString> test = new Sequence<>(
                 Arrays.asList(new PhraseString("Foo", 0), new PhraseString("bar", 0)), PhraseString.Traits);
 
-        assertEquals("Foo bar", test.toString());
-        assertFalse(test.toString().startsWith("["));
-        assertFalse(test.toString().endsWith("]"));
+        Assertions.assertEquals("Foo bar", test.toString());
+        Assertions.assertFalse(test.toString().startsWith("["));
+        Assertions.assertFalse(test.toString().endsWith("]"));
     }
 
     @Test
@@ -38,7 +33,7 @@ public class SRGSPhraseBuilderTest {
                 new Choice("A, B"), new Choice("A, C"));
         SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
         String xml = srgs.toXML();
-        assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
     }
 
     @Test
@@ -48,7 +43,7 @@ public class SRGSPhraseBuilderTest {
                 new Choice("A, C"), new Choice("B, C"));
         SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
         String xml = srgs.toXML();
-        assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
     }
 
     @Test
@@ -58,7 +53,7 @@ public class SRGSPhraseBuilderTest {
                 new Choice("A C, D"), new Choice("B C, E"));
         SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
         String xml = srgs.toXML();
-        assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
     }
 
     @Test
@@ -68,7 +63,7 @@ public class SRGSPhraseBuilderTest {
                 new Choice("A B, D"), new Choice("A C, D"));
         SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
         String xml = srgs.toXML();
-        assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
     }
 
     @Test
@@ -78,18 +73,18 @@ public class SRGSPhraseBuilderTest {
                 new Choice("A B"), new Choice("B C"));
         SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
         String xml = srgs.toXML();
-        assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
     }
 
     @Test
     public void testSingleChoiceMultiplePhrasesAreDistinct()
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
-        String[] yes = { "Yes Miss, of course", "Of course, Miss" };
+        String[] yes = {"Yes Miss, of course", "Of course, Miss"};
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice("Yes #title, of course", "Yes Miss, of course", yes));
         SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
         String xml = srgs.toXML();
-        assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
     }
 
     @Test
@@ -102,7 +97,7 @@ public class SRGSPhraseBuilderTest {
                 new Choice("A B3 C2 D"));
         SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
         String xml = srgs.toXML();
-        assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
     }
 
     @Test
@@ -115,7 +110,7 @@ public class SRGSPhraseBuilderTest {
                 new Choice("A B3 C2 D"));
         SRGSPhraseBuilder srgs = new SRGSPhraseBuilder(choices, "en_us");
         String xml = srgs.toXML();
-        assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
     }
 
     private static final Choice Optional = new Choice("");
@@ -123,10 +118,10 @@ public class SRGSPhraseBuilderTest {
     @Test
     public void testSRGSBuilderMultipleChoiceResults() {
         String template = "A %0 %1, %2";
-        Choice[] material = { new Choice("leather"), new Choice("rubber"), Optional };
-        Choice[] dogToy = { new Choice("ball"), new Choice("bone"), new Choice("dildo") };
-        Choice[] formOfAddress = { new Choice("#title", "Miss", "Miss", "Mistress", "dear Mistress") };
-        Choice[][] args = { material, dogToy, formOfAddress };
+        Choice[] material = {new Choice("leather"), new Choice("rubber"), Optional};
+        Choice[] dogToy = {new Choice("ball"), new Choice("bone"), new Choice("dildo")};
+        Choice[] formOfAddress = {new Choice("#title", "Miss", "Miss", "Mistress", "dear Mistress")};
+        Choice[][] args = {material, dogToy, formOfAddress};
 
         List<Sequences<PhraseString>> slices = new ArrayList<>();
         for (String word : PhraseString.words(template)) {
@@ -146,7 +141,7 @@ public class SRGSPhraseBuilderTest {
             }
         }
 
-        assertEquals(4, slices.size());
+        Assertions.assertEquals(4, slices.size());
         // assertEquals(Phrases.rule(0, 0, "A"), phrases.get(0));
         // assertEquals(Phrases.rule(0, 1, "leather", "rubber", ""), phrases.get(1));
         // assertEquals(Phrases.rule(0, 2, "ball", "bone", "dildo"), phrases.get(2));

@@ -1,14 +1,7 @@
 package teaselib.stimulation.ext;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import teaselib.Body;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.StimulationDevice;
@@ -17,13 +10,17 @@ import teaselib.stimulation.pattern.Tease;
 import teaselib.stimulation.pattern.Walk;
 import teaselib.stimulation.pattern.Whip;
 
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 public class IntentionBasedControllerTest {
     private final class TestController extends IntentionBasedController<Intention, Body> {
         Consumer<List<StimulationTarget>> testActionList;
         BiConsumer<StimulationDevice, StimulationTargets> testDeviceEntry;
 
         public TestController(Consumer<List<StimulationTarget>> testActionList,
-                BiConsumer<StimulationDevice, StimulationTargets> testDeviceEntry) {
+                              BiConsumer<StimulationDevice, StimulationTargets> testDeviceEntry) {
             this.testActionList = testActionList;
             this.testDeviceEntry = testDeviceEntry;
         }
@@ -52,8 +49,7 @@ public class IntentionBasedControllerTest {
         Stimulator stim3 = device2.add(new TestStimulator(device2, 3));
 
         IntentionBasedController<Intention, Body> c = new TestController(
-                (stimulationActions) -> assertEquals(2, stimulationActions.size()), (device, items) -> assertTrue(
-                        (device == device1 && items.size() == 1) || (device == device2 && items.size() == 2)));
+                (stimulationActions) -> Assertions.assertEquals(2, stimulationActions.size()), (device, items) -> Assertions.assertTrue((device == device1 && items.size() == 1) || (device == device2 && items.size() == 2)));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Pain, stim3);
@@ -74,11 +70,10 @@ public class IntentionBasedControllerTest {
         Stimulator stim3 = device2.add(new TestStimulator(device2, 3));
 
         IntentionBasedController<Intention, Body> c = new TestController(
-                (stimulationActions) -> assertEquals(2, stimulationActions.size()),
-                (device, items) -> assertTrue(
-                        (device == device1 && items.size() == 1 && items.get(0).stimulator == stim1)
-                                || (device == device2 && items.size() == 2 && items.get(0) == StimulationTarget.EMPTY
-                                        && items.get(1).stimulator == stim3)));
+                (stimulationActions) -> Assertions.assertEquals(2, stimulationActions.size()),
+                (device, items) -> Assertions.assertTrue((device == device1 && items.size() == 1 && items.get(0).stimulator == stim1)
+                        || (device == device2 && items.size() == 2 && items.get(0) == StimulationTarget.EMPTY
+                        && items.get(1).stimulator == stim3)));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Pain, stim3);
@@ -98,11 +93,10 @@ public class IntentionBasedControllerTest {
         Stimulator stim3 = device2.add(new TestStimulator(device2, 3));
 
         IntentionBasedController<Intention, Body> c = new TestController(
-                (stimulationActions) -> assertEquals(3, stimulationActions.size()),
-                (device, items) -> assertTrue(
-                        (device == device1 && items.size() == 1 && items.get(0).stimulator == stim1)
-                                || (device == device2 && items.size() == 2 && items.get(0).stimulator == stim2
-                                        && items.get(1).stimulator == stim3)));
+                (stimulationActions) -> Assertions.assertEquals(3, stimulationActions.size()),
+                (device, items) -> Assertions.assertTrue((device == device1 && items.size() == 1 && items.get(0).stimulator == stim1)
+                        || (device == device2 && items.size() == 2 && items.get(0).stimulator == stim2
+                        && items.get(1).stimulator == stim3)));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Pain, stim3);

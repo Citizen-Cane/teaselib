@@ -1,8 +1,12 @@
 package teaselib.core.sound;
 
-import static org.junit.Assume.*;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import teaselib.host.Host.Audio;
+import teaselib.test.TestScript;
 
+import javax.sound.sampled.AudioFileFormat.Type;
+import javax.sound.sampled.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -12,23 +16,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.sound.sampled.AudioFileFormat.Type;
-import javax.sound.sampled.BooleanControl;
-import javax.sound.sampled.CompoundControl;
-import javax.sound.sampled.Control;
-import javax.sound.sampled.EnumControl;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.Line;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.Mixer;
-import javax.sound.sampled.Port;
-import javax.sound.sampled.UnsupportedAudioFileException;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
-import teaselib.host.Host.Audio;
-import teaselib.test.TestScript;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class AudioSystemTest {
 
@@ -109,7 +98,7 @@ public class AudioSystemTest {
             return toReturn.substring(0, toReturn.length() - 1);
         }
         if (thisControl instanceof EnumControl) {
-            return "\t\t    Control:" + type + " (enum: " + thisControl.toString() + ")";
+            return "\t\t    Control:" + type + " (enum: " + thisControl + ")";
         }
         if (thisControl instanceof FloatControl) {
             return "\t\t    Control: " + type + " (float: from " +
@@ -123,7 +112,7 @@ public class AudioSystemTest {
     public void printAudioDevices() {
         var lines = printDevices();
         assertNotNull(lines);
-        assumeTrue(lines.size() > 0);
+        assertFalse(lines.isEmpty());
     }
 
     // Audio-Service-Provider:
@@ -147,13 +136,13 @@ public class AudioSystemTest {
 
             var speakers = audioSystem.output.devices();
             assertNotNull(speakers);
-            assumeTrue(speakers.size() > 0);
+            assumeTrue(!speakers.isEmpty());
             assertNotNull(audioSystem.defaultOutput());
             assertFalse(speakers.contains(audioSystem.defaultOutput()));
 
             var mics = audioSystem.input.devices();
             assertNotNull(mics);
-            assumeTrue(mics.size() > 0);
+            assumeTrue(!mics.isEmpty());
             assertNotNull(audioSystem.defaultInput());
             assertFalse(mics.contains(audioSystem.defaultInput()));
         }
@@ -166,7 +155,7 @@ public class AudioSystemTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testAudioSystemReadMp3SpeechLong()
             throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException, ExecutionException {
         testMP3("1.mp3", 758110);
@@ -182,7 +171,7 @@ public class AudioSystemTest {
             var playing = audio.start();
             Thread.sleep(1000);
             playing.cancel(true);
-            assertThrows(CancellationException.class, () -> playing.get());
+            assertThrows(CancellationException.class, playing::get);
         }
     }
 
@@ -200,7 +189,7 @@ public class AudioSystemTest {
             audio.setBalance(1.0f);
             Thread.sleep(1000);
             playing.cancel(true);
-            assertThrows(CancellationException.class, () -> playing.get());
+            assertThrows(CancellationException.class, playing::get);
         }
     }
 

@@ -1,41 +1,24 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
-import org.junit.runners.Parameterized;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.debug.DebugHost;
-import teaselib.test.IntegrationTests;
 import teaselib.test.TestScript;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // TODO sometimes blocks because timeAdvanceListener locks prompt in render thread to invoke a second handler
 // - find out who has locked the prompt
 
-@Category(IntegrationTests.class)
-@RunWith(Parameterized.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesInputMethodHandlerTest {
-
-    @Parameterized.Parameters
-    public static List<Object[]> data() {
-        return Arrays.asList(new Object[ShowChoicesAbstractTest.ITERATIONS][0]);
-    }
 
     TeaseScript script;
     Debugger debugger;
@@ -43,7 +26,7 @@ public class ShowChoicesInputMethodHandlerTest {
     DebugHost host;
     TeaseLib teaseLib;
 
-    @Before
+    @BeforeEach
     public void init() throws IOException {
         host = new DebugHost();
         teaseLib = new TeaseLib(host, new DebugSetup());
@@ -68,7 +51,7 @@ public class ShowChoicesInputMethodHandlerTest {
         count = new AtomicInteger(0);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         teaseLib.close();
         host.close();

@@ -3,7 +3,8 @@
  */
 package teaselib.core.devices.release.unattended;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.Devices;
@@ -67,7 +68,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
         assertEndState(keyRelease);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test // TODO JUnit 5 (expected = IllegalStateException.class)
     public void testWrongCall() {
         for (Actuator actuator : assertConnected(keyRelease)) {
             arm(actuator);

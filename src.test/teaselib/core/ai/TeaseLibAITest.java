@@ -1,10 +1,9 @@
 package teaselib.core.ai;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -15,7 +14,9 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public class TeaseLibAITest {
 
     @Test
     public void loadNativeLibrary() {
-        try (TeaseLibAI teaseLibAI = new TeaseLibAI();
+        try (TeaseLibAI ignored = new TeaseLibAI();
                 NativeObjectList<SceneCapture> devices = SceneCapture.devices()) {
             assertNotNull(devices);
             int n = 0;
@@ -51,7 +52,7 @@ public class TeaseLibAITest {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI();
                 NativeObjectList<SceneCapture> devices = SceneCapture.devices()) {
             assertNotNull(devices);
-            assumeFalse("No Scene Capture devices found", devices.isEmpty());
+            Assumptions.assumeFalse(devices.isEmpty(), "No Scene Capture devices found");
             Runnable test = () -> {
                 try (HumanPose humanPose = new HumanPose()) {
                     humanPose.setInterests(Interest.Head);
@@ -149,22 +150,22 @@ public class TeaseLibAITest {
                             "images/p2_320x240_01.jpg", Rotation.None);
                     assertNotNull(poses1_n);
                     assertEquals(2, poses1_n.size());
-                    assertEquals(1.55, poses1_n.get(0).distance.get(), 0.01);
-                    assertEquals(1.41, poses1_n.get(1).distance.get(), 0.01);
+                    assertEquals(1.55, poses1_n.get(0).distance.orElseThrow(), 0.01);
+                    assertEquals(1.41, poses1_n.get(1).distance.orElseThrow(), 0.01);
 
                     humanPose.setInterests(Interest.Pose);
                     List<HumanPose.Estimation> poses2_n = poses(humanPose,
                             "images/handsup1_camera_rotated_clockwise_01.jpg", Rotation.CounterClockwise);
                     assertNotNull(poses2_n);
                     assertEquals(1, poses2_n.size());
-                    assertEquals(0.994f, poses2_n.get(0).distance.get(), 0.04);
+                    assertEquals(0.994f, poses2_n.get(0).distance.orElseThrow(), 0.04);
 
                     humanPose.setInterests(Interest.Pose);
                     List<HumanPose.Estimation> poses_2cc = poses(humanPose,
                             "images/handsup1.jpg", Rotation.None);
                     assertNotNull(poses_2cc);
                     assertEquals(1, poses_2cc.size());
-                    assertEquals(0.99f, poses_2cc.get(0).distance.get(), 0.04);
+                    assertEquals(0.99f, poses_2cc.get(0).distance.orElseThrow(), 0.04);
                 } catch (IOException e) {
                     throw ExceptionUtil.asRuntimeException(e);
                 }
@@ -173,9 +174,9 @@ public class TeaseLibAITest {
         }
     }
 
-    private static Object runAccelerated(TeaseLibAI teaseLibAI, Runnable test) throws InterruptedException {
+    private static void runAccelerated(TeaseLibAI teaseLibAI, Runnable test) throws InterruptedException {
         try {
-            return teaseLibAI.getExecutor(ExecutionType.Accelerated).submit(test).get();
+            teaseLibAI.getExecutor(ExecutionType.Accelerated).submit(test).get();
         } catch (ExecutionException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
@@ -249,26 +250,29 @@ public class TeaseLibAITest {
         assertEquals(0, poses.size());
     }
 
+    @Test
     public void testImageStabilityNullByteArray() {
-        testIllegalArgument(null);
+        assertThrows(NullPointerException.class, () -> testNotAnImage(null));
     }
 
+    @Test
     public void testImageStabilityEmptyByteArray() {
-        testIllegalArgument(new byte[0]);
+        assertThrows(IllegalArgumentException.class, () -> testNotAnImage(new byte[0]));
     }
 
+    @Test
     public void testImageStabilityNotAnImage() {
-        testIllegalArgument(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+        assertThrows(IllegalArgumentException.class, () -> testNotAnImage(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }));
     }
 
-    private static void testIllegalArgument(byte[] image) throws UnsatisfiedLinkError {
+    private static void testNotAnImage(byte[] image) throws UnsatisfiedLinkError, InterruptedException {
         try (TeaseLibAI teaseLibAI = new TeaseLibAI()) {
             Runnable test = () -> {
                 try (HumanPose humnaPose = new HumanPose()) {
                     humnaPose.poses(image, Rotation.None);
                 }
             };
-            assertThrows(IllegalArgumentException.class, () -> runAccelerated(teaseLibAI, test));
+            runAccelerated(teaseLibAI, test);
         }
     }
 
@@ -300,10 +304,10 @@ public class TeaseLibAITest {
                     assertEquals(Proximity.NEAR, poses2.get(0).proximity());
 
                     var timestamp3 = System.currentTimeMillis();
-                    assertThrows(
-                            "Expected Device Lost since cacpture sequence doesn't contain any more images",
+                    Assertions.assertThrows(
                             DeviceLost.class,
-                            () -> humanPose2.poses(sceneCapture, timestamp3));
+                            () -> humanPose2.poses(sceneCapture, timestamp3),
+                            "Expected Device Lost since capture sequence doesn't contain any more images");
                 }
             };
             runAccelerated(teaseLibAI, test);

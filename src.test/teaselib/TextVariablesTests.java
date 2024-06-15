@@ -1,18 +1,16 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import teaselib.Sexuality.Gender;
+import teaselib.test.TestScript;
+import teaselib.util.TextVariables;
+import teaselib.util.TextVariables.FormOfAddress;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-
-import org.junit.Test;
-
-import teaselib.Sexuality.Gender;
-import teaselib.test.TestScript;
-import teaselib.util.TextVariables;
-import teaselib.util.TextVariables.FormOfAddress;
 
 public class TextVariablesTests {
     enum Names {
@@ -32,7 +30,7 @@ public class TextVariablesTests {
     @Test
     public void testMatching() {
         TextVariables testData = createTestData();
-        assertEquals("My name is Peter.", testData.expand("My name is #" + testData.get(Names.First) + "."));
+        Assertions.assertEquals("My name is Peter.", testData.expand("My name is #" + testData.get(Names.First) + "."));
     }
 
     @Test
@@ -40,7 +38,7 @@ public class TextVariablesTests {
         TextVariables testData = createTestData();
         List<String> expected = Arrays.asList("First name: Peter.", "Second name: Paul.");
         List<String> actual = Arrays.asList("First name: #first.", "Second name: #second.");
-        assertEquals(expected, testData.expand(actual));
+        Assertions.assertEquals(expected, testData.expand(actual));
     }
 
     @Test
@@ -48,14 +46,14 @@ public class TextVariablesTests {
         TextVariables testData = createTestData();
         List<String> expected = Arrays.asList("First name: Peter.", "Second name: Paul.");
         List<String> actual = Arrays.asList("First name: #First.", "Second name: #sECond.");
-        assertEquals(expected, testData.expand(actual));
+        Assertions.assertEquals(expected, testData.expand(actual));
     }
 
     @Test
     public void testNonExisting() {
         List<String> expected = Arrays.asList("Yes, AAaa", "No, aAAa");
         List<String> actual = Arrays.asList("Yes, #AAaa", "No, #aAAa");
-        assertEquals(expected, new TextVariables().expand(actual));
+        Assertions.assertEquals(expected, new TextVariables().expand(actual));
     }
 
     @Test
@@ -64,7 +62,7 @@ public class TextVariablesTests {
         List<String> expected = Arrays.asList("Yes, " + actor.textVariables.get(FormOfAddress.Name),
                 "No, " + actor.textVariables.get(FormOfAddress.FullName));
         List<String> actual = Arrays.asList("Yes, #name", "No, #FullName");
-        assertEquals(expected, actor.textVariables.expand(actual));
+        Assertions.assertEquals(expected, actor.textVariables.expand(actual));
     }
 
     @Test
@@ -72,11 +70,11 @@ public class TextVariablesTests {
         try (TestScript script = new TestScript(TestScript.newActor(Gender.Feminine, Locale.UK))) {
             script.persistence.newEnum(Gender.class).set(Gender.Masculine);
 
-            assertEquals("en", script.actor.locale().getLanguage());
-            assertEquals("slave", script.expandTextVariables("#slave"));
-            assertEquals("slave", script.expandTextVariables("#slave_title"));
-            assertEquals("slave", script.expandTextVariables("#slave_name"));
-            assertEquals("Slave", script.expandTextVariables("#slave_fullname"));
+            Assertions.assertEquals("en", script.actor.locale().getLanguage());
+            Assertions.assertEquals("slave", script.expandTextVariables("#slave"));
+            Assertions.assertEquals("slave", script.expandTextVariables("#slave_title"));
+            Assertions.assertEquals("slave", script.expandTextVariables("#slave_name"));
+            Assertions.assertEquals("Slave", script.expandTextVariables("#slave_fullname"));
         }
     }
 
@@ -85,11 +83,11 @@ public class TextVariablesTests {
         try (TestScript script = new TestScript(TestScript.newActor(Gender.Masculine, Locale.UK))) {
             script.persistence.newEnum(Gender.class).set(Gender.Feminine);
 
-            assertEquals("en", script.actor.locale().getLanguage());
-            assertEquals("slave-girl", script.expandTextVariables("#slave"));
-            assertEquals("slave-girl", script.expandTextVariables("#slave_title"));
-            assertEquals("slave-girl", script.expandTextVariables("#slave_name"));
-            assertEquals("Slave-girl", script.expandTextVariables("#slave_fullname"));
+            Assertions.assertEquals("en", script.actor.locale().getLanguage());
+            Assertions.assertEquals("slave-girl", script.expandTextVariables("#slave"));
+            Assertions.assertEquals("slave-girl", script.expandTextVariables("#slave_title"));
+            Assertions.assertEquals("slave-girl", script.expandTextVariables("#slave_name"));
+            Assertions.assertEquals("Slave-girl", script.expandTextVariables("#slave_fullname"));
         }
     }
 
@@ -98,11 +96,11 @@ public class TextVariablesTests {
         try (TestScript script = new TestScript(TestScript.newActor(Gender.Feminine, Locale.GERMAN))) {
             script.persistence.newEnum(Gender.class).set(Gender.Masculine);
 
-            assertEquals("de", script.actor.locale().getLanguage());
-            assertEquals("Sklave", script.expandTextVariables("#slave"));
-            assertEquals("Sklave", script.expandTextVariables("#slave_title"));
-            assertEquals("Sklave", script.expandTextVariables("#slave_name"));
-            assertEquals("Sklave", script.expandTextVariables("#slave_fullname"));
+            Assertions.assertEquals("de", script.actor.locale().getLanguage());
+            Assertions.assertEquals("Sklave", script.expandTextVariables("#slave"));
+            Assertions.assertEquals("Sklave", script.expandTextVariables("#slave_title"));
+            Assertions.assertEquals("Sklave", script.expandTextVariables("#slave_name"));
+            Assertions.assertEquals("Sklave", script.expandTextVariables("#slave_fullname"));
         }
     }
 
@@ -111,11 +109,11 @@ public class TextVariablesTests {
         try (TestScript script = new TestScript(TestScript.newActor(Gender.Masculine, Locale.GERMAN))) {
             script.persistence.newEnum(Gender.class).set(Gender.Feminine);
 
-            assertEquals("de", script.actor.locale().getLanguage());
-            assertEquals("Sklavin", script.expandTextVariables("#slave"));
-            assertEquals("Sklavin", script.expandTextVariables("#slave_title"));
-            assertEquals("Sklavin", script.expandTextVariables("#slave_name"));
-            assertEquals("Sklavin", script.expandTextVariables("#slave_fullname"));
+            Assertions.assertEquals("de", script.actor.locale().getLanguage());
+            Assertions.assertEquals("Sklavin", script.expandTextVariables("#slave"));
+            Assertions.assertEquals("Sklavin", script.expandTextVariables("#slave_title"));
+            Assertions.assertEquals("Sklavin", script.expandTextVariables("#slave_name"));
+            Assertions.assertEquals("Sklavin", script.expandTextVariables("#slave_fullname"));
         }
     }
 

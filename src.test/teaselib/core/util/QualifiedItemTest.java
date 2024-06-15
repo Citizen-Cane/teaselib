@@ -1,11 +1,9 @@
 package teaselib.core.util;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 
-import org.junit.Test;
 
+import org.junit.jupiter.api.Test;
 import teaselib.Material;
 import teaselib.Toys;
 import teaselib.core.ItemImpl;
@@ -14,13 +12,13 @@ import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class QualifiedItemTest {
 
     @Test
     public void testEquals() {
         QualifiedString itemFromEnum = QualifiedString.of(Toys.Dildo);
-        assertEquals(itemFromEnum, itemFromEnum);
-
         QualifiedString itemFromString = QualifiedString.of("teaselib.Toys.Dildo");
         assertEquals(itemFromEnum, itemFromString);
         assertEquals(itemFromEnum, QualifiedString.of(Toys.Dildo));
@@ -29,7 +27,6 @@ public class QualifiedItemTest {
         assertNotEquals(itemFromEnum, QualifiedString.of(Toys.Buttplug));
         assertNotEquals(itemFromEnum, QualifiedString.of("teaselib.Toys.Buttplug"));
 
-        assertEquals(itemFromString, itemFromString);
         assertEquals(itemFromString, itemFromEnum);
         assertEquals(itemFromString, QualifiedString.of(Toys.Dildo));
         assertEquals(itemFromString, QualifiedString.of("teaselib.Toys.Dildo"));
@@ -41,8 +38,6 @@ public class QualifiedItemTest {
     @Test
     public void testIs() {
         QualifiedString itemFromEnum = QualifiedString.of(Toys.Dildo);
-        assertEquals(itemFromEnum, itemFromEnum);
-
         QualifiedString itemFromString = QualifiedString.of("teaselib.Toys.Dildo");
         assertEquals(itemFromEnum, itemFromString);
         assertTrue(itemFromEnum.is(Toys.Dildo));
@@ -51,7 +46,6 @@ public class QualifiedItemTest {
         assertFalse(itemFromEnum.is(Toys.Buttplug));
         assertFalse(itemFromEnum.is("teaselib.Toys.Buttplug"));
 
-        assertEquals(itemFromString, itemFromString);
         assertEquals(itemFromString, itemFromEnum);
         assertTrue(itemFromEnum.is(Toys.Dildo));
         assertTrue(itemFromEnum.is("teaselib.Toys.Dildo"));

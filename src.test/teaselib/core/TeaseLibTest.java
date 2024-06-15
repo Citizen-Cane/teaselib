@@ -1,13 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import teaselib.test.TestScript;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-
-import teaselib.test.TestScript;
 
 public class TeaseLibTest {
     @Test
@@ -19,7 +17,7 @@ public class TeaseLibTest {
             long expected = teaseLib.getTime(TimeUnit.MILLISECONDS);
             teaseLib.freezeTime();
             long actual = teaseLib.getTime(TimeUnit.MILLISECONDS);
-            assertEquals(expected, actual);
+            Assertions.assertEquals(expected, actual);
         }
     }
 
@@ -34,7 +32,7 @@ public class TeaseLibTest {
             long expected = teaseLib.getTime(TimeUnit.SECONDS);
             teaseLib.freezeTime();
             long actual = teaseLib.getTime(TimeUnit.SECONDS);
-            assertEquals(expected, actual);
+            Assertions.assertEquals(expected, actual);
         }
     }
 }

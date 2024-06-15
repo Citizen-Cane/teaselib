@@ -1,17 +1,14 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.IOException;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import teaselib.Resources;
 import teaselib.core.InstructionalImages;
 import teaselib.test.TestScript;
+
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class InstructionalImagesTest {
 
@@ -26,9 +23,9 @@ public class InstructionalImagesTest {
 
             var images = new InstructionalImages(resources);
             assertTrue(images.contains(TEST_PICTURE_SET + "p1.jpg"));
-            assertNotNull(images.annotated(TEST_PICTURE_SET + "p1.jpg"));
+            Assertions.assertNotNull(images.annotated(TEST_PICTURE_SET + "p1.jpg"));
             assertTrue(images.contains("p1.jpg"));
-            assertNotNull(images.annotated("p1.jpg"));
+            Assertions.assertNotNull(images.annotated("p1.jpg"));
         }
     }
 

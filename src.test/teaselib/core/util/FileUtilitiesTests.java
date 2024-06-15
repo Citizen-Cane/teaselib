@@ -3,14 +3,16 @@
  */
 package teaselib.core.util;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Citizen-Cane
@@ -19,22 +21,22 @@ import org.junit.rules.TemporaryFolder;
 public class FileUtilitiesTests {
     File currentDir = new File(getClass().getResource(getClass().getSimpleName() + ".class").getPath()).getParentFile();
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    Path temporaryFolder;
 
     @Test
     public void testSameContentSmallFiles() throws IOException {
         File test = new File(currentDir, getClass().getSimpleName() + ".class");
         assertTrue(FileUtilities.sameContent(test, test));
-        final File foo = new File(currentDir, "Foo.txt");
+        File foo = new File(currentDir, "Foo.txt");
         assertFalse(FileUtilities.sameContent(test, foo));
         assertTrue(FileUtilities.sameContent(foo, foo));
     }
 
     @Test
     public void testFileFilter() throws IOException {
-        final File directory = temporaryFolder.newFolder();
-        assertEquals(false, FileUtilities.getFileFilter("jpg").accept(directory));
+        File directory = Files.createDirectory(temporaryFolder.resolve("test")).toFile();
+        assertFalse(FileUtilities.getFileFilter("jpg").accept(directory));
     }
 
 }

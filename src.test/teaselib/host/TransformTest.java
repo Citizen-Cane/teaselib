@@ -1,16 +1,13 @@
 package teaselib.host;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import java.awt.Dimension;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Optional;
-
-import org.junit.Assert;
-import org.junit.jupiter.api.Test;
 
 public class TransformTest {
 
@@ -28,8 +25,8 @@ public class TransformTest {
 
     private static void assertEquals(Point2D expected, Point2D actual) {
         String message = "Expected " + expected + " but got " + actual;
-        Assert.assertEquals(message, expected.getX(), actual.getX(), 10E-3);
-        Assert.assertEquals(message, expected.getY(), actual.getY(), 10E-3);
+        Assertions.assertEquals(expected.getX(), actual.getX(), 10E-3, message);
+        Assertions.assertEquals(expected.getY(), actual.getY(), 10E-3, message);
     }
 
     private static Point2D.Double p(double x, double y) {
@@ -85,7 +82,7 @@ public class TransformTest {
 
         Point2D focusTop = t.transform(new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMinY()),
                 new Point2D.Double());
-        assertTrue(focusTop.getY() < 0.0);
+        Assertions.assertTrue(focusTop.getY() < 0.0);
 
         t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, imageFocusArea);
         assertEquals(t, p(0.0, -7.497), p(0.0, 0.0)); //
@@ -104,7 +101,7 @@ public class TransformTest {
 
         Point2D focusBottom = t.transform(new Point2D.Double(imageFocusArea.getCenterX(), imageFocusArea.getMaxY()),
                 new Point2D.Double());
-        assertTrue(focusBottom.getY() > bounds.height);
+        Assertions.assertTrue(focusBottom.getY() > bounds.height);
 
         t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, imageFocusArea);
         assertEquals(t, p(0.0, -306.666), p(0.0, 0.0));
@@ -149,7 +146,7 @@ public class TransformTest {
 
         Point2D focusTop = t.transform(new Point2D.Double(focusAreaImage.getCenterX(), focusAreaImage.getMinY()),
                 new Point2D.Double());
-        assertTrue(focusTop.getY() < 0.0);
+        Assertions.assertTrue(focusTop.getY() < 0.0);
 
         t = Transform.matchGoldenRatioOrKeepVisible(t, image, bounds, focusAreaImage);
         assertEquals(t, p(2.229, -114.164), p(0.0, 0.0)); //

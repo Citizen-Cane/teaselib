@@ -1,31 +1,14 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Test;
 
 import teaselib.ScriptFunction;
-import teaselib.test.IntegrationTests;
 
-@Category(IntegrationTests.class)
-@RunWith(Parameterized.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ShowChoicesTestThreadInterrupted extends ShowChoicesAbstractTest {
+import static org.junit.jupiter.api.Assertions.*;
 
-    @Parameterized.Parameters
-    public static List<Object[]> data() {
-        return Arrays.asList(new Object[ITERATIONS][0]);
-    }
+public class ShowChoicesThreadInterruptedTest extends ShowChoicesAbstractTest {
 
     @Test
     public void testSingleScriptFunctionErrorHandling() {
@@ -225,7 +208,7 @@ public class ShowChoicesTestThreadInterrupted extends ShowChoicesAbstractTest {
     }
 
     static void failedToHandleInterrupt() {
-        Assert.fail("Interrupting any script thread has to end script");
+        fail("Interrupting any script thread has to end script");
     }
 
 }

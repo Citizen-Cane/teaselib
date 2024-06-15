@@ -1,13 +1,14 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import teaselib.ScriptFunction;
 import teaselib.core.AudioSync;
@@ -40,7 +41,7 @@ public class SpeechRecognitionInputMethodTest {
     @Test
     public void testSpeechRecognitionInputMethodDeDe() throws InterruptedException {
         test(new Choices(Locale.GERMAN, Intention.Decide, choice("Jawohl, Meister"),
-                choice("Natürlich nicht, Meister")), "Natürlich nicht Meister", 1);
+                choice("NatÃ¼rlich nicht, Meister")), "NatÃ¼rlich nicht Meister", 1);
     }
 
     @Test
@@ -78,8 +79,8 @@ public class SpeechRecognitionInputMethodTest {
                 prompt.lock.unlock();
             }
 
-            assertEquals(phrase, new Prompt.Result(0), result);
-            assertTrue("Expected dismissed prompt", dismissed);
+            assertEquals(new Prompt.Result(0), result,phrase);
+            assertTrue(dismissed,"Expected dismissed prompt");
         }
     }
 
@@ -104,8 +105,8 @@ public class SpeechRecognitionInputMethodTest {
                     dismissed = prompt.click.await(5, TimeUnit.SECONDS);
                     result = prompt.result();
 
-                    assertEquals(bar, new Prompt.Result(1), result);
-                    assertTrue("Expected dismissed prompt", dismissed);
+                    assertEquals(new Prompt.Result(1), result,bar);
+                    assertTrue(dismissed,"Expected dismissed prompt");
                 } finally {
                     inputMethod.dismiss(prompt);
                     prompt.lock.unlock();
@@ -130,7 +131,7 @@ public class SpeechRecognitionInputMethodTest {
                     result = prompt.result();
 
                     assertEquals(Prompt.Result.UNDEFINED, result);
-                    assertFalse("Expected dismissed prompt", dismissed);
+                    assertFalse(dismissed,"Expected dismissed prompt");
                 } finally {
                     inputMethod.dismiss(prompt);
                     prompt.lock.unlock();
@@ -178,7 +179,7 @@ public class SpeechRecognitionInputMethodTest {
             try {
                 inputMethod.show(prompt1);
                 inputMethod.emulateRecogntion("Bar");
-                assertFalse("Bar unexpected", prompt1.click.await(1, TimeUnit.SECONDS));
+                assertFalse(prompt1.click.await(1, TimeUnit.SECONDS),"Bar unexpected");
                 inputMethod.dismiss(prompt1);
                 assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
 
@@ -188,7 +189,7 @@ public class SpeechRecognitionInputMethodTest {
                 try {
                     inputMethod.show(prompt2);
                     inputMethod.emulateRecogntion("Bar");
-                    assertTrue("Bar expected", prompt2.click.await(1, TimeUnit.SECONDS));
+                    assertTrue(prompt2.click.await(1, TimeUnit.SECONDS),"Bar expected");
                     assertEquals(new Prompt.Result(0), prompt2.result());
                 } finally {
                     prompt2.lock.unlock();
@@ -196,13 +197,13 @@ public class SpeechRecognitionInputMethodTest {
 
                 inputMethod.show(prompt1);
                 inputMethod.emulateRecogntion("Bar");
-                assertFalse("Bar unexpected", prompt1.click.await(1, TimeUnit.SECONDS));
+                assertFalse(prompt1.click.await(1, TimeUnit.SECONDS), "Bar unexpected");
                 inputMethod.dismiss(prompt1);
                 assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
 
                 inputMethod.show(prompt1);
                 inputMethod.emulateRecogntion("Foo");
-                assertTrue("Foo expected", prompt1.click.await(1, TimeUnit.SECONDS));
+                assertTrue(prompt1.click.await(1, TimeUnit.SECONDS), "Foo expected");
                 assertEquals(new Prompt.Result(0), prompt1.result());
             } finally {
                 prompt1.lock.unlock();

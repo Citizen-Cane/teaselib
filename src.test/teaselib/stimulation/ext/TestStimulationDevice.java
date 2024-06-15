@@ -1,13 +1,15 @@
 package teaselib.stimulation.ext;
 
-import static org.junit.Assert.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import teaselib.core.devices.BatteryLevel;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public final class TestStimulationDevice extends StimulationDevice {
     List<Stimulator> stimulators = new ArrayList<>();

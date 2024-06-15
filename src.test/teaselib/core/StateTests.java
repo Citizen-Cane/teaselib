@@ -1,12 +1,12 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static teaselib.core.TeaseLib.*;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import teaselib.Body;
 import teaselib.Color;
@@ -384,8 +384,9 @@ public class StateTests {
             script.state(Toys.Nipple_Clamps).apply();
             // allows setting a duration for items that may be attached to multiple peers
             // - otherwise the duration would be forgotten
-            assertEquals("Apply without setting a duration must retain the previous duration", 30,
-                    script.state(Toys.Nipple_Clamps).duration().remaining(TimeUnit.MINUTES));
+            assertEquals(30,
+                    script.state(Toys.Nipple_Clamps).duration().remaining(TimeUnit.MINUTES),
+                    "Apply without setting a duration must retain the previous duration");
             assertFalse(script.state(Toys.Nipple_Clamps).expired());
         }
     }

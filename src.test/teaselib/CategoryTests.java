@@ -1,16 +1,13 @@
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import teaselib.util.Select;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.junit.Test;
-
-import teaselib.util.Select;
 
 public class CategoryTests {
 
@@ -52,10 +49,10 @@ public class CategoryTests {
         }
 
         for (T item : values) {
-            assertTrue("Item " + item + " not assigned to any catagory", all.contains(item));
+            Assertions.assertTrue(all.contains(item), "Item " + item + " not assigned to any catagory");
         }
 
-        assertEquals("There are items in more then one category", values.length, all.size());
+        Assertions.assertEquals(values.length, all.size(), "There are items in more then one category");
     }
 
     @SafeVarargs

@@ -1,21 +1,21 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
 import teaselib.functional.RunnableScript;
 import teaselib.test.TestScript;
 
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 /**
  * @author Citizen-Cane
- *
  */
 public class ScriptFunctionTest {
     private static final String TEST = "test";

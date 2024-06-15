@@ -1,14 +1,7 @@
 package teaselib.core.devices.xinput.stimulation;
 
-import static org.junit.Assert.*;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.After;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import teaselib.stimulation.ConstantWave;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
@@ -20,9 +13,15 @@ import teaselib.stimulation.ext.TestStimulationDevice;
 import teaselib.stimulation.ext.TestStimulator;
 import teaselib.test.TestException;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 /**
  * @author Citizen-Cane
- *
  */
 public class StimulationSamplerTaskTest {
 
@@ -52,7 +51,7 @@ public class StimulationSamplerTaskTest {
 
     final StimulationTargets constantSignal = constantSignal(device, 1, TimeUnit.MILLISECONDS);
 
-    @After
+    @AfterEach
     public void close() {
         device.close();
     }
@@ -82,34 +81,40 @@ public class StimulationSamplerTaskTest {
         }
     }
 
-    @Test(expected = TestException.class)
-    public void testErrorHandling() throws TestException {
-        try (TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask() {
-            @Override
-            void playSamples(Samples samples) {
-                throw new TestException();
-            }
-        }) {
-            testSampler.play(constantSignal);
-            testSampler.complete();
-        }
+    @Test
+    public void testErrorHandling() {
+        assertThrows(TestException.class,
+                () -> {
+                    try (TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask() {
+                        @Override
+                        void playSamples(Samples samples) {
+                            throw new TestException();
+                        }
+                    }) {
+                        testSampler.play(constantSignal);
+                        testSampler.complete();
+                    }
+                });
     }
 
-    @Test(expected = TestException.class)
-    public void testErrorHandlingAfterCancel() throws TestException, InterruptedException {
-        try (TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask() {
-            @Override
-            void playSamples(Samples samples) {
-                throw new TestException();
-            }
-        }) {
-            testSampler.play(constantSignal);
+    @Test
+    public void testErrorHandlingAfterCancel() {
+        assertThrows(TestException.class,
+                () -> {
+                    try (TestStimulationSamplerTask testSampler = new TestStimulationSamplerTask() {
+                        @Override
+                        void playSamples(Samples samples) {
+                            throw new TestException();
+                        }
+                    }) {
+                        testSampler.play(constantSignal);
 
-            // Do something, wait until error occurs
-            Thread.sleep(1000);
-            testSampler.stop();
+                        // Do something, wait until error occurs
+                        Thread.sleep(1000);
+                        testSampler.stop();
 
-            testSampler.complete();
-        }
+                        testSampler.complete();
+                    }
+                });
     }
 }

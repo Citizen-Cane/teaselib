@@ -1,12 +1,12 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,10 +16,10 @@ import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+import org.junit.jupiter.api.io.TempDir;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Type;
@@ -58,14 +58,14 @@ public class TextToSpeechRecorderTest {
         }
     }
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @TempDir
+    Path tempFolder;
 
     @Test
     public void testMultiThreading() throws IOException, InterruptedException, ExecutionException {
         Configuration config = new Configuration();
         new DebugSetup().withInput().withOutput().applyTo(config);
-        File path = tempFolder.getRoot();
+        File path = tempFolder.toFile();
 
         try (TextToSpeechPlayer tts = new TextToSpeechPlayer(config)) {
             ResourceLoader resources = new ResourceLoader(this.getClass(),
@@ -105,14 +105,13 @@ public class TextToSpeechRecorderTest {
         }
 
         for (int i = 0; i < n - 1; i++) {
-            assertArrayEquals(Files.readAllBytes(Paths.get(fileNames.get(i))),
-                    Files.readAllBytes(Paths.get(fileNames.get(i + 1))));
+            Assertions.assertArrayEquals(Files.readAllBytes(Paths.get(fileNames.get(i))), Files.readAllBytes(Paths.get(fileNames.get(i + 1))));
         }
     }
 
     @Test
     public void testRecording() throws IOException, InterruptedException, ExecutionException {
-        File path = tempFolder.getRoot();
+        File path = tempFolder.toFile();
         String name = "test";
         ResourceLoader resources = new ResourceLoader(this.getClass(),
                 ResourceLoader.absolute(ReflectionUtils.packagePath(getClass())));
@@ -169,18 +168,21 @@ public class TextToSpeechRecorderTest {
         assertTrue(updatedMessages.contains(update2));
         updatedMessages.add(update2);
         assertEquals(11, updatedMessages.size());
+
+        String assets;
         try (TextToSpeechRecorder recorder5 = recordVoices(updatedMessages, path, name, resources);) {
             assertEquals(1, recorder5.sum.newEntries);
             assertEquals(2, recorder5.sum.reusedDuplicates);
             assertEquals(0, recorder5.sum.changedEntries);
             assertEquals(8, recorder5.sum.upToDateEntries);
-            testAssets(recorder5, resources, updatedMessages);
+            assets = recorder5.assetPath().getAbsolutePath();
         }
+        testAssets(assets, updatedMessages, resources);
     }
 
     @Test
     public void testReplay() throws IOException, InterruptedException, ExecutionException {
-        File path = tempFolder.getRoot();
+        File path = tempFolder.toFile();
         String name = "test";
         String resourcesRoot = ResourceLoader.absolute(ReflectionUtils.packagePath(getClass()));
         ResourceLoader resources = new ResourceLoader(this.getClass(), resourcesRoot);
@@ -191,13 +193,16 @@ public class TextToSpeechRecorderTest {
                 new Message(actor, "I dream of grey sheep standing on the lawn.", "Certainly."),
                 new Message(actor, "I dream of grey sheep standing on the lawn.", "Certainly.", "Sure."));
         assertEquals(5, messages.size());
+
+        String assets;
         try (TextToSpeechRecorder recorder = recordVoices(messages, path, name, resources);) {
             assertEquals(4, recorder.sum.newEntries);
             assertEquals(1, recorder.sum.reusedDuplicates);
             assertEquals(0, recorder.sum.changedEntries);
             assertEquals(0, recorder.sum.upToDateEntries);
-            testAssets(recorder, resources, messages);
+            assets = recorder.assetPath().getAbsolutePath();
         }
+        testAssets(assets, messages, resources);
     }
 
     TextToSpeechRecorder recordVoices(List<Message> messages, File path, String name, ResourceLoader resources)
@@ -205,18 +210,21 @@ public class TextToSpeechRecorderTest {
         ScriptScanner scriptScanner = new TestScriptScanner(messages);
         DebugSetup setup = new DebugSetup().withDictionaries().withOutput();
         Configuration configuration = setup.applyTo(new Configuration());
-        TextToSpeechRecorder recorder = new TextToSpeechRecorder(path, name, resources, new TextVariables(),
-                configuration);
-
-        recorder.startPass("Test", "Test");
-        recorder.run(scriptScanner);
-        recorder.finish();
-
+        TextToSpeechRecorder recorder = new TextToSpeechRecorder(
+                path, name, resources, new TextVariables(), configuration);
+        try {
+            recorder.startPass("Test", "Test");
+            recorder.run(scriptScanner);
+            recorder.finish();
+        } catch (Throwable t) {
+            recorder.close();
+            throw t;
+        }
         return recorder;
     }
 
-    private void testAssets(TextToSpeechRecorder recorder, ResourceLoader resources, List<Message> messages) {
-        resources.addAssets(recorder.assetPath().getAbsolutePath());
+    private void testAssets(String assets, List<Message> messages, ResourceLoader resources) {
+        resources.addAssets(assets);
         Configuration config = new Configuration();
         new DebugSetup().withInput().withOutput().applyTo(config);
         try (TextToSpeechPlayer tts = new TextToSpeechPlayer(config)) {
@@ -229,8 +237,9 @@ public class TextToSpeechRecorderTest {
         for (Message message : messages) {
             AbstractMessage speech = tts.createSpeechMessage(message.actor, message, resources);
             speech.stream().filter((part) -> part.type == Type.Speech)
-                    .forEach((part) -> assertTrue("Expected pre-recorded speech: " + part.type,
-                            Message.Type.isSound(part.value)));
+                    .forEach((part) -> assertTrue(
+                            Type.isSound(part.value),
+                            "Expected pre-recorded speech: " + part.type));
         }
     }
 }

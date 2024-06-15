@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
@@ -117,9 +117,9 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testUnicode() throws InterruptedException {
-        String a = "Äh";
-        String o = "Öh";
-        String u = "Üh";
+        String a = "ï¿½h";
+        String o = "ï¿½h";
+        String u = "ï¿½h";
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
                 new Choice(a), new Choice(o), new Choice(u));
 

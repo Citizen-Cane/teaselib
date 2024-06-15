@@ -5,7 +5,7 @@ import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
 import java.util.Locale;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import teaselib.core.AudioSync;
 import teaselib.core.speechrecognition.SpeechRecognition;

@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
@@ -206,8 +207,8 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         current.close();
         updated.flush();
         updated.close();
-        zipFileCurrent.delete();
-        zipFileUpdated.renameTo(zipFileCurrent);
+        Files.delete(zipFileCurrent.toPath());
+        Files.move(zipFileUpdated.toPath(), zipFileCurrent.toPath());
     }
 
 }

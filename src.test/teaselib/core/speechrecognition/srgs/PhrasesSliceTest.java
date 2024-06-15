@@ -1,25 +1,19 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.srgs.PhraseString.*;
-import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.*;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import teaselib.core.util.CodeDuration;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import teaselib.core.util.CodeDuration;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.jupiter.api.Assertions.*;
+import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
+import static teaselib.core.speechrecognition.srgs.PhraseStringSequences.prettyPrint;
 
 public class PhrasesSliceTest {
     private static final Logger logger = LoggerFactory.getLogger(PhrasesSliceTest.class);
@@ -41,12 +35,12 @@ public class PhrasesSliceTest {
     }
 
     static Sequence<PhraseString> result(String string1, String string2, String string3, String string4,
-            Integer... choices) {
+                                         Integer... choices) {
         return result(Arrays.asList(string1, string2, string3, string4), choices);
     }
 
     static Sequence<PhraseString> result(String string1, String string2, String string3, String string4, String string5,
-            Integer... choices) {
+                                         Integer... choices) {
         return result(Arrays.asList(string1, string2, string3, string4, string5), choices);
     }
 
@@ -82,11 +76,12 @@ public class PhrasesSliceTest {
         // candidates.stream().map(e -> e.rating.symbols.size()).distinct().collect(toList()));
 
         for (SlicedPhrases<PhraseString> candidate : candidates) {
-            assertEquals(candidate.toString() + "\t duplicates", candidate.rating.duplicatedSymbols,
-                    candidate.duplicatedSymbolsCount());
+            assertEquals(
+                    candidate.rating.duplicatedSymbols,
+                    candidate.duplicatedSymbolsCount(), candidate + "\t duplicates");
 
-            assertEquals(candidate.toString() + "\t max commonness", candidate.rating.maxCommonness,
-                    candidate.maxCommonness());
+            assertEquals(candidate.rating.maxCommonness,
+                    candidate.maxCommonness(), candidate + "\t max commonness");
         }
 
         optimal.resymbolize();
@@ -94,7 +89,7 @@ public class PhrasesSliceTest {
     }
 
     private static <T> SlicedPhrases<T> slice(Sequences<T> phrases, List<SlicedPhrases<T>> results,
-            Function<Sequences<T>, String> toString) {
+                                              Function<Sequences<T>, String> toString) {
         SlicedPhrases.slice(results, phrases, toString);
         ReducingList<SlicedPhrases<T>> candidates = new ReducingList<>(SlicedPhrases::leastDuplicatedSymbols);
         results.removeIf(candidate -> candidate.rating.isInvalidated());
@@ -113,8 +108,10 @@ public class PhrasesSliceTest {
                     }
                 }
             }
-            assertEquals(sliced.toString() + "Phrase " + i, expected.toString().toLowerCase(),
-                    actual.toString().toLowerCase());
+            assertEquals(
+                    expected.toString().toLowerCase(),
+                    actual.toString().toLowerCase()
+                    , sliced + "Phrase " + i);
         }
     }
 
@@ -134,13 +131,13 @@ public class PhrasesSliceTest {
         assertTrue(PhraseString.intersect(new HashSet<>(Arrays.asList(0, 1)), new HashSet<>(Arrays.asList(0, 1))));
         assertTrue(PhraseString.intersect(new HashSet<>(Arrays.asList(0, 2)), new HashSet<>(Arrays.asList(0, 1))));
         assertFalse(PhraseString.intersect(new HashSet<>(Arrays.asList(3, 2)), new HashSet<>(Arrays.asList(0, 1))));
-        assertFalse(PhraseString.intersect(new HashSet<>(Arrays.asList()), new HashSet<>(Arrays.asList(0, 1))));
+        assertFalse(PhraseString.intersect(new HashSet<>(List.of()), new HashSet<>(Arrays.asList(0, 1))));
     }
 
     @Test
     public void testPhraseStringEquals() {
         assertEquals(new PhraseString("N", 5), new PhraseString("N", 5));
-        assertEquals(new PhraseString("N", 5), new PhraseString("N", Integer.valueOf(5)));
+        assertEquals(new PhraseString("N", 5), new PhraseString("N", 5));
         assertEquals(new PhraseString("N", 5), new PhraseString("N", Collections.singleton(5)));
         assertEquals(new PhraseString("N", 5), new PhraseString("n", 5));
     }

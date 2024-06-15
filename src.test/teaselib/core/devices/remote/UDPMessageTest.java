@@ -1,14 +1,15 @@
 package teaselib.core.devices.remote;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class testUPDMessage {
+public class UDPMessageTest {
 
     @Test
     public void testByteArrayPeristsAndRestore() throws IOException {
@@ -17,15 +18,14 @@ public class testUPDMessage {
         byte[] data = testMessage.toByteArray();
         UDPMessage restored = new UDPMessage(data);
         assertEquals(testMessage.message.command, restored.message.command);
-        assertEquals(testMessage.message.parameters,
-                restored.message.parameters);
+        assertEquals(testMessage.message.parameters, restored.message.parameters);
     }
 
     @Test
     public void testByteArrayPersistAndRestoreBinaryPart() throws IOException {
         UDPMessage testMessage = new UDPMessage("test",
                 Arrays.asList("parameter 1", "parameter 2", "parameter 3"),
-                new byte[] { 1, 2, 3 });
+                new byte[]{1, 2, 3});
         byte[] data = testMessage.toByteArray();
         UDPMessage restored = new UDPMessage(data);
         assertEquals(testMessage.message.command, restored.message.command);
@@ -43,7 +43,7 @@ public class testUPDMessage {
     public void testPersistAndRestoreNoParametersBinaryPart()
             throws IOException {
         UDPMessage testMessage = new UDPMessage("test", new ArrayList<String>(),
-                new byte[] { 1, 2, 3 });
+                new byte[]{1, 2, 3});
         byte[] data = testMessage.toByteArray();
         UDPMessage restored = new UDPMessage(data);
         assertEquals(testMessage.message.command, restored.message.command);
@@ -73,7 +73,7 @@ public class testUPDMessage {
     @Test
     public void testByteArrayContentUnderstood() throws IOException {
         UDPMessage testMessage = new UDPMessage("command",
-                Arrays.asList("parameter1", "param2"), new byte[] { 1, 2, 3 });
+                Arrays.asList("parameter1", "param2"), new byte[]{1, 2, 3});
         // test restore
         byte[] data = testMessage.toByteArray();
         UDPMessage restored = new UDPMessage(data);

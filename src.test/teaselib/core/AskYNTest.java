@@ -1,16 +1,15 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
 import teaselib.Answer;
 import teaselib.Answer.Meaning;
 import teaselib.test.TestScript;
+
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class AskYNTest {
 
@@ -82,7 +81,7 @@ class AskYNTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { "Yes", "Maybe", "Perhaps" })
+    @ValueSource(strings = {"Yes", "Maybe", "Perhaps"})
     void testReplyMultipleYes(String choice) throws IOException {
         try (TestScript script = new TestScript()) {
             script.debugger.addResponse(choice, Debugger.Response.Choose);
@@ -93,7 +92,7 @@ class AskYNTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { "No", "Never", "Not ever" })
+    @ValueSource(strings = {"No", "Never", "Not ever"})
     void testReplyMultipleNo(String choice) throws IOException {
         try (TestScript script = new TestScript()) {
             script.debugger.addResponse(choice, Debugger.Response.Choose);

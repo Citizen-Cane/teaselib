@@ -96,4 +96,9 @@ public class CommandLineHost implements Host {
             throw new IllegalArgumentException(Objects.toString(folder));
     }
 
+    @Override
+    public Window window() {
+        throw new UnsupportedOperationException();
+    }
+
 }

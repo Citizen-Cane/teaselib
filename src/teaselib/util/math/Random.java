@@ -39,6 +39,11 @@ public class Random {
         return probability > r;
     }
 
+    public boolean chance(double probability) {
+        double r = generator.nextDouble();
+        return probability > r;
+    }
+
     /**
      * Return a random number
      * 

@@ -665,4 +665,37 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend, Closeable 
             throw new IllegalArgumentException(Objects.toString(folder));
     }
 
+    private int restoreState = Frame.NORMAL;
+
+    @Override
+    public Window window() {
+        return new Window() {
+
+            @Override
+            public void minimize() {
+                restoreState = mainFrame.getState();
+                if (restoreState != Frame.ICONIFIED) {
+                    EventQueue.invokeLater(() -> {
+                        mainFrame.setState(Frame.ICONIFIED);
+                    });
+                }
+            }
+
+            @Override
+            public boolean isMinimized() {
+                return mainFrame.getState() == Frame.ICONIFIED;
+            }
+
+            @Override
+            public void restore() {
+                if (mainFrame.getState() == Frame.ICONIFIED) {
+                    mainFrame.setState(restoreState);
+                    EventQueue.invokeLater(() -> {
+                        mainFrame.setAlwaysOnTop(true);
+                        mainFrame.toFront();
+                    });
+                }
+            }
+        };
+    }
 }

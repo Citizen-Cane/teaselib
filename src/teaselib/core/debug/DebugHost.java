@@ -228,4 +228,9 @@ public class DebugHost implements Host, HostInputMethod.Backend, Closeable {
                 + (replySection.isLocked() ? "locked" : "free") + " ]";
     }
 
+    @Override
+    public Window window() {
+        throw new UnsupportedOperationException();
+    }
+
 }

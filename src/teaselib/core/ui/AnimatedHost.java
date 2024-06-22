@@ -403,4 +403,9 @@ public class AnimatedHost implements Host, Closeable {
         return host.getLocation(folder);
     }
 
+    @Override
+    public Window window() {
+        return host.window();
+    }
+
 }

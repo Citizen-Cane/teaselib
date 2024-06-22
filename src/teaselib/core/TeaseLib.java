@@ -98,7 +98,10 @@ public class TeaseLib implements Closeable {
     private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
     private final Set<CheckPointListener> checkPointListeners = new HashSet<>();
 
+    private final Thread mainThread;
     private final Thread shutdownHook = new Thread(this::shutdown);
+
+    private Runnable quitHandler = null;
 
     public TeaseLib(Host host, Setup setup) throws IOException {
         Objects.requireNonNull(host);
@@ -122,6 +125,7 @@ public class TeaseLib implements Closeable {
 
         this.random = new Random();
 
+        this.mainThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
@@ -181,6 +185,11 @@ public class TeaseLib implements Closeable {
         }
     }
 
+    public void setQuitHandler(Runnable quitHandler) {
+        this.quitHandler = quitHandler;
+        host.setQuitHandler(e -> mainThread.interrupt());
+    }
+
     private void run(String scriptName) throws ReflectiveOperationException {
         host.showInterTitle(Collections.singletonList(""));
         host.show();
@@ -191,8 +200,11 @@ public class TeaseLib implements Closeable {
             Class<RunnableScript> scriptClass = (Class<RunnableScript>) contextClassLoader.loadClass(scriptName);
             RunnableScript script = script(scriptClass);
             script.run();
-        } catch (ScriptInterruptedException e) {
+            globals.get(ScriptRenderer.class).awaitAllCompleted();
+        } catch (InterruptedException ignore) {
             // Ignore
+        } catch (ScriptInterruptedException e) {
+            handleQuit();
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
             throw t;
@@ -205,6 +217,20 @@ public class TeaseLib implements Closeable {
         }
         host.show(null, Collections.emptyList());
         host.show();
+    }
+
+    private void handleQuit() {
+        if (quitHandler != null) {
+            try {
+                quitHandler.run();
+                globals.get(ScriptRenderer.class).awaitAllCompleted();
+            } catch (ScriptInterruptedException | InterruptedException ignore) {
+                // Ignore
+            } catch (Throwable t) {
+                logger.error(t.getMessage(), t);
+                throw t;
+            }
+        }
     }
 
     static class MainScriptConstructorMissingException extends NoSuchMethodException {

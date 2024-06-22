@@ -171,4 +171,13 @@ public interface Host {
 
     File getLocation(Location folder);
 
+    interface Window {
+        void minimize();
+
+        boolean isMinimized();
+
+        void restore();
+    }
+
+    Window window();
 }

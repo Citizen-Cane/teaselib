@@ -1,7 +1,6 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +17,8 @@ import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
 import org.junit.jupiter.api.io.TempDir;
+
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Type;
@@ -207,19 +206,25 @@ public class TextToSpeechRecorderTest {
 
     TextToSpeechRecorder recordVoices(List<Message> messages, File path, String name, ResourceLoader resources)
             throws IOException, InterruptedException, ExecutionException {
-        ScriptScanner scriptScanner = new TestScriptScanner(messages);
-        DebugSetup setup = new DebugSetup().withDictionaries().withOutput();
-        Configuration configuration = setup.applyTo(new Configuration());
-        TextToSpeechRecorder recorder = new TextToSpeechRecorder(
-                path, name, resources, new TextVariables(), configuration);
+        @SuppressWarnings("resource")
+        TextToSpeechRecorder recorder = newRecorder(path, name, resources);
         try {
             recorder.startPass("Test", "Test");
+            ScriptScanner scriptScanner = new TestScriptScanner(messages);
             recorder.run(scriptScanner);
             recorder.finish();
         } catch (Throwable t) {
             recorder.close();
             throw t;
         }
+        return recorder;
+    }
+
+    private static TextToSpeechRecorder newRecorder(File path, String name, ResourceLoader resources) throws IOException {
+        DebugSetup setup = new DebugSetup().withDictionaries().withOutput();
+        Configuration configuration = setup.applyTo(new Configuration());
+        TextToSpeechRecorder recorder = new TextToSpeechRecorder(
+                path, name, resources, new TextVariables(), configuration);
         return recorder;
     }
 

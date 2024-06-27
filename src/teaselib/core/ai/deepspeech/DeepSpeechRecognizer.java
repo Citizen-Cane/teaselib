@@ -1,7 +1,6 @@
 package teaselib.core.ai.deepspeech;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,7 +62,6 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         Idle,
         Started,
         Running,
-        Pending,
         Noise,
         Cancelled,
         Done,
@@ -138,8 +136,6 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         } else if (status == Status.Running) {
             startRecognition(events);
             speechDetected(events);
-        } else if (status == Status.Pending) {
-            // ignore
         } else if (status == Status.Noise) {
             noiseDetected(events);
         } else if (status == Status.Cancelled) {

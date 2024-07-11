@@ -130,13 +130,13 @@ extern "C"
 			return static_cast<int>(status);
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Cancelled);
+			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Idle);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Cancelled);
+			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Idle);
 		} catch (JNIException& e) {
 			e.rethrow();
-			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Cancelled);
+			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Idle);
 		}
 	}
 
@@ -300,8 +300,8 @@ extern "C"
 
 DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languageCode)
 	: recognizer(path, languageCode)
-	, audioStream(recognizer)
-	, audio(AudioCapture::Devices().default_device, recognizer.sample_rate(), aifx::speech::SpeechAudioStream::feed_audio_samples / 2)
+	, audioStream(recognizer, SpeechAudioStream::Detection::VeryAggressive) // ignore notbook fan noise 
+	, audio(AudioCapture::Devices().default_device, recognizer.sample_rate(), aifx::speech::SpeechAudioStream::minimum_speech_samples / 2)
 	, input([this](const short* audio, unsigned int samples) {
 		aifx::speech::SpeechAudioStream::FeedState feed_stste;
 		const unsigned int consumed = audioStream.feed(audio, samples, feed_stste);

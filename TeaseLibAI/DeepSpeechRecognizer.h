@@ -14,7 +14,7 @@
 
 
 class DeepSpeechRecognizer {
-	aifx::speech::CoquiRecognizer recognizer;
+	aifx::speech::SpeechRecognizer recognizer;
 	aifx::speech::SpeechAudioStream audioStream;
 	aifx::audio::AudioCapture audio;
 	aifx::audio::AudioCapture::Input input;

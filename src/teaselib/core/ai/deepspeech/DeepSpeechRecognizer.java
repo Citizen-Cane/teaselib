@@ -150,8 +150,8 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
                 events.recognitionCompleted.fire(new SpeechRecognizedEventArgs(rules));
             }
         } else if (status == Status.Idle) {
-            recognitionStartedEventFired = false;
             if (recognitionStartedEventFired) {
+                recognitionStartedEventFired = false;
                 List<Rule> rules = rules();
                 if (rules.isEmpty()) {
                     events.recognitionRejected.fire(TimeoutEvent);

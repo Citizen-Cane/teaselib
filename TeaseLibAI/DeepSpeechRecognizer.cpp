@@ -299,7 +299,7 @@ extern "C"
 }
 
 DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languageCode)
-	: recognizer(path, languageCode)
+	: recognizer((new CoquiContext(path, languageCode))->enableScorer())
 	, audioStream(recognizer, SpeechAudioStream::Detection::VeryAggressive) // ignore notbook fan noise 
 	, audio(AudioCapture::Devices().default_device, recognizer.sample_rate(), aifx::speech::SpeechAudioStream::minimum_speech_samples / 2)
 	, input([this](const short* audio, unsigned int samples) {
@@ -313,9 +313,7 @@ DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languag
 			}
 		}
 	})
-{
-	recognizer.enableExternalScorer(true);
-}
+{}
 
 DeepSpeechRecognizer::~DeepSpeechRecognizer()
 {
@@ -325,7 +323,7 @@ DeepSpeechRecognizer::~DeepSpeechRecognizer()
 
 const string& DeepSpeechRecognizer::languageCode() const
 {
-	return recognizer.language_code();
+	return recognizer.lang();
 }
 
 void DeepSpeechRecognizer::setMaxAlternates(int n)

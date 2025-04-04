@@ -44,10 +44,22 @@ dependencies {
     implementation files('../SexScripts/SexScripts.jar')
 
     implementation 'org.slf4j:slf4j-api:1.7.25'
-    implementation 'org.slf4j:slf4j-simple:1.7.25'
+    runtime 'org.slf4j:slf4j-simple:1.7.25'
 
     implementation 'de.sciss:jump3r:1.0.5'
     implementation 'com.tagtraum:ffsampledsp-complete:0.9.46'
+    // https://mvnrepository.com/artifact/net.java.dev.jna/jna
+    implementation group: 'net.java.dev.jna', name: 'jna', version: '5.14.0'
+    // https://mvnrepository.com/artifact/net.java.dev.jna/jna-platform
+    implementation group: 'net.java.dev.jna', name: 'jna-platform', version: '5.14.0'
+
+    // TODO copyLibs copies runtime, but build needs implementation
+    runtime 'de.sciss:jump3r:1.0.5'
+    runtime 'com.tagtraum:ffsampledsp-complete:0.9.46'
+    // https://mvnrepository.com/artifact/net.java.dev.jna/jna
+    runtime group: 'net.java.dev.jna', name: 'jna', version: '5.14.0'
+    // https://mvnrepository.com/artifact/net.java.dev.jna/jna-platform
+    runtime group: 'net.java.dev.jna', name: 'jna-platform', version: '5.14.0'
 
     testImplementation "org.junit.jupiter:junit-jupiter-params:5.9.3"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
@@ -61,7 +73,7 @@ tasks.register('copyLibs', Copy) {
 
 test {
     useJUnitPlatform {
-        includeEngines 'junit-jupiter', 'junit-vintage'
+        includeEngines 'junit-jupiter'
     }
     testLogging {
         events "passed", "skipped", "failed"

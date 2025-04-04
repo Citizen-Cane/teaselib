@@ -249,3 +249,6 @@ gradle/
 
 # Ignore Gradle build output directory
 build
+
+# Ignore IntelliJ project files
+/.idea

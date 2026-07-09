@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <set>
 #include <string>
 #include <vector>
@@ -7,29 +8,31 @@
 #include <NativeObject.h>
 
 #include <Audio/AudioCapture.h>
+#include <Compute/AllocationPlan.h>
 #include <Speech/SpeechAudioStream.h>
 
-#include <CoquiSTT/CoquiContext.h>
-#include <CoquiSTT/CoquiRecognizer.h>
-
+#include <Whisper/Silero.h>
+#include <Whisper/WhisperHypothesizingContext.h>
 
 class DeepSpeechRecognizer {
-	aifx::speech::SpeechRecognizer recognizer;
+	aifx::speech::WhisperHypothesizingContext recognizer;
+	aifx::speech::vad::Silero vad;
 	aifx::speech::SpeechAudioStream audioStream;
 	aifx::audio::AudioCapture audio;
 	aifx::audio::AudioCapture::Input input;
+
 public:
-	DeepSpeechRecognizer(const char* path, const char* languageCode);
+	DeepSpeechRecognizer(const aifx::compute::AllocationPlan& plan, const char* languageCode);
 	~DeepSpeechRecognizer();
 
 	const std::string& languageCode() const;
-	void setMaxAlternates(int n);
 	void setHotWords(const std::set<std::string>& words);
 
 	void start();
 	void stop();
 	void emulate(const char* speech);
-	void emulate(const short* speech, unsigned int samples);
+	void emulate(const std::vector<float>& speech);
+	void emulate(const float* speech, unsigned int samples);
 
 	void stopEventLoop();
 

@@ -226,7 +226,7 @@ lib/*.lib
 lib/*.dll
 lib/*.so
 lib/*.exp
-lib/coqui-ai
+lib/models
 
 bin.test/
 bin.test.interactive/

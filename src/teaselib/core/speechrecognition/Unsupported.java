@@ -27,11 +27,6 @@ class Unsupported extends SpeechRecognitionNativeImplementation {
     }
 
     @Override
-    public void setMaxAlternates(int n) {
-        // Ignore
-    }
-
-    @Override
     protected void process(SpeechRecognitionEvents events, CountDownLatch signalInitialized) {
         // noop
     }

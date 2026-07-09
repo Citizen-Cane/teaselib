@@ -16,8 +16,10 @@ import teaselib.core.util.ExceptionUtil;
  * @author Citizen-Cane
  *
  */
-public abstract class SpeechRecognitionNativeImplementation extends NativeObject.Disposible
+public abstract class SpeechRecognitionNativeImplementation
+        extends NativeObject.Disposible
         implements Closeable, SpeechRecognitionImplementation {
+
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionNativeImplementation.class);
 
     public final HearingAbility required;

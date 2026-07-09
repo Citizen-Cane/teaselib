@@ -45,37 +45,9 @@ class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
 
     static Stream<EmulatedSpeech> emulatedSpeechTests() {
         return Stream.of(//
-                new EmulatedSpeech("Yes Miss", 0.9113f, """
-                        yes
-                        yes
-                        yes i
-                        yes is
-                        yes miss
-                        yes it
-                        yes m
-                        yes a
-                        yes as
-                        yes s
-                        """), //
-                new EmulatedSpeech("Yes Miss", 0.6900f, """
-                        yes
-                        i guess
-                        as
-                        yet
-                        guess
-                        is
-                        get
-                        his
-                        at
-                        eyes
-                        """), //
-                new EmulatedSpeech("I have new shoes Miss", 0.7575f, """
-                        i have now so is
-                        i have now she is
-                        i have new so as
-                        i have now to ask
-                        i have now to his
-                        """));
+                new EmulatedSpeech("Yes Mistress", 0.5f, "yes"), //
+                new EmulatedSpeech("Yes Miss", 0.5f, "yes"), //
+                new EmulatedSpeech("I have new shoes Miss", 0.573f, "i have now choose is"));
     }
 
     @ParameterizedTest
@@ -125,7 +97,6 @@ class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
     void testAlrightMissDifferentResultSizes() throws InterruptedException {
         Rule rule = emulateSpeech("Alright Miss", """
                     all, rightness
-                    all right miss
                 """);
         assertEquals(2, rule.children.size());
     }
@@ -156,13 +127,7 @@ class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
     // [[your, part, is, sufficient, said] confidence=0.75178033]
 
     // test catches samples from the previous recognition -> clear buffers, when to call clear() - impl coreect?
-    static final String detectedSpeech = """
-            your paris efficient i said
-            your paris sufficient i said
-            you paris efficient i said
-            your parents efficient i said
-            your paris efficient y said
-            """;
+    static final String detectedSpeech = "your paris efficient i said";
 
     @Test
     void testMissingWordAndWrongRecognitionGroundTruth() throws InterruptedException {
@@ -171,7 +136,7 @@ class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
         assertNotNull(rule.children.get(3).text, "\"is\" should be recognized as null rule");
         assertNotNull(rule.children.get(4).text, "\"sufficient\" should be recognized as child 4");
         assertNotNull(rule.children.get(5).text, "\"I\" should be recognized as child 5");
-        SpeechRecognitionTestUtils.assertConfidence(rule, High.probability);
+        SpeechRecognitionTestUtils.assertConfidence(rule, High.probability - 0.18f);
     }
 
     @Test

@@ -143,26 +143,6 @@ extern "C"
 		}
 	}
 
-
-    /*
-    * Class:     teaselib_speechrecognition_implementation_TeaseLibSR
-    * Method:    setMaxAlternates
-    * Signature: (I)V
-    */
-    JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_sapi_TeaseLibSR_setMaxAlternates
-    (JNIEnv *env, jobject jthis, jint maxAlternates) {
-        try {
-            SpeechRecognizer* speechRecognizer = NativeInstance::get<SpeechRecognizer>(env, jthis);
-            speechRecognizer->setMaxAlternates(maxAlternates);
-        } catch (exception& e) {
-            JNIException::rethrow(env, e);
-        } catch (NativeException& e) {
-            JNIException::rethrow(env, e);
-		} catch (JNIException& e) {
-			e.rethrow();
-		}
-    }
-
     /*
     * Class:     teaselib_speechrecognition_implementation_TeaseLibSR
     * Method:    startRecognition

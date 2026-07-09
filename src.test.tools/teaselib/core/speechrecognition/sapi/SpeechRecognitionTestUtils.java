@@ -1,17 +1,13 @@
 package teaselib.core.speechrecognition.sapi;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import teaselib.core.AudioSync;
-import teaselib.core.ai.deepspeech.DeepSpeechRecognizer;
-import teaselib.core.configuration.Configuration;
-import teaselib.core.configuration.DebugSetup;
-import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.*;
-import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.srgs.PhraseString;
-import teaselib.core.ui.*;
-import teaselib.core.ui.Prompt.Result;
+import static java.util.stream.Collectors.joining;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static teaselib.core.util.ExceptionUtil.asRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,9 +19,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static java.util.stream.Collectors.joining;
-import static org.junit.jupiter.api.Assertions.*;
-import static teaselib.core.util.ExceptionUtil.asRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import teaselib.core.AudioSync;
+import teaselib.core.ai.deepspeech.DeepSpeechRecognizer;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
+import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.SpeechRecognitionEvents;
+import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
+import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.srgs.PhraseString;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethods;
+import teaselib.core.ui.Intention;
+import teaselib.core.ui.Prompt;
+import teaselib.core.ui.Prompt.Result;
 
 /**
  * @author Citizen-Cane
@@ -61,8 +75,7 @@ public class SpeechRecognitionTestUtils {
         return config;
     }
 
-    private SpeechRecognitionTestUtils() {
-    }
+    private SpeechRecognitionTestUtils() {}
 
     public static List<Rule> assertRecognized(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
@@ -70,7 +83,7 @@ public class SpeechRecognitionTestUtils {
     }
 
     public static List<Rule> assertRecognized(SpeechRecognitionInputMethod inputMethod, Choices choices, String phrase,
-                                              Prompt.Result expected) throws InterruptedException {
+            Prompt.Result expected) throws InterruptedException {
         return emulateSpeechRecognition(inputMethod, choices, phrase, expected);
     }
 
@@ -82,7 +95,7 @@ public class SpeechRecognitionTestUtils {
     }
 
     public static List<Rule> assertRecognizedAsHypothesis(SpeechRecognitionInputMethod inputMethod, Choices choices,
-                                                          String phrase, Prompt.Result expected) throws InterruptedException {
+            String phrase, Prompt.Result expected) throws InterruptedException {
         return emulateSpeechRecognition(inputMethod, choices, phrase, expected);
     }
 
@@ -102,7 +115,7 @@ public class SpeechRecognitionTestUtils {
     }
 
     private static List<Rule> emulateSpeechRecognition(SpeechRecognitionInputMethod inputMethod, Choices choices,
-                                                       String phrase, Prompt.Result expected) throws InterruptedException {
+            String phrase, Prompt.Result expected) throws InterruptedException {
         Prompt prompt = new Prompt(choices, new InputMethods(inputMethod));
         return awaitResult(prompt, inputMethod, phrase, expected);
     }
@@ -126,8 +139,8 @@ public class SpeechRecognitionTestUtils {
     }
 
     public static List<Rule> awaitResult(Prompt prompt, SpeechRecognitionInputMethod inputMethod, String phrase,
-                                         Prompt.Result expectedRules) throws InterruptedException {
-        boolean isAudioFile = phrase.toLowerCase().endsWith(".raw");
+            Prompt.Result expectedRules) throws InterruptedException {
+        boolean isAudioFile = phrase.toLowerCase().endsWith(".wav");
         if (!isAudioFile) {
             assertEquals(withoutPunctation(phrase), phrase, "Phrase may not contain punctation: '" + phrase + "'");
         }
@@ -306,7 +319,7 @@ public class SpeechRecognitionTestUtils {
     }
 
     public static void assertConfidence(SpeechRecognitionNativeImplementation recognizer, Rule rule,
-                                        Intention intention) {
+            Intention intention) {
         assertConfidence(rule, recognizer.required.confidence(intention));
     }
 

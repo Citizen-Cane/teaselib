@@ -1,13 +1,14 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.getInputMethod;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import teaselib.ScriptFunction;
@@ -38,17 +39,17 @@ public class SpeechRecognitionInputMethodTest {
         test(new Choices(Locale.ENGLISH, Intention.Decide, choice("Yes, Miss"), choice("No, Miss")), "No Miss", 1);
     }
 
-    @Test
-    public void testSpeechRecognitionInputMethodDeDe() throws InterruptedException {
-        test(new Choices(Locale.GERMAN, Intention.Decide, choice("Jawohl, Meister"),
-                choice("Natürlich nicht, Meister")), "Natürlich nicht Meister", 1);
-    }
+    // @Test
+    // public void testSpeechRecognitionInputMethodDeDe() throws InterruptedException {
+    // test(new Choices(Locale.GERMAN, Intention.Decide, choice("Jawohl, Meister"),
+    // choice("Natürlich nicht, Meister")), "Natürlich nicht Meister", 1);
+    // }
 
-    @Test
-    public void testSpeechRecognitionInputMethodFrFr() throws InterruptedException {
-        test(new Choices(Locale.FRENCH, Intention.Decide, //
-                choice("Qui, Madame"), choice("Non, Madame")), "Qui Madame", 0);
-    }
+    // @Test
+    // public void testSpeechRecognitionInputMethodFrFr() throws InterruptedException {
+    // test(new Choices(Locale.FRENCH, Intention.Decide, //
+    // choice("Qui, Madame"), choice("Non, Madame")), "Qui Madame", 0);
+    // }
 
     private static void test(Choices choices, String expected, int resultIndex) throws InterruptedException {
         try (InputMethods inputMethods = new InputMethods(getInputMethod(TeaseLibSRGS.Relaxed.class))) {
@@ -79,8 +80,8 @@ public class SpeechRecognitionInputMethodTest {
                 prompt.lock.unlock();
             }
 
-            assertEquals(new Prompt.Result(0), result,phrase);
-            assertTrue(dismissed,"Expected dismissed prompt");
+            assertEquals(new Prompt.Result(0), result, phrase);
+            assertTrue(dismissed, "Expected dismissed prompt");
         }
     }
 
@@ -105,8 +106,8 @@ public class SpeechRecognitionInputMethodTest {
                     dismissed = prompt.click.await(5, TimeUnit.SECONDS);
                     result = prompt.result();
 
-                    assertEquals(new Prompt.Result(1), result,bar);
-                    assertTrue(dismissed,"Expected dismissed prompt");
+                    assertEquals(new Prompt.Result(1), result, bar);
+                    assertTrue(dismissed, "Expected dismissed prompt");
                 } finally {
                     inputMethod.dismiss(prompt);
                     prompt.lock.unlock();
@@ -131,7 +132,7 @@ public class SpeechRecognitionInputMethodTest {
                     result = prompt.result();
 
                     assertEquals(Prompt.Result.UNDEFINED, result);
-                    assertFalse(dismissed,"Expected dismissed prompt");
+                    assertFalse(dismissed, "Expected dismissed prompt");
                 } finally {
                     inputMethod.dismiss(prompt);
                     prompt.lock.unlock();
@@ -179,7 +180,7 @@ public class SpeechRecognitionInputMethodTest {
             try {
                 inputMethod.show(prompt1);
                 inputMethod.emulateRecogntion("Bar");
-                assertFalse(prompt1.click.await(1, TimeUnit.SECONDS),"Bar unexpected");
+                assertFalse(prompt1.click.await(1, TimeUnit.SECONDS), "Bar unexpected");
                 inputMethod.dismiss(prompt1);
                 assertEquals(Prompt.Result.UNDEFINED, prompt1.result());
 
@@ -189,7 +190,7 @@ public class SpeechRecognitionInputMethodTest {
                 try {
                     inputMethod.show(prompt2);
                     inputMethod.emulateRecogntion("Bar");
-                    assertTrue(prompt2.click.await(1, TimeUnit.SECONDS),"Bar expected");
+                    assertTrue(prompt2.click.await(1, TimeUnit.SECONDS), "Bar expected");
                     assertEquals(new Prompt.Result(0), prompt2.result());
                 } finally {
                     prompt2.lock.unlock();

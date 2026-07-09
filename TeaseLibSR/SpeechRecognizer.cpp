@@ -425,14 +425,6 @@ void SpeechRecognizer::setChoices(CComPtr<IStream>& srgs) {
 	if (FAILED(hr)) throw COMException(hr);
 }
 
-void SpeechRecognizer::setMaxAlternates(const int maxAlternates) {
-	checkRecogizerStatus();
-	
-	HRESULT hr = cpContext->SetMaxAlternates(maxAlternates);
-	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw COMException(hr);
-}
-
 void SpeechRecognizer::start() {
 	checkRecogizerStatus();
 

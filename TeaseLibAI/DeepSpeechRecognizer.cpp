@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -14,7 +15,16 @@
 #include <UnsupportedLanguageException.h>
 
 #include <Tests/AIfxTestFramework/Blob.h>
+
+#include <Audio/WavFile.h>
+#include <Compute/AllocationPlan.h>
+#include <Compute/Devices.h>
+#include <Compute/Model.h>
+#include <Compute/ModelZoo.h>
 #include <Compute/Resource.h>
+#include <Whisper/Silero.h>
+#include <Whisper/Whisper.h>
+#include <Whisper/WhisperHypothesizingContext.h>
 
 #include <teaselib_core_ai_deepspeech_DeepSpeechRecognizer.h>
 #include "DeepSpeechRecognizer.h"
@@ -37,30 +47,25 @@ extern "C"
 	{
 		try {
 			Objects::requireNonNull(L"locale", jlanguageCode);
+			aifx::compute::ModelZoo models = aifx::util::Resource::getModuleDirectory() / "models";
+			models.emplace_back(WhisperHypothesizingContext::model_set());
+			models.emplace_back(vad::Silero::model_set);
+			auto plan = aifx::compute::AllocationPlan(aifx::compute::Devices::all(), models);
+			if (!plan.allocate()) throw bad_alloc();
 
-			char thisModule[MAX_PATH];
-			DWORD size = ::GetModuleFileNameA(Resource::getModuleHandle(), thisModule, MAX_PATH);
-			if (size == 0) {
-				throw NativeException(::GetLastError(), L"model");
-			}
-
-			const filesystem::path models = thisModule;
-			filesystem::path model = filesystem::path(thisModule).parent_path().append("coqui-ai");
 			JNIStringUTF8 languageCode(env, jlanguageCode);
 			try {
-				DeepSpeechRecognizer* speechRecognizer = new DeepSpeechRecognizer(model.string().c_str(), languageCode);
+				DeepSpeechRecognizer* speechRecognizer = new DeepSpeechRecognizer(plan, languageCode);
 				return reinterpret_cast<jlong>(speechRecognizer);
 			} catch (invalid_argument& e) {
-				throw e;
-			} catch (exception& e) {
 				const string what = e.what();
+				if (!what.contains(languageCode)) {
+					throw e;
+				}
 				wstringstream message;
-				message << what.substr(0, what.size()).c_str() << ": " << model.append(languageCode.c_str());
+				message << e.what();
 				throw UnsupportedLanguageException(E_INVALIDARG, message.str().c_str());
 			}
-		} catch (invalid_argument& e) {
-			JNIException::rethrow(env, e);
-			return 0;
 		} catch(exception& e) {
 			JNIException::rethrow(env, e);
 			return 0;
@@ -93,26 +98,6 @@ extern "C"
 		} catch (JNIException& e) {
 			e.rethrow();
 			return nullptr;
-		}
-	}
-
-	/*
-	 * Class:     teaselib_core_ai_deepspeech_DeepSpeechRecognizer
-	 * Method:    setMaxResults
-	 * Signature: (I)V
-	 */
-	JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_setMaxResults
-	(JNIEnv* env, jobject jthis, jint maxAlternates)
-	{
-		try {
-			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
-			speechRecognizer->setMaxAlternates(maxAlternates);
-		} catch (exception& e) {
-			JNIException::rethrow(env, e);
-		} catch (NativeException& e) {
-			JNIException::rethrow(env, e);
-		} catch (JNIException& e) {
-			e.rethrow();
 		}
 	}
 
@@ -222,8 +207,7 @@ extern "C"
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			JNIStringUTF8 speech(env, jspeech);
 			if (PathFileExistsA(speech)) {
-				const aifx::Blob<short> data(speech);
-				speechRecognizer->emulate(data, static_cast<unsigned int>(data.size()));
+				speechRecognizer->emulate(aifx::audio::WavFile(std::filesystem::path(speech.c_str())));
 			} else {
 				speechRecognizer->emulate(speech);
 			}
@@ -298,11 +282,18 @@ extern "C"
 
 }
 
-DeepSpeechRecognizer::DeepSpeechRecognizer(const char* path, const char* languageCode)
-	: recognizer((new CoquiContext(path, languageCode))->enableScorer())
-	, audioStream(recognizer, SpeechAudioStream::Detection::VeryAggressive) // ignore notbook fan noise 
-	, audio(AudioCapture::Devices().default_device, recognizer.sample_rate(), aifx::speech::SpeechAudioStream::minimum_speech_samples / 2)
-	, input([this](const short* audio, unsigned int samples) {
+WhisperHypothesizingContext build(const aifx::compute::ModelZoo& zoo, const char* languageCode) {
+	aifx::compute::AllocationPlan plan(aifx::compute::Devices::all(), zoo);
+	if (!plan.allocate()) throw bad_alloc();
+	return plan.make<WhisperHypothesizingContext>(languageCode);
+}
+
+DeepSpeechRecognizer::DeepSpeechRecognizer(const aifx::compute::AllocationPlan& plan, const char* languageCode)
+	: recognizer(plan.make<WhisperHypothesizingContext>(languageCode))
+	, vad(plan.make<vad::Silero>())
+	, audioStream(recognizer, vad)
+	, audio(AudioCapture::Devices().default_device, recognizer.sample_rate(), vad.frame_size() * 10)
+	, input([this](const float* audio, unsigned int samples) {
 		aifx::speech::SpeechAudioStream::FeedState feed_stste;
 		const unsigned int consumed = audioStream.feed(audio, samples, feed_stste);
 		if (consumed < samples) {
@@ -323,17 +314,13 @@ DeepSpeechRecognizer::~DeepSpeechRecognizer()
 
 const string& DeepSpeechRecognizer::languageCode() const
 {
-	return recognizer.lang();
-}
-
-void DeepSpeechRecognizer::setMaxAlternates(int n)
-{
-	recognizer.setMaxAlternates(n);
+	return recognizer.lang;
 }
 
 void DeepSpeechRecognizer::setHotWords(const set<string>& words)
 {
-	recognizer.setHotWords(words, aifx::speech::SpeechRecognizer::HotwordBoost::Medium);
+	recognizer.set_hotwords(words, aifx::speech::Hotwords::Boost::Medium);
+	// recognizer.set_phrases(TODO, aifx::speech::Hotwords::Boost::Medium);
 }
 
 void DeepSpeechRecognizer::start()
@@ -371,7 +358,12 @@ void DeepSpeechRecognizer::emulate(const char* speech)
 	audioStream.emulate(speech);
 }
 
-void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
+void DeepSpeechRecognizer::emulate(const std::vector<float>& speech)
+{
+	emulate(speech.data(), static_cast<unsigned int>(speech.size()));
+}
+
+void DeepSpeechRecognizer::emulate(const float* speech, unsigned int samples)
 {
 	stop();
 	audioStream.reset();
@@ -379,7 +371,7 @@ void DeepSpeechRecognizer::emulate(const short* speech, unsigned int samples)
 		while (samples) {
 			unsigned int consumed;
 			aifx::speech::SpeechAudioStream::FeedState feed_state;
-			consumed = audioStream.feed(speech, min<unsigned int>(samples, aifx::speech::SpeechAudioStream::vad_frame_size * 5), feed_state);
+			consumed = audioStream.feed(speech, min<unsigned int>(samples, vad.frame_size() * 10), feed_state);
 			samples -= consumed;
 			speech += consumed;
 			if (samples == 0 || audioStream == aifx::speech::SpeechAudioStream::Status::Done) break; else this_thread::sleep_for(100ms);
@@ -404,19 +396,19 @@ aifx::speech::SpeechAudioStream::Status DeepSpeechRecognizer::decode()
 	return audioStream.decode();
 }
 
-const vector<aifx::speech::RecognitionResult> DeepSpeechRecognizer::results() const
+const vector<RecognitionResult> DeepSpeechRecognizer::results() const
 {
-	return recognizer;
+	return { audioStream };
 }
 
 
-const jobject DeepSpeechRecognizer::jresults(JNIEnv* env, const vector<aifx::speech::RecognitionResult>& results)
+const jobject DeepSpeechRecognizer::jresults(JNIEnv* env, const vector<RecognitionResult>& results)
 {
 	if (results.empty()) return nullptr;
 	if (results.at(0).text.empty()) return nullptr;
 
 	jobject jresults = JNIUtilities::newList(env, results.size());
-	const float normalization = results.at(0).confidence;
+	const float normalization = results.at(0).words.confidence();
 
 	jmethodID add = env->GetMethodID(JNIClass::getClass(env, "java/util/List"), "add", "(Ljava/lang/Object;)Z");
 	if (env->ExceptionCheck()) throw JNIException(env);
@@ -425,13 +417,9 @@ const jobject DeepSpeechRecognizer::jresults(JNIEnv* env, const vector<aifx::spe
 	jmethodID init = JNIClass::getMethodID(env, resultClass, "<init>", "(FLjava/util/List;)V");
 	if (env->ExceptionCheck()) throw JNIException(env);
 
-	for_each(results.begin(), results.end(), [env, normalization, &resultClass, &add, &init, &jresults](const aifx::speech::RecognitionResult& result) {
-		const float confidence = normalization / result.confidence;
-		vector<string> words;
-		for_each(result.words.begin(), result.words.end(), [env, normalization, &words](const aifx::speech::RecognitionResult::Word& word) {
-			words.push_back(word.word);
-			});
-		jobject jwords = JNIUtilities::asList(env, words);
+	ranges::for_each(results, [env, normalization, &resultClass, &add, &init, &jresults] (const RecognitionResult& result) {
+		const float confidence = normalization / result.words.confidence();
+		jobject jwords = JNIUtilities::asList(env, result.words);
 		jobject jresult = env->NewObject(resultClass, init, confidence, jwords);
 		if (env->ExceptionCheck()) throw JNIException(env);
 		env->CallObjectMethod(jresults, add, jresult);

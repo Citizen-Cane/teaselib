@@ -52,13 +52,6 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     @Override
     public native String languageCode();
 
-    @Override
-    public void setMaxAlternates(int n) {
-        setMaxResults(n * 5);
-    }
-
-    public native void setMaxResults(int n);
-
     enum Status {
         Idle,
         Started,

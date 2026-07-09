@@ -29,7 +29,6 @@ public:
 	void setChoices(const Choices& choices);
 	void setChoices(CComPtr<IStream>& srgs);
 
-	void setMaxAlternates(const int maxAlternates);
 	void start();
 	void stop();
 	void emulate(const wchar_t * emulatedRecognitionResult);

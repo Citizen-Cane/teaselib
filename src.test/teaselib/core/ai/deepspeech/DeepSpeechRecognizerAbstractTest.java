@@ -1,14 +1,14 @@
 package teaselib.core.ai.deepspeech;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+
 import teaselib.core.ai.TeaseLibAI;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
-
-import java.util.Locale;
 
 @TestInstance(Lifecycle.PER_CLASS)
 abstract class DeepSpeechRecognizerAbstractTest {
@@ -21,7 +21,6 @@ abstract class DeepSpeechRecognizerAbstractTest {
     public void init() {
         teaseLibAI = new TeaseLibAI();
         deepSpeechRecognizer = new DeepSpeechRecognizer(Locale.ENGLISH);
-        deepSpeechRecognizer.setMaxAlternates(SpeechRecognitionImplementation.MAX_ALTERNATES_DEFAULT);
         events = new SpeechRecognitionEvents();
         deepSpeechRecognizer.startEventLoop(events);
 

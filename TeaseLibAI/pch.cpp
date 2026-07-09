@@ -7,8 +7,6 @@
 
 // core
 
-#pragma comment(lib, "libfvad.lib") 
-
 #pragma comment(lib, "Audio.lib") 
 #pragma comment(lib, "Compute.lib") 
 #pragma comment(lib, "Graphics.lib") 
@@ -23,4 +21,4 @@
 // Features
 
 #pragma comment(lib, "Pose.lib") 
-#pragma comment(lib, "CoquiSTT.lib")
+#pragma comment(lib, "Whisper.lib")

@@ -99,7 +99,7 @@ public class TeaseLib implements Closeable {
     private final Set<CheckPointListener> checkPointListeners = new HashSet<>();
 
     private final Thread mainThread;
-    private final Thread shutdownHook = new Thread(this::shutdown);
+    private final Thread saveAllShutDownHook = new Thread(this::saveAll);
 
     private Runnable quitHandler = null;
 
@@ -113,7 +113,7 @@ public class TeaseLib implements Closeable {
 
         this.config = new Configuration(setup);
         this.host = host;
-        this.audioSystem = new TeaseLibAudioSystem(); // host.audioSystem();
+        this.audioSystem = new TeaseLibAudioSystem();
         this.persistence = new ConfigFileMapping(config, host.persistence(config));
 
         this.userItems = new UserItemsImpl(this);
@@ -126,7 +126,7 @@ public class TeaseLib implements Closeable {
         this.random = new Random();
 
         this.mainThread = Thread.currentThread();
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
+        Runtime.getRuntime().addShutdownHook(saveAllShutDownHook);
     }
 
     private static void logDateTime() {
@@ -257,43 +257,41 @@ public class TeaseLib implements Closeable {
 
     @Override
     public void close() {
-        Runtime.getRuntime().removeShutdownHook(shutdownHook);
-        boolean isInterrupted = Thread.interrupted();
-        shutdown();
-        if (isInterrupted) {
-            Thread.currentThread().interrupt();
+        try {
+            if (Runtime.getRuntime().removeShutdownHook(saveAllShutDownHook)) {
+                boolean isInterrupted = Thread.interrupted();
+                saveAll();
+                cleanup();
+                if (isInterrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        } catch (IllegalStateException e) {
+            // saveAll() and cleanup() executed via hook
+            if (e.getMessage().contains("Shutdown in progress")) {
+                return;
+            } else {
+                throw e;
+            }
         }
     }
 
-    private void shutdown() {
-        try {
-            globals.close();
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
-        }
+    private void saveAll() {
+        close(config);
+    }
 
-        try {
-            audioSystem.close();
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
+    private void cleanup() {
+        close(devices);
+        close(globals);
+        close(audioSystem);
+        if (host instanceof Closeable closeable) {
+            close(closeable);
         }
+    }
 
-        if (host instanceof Closeable) {
-            try {
-                ((Closeable) host).close();
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
-            }
-        }
-
+    static void close(Closeable c) {
         try {
-            devices.close();
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
-        }
-
-        try {
-            config.close();
+            c.close();
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }

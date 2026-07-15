@@ -26,7 +26,10 @@ public:
 	~DeepSpeechRecognizer();
 
 	const std::string& languageCode() const;
-	void setHotWords(const std::set<std::string>& words, const std::vector<std::string>& phrases);
+	using Hotwords = aifx::speech::RecognitionContext<float>::Hotword::Set;
+	using Phrase = aifx::speech::RecognitionContext<float>::Hotword::Phrase;
+	using Phrases = aifx::speech::RecognitionContext<float>::Hotword::Phrases;
+	void setHotWords(const Hotwords& words, const Phrases& phrases);
 
 	void start();
 	void stop();

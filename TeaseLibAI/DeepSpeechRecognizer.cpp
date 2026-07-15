@@ -155,20 +155,19 @@ extern "C"
 	 * Signature: (Ljava/util/List;)V
 	 */
 	JNIEXPORT void JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_setChoices
-	(JNIEnv* env, jobject jthis, jobject jphrases)
+	(JNIEnv* env, jobject jthis, jobject jchoices)
 	{
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
-			vector<jobjectArray> phrases = JNIUtilities::objectArrays(env, jphrases);
-			set<string> all;
-			vector<string> phrases_list(phrases.size());
-			ranges::for_each(phrases, [env, &all, &phrases_list] (jobjectArray jphrase) {
-				const vector<string> words = JNIUtilities::stringArray(env, jphrase);
+			vector<jobjectArray> jphrases = JNIUtilities::objectArrays(env, jchoices);
+			DeepSpeechRecognizer::Hotwords all;
+			DeepSpeechRecognizer::Phrases phrases;
+			for(const auto& jphrase : jphrases) {
+				const DeepSpeechRecognizer::Phrase words = JNIUtilities::stringArray(env, jphrase);
 				all.insert(words.begin(), words.end());
-				string phrase = aifx::text::join(words);
-				phrases_list.emplace_back(phrase);
-			});
-			speechRecognizer->setHotWords(all, phrases_list);
+				phrases.emplace_back(words);
+			}
+			speechRecognizer->setHotWords(all, phrases);
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
@@ -315,7 +314,7 @@ const string& DeepSpeechRecognizer::languageCode() const
 	return recognizer.lang;
 }
 
-void DeepSpeechRecognizer::setHotWords(const set<string>& words, const vector<string>& phrases)
+void DeepSpeechRecognizer::setHotWords(const Hotwords& words, const Phrases& phrases)
 {
 	recognizer.set_hotwords(words, aifx::speech::Hotwords::Boost::Medium);
 	recognizer.set_phrases(phrases, aifx::speech::Hotwords::Boost::Medium);

@@ -161,11 +161,14 @@ extern "C"
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			vector<jobjectArray> phrases = JNIUtilities::objectArrays(env, jphrases);
 			set<string> all;
-			ranges::for_each(phrases, [env, &all] (jobjectArray phrase) {
-				const vector<string> words = JNIUtilities::stringArray(env, phrase);
+			vector<string> phrases_list(phrases.size());
+			ranges::for_each(phrases, [env, &all, &phrases_list] (jobjectArray jphrase) {
+				const vector<string> words = JNIUtilities::stringArray(env, jphrase);
 				all.insert(words.begin(), words.end());
+				string phrase = aifx::text::join(words);
+				phrases_list.emplace_back(phrase);
 			});
-			speechRecognizer->setHotWords(all);
+			speechRecognizer->setHotWords(all, phrases_list);
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
@@ -312,10 +315,10 @@ const string& DeepSpeechRecognizer::languageCode() const
 	return recognizer.lang;
 }
 
-void DeepSpeechRecognizer::setHotWords(const set<string>& words)
+void DeepSpeechRecognizer::setHotWords(const set<string>& words, const vector<string>& phrases)
 {
 	recognizer.set_hotwords(words, aifx::speech::Hotwords::Boost::Medium);
-	// recognizer.set_phrases(TODO, aifx::speech::Hotwords::Boost::Medium);
+	recognizer.set_phrases(phrases, aifx::speech::Hotwords::Boost::Medium);
 }
 
 void DeepSpeechRecognizer::start()

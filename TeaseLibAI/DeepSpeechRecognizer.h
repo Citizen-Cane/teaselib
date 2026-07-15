@@ -26,7 +26,7 @@ public:
 	~DeepSpeechRecognizer();
 
 	const std::string& languageCode() const;
-	void setHotWords(const std::set<std::string>& words);
+	void setHotWords(const std::set<std::string>& words, const std::vector<std::string>& phrases);
 
 	void start();
 	void stop();

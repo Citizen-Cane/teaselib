@@ -57,7 +57,7 @@ extern "C"
 			} else if (sdk == SpSpeechSynthesizer::Sdk) {
 				speechSynthesizer = new SpSpeechSynthesizer(env);
 			} else {
-				throw invalid_argument(sdk);
+				throw invalid_argument(static_cast<string>(sdk));
 			}
 			return reinterpret_cast<jlong>(speechSynthesizer);
 		}
@@ -88,7 +88,7 @@ extern "C"
 			Objects::requireNonNull(L"locale", locale);
 			Objects::requireNonNull(L"pronunciation", pronunciation);
 			SpeechSynthesizer* speechSynthesizer = NativeInstance::get<SpeechSynthesizer>(env, jthis);
-			speechSynthesizer->addLexiconEntry(JNIString(env, locale), JNIString(env, word), static_cast<SPPARTOFSPEECH>(partOfSpeech), JNIString(env, pronunciation));
+			speechSynthesizer->addLexiconEntry(JNIString(env, locale), JNIString(env, word), static_cast<SPPARTOFSPEECH>(partOfSpeech),	JNIString(env, pronunciation));
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
@@ -197,7 +197,7 @@ extern "C"
 			SpeechSynthesizer* speechSynthesizer = NativeInstance::get<SpeechSynthesizer>(env, jthis);
             speechSynthesizer->setHints(JNIUtilities::wstringArray(env, getHints(env, jthis)));
             const std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
-            actualPath = JNIString(env, soundFile.c_str()).detach();
+            actualPath = JNIString(env, soundFile).detach();
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
 		} catch (NativeException& e) {
@@ -207,7 +207,6 @@ extern "C"
 		}
         return actualPath;
     }
-
 
 	/*
 	 * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS

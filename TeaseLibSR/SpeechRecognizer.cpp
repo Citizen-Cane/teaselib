@@ -64,8 +64,8 @@ void SpeechRecognizer::initContext() {
 	CComPtr<ISpObjectToken> cpRecognizerToken;
 	HRESULT hr = SpFindBestToken(SPCAT_RECOGNIZERS, recognizerAttributes.c_str(), NULL, &cpRecognizerToken);
 	if (cpRecognizerToken == NULL || hr == SPERR_NOT_FOUND) {
-		throw UnsupportedLanguageException(FAILED(hr) ? hr : E_INVALIDARG, (std::wstring(L"Unsupported language or region '") + locale +
-			L"'. Please install the corresponding Windows language pack.").c_str());
+		throw UnsupportedLanguageException(FAILED(hr) ? hr : E_INVALIDARG, std::format(
+			L"Unsupported language or region '%s'. Please install the corresponding Windows language pack.", locale));
 	} else if (FAILED(hr)) {
 		assert(SUCCEEDED(hr));
 		throw COMException(hr);
@@ -292,7 +292,7 @@ void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
 					wcerr << "Uncatched native exception in SpeechRecognizer::EventHandler::eventLoop: " << e.message << "(error code=" << e.errorCode << ")" << endl;
 				} catch (JNIException& e) {
 					JNIStringUTF8 message(env, e.getMessage());
-					cerr << "Uncatched Java exception in SpeechRecognizer::EventHandler::eventLoop: " << message.operator LPCSTR() << endl;
+					cerr << "Uncatched Java exception in SpeechRecognizer::EventHandler::eventLoop: " << message << endl;
 					e.printStacktrace();
 				}
             }

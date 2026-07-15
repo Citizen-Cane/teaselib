@@ -30,6 +30,7 @@
 #include "DeepSpeechRecognizer.h"
 
 using namespace aifx::audio;
+using namespace aifx::compute;
 using namespace aifx::speech;
 using namespace aifx::util;
 using namespace std;
@@ -47,10 +48,10 @@ extern "C"
 	{
 		try {
 			Objects::requireNonNull(L"locale", jlanguageCode);
-			aifx::compute::ModelZoo models = aifx::util::Resource::getModuleDirectory() / "models";
+			ModelZoo models = aifx::util::Resource::getModuleDirectory() / "models";
 			models.emplace_back(WhisperHypothesizingContext::model_set());
 			models.emplace_back(vad::Silero::model_set);
-			auto plan = aifx::compute::AllocationPlan(aifx::compute::Devices::all(), models);
+			auto plan = AllocationPlan(Devices::all(), models);
 			if (!plan.allocate()) throw bad_alloc();
 
 			JNIStringUTF8 languageCode(env, jlanguageCode);
@@ -64,7 +65,7 @@ extern "C"
 				}
 				wstringstream message;
 				message << e.what();
-				throw UnsupportedLanguageException(E_INVALIDARG, message.str().c_str());
+				throw UnsupportedLanguageException(E_INVALIDARG, message.str());
 			}
 		} catch(exception& e) {
 			JNIException::rethrow(env, e);
@@ -111,17 +112,17 @@ extern "C"
 	{
 		try {
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
-			const aifx::speech::SpeechAudioStream::Status status = speechRecognizer->decode();
+			const SpeechAudioStream::Status status = speechRecognizer->decode();
 			return static_cast<int>(status);
 		} catch (exception& e) {
 			JNIException::rethrow(env, e);
-			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Idle);
+			return static_cast<int>(SpeechAudioStream::Status::Idle);
 		} catch (NativeException& e) {
 			JNIException::rethrow(env, e);
-			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Idle);
+			return static_cast<int>(SpeechAudioStream::Status::Idle);
 		} catch (JNIException& e) {
 			e.rethrow();
-			return static_cast<int>(aifx::speech::SpeechAudioStream::Status::Idle);
+			return static_cast<int>(SpeechAudioStream::Status::Idle);
 		}
 	}
 
@@ -160,8 +161,8 @@ extern "C"
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			vector<jobjectArray> phrases = JNIUtilities::objectArrays(env, jphrases);
 			set<string> all;
-			for_each(phrases.begin(), phrases.end(), [env, &phrases, &all](jobjectArray phrase) {
-				vector<string> words = JNIUtilities::stringArray(env, phrase);
+			ranges::for_each(phrases, [env, &all] (jobjectArray phrase) {
+				const vector<string> words = JNIUtilities::stringArray(env, phrase);
 				all.insert(words.begin(), words.end());
 			});
 			speechRecognizer->setHotWords(all);
@@ -207,7 +208,7 @@ extern "C"
 			DeepSpeechRecognizer* speechRecognizer = NativeInstance::get<DeepSpeechRecognizer>(env, jthis);
 			JNIStringUTF8 speech(env, jspeech);
 			if (PathFileExistsA(speech)) {
-				speechRecognizer->emulate(aifx::audio::WavFile(std::filesystem::path(speech.c_str())));
+				speechRecognizer->emulate(aifx::audio::WavFile(speech));
 			} else {
 				speechRecognizer->emulate(speech);
 			}
@@ -282,22 +283,16 @@ extern "C"
 
 }
 
-WhisperHypothesizingContext build(const aifx::compute::ModelZoo& zoo, const char* languageCode) {
-	aifx::compute::AllocationPlan plan(aifx::compute::Devices::all(), zoo);
-	if (!plan.allocate()) throw bad_alloc();
-	return plan.make<WhisperHypothesizingContext>(languageCode);
-}
-
-DeepSpeechRecognizer::DeepSpeechRecognizer(const aifx::compute::AllocationPlan& plan, const char* languageCode)
+DeepSpeechRecognizer::DeepSpeechRecognizer(const AllocationPlan& plan, const char* languageCode)
 	: recognizer(plan.make<WhisperHypothesizingContext>(languageCode))
 	, vad(plan.make<vad::Silero>())
 	, audioStream(recognizer, vad)
 	, audio(AudioCapture::Devices().default_device, recognizer.sample_rate(), vad.frame_size() * 10)
-	, input([this](const float* audio, unsigned int samples) {
-		aifx::speech::SpeechAudioStream::FeedState feed_stste;
+	, input([this] (const float* audio, unsigned int samples) {
+		SpeechAudioStream::FeedState feed_stste;
 		const unsigned int consumed = audioStream.feed(audio, samples, feed_stste);
 		if (consumed < samples) {
-			if (feed_stste == aifx::speech::SpeechAudioStream::FeedState::FinishDecodeStream) {
+			if (feed_stste == SpeechAudioStream::FeedState::FinishDecodeStream) {
 				// ok - waiting to finish decode
 			} else {
 				cerr << "DeepSpeechAudioStream feed buffer size insufficient - " << samples - consumed << " samples dropped." << endl;
@@ -370,14 +365,14 @@ void DeepSpeechRecognizer::emulate(const float* speech, unsigned int samples)
 	try {
 		while (samples) {
 			unsigned int consumed;
-			aifx::speech::SpeechAudioStream::FeedState feed_state;
+			SpeechAudioStream::FeedState feed_state;
 			consumed = audioStream.feed(speech, min<unsigned int>(samples, vad.frame_size() * 10), feed_state);
 			samples -= consumed;
 			speech += consumed;
-			if (samples == 0 || audioStream == aifx::speech::SpeechAudioStream::Status::Done) break; else this_thread::sleep_for(100ms);
+			if (samples == 0 || audioStream == SpeechAudioStream::Status::Done) break; else this_thread::sleep_for(100ms);
 		}
 
-		if (audioStream == aifx::speech::SpeechAudioStream::Status::Running) {
+		if (audioStream == SpeechAudioStream::Status::Running) {
 			audioStream.finish();
 		}
 	} catch (exception& e) {
@@ -391,7 +386,7 @@ void DeepSpeechRecognizer::stopEventLoop()
 	stop();
 }
 
-aifx::speech::SpeechAudioStream::Status DeepSpeechRecognizer::decode()
+SpeechAudioStream::Status DeepSpeechRecognizer::decode()
 {
 	return audioStream.decode();
 }

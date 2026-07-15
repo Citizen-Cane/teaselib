@@ -20,7 +20,7 @@ vector<string> JNIUtilities::stringArray(JNIEnv* env, jobjectArray jarray)
 		int stringCount = env->GetArrayLength(jarray);
 		for (int i = 0; i < stringCount; i++) {
 			JNIStringUTF8 element(env, (jstring) env->GetObjectArrayElement(jarray, i));
-			elements.push_back(element.c_str());
+			elements.emplace_back(element);
 		}
 	}
 	return elements;
@@ -28,15 +28,15 @@ vector<string> JNIUtilities::stringArray(JNIEnv* env, jobjectArray jarray)
 
 vector<wstring> JNIUtilities::wstringArray(JNIEnv* env, jobjectArray jarray)
 {
-    vector<wstring> elements;
-    if (jarray) {
-        int stringCount = env->GetArrayLength(jarray);
-        for (int i = 0; i < stringCount; i++) {
+	vector<wstring> elements;
+	if (jarray) {
+		int stringCount = env->GetArrayLength(jarray);
+		for (int i = 0; i < stringCount; i++) {
 			JNIString element(env, (jstring) env->GetObjectArrayElement(jarray, i));
-			elements.push_back(element.c_str());
+			elements.emplace_back(element);
 		}
-    }
-    return elements;
+	}
+	return elements;
 }
 
 jobject JNIUtilities::emptyList(JNIEnv* env) {
@@ -119,7 +119,7 @@ jobject JNIUtilities::asSet(JNIEnv* env, const set<NativeObject*>& elements)
 	if (env->ExceptionCheck()) throw JNIException(env);
 
 	jmethodID add = JNIClass::getMethodID(env, setClass, "add", "(Ljava/lang/Object;)Z");
-	for_each(elements.begin(), elements.end(), [&](const NativeObject* nativeObject) {
+	for_each(elements.begin(), elements.end(), [&] (const NativeObject* nativeObject) {
 		env->CallObjectMethod(set, add, nativeObject->operator jobject());
 		if (env->ExceptionCheck()) throw JNIException(env);
 	});
@@ -135,21 +135,21 @@ jobject JNIUtilities::enumValue(JNIEnv* env, const char* enumClass, const char* 
 
 vector<string> JNIUtilities::strings(JNIEnv* env, jobject jcollection)
 {
-	return list<string>(env, jcollection, [&env](jobject jelement)->string {
-		 return JNIStringUTF8(env, (jstring) jelement).c_str();
+	return list<string>(env, jcollection, [&env] (jobject jelement)->string {
+		 return JNIStringUTF8(env, (jstring) jelement);
 	});
 }
 
 vector<wstring> JNIUtilities::wstrings(JNIEnv* env, jobject jcollection)
 {
-	return list<wstring>(env, jcollection, [&env](jobject jelement)->wstring {
-		return JNIString(env, (jstring) jelement).c_str();
+	return list<wstring>(env, jcollection, [&env] (jobject jelement)->wstring {
+		return JNIString(env, (jstring) jelement);
 	});
 }
 
 vector<jobjectArray> JNIUtilities::objectArrays(JNIEnv* env, jobject jcollection)
 {
-	return list<jobjectArray>(env, jcollection, [&env](jobject jelement)->jobjectArray {
+	return list<jobjectArray>(env, jcollection, [&env] (jobject jelement)->jobjectArray {
 		return (jobjectArray) jelement;
 	});
 }

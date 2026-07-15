@@ -10,11 +10,11 @@ public:
 	JNIStringT(JNIEnv* env, const std::basic_string<T>& string);
 	virtual ~JNIStringT();
 
-	operator const T*() const {
-		return string;
+	operator const std::basic_string<T>() const {
+		return { string };
 	};
 
-	const T* c_str() const {
+	operator const T*() const {
 		return string;
 	};
 

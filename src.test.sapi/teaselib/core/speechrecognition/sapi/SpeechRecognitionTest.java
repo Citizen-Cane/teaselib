@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
+import teaselib.core.speechrecognition.Word;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
@@ -144,7 +145,7 @@ public class SpeechRecognitionTest {
         rejected.addAll(assertRejected(choices, "Yes I haven't"));
         assertEquals("Should have been filtered by SRGS speech recognition implementation", 0, rejected.size());
 
-        Rule distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
+        Word distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
         assertEquals(expected.get(0), distinct);
 
         assertRejected(choices, "Yes I haven't");
@@ -169,7 +170,7 @@ public class SpeechRecognitionTest {
         expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
         assertEquals(1, expected.size());
 
-        Rule distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
+        Word distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
         assertEquals(expected.get(0), distinct);
     }
 

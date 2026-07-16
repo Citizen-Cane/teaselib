@@ -1,8 +1,12 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Collections.*;
-import static java.util.function.Predicate.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+import static java.util.Collections.unmodifiableList;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,7 +27,7 @@ import teaselib.core.speechrecognition.srgs.SlicedPhrases;
  * @author Citizen-Cane
  *
  */
-public class Rule {
+public class Rule extends Word {
 
     public static final String MAIN_RULE_NAME = "Recognized";
     public static final int MAIN_RULE_INDEX = -1;
@@ -41,14 +45,11 @@ public class Rule {
     public static final Set<Integer> NoIndices = emptySet();
 
     public final String name;
-    public final String text;
     public final int ruleIndex;
     public final Set<Integer> indices;
     public final int fromElement;
     public final int toElement;
-
     public final List<Rule> children;
-    public final float probability;
 
     public static Rule mainRule(List<Rule> children) {
         if (children.isEmpty()) {
@@ -136,16 +137,15 @@ public class Rule {
 
     private Rule(String name, String text, int ruleIndex, Set<Integer> indices, List<Rule> children, int fromElement,
             int toElement, float probability) {
+        super(text, probability);
         Precoditions.checkProbability(probability);
 
         this.name = name;
-        this.text = text;
         this.ruleIndex = ruleIndex;
         this.indices = indices;
         this.fromElement = fromElement;
         this.toElement = toElement;
         this.children = unmodifiableList(children);
-        this.probability = probability;
     }
 
     public static Rule maxProbability(Rule a, Rule b) {

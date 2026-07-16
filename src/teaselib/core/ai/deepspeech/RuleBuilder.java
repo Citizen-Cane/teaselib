@@ -10,14 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import teaselib.core.ai.deepspeech.DeepSpeechRecognizer.Result;
 import teaselib.core.ai.deepspeech.RuleBuilder.Rating.Rated;
 import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.Word;
 
 public class RuleBuilder {
 
-    private RuleBuilder() {
-    }
+    private RuleBuilder() {}
 
     interface Rating {
         Rated get(String word, Integer choice);
@@ -37,7 +36,7 @@ public class RuleBuilder {
 
     static class Matcher {
         final List<String[]> phrases;
-        final List<Result> results;
+        final List<List<Word>> results;
         final List<MatchStrategy> matchStrategies;
 
         String[] phrase;
@@ -47,7 +46,7 @@ public class RuleBuilder {
         int insertNullRules;
         List<Rule> children;
 
-        public Matcher(List<String[]> phrases, List<Result> results) {
+        public Matcher(List<String[]> phrases, List<List<Word>> results) {
             this.phrases = phrases;
             this.results = results;
             matchStrategies = createStrategies();
@@ -73,18 +72,18 @@ public class RuleBuilder {
 
             // recognized word -> two expected words
             var joinedWord = new MatchStrategy((word, choice) -> {
-                List<String> result = results.get(0).words;
+                var result = results.get(0);
                 if (resultIndex < result.size() - 1 && wordIndex < phrase.length - 1) {
-                    String recognized = result.get(resultIndex);
+                    var recognized = result.get(resultIndex);
                     String nextWord = phrase[wordIndex + 1];
 
-                    float probability = partialMatch(word + nextWord, recognized);
+                    float probability = partialMatch(word + nextWord, recognized.text);
                     if (probability > 0.0f) {
-                        float a = recognized.startsWith(word.substring(0, 1)) //
-                                ? partialMatch(word, recognized)
+                        float a = recognized.text.startsWith(word.substring(0, 1)) //
+                                ? partialMatch(word, recognized.text)
                                 : 0.0f;
-                        float b = recognized.endsWith(nextWord.substring(nextWord.length() - 1)) //
-                                ? partialMatch(nextWord, recognized)
+                        float b = recognized.text.endsWith(nextWord.substring(nextWord.length() - 1)) //
+                                ? partialMatch(nextWord, recognized.text)
                                 : 0.0f;
                         if (a > 0.0f && b > 0.0f) {
                             return new Rated(probability, () -> {
@@ -106,14 +105,14 @@ public class RuleBuilder {
                 }
             });
 
-            // recognized words -> ome expected word
+            // recognized words -> one expected word
             var splitWord = new MatchStrategy((word, choice) -> {
-                List<String> result = results.get(0).words;
+                List<Word> result = results.get(0);
                 if (resultIndex < result.size() - 1) {
-                    String recognized = result.get(resultIndex);
-                    String nextRecognized = result.get(resultIndex + 1);
+                    Word recognized = result.get(resultIndex);
+                    Word nextRecognized = result.get(resultIndex + 1);
 
-                    float probability = partialMatch(recognized + nextRecognized, word);
+                    float probability = partialMatch(recognized.text + nextRecognized.text, word);
                     if (probability > 0.0f) {
                         return new Rated(probability, () -> {
                             addChild("splitWord", word, choice, probability);
@@ -157,8 +156,8 @@ public class RuleBuilder {
                 wordIndex++;
             }
 
-            if (resultIndex < results.get(0).words.size() || insertNullRules > 0) {
-                int n = Math.max(results.get(0).words.size() - wordIndex, insertNullRules);
+            if (resultIndex < results.get(0).size() || insertNullRules > 0) {
+                int n = Math.max(results.get(0).size() - wordIndex, insertNullRules);
                 addPlaceholders(n, phraseIndex);
             }
         }
@@ -185,12 +184,12 @@ public class RuleBuilder {
         private float match(String word, int index, int startResult, float currentConfidence) {
             for (int i = startResult; i < results.size(); i++) {
                 var result = results.get(i);
-                if (index < result.words.size()) {
-                    String hypothesis = result.words.get(index);
-                    if (word.equals(hypothesis) && result.confidence >= currentConfidence) {
-                        return result.confidence;
+                if (index < result.size()) {
+                    Word hypothesis = result.get(index);
+                    if (word.equals(hypothesis) && hypothesis.probability >= currentConfidence) {
+                        return hypothesis.probability;
                     } else {
-                        float confidence = partialMatch(hypothesis, word) * result.confidence;
+                        float confidence = partialMatch(hypothesis.text, word) * hypothesis.probability;
                         return Math.max(currentConfidence, match(word, index, startResult + 1, confidence));
                     }
                 }
@@ -268,7 +267,7 @@ public class RuleBuilder {
 
     }
 
-    public static List<Rule> rules(List<String[]> phrases, List<Result> results) {
+    public static List<Rule> rules(List<String[]> phrases, List<List<Word>> results) {
         Map<String, Rule> rules = new LinkedHashMap<>();
         var matcher = new Matcher(phrases, results);
         for (int phraseIndex = 0; phraseIndex < phrases.size(); phraseIndex++) {

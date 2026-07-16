@@ -32,6 +32,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionInputMethod;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
 import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.Word;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
@@ -318,12 +319,12 @@ public class SpeechRecognitionTestUtils {
         }
     }
 
-    public static void assertConfidence(SpeechRecognitionNativeImplementation recognizer, Rule rule,
+    public static void assertConfidence(SpeechRecognitionNativeImplementation recognizer, Word rule,
             Intention intention) {
         assertConfidence(rule, recognizer.required.confidence(intention));
     }
 
-    public static void assertConfidence(Rule rule, float confidence) {
+    public static void assertConfidence(Word rule, float confidence) {
         assertTrue(rule.probability > confidence,
                 "confidence=" + rule.probability
                         + " too low for required confidence=" + confidence + " in rule " + rule);

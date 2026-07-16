@@ -129,7 +129,7 @@ extern "C"
 	/*
 	 * Class:     teaselib_core_ai_perception_DeepSpeechRecognizer
 	 * Method:    results
-	 * Signature: ()Lteaselib/core/ai/perception/DeepSpeechRecognizer/Results;
+	 * Signature: ()Ljava/util/List;
 	 */
 	JNIEXPORT jobject JNICALL Java_teaselib_core_ai_deepspeech_DeepSpeechRecognizer_results
 	(JNIEnv* env, jobject jthis)
@@ -405,23 +405,28 @@ const jobject DeepSpeechRecognizer::jresults(JNIEnv* env, const vector<Recogniti
 	if (results.at(0).text.empty()) return nullptr;
 
 	jobject jresults = JNIUtilities::newList(env, results.size());
-	const float normalization = results.at(0).words.confidence();
 
-	jmethodID add = env->GetMethodID(JNIClass::getClass(env, "java/util/List"), "add", "(Ljava/lang/Object;)Z");
+	jmethodID listAdd = env->GetMethodID(JNIClass::getClass(env, "java/util/List"), "add", "(Ljava/lang/Object;)Z");
 	if (env->ExceptionCheck()) throw JNIException(env);
-	jclass resultClass = JNIClass::getClass(env, "teaselib/core/ai/deepspeech/DeepSpeechRecognizer$Result");
+	jclass wordClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/Word");
 	if (env->ExceptionCheck()) throw JNIException(env);
-	jmethodID init = JNIClass::getMethodID(env, resultClass, "<init>", "(FLjava/util/List;)V");
+	jmethodID wordInit = JNIClass::getMethodID(env, wordClass, "<init>", "(Ljava/lang/String;F)V");
 	if (env->ExceptionCheck()) throw JNIException(env);
 
-	ranges::for_each(results, [env, normalization, &resultClass, &add, &init, &jresults] (const RecognitionResult& result) {
-		const float confidence = normalization / result.words.confidence();
-		jobject jwords = JNIUtilities::asList(env, result.words);
-		jobject jresult = env->NewObject(resultClass, init, confidence, jwords);
+	for(auto& result : results) {
+		std::vector<jobject> vjwords = result.words 
+			| ranges::views::transform(
+				[env, &wordClass, &wordInit] (const auto& word) {
+					auto jtext = JNIStringUTF8(env, word.text);
+					auto jresult = env->NewObject(wordClass, wordInit, jtext.detach(), word.confidence);
+					if (env->ExceptionCheck()) throw JNIException(env);
+					return jresult;
+				})
+			| ranges::to<vector>();
+		jobject jwords = JNIUtilities::asList(env, vjwords);
+		env->CallObjectMethod(jresults, listAdd, jwords);
 		if (env->ExceptionCheck()) throw JNIException(env);
-		env->CallObjectMethod(jresults, add, jresult);
-		if (env->ExceptionCheck()) throw JNIException(env);
-	});
+	};
 
 	return jresults;
 }

@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.HashMap;
 import java.util.List;
@@ -258,7 +258,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         }
     }
 
-    private float expectedConfidence(Choices choices, Rule rule) {
+    private float expectedConfidence(Choices choices, Word rule) {
         SpeechRecognition recognizer = getRecognizer(choices.locale);
         HearingAbility required = recognizer.implementation.required;
         float p = required.confidence(choices.intention);

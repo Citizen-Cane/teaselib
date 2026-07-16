@@ -14,6 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.Word;
 import teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -151,7 +152,7 @@ class DeepSpeechRuleTest extends DeepSpeechRecognizerAbstractTest {
 
     @Test
     void testExperienceProovesThisAsText() throws InterruptedException {
-        Rule rule = emulateSpeech("experience prooves this",
+        Word rule = emulateSpeech("experience prooves this",
                 "experience prooves this\nexperience prooves that\nthe experience proofs it");
         assertNotNull(rule);
     }

@@ -13,6 +13,7 @@ import java.util.function.IntUnaryOperator;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.Word;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -76,7 +77,7 @@ public class TeaseLibSRSimple extends TeaseLibSR.SAPI {
         return repaired;
     }
 
-    private static boolean startsWith(Rule rule, String phrase) {
+    private static boolean startsWith(Word rule, String phrase) {
         return PhraseString.words(rule.text).length < PhraseString.words(phrase).length && phrase.startsWith(rule.text);
     }
 

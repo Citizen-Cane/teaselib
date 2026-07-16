@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.speechrecognition.PreparedChoices;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.Word;
 import teaselib.core.speechrecognition.srgs.PhraseMapping;
 import teaselib.core.speechrecognition.srgs.PhraseString;
 import teaselib.core.speechrecognition.srgs.SRGSPhraseBuilder;
@@ -203,7 +204,7 @@ public abstract class TeaseLibSRGS extends TeaseLibSR.SAPI {
         return rules;
     }
 
-    private boolean isPhrase(Rule rule) {
+    private boolean isPhrase(Word rule) {
         String text = rule.text.toLowerCase();
         return preparedChoices.phrases.stream().anyMatch(phrase -> phrase.startsWith(text));
     }

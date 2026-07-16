@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import teaselib.core.speechrecognition.Rule;
+import teaselib.core.speechrecognition.Word;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Intention;
@@ -73,7 +73,7 @@ class DeepSpeechRecognizerAudioTest extends DeepSpeechRecognizerAbstractTest {
         Path audio = testData.audio();
         assertTrue(Files.exists(audio), "File not found: " + audio);
         deepSpeechRecognizer.emulateRecognition(audio.toString());
-        Rule rule = await(0, deepSpeechRecognizer, events);
+        Word rule = await(0, deepSpeechRecognizer, events);
         assertConfidence(deepSpeechRecognizer, rule, Intention.Decide);
     }
 

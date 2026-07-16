@@ -22,6 +22,7 @@ import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionNativeImplementation;
+import teaselib.core.speechrecognition.Word;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -64,22 +65,6 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
         public static Status of(int value) {
             return values()[value];
         }
-    }
-
-    static class Result {
-        final float confidence;
-        final List<String> words;
-
-        public Result(float confidence, List<String> words) {
-            this.confidence = confidence;
-            this.words = words;
-        }
-
-        @Override
-        public String toString() {
-            return "[" + words + " confidence=" + confidence + "]";
-        }
-
     }
 
     @Override
@@ -158,7 +143,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
     }
 
     private List<Rule> rules() {
-        List<Result> results = results();
+        List<List<Word>> results = results();
         if (results == null || results.isEmpty()) {
             return Collections.emptyList();
         } else {
@@ -211,7 +196,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
 
     private native int decode();
 
-    private native List<Result> results();
+    private native List<List<Word>> results();
 
     public native void setChoices(List<String[]> phrases);
 

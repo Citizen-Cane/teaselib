@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.sapi;
 
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.awaitResult;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.getConfig;
 import static teaselib.core.util.ExceptionUtil.asRuntimeException;
@@ -16,7 +16,7 @@ import java.util.function.IntUnaryOperator;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,9 +101,10 @@ public class SpeechRecognitionHandcraftedXmlTest {
 
     private static List<Rule> emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
             Prompt.Result expected, Prompt.Result.Accept mode) throws IOException, InterruptedException {
-        assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
-                Arrays.stream(PhraseString.words(emulatedRecognitionResult)).collect(joining(" ")),
-                emulatedRecognitionResult);
+        assertEquals(String.join(" ", PhraseString.words(emulatedRecognitionResult)),
+                emulatedRecognitionResult,
+                "Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'"
+        );
 
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
         try (InputStream inputStream = resources.get(resource);) {
@@ -153,7 +154,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
     // However in RUle.gather() recursive child -> addAll(child.indices()) breaks a lot of other tests
 
     @Test
-    @Ignore
+    @Disabled
     public void testHandcraftedChildren() throws InterruptedException, IOException {
         String resource = "srgs/experimental/handcrafted_children_srg.xml";
 
@@ -176,7 +177,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testHandcraftedMultipleChoices() throws InterruptedException, IOException {
         String resource = "srgs/handcrafted_multiple_choices_srg.xml";
         assertRecognized(resource, "Please Miss two more strokes May I", new Prompt.Result(2, 1));
@@ -258,8 +259,8 @@ public class SpeechRecognitionHandcraftedXmlTest {
         List<Rule> results = new ArrayList<>();
         results.addAll(assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.Distinct));
         results.addAll(assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.Distinct));
-        assertEquals("sr result contains ambiguous rules since gargabe also matches allowed phrases", 2,
-                results.size());
+        assertEquals(2, results.size(),
+                "sr result contains ambiguous rules since gargabe also matches allowed phrases");
 
         assertRejected(srgs, "Yes of course Miss", Prompt.Result.Accept.Distinct);
         assertRejected(srgs, "of course", Prompt.Result.Accept.Distinct);
@@ -278,10 +279,9 @@ public class SpeechRecognitionHandcraftedXmlTest {
         List<Rule> results = new ArrayList<>();
         results.addAll(assertRecognized(srgs, "Yes of course", new Prompt.Result(0), Prompt.Result.Accept.Distinct));
         results.addAll(assertRecognized(srgs, "Of course Miss", new Prompt.Result(1), Prompt.Result.Accept.Distinct));
-        assertEquals("sr result contains ambiguous rules since gargabe also matches allowed phrases", 2,
-                results.size());
+        assertEquals(2, results.size(), "sr result contains ambiguous rules since gargabe also matches allowed phrases");
 
-        // Regcognized as choice 1 because the GARBAGE rule produces alterantes,
+        // Regcognized as choice 1 because the GARBAGE rule produces alternates,
         // which in turn produce a rule yes(choice index = 1)
         assertRecognized(srgs, "Yes of course Miss", new Prompt.Result(1), Prompt.Result.Accept.Distinct);
         // Regcognized as choice 1 because the missing phrase elements activate the GARBAGE rule

@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.sapi;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static teaselib.core.speechrecognition.SpeechRecognitionInputMethod.*;
 import static teaselib.core.speechrecognition.sapi.SpeechRecognitionTestUtils.*;
 
@@ -137,16 +138,16 @@ public class SpeechRecognitionTest {
                 new Choice("Yes I have"), //
                 new Choice("No I haven't"));
 
-        List<Rule> expected = new ArrayList<>();
-        expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
+        List<Rule> expected = new ArrayList<>(
+                assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
         assertEquals(1, expected.size());
 
-        List<Rule> rejected = new ArrayList<>();
-        rejected.addAll(assertRejected(choices, "Yes I haven't"));
-        assertEquals("Should have been filtered by SRGS speech recognition implementation", 0, rejected.size());
+        List<Rule> rejected = new ArrayList<>(
+                assertRejected(choices, "Yes I haven't"));
+        assertEquals(0, rejected.size(), "Should have been filtered by SRGS speech recognition implementation");
 
         Word distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
-        assertEquals(expected.get(0), distinct);
+        assertEquals(expected.getFirst(), distinct);
 
         assertRejected(choices, "Yes I haven't");
         assertRejected(choices, "No I have");
@@ -158,26 +159,26 @@ public class SpeechRecognitionTest {
                 new Choice("Yes I have"), //
                 new Choice("No I haven't"));
 
-        List<Rule> rejected = new ArrayList<>();
-        rejected.addAll(assertRejected(choices, "Yes I haven't"));
+        List<Rule> rejected = new ArrayList<>(assertRejected(choices, "Yes I haven't"));
         if (rejected.size() > 1) {
-            fail("Unstabel - multiple results: " + rejected);
+            fail("Unstable - multiple results: " + rejected);
         } else {
-            assertEquals("Should have been filtered by SRGS speech recognition implementation", 0, rejected.size());
+            assertEquals(0, rejected.size(),
+                    "Should have been filtered by SRGS speech recognition implementation");
         }
 
-        List<Rule> expected = new ArrayList<>();
-        expected.addAll(assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
+        List<Rule> expected = new ArrayList<>(
+                assertRecognized(choices, "Yes I have", new Prompt.Result(0)));
         assertEquals(1, expected.size());
 
         Word distinct = bestSingleResult(expected, PreparedChoices.IdentityMapping).orElseThrow();
-        assertEquals(expected.get(0), distinct);
+        assertEquals(expected.getFirst(), distinct);
     }
 
     @Test
     public void testWeightedHypothesis() throws InterruptedException {
         Choices choices = new Choices(Locale.ENGLISH, Intention.Decide, //
-                new Choice("Yes Mistress, I'ts locked up"), //
+                new Choice("Yes Mistress, It's locked up"), //
                 new Choice("Sorry Mistress, not yet"));
 
         // Hypothesis is weighted by amount of complete phrase, resulting in a probability of 1.0 / 5 = 0.2

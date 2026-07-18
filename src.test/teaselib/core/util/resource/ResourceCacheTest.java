@@ -2,8 +2,8 @@ package teaselib.core.util.resource;
 
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.platform.commons.logging.Logger;
+import org.junit.platform.commons.logging.LoggerFactory;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ResourceLoaderTest;
 import teaselib.core.util.ReflectionUtils;
@@ -98,7 +98,7 @@ public class ResourceCacheTest {
 
     private static void print(List<String> list) {
         for (String string : list) {
-            logger.info(string);
+            logger.info(()->string);
         }
     }
 }

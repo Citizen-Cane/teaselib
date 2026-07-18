@@ -3,16 +3,13 @@
  */
 package teaselib.core.devices.release.unattended;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import teaselib.core.configuration.DebugSetup;
@@ -21,6 +18,9 @@ import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.Actuators;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.release.KeyReleaseBaseTest;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Citizen-Cane
@@ -31,13 +31,13 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
     final Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
     final KeyRelease keyRelease = devices.getDefaultDevice(KeyRelease.class);
 
-    @Before
+    @BeforeEach
     public void before() {
         assertConnected(keyRelease, WAIT_FOR_CONNECTION_SECONDS);
         releaseAllRunningActuators(keyRelease);
     }
 
-    @After
+    @AfterEach
     public void releaseAllAfterwards() {
         releaseAllRunningActuators(keyRelease);
         devices.close();
@@ -104,7 +104,7 @@ public class KeyReleaseFunctionalTest extends KeyReleaseBaseTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testStatus() {
         // TODO Test once status command is implemented
         for (Actuator actuator : assertConnected(keyRelease)) {

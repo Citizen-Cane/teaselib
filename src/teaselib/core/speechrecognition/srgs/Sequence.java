@@ -10,7 +10,6 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 public class Sequence<T> extends ArrayList<T> {
-    private static final long serialVersionUID = 1L;
 
     static class Traits<T> {
         final Comparator<T> comparator;

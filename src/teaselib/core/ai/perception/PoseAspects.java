@@ -135,11 +135,8 @@ public class PoseAspects {
             return false;
         PoseAspects other = (PoseAspects) obj;
         if (aspects == null) {
-            if (other.aspects != null)
-                return false;
-        } else if (!aspects.equals(other.aspects))
-            return false;
-        return true;
+            return other.aspects == null;
+        } else return aspects.equals(other.aspects);
     }
 
     public <T extends HumanPose.PoseAspect> Optional<T> aspect(Class<T> clazz) {

@@ -24,8 +24,6 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
     private Proximity previous = Proximity.FACE2FACE;
 
     public static final Map<Proximity, Double> zoom = new HashMap<>() {
-        private static final long serialVersionUID = 1L;
-
         {
             put(Proximity.CLOSE, 1.728);
             put(Proximity.FACE2FACE, 1.2);
@@ -65,22 +63,14 @@ public final class ProximitySensor extends HumanPoseDeviceInteraction.EventListe
     private static boolean stream(PoseAspects pose) {
         Optional<HumanPose.Status> aspect = pose.aspect(HumanPose.Status.class);
         HumanPose.Status stream;
-        if (aspect.isPresent()) {
-            stream = aspect.get();
-        } else {
-            stream = HumanPose.Status.None;
-        }
+        stream = aspect.orElse(HumanPose.Status.None);
         return stream == HumanPose.Status.Stream;
     }
 
     private static boolean presence(PoseAspects pose) {
         Optional<HumanPose.Status> aspect = pose.aspect(HumanPose.Status.class);
         HumanPose.Status presence;
-        if (aspect.isPresent()) {
-            presence = aspect.get();
-        } else {
-            presence = HumanPose.Status.None;
-        }
+        presence = aspect.orElse(HumanPose.Status.None);
         return presence != HumanPose.Status.None;
     }
 

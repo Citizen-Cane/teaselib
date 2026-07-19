@@ -35,7 +35,7 @@ public class PhraseStringSequences extends Sequences<PhraseString> {
     }
 
     public static String prettyPrint(Sequences<PhraseString> slice) {
-        return slice.stream().map(Sequence<PhraseString>::joined)
+        return slice.stream().map(Sequence::joined)
                 .map(element -> "\t\"" + element.phrase + "\"=" + element.indices + " ").collect(joining(" "));
     }
 

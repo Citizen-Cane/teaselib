@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 
 /**
  * @author Citizen-Cane
- * 
  *         A timeLine that doesn't add duplicate elements. Instead, the timestamp is updated. As a result, the timeline
  *         always contains the latest occurrence of an element.
  *
@@ -108,8 +107,8 @@ public class DenseTimeLine<T> {
         return elements.getLast().element;
     }
 
-    public TimeStamp<T> removeLast() {
-        return elements.removeLast();
+    public void removeLast() {
+        elements.removeLast();
     }
 
     public DenseTimeLine<T> last(int n) {

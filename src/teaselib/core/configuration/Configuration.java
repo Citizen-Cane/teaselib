@@ -115,7 +115,7 @@ public class Configuration implements Closeable {
             if (namespaces.size() != 1) {
                 throw new IllegalArgumentException(namespaces.toString());
             } else {
-                String existing = namespaces.get(0) + PROPERTIES_EXTENSION;
+                String existing = namespaces.getFirst() + PROPERTIES_EXTENSION;
                 if (!filename.equalsIgnoreCase(existing)) {
                     throw new IllegalArgumentException(filename);
                 }
@@ -168,7 +168,7 @@ public class Configuration implements Closeable {
         if (defaultProperties.isEmpty()) {
             configurationFileImpl = new ConfigurationFileImpl();
         } else {
-            configurationFileImpl = new ConfigurationFileImpl(defaultProperties.get(defaultProperties.size() - 1));
+            configurationFileImpl = new ConfigurationFileImpl(defaultProperties.getLast());
         }
         try (var fileInputStream = new FileInputStream(file)) {
             configurationFileImpl.load(fileInputStream);
@@ -182,7 +182,7 @@ public class Configuration implements Closeable {
         if (defaultProperties.isEmpty()) {
             configurationFileImpl = new ConfigurationFileImpl();
         } else {
-            configurationFileImpl = new ConfigurationFileImpl(defaultProperties.get(defaultProperties.size() - 1));
+            configurationFileImpl = new ConfigurationFileImpl(defaultProperties.getLast());
         }
         try (var fileInputStream = getClass().getResourceAsStream(configResource)) {
             Objects.requireNonNull(fileInputStream, "Configuration file not found:" + configResource);
@@ -296,7 +296,7 @@ public class Configuration implements Closeable {
             var settings = new File(path.get(), SCRIPT_SETTINGS);
             settings.mkdirs();
             File[] files = settings.listFiles(Configuration::settingsFile);
-            Arrays.stream(files).map(File::getName).forEach(name -> {
+            Arrays.stream(Objects.requireNonNull(files)).map(File::getName).forEach(name -> {
                 int index = name.lastIndexOf('.');
                 if (index > 0) {
                     var namespace = name.substring(0, index);

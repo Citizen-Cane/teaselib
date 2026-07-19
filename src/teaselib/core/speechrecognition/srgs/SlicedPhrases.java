@@ -68,7 +68,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
             rating.append("duplicates=");
             rating.append(duplicatedSymbols);
             rating.append("\n");
-            rating.append("\t" + symbols);
+            rating.append("\t").append(symbols);
             rating.append("]");
             return rating.toString();
         }
@@ -147,14 +147,14 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
                 Sequences<T> next = slices.get(i + 1);
                 if (next.isJoinableWith(sequence)) {
                     if (sequence.size() == 1) {
-                        List<T> elements = sequence.traits.splitter.apply(sequence.get(0));
+                        List<T> elements = sequence.traits.splitter.apply(sequence.getFirst());
                         if (elements.size() > 1) {
-                            sequence.set(0, elements.get(0));
+                            sequence.set(0, elements.getFirst());
                             var moved = elements.subList(1, elements.size());
                             next.add(new Sequence<>(moved, sequence.traits));
                         }
                     } else if (sequence.size() > 1) {
-                        T remaining = sequence.remove(0);
+                        T remaining = sequence.removeFirst();
                         Sequence<T> reduced = new Sequence<>(remaining, sequence.traits);
                         Sequence<T> moved = slice.set(k, reduced);
                         if (!join(moved, next, rating)) {
@@ -188,7 +188,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         return joined;
     }
 
-    public SlicedPhrases(Sequence.Traits<T> traits, Function<Sequences<T>, String> toString) {
+    SlicedPhrases(Sequence.Traits<T> traits, Function<Sequences<T>, String> toString) {
         this.elements = new ArrayList<>();
         this.rating = new Rating<>(traits.comparator);
         this.toString = toString;
@@ -197,8 +197,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     private SlicedPhrases(List<Sequences<T>> elements, Rating<T> rating, Sequence.Traits<T> traits,
             Function<Sequences<T>, String> toString) {
         this.elements = new ArrayList<>(elements.size());
-        for (int i = 0; i < elements.size(); i++) {
-            Sequences<T> sequences = elements.get(i);
+        for (Sequences<T> sequences : elements) {
             this.elements.add(new Sequences<>(sequences));
         }
         this.rating = new Rating<>(rating, traits.comparator);
@@ -239,7 +238,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     }
 
     public long symbolCount() {
-        return elements.stream().collect(Collectors.summingLong(Sequences::symbolCount));
+        return elements.stream().mapToLong(Sequences::symbolCount).sum();
     }
 
     public long duplicatedSymbolsCount() {
@@ -270,8 +269,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
                 boolean moveableSequence = true;
                 Sequence<T> mergeableSequence = null;
                 int targetSliceSize = targetSlice.size();
-                for (int k = 0; k < targetSliceSize; k++) {
-                    Sequence<T> targetSequence = targetSlice.get(k);
+                for (Sequence<T> targetSequence : targetSlice) {
                     if (sequence.joinableSequences(targetSequence)) {
                         // merge sequence into target
                         if (sequence.compareTo(targetSequence) == 0) {
@@ -325,7 +323,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     public List<T> complete(T text) {
         return elements.stream()
                 .map(sequences -> sequences.stream()
-                        .filter(sequence -> sequences.traits.intersectionPredicate.test(sequence.get(0), text))
+                        .filter(sequence -> sequences.traits.intersectionPredicate.test(sequence.getFirst(), text))
                         .reduce(Sequence::maxLength).orElse(new Sequence<>(sequences.traits)))
                 .flatMap(Sequence::stream).toList();
     }
@@ -358,7 +356,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         if (candidates.isEmpty()) {
             return false;
         } else {
-            return SlicedPhrases.leastDuplicatedSymbols(this, candidates.get(0)) != this;
+            return SlicedPhrases.leastDuplicatedSymbols(this, candidates.getFirst()) != this;
         }
     }
 
@@ -373,14 +371,10 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
     }
 
     SlicedPhrases<T> resymbolize() {
-        List<Sequences<T>> slices = elements;
-        int size = slices.size();
-        for (int i = 0; i < size; i++) {
-            Sequences<T> slice = slices.get(i);
-            for (int k = 0; k < slice.size(); k++) {
-                Sequence<T> sequence = slice.get(k);
+        for (Sequences<T> slice : elements) {
+            for (Sequence<T> sequence : slice) {
                 if (sequence.size() == 1) {
-                    List<T> words = sequence.traits.splitter.apply(sequence.get(0));
+                    List<T> words = sequence.traits.splitter.apply(sequence.getFirst());
                     if (words.size() > 1) {
                         sequence.clear();
                         sequence.addAll(words);

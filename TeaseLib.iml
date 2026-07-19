@@ -35,7 +35,6 @@
       <excludeFolder url="file://$MODULE_DIR$/devices" />
       <excludeFolder url="file://$MODULE_DIR$/include" />
       <excludeFolder url="file://$MODULE_DIR$/lib" />
-      <excludeFolder url="file://$MODULE_DIR$/src.sexscripts" />
       <excludeFolder url="file://$MODULE_DIR$/src.test.sexscripts" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />

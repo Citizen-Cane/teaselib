@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import teaselib.core.ai.perception.SceneCapture.Rotation;
 import teaselib.core.jni.NativeObject;
@@ -42,7 +41,7 @@ public class HumanPose extends NativeObject.Disposible {
 
         final int bit;
 
-        private Interest(int bit) {
+        Interest(int bit) {
             this.bit = bit;
         }
 
@@ -124,7 +123,7 @@ public class HumanPose extends NativeObject.Disposible {
         }
 
         public static final class Distance {
-            private float[] values;
+            private final float[] values;
 
             Distance(float... values) {
                 if (values.length != Proximity.values().length) {
@@ -278,11 +277,10 @@ public class HumanPose extends NativeObject.Disposible {
         public Optional<Rectangle2D> face() {
             if (head.isEmpty()) {
                 return Optional.empty();
-            } else {
-                Point2D h = head.get();
-                float r = 1.0f / distance.orElse(1.0f) * 0.2f;
-                return Optional.of(new Rectangle2D.Double(h.getX() - r, h.getY() - r, 2 * r, 2 * r));
             }
+            Point2D h = head.get();
+            float r = 1.0f / distance.orElse(1.0f) * 0.2f;
+            return Optional.of(new Rectangle2D.Double(h.getX() - r, h.getY() - r, 2 * r, 2 * r));
         }
 
         // TODO actual bounding box
@@ -316,7 +314,7 @@ public class HumanPose extends NativeObject.Disposible {
             head.ifPresent(point -> elements.add("head=" + point));
             distance.ifPresent(m -> elements.add("distance=" + m + "m"));
             gaze.ifPresent(point -> elements.add("gaze=" + point));
-            pose.append(elements.stream().collect(Collectors.joining(", ")));
+            pose.append(String.join(", ", elements));
             pose.append(']');
             return pose.toString();
         }

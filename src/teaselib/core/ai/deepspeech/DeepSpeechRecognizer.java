@@ -228,7 +228,7 @@ public class DeepSpeechRecognizer extends SpeechRecognitionNativeImplementation 
             speechEmulation.shutdown();
             while (!speechEmulation.isTerminated()) {
                 try {
-                    speechEmulation.awaitTermination(10, TimeUnit.SECONDS);
+                    var terminated = speechEmulation.awaitTermination(10, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }

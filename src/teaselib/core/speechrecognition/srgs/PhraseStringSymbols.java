@@ -100,9 +100,6 @@ public class PhraseStringSymbols extends StringSequences {
                         // cleanup removed candidates whose successor has already another predecessors
                         String successor = sequence.get(i + 1);
                         removeOtherCandidate(candidates, used, successor);
-                    } else {
-                        // last symbol
-                        continue;
                     }
                 }
             }

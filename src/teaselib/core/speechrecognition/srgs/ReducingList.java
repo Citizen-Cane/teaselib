@@ -62,7 +62,6 @@ class ReducingList<T> implements List<T> {
         throw new UnsupportedOperationException();
     }
 
-    @SuppressWarnings("hiding")
     @Override
     public <T> T[] toArray(T[] a) {
         throw new UnsupportedOperationException();

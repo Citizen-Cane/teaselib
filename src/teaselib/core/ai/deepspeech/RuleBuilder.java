@@ -52,13 +52,7 @@ public class RuleBuilder {
             matchStrategies = createStrategies();
         }
 
-        class MatchStrategy {
-            final Rating rating;
-
-            public MatchStrategy(Rating wordRater) {
-                this.rating = wordRater;
-            }
-        }
+        record MatchStrategy(Rating rating) {}
 
         private List<MatchStrategy> createStrategies() {
 
@@ -72,7 +66,7 @@ public class RuleBuilder {
 
             // recognized word -> two expected words
             var joinedWord = new MatchStrategy((word, choice) -> {
-                var result = results.get(0);
+                var result = results.getFirst();
                 if (resultIndex < result.size() - 1 && wordIndex < phrase.length - 1) {
                     var recognized = result.get(resultIndex);
                     String nextWord = phrase[wordIndex + 1];
@@ -87,10 +81,8 @@ public class RuleBuilder {
                                 : 0.0f;
                         if (a > 0.0f && b > 0.0f) {
                             return new Rated(probability, () -> {
-                                if (a > 0.0f)
-                                    addChild("Join word " + "a", word, choice, a);
-                                if (b > 0.0f)
-                                    addChild("Join word " + "b", nextWord, choice, b);
+                                addChild("Join word " + "a", word, choice, a);
+                                addChild("Join word " + "b", nextWord, choice, b);
                                 resultIndex += 1;
                                 wordIndex += 1;
                             });
@@ -107,7 +99,7 @@ public class RuleBuilder {
 
             // recognized words -> one expected word
             var splitWord = new MatchStrategy((word, choice) -> {
-                List<Word> result = results.get(0);
+                List<Word> result = results.getFirst();
                 if (resultIndex < result.size() - 1) {
                     Word recognized = result.get(resultIndex);
                     Word nextRecognized = result.get(resultIndex + 1);
@@ -156,8 +148,8 @@ public class RuleBuilder {
                 wordIndex++;
             }
 
-            if (resultIndex < results.get(0).size() || insertNullRules > 0) {
-                int n = Math.max(results.get(0).size() - wordIndex, insertNullRules);
+            if (resultIndex < results.getFirst().size() || insertNullRules > 0) {
+                int n = Math.max(results.getFirst().size() - wordIndex, insertNullRules);
                 addPlaceholders(n, phraseIndex);
             }
         }
@@ -169,7 +161,7 @@ public class RuleBuilder {
                 if ((ratedWord == null && r != null && r.probability > 0.0f)
                         || (ratedWord != null && r != null && r.probability > ratedWord.probability)) {
                     ratedWord = r;
-                    if (ratedWord != null && ratedWord.probability >= 1.0) {
+                    if (ratedWord.probability >= 1.0) {
                         break;
                     }
                 }
@@ -186,7 +178,7 @@ public class RuleBuilder {
                 var result = results.get(i);
                 if (index < result.size()) {
                     Word hypothesis = result.get(index);
-                    if (word.equals(hypothesis) && hypothesis.probability >= currentConfidence) {
+                    if (word.equals(hypothesis.text) && hypothesis.probability >= currentConfidence) {
                         return hypothesis.probability;
                     } else {
                         float confidence = partialMatch(hypothesis.text, word) * hypothesis.probability;

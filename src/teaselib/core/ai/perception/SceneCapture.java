@@ -43,25 +43,18 @@ public class SceneCapture extends NativeObject.Disposible {
         }
 
         public Rotation reverse() {
-            switch (this) {
-            case Clockwise:
-                return CounterClockwise;
-            case CounterClockwise:
-                return Clockwise;
-            default:
-                return this;
-            }
+            return switch (this) {
+                case Clockwise -> CounterClockwise;
+                case CounterClockwise -> Clockwise;
+                default -> this;
+            };
         }
     }
 
     public static class DeviceLost extends RuntimeException {
-
-        private static final long serialVersionUID = 1L;
-
         public DeviceLost(String message) {
             super(message);
         }
-
     }
 
     public static SceneCapture getDevice() throws InterruptedException {

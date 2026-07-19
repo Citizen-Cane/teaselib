@@ -60,7 +60,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
 
     private DeviceInteractionDefinitions<Interest, EventSource<PoseEstimationEventArgs>> definitions = DeviceInteractionDefinitions.empty();
 
-    private CountDownLatch startup = new CountDownLatch(1);
+    private final CountDownLatch startup = new CountDownLatch(1);
 
     private final AtomicReference<PoseAspects> poseAspects;
 
@@ -88,7 +88,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
         }
 
         try {
-            taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
+            var terminated = taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -149,11 +149,11 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     }
 
     boolean await(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) throws InterruptedException {
-        return await(interests, (p, a) -> p.is(a), duration, unit, aspects);
+        return await(interests, PoseAspects::is, duration, unit, aspects);
     }
 
     boolean awaitNoneOf(Set<Interest> interests, long duration, TimeUnit unit, PoseAspect... aspects) throws InterruptedException {
-        return await(interests, (p, a) -> p.isNot(a), duration, unit, aspects);
+        return await(interests, PoseAspects::isNot, duration, unit, aspects);
     }
 
     boolean await(Set<Interest> interests, PoseCondition condition, long duration, TimeUnit unit, PoseAspect... aspects)
@@ -206,17 +206,15 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
                 // Away is either more distant than Far or absent
                 if (interests.contains(Interest.Proximity) && HumanPose.asSet(aspects).contains(Proximity.AWAY)) {
                     return true;
-                } else {
-                    continue;
                 }
             }
         }
         return false;
     }
 
-    private HumanPose preloadModel(Set<Interest> interests, Rotation rotation) throws InterruptedException {
+    private void preloadModel(Set<Interest> interests, Rotation rotation) throws InterruptedException {
         this.humanPoseCachedModel = getModel(interests);
-        return inferenceExecutor.submitAndGet(() -> {
+        inferenceExecutor.submitAndGet(() -> {
             humanPoseCachedModel.loadModel(interests, rotation);
             return humanPoseCachedModel;
         });
@@ -406,7 +404,7 @@ class PoseEstimationTask implements Callable<PoseAspects>, Closeable {
     }
 
     private PoseAspects getLatestPoseAspects(PoseAspects previous, Set<Interest> interests) throws InterruptedException {
-        PoseAspects update = null;
+        PoseAspects update;
         do {
             Runnable task;
             while ((task = pause.getAndSet(null)) != null) {

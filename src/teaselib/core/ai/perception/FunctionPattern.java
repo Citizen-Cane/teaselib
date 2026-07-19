@@ -15,8 +15,8 @@ public class FunctionPattern {
     private static final Logger logger = LoggerFactory.getLogger(FunctionPattern.class);
 
     public interface Direction {
-        static final float MIN_SIGNAL_VALUE = 15.0f;
-        static final int MAX_DURATION_MILLIS = 750;
+        float MIN_SIGNAL_VALUE = 15.0f;
+        int MAX_DURATION_MILLIS = 750;
 
         Direction None = new Direction() {
 
@@ -33,7 +33,7 @@ public class FunctionPattern {
 
     }
 
-    private class DirectionValue {
+    private static class DirectionValue {
         final Direction direction;
         final float x;
         final float dx;
@@ -94,17 +94,14 @@ public class FunctionPattern {
                 last = x;
 
                 // TODO filter insignificant values and join adjacent entries
-                DenseTimeLine<DirectionValue> tail = values.last(patterns.get(0).size());
+                DenseTimeLine<DirectionValue> tail = values.last(patterns.getFirst().size());
                 logger.info("movement = {}", tail);
                 List<Direction> gesture = tail.last(3, TimeUnit.SECONDS).stream().map(this::direction)
                         .collect(toList());
                 logger.info("Gesture pattern = {}", gesture);
-                if (gesture.equals(patterns.get(0)) || gesture.equals(patterns.get(1))) {
-                    return true;
-                }
+                return gesture.equals(patterns.get(0)) || gesture.equals(patterns.get(1));
             }
         }
-
         return false;
     }
 

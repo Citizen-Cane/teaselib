@@ -34,7 +34,7 @@ public class PersistentConfigurationFileStoreService implements Closeable {
         }
     }
 
-    Future<Void> write() throws IOException {
+    void write() throws IOException {
         Set<PersistentConfigurationFile> pending;
         synchronized (elements) {
             if (!elements.isEmpty()) {
@@ -66,9 +66,7 @@ public class PersistentConfigurationFileStoreService implements Closeable {
                 }
                 return null;
             });
-            return writeAll;
         } else {
-            return Done;
         }
     }
 

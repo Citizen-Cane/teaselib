@@ -81,7 +81,7 @@ public class HumanPoseDeviceInteraction extends
             if (poses.isEmpty()) {
                 return PoseAspects.Unavailable;
             } else {
-                return new PoseAspects(poses.get(0), timestamp, interests);
+                return new PoseAspects(poses.getFirst(), timestamp, interests);
             }
         };
         return poseEstimationTask.submitAndGet(poseAspects);
@@ -132,7 +132,7 @@ public class HumanPoseDeviceInteraction extends
         synchronized (this) {
             var definitions = super.definitions(actor);
             return listener.interests.stream()
-                    .map(interest -> definitions.get(interest))
+                    .map(definitions::get)
                     .filter(Objects::nonNull)
                     .anyMatch(eventSource -> eventSource.contains(listener));
         }

@@ -134,10 +134,8 @@ class SliceCollector<T> {
         if (isEmpty != other.isEmpty)
             return false;
         if (sequences == null) {
-            if (other.sequences != null)
-                return false;
+            return other.sequences == null;
         } else return sequences.equals(other.sequences);
-        return true;
     }
 
     @Override

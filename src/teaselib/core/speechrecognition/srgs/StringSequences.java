@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.function.BiPredicate;
 
 public class StringSequences extends Sequences<String> {
-    private static final long serialVersionUID = 1L;
 
     StringSequences(int capacity) {
         super(capacity, Traits);
@@ -18,7 +17,7 @@ public class StringSequences extends Sequences<String> {
     }
 
     protected static String joinCommon(List<String> elements) {
-        return elements.get(0);
+        return elements.getFirst();
     }
 
     protected static String joinSequence(List<String> elements) {

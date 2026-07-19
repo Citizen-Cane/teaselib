@@ -115,7 +115,7 @@ public class SlicedPhrases<T> implements Iterable<Sequences<T>> {
         while (!more.isEmpty()) {
             ArrayList<Sequences.SliceInProgress<T>> evenMore = new ArrayList<>();
             for (SliceInProgress<T> sliceInProgress : more) {
-                evenMore.addAll(sliceInProgress.unsliced.sliceAll(candidates, sliceInProgress.soFar));
+                evenMore.addAll(sliceInProgress.unsliced().sliceAll(candidates, sliceInProgress.soFar()));
             }
             more = evenMore;
         }

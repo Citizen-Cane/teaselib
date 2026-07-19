@@ -5,8 +5,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A sequence of values with absolute time stamps. Entries contain durations, internally the entries are stored with
- * absolute time stamps.
+ * A sequence of values with absolute time stamps.
+ * Entries contain durations, internally the entries are stored with absolute time stamps.
  * 
  * @author Citizen-Cane
  *
@@ -35,10 +35,8 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            long temp;
-            temp = Double.doubleToLongBits(amplitude);
-            result = prime * result + (int) (temp ^ (temp >>> 32));
-            result = prime * result + (int) (durationMillis ^ (durationMillis >>> 32));
+            result = prime * result + Double.hashCode(amplitude);
+            result = prime * result + Long.hashCode(durationMillis);
             return result;
         }
 
@@ -53,9 +51,7 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
             Entry other = (Entry) obj;
             if (Double.doubleToLongBits(amplitude) != Double.doubleToLongBits(other.amplitude))
                 return false;
-            if (durationMillis != other.durationMillis)
-                return false;
-            return true;
+            return durationMillis == other.durationMillis;
         }
 
         @Override
@@ -104,7 +100,7 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
     }
 
     public static double clamp(double value) {
-        return Math.max(0.0, Math.min(value, 1.0));
+        return Math.clamp(value, 0.0, 1.0);
     }
 
     public int size() {
@@ -245,7 +241,7 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + (int) (end ^ (end >>> 32));
+        result = prime * result + Long.hashCode(end);
         result = prime * result + ((values == null) ? 0 : values.hashCode());
         return result;
     }
@@ -262,10 +258,8 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         if (end != other.end)
             return false;
         if (values == null) {
-            if (other.values != null)
-                return false;
-        } else if (!values.equals(other.values))
-            return false;
-        return true;
+            return other.values == null;
+        } else return values.equals(other.values);
     }
+
 }

@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
 public class PhraseString {
-    public static final Sequence.Traits<PhraseString> Traits = new Traits<>(//
+    static final Sequence.Traits<PhraseString> Traits = new Traits<>(//
             PhraseString::compareTo, //
             PhraseString::words, //
             PhraseString::commonness, //
@@ -93,7 +93,7 @@ public class PhraseString {
         }
 
         Set<Integer> results = strings.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet());
-        return new PhraseString(strings.get(0).phrase, results);
+        return new PhraseString(strings.getFirst().phrase, results);
     }
 
     static PhraseString joinSequence(List<PhraseString> strings) {
@@ -107,15 +107,15 @@ public class PhraseString {
     }
 
     static boolean joinableSequences(List<PhraseString> sequence1, List<PhraseString> sequence2) {
-        Set<Integer> indices1 = sequence1.size() == 1 ? sequence1.get(0).indices
+        Set<Integer> indices1 = sequence1.size() == 1 ? sequence1.getFirst().indices
                 : sequence1.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
-        Set<Integer> indices2 = sequence2.size() == 1 ? sequence2.get(0).indices
+        Set<Integer> indices2 = sequence2.size() == 1 ? sequence2.getFirst().indices
                 : sequence2.stream().map(p -> p.indices).flatMap(Set::stream).collect(Collectors.toSet());
         return !PhraseString.intersect(indices1, indices2);
     }
 
     static boolean joinablePhrases(List<PhraseString> phrases1, List<PhraseString> phrases2) {
-        return phrases1.get(0).indices.equals(phrases2.get(0).indices);
+        return phrases1.getFirst().indices.equals(phrases2.getFirst().indices);
     }
 
     private static boolean joinablePhrases(PhraseString phrase1, PhraseString phrase2) {
@@ -143,9 +143,8 @@ public class PhraseString {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (!(obj instanceof PhraseString))
+        if (!(obj instanceof PhraseString other))
             return false;
-        PhraseString other = (PhraseString) obj;
         return joinablePhrases(this, other) && compareTo(other) == 0;
     }
 

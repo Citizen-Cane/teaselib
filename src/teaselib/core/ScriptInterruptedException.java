@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Citizen-Cane
- *
  *         Implements script interruption. Must be thrown if a script gets interrupted. Used to cancel script closures
  *         upon choice.
  *         <p>
@@ -16,11 +15,10 @@ public class ScriptInterruptedException extends RuntimeException {
 
     private static final Logger logger = LoggerFactory.getLogger(ScriptInterruptedException.class);
 
-    private static final long serialVersionUID = 1L;
-
     public ScriptInterruptedException(InterruptedException e) {
         super(e);
-        Thread.interrupted();
+        @SuppressWarnings("unused")
+        boolean interrupted = Thread.interrupted();
     }
 
     public ScriptInterruptedException() {

@@ -4,11 +4,13 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static teaselib.core.speechrecognition.srgs.PhraseString.Traits;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class PhraseStringSequences extends Sequences<PhraseString> {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @SafeVarargs

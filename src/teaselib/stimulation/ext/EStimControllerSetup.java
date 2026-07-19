@@ -1,15 +1,11 @@
 package teaselib.stimulation.ext;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-import teaselib.Actor;
-import teaselib.Message;
-import teaselib.TeaseScript;
+import teaselib.*;
 import teaselib.core.Script;
 import teaselib.core.devices.DeviceCache;
 import teaselib.stimulation.BurstSquareWave;
@@ -34,8 +30,8 @@ public class EStimControllerSetup extends TeaseScript {
     public static final Predicate<Stimulator> VibrationOutput = (
             Stimulator stimulator) -> stimulator.output() == Output.Vibration;
 
-    public static final Predicate<Stimulator> ContinousOutput = (
-            Stimulator stimulator) -> stimulator.signal() == Signal.Continous;
+    public static final Predicate<Stimulator> ContinuousOutput = (
+            Stimulator stimulator) -> stimulator.signal() == Signal.Continuous;
 
     public EStimControllerSetup(TeaseScript script) {
         super(script, getOrDefault(script, Locale.ENGLISH));
@@ -71,10 +67,10 @@ public class EStimControllerSetup extends TeaseScript {
             return chooser.device;
         } else {
             say("Get your EStim device and turn on the controller!");
-            String manualDevice = "I only have a manual device";
-            String notAvailable = "I'm sorry, #title, but I don't have any";
+            Answer manualDevice = Answer.yes("I only have a manual device");
+            Answer notAvailable = Answer.no("I'm sorry, #title, but I don't have any");
             // String result = reply(chooser::supplyDebugInstance, manualDevice, notAvailable);
-            String result = reply(chooser::connect, manualDevice, notAvailable);
+            Answer result = reply(chooser::connect, manualDevice, notAvailable);
             if (result == Chooser.CONNECTED) {
                 return chooser.device;
             } else {
@@ -84,17 +80,17 @@ public class EStimControllerSetup extends TeaseScript {
     }
 
     class Chooser {
-        static final String CONNECTED = "Device Connected";
-        static final String CANCELLED = "Cancelled";
+        static final Answer CONNECTED = Answer.resume("Device Connected");
+        static final Answer CANCELLED = Answer.no("Cancelled");
         StimulationDevice device;
 
-        String supplyDebugInstance() {
+        Answer supplyDebugInstance() {
             say("Supplying debug instance.");
             device = teaseLib.devices.get(StimulationDevice.class).getDefaultDevice();
             return CONNECTED;
         }
 
-        String connectDevice() {
+        Answer connectDevice() {
             do {
                 connect();
             } while (!device.connected());
@@ -128,16 +124,17 @@ public class EStimControllerSetup extends TeaseScript {
         // TODO Mixed mode (EStim/Vibrator) is possible, so don't check too much here - handle in instructions instead
         device.setMode(device.output, Wiring.Independent);
 
-        List<Stimulator> estims = device.stimulators().stream().filter(EstimOutput).collect(Collectors.toList());
-        List<Stimulator> vibrators = device.stimulators().stream().filter(VibrationOutput).collect(Collectors.toList());
+        List<Stimulator> estims = device.stimulators().stream().filter(EstimOutput).toList();
+        List<Stimulator> vibrators = device.stimulators().stream().filter(VibrationOutput).toList();
 
         if (estims.isEmpty() && vibrators.isEmpty()) {
             return handleManualDevice(device);
         }
 
         // TODO Handle vibrators first -> vib at penis tip or in cunt, then estim punishment
-        if (estims.size() != 2 || estims.stream().filter(ContinousOutput).count() > 0
-                || estims.stream().filter(VibrationOutput).count() > 0) {
+        if (estims.size() != 2
+                || estims.stream().anyMatch(ContinuousOutput)
+                || estims.stream().anyMatch(VibrationOutput)) {
             return handleMoreThanTwoPhysicalChannels();
         } else {
             return wireUpDualPhysicalChannelDevice(device);
@@ -162,10 +159,10 @@ public class EStimControllerSetup extends TeaseScript {
         wireUpDualPhysicalChannelDeviceInstructions();
         device.play(constantSignal(device, 1, TimeUnit.MINUTES));
 
-        String separate = "Two separate sets of electrodes, #title";
-        String oneShared = "One shared electrode, #title";
-        String bothShared = "Both electrodes shared, #title";
-        String answer = reply(separate, oneShared, bothShared);
+        var separate = Answer.resume("Two separate sets of electrodes, #title");
+        var oneShared = Answer.resume("One shared electrode, #title");
+        var bothShared = Answer.resume("Both electrodes shared, #title");
+        var answer = reply(separate, oneShared, bothShared);
         device.stop();
         device.setMode(Output.EStim, answer == separate ? Wiring.Independent : Wiring.INFERENCE_CHANNEL);
 
@@ -216,14 +213,14 @@ public class EStimControllerSetup extends TeaseScript {
 
     private void adjustLevels(EStimController stim, StimulationDevice device) {
         if (!device.stimulators().isEmpty()) {
-            adjustlevelsInstructions(device);
+            adjustLevelsInstructions(device);
             append("Let's try it:");
             testIntentions(stim);
         }
     }
 
-    private void adjustlevelsInstructions(StimulationDevice device) {
-        say("Now adjust the levels acording to your pain tolerance for proper feedback during your training:");
+    private void adjustLevelsInstructions(StimulationDevice device) {
+        say("Now adjust the levels according to your pain tolerance for proper feedback during your training:");
         append(Message.Bullet, "Left channel: pace");
         append(Message.Bullet, "Right channel: tease");
         if (device.wiring == Wiring.INFERENCE_CHANNEL) {
@@ -231,33 +228,33 @@ public class EStimControllerSetup extends TeaseScript {
         }
     }
 
-    private boolean testIntentions(EStimController stim) {
+    private void testIntentions(EStimController stim) {
         // TODO What is perceived stronger on pain or tease level:
         // constant input or burst pulse?
         // return new ConstantWave(2.0);
         Stimulation stimulation = (stimulator, intensity) -> {
-            double mimimalSignalDuration = stimulator.minimalSignalDuration();
-            return new BurstSquareWave(2, mimimalSignalDuration, 1.0 - mimimalSignalDuration);
+            double minimalSignalDuration = stimulator.minimalSignalDuration();
+            return new BurstSquareWave(2, minimalSignalDuration, 1.0 - minimalSignalDuration);
         };
 
-        List<String> answers = new ArrayList<>();
+        var answers = new Answers();
         for (Intention intention : Intention.values()) {
-            answers.add(intention.name());
+            answers.add(Answer.resume(intention.name()));
         }
-        String allAdjusted = "All channels adjusted, #title";
+        Answer allAdjusted = Answer.yes("All channels adjusted, #title");
         answers.add(allAdjusted);
 
         while (true) {
-            String answer = reply(answers);
+            var answer = reply(answers);
             if (answer == allAdjusted) {
                 break;
             }
 
-            if (answer.equals(Intention.Pace.name())) {
+            if (answer.text.getFirst().equals(Intention.Pace.name())) {
                 replace("Pace!");
-            } else if (answer.equals(Intention.Tease.name())) {
+            } else if (answer.text.getFirst().equals(Intention.Tease.name())) {
                 replace("Tease!");
-            } else if (answer.equals(Intention.Pain.name())) {
+            } else if (answer.text.getFirst().equals(Intention.Pain.name())) {
                 replace("Pain!");
             }
 
@@ -266,6 +263,5 @@ public class EStimControllerSetup extends TeaseScript {
             stim.complete(intention);
         }
 
-        return true;
     }
 }

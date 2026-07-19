@@ -106,7 +106,7 @@ class ReducingList<T> implements List<T> {
 
     @Override
     public boolean addAll(int index, Collection<? extends T> c) {
-        if (0 > index || index > 0)
+        if (0 > index || index > size())
             throw new IndexOutOfBoundsException(index);
         return addAll(c);
     }
@@ -134,14 +134,14 @@ class ReducingList<T> implements List<T> {
 
     @Override
     public T get(int index) {
-        if (0 > index || index > 0)
+        if (0 > index || index > size())
             throw new IndexOutOfBoundsException(index);
         return element;
     }
 
     @Override
     public T set(int index, T element) {
-        if (0 > index || index > 0)
+        if (0 > index || index > size())
             throw new IndexOutOfBoundsException(index);
         T old = element;
         this.element = reducer.apply(this.element, element);
@@ -150,14 +150,14 @@ class ReducingList<T> implements List<T> {
 
     @Override
     public void add(int index, T element) {
-        if (0 > index || index > 0)
+        if (0 > index || index > size())
             throw new IndexOutOfBoundsException(index);
         add(element);
     }
 
     @Override
     public T remove(int index) {
-        if (0 > index || index > 0)
+        if (0 > index || index > size())
             throw new IndexOutOfBoundsException(index);
         T old = element;
         this.element = null;
@@ -193,7 +193,7 @@ class ReducingList<T> implements List<T> {
 
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
-        if (0 > fromIndex || fromIndex > 0)
+        if (0 > fromIndex || fromIndex > size())
             throw new IndexOutOfBoundsException(fromIndex);
         if (toIndex == 0) {
             return Collections.emptyList();

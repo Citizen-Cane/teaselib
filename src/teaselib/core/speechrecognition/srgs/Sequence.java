@@ -60,11 +60,11 @@ public class Sequence<T> extends ArrayList<T> {
 
     final Sequence.Traits<T> traits;
 
-    public static <T> Sequence<T> of(T t, Traits<T> traits) {
+    static <T> Sequence<T> of(T t, Traits<T> traits) {
         return new Sequence<>(traits.splitter.apply(t), traits);
     }
 
-    public static <T> Sequence<T> of(List<T> t, Traits<T> traits) {
+    static <T> Sequence<T> of(List<T> t, Traits<T> traits) {
         return new Sequence<>(t, traits);
     }
 
@@ -72,20 +72,20 @@ public class Sequence<T> extends ArrayList<T> {
         this(elements, elements.traits);
     }
 
-    public Sequence(Traits<T> traits) {
+    Sequence(Traits<T> traits) {
         this.traits = traits;
     }
 
-    public Sequence(Traits<T> traits, int capacity) {
+    Sequence(Traits<T> traits, int capacity) {
         super(capacity);
         this.traits = traits;
     }
 
-    public Sequence(T element, Traits<T> traits) {
+    Sequence(T element, Traits<T> traits) {
         this(Collections.singletonList(element), traits);
     }
 
-    public Sequence(List<T> elements, Traits<T> traits) {
+    Sequence(List<T> elements, Traits<T> traits) {
         super(elements);
         this.traits = traits;
     }
@@ -95,10 +95,9 @@ public class Sequence<T> extends ArrayList<T> {
     }
 
     /**
-     * @param elements
      * @param index
      *            ranging from 0 to size() - elements.size()
-     * @return
+     *
      */
     public boolean matchesAt(List<? extends T> elements, int index) {
         int size = elements.size();
@@ -215,9 +214,7 @@ public class Sequence<T> extends ArrayList<T> {
             return true;
         if (!super.equals(obj))
             return false;
-        if (!(obj instanceof Sequence))
-            return false;
-        return true;
+        return obj instanceof Sequence;
     }
 
 }

@@ -4,6 +4,7 @@ import static java.lang.Math.min;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -22,29 +23,21 @@ import java.util.function.Supplier;
 import teaselib.core.speechrecognition.srgs.Sequence.Traits;
 
 public class Sequences<T> extends ArrayList<Sequence<T>> {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     final Sequence.Traits<T> traits;
 
-    static class SliceInProgress<T> {
-        final SlicedPhrases<T> soFar;
-        final Sequences<T> unsliced;
+    record SliceInProgress<T>(SlicedPhrases<T> soFar, Sequences<T> unsliced) {}
 
-        public SliceInProgress(SlicedPhrases<T> soFar, Sequences<T> unsliced) {
-            super();
-            this.soFar = soFar;
-            this.unsliced = unsliced;
-        }
-    }
+    final List<SliceInProgress<T>> later = new ArrayList<>();
 
-    public final List<SliceInProgress<T>> later = new ArrayList<>();
-
-    public Sequences(Traits<T> traits) {
+    Sequences(Traits<T> traits) {
         super();
         this.traits = traits;
     }
 
-    public Sequences(Collection<? extends Sequence<T>> elements, Traits<T> traits) {
+    Sequences(Collection<? extends Sequence<T>> elements, Traits<T> traits) {
         this(traits);
         for (Sequence<T> sequence : elements) {
             Sequence<T> clone = new Sequence<>(traits);
@@ -55,7 +48,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
     }
 
-    public Sequences(int initialCapacity, Traits<T> traits) {
+    Sequences(int initialCapacity, Traits<T> traits) {
         super(initialCapacity);
         this.traits = traits;
     }
@@ -78,7 +71,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
     }
 
-    public List<SliceInProgress<T>> sliceAll(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> slices) {
+    List<SliceInProgress<T>> sliceAll(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> slices) {
         candidates.add(slice(candidates, slices));
         return later;
     }
@@ -114,7 +107,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         for (int i = 0; i < size; i++) {
             Sequence<T> sequence = get(i);
             if (!sequence.isEmpty()) {
-                var element = sequence.get(0);
+                var element = sequence.getFirst();
                 boolean othersStartWithElement = lookup.othersStartWith(element);
                 if (!othersStartWithElement) {
                     disjunct.add(i, element);
@@ -148,8 +141,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     private void sliceWithLaterOccurrences(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar,
-            SliceCollector<T> disjunct, Set<T> symbolsWithLaterOccurence) {
-        SliceCollector<T> disjunctWithoutLaterOccurrencesAtDistance = disjunct.without(symbolsWithLaterOccurence);
+            SliceCollector<T> disjunct, Set<T> symbolsWithLaterOccurrence) {
+        SliceCollector<T> disjunctWithoutLaterOccurrencesAtDistance = disjunct.without(symbolsWithLaterOccurrence);
 
         if (disjunctWithoutLaterOccurrencesAtDistance.modified) {
             disjunctWithoutLaterOccurrencesAtDistance.modified = false;
@@ -190,7 +183,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     }
 
     public long symbolCount() {
-        return stream().flatMap(Sequence::stream).count();
+        return stream().mapToLong(Sequence::size).sum();
     }
 
     public int maxCommonness() {
@@ -209,9 +202,6 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         }
         return sequence;
     }
-
-    @SuppressWarnings("rawtypes")
-    private static final Sequences empty = new Sequences<>((Sequence.Traits<?>) null);
 
     private Sequences<T> splitCommon(List<SlicedPhrases<T>> candidates, SlicedPhrases<T> soFar) {
         Optional<Integer> maxCommon = maxCommon(0, 1);
@@ -250,7 +240,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             removeCommon(common.sequences);
             return commonSlice;
         } else {
-            return empty;
+            return new Sequences<T>(traits);
         }
     }
 
@@ -400,7 +390,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     public int maxLength() {
         Optional<? extends Sequence<T>> reduced = stream().reduce((a, b) -> a.size() > b.size() ? a : b);
-        return reduced.isPresent() ? reduced.get().size() : 0;
+        return reduced.map(ArrayList::size).orElse(0);
     }
 
     public boolean isJoinableWith(Sequence<T> sequence) {
@@ -418,9 +408,9 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             return true;
         else if (!super.equals(obj))
             return false;
-        else if (this.getClass().isAssignableFrom(obj.getClass()) || obj.getClass().isAssignableFrom(getClass()))
-            return true;
-        return false;
+        else return
+            this.getClass().isAssignableFrom(obj.getClass())
+                    || obj.getClass().isAssignableFrom(getClass());
     }
 
 }

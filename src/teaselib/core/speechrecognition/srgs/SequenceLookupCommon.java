@@ -58,8 +58,7 @@ class SequenceLookupCommon<T> {
             return false;
         }
 
-        for (int i = 0; i < occurrences.size(); i++) {
-            Sequence<T> sequence = occurrences.get(i);
+        for (Sequence<T> sequence : occurrences) {
             if (!sequence.startsWith(key) && sequence.indexOf(key, 1) > 0) {
                 return true;
             }

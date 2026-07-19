@@ -110,17 +110,16 @@ public class StimulationTargets implements Iterable<Samples> {
                 if (next.isPresent()) {
                     Sample sample = next.get();
                     int targetIndex = waveformSamples.indexOf(sample);
-                    long waveFormDuration = targets.get(targetIndex).waveForm.getDurationMillis()
-                            * repeatCounts[targetIndex];
+                    long waveFormDuration =
+                        targets.get(targetIndex).waveForm.getDurationMillis() * repeatCounts[targetIndex];
                     long timeStampMillis = sample.getTimeStampMillis();
                     if (waveFormDuration + timeStampMillis >= samples.getTimeStampMillis()) {
                         advance(timeStampMillis);
                         next = getNextSample();
                         if (next.isPresent()) {
-                            long nextWaveFormDuration = targets.get(targetIndex).waveForm.getDurationMillis()
-                                    * repeatCounts[targetIndex];
+                            long nextWaveFormDuration =
+                                targets.get(targetIndex).waveForm.getDurationMillis() * repeatCounts[targetIndex];
                             long nextTimeStampMillis = next.get().getTimeStampMillis();
-
                             // TODO waveform duration is finite, so the infinite delay is irregular -> remove
                             long durationMillis = nextTimeStampMillis == Long.MAX_VALUE ? Long.MAX_VALUE
                                     : (nextWaveFormDuration + nextTimeStampMillis)

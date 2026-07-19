@@ -104,8 +104,8 @@ public class XInputStimulator implements Stimulator {
         return device.getName() + " " + getLocation();
     }
 
-    private String[] estimLocation = { "Left channel", "Right channel", "Inference channel" };
-    private String[] rumbleLocation = { "Left rumble motor", "Right rumble motor", "Both rumble motors" };
+    private static final String[] estimLocation = { "Left channel", "Right channel", "Inference channel" };
+    private static final String[] rumbleLocation = { "Left rumble motor", "Right rumble motor", "Both rumble motors" };
 
     private String getLocation() {
         if (device.output == Output.EStim) {
@@ -132,7 +132,7 @@ public class XInputStimulator implements Stimulator {
 
     @Override
     public Signal signal() {
-        return device.output == Output.EStim ? Signal.Discrete : Signal.Continous;
+        return device.output == Output.EStim ? Signal.Discrete : Signal.Continuous;
     }
 
     @Override

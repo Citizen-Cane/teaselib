@@ -25,13 +25,11 @@ class SequenceLookupDisjunct<T> {
         laterOccurrences.clear();
 
         int size = sequences.size();
-        for (int k = 0; k < size; k++) {
-            Sequence<T> sequence = sequences.get(k);
+        for (Sequence<T> sequence : sequences) {
             if (!sequence.isEmpty()) {
-                T key = sequence.get(0);
+                T key = sequence.getFirst();
                 startElementIndices.computeIfAbsent(key, t -> new AtomicInteger(0)).incrementAndGet();
                 startElementSequence.computeIfAbsent(key, t -> new ArrayList<>()).add(sequence);
-
                 for (int i = 0; i < size; i++) {
                     Sequence<T> seq = sequences.get(i);
                     if (sequence != seq && !seq.isEmpty() && seq.size() > 1 && seq.indexOf(key, 1) > 0) {

@@ -1,7 +1,10 @@
 package teaselib.core;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -145,11 +148,11 @@ public class Debugger {
     }
 
     public void setTime(Daytime dayTime) {
-        Date now = new Date(teaseLib.getTime(TimeUnit.MILLISECONDS));
-        // TODO Resolve deprecation
-        Date adjusted = new Date(now.getYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        teaseLib.advanceTime(adjusted.getTime() - now.getTime(), TimeUnit.MILLISECONDS);
-
+        Instant instantNow = Instant.ofEpochMilli(teaseLib.getTime(TimeUnit.MILLISECONDS));
+        ZonedDateTime now = instantNow.atZone(ZoneId.systemDefault());
+        ZonedDateTime adjusted = now.toLocalDate().atStartOfDay(now.getZone());
+        long duration = Duration.between(now, adjusted).toMillis();
+        teaseLib.advanceTime(duration, TimeUnit.MILLISECONDS);
         float hours = TimeOfDayImpl.hours(dayTime).average();
         teaseLib.advanceTime((long) (hours * 60.0f), TimeUnit.MINUTES);
     }

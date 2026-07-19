@@ -75,8 +75,8 @@ public abstract class StimulationController<T> {
     }
 
     public Stimulator stimulator(T type) {
-        if (regions.containsKey(type)) {
-            return regions.get(type);
+        if (stimulators.containsKey(type)) {
+            return stimulators.get(type);
         } else {
             throw new IllegalArgumentException("No stimulator assigned to stimulation type " + type.toString());
         }
@@ -121,8 +121,8 @@ public abstract class StimulationController<T> {
                 actualDurationSeconds = Math.max(0, actualDurationSeconds);
 
                 if (logger.isInfoEnabled()) {
-                    logger.info(getClass().getSimpleName() + ": intensity=" + intensity + " duration=" + durationSeconds
-                            + " on " + stimulator.getName());
+                    logger.info("{}: intensity={} duration={} on {}",
+                            getClass().getSimpleName(), intensity, durationSeconds, stimulator.getName());
                 }
 
                 WaveForm waveform = stimulation.waveform(stimulator(type), intensity);

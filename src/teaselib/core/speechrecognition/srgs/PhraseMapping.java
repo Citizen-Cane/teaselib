@@ -14,10 +14,8 @@ public abstract class PhraseMapping {
 
     PhraseMapping(Choices choices) {
         this.phrase2choice = new IndexMap<>();
-        this.phrases = choices.stream().flatMap(choice -> choice.phrases.stream().map(phrase -> {
-            phrase2choice.add(choices.indexOf(choice));
-            return phrase;
-        })).toList();
+        this.phrases = choices.stream().flatMap(choice -> choice.phrases.stream()
+                .peek(phrase -> phrase2choice.add(choices.indexOf(choice)))).toList();
     }
 
     public int size() {

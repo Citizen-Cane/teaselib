@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
@@ -66,7 +65,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
             this.previous = null;
             this.toString = toString;
             for (int i = 0; i < size; i++) {
-                indexMap.put(Integer.valueOf(i), node);
+                indexMap.put(i, node);
             }
         }
 
@@ -101,7 +100,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         Indices<Element> next = new Indices<>(current);
         Set<Integer> all = Collections.unmodifiableSet(allIndices());
         for (int i = 0; i < slices.size(); i++) {
-            List<PhraseString> slice = slices.get(i).stream().map(Sequence::joined).collect(toList());
+            List<PhraseString> slice = slices.get(i).stream().map(Sequence::joined).toList();
 
             Set<Integer> coverage = mapping
                     .srgs(slice.stream().flatMap(phrase -> phrase.indices.stream()).collect(toSet()));
@@ -204,7 +203,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         return item;
     }
 
-    private Element addNullRule(Element grammar, String id) {
+    private void addNullRule(Element grammar, String id) {
         Element element = document.createElement("rule");
         addAttribute(element, "id", id);
         addAttribute(element, "scope", "private");
@@ -213,8 +212,6 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
         addAttribute(specialNull, "special", "NULL");
         element.appendChild(specialNull);
         grammar.appendChild(element);
-
-        return element;
     }
 
     private Element optional(Element ruleRef) {
@@ -243,7 +240,7 @@ public class SRGSPhraseBuilder extends AbstractSRGSBuilder {
 
     private Element gather(List<Element> elements) {
         if (elements.size() == 1) {
-            return elements.get(0);
+            return elements.getFirst();
         } else {
             Element items = document.createElement("one-of");
             for (Element element : elements) {

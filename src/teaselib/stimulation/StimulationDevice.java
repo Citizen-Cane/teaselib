@@ -16,16 +16,16 @@ import teaselib.stimulation.ext.StimulationTargets;
 /**
  * 
  * TODO map actions to motors and patterns
- * 
+ * <p>
  * actions: tease, punish, walk,run, etc. patterns are different depending on what is connected (and where)
- * 
+ * <p>
  * for instance: "tease tip estim" will be different from "tease tip vibrator" because of the different sensitivity of
  * the area.
- * 
+ * <p>
  * Then there's the intensity of the stimulation: For a vibrator, you may want to render intensity by adjusting the
  * motor voltage, but for controlling an e-stim current via a relay, the choice are on or off. So for relays, intensity
  * maps to on/off time.
- * 
+ *
  * @author Citizen-Cane
  */
 public abstract class StimulationDevice implements Device.Creatable {
@@ -131,14 +131,12 @@ public abstract class StimulationDevice implements Device.Creatable {
      * Plays the targets in the current stream. Playing targets will be replaced, but targets on free chaneels will be
      * mixed in.
      * 
-     * @param targets
      */
     public abstract void play(StimulationTargets targets);
 
     /**
      * Play all the targets, replacing any currently playing.
      * 
-     * @param targets
      */
     public abstract void playAll(StimulationTargets targets);
 
@@ -146,10 +144,9 @@ public abstract class StimulationDevice implements Device.Creatable {
      * Appends targets to the current stream. The current targets will be completed first, and the new ones seamlessly
      * appended without resetting any stimulation outputs.
      * <p>
-     * THis method almost behaves like play(), complete(), play(), but without stopping the sampler thread or clearing
+     * This method almost behaves like play(), complete(), play(), but without stopping the sampler thread or clearing
      * stimulation outputs.
      * 
-     * @param targets
      */
     public abstract void append(StimulationTargets targets);
 

@@ -102,7 +102,7 @@ class SliceCollector<T> {
         for (int i = 0; i < size; i++) {
             Sequence<T> sequence = sequences.get(i);
             if (sequence != null) {
-                var disjunctElement = sequence.get(0);
+                var disjunctElement = sequence.getFirst();
                 if (!symbols.contains(disjunctElement)) {
                     disjunctWithoutLaterOccurrences.add(i, disjunctElement);
                 }
@@ -136,8 +136,7 @@ class SliceCollector<T> {
         if (sequences == null) {
             if (other.sequences != null)
                 return false;
-        } else if (!sequences.equals(other.sequences))
-            return false;
+        } else return sequences.equals(other.sequences);
         return true;
     }
 

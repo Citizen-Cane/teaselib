@@ -3,12 +3,14 @@ package teaselib.core.speechrecognition.srgs;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
+import java.io.Serial;
 import java.util.List;
 
 public class StringSequence extends Sequence<String> {
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    public static final Traits<String> Traits = new Sequence.Traits<>( //
+    static final Traits<String> Traits = new Sequence.Traits<>( //
             String::compareTo, //
             StringSequence::splitWords, //
             StringSequence::commonness, //

@@ -2,17 +2,13 @@ package teaselib.core.speechrecognition.srgs;
 
 import static java.util.stream.Collectors.joining;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.io.Serial;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class PhraseStringSymbols extends StringSequences {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final Map<String, String> symbols = new TreeMap<>(String::compareToIgnoreCase);
@@ -63,8 +59,8 @@ public class PhraseStringSymbols extends StringSequences {
             // last seen predecessor
             Map<String, String> used = new TreeMap<>(String::compareToIgnoreCase);
 
-            // first symbols don't have predecessor
-            stream().map(sequence -> sequence.get(0)).toList().forEach(element -> used.put(element, null));
+            // first symbols don't have predecessors
+            stream().map(ArrayList::getFirst).toList().forEach(element -> used.put(element, null));
 
             for (var sequence : this) {
                 int size = sequence.size();
@@ -156,7 +152,7 @@ public class PhraseStringSymbols extends StringSequences {
 
     @Override
     public String toString() {
-        return stream().map(sequence -> sequence.stream().collect(joining(", "))) //
+        return stream().map(sequence -> String.join(", ", sequence)) //
                 .map(phrase -> "\t" + phrase + " ").collect(joining("\n"));
     }
 

@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="checkDestination" name="DeployTeaseLib" xmlns:unless="ant:unless">
+<project default="checkDestination" name="DeployTeaseLib">
 
 	<dirname property="DeployTeaseLib.basedir" file="${ant.file.DeployTeaseLib}"/>
 
+    <local name="destination"/>
+    <property name="destination" value=""/>
+
     <target name="checkDestination">
-        <fail message="variable 'destination' not se!" unless:set="destination"/>
+        <fail message="'destination' not set">
+            <condition>
+                <or>
+                    <not><isset property="destination"/></not>
+                    <equals arg1="${destination}" arg2=""/>
+                </or>
+            </condition>
+        </fail>
     </target>
 
     <target name="createTeaseLibJar" depends="checkDestination">

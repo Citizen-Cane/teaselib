@@ -65,7 +65,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
             return new ZipFile(zipFileCurrent);
         } catch (FileNotFoundException | NoSuchFileException e) {
             try (FileOutputStream fos = new FileOutputStream(zipFileCurrent);
-                    ZipOutputStream zos = new ZipOutputStream(fos);) {
+                    ZipOutputStream zos = new ZipOutputStream(fos)) {
                 zos.flush();
             }
             return new ZipFile(zipFileCurrent);
@@ -117,7 +117,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         String messageHash = messageHashes.get(processHash(actor, voice, hash));
         if (messageHash == null) {
             ZipEntry entry = current.getEntry(getPath(actor, voice, hash, TextToSpeechRecorder.MessageFilename));
-            try (InputStream inputStream = current.getInputStream(entry);) {
+            try (InputStream inputStream = current.getInputStream(entry)) {
                 messageHash = TextToSpeechRecorder.readMessage(inputStream);
                 messageHashes.put(processHash(actor, voice, hash), messageHash);
             }
@@ -191,7 +191,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
 
     private void copyEntry(Actor actor, Voice voice, String hash, String name) throws IOException {
         ZipEntry entry = current.getEntry(getPath(actor, voice, hash, name));
-        try (InputStream inputStream = current.getInputStream(entry);) {
+        try (InputStream inputStream = current.getInputStream(entry)) {
             storeSpeechResource(actor, voice, hash, inputStream, name);
             updated.closeEntry();
         }
@@ -200,7 +200,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     private String getStringResource(Actor actor, Voice voice, String hash, String name) throws IOException {
         ZipEntry entry = current.getEntry(getPath(actor, voice, hash, name));
         try (InputStream inputStream = current.getInputStream(entry);
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();) {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             Stream.copy(inputStream, bos);
             return bos.toString(StandardCharsets.UTF_8);
         }

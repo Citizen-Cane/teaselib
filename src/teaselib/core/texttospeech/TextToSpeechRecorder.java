@@ -3,7 +3,6 @@ package teaselib.core.texttospeech;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -246,7 +245,7 @@ public class TextToSpeechRecorder implements java.io.Closeable {
     }
 
     private boolean haveActorVoicesFile() throws IOException {
-        try (InputStream is = resources.get(ActorVoices.VoicesFilename);) {
+        try (InputStream is = resources.get(ActorVoices.VoicesFilename)) {
             return is != null;
         }
     }
@@ -297,8 +296,8 @@ public class TextToSpeechRecorder implements java.io.Closeable {
 
     static String readMessage(InputStream inputStream) throws IOException {
         StringBuilder message = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));) {
-            String line = null;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
             while ((line = reader.readLine()) != null) {
                 if (!message.isEmpty()) {
                     message.append("\n");
@@ -395,7 +394,7 @@ public class TextToSpeechRecorder implements java.io.Closeable {
         } catch (NoSuchAlgorithmException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
-        byte[] string = null;
+        byte[] string;
         string = message.toPrerecordedSpeechHashString().getBytes(StandardCharsets.UTF_16);
         byte[] hash = digest.digest(string);
         StringBuilder hexString = new StringBuilder();

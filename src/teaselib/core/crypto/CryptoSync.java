@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -67,15 +68,13 @@ public class CryptoSync extends CipherUtility {
             options.add(argv[argi++].toLowerCase());
         }
         EnumerationMode mode = options.contains(RECURSIVE) ? EnumerationMode.Recursive : EnumerationMode.Flat;
-        System.out.print("Scan mode = " + mode.toString());
+        System.out.print("Scan mode = " + mode);
         if (argv.length > argi) {
             String[] extensions = Arrays.copyOfRange(argv, argi, argv.length);
             decryptedFiles.mkdirs();
             sync = new CryptoSync(decryptedFiles, encryptedFiles, FileUtilities.getFileFilter(extensions), mode);
             System.out.print(", " + extensions.length + " extensions (");
-            for (String extension : extensions) {
-                System.out.print((extension == extensions[0] ? "" : ",") + extension);
-            }
+            System.out.print(String.join(",", extensions));
             System.out.print("), resulting in ");
         } else {
             sync = new CryptoSync(decryptedFiles, encryptedFiles, mode);
@@ -126,12 +125,7 @@ public class CryptoSync extends CipherUtility {
         this.decryptedDir = decryptedDir;
         this.encryptedDir = encryptedDir;
         this.mode = mode;
-        this.filter = new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return true;
-            }
-        };
+        this.filter = file -> true;
         this.files = fromFilter(decryptedDir, encryptedDir);
     }
 
@@ -244,14 +238,14 @@ public class CryptoSync extends CipherUtility {
         Decoder decoder = new Decoder();
         File zipFile = getEncryptedFile(name);
         File decryptedFile = getDecryptedFile(name);
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));) {
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().equals(ENCODED_KEY)) {
                     decoder.loadAESKey(zis, privateKey);
                 } else if (entry.getName().equals(ENCODED_DATA)) {
                     decryptedFile.getParentFile().mkdirs();
-                    try (FileOutputStream os = new FileOutputStream(decryptedFile);) {
+                    try (FileOutputStream os = new FileOutputStream(decryptedFile)) {
                         decoder.decrypt(zis, os);
                     }
                 }
@@ -265,14 +259,14 @@ public class CryptoSync extends CipherUtility {
         Encoder encoder = new Encoder();
         File zipFile = getEncryptedFile(name);
         zipFile.getParentFile().mkdirs();
-        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));) {
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
             ZipEntry encodedKey = new ZipEntry(ENCODED_KEY);
             zos.putNextEntry(encodedKey);
             encoder.saveAESKey(zos, publicKey);
             ZipEntry encodedData = new ZipEntry(ENCODED_DATA);
             zos.putNextEntry(encodedData);
             File decryptedFile = getDecryptedFile(name);
-            try (FileInputStream is = new FileInputStream(decryptedFile);) {
+            try (FileInputStream is = new FileInputStream(decryptedFile)) {
                 encoder.encrypt(is, zos, decryptedFile.length());
             }
             zipFile.setLastModified(decryptedFile.lastModified());

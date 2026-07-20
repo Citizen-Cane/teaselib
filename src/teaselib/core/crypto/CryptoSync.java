@@ -7,11 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -54,14 +50,14 @@ public class CryptoSync extends CipherUtility {
      */
     private static final String ENCODED_KEY = "encodedKey";
 
-    public static void main(String[] argv) throws GeneralSecurityException, IOException {
+    static void main(String[] argv) throws GeneralSecurityException, IOException {
         if (argv.length < 2) {
             throw new IllegalArgumentException(
                     CryptoSync.class.getSimpleName() + ": decryptedDir encryptedDir extensions...");
         }
         int argi = 0;
-        File decryptedFiles = new File(argv[argi++]);
-        File encryptedFiles = new File(argv[argi++]);
+        File decryptedFiles = new File(argv[argi++]).getCanonicalFile();
+        File encryptedFiles = new File(argv[argi++]).getCanonicalFile();
         System.out.println("Decrypted files: " + decryptedFiles);
         System.out.println("Encrypted files: " + encryptedFiles);
         final CryptoSync sync;
@@ -109,13 +105,8 @@ public class CryptoSync extends CipherUtility {
     }
 
     /**
-     * Syncronizes files accepted by the {@code FileFilter} argument.
+     * Synchronizes files accepted by the {@code FileFilter} argument.
      * 
-     * @param decryptedDir
-     * @param encryptedDir
-     * @param fileFilter
-     * @throws IOException
-     * @throws GeneralSecurityException
      */
     public CryptoSync(File decryptedDir, File encryptedDir, FileFilter filter, EnumerationMode mode)
             throws IOException, GeneralSecurityException {
@@ -144,15 +135,14 @@ public class CryptoSync extends CipherUtility {
         this.files = fromFilter(decryptedDir, encryptedDir);
     }
 
-    private static File checkValidOrThrow(File path) throws FileNotFoundException, IOException {
+    private static void checkValidOrThrow(File path) throws IOException {
         if (!path.exists())
             throw new FileNotFoundException(path.getPath());
         if (!path.isDirectory())
             throw new IOException(path.getPath() + ": Not a directory");
-        return path;
     }
 
-    enum EnumerationMode {
+    public enum EnumerationMode {
         Flat,
         Recursive;
     }
@@ -166,7 +156,7 @@ public class CryptoSync extends CipherUtility {
 
     private Set<String> enumFiles(File root, String path) {
         Set<String> files = new HashSet<>();
-        for (File file : new File(root, path).listFiles()) {
+        for (File file : Objects.requireNonNull(new File(root, path).listFiles())) {
             final String element = (path.isEmpty() ? "" : path + File.separator) + file.getName();
             if (file.isDirectory()) {
                 if (mode == EnumerationMode.Recursive) {
@@ -200,7 +190,7 @@ public class CryptoSync extends CipherUtility {
         decrypt(filesToDecrypt);
     }
 
-    public void updateEcrypted() throws IOException, GeneralSecurityException {
+    public void updateEncrypted() throws IOException, GeneralSecurityException {
         Collection<String> filesToEncrypt = filesToEncrypt();
         encrypt(filesToEncrypt);
     }
@@ -228,7 +218,7 @@ public class CryptoSync extends CipherUtility {
     }
 
     private void decrypt(Collection<String> filesToDecrypt) throws GeneralSecurityException, IOException {
-        if (filesToDecrypt.size() > 0) {
+        if (!filesToDecrypt.isEmpty()) {
             System.out.println("Decrypting " + filesToDecrypt.size() + " items to " + decryptedDir);
             for (String name : filesToDecrypt) {
                 decrypt(name);
@@ -239,7 +229,7 @@ public class CryptoSync extends CipherUtility {
     }
 
     private void encrypt(Collection<String> filesToEncrypt) throws GeneralSecurityException, IOException {
-        if (filesToEncrypt.size() > 0) {
+        if (!filesToEncrypt.isEmpty()) {
             System.out.println("Encrypting " + filesToEncrypt.size() + " items to " + encryptedDir);
             for (String name : filesToEncrypt) {
                 encrypt(name);

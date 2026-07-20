@@ -1,12 +1,9 @@
 package teaselib.core.texttospeech;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -27,7 +24,6 @@ import teaselib.Message;
 import teaselib.MessagePart;
 import teaselib.Mood;
 import teaselib.core.AbstractMessage;
-import teaselib.core.Closeable;
 import teaselib.core.CommandLineHost;
 import teaselib.core.ResourceLoader;
 import teaselib.core.configuration.Configuration;
@@ -54,22 +50,24 @@ public class TextToSpeechRecorder implements java.io.Closeable {
     private final long buildStart;
     private final TextVariables textVariables;
 
+    public static boolean isUpToDate(File path, String projectName) throws IOException {
+        File scriptAssets = new File(path, projectName + " Scripts.zip");
+        if (!scriptAssets.exists()) throw new FileNotFoundException(scriptAssets.toString());
+        File speechAssets = PrerecordedSpeechZipStorage.getFile(path, projectName);
+        if (speechAssets.exists() && scriptAssets.lastModified() < speechAssets.lastModified()) {
+            logger.info("'{}' is up-to-date", speechAssets);
+            return true;
+        }
+        return false;
+    }
+
     static class Pass {
-        static class Symbol {
-            final String key;
-            final String value;
 
-            public Symbol(String key, String value) {
-                super();
-                this.key = key;
-                this.value = value;
-            }
-
+        record Symbol(String key, String value) {
             @Override
             public String toString() {
-                return key + "=" + value;
-            }
-
+                    return key + "=" + value;
+                }
         }
 
         final List<Symbol> symbols = new ArrayList<>();
@@ -133,7 +131,6 @@ public class TextToSpeechRecorder implements java.io.Closeable {
             Configuration config) throws IOException {
         this.resources = resources;
         this.textVariables = textVariables;
-
         this.ttsPlayer = new TextToSpeechPlayer(config);
         this.buildStart = System.currentTimeMillis();
         this.storage = new StorageSynchronizer(new PrerecordedSpeechZipStorage(path, resources.getRoot(), name));
@@ -392,22 +389,18 @@ public class TextToSpeechRecorder implements java.io.Closeable {
     }
 
     public static String getHash(AbstractMessage message) {
-        MessageDigest digest = null;
+        MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
         byte[] string = null;
-        try {
-            string = message.toPrerecordedSpeechHashString().getBytes("UTF-16");
-        } catch (UnsupportedEncodingException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
+        string = message.toPrerecordedSpeechHashString().getBytes(StandardCharsets.UTF_16);
         byte[] hash = digest.digest(string);
         StringBuilder hexString = new StringBuilder();
-        for (int i = 0; i < hash.length; i++) {
-            String hex = Integer.toHexString(0xff & hash[i]);
+        for (byte b : hash) {
+            String hex = Integer.toHexString(0xff & b);
             if (hex.length() == 1)
                 hexString.append('0');
             hexString.append(hex);

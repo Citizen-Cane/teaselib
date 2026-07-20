@@ -1,36 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="buildTeaseLib" name="DeployTeaseLib">
+<project default="checkDestination" name="DeployTeaseLib" xmlns:unless="ant:unless">
+
 	<dirname property="DeployTeaseLib.basedir" file="${ant.file.DeployTeaseLib}"/>
 
-    <target name="createTeaseLibRuntime">
+    <target name="checkDestination">
+        <fail message="variable 'destination' not se!" unless:set="destination"/>
+    </target>
+
+    <target name="createTeaseLibJar" depends="checkDestination">
         <jar destfile="${DeployTeaseLib.basedir}/lib/TeaseLib.jar">
-            <manifest>
-                <attribute name="Class-Path" value="jump3er-1.03.jar"/>
-            </manifest>
             <fileset dir="${DeployTeaseLib.basedir}/bin">
            		<exclude name="simplelogger.properties"/>
            	</fileset>
         </jar>
     </target>
 
-    <target name="deploy" depends="createTeaseLibRuntime">
+    <target name="deployTeaseLib" depends="checkDestination,createTeaseLibJar">
         <copy todir="${destination}/lib/">
-            <fileset dir="${DeployTeaseLib.basedir}/lib/" excludes="**.obj,**.iobj,**.pdb,**.ipdb,**.exp,**.ilk,**.lib"/>
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" excludes="models/,**.obj,**.iobj,**.pdb,**.ipdb,**.exp,**.ilk,**.lib"/>
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" includes="models/silero/"/>
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" includes="models/whisper/ggml-tiny.en-q4_0.bin"/>
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" includes="models/whisper/ggml-tiny.en-q4_0-en.bin"/>
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" includes="models/whisper/ggml-base.bin"/>
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" includes="models/whisper/ggml-base-en.bin"/>
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" includes="models/whisper/ggml-large-v3-turbo.bin"/>
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" includes="models/whisper/ggml-large-v3.bin"/>
         </copy>
         <copy todir="${destination}/pronunciation">
             <fileset dir="${DeployTeaseLib.basedir}/pronunciation"/>
         </copy>
     </target>
 
-    <target name="deployToSexScripts">
-        <property name="destination" value="${basedir}/../SexScripts"/>
-        <antcall target="deploy"/>
-    </target>
-
-    <target name="deployToMine" depends="createTeaseLibRuntime">
-        <antcall target="deploy"/>
-    </target>
-
-    <target name="buildTeaseLib" depends="deployToSexScripts">
-    </target>
 </project>

@@ -21,11 +21,11 @@ import teaselib.Actor;
 import teaselib.core.util.Stream;
 
 public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
+
     private static final String Zip = ".zip";
     private static final String Temp = " temp";
 
     private final String resourcesRoot;
-    private final String archiveName;
     private final ZipFile current;
     private final ZipOutputStream updated;
 
@@ -34,12 +34,23 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     private final File zipFileUpdated;
     private final File zipFileCurrent;
 
+    public static File getFile(File path, String name) throws IOException {
+        return getFile(path, name, false);
+    }
+
+    private static File getFile(File path, String name, boolean temp) throws IOException {
+        String filename = name + " " + "Speech";
+        if (temp) filename += Temp;
+        filename += Zip;
+        return new File(path, filename).getCanonicalFile();
+    }
+
     public PrerecordedSpeechZipStorage(File path, String resourcesRoot, String name) throws IOException {
-        this.resourcesRoot = resourcesRoot.endsWith("/") ? resourcesRoot.substring(1, resourcesRoot.length() - 1)
-                : resourcesRoot.substring(1);
-        this.archiveName = name + " " + "Speech";
-        zipFileCurrent = new File(path, archiveName + Zip).getAbsoluteFile();
-        zipFileUpdated = new File(path, archiveName + Temp + Zip).getAbsoluteFile();
+        this.resourcesRoot = resourcesRoot.endsWith("/")
+            ? resourcesRoot.substring(1, resourcesRoot.length() - 1)
+            : resourcesRoot.substring(1);
+        zipFileCurrent = getFile(path, name);
+        zipFileUpdated = getFile(path, name, true);
         current = getCurrent();
         updated = new ZipOutputStream(new FileOutputStream(zipFileUpdated));
     }
@@ -191,7 +202,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         try (InputStream inputStream = current.getInputStream(entry);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();) {
             Stream.copy(inputStream, bos);
-            return new String(bos.toByteArray(), StandardCharsets.UTF_8);
+            return bos.toString(StandardCharsets.UTF_8);
         }
     }
 
